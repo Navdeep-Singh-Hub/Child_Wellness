@@ -2,7 +2,6 @@ import { icons } from "@/constants/icons";
 import { images } from "@/constants/images";
 import { SignedIn, SignedOut, useAuth } from '@clerk/clerk-expo';
 import { Redirect, Tabs } from "expo-router";
-import React from 'react';
 import { ActivityIndicator, Image, ImageBackground, Text, View } from "react-native";
 
 
@@ -115,35 +114,7 @@ const _Layout=()=>{
           )
           }}
       />
-      <Tabs.Screen
-          name="Motor Skills"
-          options={{
-            title: "Motor Skills",
-            headerShown: false,
-            tabBarIcon: ({focused})=>(
-            <TabIcon 
-              focused={focused}
-              icon={icons.motor}
-              title="Motor"
-            />
-          )
-          }}
-      />
 
-      <Tabs.Screen
-          name="Settings"
-          options={{
-            title: "Settings",
-            headerShown: false,
-            tabBarIcon: ({focused})=>(
-            <TabIcon 
-              focused={focused}
-              icon={icons.settings}
-              title="Settings"
-            />
-          )
-          }}
-      />
       
       <Tabs.Screen
             name="Profile"

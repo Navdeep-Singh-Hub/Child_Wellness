@@ -35,7 +35,7 @@ export default function Page() {
       // and redirect the user
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId })
-        router.replace('/')
+        router.replace('/(tabs)')
       } else {
         // If the status isn't complete, check why. User might need to
         // complete further steps.
@@ -191,7 +191,7 @@ export default function Page() {
 
       <View className="flex-row justify-center items-center mt-4">
         <Text className="text-gray-600">Don't have an account? </Text>
-        <Link href="/sign-up" asChild>
+        <Link href="/(auth)/sign-up" asChild>
           <TouchableOpacity>
             <Text className="text-blue-600 font-semibold">Sign Up</Text>
           </TouchableOpacity>

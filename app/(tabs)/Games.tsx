@@ -1,7 +1,7 @@
 import { icons } from '@/constants/icons';
 import { images } from '@/constants/images';
 import { fetchMyStats, finishTapRound, recordGame, startTapRound } from '@/utils/api';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Image, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 
 type Stats = {
