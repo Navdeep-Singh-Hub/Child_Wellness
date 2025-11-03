@@ -1,16 +1,17 @@
 {
   "expo": {
-    "name": "Child_Wellness",
-    "slug": "Child_Wellness",
+    "name": "ChildWellness",
+    "slug": "ChildWellness",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "childwellness",
+    "scheme": "ChildWellness",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "extra": {
-      "EXPO_PUBLIC_API_BASE_URL": "http://192.168.1.3:4000",
-      "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY":"pk_test_Y3VkZGx5LXN1bmJlYW0tODEuY2xlcmsuYWNjb3VudHMuZGV2JA"
+      "AUTH0_CLIENT_ID_NATIVE": "mVqiDhhSeBZ3BGUddxCvqheVb0VJcaGC",
+      "AUTH0_DOMAIN": "child-wellness.us.auth0.com",
+      "AUTH0_CLIENT_ID_WEB": "pK2uzbNONOHaPUPWbD9s7Y3qx6nYntEW"
     },
     "ios": {
       "supportsTablet": true
@@ -32,6 +33,8 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      ["react-native-auth0", 
+      { "domain": "child-wellness.us.auth0.com" }],
       "expo-router",
       [
         "expo-splash-screen",

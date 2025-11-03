@@ -11,10 +11,10 @@ const TARGETS = [10000, 13000, 34000];
 
 tapGame.post('/start', async (req, res) => {
   try {
-    const clerkId = req.userId; // From requireAuth middleware
+    const auth0Id = req.auth0Id || req.userId; // From requireAuth middleware
     const targetMs = TARGETS[Math.floor(Math.random() * TARGETS.length)];
     const round = await TapRound.create({
-      userClerkId: clerkId,
+      userAuth0Id: auth0Id,
       targetMs,
       startedAt: new Date(),
       status: 'active',
@@ -28,12 +28,12 @@ tapGame.post('/start', async (req, res) => {
 
 tapGame.post('/finish', async (req, res) => {
   try {
-    const clerkId = req.userId; // From requireAuth middleware
+    const auth0Id = req.auth0Id || req.userId; // From requireAuth middleware
     const { roundId } = req.body || {};
     if (!roundId) return res.status(400).json({ error: 'roundId required' });
 
     const round = await TapRound.findById(roundId);
-    if (!round || round.userClerkId !== clerkId) return res.status(404).json({ error: 'Round not found' });
+    if (!round || round.userAuth0Id !== auth0Id) return res.status(404).json({ error: 'Round not found' });
     if (round.status !== 'active') return res.status(400).json({ error: 'Round already finished' });
 
     const now = new Date();
@@ -48,8 +48,8 @@ tapGame.post('/finish', async (req, res) => {
     await round.save();
 
     // Update rewards
-    let user = await User.findOne({ clerkId });
-    if (!user) user = await User.create({ clerkId });
+    let user = await User.findOne({ auth0Id });
+    if (!user) user = await User.create({ auth0Id });
     const r = user.rewards || (user.rewards = {});
 
     // Streak by IST day

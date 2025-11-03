@@ -43,23 +43,19 @@ To learn more about developing your project with Expo, look at the following res
 - [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
 ## Join the community
-## Authentication (Clerk)
+## Authentication (Auth0)
 
-This app uses Clerk for authentication.
+This app uses Auth0 for authentication.
 
 1. Install deps (already added):
 
 ```
-npm i @clerk/clerk-expo expo-secure-store
+npm install
 ```
 
-2. Create a Clerk project and get your Publishable Key.
+2. Create an Auth0 project and get your keys
 
-3. Add the key to your Expo env (e.g. `.env` or env var):
-
-```
-EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxx
-```
+3. Add the keys to your .env and app.json as shown in the Auth0 quickstart guide
 
 4. Start the app:
 

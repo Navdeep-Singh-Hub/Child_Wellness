@@ -13,12 +13,13 @@ const RewardsSchema = new Schema({
   coins:        { type: Number, default: 0 },
   hearts:       { type: Number, default: 5 },
   streakDays:   { type: Number, default: 0 },
+  bestStreak:   { type: Number, default: 0 },
   lastPlayedDate: String, // 'YYYY-MM-DD' in Asia/Kolkata
   totalGamesPlayed: { type: Number, default: 0 },
 });
 
 const UserSchema = new Schema({
-  clerkId: { type: String, index: true, unique: true },
+  auth0Id: { type: String, index: true, unique: true },
   email: { type: String, index: true },
   name: String,
   firstName: String,

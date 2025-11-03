@@ -1,31 +1,40 @@
 // app/(tabs)/Profile.tsx  — animated + gradient version
-import { useAuth, useUser } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+// at top
+import { router } from 'expo-router';
+import { useAuth } from '../../src/auth/AuthProvider';
+
+// inside component:
+
+
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    Alert,
-    Animated,
-    Easing,
-    Image,
-    SafeAreaView,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Animated,
+  Easing,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 import { getMyProfile, updateMyProfile } from '@/utils/api';
 
 export default function ProfileScreen() {
-  const { signOut, isSignedIn } = useAuth();
-  const { user } = useUser();
-
+  // TODO: use Auth0 useAuth()
+  // const { signOut, isSignedIn } = useAuth();
+  // const { user } = useUser();
+  const { logout } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [lastName,  setLastName]  = useState('');
   const [email,     setEmail]     = useState('');
   const [dob,       setDob]       = useState<string | null>(null);
+  // Placeholder: user info (
+  const user = { fullName: '', username: '', imageUrl: '', primaryEmail: '' };
 
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -39,7 +48,7 @@ export default function ProfileScreen() {
     (async () => {
       try {
         // Only call API if user is signed in
-        if (!isSignedIn) {
+        if (!user) { // Assuming user is null or undefined if not logged in
           setLoaded(true);
           Animated.parallel([
             Animated.timing(fade, { toValue: 1, duration: 550, useNativeDriver: true }),
@@ -51,7 +60,7 @@ export default function ProfileScreen() {
         const p = await getMyProfile();
         setFirstName(p.firstName || '');
         setLastName(p.lastName || '');
-        setEmail(p.email || (user?.primaryEmailAddress?.emailAddress ?? ''));
+        setEmail(p.email || (user?.primaryEmail ?? ''));
         setDob(p.dob || null);
       } catch {
         // ignore
@@ -63,7 +72,7 @@ export default function ProfileScreen() {
         ]).start();
       }
     })();
-  }, [user?.id, isSignedIn]);
+  }, []); // Removed isSignedIn from dependency array
 
   // Gentle pulse on the Save button when saving
   useEffect(() => {
@@ -139,7 +148,7 @@ export default function ProfileScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
                 <Ionicons name="mail-outline" size={14} color="#6B7280" />
                 <Text style={{ marginLeft: 6, color: '#6B7280' }}>
-                  {user?.primaryEmailAddress?.emailAddress || 'Signed in'}
+                  {user?.primaryEmail || 'Signed in'}
                 </Text>
               </View>
 
@@ -155,11 +164,18 @@ export default function ProfileScreen() {
             </View>
 
             <TouchableOpacity
-              onPress={() => signOut()}
-              style={{ marginLeft: 'auto', backgroundColor: '#EF4444', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999 }}
-              activeOpacity={0.9}
+                onPress={async () => {
+                  try {
+                    await logout();
+                  } finally {
+                    // Send user back to auth stack
+                    router.replace('/(public)');
+                  }
+                }}
+                style={{ marginLeft: 'auto', backgroundColor: '#EF4444', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999 }}
+                activeOpacity={0.9}
             >
-              <Text style={{ color: 'white', fontWeight: '700' }}>Sign Out</Text>
+                <Text style={{ color: 'white', fontWeight: '700' }}>Sign Out</Text>
             </TouchableOpacity>
           </View>
         </View>

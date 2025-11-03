@@ -1,21 +1,26 @@
-
 import { CATEGORIES, CATEGORY_STYLES, COMMON_WORDS, tileImages, type Category, type Tile } from '@/constants/aac';
 import { addCustomTile, API_BASE_URL, getCustomTiles, getFavorites, toggleFavorite, type CustomTile } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as Speech from 'expo-speech';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Toast from 'react-native-toast-message';
+
+
+
 import {
   Alert,
-  Animated,
   Easing,
   FlatList,
   Image,
+  InteractionManager,
   LayoutAnimation,
   Modal,
   Platform,
   Pressable,
+  Animated as RNAnimated,
   ScrollView,
   StyleSheet,
   Text,
@@ -25,7 +30,17 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+
+import Animated, {
+  cancelAnimation,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -42,17 +57,37 @@ const LANG_OPTIONS: { key: LangKey; label: string }[] = [
   { key: 'te-IN', label: 'Telugu' },
 ];
 
-// Per-language dictionary. Add/edit any words you like.
+
+// Per-language dictionary. Full parity across languages.
 const TRANSLATIONS: Record<LangKey, Record<string, string>> = {
   'en-US': {
     i: 'I', want: 'want', more: 'more', help: 'help', go: 'go', stop: 'stop', yes: 'yes', no: 'no', please: 'please', thankyou: 'thank you',
     if: 'if', this: 'this', that: 'that', then: 'then', to: 'to',
-    car: 'car', bike: 'bike', train: 'train', bus: 'bus', plane: 'plane',
-    apple: 'apple', banana: 'banana', rice: 'rice', milk: 'milk', bread: 'bread',
-    doctor: 'doctor', teacher: 'teacher', police: 'police', farmer: 'farmer', chef: 'chef',
-    happy: 'happy', sad: 'sad', angry: 'angry', tired: 'tired', excited: 'excited',
-    eat: 'eat', drink: 'drink', open: 'open', close: 'close', play: 'play',
+    // Transport
+    car: 'car', bike: 'bike', train: 'train', bus: 'bus', plane: 'plane', boat: 'boat', ship: 'ship', taxi: 'taxi', truck: 'truck', scooter: 'scooter',
+    helicopter: 'helicopter', submarine: 'submarine', rocket: 'rocket', bicycle: 'bicycle', tram: 'tram', metro: 'metro', van: 'van', ambulance: 'ambulance',
+    policecar: 'police car', firetruck: 'fire truck', skateboard: 'skateboard', rollerskates: 'roller skates', wheelchair: 'wheelchair',
+    // Food
+    apple: 'apple', banana: 'banana', grapes: 'grapes', pineapple: 'pineapple', mango: 'mango', orange: 'orange', strawberry: 'strawberry', watermelon: 'watermelon',
+    pear: 'pear', peach: 'peach', cherry: 'cherry', kiwi: 'kiwi', lemon: 'lemon', rice: 'rice', milk: 'milk', bread: 'bread', cheese: 'cheese',
+    egg: 'egg', chicken: 'chicken', fish: 'fish', pizza: 'pizza', burger: 'burger', pasta: 'pasta', salad: 'salad', soup: 'soup',
+    icecream: 'ice cream', cake: 'cake', cookie: 'cookie', juice: 'juice', yogurt: 'yogurt',
+    // Jobs
+    doctor: 'doctor', nurse: 'nurse', teacher: 'teacher', police: 'police', firefighter: 'firefighter', farmer: 'farmer', chef: 'chef', driver: 'driver',
+    engineer: 'engineer', artist: 'artist', singer: 'singer', dancer: 'dancer', soldier: 'soldier', pilot: 'pilot', judge: 'judge', lawyer: 'lawyer',
+    scientist: 'scientist', programmer: 'programmer', builder: 'builder', cashier: 'cashier', waiter: 'waiter', barber: 'barber', mechanic: 'mechanic',
+    plumber: 'plumber', electrician: 'electrician', photographer: 'photographer', dentist: 'dentist', veterinarian: 'veterinarian',
+    // Emotions
+    happy: 'happy', sad: 'sad', angry: 'angry', tired: 'tired', excited: 'excited', scared: 'scared', surprised: 'surprised', calm: 'calm',
+    bored: 'bored', confused: 'confused', proud: 'proud', shy: 'shy', silly: 'silly', frustrated: 'frustrated', worried: 'worried', sleepy: 'sleepy',
+    sick: 'sick', brave: 'brave', curious: 'curious', embarrassed: 'embarrassed', lonely: 'lonely', hopeful: 'hopeful', grateful: 'grateful',
+    confident: 'confident', relaxed: 'relaxed', annoyed: 'annoyed', shocked: 'shocked',
+    // Actions
+    eat: 'eat', drink: 'drink', open: 'open', close: 'close', play: 'play', run: 'run', walk: 'walk', jump: 'jump', sit: 'sit', stand: 'stand',
+    sleep: 'sleep', read: 'read', write: 'write', draw: 'draw', sing: 'sing', dance: 'dance', wash: 'wash', brush: 'brush', take: 'take', give: 'give',
+    look: 'look', listen: 'listen', start: 'start', help: 'help', call: 'call', wait: 'wait', think: 'think',
   },
+
   'hi-IN': {
     i: 'मैं', want: 'चाहता हूँ', more: 'और', help: 'मदद', go: 'चलो', stop: 'रुको', yes: 'हाँ', no: 'नहीं', please: 'कृपया', thankyou: 'धन्यवाद',
     if: 'अगर', this: 'यह', that: 'वह', then: 'तब', to: 'को',
@@ -74,40 +109,98 @@ const TRANSLATIONS: Record<LangKey, Record<string, string>> = {
     happy: 'खुश', sad: 'दुखी', angry: 'गुस्सा', tired: 'थका हुआ', excited: 'उत्साहित', scared: 'डरा हुआ', surprised: 'आश्चर्यचकित', calm: 'शांत',
     bored: 'ऊब गया', confused: 'उलझन', proud: 'गर्व', shy: 'शर्मीला', silly: 'मजाकिया', frustrated: 'निराश', worried: 'चिंतित', sleepy: 'नींद में',
     sick: 'बीमार', brave: 'बहादुर', curious: 'जिज्ञासु', embarrassed: 'शर्मिंदा', lonely: 'अकेला', hopeful: 'आशावान', grateful: 'आभारी',
-    confident: 'आत्मविश्वासी', relaxed: 'आरामदायक', annoyed: 'चिढ़ा', shocked: 'स्तब्ध',
+    confident: 'आत्मविश्वासी', relaxed: 'आरामदायक', annoyed: 'चिढ़ा हुआ', shocked: 'स्तब्ध',
     // Actions
     eat: 'खाना', drink: 'पीना', open: 'खोलो', close: 'बंद करो', play: 'खेलो', run: 'दौड़ो', walk: 'चलो', jump: 'कूदो', sit: 'बैठो', stand: 'खड़े हो',
     sleep: 'सोओ', read: 'पढ़ो', write: 'लिखो', draw: 'ड्रॉ करो', sing: 'गाना गाओ', dance: 'नाचो', wash: 'धोओ', brush: 'ब्रश करो', take: 'लो', give: 'दो',
-    go: 'जाओ', come: 'आओ', look: 'देखो', listen: 'सुनो', stop: 'रुको', start: 'शुरू करो', help: 'मदद करो', call: 'फोन करो', wait: 'ठहरो', think: 'सोचो',
+    look: 'देखो', listen: 'सुनो', start: 'शुरू करो', help: 'मदद करो', call: 'फोन करो', wait: 'ठहरो', think: 'सोचो',
   },
+
   'pa-IN': {
     i: 'ਮੈਂ', want: 'ਚਾਹੁੰਦਾ ਹਾਂ', more: 'ਹੋਰ', help: 'ਮਦਦ', go: 'ਚੱਲੋ', stop: 'ਰੁੱਕੋ', yes: 'ਹਾਂ', no: 'ਨਹੀਂ', please: 'ਕਿਰਪਾ ਕਰਕੇ', thankyou: 'ਧੰਨਵਾਦ',
     if: 'ਜੇ', this: 'ਇਹ', that: 'ਉਹ', then: 'ਫਿਰ', to: 'ਨੂੰ',
-    car: 'ਕਾਰ', bike: 'ਬਾਈਕ', train: 'ਰੇਲਗੱਡੀ', bus: 'ਬੱਸ', plane: 'ਜਹਾਜ਼',
-    apple: 'ਸੇਬ', banana: 'ਕੇਲਾ', rice: 'ਚਾਵਲ', milk: 'ਦੁੱਧ', bread: 'ਰੋਟੀ',
-    doctor: 'ਡਾਕਟਰ', teacher: 'ਅਧਿਆਪਕ', police: 'ਪੁਲਿਸ', farmer: 'ਕਿਸਾਨ', chef: 'ਸ਼ੈਫ',
-    happy: 'ਖੁਸ਼', sad: 'ਉਦਾਸ', angry: 'ਗੁੱਸਾ', tired: 'ਥੱਕਿਆ', excited: 'ਉਤਸ਼ਾਹਿਤ',
-    eat: 'ਖਾਓ', drink: 'ਪੀਓ', open: 'ਖੋਲ੍ਹੋ', close: 'ਬੰਦ ਕਰੋ', play: 'ਖੇਡੋ',
+    // Transport
+    car: 'ਕਾਰ', bike: 'ਬਾਈਕ', train: 'ਰੇਲਗੱਡੀ', bus: 'ਬੱਸ', plane: 'ਜਹਾਜ਼', boat: 'ਕਿਸ਼ਤੀ', ship: 'ਪੋਤ', taxi: 'ਟੈਕਸੀ', truck: 'ਟਰੱਕ', scooter: 'ਸਕੂਟਰ',
+    helicopter: 'ਹੈਲੀਕਾਪਟਰ', submarine: 'ਪੰਡੂਬੀ', rocket: 'ਰਾਕੇਟ', bicycle: 'ਸਾਇਕਲ', tram: 'ਟ੍ਰਾਮ', metro: 'ਮੈਟਰੋ', van: 'ਵੈਨ', ambulance: 'ਐਂਬੂਲੈਂਸ',
+    policecar: 'ਪੁਲਿਸ ਕਾਰ', firetruck: 'ਅੱਗ ਬੁਝਾਉ ਗੱਡੀ', skateboard: 'ਸਕੇਟਬੋਰਡ', rollerskates: 'ਰੋਲਰ ਸਕੇਟਸ', wheelchair: 'ਵ੍ਹੀਲਚੇਅਰ',
+    // Food
+    apple: 'ਸੇਬ', banana: 'ਕੇਲਾ', grapes: 'ਅੰਗੂਰ', pineapple: 'ਅਨਾਨਾਸ', mango: 'ਆਮ', orange: 'ਸੰਤਰਾ', strawberry: 'ਸਟ੍ਰਾਬੈਰੀ', watermelon: 'ਤੁਰਬੂਜ',
+    pear: 'ਨਾਸ਼ਪਾਤੀ', peach: 'ਆੜੂ', cherry: 'ਚੈਰੀ', kiwi: 'ਕੀਵੀ', lemon: 'ਨਿੰਬੂ', rice: 'ਚਾਵਲ', milk: 'ਦੁੱਧ', bread: 'ਰੋਟੀ', cheese: 'ਪਨੀਰ',
+    egg: 'ਅੰਡਾ', chicken: 'ਚਿਕਨ', fish: 'ਮੱਛੀ', pizza: 'ਪਿਜ਼ਾ', burger: 'ਬਰਗਰ', pasta: 'ਪਾਸਤਾ', salad: 'ਸਲਾਦ', soup: 'ਸੂਪ',
+    icecream: 'ਆਈਸਕ੍ਰੀਮ', cake: 'ਕੇਕ', cookie: 'ਕੁਕੀ', juice: 'ਜੂਸ', yogurt: 'ਦਹੀਂ',
+    // Jobs
+    doctor: 'ਡਾਕਟਰ', nurse: 'ਨਰਸ', teacher: 'ਅਧਿਆਪਕ', police: 'ਪੁਲਿਸ', firefighter: 'ਫਾਇਰਫਾਈਟਰ', farmer: 'ਕਿਸਾਨ', chef: 'ਸ਼ੈਫ', driver: 'ਡਰਾਈਵਰ',
+    engineer: 'ਇੰਜੀਨੀਅਰ', artist: 'ਕਲਾਕਾਰ', singer: 'ਗਾਇਕ', dancer: 'ਨਰਤਕਾਰ', soldier: 'ਸਿਪਾਹੀ', pilot: 'ਪਾਇਲਟ', judge: 'ਜੱਜ', lawyer: 'ਵਕੀਲ',
+    scientist: 'ਵਿਗਿਆਨੀ', programmer: 'ਪ੍ਰੋਗ੍ਰਾਮਰ', builder: 'ਨਿਰਮਾਤਾ', cashier: 'ਕੈਸ਼ੀਅਰ', waiter: 'ਵੇਟਰ', barber: 'ਨਾਈ', mechanic: 'ਮਕੈਨਿਕ',
+    plumber: 'ਪਲੰਬਰ', electrician: 'ਬਿਜਲੀ ਮਿਸਤਰੀ', photographer: 'ਫੋਟੋਗ੍ਰਾਫਰ', dentist: 'ਡੈਂਟਿਸਟ', veterinarian: 'ਪਸ਼ੂ ਡਾਕਟਰ',
+    // Emotions
+    happy: 'ਖੁਸ਼', sad: 'ਉਦਾਸ', angry: 'ਗੁੱਸਾ', tired: 'ਥੱਕਿਆ', excited: 'ਉਤਸ਼ਾਹਿਤ', scared: 'ਡਰਿਆ', surprised: 'ਹੈਰਾਨ', calm: 'ਸ਼ਾਂਤ',
+    bored: 'ਬੋਰ ਹੋਇਆ', confused: 'ਉਲਝਣ', proud: 'ਮਾਣ', shy: 'ਸ਼ਰਮੀਲਾ', silly: 'ਮਜ਼ਾਕੀਆ', frustrated: 'ਨਿਰਾਸ਼', worried: 'ਚਿੰਤਤ', sleepy: 'ਨੀੰਦ ਆ ਰਹੀ',
+    sick: 'ਬੀਮਾਰ', brave: 'ਬਹਾਦਰ', curious: 'ਜਿਗਿਆਸੂ', embarrassed: 'ਸ਼ਰਮਿੰਦਾ', lonely: 'ਅਕੇਲਾ', hopeful: 'ਆਸਾਵਾਨ', grateful: 'ਆਭਾਰੀ',
+    confident: 'ਆਤਮਵਿਸ਼ਵਾਸੀ', relaxed: 'ਆਰਾਮਦਾਇਕ', annoyed: 'ਚਿੜ੍ਹਿਆ', shocked: 'ਹੈਰਾਨ-ਪਰੇਸ਼ਾਨ',
+    // Actions
+    eat: 'ਖਾਣਾ', drink: 'ਪੀਣਾ', open: 'ਖੋਲ੍ਹਣਾ', close: 'ਬੰਦ ਕਰਨਾ', play: 'ਖੇਡਣਾ', run: 'ਦੌੜਣਾ', walk: 'ਤੁਰਨਾ', jump: 'ਕੁੱਦਣਾ', sit: 'ਬੈਠਣਾ', stand: 'ਖੜ੍ਹਾ ਹੋਣਾ',
+    sleep: 'ਸੌਣਾ', read: 'ਪੜ੍ਹਨਾ', write: 'ਲਿਖਣਾ', draw: 'ਚਿੱਤਰ ਬਣਾਉਣਾ', sing: 'ਗਾਣਾ ਗਾਉਣਾ', dance: 'ਨੱਚਣਾ', wash: 'ਧੋਣਾ', brush: 'ਬਰਸ਼ ਕਰਨਾ',
+    take: 'ਲੈਣਾ', give: 'ਦੇਣਾ', look: 'ਵੇਖਣਾ', listen: 'ਸੁਣਨਾ', start: 'ਸ਼ੁਰੂ ਕਰਨਾ', help: 'ਮਦਦ ਕਰਨਾ', call: 'ਫੋਨ ਕਰਨਾ', wait: 'ਉਡੀਕ ਕਰਨਾ', think: 'ਸੋਚਣਾ',
   },
+
   'ta-IN': {
     i: 'நான்', want: 'வேண்டும்', more: 'இன்னும்', help: 'உதவி', go: 'போ', stop: 'நிறுத்து', yes: 'ஆம்', no: 'இல்லை', please: 'தயவு செய்து', thankyou: 'நன்றி',
     if: 'என்றால்', this: 'இந்த', that: 'அந்த', then: 'அப்போது', to: 'க்கு',
-    car: 'கார்', bike: 'பைக்', train: 'ரயில்', bus: 'பேருந்து', plane: 'விமானம்',
-    apple: 'ஆப்பிள்', banana: 'வாழை', rice: 'அரிசி', milk: 'பால்', bread: 'ரொட்டி',
-    doctor: 'மருத்துவர்', teacher: 'ஆசிரியர்', police: 'போலீஸ்', farmer: 'விவசாயி', chef: 'சமையல்காரர்',
-    happy: 'மகிழ்ச்சி', sad: 'துயரம்', angry: 'கோபம்', tired: 'சோர்வு', excited: 'உற்சாகம்',
-    eat: 'சாப்பிடு', drink: 'குடி', open: 'திற', close: 'மூடு', play: 'விளையாடு',
+    // Transport
+    car: 'கார்', bike: 'பைக்', train: 'ரயில்', bus: 'பேருந்து', plane: 'விமானம்', boat: 'படகு', ship: 'கப்பல்', taxi: 'டாக்ஸி', truck: 'லாரி', scooter: 'ஸ்கூட்டர்',
+    helicopter: 'ஹெலிகாப்டர்', submarine: 'நீர்மூழ்கிக் கப்பல்', rocket: 'ராக்கெட்', bicycle: 'மிதிவண்டி', tram: 'ட்ராம்', metro: 'மெட்ரோ', van: 'வேன்', ambulance: 'ஆம்புலன்ஸ்',
+    policecar: 'காவல் கார்', firetruck: 'தீயணைப்பு வண்டி', skateboard: 'ஸ்கேட்போர்டு', rollerskates: 'ரோலர் ஸ்கேட்ஸ்', wheelchair: 'சக்கர நாற்காலி',
+    // Food
+    apple: 'ஆப்பிள்', banana: 'வாழைப்பழம்', grapes: 'திராட்சை', pineapple: 'அன்னாசி', mango: 'மாம்பழம்', orange: 'ஆரஞ்சு', strawberry: 'ஸ்ட்ராபெரி', watermelon: 'தர்பூசணி',
+    pear: 'பேரிக்காய்', peach: 'பீச்', cherry: 'செர்ரி', kiwi: 'கிவி', lemon: 'எலுமிச்சை', rice: 'அரிசி', milk: 'பால்', bread: 'ரொட்டி', cheese: 'பன்னீர்',
+    egg: 'முட்டை', chicken: 'கோழி', fish: 'மீன்', pizza: 'பீட்சா', burger: 'பர்கர்', pasta: 'பாஸ்தா', salad: 'சாலட்', soup: 'சூப்',
+    icecream: 'ஐஸ்கிரீம்', cake: 'கேக்', cookie: 'குக்கீ', juice: 'ஜூஸ்', yogurt: 'தயிர்',
+    // Jobs
+    doctor: 'மருத்துவர்', nurse: 'செவிலியர்', teacher: 'ஆசிரியர்', police: 'போலீஸ்', firefighter: 'தீயணைப்பு வீரர்', farmer: 'விவசாயி', chef: 'சமையல்காரர்', driver: 'டிரைவர்',
+    engineer: 'பொறியாளர்', artist: 'கலைஞர்', singer: 'பாடகர்', dancer: 'நடனக் கலைஞர்', soldier: 'சிப்பாய்', pilot: 'விமானி', judge: 'நீதிபதி', lawyer: 'வழக்கறிஞர்',
+    scientist: 'அறிவியலாளர்', programmer: 'நிரலாளர்', builder: 'கட்டுமான தொழிலாளர்', cashier: 'காசாளர்', waiter: 'பரிமாறுபவர்', barber: 'முடி வெட்டுபவர்',
+    mechanic: 'மெக்கானிக்', plumber: 'குழாய் வல்லுநர்', electrician: 'மின்சார தொழிலாளி', photographer: 'புகைப்படக் கலைஞர்', dentist: 'பல் மருத்துவர்', veterinarian: 'மிருக மருத்துவர்',
+    // Emotions
+    happy: 'மகிழ்ச்சி', sad: 'துயரம்', angry: 'கோபம்', tired: 'சோர்வு', excited: 'உற்சாகம்', scared: 'பயம்', surprised: 'ஆச்சரியம்', calm: 'அமைதி',
+    bored: 'சலிப்பு', confused: 'குழப்பம்', proud: 'பெருமை', shy: 'நாணம்', silly: 'வேடிக்கை', frustrated: 'விரக்தி', worried: 'கவலை', sleepy: 'தூக்கமாக',
+    sick: 'நோய்', brave: 'தைரியம்', curious: 'ஆர்வம்', embarrassed: 'வெட்கம்', lonely: 'தனிமை', hopeful: 'நம்பிக்கை', grateful: 'நன்றியுணர்வு',
+    confident: 'தன்னம்பிக்கை', relaxed: 'சாந்தம்', annoyed: 'எரிச்சல்', shocked: 'அதிர்ச்சி',
+    // Actions
+    eat: 'சாப்பிடு', drink: 'குடி', open: 'திற', close: 'மூடு', play: 'விளையாடு', run: 'ஓடு', walk: 'நடு', jump: 'குதி', sit: 'உட்கார்', stand: 'நில்',
+    sleep: 'தூங்கு', read: 'படி', write: 'எழுது', draw: 'வரை', sing: 'பாடு', dance: 'நடனம் ஆடு', wash: 'கழுவு', brush: 'துலக்கு', take: 'எடு', give: 'கொடு',
+    look: 'பார்', listen: 'கேள்', start: 'தொடங்கு', help: 'உதவி செய்', call: 'அழை', wait: 'காத்திரு', think: 'யோசி',
   },
+
   'te-IN': {
     i: 'నేను', want: 'కావాలి', more: 'ఇంకా', help: 'సహాయం', go: 'వెళ్ళు', stop: 'ఆపు', yes: 'అవును', no: 'కాదు', please: 'దయచేసి', thankyou: 'ధన్యవాదాలు',
     if: 'ఒకవేళ', this: 'ఈ', that: 'ఆ', then: 'అప్పుడు', to: 'కు',
-    car: 'కారు', bike: 'బైక్', train: 'రైలు', bus: 'బస్సు', plane: 'విమానం',
-    apple: 'ఆపిల్', banana: 'అరటి', rice: 'బియ్యం', milk: 'పాలు', bread: 'రొట్టి',
-    doctor: 'డాక్టర్', teacher: 'ఉపాధ్యాయుడు', police: 'పోలీస్', farmer: 'రైతు', chef: 'షెఫ్',
-    happy: 'సంతోషం', sad: 'దుఃఖం', angry: 'కోపం', tired: 'అలసట', excited: 'ఉత్సాహం',
-    eat: 'తిను', drink: 'త్రాగు', open: 'తెరువు', close: 'మూసివేయి', play: 'ఆడు',
+    // Transport
+    car: 'కారు', bike: 'బైక్', train: 'రైలు', bus: 'బస్సు', plane: 'విమానం', boat: 'పడవ', ship: 'నౌక', taxi: 'టాక్సీ', truck: 'ట్రక్', scooter: 'స్కూటర్',
+    helicopter: 'హెలికాప్టర్', submarine: 'జలాంతర్గామి', rocket: 'రాకెట్', bicycle: 'సైకిల్', tram: 'ట్రామ్', metro: 'మెట్రో', van: 'వ్యాన్', ambulance: 'అంబులెన్స్',
+    policecar: 'పోలీస్ కారు', firetruck: 'అగ్నిమాపక వాహనం', skateboard: 'స్కేట్‌బోర్డు', rollerskates: 'రోలర్ స్కేట్స్', wheelchair: 'వీల్‌చేర్',
+    // Food
+    apple: 'ఆపిల్', banana: 'అరటి పండు', grapes: 'ద్రాక్ష', pineapple: 'అనాస పండు', mango: 'మామిడి', orange: 'నారింజ', strawberry: 'స్ట్రాబెర్రీ', watermelon: 'పుచ్చకాయ',
+    pear: 'పియర్', peach: 'పీచ్', cherry: 'చెర్రీ', kiwi: 'కివీ', lemon: 'నిమ్మకాయ', rice: 'బియ్యం', milk: 'పాలు', bread: 'రొట్టె', cheese: 'పనీర్',
+    egg: 'గుడ్డు', chicken: 'చికెన్', fish: 'చేప', pizza: 'పిజ్జా', burger: 'బర్గర్', pasta: 'పాస్తా', salad: 'సలాడ్', soup: 'సూప్',
+    icecream: 'ఐస్‌క్రీమ్', cake: 'కేక్', cookie: 'కుకీ', juice: 'జ్యూస్', yogurt: 'పెరుగు',
+    // Jobs
+    doctor: 'డాక్టర్', nurse: 'నర్స్', teacher: 'ఉపాధ్యాయుడు', police: 'పోలీస్', firefighter: 'అగ్నిమాపక సిబ్బంది', farmer: 'రైతు', chef: 'షెఫ్', driver: 'డ్రైవర్',
+    engineer: 'ఇంజనీర్', artist: 'కళాకారి', singer: 'గాయకుడు', dancer: 'నర్తకి', soldier: 'సైనికుడు', pilot: 'పైలట్', judge: 'న్యాయమూర్తి', lawyer: 'న్యాయవాది',
+    scientist: 'శాస్త్రవేత్త', programmer: 'ప్రోగ్రామర్', builder: 'నిర్మాత', cashier: 'క్యాషియర్', waiter: 'వేటర్', barber: 'క్షౌరవేత్త', mechanic: 'మెకానిక్',
+    plumber: 'ప్లంబర్', electrician: 'ఎలక్ట్రీషియన్', photographer: 'ఫోటోగ్రాఫర్', dentist: 'దంత వైద్యుడు', veterinarian: 'పశు వైద్యుడు',
+    // Emotions
+    happy: 'ఆనందం', sad: 'దుఃఖం', angry: 'కోపం', tired: 'అలసట', excited: 'ఉత్సాహం', scared: 'భయం', surprised: 'ఆశ్చర్యం', calm: 'ప్రశాంతం',
+    bored: 'బోరు', confused: 'గందరగోళం', proud: 'గర్వం', shy: 'సిగ్గు', silly: 'సరదా', frustrated: 'నిరాశ', worried: 'ఆందోళన', sleepy: 'నిద్రగా',
+    sick: 'అనారోగ్యం', brave: 'ధైర్యం', curious: 'ఆసక్తి', embarrassed: 'సంకోచం', lonely: 'ఒంటరితనం', hopeful: 'ఆశ', grateful: 'కృతజ్ఞత',
+    confident: 'ఆత్మవిశ్వాసం', relaxed: 'ఆరామం', annoyed: 'చిరాకు', shocked: 'ఆశ్చర్యచకితం',
+    // Actions
+    eat: 'తిను', drink: 'త్రాగు', open: 'తెరువు', close: 'మూసివేయి', play: 'ఆడు', run: 'పరుగెట్టు', walk: 'నడుచు', jump: 'దూకు', sit: 'కూర్చో', stand: 'నిలబడు',
+    sleep: 'నిద్రపో', read: 'చదువు', write: 'వ్రాయు', draw: 'గీయు', sing: 'పాడు', dance: 'నృత్యం చేయి', wash: 'కడుగు', brush: 'బ్రష్ చేయి', take: 'తీసుకో', give: 'ఇవ్వు',
+    look: 'చూడి', listen: 'విని', start: 'ప్రారంభించు', help: 'సహాయం చేయి', call: 'పిలువు', wait: 'వేచి ఉండు', think: 'ఆలోచించు',
   },
 };
+
 
 // ---------- Smart voice selection (Expo Speech) ----------
 const LANG_MATCH: Record<LangKey, (v: Speech.Voice) => boolean> = {
@@ -144,7 +237,6 @@ async function speakSmart(text: string, lang: LangKey) {
   const isIndianLang = lang !== 'en-US';
 
   if (!voice || (voice.language && !voice.language.toLowerCase().startsWith(lang.slice(0,2).toLowerCase()))) {
-    // Missing voice: guide user once per session (simple alert)
     Alert.alert(
       'Install voice',
       `This device may not have a ${lang} voice installed. I’ll use English for now.\n\nAndroid: Settings → System → Languages & input → Text-to-speech → Google TTS → Install voice data.\niOS: Settings → Accessibility → Spoken Content → Voices.`,
@@ -171,26 +263,50 @@ function tSentence(ids: string[], lang: LangKey) {
   return ids.map(w => tWord(w, lang)).join(' ');
 }
 
-// tile types, constants and styles now imported from '@/constants/aac'
+// ---------- TTS scheduler: run speech AFTER animations ----------
+function scheduleSpeak(text: string, lang: LangKey, delayMs = 120) {
+  InteractionManager.runAfterInteractions(() => {
+    setTimeout(() => {
+      speakSmart(text, lang);
+    }, delayMs);
+  });
+}
 
 // ---------- Small helpers ----------
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-const springify = (v: Animated.Value, to: number) =>
-  Animated.spring(v, { toValue: to, useNativeDriver: true, friction: 6, tension: 120 });
 
 // ---------- UI pieces ----------
 function SectionHeader({ id, title }: { id: Category['id']; title: string }) {
   const style = CATEGORY_STYLES[id];
-  const underline = useRef(new Animated.Value(0)).current;
-  const bounce = useRef(new Animated.Value(0)).current;
+
+  // 👇 RN legacy Animated for underline bounce (lightweight)
+  const underline = useRef(new RNAnimated.Value(0)).current;
+  const bounce = useRef(new RNAnimated.Value(0)).current;
 
   useEffect(() => {
-    underline.setValue(0); bounce.setValue(0);
-    Animated.parallel([
-      Animated.timing(underline, { toValue: 1, duration: 550, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
-      Animated.sequence([
-        Animated.timing(bounce, { toValue: 1, duration: 280, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(bounce, { toValue: 0, duration: 180, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+    underline.setValue(0);
+    bounce.setValue(0);
+
+    RNAnimated.parallel([
+      RNAnimated.timing(underline, {
+        toValue: 1,
+        duration: 550,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+      RNAnimated.sequence([
+        RNAnimated.timing(bounce, {
+          toValue: 1,
+          duration: 280,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        RNAnimated.timing(bounce, {
+          toValue: 0,
+          duration: 180,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }),
       ]),
     ]).start();
   }, [id]);
@@ -198,79 +314,162 @@ function SectionHeader({ id, title }: { id: Category['id']; title: string }) {
   return (
     <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <Animated.Text style={{ fontSize: 22, fontWeight: '800', color: style.text, transform: [{ translateY: bounce.interpolate({ inputRange: [0,1], outputRange: [0,-6] }) }] }}>
+        <RNAnimated.Text
+          style={{
+            fontSize: 22,
+            fontWeight: '800',
+            color: style.text,
+            transform: [
+              { translateY: bounce.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) },
+            ],
+          }}
+        >
           {style.headerEmoji}
-        </Animated.Text>
+        </RNAnimated.Text>
+
         <Text style={{ fontSize: 22, fontWeight: '800', color: style.text }}>{title}</Text>
       </View>
-      <Animated.View style={{ height: 4, backgroundColor: style.accent, borderRadius: 999, marginTop: 8, width: underline.interpolate({ inputRange: [0,1], outputRange: ['0%','55%'] }) as any }} />
+
+      <RNAnimated.View
+        style={{
+          height: 4,
+          backgroundColor: style.accent,
+          borderRadius: 999,
+          marginTop: 8,
+          width: underline.interpolate({
+            inputRange: [0, 1],
+            outputRange: ['0%', '55%'],
+          }) as any,
+        }}
+      />
     </View>
   );
 }
 
+
 function AnimatedCommonChip({ t, onPress }: { t: Tile; onPress: (t: Tile) => void }) {
-  const scale = useRef(new Animated.Value(1)).current;
+  const scale = useSharedValue(1);
+  const springCfg = { stiffness: 230, damping: 22, mass: 1 };
+
+  const onDown = () => {
+    cancelAnimation(scale);
+    scale.value = withSpring(0.99, springCfg);
+  };
+
+  const onUp = () => {
+    scale.value = withSpring(1.0, springCfg);
+  };
+
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
     <AnimatedPressable
-      onPressIn={() => springify(scale, 0.96).start()}
-      onPressOut={() => springify(scale, 1).start()}
-      onPress={() => onPress(t)}
-      style={[{ height: 46, paddingHorizontal: 12, borderRadius: 14, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', transform: [{ scale }] }, shadow.s]}
+      onPress={() => {
+        // micro pop, then call press after animation
+        scale.value = withTiming(1.015, { duration: 85 }, (finished) => {
+          if (finished) scale.value = withSpring(1.0, springCfg, (ok) => {
+            if (ok) runOnJS(onPress)(t);
+          });
+        });
+      }}
+      onPressIn={onDown}
+      onPressOut={onUp}
+      style={[
+        {
+          height: 46,
+          paddingHorizontal: 12,
+          borderRadius: 14,
+          backgroundColor: '#F3F4F6',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderWidth: 1,
+          borderColor: '#E5E7EB',
+        },
+        style,
+        shadow.s,
+      ]}
       accessibilityRole="button"
     >
-      <Text style={{ fontWeight: '700' }}>{t.label}</Text>
+      <Text style={{ fontWeight: '700', color: '#111827' }}>{t.label}</Text>
     </AnimatedPressable>
   );
 }
 
-function TileCard({ t, index, onPress, accent, isFav, onToggleFav, isMyTile, onEditTile, onDeleteTile }: { 
-  t: Tile; 
-  index: number; 
-  onPress: (t: Tile) => void; 
-  accent: string; 
-  isFav: boolean; 
+
+
+function TileCard({
+  t, index, onPress, accent, isFav, onToggleFav, isMyTile, onEditTile, onDeleteTile
+}: {
+  t: Tile;
+  index: number;
+  onPress: (t: Tile) => void;
+  accent: string;
+  isFav: boolean;
   onToggleFav: (id: string) => void;
   isMyTile?: boolean;
   onEditTile?: (t: Tile) => void;
   onDeleteTile?: (t: Tile) => void;
 }) {
-  const mount = useRef(new Animated.Value(0)).current;
-  const press = useRef(new Animated.Value(1)).current;
-  const wobble = useRef(new Animated.Value(0)).current;
+  // Reanimated shared values
+  const scale = useSharedValue(1);
+  const appear = useSharedValue(0); // mount fade/scale
 
-  useEffect(() => {
-    mount.setValue(0);
-    Animated.sequence([
-      Animated.delay(index * 25),
-      Animated.timing(mount, { toValue: 1, duration: 260, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-    ]).start();
+  // mount animation (fade in + slight scale)
+  React.useEffect(() => {
+    const delay = index * 25;
+    appear.value = 0;
+    const run = () => {
+      appear.value = withTiming(1, { duration: 260 });
+      scale.value = withTiming(1, { duration: 260 });
+    };
+    const id = setTimeout(run, delay);
+    return () => clearTimeout(id);
   }, [index]);
 
-  const rotate = wobble.interpolate({ inputRange: [-1, 0, 1], outputRange: ['-3deg', '0deg', '3deg'] });
-  const startWobble = () => {
-    wobble.stopAnimation(); wobble.setValue(0);
-    Animated.sequence([
-      Animated.timing(wobble, { toValue: 1, duration: 90, easing: Easing.linear, useNativeDriver: true }),
-      Animated.timing(wobble, { toValue: -1, duration: 90, easing: Easing.linear, useNativeDriver: true }),
-      Animated.timing(wobble, { toValue: 1, duration: 90, easing: Easing.linear, useNativeDriver: true }),
-      Animated.timing(wobble, { toValue: 0, duration: 90, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-    ]).start();
+  // physics config tuned for tiny, crisp pop
+  const springCfg = { stiffness: 260, damping: 24, mass: 1 };
+
+  const onPressIn = () => {
+    cancelAnimation(scale);
+    // slight compress on touch down
+    scale.value = withSpring(0.96, springCfg);
   };
+
+  const onPressOut = () => {
+    // return to normal if user cancels
+    scale.value = withSpring(1.0, springCfg);
+  };
+
+  // pop then JS handler AFTER animation (no lag)
+  const handlePress = () => {
+    cancelAnimation(scale);
+    // quick micro expand, then settle, then call onPress in JS
+    scale.value = withTiming(1.02, { duration: 85 }, (finished) => {
+      if (finished) {
+        scale.value = withSpring(1.0, springCfg, (ok) => {
+          if (ok) runOnJS(onPress)(t);
+        });
+      }
+    });
+  };
+
+  const cardStyle = useAnimatedStyle(() => ({
+    opacity: appear.value,
+    transform: [{ scale: scale.value }],
+  }));
 
   return (
     <AnimatedPressable
-      onPressIn={() => { springify(press, 0.97).start(); startWobble(); }}
-      onPressOut={() => springify(press, 1).start()}
-      onPress={() => onPress(t)}
-      onHoverIn={startWobble}
-      style={[
-        styles.card,
-        { transform: [{ scale: mount.interpolate({ inputRange: [0,1], outputRange: [0.96,1] }) }, { scale: press }, { rotate }], opacity: mount, borderColor: 'rgba(17,17,17,0.06)' },
-        shadow.m,
-      ]}
+      onPress={handlePress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      style={[styles.card, cardStyle, shadow.m]}
       accessibilityRole="button"
     >
       <View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { backgroundColor: accent + '18', borderRadius: 16 }]} />
+
       <View style={styles.emojiWrap}>
         <View style={[styles.emojiHalo, { backgroundColor: accent + '26' }]} />
         {t.imageUrl ? (
@@ -281,12 +480,13 @@ function TileCard({ t, index, onPress, accent, isFav, onToggleFav, isMyTile, onE
           <Text style={styles.emojiText}>{t.emoji || '🟦'}</Text>
         )}
       </View>
+
       <View style={styles.labelWrap}>
         <Text numberOfLines={1} style={styles.labelText}>{t.label}</Text>
       </View>
+
       <Animated.View style={[styles.bottomBar, { backgroundColor: accent }]} />
-      
-      {/* heart overlay */}
+
       <TouchableOpacity
         onPress={() => onToggleFav(t.id)}
         activeOpacity={0.8}
@@ -299,24 +499,12 @@ function TileCard({ t, index, onPress, accent, isFav, onToggleFav, isMyTile, onE
         <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={16} color={isFav ? '#EF4444' : '#6B7280'} />
       </TouchableOpacity>
 
-      {/* Action chips for My Tiles */}
       {isMyTile && (
         <View style={styles.tileActions}>
-          <TouchableOpacity
-            onPress={() => onEditTile?.(t)}
-            style={[styles.actionChip, styles.editChip]}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityLabel="Edit tile"
-          >
+          <TouchableOpacity onPress={() => onEditTile?.(t)} style={[styles.actionChip, styles.editChip]}>
             <Ionicons name="create-outline" size={16} />
           </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => onDeleteTile?.(t)}
-            style={[styles.actionChip, styles.deleteChip]}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityLabel="Delete tile"
-          >
+          <TouchableOpacity onPress={() => onDeleteTile?.(t)} style={[styles.actionChip, styles.deleteChip]}>
             <Ionicons name="trash-outline" size={16} />
           </TouchableOpacity>
         </View>
@@ -324,6 +512,45 @@ function TileCard({ t, index, onPress, accent, isFav, onToggleFav, isMyTile, onE
     </AnimatedPressable>
   );
 }
+
+function NiceAlert({ message }: { message: string | null }) {
+  if (!message) return null;
+  return (
+    <View style={{
+      flexDirection: 'row', alignItems: 'center',
+      backgroundColor: '#FEF2F2', borderColor: '#FCA5A5',
+      borderWidth: 1, padding: 10, borderRadius: 12, marginBottom: 10
+    }}>
+      <Ionicons name="alert-circle" size={18} color="#B91C1C" style={{ marginRight: 8 }} />
+      <Text style={{ color: '#7F1D1D', fontWeight: '700', flex: 1 }}>{message}</Text>
+    </View>
+  );
+}
+
+const MAX_IMAGE_BYTES = 1_000_000; // 1MB
+
+function isValidId(id: string) {
+  // no spaces, only letters/numbers/underscore/hyphen, 2–40 chars
+  return /^[a-zA-Z0-9_-]{2,40}$/.test(id);
+}
+
+function isHttpUrl(u: string) {
+  try {
+    const x = new URL(u);
+    return x.protocol === 'http:' || x.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function showError(msg: string) {
+  Toast.show({ type: 'error', text1: 'Please fix and try again', text2: msg });
+}
+function showSuccess(msg: string) {
+  Toast.show({ type: 'success', text1: 'Done', text2: msg });
+}
+
+
 
 // ---------- Screen ----------
 export default function AACGrid() {
@@ -335,6 +562,10 @@ export default function AACGrid() {
   const [available, setAvailable] = useState<Record<LangKey, boolean>>({
     'en-US': true, 'hi-IN': false, 'pa-IN': false, 'ta-IN': false, 'te-IN': false,
   });
+
+  //for add tile 
+  const [formError, setFormError] = useState<string | null>(null);
+
 
   // New state for favorites and custom tiles
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -370,7 +601,6 @@ export default function AACGrid() {
 
   const allCategories: Category[] = useMemo(() => {
     const favTiles: Tile[] = [];
-    // Collect from COMMON + all real categories
     const every: Tile[] = [
       ...COMMON_WORDS,
       ...CATEGORIES.flatMap(c => c.tiles),
@@ -423,18 +653,35 @@ export default function AACGrid() {
   async function pickImageFromDevice() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please allow photo access to pick an image.');
+      setFormError('Photo access is required to pick an image.');
+      showError('Allow photo access to continue.');
       return;
     }
+  
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.9,
     });
-    if (!result.canceled) {
-      const uri = result.assets[0].uri;
-      setPickedUri(uri);
+    if (result.canceled) return;
+  
+    const uri = result.assets[0].uri;
+    try {
+      const info = await FileSystem.getInfoAsync(uri, { size: true });
+      if ((info as any)?.size && (info as any).size > MAX_IMAGE_BYTES) {
+        setPickedUri('');
+        setFormError('Image is larger than 1MB. Please choose a smaller file.');
+        showError('Image too large (max 1MB).');
+        return;
+      }
+    } catch {
+      // if size not available, we’ll still allow; upload will catch failures.
     }
+  
+    setFormError(null);
+    setPickedUri(uri);
+    Toast.show({ type: 'info', text1: 'Image selected', text2: 'Will upload on Save' });
   }
+  
 
   async function uploadPickedImage(): Promise<string> {
     if (!pickedUri) throw new Error('No image selected');
@@ -444,44 +691,39 @@ export default function AACGrid() {
       const filename = `image-${Date.now()}.jpg`;
       const type = 'image/jpeg';
 
-      // For blob URIs, we need to fetch the blob and convert it to a file
       if (pickedUri.startsWith('blob:')) {
         const response = await fetch(pickedUri);
         const blob = await response.blob();
-        
-        // Create a file from the blob
         const file = new File([blob], filename, { type });
         form.append('file', file);
       } else {
-        // For regular URIs (like from image picker), use the original approach
         // @ts-ignore (RN FormData file)
         form.append('file', { uri: pickedUri, name: filename, type });
       }
 
-      // Get auth headers for the upload
       const { authHeaders } = await import('@/utils/api');
-      
-      // tell authHeaders we're doing multipart so it must NOT add Content-Type
       const headers = await authHeaders?.({ multipart: true }) ?? {};
-      
-      // extra safety: remove any content-type that might still sneak in
       for (const k of Object.keys(headers)) {
         if (k.toLowerCase() === 'content-type') delete (headers as any)[k];
       }
 
       const res = await fetch(`${API_BASE_URL}/api/upload`, {
         method: 'POST',
-        headers,          // no Content-Type here
-        body: form,       // FormData
+        headers,
+        body: form,
       });
 
       if (!res.ok) {
         const text = await res.text();
-        console.error('Upload failed:', text);
-        throw new Error(text || `Upload failed (${res.status})`);
+        // Turn Multer/HTML errors into a clean message
+        let msg = 'Upload failed';
+        if (/File too large/i.test(text)) msg = 'Image too large (max 1MB).';
+        else if (/MulterError/i.test(text)) msg = 'Upload error. Please try a smaller image.';
+        showError(msg);
+        throw new Error(msg);
       }
+      
       const data = await res.json();
-      console.log('Upload successful:', data);
       return data.url as string;
     } catch (error) {
       console.error('Upload error:', error);
@@ -491,22 +733,14 @@ export default function AACGrid() {
     }
   }
 
-  // Identify "My Tiles" - custom tiles
   const isMyTile = (t: Tile) => customTiles.some(ct => ct.id === t.id);
 
-  // Upload or keep existing URL helper
   async function uploadOrKeep(url?: string): Promise<string | undefined> {
-    // If user provided a fresh URL, keep it
     if (url && /^https?:\/\//i.test(url)) return url;
-
-    // Otherwise, let user pick a file and upload using existing upload endpoint
-    if (pickedUri) {
-      return await uploadPickedImage();
-    }
-    return url; // fallback no-op if you only edit label
+    if (pickedUri) return await uploadPickedImage();
+    return url;
   }
 
-  // Update the local custom tiles array
   function updateMyTileLocal(updated: CustomTile) {
     setCustomTiles((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
   }
@@ -524,10 +758,8 @@ export default function AACGrid() {
     if (!editForm) return;
     try {
       setSavingEdit(true);
-      // 1) optionally upload/keep image
       const finalUrl = await uploadOrKeep(editForm.imageUrl);
 
-      // 2) call backend if available (optional)
       try {
         const { authHeaders } = await import('@/utils/api');
         await fetch(`${API_BASE_URL}/api/me/custom-tiles/${editForm.id}`, {
@@ -535,11 +767,8 @@ export default function AACGrid() {
           headers: await authHeaders(),
           body: JSON.stringify({ label: editForm.label, imageUrl: finalUrl }),
         });
-      } catch {
-        // ignore if you don't have this endpoint yet; local update still happens
-      }
+      } catch {}
 
-      // 3) local state update
       updateMyTileLocal({
         id: editForm.id,
         label: editForm.label,
@@ -555,16 +784,13 @@ export default function AACGrid() {
   function confirmDelete(tile: Tile) {
     const go = async () => {
       try {
-        // backend delete (optional)
         try {
           const { authHeaders } = await import('@/utils/api');
           await fetch(`${API_BASE_URL}/api/me/custom-tiles/${tile.id}`, {
             method: "DELETE",
             headers: await authHeaders(),
           });
-        } catch {
-          // ignore if no endpoint; we still remove locally
-        }
+        } catch {}
         removeMyTileLocal(tile.id);
       } catch (e) {
         console.error("Delete failed", e);
@@ -605,18 +831,19 @@ export default function AACGrid() {
     return q ? base.filter(t => t.label.toLowerCase().includes(q)) : base;
   }, [query, category]);
 
-  const onTile = async (t: Tile) => {
+  // ======= Updated: do NOT await speech; schedule after animation =======
+  const onTile = (t: Tile) => {
     Haptics.selectionAsync();
-    setUtterance(s => [...s, t.id]); // store ids so we can translate for sentence too
+    setUtterance(s => [...s, t.id]);
     const say = tWord(t.id, selectedLang);
-    await speakSmart(say, selectedLang);
+    scheduleSpeak(say, selectedLang, 120);
   };
 
-  const onSpeakSentence = async () => {
+  const onSpeakSentence = () => {
     if (!utterance.length) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const say = tSentence(utterance, selectedLang);
-    await speakSmart(say, selectedLang);
+    scheduleSpeak(say, selectedLang, 80);
   };
 
   const theme = CATEGORY_STYLES[activeCat];
@@ -722,10 +949,10 @@ export default function AACGrid() {
           renderItem={({ item }) => (
             <AnimatedCommonChip
               t={item}
-              onPress={async (tile) => {
+              onPress={(tile) => {
                 Haptics.selectionAsync();
                 setUtterance(s => [...s, tile.id]);
-                await speakSmart(tWord(tile.id, selectedLang), selectedLang);
+                scheduleSpeak(tWord(tile.id, selectedLang), selectedLang, 100);
               }}
             />
           )}
@@ -744,6 +971,11 @@ export default function AACGrid() {
         keyExtractor={(t) => t.id}
         columnWrapperStyle={{ columnGap: 8 }}
         contentContainerStyle={{ paddingBottom: 28, rowGap: 8 }}
+        initialNumToRender={12}
+        maxToRenderPerBatch={12}
+        windowSize={5}
+        removeClippedSubviews
+        updateCellsBatchingPeriod={40}
         renderItem={({ item, index }) => (
           <View style={{ flex: 1 }}>
             <TileCard
@@ -755,7 +987,7 @@ export default function AACGrid() {
               onToggleFav={async (id) => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 try {
-                  const { isFavorite, favorites: favList } = await toggleFavorite(id);
+                  const { favorites: favList } = await toggleFavorite(id);
                   setFavorites(new Set(favList));
                 } catch (e) {
                   Alert.alert('Failed', 'Could not update favorites');
@@ -769,7 +1001,7 @@ export default function AACGrid() {
         )}
       />
       
-      {/* Floating add button (raised above tab bar on phone + web) */}
+      {/* Floating add button */}
       <View style={{ position: 'absolute', right: 16, bottom: addBtnBottom, zIndex: 100 }}>
         <TouchableOpacity
           onPress={() => setShowAddModal(true)}
@@ -783,9 +1015,28 @@ export default function AACGrid() {
 
       {/* Add Tile Modal */}
       {showAddModal && (
-        <View style={{ position:'absolute', left:0, right:0, top:0, bottom:0, backgroundColor:'rgba(0,0,0,0.35)', alignItems:'center', justifyContent:'center' }}>
-          <View style={{ width:'90%', backgroundColor:'#fff', borderRadius:16, padding:16 }}>
+        <View
+        style={{
+          position:'absolute', left:0, right:0, top:0, bottom:0,
+          backgroundColor:'rgba(0,0,0,0.35)',
+          alignItems:'center', justifyContent:'center', padding:16
+        }}
+        >
+        <View
+          style={{
+            width:'100%', maxWidth:560, maxHeight:'80%',
+            backgroundColor:'#fff', borderRadius:16, overflow:'hidden'
+          }}
+          >
+          <ScrollView
+            contentContainerStyle={{ padding:16 }}
+            keyboardShouldPersistTaps="handled"
+            // ensures scrolling on web if content is tall
+            style={{ flexGrow:0 }}
+            >
             <Text style={{ fontSize:18, fontWeight:'800', marginBottom:10 }}>Create custom tile</Text>
+            <NiceAlert message={formError} />
+
 
             {/* ID */}
             <Text style={{ fontWeight:'700', color:'#374151' }}>ID (no spaces)</Text>
@@ -818,6 +1069,10 @@ export default function AACGrid() {
             {sourceMode === 'url' ? (
               <>
                 <Text style={{ fontWeight:'700', color:'#374151' }}>Image URL</Text>
+                <Text style={{ fontSize:12, color:'#6B7280', marginTop:4 }}>
+                   Must start with http:// or https://
+                </Text>
+
                 <TextInput
                   value={newImageUrl}
                   onChangeText={setNewImageUrl}
@@ -869,61 +1124,88 @@ export default function AACGrid() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={async () => {
-                  if (saving) return; // Prevent multiple clicks
-                  
-                  if (!newId || !newLabel) {
-                    Alert.alert('Missing', 'ID and Label are required'); 
+                  if (saving || uploading) return;
+
+                  const id = newId.trim();
+                  const label = newLabel.trim();
+                  const emoji = newEmoji.trim();
+                  const imageUrlRaw = newImageUrl.trim();
+
+                  // Field validations
+                  if (!id && !label) {
+                    setFormError?.('ID and Label are required.');
+                    showError?.('ID and Label are required.');
                     return;
                   }
-                  
+                  if (!id) {
+                    setFormError?.('Please enter an ID (only letters, numbers, _ or -).');
+                    showError?.('Missing ID.');
+                    return;
+                  }
+                  if (!/^[a-zA-Z0-9_-]{2,40}$/.test(id)) {
+                    setFormError?.('Invalid ID. Use letters, numbers, _ or - (2–40 chars).');
+                    showError?.('Invalid ID format.');
+                    return;
+                  }
+                  if (!label) {
+                    setFormError?.('Please enter a Label.');
+                    showError?.('Missing Label.');
+                    return;
+                  }
+
+                  // Image requirement: either a valid URL (when mode=url) or a picked file (when mode=upload)
+                  if (sourceMode === 'url') {
+                    if (!imageUrlRaw) {
+                      setFormError?.('Please add an Image URL or switch to Upload.');
+                      showError?.('Missing Image URL.');
+                      return;
+                    }
+                    try {
+                      const u = new URL(imageUrlRaw);
+                      if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error();
+                    } catch {
+                      setFormError?.('That does not look like a valid http/https URL.');
+                      showError?.('Invalid URL.');
+                      return;
+                    }
+                  } else {
+                    if (!pickedUri) {
+                      setFormError?.('Please choose an image to upload (max 1MB).');
+                      showError?.('No image selected.');
+                      return;
+                    }
+                  }
+
+                  setFormError?.(null);
                   setSaving(true);
-                  let finalImageUrl = newImageUrl.trim() || undefined;
+                  let finalImageUrl: string | undefined = imageUrlRaw || undefined;
 
                   try {
-                    console.log('Starting tile creation process...');
-                    console.log('Source mode:', sourceMode);
-                    console.log('Picked URI:', pickedUri);
-                    
                     if (sourceMode === 'upload') {
-                      if (!pickedUri) { 
-                        Alert.alert('No image', 'Please choose an image to upload'); 
-                        return; 
-                      }
-                      console.log('Uploading image...');
-                      finalImageUrl = await uploadPickedImage(); // ← get public URL from backend
-                      console.log('Upload completed, URL:', finalImageUrl);
+                      finalImageUrl = await uploadPickedImage();
                     }
 
-                    console.log('Creating custom tile with data:', {
-                      id: newId.trim(),
-                      label: newLabel.trim(),
-                      emoji: newEmoji.trim() || undefined,
-                      imageUrl: finalImageUrl,
-                    });
-
                     const { tile } = await addCustomTile({
-                      id: newId.trim(),
-                      label: newLabel.trim(),
-                      emoji: newEmoji.trim() || undefined,
+                      id,
+                      label,
+                      emoji: emoji || undefined,
                       imageUrl: finalImageUrl,
                     });
 
-                    console.log('Tile created successfully:', tile);
                     setCustomTiles(prev => [...prev, tile]);
-                    
-                    // Close modal and reset form immediately
+
+                    // reset form
                     setShowAddModal(false);
-                    setNewId(''); 
-                    setNewLabel(''); 
-                    setNewEmoji(''); 
-                    setNewImageUrl(''); 
-                    setPickedUri('');
+                    setNewId(''); setNewLabel(''); setNewEmoji('');
+                    setNewImageUrl(''); setPickedUri('');
                     setSourceMode('url');
-                    
+
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    showSuccess?.('Custom tile created.');
                   } catch (e: any) {
                     console.error('Error creating tile:', e);
-                    Alert.alert('Could not add', e?.message || 'Please try again');
+                    setFormError?.(e?.message || 'Could not create tile.');
+                    showError?.(e?.message || 'Could not create tile.');
                   } finally {
                     setSaving(false);
                   }
@@ -935,7 +1217,9 @@ export default function AACGrid() {
                   {uploading ? 'Uploading…' : saving ? 'Saving…' : 'Save'}
                 </Text>
               </TouchableOpacity>
+
             </View>
+            </ScrollView>
           </View>
         </View>
       )}
@@ -981,7 +1265,6 @@ export default function AACGrid() {
               </TouchableOpacity>
             </View>
 
-            {/* Optional: a secondary button to open your existing picker+uploader */}
             <TouchableOpacity onPress={async () => {
               await pickImageFromDevice();
               if (pickedUri) {
@@ -998,6 +1281,9 @@ export default function AACGrid() {
           </View>
         </View>
       </Modal>
+
+        {/* Toast root (keep this as the last child in the screen) */}
+        <Toast position="top" topOffset={60} visibilityTime={2000} />
     </View>
   );
 }
@@ -1063,7 +1349,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   editChip: {
-    // subtle accent ring
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.06)",
   },

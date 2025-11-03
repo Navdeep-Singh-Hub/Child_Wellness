@@ -1,29 +1,30 @@
 // app/(auth)/complete-profile.tsx
 import { images } from '@/constants/images';
-import { ensureUser, getMyProfile, updateMyProfile } from '@/utils/api';
-import { useAuth } from '@clerk/clerk-expo';
+import { getMyProfile, updateMyProfile } from '@/utils/api';
+// import { useAuth } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function CompleteProfile() {
-  const { isSignedIn } = useAuth();
+  // const { isSignedIn } = useAuth();
   const router = useRouter();
+  // TODO: add Auth0 session check if needed
 
   // loading + saving
   const [loading, setLoading] = useState(true);
@@ -65,8 +66,6 @@ export default function CompleteProfile() {
   useEffect(() => {
     (async () => {
       try {
-        if (!isSignedIn) return;
-        await ensureUser();
         const p = await getMyProfile();
 
         // already complete? go home
@@ -85,7 +84,7 @@ export default function CompleteProfile() {
       setLoading(false);
       }
     })();
-  }, [isSignedIn]);
+  }, []); // Removed isSignedIn from dependency array
 
   // helpers
   const toYYYYMMDD = (d: Date) => {
@@ -161,7 +160,7 @@ export default function CompleteProfile() {
       console.log('Profile saved successfully:', result);
       
       console.log('Attempting navigation to /(tabs)...');
-      router.push('/(tabs)');
+      router.replace('/(tabs)');
       console.log('Navigation command sent');
     } catch (e: any) {
       console.error('Save failed with error:', e);
