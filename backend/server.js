@@ -11,6 +11,14 @@ import { tapGame } from './routes/tapGame.js';
 
 const app = express();
 app.use(cors());
+app.use(cors({
+  origin: [
+    'https://child-wellness.vercel.app',
+    'http://localhost:19006',
+    'http://localhost:3000',
+  ],
+  credentials: true
+}));
 
 // TODO: Auth0 JWT middleware goes here
 // app.use(auth0JWTMiddleware());
