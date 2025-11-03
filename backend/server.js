@@ -1,4 +1,3 @@
-import { clerkClient, clerkMiddleware, getAuth } from '@clerk/express';
 import cors from 'cors';
 import 'dotenv/config';
 import express from 'express';
@@ -6,14 +5,15 @@ import fs from 'fs';
 import mongoose from 'mongoose';
 import multer from 'multer';
 import path from 'path';
+import { Session } from './models/Session.js';
 import { User } from './models/User.js';
 import { tapGame } from './routes/tapGame.js';
 
 const app = express();
 app.use(cors());
 
-// Register Clerk middleware BEFORE any routes that use getAuth
-app.use(clerkMiddleware());
+// TODO: Auth0 JWT middleware goes here
+// app.use(auth0JWTMiddleware());
 
 // ---- serve /static so the app can load uploaded images
 app.use('/static', express.static(path.join(process.cwd(), 'static')));
@@ -76,36 +76,15 @@ app.get('/api/health', (req, res) => {
 
 const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/child_wellness';
 
-async function getUserInfoFromClerk(clerkId) {
-  try {
-    // Handle test user for development
-    if (clerkId === 'test_user_123') {
-      return { name: 'Test User', email: 'test@example.com' };
-    }
-    
-    const user = await clerkClient.users.getUser(clerkId);
-    return {
-      name: user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.emailAddresses[0]?.emailAddress || 'User',
-      email: user.emailAddresses[0]?.emailAddress || ''
-    };
-  } catch (error) {
-    console.log('Could not fetch user info from Clerk:', error.message);
-    return { name: 'User', email: '' };
-  }
-}
-
-async function ensureUser(clerkId) {
-  // Get user info from Clerk
-  const { name, email } = await getUserInfoFromClerk(clerkId);
-  
-  // Use upsert to create or update user
+async function ensureUser(auth0Id, email, name) {
+  // Use upsert to create or update user with Auth0 info
   const user = await User.findOneAndUpdate(
-    { clerkId },
+    { auth0Id },
     {
       $setOnInsert: {
-        clerkId,
-        name,
-        email,
+        auth0Id,
+        email: email || '',
+        name: name || email || 'User',
         rewards: {
           xp: 0,
           coins: 0,
@@ -124,30 +103,26 @@ async function ensureUser(clerkId) {
   );
   
   if (user.isNew) {
-    console.log(`Created new user: ${clerkId} with name: ${name}`);
+    console.log(`Created new user: ${auth0Id} with email: ${email}`);
   } else {
-    console.log(`Found existing user: ${clerkId} with name: ${name}`);
+    console.log(`Found existing user: ${auth0Id} with email: ${email}`);
   }
   
   return user;
 }
 
+// Replace requireAuth to extract Auth0 user info from request body or JWT
 function requireAuth(req, res, next) {
-  const { userId } = getAuth(req);
-  console.log('🔍 Auth Debug:', {
-    hasUserId: !!userId,
-    userId: userId,
-    authHeader: req.headers.authorization,
-    userAgent: req.headers['user-agent']
-  });
+  // For now, get auth0Id from request body or headers (we'll send it from frontend)
+  // TODO: In production, parse Auth0 JWT from Authorization header
+  const auth0Id = req.body?.auth0Id || req.headers['x-auth0-id'] || 'auth0_test_user';
+  const email = req.body?.email || req.headers['x-auth0-email'] || '';
+  const name = req.body?.name || req.headers['x-auth0-name'] || '';
   
-  if (!userId) {
-    console.log('No userId found in request, using test user for development');
-    // For development/testing purposes, use a test user ID
-    req.userId = 'test_user_123';
-    return next();
-  }
-  req.userId = userId;
+  req.auth0Id = auth0Id;
+  req.auth0Email = email;
+  req.auth0Name = name;
+  req.userId = auth0Id; // Keep for backward compatibility
   next();
 }
 
@@ -165,17 +140,33 @@ app.get('/api/test', (req, res) => {
 // Create or fetch the authenticated user immediately after verification/login
 app.post('/api/users/ensure', requireAuth, async (req, res) => {
   try {
-    const user = await ensureUser(req.userId);
+    const auth0Id = req.body?.auth0Id || req.auth0Id;
+    const email = req.body?.email || req.auth0Email;
+    const name = req.body?.name || req.auth0Name;
+    
+    if (!auth0Id) {
+      console.error('ensure-user: missing auth0Id', {
+        headers: {
+          xAuth0Id: req.headers['x-auth0-id'],
+          auth: req.headers.authorization,
+        },
+        body: req.body,
+      });
+      return res.status(401).json({ ok: false, error: 'Missing auth0Id' });
+    }
+    
+    const user = await ensureUser(auth0Id, email, name);
     res.json({
       ok: true,
       user: {
         id: user._id,
-        clerkId: user.clerkId,
+        auth0Id: user.auth0Id,
         name: user.name,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
         dob: user.dob,
+        gender: user.gender,
         rewards: user.rewards,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
@@ -190,7 +181,14 @@ app.post('/api/users/ensure', requireAuth, async (req, res) => {
 // Get current user's profile
 app.get('/api/me/profile', requireAuth, async (req, res) => {
   try {
-    const user = await ensureUser(req.userId);
+    const auth0Id = req.auth0Id;
+    const email = req.auth0Email || '';
+    const name = req.auth0Name || '';
+    if (!auth0Id) {
+      console.error('get-profile: missing auth0Id');
+      return res.status(401).json({ error: 'Missing auth0Id' });
+    }
+    const user = await ensureUser(auth0Id, email, name);
     res.json({
       firstName: user.firstName || '',
       lastName: user.lastName || '',
@@ -206,8 +204,18 @@ app.get('/api/me/profile', requireAuth, async (req, res) => {
 // Update current user's profile (DOB immutable once set)
 app.post('/api/me/profile', requireAuth, async (req, res) => {
   try {
+    const auth0Id = req.auth0Id;
+    const email = req.auth0Email || '';
+    const name = req.auth0Name || '';
+    if (!auth0Id) {
+      console.error('update-profile: missing auth0Id. Headers:', {
+        xAuth0Id: req.headers['x-auth0-id'],
+        authHeader: req.headers.authorization,
+      });
+      return res.status(401).json({ ok: false, error: 'Missing auth0Id' });
+    }
     const { firstName, lastName, dob, gender } = req.body || {};
-    const user = await ensureUser(req.userId);
+    const user = await ensureUser(auth0Id, email, name);
     if (typeof firstName === 'string') user.firstName = firstName.trim();
     if (typeof lastName === 'string') user.lastName = lastName.trim();
     // Allow setting dob only if not already set
@@ -224,18 +232,62 @@ app.post('/api/me/profile', requireAuth, async (req, res) => {
     await user.save();
     res.json({ ok: true });
   } catch (e) {
-    console.error('Update profile failed:', e);
+    console.error('Update profile failed:', e?.message || e, {
+      stack: e?.stack,
+    });
     res.status(500).json({ ok: false, error: 'Failed to update profile' });
   }
 });
 
+
+
+// POST /api/me/game-log
+app.post('/api/me/game-log', requireAuth, async (req, res) => {
+  try {
+    const userId = req.userId || req.auth0Id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { type, correct, total, accuracy, xpAwarded, durationMs } = req.body || {};
+    if (!type || typeof correct !== 'number' || typeof total !== 'number') {
+      return res.status(400).json({ error: 'Missing fields' });
+    }
+
+    let session = await Session.findOne({ userId });
+    if (!session) session = await Session.create({ userId });
+
+    session.gameLogs.push({
+      userId,
+      type,
+      correct,
+      total,
+      accuracy: Math.max(0, Math.min(100, Math.round(accuracy))),
+      xpAwarded: xpAwarded || 0,
+      durationMs: durationMs || 0,
+      at: new Date(),
+    });
+
+    session.points = (session.points || 0) + (xpAwarded || 0);
+    session.totalGamesPlayed = (session.totalGamesPlayed || 0) + 1;
+
+    await session.save();
+    res.json({ ok: true, points: session.points, totalGamesPlayed: session.totalGamesPlayed, last: session.gameLogs.at(-1) });
+  } catch (e) {
+    console.error('game-log error', e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.get('/api/me/stats', requireAuth, async (req, res) => {
-  const user = await ensureUser(req.userId);
+  const auth0Id = req.auth0Id;
+  const email = req.auth0Email || '';
+  const name = req.auth0Name || '';
+  const user = await ensureUser(auth0Id, email, name);
   res.json({
     xp: user.rewards?.xp ?? 0,
     coins: user.rewards?.coins ?? 0,
     hearts: user.rewards?.hearts ?? 5,
     streakDays: user.rewards?.streakDays ?? 0,
+    bestStreak: user.rewards?.bestStreak ?? 0,
     lastPlayedDate: user.rewards?.lastPlayedDate ?? null,
   });
 });
@@ -245,7 +297,7 @@ app.post('/api/games/record', requireAuth, async (req, res) => {
   const today = new Date();
   const todayYmd = today.toISOString().slice(0, 10);
 
-  const user = await ensureUser(req.userId);
+  const user = await ensureUser(req.auth0Id, req.auth0Email || '', req.auth0Name || '');
   const rewards = user.rewards || {};
 
   if (rewards.lastPlayedDate) {
@@ -267,6 +319,12 @@ app.post('/api/games/record', requireAuth, async (req, res) => {
   rewards.xp = (rewards.xp || 0) + Number(xp || pointsEarned || 0);
   rewards.coins = (rewards.coins || 0) + Number(coins || 0);
   rewards.hearts = Math.max(0, Math.min(5, rewards.hearts ?? 5));
+  // Track best streak
+  const currentStreak = rewards.streakDays || 0;
+  const best = rewards.bestStreak || 0;
+  if (currentStreak > best) {
+    rewards.bestStreak = currentStreak;
+  }
   user.rewards = rewards;
   await user.save();
   res.json({
@@ -280,14 +338,14 @@ app.post('/api/games/record', requireAuth, async (req, res) => {
 
 // Favorites
 app.get('/api/me/favorites', requireAuth, async (req, res) => {
-  const user = await ensureUser(req.userId);
+  const user = await ensureUser(req.auth0Id, req.auth0Email || '', req.auth0Name || '');
   res.json({ favorites: user.favorites || [] });
 });
 
 app.post('/api/me/favorites/toggle', requireAuth, async (req, res) => {
   const { tileId } = req.body || {};
   if (!tileId) return res.status(400).json({ error: 'tileId required' });
-  const user = await ensureUser(req.userId);
+  const user = await ensureUser(req.auth0Id, req.auth0Email || '', req.auth0Name || '');
   const set = new Set(user.favorites || []);
   let isFavorite;
   if (set.has(tileId)) {
@@ -304,14 +362,14 @@ app.post('/api/me/favorites/toggle', requireAuth, async (req, res) => {
 
 // Custom tiles
 app.get('/api/me/custom-tiles', requireAuth, async (req, res) => {
-  const user = await ensureUser(req.userId);
+  const user = await ensureUser(req.auth0Id, req.auth0Email || '', req.auth0Name || '');
   res.json({ tiles: user.customTiles || [] });
 });
 
 app.post('/api/me/custom-tiles', requireAuth, async (req, res) => {
   const { id, label, emoji, imageUrl } = req.body || {};
   if (!id || !label) return res.status(400).json({ error: 'id and label required' });
-  const user = await ensureUser(req.userId);
+  const user = await ensureUser(req.auth0Id, req.auth0Email || '', req.auth0Name || '');
   // prevent duplicates by id
   const exists = (user.customTiles || []).some(t => t.id === id);
   if (exists) return res.status(409).json({ error: 'id already exists' });
@@ -324,7 +382,7 @@ app.put('/api/me/custom-tiles/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { label, emoji, imageUrl } = req.body || {};
   if (!label) return res.status(400).json({ error: 'label required' });
-  const user = await ensureUser(req.userId);
+  const user = await ensureUser(req.auth0Id, req.auth0Email || '', req.auth0Name || '');
   const tileIndex = (user.customTiles || []).findIndex(t => t.id === id);
   if (tileIndex === -1) return res.status(404).json({ error: 'tile not found' });
   
@@ -341,7 +399,7 @@ app.put('/api/me/custom-tiles/:id', requireAuth, async (req, res) => {
 
 app.delete('/api/me/custom-tiles/:id', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const user = await ensureUser(req.userId);
+  const user = await ensureUser(req.auth0Id, req.auth0Email || '', req.auth0Name || '');
   user.customTiles = (user.customTiles || []).filter(t => t.id !== id);
   await user.save();
   res.json({ ok: true });

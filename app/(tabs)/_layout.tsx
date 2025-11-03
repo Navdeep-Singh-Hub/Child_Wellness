@@ -1,88 +1,80 @@
-import { icons } from "@/constants/icons";
-import { images } from "@/constants/images";
-import { SignedIn, SignedOut, useAuth } from '@clerk/clerk-expo';
-import { Redirect, Tabs } from "expo-router";
-import { ActivityIndicator, Image, ImageBackground, Text, View } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+// import { SignedIn, SignedOut, useAuth } from '@clerk/clerk-expo';
+import { Tabs } from "expo-router";
+import { Platform, Text, View } from "react-native";
+import PillTabBar from "../comonents/PillTabBar";
 
 
-const TabIcon=({ focused, title, icon }: any)=>{
-
-  if(focused)
-    {
-            return(
-               <ImageBackground 
-                  source={images.highlight} 
-                  className="flex flex-row w-full flex-1 min-w-[112px] min-h-14 justify-center items-center rounded-full overflow-hidden pt-1 pb-1 "
-              >
-
-                <Image 
-                  source={icon}
-                  tintColor= '#151312'
-                  className="size-5"
-                 />
-                <Text
-                  className="text-secondary text-base font-semibold ml-1"
-                  >
-                  {title}
-                </Text>
-              </ImageBackground>
-            )
-     }
-     return(
-      <View className="size-full justify-center items-center mt-4 rounded-full">
-        <Image source={icon} tintColor='#A8B5DB' className="size-5" />
-      </View>
-     )
-}
-const _Layout=()=>{
-
-  const {isLoaded, isSignedIn,userId, sessionId,getToken} = useAuth();
-  if(!isLoaded) {
+const TabIcon = ({ focused, title, iconName, color }: { focused: boolean; title: string; iconName: keyof typeof Ionicons.glyphMap; color: string }) => {
+  if (focused) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <ActivityIndicator size={"large"} color={"#0f0D23"}/>
-      </View>
-    )
+      <LinearGradient
+        colors={["#E0EAFF", "#F5F3FF"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minWidth: 120,
+          height: Platform.OS === 'web' ? 44 : 40,
+          borderRadius: 999,
+          paddingHorizontal: 14,
+          shadowColor: '#000',
+          shadowOpacity: 0.12,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: 4,
+        }}
+      >
+        <Ionicons name={iconName} size={18} color={'#111827'} />
+        <Text style={{ marginLeft: 6, fontWeight: '700', color: '#111827' }}>{title}</Text>
+      </LinearGradient>
+    );
   }
   return (
+    <View style={{ justifyContent: 'center', alignItems: 'center', marginTop: 16 }}>
+      <Ionicons name={iconName} size={18} color={color} />
+    </View>
+  );
+};
+const _Layout=()=>{
+  // TODO: use Auth0 useAuth for session checks
+  // const {isLoaded, isSignedIn,userId, sessionId,getToken} = useAuth();
+  // if(!isLoaded) {
+  //   return (
+  //     <View className="flex-1 items-center justify-center">
+  //       <ActivityIndicator size={"large"} color={"#0f0D23"}/>
+  //     </View>
+  // )
+  // }
+  return (
     <>
-    <SignedOut>
-      <Redirect href={"/(auth)/sign-in" as any} />
-    </SignedOut>
-    <SignedIn>
+    {/* TODO: Replace session redirects with Auth0 logic */}
     <Tabs
-      screenOptions={{
-        tabBarShowLabel:false,
-        tabBarItemStyle:{
-          width:'100%',
-          height:'100%',
-          justifyContent:'center',
-          alignItems:'center'
-        },
-        tabBarStyle:{
-          backgroundColor:'#0f0D23',
-          borderRadius:50,
-          marginHorizontal:15,
-          marginBottom:36,
-          height:52,
-          position:"absolute",
-          overflow:'hidden',
-          borderWidth:1,
-          borderColor:'#0f0d23'
-        }
-      }}
+      screenOptions={{ headerShown: false, tabBarStyle: { display: "none" } }}
+      tabBar={(props) => (
+        <PillTabBar
+          {...props}
+          // this shows the little black logo circle like the demo
+          logo={require("../../assets/images/logo.png")}
+          railColor="#000000"
+          pillFill="#FFFFFF"
+          pillBorder="#000000"
+          activeFill="#000000"
+          labelColor="#000000"
+          hoverLabelColor="#FFFFFF"
+        />
+      )}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "Home",
           headerShown: false,
-          tabBarIcon: ({focused})=>(
-            <TabIcon 
-              focused={focused}
-              icon={icons.home}
-              title="Home"
-            />
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon focused={focused} iconName={focused ? 'home' : 'home-outline'} title="Home" color={color as string} />
           )
         }}
       />
@@ -91,12 +83,8 @@ const _Layout=()=>{
         options={{
           title: "Games",
           headerShown: false,
-          tabBarIcon: ({focused})=>(
-            <TabIcon 
-              focused={focused}
-              icon={icons.games}
-              title="Games"
-            />
+          tabBarIcon: ({ focused, color }) => (
+            <TabIcon focused={focused} iconName={focused ? 'game-controller' : 'game-controller-outline'} title="Games" color={color as string} />
           )
         }}
       />
@@ -105,13 +93,9 @@ const _Layout=()=>{
           options={{
             title: "Grid Section",
             headerShown: false,
-            tabBarIcon: ({focused})=>(
-            <TabIcon 
-              focused={focused}
-              icon={icons.motor}
-              title="Grids"
-            />
-          )
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon focused={focused} iconName={focused ? 'grid' : 'grid-outline'} title="Grids" color={color as string} />
+            )
           }}
       />
 
@@ -121,18 +105,13 @@ const _Layout=()=>{
             options={{
             title: "Profile",
             headerShown: false,
-            tabBarIcon: ({focused})=>(
-              <TabIcon 
-                  focused={focused}
-                  icon={icons.person}
-                  title="Profile"
-              />
-          )
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon focused={focused} iconName={focused ? 'person' : 'person-outline'} title="Profile" color={color as string} />
+            )
           }}
       />
         
     </Tabs>
-    </SignedIn>
     </>
   )
 }

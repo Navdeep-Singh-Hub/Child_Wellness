@@ -2,34 +2,30 @@
 import { Stack } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import React from 'react';
-import { Text, View } from 'react-native';
-
-import AuthTokenProvider from '@/app/providers/AuthTokenProvider';
-import { tokenCache } from '@/utils/clerkTokenCache';
-import { ClerkProvider } from '@clerk/clerk-expo';
+import { Platform } from 'react-native';
 import './globals.css';
-
-
+import AuthTokenProvider from './providers/AuthTokenProvider';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
-function MissingKey() {
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-      <Text style={{ textAlign: 'center' }}>
-        Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY (should start with "pk_")
-      </Text>
-    </View>
-  );
+let AuthProvider: React.FC<{children:React.ReactNode}>;
+let useAuth: any;
+if (Platform.OS === 'web') {
+  // @ts-ignore
+  const web = require('../src/auth/AuthProvider.web.tsx');
+  AuthProvider = web.AuthProvider;
+  useAuth = web.useAuth;
+} else {
+  // @ts-ignore
+  const native = require('../src/auth/AuthProvider.native.tsx');
+  AuthProvider = native.AuthProvider;
+  useAuth = native.useAuth;
 }
+export { useAuth };
 
 export default function RootLayout() {
-  if (!publishableKey) return <MissingKey />;
-
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+    <AuthProvider>
       <AuthTokenProvider>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -40,6 +36,6 @@ export default function RootLayout() {
           <Stack.Screen name="(auth)/complete-profile" options={{ headerShown: false }} />
         </Stack>
       </AuthTokenProvider>
-    </ClerkProvider>
+    </AuthProvider>
   );
 }

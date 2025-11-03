@@ -29,7 +29,6 @@ export async function testNetworkConnectivity() {
     console.log('🔍 Testing network connectivity to:', API_BASE_URL);
     const response = await fetch(`${API_BASE_URL}/api/test`, {
       method: 'GET',
-      timeout: 5000,
     });
     console.log('✅ Network test response:', response.status);
     return true;
@@ -39,11 +38,29 @@ export async function testNetworkConnectivity() {
   }
 }
 
+// Helper to get Auth0 user info from session (will be set by AuthTokenProvider)
+let auth0UserInfo: { auth0Id?: string; email?: string; name?: string } | null = null;
+
+export function setAuth0UserInfo(info: { auth0Id?: string; email?: string; name?: string } | null) {
+  auth0UserInfo = info;
+}
+
 export async function authHeaders(opts?: { multipart?: boolean }) {
   const token = tokenProvider ? await tokenProvider().catch(() => undefined) : undefined;
   const headers: Record<string, string> = {};
   
   if (token) headers['Authorization'] = `Bearer ${token}`;
+  
+  // Add Auth0 user info to headers for backend
+  if (auth0UserInfo?.auth0Id) {
+    headers['x-auth0-id'] = auth0UserInfo.auth0Id;
+  }
+  if (auth0UserInfo?.email) {
+    headers['x-auth0-email'] = auth0UserInfo.email;
+  }
+  if (auth0UserInfo?.name) {
+    headers['x-auth0-name'] = auth0UserInfo.name;
+  }
   
   // ONLY set JSON for non-multipart calls
   if (!opts?.multipart) {
@@ -91,6 +108,24 @@ export async function recordGame(pointsEarned: number) {
   }
 }
 
+export async function logGameAndAward(payload: {
+  type: 'tap' | 'match' | 'sort' | 'emoji';
+  correct: number;
+  total: number;
+  accuracy: number; // 0..100
+  xpAwarded: number;
+  durationMs?: number;
+}) {
+  const headers = await authHeaders();
+  const res = await fetch(`${API_BASE_URL}/api/me/game-log`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('Log failed');
+  return res.json();
+}
+
 export async function startTapRound() {
   const res = await fetch(`${API_BASE_URL}/api/tap/start`, {
     method: 'POST',
@@ -117,7 +152,7 @@ export async function finishTapRound(roundId: string) {
   };
 }
 
-export async function ensureUser() {
+export async function ensureUser(auth0Id: string, email: string, name?: string) {
   try {
     console.log(`Attempting to POST to: ${API_BASE_URL}/api/users/ensure`);
     const headers = await authHeaders();
@@ -126,6 +161,11 @@ export async function ensureUser() {
     const res = await fetch(`${API_BASE_URL}/api/users/ensure`, {
       method: 'POST',
       headers,
+      body: JSON.stringify({
+        auth0Id,
+        email,
+        name: name || email || 'User',
+      }),
     });
     
     console.log('Response status:', res.status);
