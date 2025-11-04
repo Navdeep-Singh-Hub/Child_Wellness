@@ -91,7 +91,7 @@ const _Layout=()=>{
       <Tabs.Screen
           name="AACgrid"
           options={{
-            title: "Grid Section",
+            title: "Grids",
             headerShown: false,
             tabBarIcon: ({ focused, color }) => (
               <TabIcon focused={focused} iconName={focused ? 'grid' : 'grid-outline'} title="Grids" color={color as string} />

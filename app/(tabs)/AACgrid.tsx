@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from "expo-router";
 import * as Speech from 'expo-speech';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Toast from 'react-native-toast-message';
@@ -28,7 +29,7 @@ import {
   TouchableOpacity,
   UIManager,
   useWindowDimensions,
-  View,
+  View
 } from 'react-native';
 
 import Animated, {
@@ -554,7 +555,9 @@ function showSuccess(msg: string) {
 
 // ---------- Screen ----------
 export default function AACGrid() {
+  const HEADER_H=56;
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [utterance, setUtterance] = useState<string[]>([]);
   const [activeCat, setActiveCat] = useState<Category['id']>('transport');
@@ -851,10 +854,47 @@ export default function AACGrid() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg}}>
-      {/* Top bar: Search (left) + language radios (right) */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 50 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <View style={[styles.inputWrap, { borderColor: theme.accent + '66', flex: 1 }]}>
+    {/* Top bar: Back (left) + Search + Radios (right) */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            columnGap: 10,
+            rowGap: 10,
+            flexWrap: 'wrap',      // radios wrap on small screens
+          }}
+        >
+          {/* Back button */}
+          <TouchableOpacity
+            onPress={() => router.navigate("/(tabs)")}
+            accessibilityRole="button"
+            accessibilityLabel="Go back to Home"
+            activeOpacity={0.9}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 999,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(0,0,0,0.75)',
+            }}
+          >
+            <Ionicons name="chevron-back" size={22} color="#fff" />
+          </TouchableOpacity>
+
+          {/* Search */}
+          <View
+            style={[
+              styles.inputWrap,
+              {
+                borderColor: theme.accent + '66',
+                flexGrow: 1,
+                flexShrink: 1,
+                flexBasis: 220, // keeps search reasonably wide on wrap
+              },
+            ]}
+          >
             <TextInput
               placeholder="Search words…"
               value={query}
@@ -864,7 +904,13 @@ export default function AACGrid() {
             />
           </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }} style={{ maxWidth: '55%' }}>
+          {/* Language radios */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 8, alignItems: 'center' }}
+            style={{ maxWidth: '55%' }}
+          >
             {LANG_OPTIONS.map(opt => {
               const active = selectedLang === opt.key;
               const dim = !available[opt.key];
@@ -877,7 +923,11 @@ export default function AACGrid() {
                   accessibilityState={{ selected: active }}
                   style={[
                     styles.radioItem,
-                    { backgroundColor: active ? theme.text : theme.chip, borderColor: active ? theme.text : theme.accent + '55', opacity: dim && !active ? 0.55 : 1 },
+                    {
+                      backgroundColor: active ? theme.text : theme.chip,
+                      borderColor: active ? theme.text : theme.accent + '55',
+                      opacity: dim && !active ? 0.55 : 1,
+                    },
                   ]}
                 >
                   <View style={[styles.radioOuter, { borderColor: active ? '#fff' : theme.text }]}>
@@ -890,6 +940,7 @@ export default function AACGrid() {
           </ScrollView>
         </View>
       </View>
+
 
       {/* Sentence strip */}
       <View style={{ paddingHorizontal: 16, marginTop: 12 }}>

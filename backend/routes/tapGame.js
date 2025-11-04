@@ -6,13 +6,16 @@ import { User } from '../models/User.js';
 
 export const tapGame = Router();
 
-// Pick target from {10,13,34}s
-const TARGETS = [10000, 13000, 34000];
+// Random target 1..20 seconds
+function randomTargetMs() {
+  const sec = Math.floor(Math.random() * 20) + 1; // 1..20
+  return sec * 1000;
+}
 
 tapGame.post('/start', async (req, res) => {
   try {
-    const auth0Id = req.auth0Id || req.userId; // From requireAuth middleware
-    const targetMs = TARGETS[Math.floor(Math.random() * TARGETS.length)];
+    const auth0Id = req.auth0Id || req.userId;
+    const targetMs = randomTargetMs();
     const round = await TapRound.create({
       userAuth0Id: auth0Id,
       targetMs,
@@ -25,6 +28,7 @@ tapGame.post('/start', async (req, res) => {
     res.status(500).json({ error: 'Failed to start round' });
   }
 });
+
 
 tapGame.post('/finish', async (req, res) => {
   try {
