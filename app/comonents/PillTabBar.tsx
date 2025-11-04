@@ -45,6 +45,11 @@ export default function PillTabBar({
   labelColor = "#000000",
   hoverLabelColor = "#FFFFFF",
 }: Props) {
+
+  // const { state } = props;
+  // ⬇️ Hide the entire tab bar on the AACgrid screen
+  const activeName = state.routes[state.index]?.name;
+  if (activeName === "AACgrid") return null;
   const insets = useSafeAreaInsets();
 
   // per-pill hover/press amount [0..1]
