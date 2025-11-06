@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 // at top
 import { router } from 'expo-router';
-import { useAuth } from '../../src/auth/AuthProvider';
+import { useAuth } from '@/app/_layout';
 
 // inside component:
 

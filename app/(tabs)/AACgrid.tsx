@@ -48,6 +48,125 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+const MENU_WIDTH = 280;
+// Keep the slide-out fully hidden when closed to prevent a right-edge white bar
+const CLOSED_OFFSET = MENU_WIDTH + 16;
+function GridMenu() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const [open, setOpen] = useState(false);
+  const slideAnim = useRef(new RNAnimated.Value(CLOSED_OFFSET)).current;
+  const overlayOpacity = useRef(new RNAnimated.Value(0)).current;
+
+  useEffect(() => {
+    if (open) {
+      RNAnimated.parallel([
+        RNAnimated.timing(slideAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+        RNAnimated.timing(overlayOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]).start();
+    } else {
+      RNAnimated.parallel([
+        RNAnimated.timing(slideAnim, { toValue: CLOSED_OFFSET, duration: 300, useNativeDriver: true }),
+        RNAnimated.timing(overlayOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [open]);
+
+  const menuItems = [
+    { title: 'Home', route: '/(tabs)', icon: 'home-outline' },
+    { title: 'Games', route: '/(tabs)/Games', icon: 'game-controller-outline' },
+    { title: 'Grids', route: '/(tabs)/AACgrid', icon: 'grid-outline' },
+    { title: 'Profile', route: '/(tabs)/Profile', icon: 'person-outline' },
+    { title: 'Contact Us', route: '/(tabs)/Contact', icon: 'mail-outline' },
+  ];
+
+  const go = (route: string) => {
+    setOpen(false);
+    setTimeout(() => router.navigate(route as any), 100);
+  };
+
+  return (
+    <>
+      <TouchableOpacity
+        onPress={() => setOpen(true)}
+        activeOpacity={0.9}
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#111827',
+          shadowColor: '#000',
+          shadowOpacity: 0.25,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: 6 },
+          elevation: 10,
+        }}
+        accessibilityLabel="Open menu"
+      >
+        <Ionicons name="menu" size={22} color="#fff" />
+      </TouchableOpacity>
+
+      {open && (
+        <Pressable
+          onPress={() => setOpen(false)}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }}
+        >
+          <RNAnimated.View
+            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', opacity: overlayOpacity }}
+          />
+        </Pressable>
+      )}
+
+      <RNAnimated.View
+        style={{
+          position: 'absolute',
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: MENU_WIDTH,
+          backgroundColor: '#FFFFFF',
+          zIndex: 1001,
+          transform: [{ translateX: slideAnim }],
+          shadowColor: '#000',
+          shadowOpacity: 0.3,
+          shadowRadius: 20,
+          shadowOffset: { width: -4, height: 0 },
+          elevation: 15,
+          paddingTop: insets.top + 20,
+        }}
+      >
+        <View style={{ paddingHorizontal: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <Text style={{ fontSize: 24, fontWeight: '800', color: '#111827' }}>Menu</Text>
+            <TouchableOpacity
+              onPress={() => setOpen(false)}
+              style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6' }}
+            >
+              <Ionicons name="close" size={20} color="#111827" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={{ paddingTop: 12 }}>
+          {menuItems.map((item) => (
+            <TouchableOpacity
+              key={item.title}
+              onPress={() => go(item.route)}
+              activeOpacity={0.7}
+              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 20 }}
+            >
+              <Ionicons name={item.icon as any} size={22} color={'#6B7280'} style={{ marginRight: 16 }} />
+              <Text style={{ fontSize: 16, fontWeight: '700', color: '#374151' }}>{item.title}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </RNAnimated.View>
+    </>
+  );
+}
+
 // ---------- Language + Translations ----------
 type LangKey = 'en-US' | 'hi-IN' | 'pa-IN' | 'ta-IN' | 'te-IN';
 const LANG_OPTIONS: { key: LangKey; label: string }[] = [
@@ -86,7 +205,7 @@ const TRANSLATIONS: Record<LangKey, Record<string, string>> = {
     // Actions
     eat: 'eat', drink: 'drink', open: 'open', close: 'close', play: 'play', run: 'run', walk: 'walk', jump: 'jump', sit: 'sit', stand: 'stand',
     sleep: 'sleep', read: 'read', write: 'write', draw: 'draw', sing: 'sing', dance: 'dance', wash: 'wash', brush: 'brush', take: 'take', give: 'give',
-    look: 'look', listen: 'listen', start: 'start', help: 'help', call: 'call', wait: 'wait', think: 'think',
+    look: 'look', listen: 'listen', start: 'start', call: 'call', wait: 'wait', think: 'think',
   },
 
   'hi-IN': {
@@ -114,7 +233,7 @@ const TRANSLATIONS: Record<LangKey, Record<string, string>> = {
     // Actions
     eat: 'खाना', drink: 'पीना', open: 'खोलो', close: 'बंद करो', play: 'खेलो', run: 'दौड़ो', walk: 'चलो', jump: 'कूदो', sit: 'बैठो', stand: 'खड़े हो',
     sleep: 'सोओ', read: 'पढ़ो', write: 'लिखो', draw: 'ड्रॉ करो', sing: 'गाना गाओ', dance: 'नाचो', wash: 'धोओ', brush: 'ब्रश करो', take: 'लो', give: 'दो',
-    look: 'देखो', listen: 'सुनो', start: 'शुरू करो', help: 'मदद करो', call: 'फोन करो', wait: 'ठहरो', think: 'सोचो',
+    look: 'देखो', listen: 'सुनो', start: 'शुरू करो', call: 'फोन करो', wait: 'ठहरो', think: 'सोचो',
   },
 
   'pa-IN': {
@@ -142,7 +261,7 @@ const TRANSLATIONS: Record<LangKey, Record<string, string>> = {
     // Actions
     eat: 'ਖਾਣਾ', drink: 'ਪੀਣਾ', open: 'ਖੋਲ੍ਹਣਾ', close: 'ਬੰਦ ਕਰਨਾ', play: 'ਖੇਡਣਾ', run: 'ਦੌੜਣਾ', walk: 'ਤੁਰਨਾ', jump: 'ਕੁੱਦਣਾ', sit: 'ਬੈਠਣਾ', stand: 'ਖੜ੍ਹਾ ਹੋਣਾ',
     sleep: 'ਸੌਣਾ', read: 'ਪੜ੍ਹਨਾ', write: 'ਲਿਖਣਾ', draw: 'ਚਿੱਤਰ ਬਣਾਉਣਾ', sing: 'ਗਾਣਾ ਗਾਉਣਾ', dance: 'ਨੱਚਣਾ', wash: 'ਧੋਣਾ', brush: 'ਬਰਸ਼ ਕਰਨਾ',
-    take: 'ਲੈਣਾ', give: 'ਦੇਣਾ', look: 'ਵੇਖਣਾ', listen: 'ਸੁਣਨਾ', start: 'ਸ਼ੁਰੂ ਕਰਨਾ', help: 'ਮਦਦ ਕਰਨਾ', call: 'ਫੋਨ ਕਰਨਾ', wait: 'ਉਡੀਕ ਕਰਨਾ', think: 'ਸੋਚਣਾ',
+    take: 'ਲੈਣਾ', give: 'ਦੇਣਾ', look: 'ਵੇਖਣਾ', listen: 'ਸੁਣਨਾ', start: 'ਸ਼ੁਰੂ ਕਰਨਾ', call: 'ਫੋਨ ਕਰਨਾ', wait: 'ਉਡੀਕ ਕਰਨਾ', think: 'ਸੋਚਣਾ',
   },
 
   'ta-IN': {
@@ -170,7 +289,7 @@ const TRANSLATIONS: Record<LangKey, Record<string, string>> = {
     // Actions
     eat: 'சாப்பிடு', drink: 'குடி', open: 'திற', close: 'மூடு', play: 'விளையாடு', run: 'ஓடு', walk: 'நடு', jump: 'குதி', sit: 'உட்கார்', stand: 'நில்',
     sleep: 'தூங்கு', read: 'படி', write: 'எழுது', draw: 'வரை', sing: 'பாடு', dance: 'நடனம் ஆடு', wash: 'கழுவு', brush: 'துலக்கு', take: 'எடு', give: 'கொடு',
-    look: 'பார்', listen: 'கேள்', start: 'தொடங்கு', help: 'உதவி செய்', call: 'அழை', wait: 'காத்திரு', think: 'யோசி',
+    look: 'பார்', listen: 'கேள்', start: 'தொடங்கு', call: 'அழை', wait: 'காத்திரு', think: 'யோசி',
   },
 
   'te-IN': {
@@ -198,12 +317,28 @@ const TRANSLATIONS: Record<LangKey, Record<string, string>> = {
     // Actions
     eat: 'తిను', drink: 'త్రాగు', open: 'తెరువు', close: 'మూసివేయి', play: 'ఆడు', run: 'పరుగెట్టు', walk: 'నడుచు', jump: 'దూకు', sit: 'కూర్చో', stand: 'నిలబడు',
     sleep: 'నిద్రపో', read: 'చదువు', write: 'వ్రాయు', draw: 'గీయు', sing: 'పాడు', dance: 'నృత్యం చేయి', wash: 'కడుగు', brush: 'బ్రష్ చేయి', take: 'తీసుకో', give: 'ఇవ్వు',
-    look: 'చూడి', listen: 'విని', start: 'ప్రారంభించు', help: 'సహాయం చేయి', call: 'పిలువు', wait: 'వేచి ఉండు', think: 'ఆలోచించు',
+    look: 'చూడి', listen: 'విని', start: 'ప్రారంభించు', call: 'పిలువు', wait: 'వేచి ఉండు', think: 'ఆలోచించు',
   },
 };
 
 
-// ---------- Smart voice selection (Expo Speech) ----------
+// ---------- Smart voice selection (Expo Speech) — prefer FEMALE per language ----------
+// type LangKey = 'en-US' | 'hi-IN' | 'pa-IN' | 'ta-IN' | 'te-IN';
+
+const FEMALE_HINTS = [
+  'female', '#female', '.female', 'fem', '-f', '_f', 'f0', 'f1', 'f2'
+];
+
+// names/ids commonly seen on iOS/Android/Web voices
+const FEMALE_PREFER: Record<LangKey, string[]> = {
+  'en-US': ['samantha', 'ava', 'victoria', 'allison', 'en-us-x', 'google us english'],
+  'hi-IN': ['lekha', 'sangeeta', 'hi-in-x-hia', 'hi-in-x-hif'],
+  'pa-IN': ['punjab', 'punjabi', 'pa-in-x-paa', 'pa-in-x-pab'],
+  'ta-IN': ['ta-in-x-taa', 'ta-in-x-tab', 'anbu', 'meera', 'tamil'],
+  'te-IN': ['te-in-x-tea', 'te-in-x-teb', 'telugu'],
+};
+
+// loose language matchers (fallbacks)
 const LANG_MATCH: Record<LangKey, (v: Speech.Voice) => boolean> = {
   'en-US': (v) => v.language?.toLowerCase().startsWith('en'),
   'hi-IN': (v) => v.language?.toLowerCase().startsWith('hi'),
@@ -224,38 +359,78 @@ async function loadVoices(): Promise<Speech.Voice[]> {
   return _voicesCache!;
 }
 
+const norm = (s?: string) => (s || '').toLowerCase();
+
+function looksFemale(v: Speech.Voice) {
+  const n = norm(v.name);
+  const id = norm(v.identifier);
+  // avoid obvious male matches
+  if (n.includes('male') || id.includes('male') || /\b(m|male)\b/.test(n + ' ' + id)) return false;
+  // accept typical female markers
+  if (FEMALE_HINTS.some(h => n.includes(h) || id.includes(h))) return true;
+  return false;
+}
+
+function langMatches(v: Speech.Voice, lang: LangKey) {
+  const L = norm(v.language);
+  const want = norm(lang);
+  return L === want || L.startsWith(want.slice(0, 2));
+}
+
+function preferByHints(voices: Speech.Voice[], lang: LangKey): Speech.Voice | null {
+  if (!voices.length) return null;
+  const prefs = FEMALE_PREFER[lang].map(norm);
+
+  // 1) explicit female + preferred name/id
+  const v1 = voices.find(v => looksFemale(v) && prefs.some(p => norm(v.name).includes(p) || norm(v.identifier).includes(p)));
+  if (v1) return v1;
+
+  // 2) any female-looking voice in this language set
+  const v2 = voices.find(looksFemale);
+  if (v2) return v2;
+
+  // 3) first voice in this language
+  return voices[0];
+}
+
 async function pickVoice(lang: LangKey): Promise<Speech.Voice | null> {
   const voices = await loadVoices();
-  let v = voices.find(v => v.language?.toLowerCase() === lang.toLowerCase());
-  if (v) return v;
-  v = voices.find(LANG_MATCH[lang]);
-  if (v) return v;
-  return voices.find(LANG_MATCH['en-US']) || null; // final fallback
-}
 
-async function speakSmart(text: string, lang: LangKey) {
-  const voice = await pickVoice(lang);
-  const isIndianLang = lang !== 'en-US';
+  // voices in the requested language
+  const inLang = voices.filter(v => langMatches(v, lang));
+  const chosenInLang = preferByHints(inLang, lang);
+  if (chosenInLang) return chosenInLang;
 
-  if (!voice || (voice.language && !voice.language.toLowerCase().startsWith(lang.slice(0,2).toLowerCase()))) {
-    Alert.alert(
-      'Install voice',
-      `This device may not have a ${lang} voice installed. I’ll use English for now.\n\nAndroid: Settings → System → Languages & input → Text-to-speech → Google TTS → Install voice data.\niOS: Settings → Accessibility → Spoken Content → Voices.`,
-      [{ text: 'OK' }]
-    );
-    Speech.stop();
-    Speech.speak(text, { language: 'en-US', rate: 0.98, pitch: 1.0 });
-    return;
+  // Punjabi fallback → try Hindi female (often available on devices)
+  if (lang === 'pa-IN') {
+    const inHindi = voices.filter(v => langMatches(v, 'hi-IN'));
+    const h = preferByHints(inHindi, 'hi-IN');
+    if (h) return h;
   }
 
+  // Final fallback → English female
+  const inEn = voices.filter(v => LANG_MATCH['en-US'](v));
+  return preferByHints(inEn, 'en-US');
+}
+
+const TWO = (l: LangKey) => l.slice(0, 2).toLowerCase();
+async function speakSmart(text: string, lang: LangKey) {
+  const v = await pickVoice(lang);
+
+  // Only use a voice id if it matches the chosen language (en/hi/pa/ta/te).
+  const okLang = v?.language?.toLowerCase().startsWith(TWO(lang)) ?? false;
+
+  const isIndian = lang !== 'en-US';
   Speech.stop();
   Speech.speak(text, {
-    language: voice.language,
-    voice: voice.identifier,
-    rate: isIndianLang ? 0.95 : 1.0,
-    pitch: 1.0,
+    language: lang,                         // ← always force target language
+    ...(okLang ? { voice: v!.identifier } : {}), // ← avoid mismatched voice (the Tamil hijack)
+    rate: isIndian ? 0.95 : 1.0,
+    pitch: 1.02,
   });
 }
+
+
 
 function tWord(id: string, lang: LangKey) {
   return TRANSLATIONS[lang]?.[id] ?? id;
@@ -275,6 +450,13 @@ function scheduleSpeak(text: string, lang: LangKey, delayMs = 120) {
 
 // ---------- Small helpers ----------
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// Normalize image URL to https and absolute when needed
+function normImageUrl(u?: string): string | undefined {
+  if (!u) return undefined;
+  if (/^https?:\/\//i.test(u)) return u.replace(/^http:\/\//i, 'https://');
+  return `${API_BASE_URL}${u.startsWith('/') ? '' : '/'}${u}`;
+}
 
 // ---------- UI pieces ----------
 function SectionHeader({ id, title }: { id: Category['id']; title: string }) {
@@ -474,7 +656,7 @@ function TileCard({
       <View style={styles.emojiWrap}>
         <View style={[styles.emojiHalo, { backgroundColor: accent + '26' }]} />
         {t.imageUrl ? (
-          <Image source={{ uri: t.imageUrl }} resizeMode="cover" style={styles.emojiImage} />
+          <Image source={{ uri: normImageUrl(t.imageUrl) }} resizeMode="cover" style={styles.emojiImage} />
         ) : t.imageKey && tileImages[t.imageKey] ? (
           <Image source={tileImages[t.imageKey]} resizeMode="cover" style={styles.emojiImage} />
         ) : (
@@ -482,8 +664,9 @@ function TileCard({
         )}
       </View>
 
-      <View style={styles.labelWrap}>
-        <Text numberOfLines={1} style={styles.labelText}>{t.label}</Text>
+      {/* Overlay label over the image */}
+      <View style={styles.overlayLabelWrap}>
+        <Text numberOfLines={1} style={styles.overlayLabelText}>{t.label}</Text>
       </View>
 
       <Animated.View style={[styles.bottomBar, { backgroundColor: accent }]} />
@@ -565,6 +748,7 @@ export default function AACGrid() {
   const [available, setAvailable] = useState<Record<LangKey, boolean>>({
     'en-US': true, 'hi-IN': false, 'pa-IN': false, 'ta-IN': false, 'te-IN': false,
   });
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
 
   //for add tile 
   const [formError, setFormError] = useState<string | null>(null);
@@ -647,7 +831,8 @@ export default function AACGrid() {
       } catch {}
       try {
         const { tiles } = await getCustomTiles();
-        setCustomTiles(tiles || []);
+        const fixed = (tiles || []).map(t => ({ ...t, imageUrl: normImageUrl(t.imageUrl) }));
+        setCustomTiles(fixed);
       } catch {}
     })();
   }, []);
@@ -669,7 +854,7 @@ export default function AACGrid() {
   
     const uri = result.assets[0].uri;
     try {
-      const info = await FileSystem.getInfoAsync(uri, { size: true });
+      const info: any = await FileSystem.getInfoAsync(uri as any);
       if ((info as any)?.size && (info as any).size > MAX_IMAGE_BYTES) {
         setPickedUri('');
         setFormError('Image is larger than 1MB. Please choose a smaller file.');
@@ -677,7 +862,7 @@ export default function AACGrid() {
         return;
       }
     } catch {
-      // if size not available, we’ll still allow; upload will catch failures.
+      // if size not available, we'll still allow; upload will catch failures.
     }
   
     setFormError(null);
@@ -745,7 +930,7 @@ export default function AACGrid() {
   }
 
   function updateMyTileLocal(updated: CustomTile) {
-    setCustomTiles((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    setCustomTiles((prev) => prev.map((t) => (t.id === updated.id ? { ...updated, imageUrl: normImageUrl(updated.imageUrl) } : t)));
   }
 
   function removeMyTileLocal(id: string) {
@@ -854,7 +1039,7 @@ export default function AACGrid() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg}}>
-    {/* Top bar: Back (left) + Search + Radios (right) */}
+      {/* Top bar: Back (left) + Search + Language menu button (right) */}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
         <View
           style={{
@@ -866,7 +1051,7 @@ export default function AACGrid() {
           }}
         >
           {/* Back button */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             onPress={() => router.navigate("/(tabs)")}
             accessibilityRole="button"
             accessibilityLabel="Go back to Home"
@@ -877,11 +1062,11 @@ export default function AACGrid() {
               borderRadius: 999,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: 'rgba(0,0,0,0.75)',
+              backgroundColor: '#000',
             }}
           >
             <Ionicons name="chevron-back" size={22} color="#fff" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           {/* Search */}
           <View
@@ -904,40 +1089,23 @@ export default function AACGrid() {
             />
           </View>
 
-          {/* Language radios */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 8, alignItems: 'center' }}
-            style={{ maxWidth: '55%' }}
+          {/* Language menu button */}
+          <TouchableOpacity
+            onPress={() => setLangMenuOpen(true)}
+            activeOpacity={0.9}
+            style={[styles.radioItem, { backgroundColor: theme.chip, borderColor: theme.accent + '55' }]}
+            accessibilityRole="button"
+            accessibilityLabel="Choose language"
           >
-            {LANG_OPTIONS.map(opt => {
-              const active = selectedLang === opt.key;
-              const dim = !available[opt.key];
-              return (
-                <TouchableOpacity
-                  key={opt.key}
-                  onPress={() => setSelectedLang(opt.key)}
-                  activeOpacity={0.9}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: active }}
-                  style={[
-                    styles.radioItem,
-                    {
-                      backgroundColor: active ? theme.text : theme.chip,
-                      borderColor: active ? theme.text : theme.accent + '55',
-                      opacity: dim && !active ? 0.55 : 1,
-                    },
-                  ]}
-                >
-                  <View style={[styles.radioOuter, { borderColor: active ? '#fff' : theme.text }]}>
-                    {active && <View style={[styles.radioInner, { backgroundColor: '#fff' }]} />}
-                  </View>
-                  <Text style={{ fontWeight: '800', color: active ? '#fff' : theme.text }}>{opt.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+            <Ionicons name="globe-outline" size={18} color={theme.text} />
+            <Text style={{ fontWeight: '800', color: theme.text }}>
+              {LANG_OPTIONS.find(l => l.key === selectedLang)?.label || 'Language'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* AAC-grid specific menu button */}
+          <GridMenu />
+
         </View>
       </View>
 
@@ -965,18 +1133,14 @@ export default function AACGrid() {
         </View>
       </View>
 
-      {/* Category chips */}
+      {/* Category chips (responsive wrap) */}
       <View style={{ marginTop: 10, paddingHorizontal: 16 }}>
-        <FlatList
-          data={allCategories}
-          keyExtractor={(c) => c.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          ItemSeparatorComponent={() => <View style={{ width: 8 }} />}
-          renderItem={({ item }) => {
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 8 }}>
+          {allCategories.map((item) => {
             const active = item.id === activeCat;
             return (
               <TouchableOpacity
+                key={item.id}
                 onPress={() => setActiveCat(item.id)}
                 style={[{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: active ? theme.text : theme.chip }, shadow.xs]}
                 activeOpacity={0.9}
@@ -984,8 +1148,8 @@ export default function AACGrid() {
                 <Text style={{ color: active ? '#fff' : theme.text, fontWeight: '800' }}>{item.title}</Text>
               </TouchableOpacity>
             );
-          }}
-        />
+          })}
+        </View>
       </View>
 
       {/* Common words lane */}
@@ -1052,6 +1216,39 @@ export default function AACGrid() {
         )}
       />
       
+      {/* Language menu (modal sheet) */}
+      {langMenuOpen && (
+        <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)' }}>
+          <View style={{ marginTop: 80, marginHorizontal: 16, borderRadius: 16, backgroundColor: '#fff', padding: 12, ...shadow.m }}>
+            <Text style={{ fontWeight: '800', fontSize: 16, marginBottom: 8 }}>Choose language</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 8 }}>
+              {LANG_OPTIONS.map((opt) => {
+                const active = selectedLang === opt.key;
+                const dim = !available[opt.key];
+                return (
+                  <TouchableOpacity
+                    key={opt.key}
+                    onPress={() => { setSelectedLang(opt.key); setLangMenuOpen(false); }}
+                    activeOpacity={0.9}
+                    style={[styles.radioItem, { backgroundColor: active ? theme.text : theme.chip, borderColor: active ? theme.text : theme.accent + '55', opacity: dim && !active ? 0.55 : 1 }]}
+                  >
+                    <View style={[styles.radioOuter, { borderColor: active ? '#fff' : theme.text }]}>
+                      {active && <View style={[styles.radioInner, { backgroundColor: '#fff' }]} />}
+                    </View>
+                    <Text style={{ fontWeight: '800', color: active ? '#fff' : theme.text }}>{opt.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <View style={{ alignItems: 'flex-end', marginTop: 10 }}>
+              <TouchableOpacity onPress={() => setLangMenuOpen(false)} style={[styles.secondaryBtn]}>
+                <Text style={{ fontWeight: '700', color: '#111827' }}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
       {/* Floating add button */}
       <View style={{ position: 'absolute', right: 16, bottom: addBtnBottom, zIndex: 100 }}>
         <TouchableOpacity
@@ -1243,7 +1440,7 @@ export default function AACGrid() {
                       imageUrl: finalImageUrl,
                     });
 
-                    setCustomTiles(prev => [...prev, tile]);
+                    setCustomTiles(prev => [...prev, { ...tile, imageUrl: normImageUrl(tile.imageUrl) }]);
 
                     // reset form
                     setShowAddModal(false);
@@ -1375,8 +1572,8 @@ const styles = StyleSheet.create({
   emojiHalo: { position: 'absolute', width: 72, height: 72, borderRadius: 999, top: '50%', left: '50%', transform: [{ translateX: -36 }, { translateY: -36 }] },
   emojiImage: { width: '100%', height: '100%', position: 'absolute' },
   emojiText: { fontSize: 48 },
-  labelWrap: { width: '100%', alignItems: 'center' },
-  labelText: { fontWeight: '800', color: '#111827', backgroundColor: 'rgba(255,255,255,0.96)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, overflow: 'hidden', fontSize: 12 },
+  overlayLabelWrap: { position: 'absolute', left: 6, right: 6, bottom: 6, alignItems: 'center' },
+  overlayLabelText: { fontWeight: '800', color: '#111827', backgroundColor: 'rgba(255,255,255,0.92)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, overflow: 'hidden', fontSize: 12 },
   bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 4 },
 
   // Action chips for editing

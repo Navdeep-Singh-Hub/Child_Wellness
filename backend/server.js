@@ -8,8 +8,11 @@ import path from 'path';
 import { Session } from './models/Session.js';
 import { User } from './models/User.js';
 import { tapGame } from './routes/tapGame.js';
+import { Message } from './models/Message.js';
 
 const app = express();
+// Behind proxies (Vercel/Render/Nginx), respect X-Forwarded-* headers
+app.set('trust proxy', true);
 app.use(cors());
 app.use(cors({
   origin: [
@@ -67,10 +70,13 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
     return res.status(400).json({ error: 'No file uploaded' });
   }
   
-  // public URL for the image
-  const url = `${req.protocol}://${req.get('host')}/static/uploads/${req.file.filename}`;
+  // public URL for the image (proxy-safe) + relative path for future-proofing
+  const proto = (req.get('x-forwarded-proto') || req.protocol || 'https').split(',')[0].trim();
+  const host  = (req.get('x-forwarded-host')  || req.get('host'));
+  const rel   = `/static/uploads/${req.file.filename}`;
+  const url   = `${proto}://${host}${rel}`;
   console.log('Generated URL:', url);
-  res.json({ ok: true, url });
+  res.json({ ok: true, url, path: rel });
 });
 
 // JSON middleware - MUST be after multer routes
@@ -203,6 +209,8 @@ app.get('/api/me/profile', requireAuth, async (req, res) => {
       email: user.email || '',
       dob: user.dob || null,
       gender: user.gender || null,
+      phoneCountryCode: user.phoneCountryCode || '+91',
+      phoneNumber: user.phoneNumber || '',
     });
   } catch (e) {
     res.status(500).json({ error: 'Failed to load profile' });
@@ -222,7 +230,7 @@ app.post('/api/me/profile', requireAuth, async (req, res) => {
       });
       return res.status(401).json({ ok: false, error: 'Missing auth0Id' });
     }
-    const { firstName, lastName, dob, gender } = req.body || {};
+    const { firstName, lastName, dob, gender, phoneCountryCode, phoneNumber } = req.body || {};
     const user = await ensureUser(auth0Id, email, name);
     if (typeof firstName === 'string') user.firstName = firstName.trim();
     if (typeof lastName === 'string') user.lastName = lastName.trim();
@@ -234,6 +242,14 @@ app.post('/api/me/profile', requireAuth, async (req, res) => {
     // Allow setting gender only if not already set
     if (!user.gender && gender && ['male', 'female', 'other', 'prefer-not-to-say'].includes(gender)) {
       user.gender = gender;
+    }
+    // Phone number - required and can be updated
+    if (typeof phoneCountryCode === 'string' && phoneCountryCode.trim()) {
+      user.phoneCountryCode = phoneCountryCode.trim();
+    }
+    if (typeof phoneNumber === 'string' && phoneNumber.trim()) {
+      // Store only digits
+      user.phoneNumber = phoneNumber.replace(/\D/g, '');
     }
     // Maintain name field as display name
     user.name = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.name;
@@ -411,6 +427,29 @@ app.delete('/api/me/custom-tiles/:id', requireAuth, async (req, res) => {
   user.customTiles = (user.customTiles || []).filter(t => t.id !== id);
   await user.save();
   res.json({ ok: true });
+});
+
+// Contact messages
+app.post('/api/me/contact', requireAuth, async (req, res) => {
+  try {
+    const auth0Id = req.auth0Id;
+    if (!auth0Id) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    const { subject, message } = req.body || {};
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      return res.status(400).json({ ok: false, error: 'message required' });
+    }
+    const doc = await Message.create({
+      userAuth0Id: auth0Id,
+      email: req.auth0Email || '',
+      name: req.auth0Name || '',
+      subject: subject || '',
+      message: message.trim(),
+    });
+    res.json({ ok: true, id: doc._id });
+  } catch (e) {
+    console.error('contact error', e);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
 });
 
 const port = process.env.PORT || 4000;

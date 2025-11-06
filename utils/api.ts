@@ -181,7 +181,7 @@ export async function ensureUser(auth0Id: string, email: string, name?: string) 
   }
 }
 
-export type Profile = { firstName: string; lastName?: string; email: string; dob: string | null; gender: string | null };
+export type Profile = { firstName: string; lastName?: string; email: string; dob: string | null; gender: string | null; phoneCountryCode?: string; phoneNumber?: string };
 
 export async function getMyProfile(): Promise<Profile> {
   const res = await fetch(`${API_BASE_URL}/api/me/profile`, {
@@ -194,11 +194,13 @@ export async function getMyProfile(): Promise<Profile> {
     lastName: p.lastName || '', 
     email: p.email || '', 
     dob: p.dob ? new Date(p.dob).toISOString().slice(0,10) : null,
-    gender: p.gender || null
+    gender: p.gender || null,
+    phoneCountryCode: p.phoneCountryCode || '+91',
+    phoneNumber: p.phoneNumber || ''
   };
 }
 
-export async function updateMyProfile(data: { firstName: string; lastName?: string; dob?: string; gender?: string }) {
+export async function updateMyProfile(data: { firstName: string; lastName?: string; dob?: string; gender?: string; phoneCountryCode?: string; phoneNumber?: string }) {
   try {
     console.log('updateMyProfile called with data:', data);
     console.log('API_BASE_URL:', API_BASE_URL);
@@ -282,6 +284,14 @@ export async function addCustomTile(tile: CustomTile): Promise<{ tile: CustomTil
 
 export async function deleteCustomTile(id: string): Promise<{ ok: true }> {
   return authedFetch(`/api/me/custom-tiles/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+// Contact API
+export async function sendContactMessage(payload: { subject?: string; message: string }): Promise<{ ok: boolean; id?: string }>{
+  return authedFetch('/api/me/contact', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
 
 

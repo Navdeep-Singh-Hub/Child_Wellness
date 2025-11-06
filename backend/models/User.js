@@ -26,6 +26,8 @@ const UserSchema = new Schema({
   lastName: String,
   dob: Date, // ISO date; immutable once set via API
   gender: { type: String, enum: ['male', 'female', 'other', 'prefer-not-to-say'], default: null },
+  phoneCountryCode: { type: String, default: '+91' }, // Default India
+  phoneNumber: { type: String, default: null }, // Phone number without country code formatting
   favorites: { type: [String], default: [] },           // store tile IDs, e.g., ['apple','go']
   customTiles: { type: [CustomTileSchema], default: [] }, // user-created tiles
   rewards: { type: RewardsSchema, default: () => ({}) },
