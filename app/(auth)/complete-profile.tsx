@@ -35,6 +35,8 @@ export default function CompleteProfile() {
   const [lastName, setLastName]   = useState('');
   const [dob, setDob]             = useState(''); // YYYY-MM-DD
   const [gender, setGender]       = useState('');
+  const [phoneCountryCode, setPhoneCountryCode] = useState('+91'); // Default India
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   // DOB picker state
   const [showDobPicker, setShowDobPicker] = useState(false);
@@ -53,6 +55,15 @@ export default function CompleteProfile() {
   const dobError = useMemo(
     () => (dob && !/^\d{4}-\d{2}-\d{2}$/.test(dob) ? 'Use YYYY-MM-DD' : ''),
     [dob]
+  );
+  const phoneError = useMemo(
+    () => {
+      const cleaned = phoneNumber.replace(/\D/g, '');
+      if (cleaned.length === 0) return 'Phone number is required';
+      if (cleaned.length < 10) return 'Phone number must be at least 10 digits';
+      return '';
+    },
+    [phoneNumber]
   );
 
   const genderOptions = [
@@ -78,6 +89,8 @@ export default function CompleteProfile() {
         setLastName(p.lastName || '');
         setDob((p as any).dob || '');      // keep same key
         setGender((p as any).gender || ''); // keep same key
+        setPhoneCountryCode((p as any).phoneCountryCode || '+91');
+        setPhoneNumber((p as any).phoneNumber || '');
       } catch {
         // silent — show form anyway
       } finally {
@@ -131,7 +144,7 @@ export default function CompleteProfile() {
 
   const onSave = async () => {
     console.log('=== SAVE BUTTON CLICKED ===');
-    console.log('Form data:', { firstName, lastName, dob, gender });
+    console.log('Form data:', { firstName, lastName, dob, gender, phoneCountryCode, phoneNumber });
     
     if (firstName.trim().length === 0) {
       Alert.alert('Missing info', 'Please enter your first name.');
@@ -139,6 +152,11 @@ export default function CompleteProfile() {
     }
     if (!dob || !/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
       Alert.alert('Missing/invalid DOB', 'Please select your date of birth using the "Pick" button.');
+      return;
+    }
+    const cleanedPhone = phoneNumber.replace(/\D/g, '');
+    if (cleanedPhone.length < 10) {
+      Alert.alert('Missing phone number', 'Please enter a valid phone number (at least 10 digits).');
       return;
     }
 
@@ -151,6 +169,8 @@ export default function CompleteProfile() {
         lastName: lastName.trim(),
         dob,
         gender: gender || undefined,
+        phoneCountryCode: phoneCountryCode.trim(),
+        phoneNumber: cleanedPhone,
       };
       
       console.log('Sending payload to API:', payload);
@@ -397,6 +417,63 @@ export default function CompleteProfile() {
                 </View>
               </Modal>
             )}
+          </View>
+
+          {/* Card: Phone Number (compulsory) */}
+          <View className="bg-white rounded-3xl p-5 border border-gray-100 mb-4">
+            <View className="flex-row items-center mb-3">
+              <View className="w-9 h-9 rounded-full items-center justify-center bg-[#FEF3C7]">
+                <Text style={{ fontSize: 18 }}>📱</Text>
+              </View>
+              <Text className="ml-2 font-extrabold text-[#0F172A]">Phone Number</Text>
+              <Text className="ml-2 text-xs text-red-600 font-bold">*</Text>
+            </View>
+
+            <Text className="text-xs font-bold text-gray-500 mb-1">Phone number (required)</Text>
+            <View className="flex-row items-center gap-2">
+              <View className={`flex-row items-center rounded-2xl px-3 py-3 border ${
+                phoneError ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'
+              }`} style={{ width: 100 }}>
+                <Ionicons
+                  name="call-outline"
+                  size={18}
+                  color={phoneError ? '#DC2626' : '#6B7280'}
+                />
+                <TextInput
+                  value={phoneCountryCode}
+                  onChangeText={setPhoneCountryCode}
+                  placeholder="+91"
+                  placeholderTextColor="#9CA3AF"
+                  className="ml-2 text-[16px] text-[#0F172A]"
+                  keyboardType="phone-pad"
+                  maxLength={5}
+                />
+              </View>
+              <View className={`flex-1 flex-row items-center rounded-2xl px-3 py-3 border ${
+                phoneError ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'
+              }`}>
+                <Ionicons
+                  name="phone-portrait-outline"
+                  size={18}
+                  color={phoneError ? '#DC2626' : '#6B7280'}
+                />
+                <TextInput
+                  value={phoneNumber}
+                  onChangeText={setPhoneNumber}
+                  placeholder="1234567890"
+                  placeholderTextColor="#9CA3AF"
+                  className="ml-2 flex-1 text-[16px] text-[#0F172A]"
+                  keyboardType="phone-pad"
+                  maxLength={15}
+                />
+              </View>
+            </View>
+            {!!phoneError && (
+              <Text className="text-xs text-red-600 mt-1">{phoneError}</Text>
+            )}
+            <Text className="text-xs text-gray-500 mt-1">
+              We'll use this to keep your account secure and send important updates.
+            </Text>
           </View>
 
           {/* Card: Gender (chips) */}

@@ -1,9 +1,10 @@
 // Games.tsx — AAC-friendly games (Tap Timing + Picture Match + Quick Sort + Find Emoji)
 // Includes guards for undefined items in FlatList and no conditional/top-level hook misuse.
 
+import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Image, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   runOnJS,
@@ -59,7 +60,7 @@ function speak(text: string) {
 }
 
 // -------------------- Data pools (safe, kid-friendly) --------------------
-type CatId = 'transport' | 'food' | 'animals' | 'emotions';
+type CatId = 'transport' | 'food' | 'animals' | 'emotions' | 'jobs' | 'actions';
 function tilesByCat(id: CatId): Tile[] {
   const cat = CATEGORIES.find((c) => c.id === id);
   return cat ? cat.tiles : [];
@@ -68,6 +69,8 @@ const TRANSPORT = tilesByCat('transport');
 const FOOD = tilesByCat('food');
 const ANIMALS = tilesByCat('animals');   // optional, not used directly below but kept for future games
 const EMOTIONS = tilesByCat('emotions'); // used by Emoji game
+const JOBS = tilesByCat('jobs');
+const ACTIONS = tilesByCat('actions');
 
 // Compact pool for picture games (no hooks at module scope)
 const PICTURE_POOL: Tile[] = (() => {
@@ -89,6 +92,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
 
   const startClientAt = useRef<number | null>(null);
   const raf = useRef<number | null>(null);
+  // removed per-second speech
 
   const stopTicker = () => {
     if (raf.current != null) cancelAnimationFrame(raf.current);
@@ -112,6 +116,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
       setRoundId(roundId);
       setTargetSec(targetSeconds);
       startClientAt.current = Date.now();
+      // reset per-second speech (removed)
       startTicker();
       speak('Wait and tap at the right time!');
     } catch (e: any) {
@@ -157,42 +162,204 @@ function TapTiming({ onBack }: { onBack: () => void }) {
     }
   };
 
+  // Ensure ticker stops on unmount regardless of render branch
   useEffect(() => () => stopTicker(), []);
 
+  // Completion screen
+  if (state === 'done' && summary && msg) {
+    // Extract delta from msg if available, otherwise estimate
+    const deltaMatch = msg.match(/Δ (\d+)ms/);
+    const deltaMs = deltaMatch ? parseInt(deltaMatch[1]) : 0;
+    const accuracy = Math.max(0, 100 - Math.min(Math.abs(deltaMs) / 10, 100));
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
+        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
+          <Text className="text-white font-semibold">← Back</Text>
+        </TouchableOpacity>
+
+        <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center">
+          <Text className="text-6xl mb-4">🎯</Text>
+          <Text className="text-3xl font-extrabold text-gray-900 mb-2">Game Complete!</Text>
+          <Text className="text-xl text-gray-600 mb-6 text-center">
+            {msg}
+          </Text>
+
+          <View className="w-full bg-gray-50 rounded-2xl p-4 mb-4">
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-gray-700 font-semibold">Accuracy:</Text>
+              <Text className="text-gray-900 font-extrabold text-lg">
+                {Math.round(accuracy)}%
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-gray-700 font-semibold">Total XP:</Text>
+              <Text className="text-gray-900 font-extrabold text-lg">{summary.xp}</Text>
+            </View>
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-gray-700 font-semibold">Streak:</Text>
+              <Text className="text-gray-900 font-extrabold text-lg">{summary.streak} days 🔥</Text>
+            </View>
+            <View className="flex-row justify-between items-center">
+              <Text className="text-gray-700 font-semibold">Games Played:</Text>
+              <Text className="text-gray-900 font-extrabold text-lg">{summary.games}</Text>
+            </View>
+          </View>
+
+          <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
+
+          <BigButton title="Play Again" color="#2563EB" onPress={() => {
+            setState('idle');
+            setSummary(null);
+            setMsg(null);
+          }} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // per-second speech removed per user feedback
+
   return (
-    <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-      <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full bg-gray-700">
+    <SafeAreaView className="flex-1 items-center justify-center p-6" style={{ backgroundColor: '#F0F9FF' }}>
+      <TouchableOpacity 
+        onPress={onBack} 
+        className="absolute top-12 left-6 px-4 py-2 rounded-full" 
+        style={{ 
+          backgroundColor: '#111827',
+          shadowColor: '#000',
+          shadowOpacity: 0.2,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: 6,
+        }}
+      >
         <Text className="text-white font-semibold">← Back</Text>
       </TouchableOpacity>
 
-      <Card style={{ alignItems: 'center' }}>
-        <Image source={images.tapIcon} style={{ width: 64, height: 64, marginBottom: 6 }} />
-        <Text className="font-extrabold text-2xl text-blue-600">Tap Timing</Text>
-        <Text className="text-gray-600 mt-1 text-center">
-          Wait for the target time, then tap. Targets are 10s, 13s, or 34s.
-        </Text>
+      <View style={{
+        width: '100%',
+        maxWidth: 500,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 32,
+        padding: 32,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+      }}>
+        <View className="items-center mb-6">
+          <View style={{
+            width: 100,
+            height: 100,
+            borderRadius: 50,
+            backgroundColor: '#6366F1',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 16,
+            shadowColor: '#6366F1',
+            shadowOpacity: 0.3,
+            shadowRadius: 16,
+            shadowOffset: { width: 0, height: 8 },
+            elevation: 8,
+          }}>
+            <Text style={{ fontSize: 48 }}>🎯</Text>
+          </View>
+          <Text className="font-extrabold text-3xl text-gray-900 mb-2">Tap Timing</Text>
+          <Text className="text-gray-600 text-center text-base">
+            Wait for the target time, then tap!
+          </Text>
+        </View>
 
-        <View className="items-center mt-6">
-          <Text className="text-6xl font-black text-gray-900">{(elapsedMs / 1000).toFixed(1)}s</Text>
-          {targetSec != null ? <Text className="text-gray-500 mt-1">Target: {targetSec}s</Text> : null}
+        <View className="items-center my-8" style={{
+          backgroundColor: '#F8FAFC',
+          borderRadius: 24,
+          padding: 32,
+          borderWidth: 2,
+          borderColor: '#E2E8F0',
+        }}>
+          <Text style={{ 
+            fontSize: 72, 
+            fontWeight: '900', 
+            color: state === 'running' ? '#2563EB' : '#1F2937',
+            letterSpacing: -2,
+          }}>
+            {Math.floor(elapsedMs / 1000)}s
+          </Text>
+          {targetSec != null ? (
+            <View style={{
+              marginTop: 12,
+              backgroundColor: '#FEF3C7',
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 16,
+            }}>
+              <Text style={{ 
+                fontSize: 16, 
+                fontWeight: '700', 
+                color: '#92400E',
+              }}>
+                Target: {targetSec}s
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         {state !== 'running' ? (
-          <BigButton title="Start round" color="#16A34A" onPress={onStart} icon={icons.play} />
+          <BigButton 
+            title="Start Round" 
+            color="#16A34A" 
+            onPress={onStart} 
+            icon={icons.play}
+          />
         ) : (
-          <BigButton title="Tap!" color="#2563EB" onPress={onTap} icon={images.tapNowIcon} />
+          <BigButton 
+            title="TAP NOW!" 
+            color="#2563EB" 
+            onPress={onTap} 
+            icon={images.tapNowIcon}
+          />
         )}
 
-        {msg ? <Text className="mt-4 text-center text-gray-800">{msg}</Text> : null}
-
-        {summary ? (
-          <View className="mt-4 bg-gray-50 rounded-2xl p-4 w-full">
-            <Text className="font-semibold text-gray-800">Total XP: {summary.xp}</Text>
-            <Text className="font-semibold text-gray-800 mt-1">Streak: {summary.streak} days</Text>
-            <Text className="font-semibold text-gray-800 mt-1">Games: {summary.games}</Text>
+        {msg && state !== 'done' ? (
+          <View style={{
+            marginTop: 16,
+            backgroundColor: '#F0F9FF',
+            padding: 16,
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: '#BFDBFE',
+          }}>
+            <Text className="text-center text-gray-800 font-semibold">{msg}</Text>
           </View>
         ) : null}
-      </Card>
+
+        {summary && state === 'done' ? (
+          <View style={{
+            marginTop: 16,
+            backgroundColor: '#F0FDF4',
+            borderRadius: 20,
+            padding: 20,
+            borderWidth: 1,
+            borderColor: '#BBF7D0',
+          }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#166534' }}>Total XP:</Text>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: '#166534' }}>{summary.xp}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#166534' }}>Streak:</Text>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: '#166534' }}>{summary.streak} days 🔥</Text>
+            </View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: '#166534' }}>Games:</Text>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: '#166534' }}>{summary.games}</Text>
+            </View>
+          </View>
+        ) : null}
+      </View>
     </SafeAreaView>
   );
 }
@@ -204,6 +371,11 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
   const [target, setTarget] = useState<Tile | null>(null);
   const [choices, setChoices] = useState<Tile[]>([]);
   const [done, setDone] = useState(false);
+  const [pmFeedback, setPmFeedback] = useState<null | 'correct' | 'wrong'>(null);
+  const [finalScore, setFinalScore] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const pmToastOpacity = useSharedValue(0);
+  const pmToastY = useSharedValue(12);
+  const pmToastStyle = useAnimatedStyle(() => ({ opacity: pmToastOpacity.value, transform: [{ translateY: pmToastY.value }] }));
 
   const pulse = useSharedValue(1);
   const pulseStyle = useScaleStyle(pulse);
@@ -231,12 +403,17 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
     const ok = !!target && t?.id === target.id;
     animatePulse(pulse, ok);
     if (ok) setScore((s) => s + 1);
+    setPmFeedback(ok ? 'correct' : 'wrong');
+    pmToastOpacity.value = 0; pmToastY.value = 12;
+    pmToastOpacity.value = withTiming(1, { duration: 180 });
+    pmToastY.value = withTiming(0, { duration: 180 });
 
     if (round >= 5) {
       setDone(true);
       const correctCount = score + (ok ? 1 : 0);
       const total = 5;
-      const xp = 5 + correctCount * 2;
+      const xp = correctCount * 10;
+      setFinalScore({ correct: correctCount, total, xp });
       try {
         await recordGame(xp); // legacy XP
         await logGameAndAward({
@@ -250,44 +427,161 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
       speak('Well done!');
     } else {
       setRound((r) => r + 1);
-      setTimeout(next, 450);
+      setTimeout(() => { pmToastOpacity.value = withTiming(0, { duration: 220 }); next(); }, 450);
     }
   };
+
+  // Completion screen
+  if (done && finalScore) {
+    const allCorrect = finalScore.correct === finalScore.total;
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
+        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
+          <Text className="text-white font-semibold">← Back</Text>
+        </TouchableOpacity>
+
+        <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center">
+          <Text className="text-6xl mb-4">{allCorrect ? '🎉' : '🎊'}</Text>
+          <Text className="text-3xl font-extrabold text-gray-900 mb-2">
+            {allCorrect ? 'Perfect Score!' : 'Game Complete!'}
+          </Text>
+          <Text className="text-xl text-gray-600 mb-6">
+            You got {finalScore.correct} out of {finalScore.total} correct!
+          </Text>
+
+          <View className="w-full bg-gray-50 rounded-2xl p-4 mb-4">
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-gray-700 font-semibold">Final Score:</Text>
+              <Text className="text-gray-900 font-extrabold text-lg">
+                {finalScore.correct}/{finalScore.total}
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-gray-700 font-semibold">Accuracy:</Text>
+              <Text className="text-gray-900 font-extrabold text-lg">
+                {Math.round((finalScore.correct / finalScore.total) * 100)}%
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center">
+              <Text className="text-gray-700 font-semibold">XP Earned:</Text>
+              <Text className="text-green-600 font-extrabold text-lg">+{finalScore.xp} XP</Text>
+            </View>
+          </View>
+
+          <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
+
+          <BigButton title="Play Again" color="#22C55E" onPress={() => {
+            setRound(1);
+            setScore(0);
+            setDone(false);
+            setFinalScore(null);
+            setPmFeedback(null);
+            next();
+          }} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!target || !(choices && choices.length)) return null;
 
   return (
-    <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-      <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full bg-gray-700">
+    <SafeAreaView className="flex-1 items-center justify-center p-6" style={{ backgroundColor: '#F0FDF4' }}>
+      <TouchableOpacity 
+        onPress={onBack} 
+        className="absolute top-12 left-6 px-4 py-2 rounded-full" 
+        style={{ 
+          backgroundColor: '#111827',
+          shadowColor: '#000',
+          shadowOpacity: 0.2,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: 6,
+        }}
+      >
         <Text className="text-white font-semibold">← Back</Text>
       </TouchableOpacity>
 
-      <Card>
-        <Text className="text-xs text-gray-500">Round {round}/5</Text>
-        <Text className="text-2xl font-extrabold text-gray-900 mt-1 text-center">Find: “{target.label}”</Text>
+      <View style={{
+        width: '100%',
+        maxWidth: 500,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 32,
+        padding: 28,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+      }}>
+        <View style={{ 
+          flexDirection: 'row', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: 16,
+        }}>
+          <View style={{
+            backgroundColor: '#22C55E',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 12,
+          }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>
+              Round {round}/5
+            </Text>
+          </View>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#FEF3C7',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 12,
+          }}>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: '#92400E' }}>
+              Score: {score}
+            </Text>
+          </View>
+        </View>
 
-        <Animated.View style={[{ marginTop: 12, alignItems: 'center' }, pulseStyle]}>
-          <Text className="text-gray-500 mb-2">Tap the correct picture</Text>
-        </Animated.View>
+        <View style={{ alignItems: 'center', marginBottom: 24 }}>
+          <Text style={{ fontSize: 28, fontWeight: '800', color: '#111827', marginBottom: 8, textAlign: 'center' }}>
+            Find: "{target.label}"
+          </Text>
+          <Animated.View style={[{ alignItems: 'center' }, pulseStyle]}>
+            <Text style={{ color: '#6B7280', fontSize: 14, fontWeight: '600' }}>
+              Tap the correct picture
+            </Text>
+          </Animated.View>
+        </View>
 
-        <View className="mt-2">
+        <View style={{ marginBottom: 20 }}>
           <FlatList
             data={(choices || []).filter(Boolean)}
             keyExtractor={(t, i) => (t && t.id ? String(t.id) : `choice-${i}`)}
             numColumns={3}
-            columnWrapperStyle={{ justifyContent: 'space-between' }}
+            columnWrapperStyle={{ justifyContent: 'space-between', gap: 12 }}
+            contentContainerStyle={{ gap: 12 }}
             renderItem={({ item }) => (item ? <ChoiceCard tile={item} onPress={() => onPick(item)} /> : null)}
           />
         </View>
 
-        <View className="items-center mt-3">
-          <Text className="text-gray-700">
-            Score: <Text className="font-extrabold">{score}</Text>
-          </Text>
-        </View>
+        <Animated.View style={[{ marginTop: 6 }, pmToastStyle]}>
+          {pmFeedback === 'correct' ? (
+            <View style={{ backgroundColor: '#DCFCE7', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 }}>
+              <Text className="text-green-800 font-extrabold">✅ Correct! +10 XP</Text>
+            </View>
+          ) : pmFeedback === 'wrong' ? (
+            <View style={{ backgroundColor: '#FEE2E2', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 }}>
+              <Text className="text-red-800 font-extrabold">✗ Try the next one</Text>
+            </View>
+          ) : null}
+        </Animated.View>
 
         {done ? <Text className="mt-3 text-green-600 font-semibold text-center">Saved! XP updated ✅</Text> : null}
-      </Card>
+      </View>
     </SafeAreaView>
   );
 }
@@ -298,19 +592,47 @@ function QuickSort({ onBack }: { onBack: () => void }) {
   const [score, setScore] = useState(0);
   const [item, setItem] = useState<Tile | null>(null);
   const [done, setDone] = useState(false);
+  const [choices, setChoices] = useState<CatId[]>(['food', 'transport']);
+  const [correctCat, setCorrectCat] = useState<CatId | null>(null);
+  const [qsFeedback, setQsFeedback] = useState<null | 'correct' | 'wrong'>(null);
+  const [finalScore, setFinalScore] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const qsToastOpacity = useSharedValue(0);
+  const qsToastY = useSharedValue(12);
+  const qsToastStyle = useAnimatedStyle(() => ({ opacity: qsToastOpacity.value, transform: [{ translateY: qsToastY.value }] }));
 
   const jiggle = useSharedValue(0);
   const jiggleStyle = useJiggleStyle(jiggle);
 
   const QUESTIONS = useMemo(() => {
-    const mix = shuffle([...(FOOD || []).slice(0, 8), ...(TRANSPORT || []).slice(0, 8)]);
-    return mix.filter(Boolean).slice(0, 8);
+    const pool = [
+      ...(FOOD || []).slice(0, 10),
+      ...(TRANSPORT || []).slice(0, 10),
+      ...(JOBS || []).slice(0, 10),
+      ...(EMOTIONS || []).slice(0, 10),
+      ...(ACTIONS || []).slice(0, 10),
+    ];
+    return shuffle(pool.filter(Boolean)).slice(0, 8);
   }, []);
+
+  const detectCategory = (t: Tile): CatId | null => {
+    const id = t.id;
+    if ((FOOD || []).some((x) => x?.id === id)) return 'food';
+    if ((TRANSPORT || []).some((x) => x?.id === id)) return 'transport';
+    if ((JOBS || []).some((x) => x?.id === id)) return 'jobs';
+    if ((EMOTIONS || []).some((x) => x?.id === id)) return 'emotions';
+    if ((ACTIONS || []).some((x) => x?.id === id)) return 'actions';
+    return null;
+  };
 
   const next = useCallback(() => {
     const t = QUESTIONS[qIndex];
     if (!t) return;
     setItem(t);
+    const correct = detectCategory(t);
+    setCorrectCat(correct);
+    const allCats: CatId[] = ['food', 'transport', 'jobs', 'emotions', 'actions'];
+    const other = shuffle(allCats.filter((c) => c !== correct))[0] as CatId;
+    setChoices(shuffle([correct as CatId, other]));
     if (t.label) speak(t.label);
   }, [QUESTIONS, qIndex]);
 
@@ -318,10 +640,9 @@ function QuickSort({ onBack }: { onBack: () => void }) {
     next();
   }, [next]);
 
-  const answer = async (cat: 'Food' | 'Transport') => {
+  const answer = async (cat: CatId) => {
     if (!item) return;
-    const isFood = (FOOD || []).some((f) => f?.id === item.id);
-    const ok = (cat === 'Food' && isFood) || (cat === 'Transport' && !isFood);
+    const ok = correctCat != null && cat === correctCat;
 
     if (ok) {
       setScore((s) => s + 1);
@@ -329,12 +650,17 @@ function QuickSort({ onBack }: { onBack: () => void }) {
     } else {
       animateWrong(jiggle);
     }
+    setQsFeedback(ok ? 'correct' : 'wrong');
+    qsToastOpacity.value = 0; qsToastY.value = 12;
+    qsToastOpacity.value = withTiming(1, { duration: 180 });
+    qsToastY.value = withTiming(0, { duration: 180 });
 
     if (qIndex >= 7) {
       setDone(true);
       const finalCorrect = score + (ok ? 1 : 0);
       const total = 8;
-      const xp = 6 + finalCorrect * 2;
+      const xp = finalCorrect * 10;
+      setFinalScore({ correct: finalCorrect, total, xp });
 
       try {
         await recordGame(xp);
@@ -350,188 +676,469 @@ function QuickSort({ onBack }: { onBack: () => void }) {
       speak('Great sorting!');
     } else {
       setQIndex((i) => i + 1);
-      setTimeout(next, 400);
+      setTimeout(() => { qsToastOpacity.value = withTiming(0, { duration: 220 }); next(); }, 400);
     }
   };
+
+  // Completion screen
+  if (done && finalScore) {
+    const allCorrect = finalScore.correct === finalScore.total;
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
+        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
+          <Text className="text-white font-semibold">← Back</Text>
+        </TouchableOpacity>
+
+        <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center">
+          <Text className="text-6xl mb-4">{allCorrect ? '🎉' : '🎊'}</Text>
+          <Text className="text-3xl font-extrabold text-gray-900 mb-2">
+            {allCorrect ? 'Perfect Score!' : 'Game Complete!'}
+          </Text>
+          <Text className="text-xl text-gray-600 mb-6">
+            You got {finalScore.correct} out of {finalScore.total} correct!
+          </Text>
+
+          <View className="w-full bg-gray-50 rounded-2xl p-4 mb-4">
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-gray-700 font-semibold">Final Score:</Text>
+              <Text className="text-gray-900 font-extrabold text-lg">
+                {finalScore.correct}/{finalScore.total}
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-gray-700 font-semibold">Accuracy:</Text>
+              <Text className="text-gray-900 font-extrabold text-lg">
+                {Math.round((finalScore.correct / finalScore.total) * 100)}%
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center">
+              <Text className="text-gray-700 font-semibold">XP Earned:</Text>
+              <Text className="text-green-600 font-extrabold text-lg">+{finalScore.xp} XP</Text>
+            </View>
+          </View>
+
+          <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
+
+          <BigButton title="Play Again" color="#F59E0B" onPress={() => {
+            setQIndex(0);
+            setScore(0);
+            setDone(false);
+            setFinalScore(null);
+            setQsFeedback(null);
+            next();
+          }} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!item) return null;
 
   return (
-    <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-      <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full bg-gray-700">
+    <SafeAreaView className="flex-1 items-center justify-center p-6" style={{ backgroundColor: '#FFF7ED' }}>
+      <TouchableOpacity 
+        onPress={onBack} 
+        className="absolute top-12 left-6 px-4 py-2 rounded-full" 
+        style={{ 
+          backgroundColor: '#111827',
+          shadowColor: '#000',
+          shadowOpacity: 0.2,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: 6,
+        }}
+      >
         <Text className="text-white font-semibold">← Back</Text>
       </TouchableOpacity>
 
-      <Card style={{ alignItems: 'center' }}>
-        <Text className="text-xs text-gray-500">Question {qIndex + 1}/8</Text>
-
-        <Animated.View
-          style={[
-            {
-              width: 180,
-              height: 140,
-              borderRadius: 16,
-              overflow: 'hidden',
-              marginTop: 8,
-              borderWidth: 1,
-              borderColor: '#E5E7EB',
-            },
-            jiggleStyle,
-          ]}
-        >
-          {item.imageUrl ? (
-            <Image source={{ uri: item.imageUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-          ) : item.imageKey && tileImages[item.imageKey] ? (
-            <Image source={tileImages[item.imageKey]} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-          ) : (
-            <View className="flex-1 bg-gray-100 items-center justify-center">
-              <Text className="text-5xl">🧩</Text>
-            </View>
-          )}
-        </Animated.View>
-
-        <Text className="mt-3 text-2xl font-extrabold text-gray-900">{item.label}</Text>
-        <Text className="text-gray-500 mt-1">Choose the right group</Text>
-
-        <View className="w-full flex-row justify-between mt-4">
-          <TouchableOpacity
-            onPress={() => answer('Food')}
-            activeOpacity={0.92}
-            className="flex-1 mr-2 rounded-2xl p-4 items-center justify-center"
-            style={{ backgroundColor: '#10B981' }}
-          >
-            <Text className="text-white font-extrabold text-lg">Food</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => answer('Transport')}
-            activeOpacity={0.92}
-            className="flex-1 ml-2 rounded-2xl p-4 items-center justify-center"
-            style={{ backgroundColor: '#F59E0B' }}
-          >
-            <Text className="text-white font-extrabold text-lg">Transport</Text>
-          </TouchableOpacity>
+      <View style={{
+        width: '100%',
+        maxWidth: 500,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 32,
+        padding: 28,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+      }}>
+        <View style={{ 
+          flexDirection: 'row', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: 20,
+        }}>
+          <View style={{
+            backgroundColor: '#F59E0B',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 12,
+          }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>
+              Question {qIndex + 1}/8
+            </Text>
+          </View>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#FEF3C7',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 12,
+          }}>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: '#92400E' }}>
+              Score: {score}
+            </Text>
+          </View>
         </View>
 
-        <Text className="mt-3 text-gray-700">
-          Score: <Text className="font-extrabold">{score}</Text>
-        </Text>
+        <View style={{ alignItems: 'center', marginBottom: 24 }}>
+          <Animated.View
+            style={[
+              {
+                width: 220,
+                height: 180,
+                borderRadius: 24,
+                overflow: 'hidden',
+                borderWidth: 3,
+                borderColor: '#F59E0B',
+                shadowColor: '#F59E0B',
+                shadowOpacity: 0.3,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 6 },
+                elevation: 8,
+              },
+              jiggleStyle,
+            ]}
+          >
+            {item.imageUrl ? (
+              <Image source={{ uri: item.imageUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+            ) : item.imageKey && tileImages[item.imageKey] ? (
+              <Image source={tileImages[item.imageKey]} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+            ) : (
+              <View style={{ flex: 1, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 64 }}>🧩</Text>
+              </View>
+            )}
+          </Animated.View>
+
+          <Text style={{ fontSize: 26, fontWeight: '800', color: '#111827', marginTop: 16, textAlign: 'center' }}>
+            {item.label}
+          </Text>
+          <Text style={{ color: '#6B7280', fontSize: 14, fontWeight: '600', marginTop: 4 }}>
+            Choose the right category
+          </Text>
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          <TouchableOpacity
+            onPress={() => answer(choices[0])}
+            activeOpacity={0.9}
+            style={{
+              flex: 1,
+              borderRadius: 20,
+              padding: 20,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#10B981',
+              shadowColor: '#10B981',
+              shadowOpacity: 0.3,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 6 },
+              elevation: 8,
+            }}
+          >
+            <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '800', textTransform: 'uppercase' }}>
+              {choices[0]?.toUpperCase()}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => answer(choices[1])}
+            activeOpacity={0.9}
+            style={{
+              flex: 1,
+              borderRadius: 20,
+              padding: 20,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#F59E0B',
+              shadowColor: '#F59E0B',
+              shadowOpacity: 0.3,
+              shadowRadius: 12,
+              shadowOffset: { width: 0, height: 6 },
+              elevation: 8,
+            }}
+          >
+            <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '800', textTransform: 'uppercase' }}>
+              {choices[1]?.toUpperCase()}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <Animated.View style={[{ marginTop: 8 }, qsToastStyle]}>
+          {qsFeedback === 'correct' ? (
+            <View style={{ backgroundColor: '#DCFCE7', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 }}>
+              <Text className="text-green-800 font-extrabold">✅ Correct! +10 XP</Text>
+            </View>
+          ) : qsFeedback === 'wrong' ? (
+            <View style={{ backgroundColor: '#FEE2E2', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 }}>
+              <Text className="text-red-800 font-extrabold">✗ Not this group</Text>
+            </View>
+          ) : null}
+        </Animated.View>
+
         {done ? <Text className="mt-2 text-green-600 font-semibold text-center">Saved! XP updated ✅</Text> : null}
-      </Card>
+      </View>
     </SafeAreaView>
   );
 }
 
-// -------------------- NEW Game: Find the Emoji --------------------
+/* ======================= FIND EMOJI — Reanimated v3 (web-safe) ======================= */
 function FindEmoji({ onBack }: { onBack: () => void }) {
-  const POOL = (EMOTIONS.length ? EMOTIONS : []).filter((t) => !!t && !!t.emoji);
+// Create a safe pool: must have a visual (emoji/image) and always have a label
+const POOL: Tile[] = useMemo(() => {
+  const list = (EMOTIONS || []).filter(Boolean).filter(t => t.emoji || (t as any).imageKey);
+  return list.map((t) => ({
+    ...t,
+    // derive a readable label if missing
+    label: t.label ?? (typeof t.id === 'string'
+      ? t.id.replace(/[_-]+/g, ' ')
+      : String(t.id)
+    ),
+  }));
+}, []);
 
+
+  const TOTAL = 6;
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
+
+  // Frozen per-round data
   const [target, setTarget] = useState<Tile | null>(null);
-  const [choices, setChoices] = useState<Tile[]>([]);
-  const [done, setDone] = useState(false);
+  const [options, setOptions] = useState<Tile[]>([]);
+  const [freezeKey, setFreezeKey] = useState(0);
+  const [locked, setLocked] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const [allCorrect, setAllCorrect] = useState(false);
+  const [feedback, setFeedback] = useState<null | "correct" | "wrong">(null);
+  const [finalScore, setFinalScore] = useState<{ correct: number; total: number; xp: number } | null>(null);
 
-  const pulse = useSharedValue(1);
-  const pulseStyle = useScaleStyle(pulse);
+  // Reanimated values (already imported at top of file)
+  const scale = useSharedValue(1);
+  const toastOpacity = useSharedValue(0);
+  const toastY = useSharedValue(12);
 
-  const next = useCallback(() => {
+  const emojiStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const toastStyle = useAnimatedStyle(() => ({
+    opacity: toastOpacity.value,
+    transform: [{ translateY: toastY.value }],
+  }));
+
+  const pulse = () => {
+    scale.value = 1;
+    scale.value = withSpring(1.06, { damping: 14, stiffness: 240 }, () => {
+      scale.value = withSpring(1, { damping: 14, stiffness: 220 });
+    });
+  };
+
+  const showToast = () => {
+    toastOpacity.value = 0;
+    toastY.value = 12;
+    toastOpacity.value = withTiming(1, { duration: 180 });
+    toastY.value = withTiming(0, { duration: 180 });
+    setTimeout(() => { toastOpacity.value = withTiming(0, { duration: 220 }); }, 420);
+  };
+
+  const makeRound = useCallback(() => {
     if (!POOL.length) return;
     const correct = POOL[Math.floor(Math.random() * POOL.length)];
-    const wrongs = POOL.filter((t) => t && t.id !== correct.id);
-    const opts = [correct, ...wrongs.slice(0, 2)].filter(Boolean) as Tile[];
+    const wrongs = shuffle(POOL.filter(t => t.id !== correct.id)).slice(0, 3);
+    const opts = shuffle([correct, ...wrongs]); // 4 options, frozen for this round
+
     setTarget(correct);
-    setChoices(opts);
-    if (correct?.emoji) speak(correct.emoji);
-    pulse.value = 1;
-  }, [POOL, pulse]);
+    setOptions(opts);
+    setFreezeKey(Date.now());   // keep FlatList stable this round
+    setFeedback(null);
+    setLocked(false);
+    pulse();
+  }, [POOL]);
 
-  useEffect(() => {
-    if (POOL.length) next();
-  }, [next, POOL.length]);
+  useEffect(() => { if (POOL.length) makeRound(); }, [POOL.length, makeRound]);
 
-  const onPick = async (t: Tile) => {
-    const ok = !!target && t?.id === target.id;
-    animatePulse(pulse, ok);
-    if (ok) setScore((s) => s + 1);
-
-    if (round >= 6) {
-      setDone(true);
-      const correctCount = score + (ok ? 1 : 0);
-      const total = 6;
-      const xp = 5 + correctCount * 2;
-      try {
-        await recordGame(xp);
-        await logGameAndAward({
-          type: 'emoji',
-          correct: correctCount,
-          total,
-          accuracy: (correctCount / total) * 100,
-          xpAwarded: xp,
-        });
-      } catch {}
-      speak('Awesome!');
+  const afterAnswer = (ok: boolean) => {
+    if (round >= TOTAL) {
+      const finalCorrect = score + (ok ? 1 : 0);
+      const xp = finalCorrect * 10;
+      setFinalScore({ correct: finalCorrect, total: TOTAL, xp });
+      setFinished(true);
+      setAllCorrect(finalCorrect === TOTAL);
+      speak(finalCorrect === TOTAL ? 'Perfect score! Amazing!' : `Well done! You got ${finalCorrect} out of ${TOTAL}!`);
+      (async () => {
+        try {
+          await recordGame(xp);
+          await logGameAndAward({
+            type: "emoji",
+            correct: finalCorrect,
+            total: TOTAL,
+            accuracy: (finalCorrect / TOTAL) * 100,
+            xpAwarded: xp,
+          });
+        } catch {}
+      })();
     } else {
-      setRound((r) => r + 1);
-      setTimeout(next, 420);
+      setRound(r => r + 1);
+      setTimeout(makeRound, 420);
     }
   };
 
-  if (!POOL.length || !target || !(choices && choices.length)) {
+  const onPick = (item: Tile) => {
+    if (locked || !target) return;
+    setLocked(true);
+    const ok = item.id === target.id;
+    setFeedback(ok ? "correct" : "wrong");
+    if (ok) setScore(s => s + 1);
+    showToast();
+    pulse();
+    setTimeout(() => afterAnswer(ok), 520);
+  };
+
+  if (!POOL.length || !target || options.length !== 4) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full bg-gray-700">
+        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
           <Text className="text-white font-semibold">← Back</Text>
         </TouchableOpacity>
-        <Card>
-          <Text>No emoji tiles found in Emotions category.</Text>
-        </Card>
+        <View className="rounded-3xl p-6 bg-white border border-gray-200">
+          <Text>No emoji tiles found.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Game finished - show completion screen
+  if (finished && finalScore) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
+        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
+          <Text className="text-white font-semibold">← Back</Text>
+        </TouchableOpacity>
+
+        <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center">
+          <Text className="text-6xl mb-4">{allCorrect ? '🎉' : '🎊'}</Text>
+          <Text className="text-3xl font-extrabold text-gray-900 mb-2">
+            {allCorrect ? 'Perfect Score!' : 'Game Complete!'}
+          </Text>
+          <Text className="text-xl text-gray-600 mb-6">
+            You got {finalScore.correct} out of {finalScore.total} correct!
+          </Text>
+
+          <View className="w-full bg-gray-50 rounded-2xl p-4 mb-4">
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-gray-700 font-semibold">Final Score:</Text>
+              <Text className="text-gray-900 font-extrabold text-lg">
+                {finalScore.correct}/{finalScore.total}
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-gray-700 font-semibold">Accuracy:</Text>
+              <Text className="text-gray-900 font-extrabold text-lg">
+                {Math.round((finalScore.correct / finalScore.total) * 100)}%
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center">
+              <Text className="text-gray-700 font-semibold">XP Earned:</Text>
+              <Text className="text-green-600 font-extrabold text-lg">+{finalScore.xp} XP</Text>
+            </View>
+          </View>
+
+          <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
+
+          <BigButton title="Play Again" color="#2563EB" onPress={() => {
+            setRound(1);
+            setScore(0);
+            setFinished(false);
+            setAllCorrect(false);
+            setFinalScore(null);
+            setFeedback(null);
+            setLocked(false);
+            makeRound();
+          }} />
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-      <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full bg-gray-700">
+      <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
         <Text className="text-white font-semibold">← Back</Text>
       </TouchableOpacity>
 
-      <Card style={{ alignItems: 'center' }}>
-        <Text className="text-xs text-gray-500">Round {round}/6</Text>
+      <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center">
+        <Text className="text-xs text-gray-500">Round {round}/{TOTAL}</Text>
 
-        <Animated.View style={[{ marginTop: 12, alignItems: 'center' }, pulseStyle]}>
-          <Text style={{ fontSize: 64 }}>{target.emoji || '🙂'}</Text>
+        <Animated.View style={[{ marginTop: 12, alignItems: "center" }, emojiStyle]}>
+          <Text style={{ fontSize: 72 }}>{target.emoji || "🙂"}</Text>
         </Animated.View>
-
         <Text className="text-gray-600 mt-2">What feeling is this?</Text>
 
-        <View className="w-full mt-3">
-          <FlatList
-            data={(choices || []).filter(Boolean)}
-            keyExtractor={(t, i) => (t && t.id ? String(t.id) : `emoji-${i}`)}
-            numColumns={1}
-            renderItem={({ item }) =>
-              item ? (
-                <TouchableOpacity
-                  onPress={() => onPick(item)}
-                  activeOpacity={0.92}
-                  className="mb-2 rounded-2xl p-4 items-center justify-center"
-                  style={{ backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' }}
-                >
-                  <Text className="font-extrabold text-lg text-gray-900">{item.label}</Text>
-                </TouchableOpacity>
-              ) : null
-            }
-          />
-        </View>
+        <FlatList
+          style={{ width: "100%", marginTop: 10 }}
+          data={options.map(o => ({ ...o, _k: freezeKey }))} // frozen keys
+          keyExtractor={(it, i) => `${it.id}-${freezeKey}-${i}`}
+          numColumns={2}
+          columnWrapperStyle={{ justifyContent: "space-between" }}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() => onPick(item)}
+              activeOpacity={0.9}
+              disabled={locked}
+              style={{
+                width: "48%",
+                paddingVertical: 14,
+                marginBottom: 10,
+                borderRadius: 16,
+                backgroundColor: "#F3F4F6",
+                borderWidth: 1,
+                borderColor: "#E5E7EB",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+             <Text className="font-extrabold text-gray-900">
+                {item.label ?? (typeof item.id === 'string' ? item.id.replace(/[_-]+/g, ' ') : String(item.id))}
+        </Text>
 
-        <Text className="mt-2 text-gray-700">
+
+            </TouchableOpacity>
+          )}
+        />
+
+        <Animated.View style={[{ marginTop: 6 }, toastStyle]}>
+          {feedback === "correct" ? (
+            <View style={{ backgroundColor: "#DCFCE7", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 }}>
+              <Text className="text-green-800 font-extrabold">✅ Correct! +10 XP</Text>
+            </View>
+          ) : feedback === "wrong" ? (
+            <View style={{ backgroundColor: "#FEE2E2", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 }}>
+              <Text className="text-red-800 font-extrabold">✗ Oops! Try the next one</Text>
+            </View>
+          ) : null}
+        </Animated.View>
+
+        <Text className="mt-3 text-gray-700">
           Score: <Text className="font-extrabold">{score}</Text>
         </Text>
-        {done ? <Text className="mt-2 text-green-600 font-semibold text-center">Saved! XP updated ✅</Text> : null}
-      </Card>
+      </View>
     </SafeAreaView>
   );
 }
+
+
+
+
 
 // -------------------- Menu screen --------------------
 type GameKey = 'menu' | 'tap' | 'match' | 'sort' | 'emoji';
@@ -554,24 +1161,150 @@ export default function GamesScreen() {
   if (screen === 'sort') return <QuickSort onBack={() => setScreen('menu')} />;
   if (screen === 'emoji') return <FindEmoji onBack={() => setScreen('menu')} />;
 
-  // Menu UI (no refresh/sample buttons)
+  // Menu UI with beautiful cards
+  const games = [
+    {
+      id: 'tap',
+      title: 'Tap Timing',
+      emoji: '🎯',
+      description: 'Test your timing skills! Tap when the timer matches the target.',
+      color: '#6366F1',
+      gradient: ['#6366F1', '#8B5CF6'],
+      icon: images.tapIcon,
+    },
+    {
+      id: 'match',
+      title: 'Picture Match',
+      emoji: '🖼️',
+      description: 'Find the matching picture from the options shown.',
+      color: '#22C55E',
+      gradient: ['#22C55E', '#10B981'],
+    },
+    {
+      id: 'sort',
+      title: 'Quick Sort',
+      emoji: '🍎',
+      description: 'Sort items into the correct categories!',
+      color: '#F59E0B',
+      gradient: ['#F59E0B', '#F97316'],
+    },
+    {
+      id: 'emoji',
+      title: 'Find the Emoji',
+      emoji: '😊',
+      description: 'Match the feeling shown by the emoji!',
+      color: '#06B6D4',
+      gradient: ['#06B6D4', '#3B82F6'],
+    },
+  ];
+
   return (
-    <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-      <View className="items-center mb-6">
-        <Image source={icons.games} style={{ width: 64, height: 64, marginBottom: 8 }} />
-        <Text className="font-extrabold text-3xl text-blue-500">Games</Text>
-        {stats ? <Text className="text-gray-600 mt-1">XP {stats.xp} · Streak {stats.streakDays}🔥</Text> : null}
-      </View>
+    <SafeAreaView className="flex-1 bg-gradient-to-b from-blue-50 to-white">
+      <ScrollView 
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View className="items-center mb-8 mt-4">
+          <View style={{
+            width: 80,
+            height: 80,
+            borderRadius: 40,
+            backgroundColor: '#3B82F6',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 12,
+            shadowColor: '#3B82F6',
+            shadowOpacity: 0.3,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 6 },
+            elevation: 8,
+          }}>
+            <Ionicons name="game-controller" size={40} color="#fff" />
+          </View>
+          <Text className="font-extrabold text-4xl text-gray-900 mb-2">Games</Text>
+          {stats && (
+            <View className="flex-row items-center gap-4 mt-2">
+              <View className="flex-row items-center bg-white px-4 py-2 rounded-full shadow-sm">
+                <Ionicons name="star" size={16} color="#F59E0B" />
+                <Text className="ml-2 font-bold text-gray-800">{stats.xp} XP</Text>
+              </View>
+              <View className="flex-row items-center bg-white px-4 py-2 rounded-full shadow-sm">
+                <Ionicons name="flame" size={16} color="#F97316" />
+                <Text className="ml-2 font-bold text-gray-800">{stats.streakDays} days</Text>
+              </View>
+            </View>
+          )}
+        </View>
 
-      <Card>
-        <Text className="text-gray-800 font-bold text-lg">Play & Learn</Text>
-        <Text className="text-gray-600 mt-1">Fun, simple games to build everyday knowledge.</Text>
-
-        <BigButton title="🎯 Tap Timing" color="#6366F1" onPress={() => setScreen('tap')} icon={images.tapIcon} />
-        <BigButton title="🖼️ Picture Match" color="#22C55E" onPress={() => setScreen('match')} />
-        <BigButton title="🍎 vs 🚗 Quick Sort" color="#F59E0B" onPress={() => setScreen('sort')} />
-        <BigButton title="😊 Find the Emoji" color="#06B6D4" onPress={() => setScreen('emoji')} />
-      </Card>
+        {/* Games Grid */}
+        <Text className="text-xl font-bold text-gray-900 mb-4 px-2">Choose a Game</Text>
+        <View style={{ gap: 16 }}>
+          {games.map((game) => (
+            <TouchableOpacity
+              key={game.id}
+              onPress={() => setScreen(game.id as GameKey)}
+              activeOpacity={0.9}
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderRadius: 24,
+                padding: 20,
+                shadowColor: '#000',
+                shadowOpacity: 0.1,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 6,
+                borderWidth: 1,
+                borderColor: '#F3F4F6',
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                <View style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: 20,
+                  backgroundColor: game.color + '15',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 16,
+                }}>
+                  <Text style={{ fontSize: 32 }}>{game.emoji}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 4 }}>
+                    {game.title}
+                  </Text>
+                  <Text style={{ fontSize: 14, color: '#6B7280', lineHeight: 20 }}>
+                    {game.description}
+                  </Text>
+                </View>
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: game.color + '20',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Ionicons name="play" size={20} color={game.color} />
+                </View>
+              </View>
+              <View style={{
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: game.color + '30',
+                overflow: 'hidden',
+              }}>
+                <View style={{
+                  height: '100%',
+                  width: '100%',
+                  backgroundColor: game.color,
+                }} />
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -643,7 +1376,7 @@ function ChoiceCard({ tile, onPress }: { tile?: Tile; onPress: () => void }) {
 function shuffle<T>(arr: T[]): T[] {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j]];
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
 }

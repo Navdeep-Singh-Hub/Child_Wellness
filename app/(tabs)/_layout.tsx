@@ -1,118 +1,219 @@
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-// import { SignedIn, SignedOut, useAuth } from '@clerk/clerk-expo';
-import { Tabs } from "expo-router";
-import { Platform, Text, View } from "react-native";
-import PillTabBar from "../comonents/PillTabBar";
+// app/(tabs)/_layout.tsx
+import { Ionicons } from "@expo/vector-icons";
+import { Stack, usePathname, useRouter } from "expo-router";
+import React from "react";
+import { Animated, Dimensions, Platform, Pressable, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const MENU_WIDTH = 280;
+// Ensure the hidden drawer sits fully off-screen to avoid any visible sliver
+const CLOSED_OFFSET = MENU_WIDTH + 16;
 
-const TabIcon = ({ focused, title, iconName, color }: { focused: boolean; title: string; iconName: keyof typeof Ionicons.glyphMap; color: string }) => {
-  if (focused) {
-    return (
-      <LinearGradient
-        colors={["#E0EAFF", "#F5F3FF"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minWidth: 120,
-          height: Platform.OS === 'web' ? 44 : 40,
-          borderRadius: 999,
-          paddingHorizontal: 14,
-          shadowColor: '#000',
-          shadowOpacity: 0.12,
-          shadowRadius: 8,
-          shadowOffset: { width: 0, height: 4 },
-          elevation: 4,
-        }}
-      >
-        <Ionicons name={iconName} size={18} color={'#111827'} />
-        <Text style={{ marginLeft: 6, fontWeight: '700', color: '#111827' }}>{title}</Text>
-      </LinearGradient>
-    );
-  }
-  return (
-    <View style={{ justifyContent: 'center', alignItems: 'center', marginTop: 16 }}>
-      <Ionicons name={iconName} size={18} color={color} />
-    </View>
-  );
-};
-const _Layout=()=>{
-  // TODO: use Auth0 useAuth for session checks
-  // const {isLoaded, isSignedIn,userId, sessionId,getToken} = useAuth();
-  // if(!isLoaded) {
-  //   return (
-  //     <View className="flex-1 items-center justify-center">
-  //       <ActivityIndicator size={"large"} color={"#0f0D23"}/>
-  //     </View>
-  // )
-  // }
+function SlideOutMenu() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const insets = useSafeAreaInsets();
+  const [open, setOpen] = React.useState(false);
+
+  const slideAnim = React.useRef(new Animated.Value(CLOSED_OFFSET)).current;
+  const overlayOpacity = React.useRef(new Animated.Value(0)).current;
+  
+
+  React.useEffect(() => {
+    if (open) {
+      // Slide menu in from right
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      // Slide menu out to right
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: CLOSED_OFFSET,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(overlayOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [open]);
+
+  // Show menu on all tabs, including AACgrid, for consistent UX
+
+  const menuItems = [
+    { title: "Home", route: "/(tabs)", icon: "home-outline" },
+    { title: "Games", route: "/(tabs)/Games", icon: "game-controller-outline" },
+    { title: "Grids", route: "/(tabs)/AACgrid", icon: "grid-outline" },
+    { title: "Profile", route: "/(tabs)/Profile", icon: "person-outline" },
+    { title: "Contact Us", route: "/(tabs)/Contact", icon: "mail-outline" },
+  ];
+
+  const navigateTo = (route: string) => {
+    setOpen(false);
+    setTimeout(() => {
+      router.navigate(route as any);
+    }, 100);
+  };
+
   return (
     <>
-    {/* TODO: Replace session redirects with Auth0 logic */}
-    <Tabs
-      screenOptions={{ headerShown: false, tabBarStyle: { display: "none" } }}
-      tabBar={(props) => (
-        <PillTabBar
-          {...props}
-          // this shows the little black logo circle like the demo
-          logo={require("../../assets/images/logo.png")}
-          railColor="#000000"
-          pillFill="#FFFFFF"
-          pillBorder="#000000"
-          activeFill="#000000"
-          labelColor="#000000"
-          hoverLabelColor="#FFFFFF"
-        />
-      )}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          headerShown: false,
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon focused={focused} iconName={focused ? 'home' : 'home-outline'} title="Home" color={color as string} />
-          )
+      {/* Menu Button */}
+      <TouchableOpacity
+        onPress={() => setOpen(true)}
+        activeOpacity={0.9}
+        style={{
+          position: "absolute",
+          right: 16,
+          top: Platform.select({
+            web: pathname?.includes('/(tabs)/AACgrid') ? 64 : 16,
+            ios: pathname?.includes('/(tabs)/AACgrid') ? insets.top + 56 : insets.top + 8,
+            android: pathname?.includes('/(tabs)/AACgrid') ? insets.top + 56 : insets.top + 8,
+            default: 16,
+          }),
+          zIndex: 1000,
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#111827",
+          shadowColor: "#000",
+          shadowOpacity: 0.25,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: 6 },
+          elevation: 10,
         }}
-      />
-      <Tabs.Screen
-        name="Games"
-        options={{
-          title: "Games",
-          headerShown: false,
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon focused={focused} iconName={focused ? 'game-controller' : 'game-controller-outline'} title="Games" color={color as string} />
-          )
-        }}
-      />
-      <Tabs.Screen
-          name="AACgrid"
-          options={{
-            title: "Grids",
-            headerShown: false,
-            tabBarIcon: ({ focused, color }) => (
-              <TabIcon focused={focused} iconName={focused ? 'grid' : 'grid-outline'} title="Grids" color={color as string} />
-            )
-          }}
-      />
+        accessibilityLabel="Open menu"
+      >
+        <Ionicons name="menu" size={22} color="#fff" />
+      </TouchableOpacity>
 
-      
-      <Tabs.Screen
-            name="Profile"
-            options={{
-            title: "Profile",
-            headerShown: false,
-            tabBarIcon: ({ focused, color }) => (
-              <TabIcon focused={focused} iconName={focused ? 'person' : 'person-outline'} title="Profile" color={color as string} />
-            )
+      {/* Overlay */}
+      {open && (
+        <Pressable
+          onPress={() => setOpen(false)}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 999,
           }}
-      />
-        
-    </Tabs>
+        >
+          <Animated.View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              opacity: overlayOpacity,
+            }}
+          />
+        </Pressable>
+      )}
+
+      {/* Slide-out Menu (right side) */}
+      <Animated.View
+        style={{
+          position: "absolute",
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: MENU_WIDTH,
+          backgroundColor: "#FFFFFF",
+          zIndex: 1001,
+          transform: [{ translateX: slideAnim }],
+          shadowColor: "#000",
+          shadowOpacity: 0.3,
+          shadowRadius: 20,
+          shadowOffset: { width: -4, height: 0 },
+          elevation: 15,
+          paddingTop: insets.top + 20,
+        }}
+      >
+        <View style={{ paddingHorizontal: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: "#E5E7EB" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <Text style={{ fontSize: 24, fontWeight: "800", color: "#111827" }}>Menu</Text>
+            <TouchableOpacity
+              onPress={() => setOpen(false)}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "#F3F4F6",
+              }}
+            >
+              <Ionicons name="close" size={20} color="#111827" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={{ paddingTop: 12 }}>
+          {menuItems.map((item, index) => {
+            const isActive = pathname === item.route || (item.route === "/(tabs)" && pathname === "/");
+            return (
+              <TouchableOpacity
+                key={item.title}
+                onPress={() => navigateTo(item.route)}
+                activeOpacity={0.7}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  backgroundColor: isActive ? "#F0F9FF" : "transparent",
+                  borderLeftWidth: isActive ? 4 : 0,
+                  borderLeftColor: "#2563EB",
+                }}
+              >
+                <Ionicons
+                  name={item.icon as any}
+                  size={22}
+                  color={isActive ? "#2563EB" : "#6B7280"}
+                  style={{ marginRight: 16 }}
+                />
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: isActive ? "700" : "600",
+                    color: isActive ? "#2563EB" : "#374151",
+                  }}
+                >
+                  {item.title}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </Animated.View>
+
+      {/* No content wrapper; we overlay above existing content only when open */}
     </>
-  )
+  );
 }
-export default _Layout
+
+export default function Layout() {
+  const pathname = usePathname();
+  const showGlobalMenu = !(pathname?.includes('/(tabs)/AACgrid'));
+  return (
+    <>
+      <Stack screenOptions={{ headerShown: false }} />
+      {showGlobalMenu ? <SlideOutMenu /> : null}
+    </>
+  );
+}
