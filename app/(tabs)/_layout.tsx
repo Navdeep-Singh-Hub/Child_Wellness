@@ -209,7 +209,8 @@ function SlideOutMenu() {
 
 export default function Layout() {
   const pathname = usePathname();
-  const showGlobalMenu = !(pathname?.includes('/(tabs)/AACgrid'));
+  // Hide global menu on AACgrid screen (it has its own GridMenu)
+  const showGlobalMenu = !(pathname?.includes('AACgrid') || pathname?.includes('/AACgrid'));
   return (
     <>
       <Stack screenOptions={{ headerShown: false }} />

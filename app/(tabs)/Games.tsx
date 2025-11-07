@@ -2,16 +2,21 @@
 // Includes guards for undefined items in FlatList and no conditional/top-level hook misuse.
 
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
+  Easing,
+  FadeInDown,
+  FadeInUp,
   cancelAnimation,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
+  withRepeat,
   withSpring,
-  withTiming,
+  withTiming
 } from 'react-native-reanimated';
 
 import { CATEGORIES, type Tile, tileImages } from '@/constants/aac';
@@ -92,6 +97,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
 
   const startClientAt = useRef<number | null>(null);
   const raf = useRef<number | null>(null);
+  const prefetch = useRef<{ roundId: string; targetSeconds: number } | null>(null);
   // removed per-second speech
 
   const stopTicker = () => {
@@ -107,18 +113,37 @@ function TapTiming({ onBack }: { onBack: () => void }) {
     raf.current = requestAnimationFrame(tick);
   };
 
+  const prefetchRound = useCallback(async () => {
+    try {
+      const data = await startTapRound();
+      prefetch.current = data;
+    } catch (e: any) {
+      console.log('Prefetch tap round failed', e?.message || e);
+      prefetch.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    prefetchRound();
+  }, [prefetchRound]);
+
   const onStart = async () => {
     try {
       setState('running');
       setMsg(null);
       setElapsedMs(0);
-      const { roundId, targetSeconds } = await startTapRound();
-      setRoundId(roundId);
-      setTargetSec(targetSeconds);
+      let round = prefetch.current;
+      if (!round) {
+        round = await startTapRound();
+      }
+      prefetch.current = null;
+      setRoundId(round.roundId);
+      setTargetSec(round.targetSeconds);
       startClientAt.current = Date.now();
       // reset per-second speech (removed)
       startTicker();
       speak('Wait and tap at the right time!');
+      prefetchRound();
     } catch (e: any) {
       setState('error');
       setMsg(e?.message || 'Could not start round');
@@ -211,6 +236,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
             setState('idle');
             setSummary(null);
             setMsg(null);
+            prefetchRound();
           }} />
         </View>
       </SafeAreaView>
@@ -427,7 +453,7 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
       speak('Well done!');
     } else {
       setRound((r) => r + 1);
-      setTimeout(() => { pmToastOpacity.value = withTiming(0, { duration: 220 }); next(); }, 450);
+      setTimeout(() => { pmToastOpacity.value = withTiming(0, { duration: 160 }); next(); }, 220);
     }
   };
 
@@ -1001,7 +1027,7 @@ const POOL: Tile[] = useMemo(() => {
     if (ok) setScore(s => s + 1);
     showToast();
     pulse();
-    setTimeout(() => afterAnswer(ok), 520);
+    setTimeout(() => afterAnswer(ok), 260);
   };
 
   if (!POOL.length || !target || options.length !== 4) {
@@ -1143,9 +1169,88 @@ const POOL: Tile[] = useMemo(() => {
 // -------------------- Menu screen --------------------
 type GameKey = 'menu' | 'tap' | 'match' | 'sort' | 'emoji';
 
+type MenuGame = {
+  id: GameKey;
+  title: string;
+  emoji: string;
+  description: string;
+  color: string;
+  gradient: [string, string];
+  icon?: any;
+};
+
+function GameCard({ game, index, onPress }: { game: MenuGame; index: number; onPress: () => void }) {
+  const press = useSharedValue(0);
+  const softGradient = useMemo<[string, string]>(
+    () => [`${game.gradient[0]}1C`, `${game.gradient[1]}05`],
+    [game.gradient]
+  );
+
+  const pressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 - press.value * 0.04 }],
+  }));
+
+  return (
+    <Animated.View
+      style={menuStyles.gameCardWrapper}
+      entering={FadeInUp.delay(index * 90).springify().damping(14)}
+    >
+      <TouchableOpacity
+        onPressIn={() => (press.value = withTiming(1, { duration: 100 }))}
+        onPressOut={() => (press.value = withTiming(0, { duration: 160 }))}
+        onPress={onPress}
+        activeOpacity={0.92}
+      >
+        <Animated.View style={[menuStyles.gameCard, pressStyle]}
+        >
+          <LinearGradient colors={softGradient} style={menuStyles.cardGlow} />
+
+          <View style={menuStyles.cardHeader}>
+            <View style={[menuStyles.iconBadge, { backgroundColor: game.color + '1A' }]}>
+              <Text style={menuStyles.iconEmoji}>{game.emoji}</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={menuStyles.cardTitle}>{game.title}</Text>
+              <Text style={menuStyles.cardSubtitle}>{game.description}</Text>
+            </View>
+            <View style={[menuStyles.playBadge, { backgroundColor: game.color + '1F' }]}
+            >
+              <Ionicons name="play" size={20} color={game.color} />
+            </View>
+          </View>
+
+          <LinearGradient
+            colors={game.gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={menuStyles.progressBar}
+          />
+        </Animated.View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
 export default function GamesScreen() {
   const [screen, setScreen] = useState<GameKey>('menu');
   const [stats, setStats] = useState<{ xp?: number; streakDays?: number } | null>(null);
+
+  const heroFloat = useSharedValue(0);
+  const headerReveal = useSharedValue(0);
+
+  useEffect(() => {
+    headerReveal.value = withTiming(1, { duration: 520, easing: Easing.out(Easing.cubic) });
+    heroFloat.value = withRepeat(withTiming(1, { duration: 2600, easing: Easing.inOut(Easing.quad) }), -1, true);
+  }, [headerReveal, heroFloat]);
+
+  const headerStyle = useAnimatedStyle(() => ({
+    opacity: headerReveal.value,
+    transform: [{ translateY: (1 - headerReveal.value) * 24 }],
+  }));
+
+  const heroStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: (heroFloat.value - 0.5) * 10 }],
+  }));
 
   useEffect(() => {
     (async () => {
@@ -1162,14 +1267,14 @@ export default function GamesScreen() {
   if (screen === 'emoji') return <FindEmoji onBack={() => setScreen('menu')} />;
 
   // Menu UI with beautiful cards
-  const games = [
+  const games: MenuGame[] = [
     {
       id: 'tap',
       title: 'Tap Timing',
       emoji: '🎯',
       description: 'Test your timing skills! Tap when the timer matches the target.',
       color: '#6366F1',
-      gradient: ['#6366F1', '#8B5CF6'],
+      gradient: ['#6366F1', '#8B5CF6'] as [string, string],
       icon: images.tapIcon,
     },
     {
@@ -1178,7 +1283,7 @@ export default function GamesScreen() {
       emoji: '🖼️',
       description: 'Find the matching picture from the options shown.',
       color: '#22C55E',
-      gradient: ['#22C55E', '#10B981'],
+      gradient: ['#22C55E', '#10B981'] as [string, string],
     },
     {
       id: 'sort',
@@ -1186,7 +1291,7 @@ export default function GamesScreen() {
       emoji: '🍎',
       description: 'Sort items into the correct categories!',
       color: '#F59E0B',
-      gradient: ['#F59E0B', '#F97316'],
+      gradient: ['#F59E0B', '#F97316'] as [string, string],
     },
     {
       id: 'emoji',
@@ -1194,117 +1299,68 @@ export default function GamesScreen() {
       emoji: '😊',
       description: 'Match the feeling shown by the emoji!',
       color: '#06B6D4',
-      gradient: ['#06B6D4', '#3B82F6'],
+      gradient: ['#06B6D4', '#3B82F6'] as [string, string],
     },
   ];
 
   return (
-    <SafeAreaView className="flex-1 bg-gradient-to-b from-blue-50 to-white">
-      <ScrollView 
-        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View className="items-center mb-8 mt-4">
-          <View style={{
-            width: 80,
-            height: 80,
-            borderRadius: 40,
-            backgroundColor: '#3B82F6',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 12,
-            shadowColor: '#3B82F6',
-            shadowOpacity: 0.3,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 6 },
-            elevation: 8,
-          }}>
-            <Ionicons name="game-controller" size={40} color="#fff" />
-          </View>
-          <Text className="font-extrabold text-4xl text-gray-900 mb-2">Games</Text>
-          {stats && (
-            <View className="flex-row items-center gap-4 mt-2">
-              <View className="flex-row items-center bg-white px-4 py-2 rounded-full shadow-sm">
-                <Ionicons name="star" size={16} color="#F59E0B" />
-                <Text className="ml-2 font-bold text-gray-800">{stats.xp} XP</Text>
-              </View>
-              <View className="flex-row items-center bg-white px-4 py-2 rounded-full shadow-sm">
-                <Ionicons name="flame" size={16} color="#F97316" />
-                <Text className="ml-2 font-bold text-gray-800">{stats.streakDays} days</Text>
-              </View>
-            </View>
-          )}
-        </View>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
+        <LinearGradient
+          colors={['#E0F2FE', '#F1F5FF', '#FFFFFF'] as [string, string, string]}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <ScrollView
+          contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <Animated.View style={[menuStyles.headerWrap, headerStyle]}>
+            <Animated.View style={[menuStyles.heroBadge, heroStyle]}>
+              <LinearGradient
+                colors={['#3B82F6', '#6366F1']}
+                style={menuStyles.heroGradient}
+              >
+                <Ionicons name="game-controller" size={40} color="#fff" />
+              </LinearGradient>
+            </Animated.View>
+            <Text style={menuStyles.heroTitle}>Games</Text>
+            {stats && (
+              <Animated.View
+                entering={FadeInDown.delay(120).springify().damping(18)}
+                style={menuStyles.statsRow}
+              >
+                <View style={menuStyles.statChip}>
+                  <Ionicons name="star" size={16} color="#F59E0B" />
+                  <Text style={menuStyles.statText}>{stats.xp} XP</Text>
+                </View>
+                <View style={menuStyles.statChip}>
+                  <Ionicons name="flame" size={16} color="#F97316" />
+                  <Text style={menuStyles.statText}>{stats.streakDays} days</Text>
+                </View>
+              </Animated.View>
+            )}
+          </Animated.View>
 
-        {/* Games Grid */}
-        <Text className="text-xl font-bold text-gray-900 mb-4 px-2">Choose a Game</Text>
-        <View style={{ gap: 16 }}>
-          {games.map((game) => (
-            <TouchableOpacity
-              key={game.id}
-              onPress={() => setScreen(game.id as GameKey)}
-              activeOpacity={0.9}
-              style={{
-                backgroundColor: '#FFFFFF',
-                borderRadius: 24,
-                padding: 20,
-                shadowColor: '#000',
-                shadowOpacity: 0.1,
-                shadowRadius: 12,
-                shadowOffset: { width: 0, height: 4 },
-                elevation: 6,
-                borderWidth: 1,
-                borderColor: '#F3F4F6',
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                <View style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 20,
-                  backgroundColor: game.color + '15',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 16,
-                }}>
-                  <Text style={{ fontSize: 32 }}>{game.emoji}</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 22, fontWeight: '800', color: '#111827', marginBottom: 4 }}>
-                    {game.title}
-                  </Text>
-                  <Text style={{ fontSize: 14, color: '#6B7280', lineHeight: 20 }}>
-                    {game.description}
-                  </Text>
-                </View>
-                <View style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: game.color + '20',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <Ionicons name="play" size={20} color={game.color} />
-                </View>
-              </View>
-              <View style={{
-                height: 4,
-                borderRadius: 2,
-                backgroundColor: game.color + '30',
-                overflow: 'hidden',
-              }}>
-                <View style={{
-                  height: '100%',
-                  width: '100%',
-                  backgroundColor: game.color,
-                }} />
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+          {/* Games Grid */}
+          <Animated.Text
+            entering={FadeInDown.delay(220)}
+            style={menuStyles.sectionHeading}
+          >
+            Choose a Game
+          </Animated.Text>
+          <View style={{ gap: 18 }}>
+            {games.map((game, index) => (
+              <GameCard
+                key={game.id}
+                game={game}
+                index={index}
+                onPress={() => setScreen(game.id as GameKey)}
+              />
+            ))}
+          </View>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -1380,3 +1436,126 @@ function shuffle<T>(arr: T[]): T[] {
   }
   return arr;
 }
+
+const menuStyles = StyleSheet.create({
+  headerWrap: {
+    alignItems: 'center',
+    marginBottom: 28,
+    marginTop: 16,
+  },
+  heroBadge: {
+    width: 94,
+    height: 94,
+    borderRadius: 47,
+    marginBottom: 14,
+    shadowColor: '#3B82F6',
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
+  },
+  heroGradient: {
+    flex: 1,
+    borderRadius: 47,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroTitle: {
+    fontSize: 38,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 6,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginTop: 4,
+  },
+  statChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  statText: {
+    marginLeft: 6,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  sectionHeading: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 14,
+    paddingHorizontal: 4,
+  },
+  gameCardWrapper: {
+    width: '100%',
+  },
+  gameCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 26,
+    padding: 22,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#EEF2FF',
+  },
+  cardGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '65%',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 18,
+    gap: 16,
+  },
+  iconBadge: {
+    width: 66,
+    height: 66,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconEmoji: {
+    fontSize: 34,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    color: '#4B5563',
+    lineHeight: 20,
+  },
+  playBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressBar: {
+    height: 5,
+    borderRadius: 999,
+  },
+});

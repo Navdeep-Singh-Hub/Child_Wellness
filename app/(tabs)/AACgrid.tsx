@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import * as Speech from 'expo-speech';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Toast from 'react-native-toast-message';
@@ -37,6 +37,7 @@ import Animated, {
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
@@ -49,25 +50,43 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const MENU_WIDTH = 280;
-// Keep the slide-out fully hidden when closed to prevent a right-edge white bar
 const CLOSED_OFFSET = MENU_WIDTH + 16;
+
 function GridMenu() {
   const router = useRouter();
+  const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
+
   const slideAnim = useRef(new RNAnimated.Value(CLOSED_OFFSET)).current;
   const overlayOpacity = useRef(new RNAnimated.Value(0)).current;
 
   useEffect(() => {
     if (open) {
       RNAnimated.parallel([
-        RNAnimated.timing(slideAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
-        RNAnimated.timing(overlayOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+        RNAnimated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        RNAnimated.timing(overlayOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
       ]).start();
     } else {
       RNAnimated.parallel([
-        RNAnimated.timing(slideAnim, { toValue: CLOSED_OFFSET, duration: 300, useNativeDriver: true }),
-        RNAnimated.timing(overlayOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+        RNAnimated.timing(slideAnim, {
+          toValue: CLOSED_OFFSET,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        RNAnimated.timing(overlayOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
       ]).start();
     }
   }, [open]);
@@ -80,17 +99,29 @@ function GridMenu() {
     { title: 'Contact Us', route: '/(tabs)/Contact', icon: 'mail-outline' },
   ];
 
-  const go = (route: string) => {
+  const navigateTo = (route: string) => {
     setOpen(false);
-    setTimeout(() => router.navigate(route as any), 100);
+    setTimeout(() => {
+      router.navigate(route as any);
+    }, 100);
   };
 
   return (
     <>
+      {/* Menu Button */}
       <TouchableOpacity
         onPress={() => setOpen(true)}
         activeOpacity={0.9}
         style={{
+          position: 'absolute',
+          right: 16,
+          top: Platform.select({
+            web: 16,
+            ios: insets.top + 8,
+            android: insets.top + 8,
+            default: 16,
+          }),
+          zIndex: 1000,
           width: 44,
           height: 44,
           borderRadius: 22,
@@ -108,17 +139,30 @@ function GridMenu() {
         <Ionicons name="menu" size={22} color="#fff" />
       </TouchableOpacity>
 
+      {/* Overlay */}
       {open && (
         <Pressable
           onPress={() => setOpen(false)}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999 }}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 999,
+          }}
         >
           <RNAnimated.View
-            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', opacity: overlayOpacity }}
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              opacity: overlayOpacity,
+            }}
           />
         </Pressable>
       )}
 
+      {/* Slide-out Menu (right side) */}
       <RNAnimated.View
         style={{
           position: 'absolute',
@@ -142,7 +186,14 @@ function GridMenu() {
             <Text style={{ fontSize: 24, fontWeight: '800', color: '#111827' }}>Menu</Text>
             <TouchableOpacity
               onPress={() => setOpen(false)}
-              style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6' }}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#F3F4F6',
+              }}
             >
               <Ionicons name="close" size={20} color="#111827" />
             </TouchableOpacity>
@@ -150,17 +201,41 @@ function GridMenu() {
         </View>
 
         <View style={{ paddingTop: 12 }}>
-          {menuItems.map((item) => (
-            <TouchableOpacity
-              key={item.title}
-              onPress={() => go(item.route)}
-              activeOpacity={0.7}
-              style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 20 }}
-            >
-              <Ionicons name={item.icon as any} size={22} color={'#6B7280'} style={{ marginRight: 16 }} />
-              <Text style={{ fontSize: 16, fontWeight: '700', color: '#374151' }}>{item.title}</Text>
-            </TouchableOpacity>
-          ))}
+          {menuItems.map((item, index) => {
+            const isActive = pathname === item.route || (item.route === '/(tabs)' && pathname === '/');
+            return (
+              <TouchableOpacity
+                key={item.title}
+                onPress={() => navigateTo(item.route)}
+                activeOpacity={0.7}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingVertical: 16,
+                  paddingHorizontal: 20,
+                  backgroundColor: isActive ? '#F0F9FF' : 'transparent',
+                  borderLeftWidth: isActive ? 4 : 0,
+                  borderLeftColor: '#2563EB',
+                }}
+              >
+                <Ionicons
+                  name={item.icon as any}
+                  size={22}
+                  color={isActive ? '#2563EB' : '#6B7280'}
+                  style={{ marginRight: 16 }}
+                />
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: isActive ? '700' : '600',
+                    color: isActive ? '#2563EB' : '#374151',
+                  }}
+                >
+                  {item.title}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </RNAnimated.View>
     </>
@@ -440,12 +515,17 @@ function tSentence(ids: string[], lang: LangKey) {
 }
 
 // ---------- TTS scheduler: run speech AFTER animations ----------
-function scheduleSpeak(text: string, lang: LangKey, delayMs = 120) {
-  InteractionManager.runAfterInteractions(() => {
+function scheduleSpeak(text: string, lang: LangKey, delayMs = 30) {
+  const run = () => {
     setTimeout(() => {
       speakSmart(text, lang);
-    }, delayMs);
-  });
+    }, Math.max(0, delayMs));
+  };
+  try {
+    InteractionManager.runAfterInteractions(run);
+  } catch {
+    run();
+  }
 }
 
 // ---------- Small helpers ----------
@@ -598,6 +678,60 @@ function TileCard({
   // Reanimated shared values
   const scale = useSharedValue(1);
   const appear = useSharedValue(0); // mount fade/scale
+  const burst = useSharedValue(0); // tap expansion
+  const highlight = useSharedValue(0); // glow intensity
+
+  // Heart animation state
+  const heartScale = useSharedValue(1);
+  const heartBurst = useSharedValue(0);
+  const heartFav = useSharedValue(isFav ? 1 : 0);
+
+  React.useEffect(() => {
+    heartFav.value = withTiming(isFav ? 1 : 0, { duration: 220 });
+  }, [isFav]);
+
+  const onHeart = () => {
+    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
+    heartScale.value = 1;
+    heartScale.value = withSequence(
+      withSpring(1.16, { stiffness: 520, damping: 28, mass: 0.6 }),
+      withSpring(1.0,  { stiffness: 240, damping: 18, mass: 0.9 }),
+    );
+    heartBurst.value = 0;
+    heartBurst.value = withTiming(1, { duration: 650 }, () => { heartBurst.value = 0; });
+    onToggleFav(t.id);
+  };
+
+  const heartWrapStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: heartScale.value * (1 + heartFav.value * 0.06) }],
+  }));
+
+  const heartRingStyle = useAnimatedStyle(() => {
+    const scale = 1 + heartBurst.value * 1.7;
+    const opacity = heartBurst.value === 0 ? 0 : (1 - heartBurst.value) * 0.35;
+    return { transform: [{ scale }], opacity, borderColor: accent };
+  });
+
+  const heartIconStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${(heartScale.value - 1) * 60}deg` }],
+  }));
+
+  // 8 sparkle particles
+  const P = 8;
+  const particleStyle = (i: number) =>
+    useAnimatedStyle(() => {
+      const angle = (i / P) * Math.PI * 2;
+      const r = 4 + heartBurst.value * 18;
+      return {
+        transform: [
+          { translateX: Math.cos(angle) * r },
+          { translateY: Math.sin(angle) * r },
+          { scale: 0.4 + heartBurst.value * 0.9 },
+        ],
+        opacity: heartBurst.value === 0 ? 0 : 1 - heartBurst.value,
+        backgroundColor: accent,
+      };
+    });
 
   // mount animation (fade in + slight scale)
   React.useEffect(() => {
@@ -617,7 +751,7 @@ function TileCard({
   const onPressIn = () => {
     cancelAnimation(scale);
     // slight compress on touch down
-    scale.value = withSpring(0.96, springCfg);
+    scale.value = withSpring(0.98, springCfg);
   };
 
   const onPressOut = () => {
@@ -628,19 +762,47 @@ function TileCard({
   // pop then JS handler AFTER animation (no lag)
   const handlePress = () => {
     cancelAnimation(scale);
-    // quick micro expand, then settle, then call onPress in JS
-    scale.value = withTiming(1.02, { duration: 85 }, (finished) => {
-      if (finished) {
-        scale.value = withSpring(1.0, springCfg, (ok) => {
-          if (ok) runOnJS(onPress)(t);
-        });
-      }
-    });
+    cancelAnimation(burst);
+    cancelAnimation(highlight);
+
+    burst.value = 0;
+    highlight.value = 0;
+
+    burst.value = withSequence(
+      withTiming(0.26, { duration: 140, easing: Easing.out(Easing.cubic) }),
+      withSpring(0, { damping: 14, stiffness: 160 })
+    );
+
+    highlight.value = withSequence(
+      withTiming(1, { duration: 120, easing: Easing.out(Easing.cubic) }),
+      withTiming(0, { duration: 320, easing: Easing.inOut(Easing.cubic) })
+    );
+
+    // ensure base scale returns smoothly
+    scale.value = withSpring(1, springCfg);
+
+    setTimeout(() => {
+      onPress(t);
+    }, 150);
   };
 
   const cardStyle = useAnimatedStyle(() => ({
     opacity: appear.value,
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scale.value * (1 + burst.value) }],
+    zIndex: highlight.value > 0.01 ? 30 : 1,
+    shadowOpacity: 0.08 + highlight.value * 0.2,
+    shadowRadius: 12 + highlight.value * 20,
+    elevation: 6 + highlight.value * 8,
+  }));
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: highlight.value,
+    transform: [{ scale: 1 + highlight.value * 0.2 }],
+    borderColor: accent,
+    shadowColor: accent,
+    shadowOpacity: 0.25 * highlight.value,
+    shadowRadius: 14,
+    elevation: 6 + highlight.value * 6,
   }));
 
   return (
@@ -651,48 +813,95 @@ function TileCard({
       style={[styles.card, cardStyle, shadow.m]}
       accessibilityRole="button"
     >
-      <View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { backgroundColor: accent + '18', borderRadius: 16 }]} />
+      <Animated.View pointerEvents="none" style={[styles.tapGlow, glowStyle]} />
 
-      <View style={styles.emojiWrap}>
-        <View style={[styles.emojiHalo, { backgroundColor: accent + '26' }]} />
+      <View style={styles.cardInner}>
+        {/* Background tint */}
+        <View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { backgroundColor: accent + '18', borderRadius: 12 }]} />
+
+        {/* Image fills entire tile */}
         {t.imageUrl ? (
-          <Image source={{ uri: normImageUrl(t.imageUrl) }} resizeMode="cover" style={styles.emojiImage} />
+          <Image source={{ uri: normImageUrl(t.imageUrl) }} resizeMode="cover" style={styles.fullImage} />
         ) : t.imageKey && tileImages[t.imageKey] ? (
-          <Image source={tileImages[t.imageKey]} resizeMode="cover" style={styles.emojiImage} />
+          <Image source={tileImages[t.imageKey]} resizeMode="cover" style={styles.fullImage} />
         ) : (
-          <Text style={styles.emojiText}>{t.emoji || '🟦'}</Text>
+          <View style={styles.emojiWrap}>
+            <Text style={styles.emojiText}>{t.emoji || '🟦'}</Text>
+          </View>
+        )}
+
+        {/* Label badge - pill-shaped, floating above bottom */}
+        <View style={styles.overlayLabelWrap}>
+          <View style={styles.labelBadge}>
+            <Text numberOfLines={1} style={styles.overlayLabelText}>{t.label}</Text>
+          </View>
+        </View>
+
+        <Animated.View style={[styles.bottomBar, { backgroundColor: accent }]} />
+
+        <AnimatedPressable
+          onPress={onHeart}
+          hitSlop={8}
+          style={[{ position: 'absolute', top: 6, right: 6, zIndex: 6 }, heartWrapStyle]}
+          accessibilityRole="button"
+          accessibilityLabel={isFav ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          {/* Ripple ring */}
+          <Animated.View
+            pointerEvents="none"
+            style={[{
+              position: 'absolute', top: -4, left: -4, right: -4, bottom: -4,
+              borderRadius: 999, borderWidth: 2,
+            }, heartRingStyle]}
+          />
+
+          {/* Chip */}
+          <View style={{
+            backgroundColor: 'rgba(255,255,255,0.95)',
+            paddingHorizontal: 10, paddingVertical: 8,
+            borderRadius: 999, borderWidth: 1,
+            borderColor: 'rgba(0,0,0,0.06)',
+            alignItems: 'center', justifyContent: 'center',
+            minWidth: 36, minHeight: 34,
+            ...shadow.s,
+          }}>
+            {/* Sparkles (centered) */}
+            <View
+              pointerEvents="none"
+              style={[StyleSheet.absoluteFillObject, { alignItems: 'center', justifyContent: 'center' }]}
+            >
+              <View style={{ width: 0, height: 0 }}>
+                {Array.from({ length: P }).map((_, i) => (
+                  <Animated.View
+                    key={i}
+                    style={[{ position: 'absolute', width: 6, height: 6, borderRadius: 99 }, particleStyle(i)]}
+                  />
+                ))}
+              </View>
+            </View>
+
+            {/* Heart icon */}
+            <Animated.View style={heartIconStyle}>
+              <Ionicons
+                name={isFav ? 'heart' : 'heart-outline'}
+                size={16}
+                color={isFav ? accent : '#6B7280'}
+              />
+            </Animated.View>
+          </View>
+        </AnimatedPressable>
+
+        {isMyTile && (
+          <View style={styles.tileActions}>
+            <TouchableOpacity onPress={() => onEditTile?.(t)} style={[styles.actionChip, styles.editChip]}>
+              <Ionicons name="create-outline" size={16} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => onDeleteTile?.(t)} style={[styles.actionChip, styles.deleteChip]}>
+              <Ionicons name="trash-outline" size={16} />
+            </TouchableOpacity>
+          </View>
         )}
       </View>
-
-      {/* Overlay label over the image */}
-      <View style={styles.overlayLabelWrap}>
-        <Text numberOfLines={1} style={styles.overlayLabelText}>{t.label}</Text>
-      </View>
-
-      <Animated.View style={[styles.bottomBar, { backgroundColor: accent }]} />
-
-      <TouchableOpacity
-        onPress={() => onToggleFav(t.id)}
-        activeOpacity={0.8}
-        style={{
-          position: 'absolute', top: 6, right: 6,
-          backgroundColor: 'rgba(255,255,255,0.9)',
-          borderRadius: 999, paddingHorizontal: 8, paddingVertical: 6
-        }}
-      >
-        <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={16} color={isFav ? '#EF4444' : '#6B7280'} />
-      </TouchableOpacity>
-
-      {isMyTile && (
-        <View style={styles.tileActions}>
-          <TouchableOpacity onPress={() => onEditTile?.(t)} style={[styles.actionChip, styles.editChip]}>
-            <Ionicons name="create-outline" size={16} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => onDeleteTile?.(t)} style={[styles.actionChip, styles.deleteChip]}>
-            <Ionicons name="trash-outline" size={16} />
-          </TouchableOpacity>
-        </View>
-      )}
     </AnimatedPressable>
   );
 }
@@ -809,9 +1018,10 @@ export default function AACGrid() {
       tiles: favTiles,
     };
 
+    const coreCategories = CATEGORIES.filter((c) => c.id !== FAV_CATEGORY_ID && c.id !== MY_CATEGORY_ID);
     return [
-      ...CATEGORIES,
       favCat,
+      ...coreCategories,
       myTilesCat,
     ];
   }, [favorites, customTiles]);
@@ -1024,21 +1234,24 @@ export default function AACGrid() {
     Haptics.selectionAsync();
     setUtterance(s => [...s, t.id]);
     const say = tWord(t.id, selectedLang);
-    scheduleSpeak(say, selectedLang, 120);
+    scheduleSpeak(say, selectedLang, 10);
   };
 
   const onSpeakSentence = () => {
     if (!utterance.length) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const say = tSentence(utterance, selectedLang);
-    scheduleSpeak(say, selectedLang, 80);
+    scheduleSpeak(say, selectedLang, 10);
   };
 
   const theme = CATEGORY_STYLES[activeCat];
   const addBtnBottom = (insets.bottom || 12) + Platform.select({ ios: 76, android: 84, default: 82 });
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.bg}}>
+    <View style={{ flex: 1, backgroundColor: theme.bg, overflow: 'visible'}}>
+      {/* Menu - positioned absolutely */}
+      <GridMenu />
+      
       {/* Top bar: Back (left) + Search + Language menu button (right) */}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
         <View
@@ -1103,8 +1316,7 @@ export default function AACGrid() {
             </Text>
           </TouchableOpacity>
 
-          {/* AAC-grid specific menu button */}
-          <GridMenu />
+          {/* Menu button is positioned absolutely, no need to render here */}
 
         </View>
       </View>
@@ -1134,8 +1346,12 @@ export default function AACGrid() {
       </View>
 
       {/* Category chips (responsive wrap) */}
-      <View style={{ marginTop: 10, paddingHorizontal: 16 }}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 8 }}>
+      <View style={{ marginTop: 10 }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, columnGap: 8 }}
+        >
           {allCategories.map((item) => {
             const active = item.id === activeCat;
             return (
@@ -1149,7 +1365,7 @@ export default function AACGrid() {
               </TouchableOpacity>
             );
           })}
-        </View>
+        </ScrollView>
       </View>
 
       {/* Common words lane */}
@@ -1167,7 +1383,7 @@ export default function AACGrid() {
               onPress={(tile) => {
                 Haptics.selectionAsync();
                 setUtterance(s => [...s, tile.id]);
-                scheduleSpeak(tWord(tile.id, selectedLang), selectedLang, 100);
+                scheduleSpeak(tWord(tile.id, selectedLang), selectedLang, 10);
               }}
             />
           )}
@@ -1179,20 +1395,25 @@ export default function AACGrid() {
 
       {/* Grid */}
       <FlatList
-        style={{ marginTop: 6, paddingHorizontal: 16 }}
+        style={{ flex: 1, marginTop: 6, paddingHorizontal: 16 }}
         data={filteredTiles}
         key={`auto-cols-${cols}-${category.id}`}
         numColumns={cols}
         keyExtractor={(t) => t.id}
-        columnWrapperStyle={{ columnGap: 8 }}
-        contentContainerStyle={{ paddingBottom: 28, rowGap: 8 }}
+        columnWrapperStyle={cols > 1 ? { columnGap: 8, overflow: 'visible', position: 'relative' } : undefined}
+        contentContainerStyle={{ 
+          paddingBottom: 28, 
+          rowGap: 8,
+        }}
         initialNumToRender={12}
         maxToRenderPerBatch={12}
         windowSize={5}
         removeClippedSubviews
         updateCellsBatchingPeriod={40}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={true}
         renderItem={({ item, index }) => (
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, overflow: 'visible', position: 'relative' }}>
             <TileCard
               t={item}
               index={index}
@@ -1554,27 +1775,73 @@ const styles = StyleSheet.create({
   radioOuter: { width: 18, height: 18, borderRadius: 999, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   radioInner: { width: 10, height: 10, borderRadius: 999 },
 
-  // card - smaller tiles with bigger emojis
+  // card - images fill entire tile
   card: {
     aspectRatio: 1,
     borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 8,
-    paddingBottom: 6,
-    paddingHorizontal: 8,
-    borderWidth: 1.5,
     position: 'relative',
+    overflow: 'visible',
   },
-  emojiWrap: { width: '100%', alignItems: 'center', justifyContent: 'center', flexGrow: 1 },
-  emojiHalo: { position: 'absolute', width: 72, height: 72, borderRadius: 999, top: '50%', left: '50%', transform: [{ translateX: -36 }, { translateY: -36 }] },
-  emojiImage: { width: '100%', height: '100%', position: 'absolute' },
+  cardInner: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#FFFFFF',
+  },
+  fullImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  tapGlow: {
+    position: 'absolute',
+    top: -8,
+    left: -8,
+    right: -8,
+    bottom: -8,
+    borderRadius: 16,
+    borderWidth: 2,
+    opacity: 0,
+    pointerEvents: 'none',
+  },
+  emojiWrap: { 
+    width: '100%', 
+    height: '100%',
+    alignItems: 'center', 
+    justifyContent: 'center',
+    position: 'absolute',
+  },
   emojiText: { fontSize: 48 },
-  overlayLabelWrap: { position: 'absolute', left: 6, right: 6, bottom: 6, alignItems: 'center' },
-  overlayLabelText: { fontWeight: '800', color: '#111827', backgroundColor: 'rgba(255,255,255,0.92)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, overflow: 'hidden', fontSize: 12 },
-  bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 4 },
+  overlayLabelWrap: { 
+    position: 'absolute', 
+    left: 0,
+    right: 0,
+    bottom: 12, 
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  labelBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+  },
+  overlayLabelText: { 
+    fontWeight: '700', 
+    color: '#111827', 
+    fontSize: 11,
+    letterSpacing: 0.2,
+  },
+  bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 4, zIndex: 3 },
 
   // Action chips for editing
   tileActions: {
@@ -1645,4 +1912,39 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   btnText: { color: "#fff", fontWeight: "600" },
+
+  heartWrap: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heartRing: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  heartIcon: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

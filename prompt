@@ -1,1 +1,12 @@
 align the menu bar with search bar and languagge menu. in all the other tabs menu bar is working and in the correct place but in the aac grid it should be align with search bar and language button. also make the new tab for contact us. add this tab in menu bar also the ui of this should be brillinat. and attractive use shadcn. and there should be links for instagram, my website, contact number and email in contact us message. and in the contact us tab they can simply message us that will be stored in the databse. we should k now from which user weve got this message or make object nmaed message with user info containing all the info about message 
+
+
+Gaps and notes
+JWT verification for API is TODO; identity flows via headers for now.
+app/(tabs)/Profile.tsx imports useAuth from ../../src/auth/AuthProvider (native path) instead of from app/_layout. Works at runtime due to platform-resolved files, but consider normalizing imports.
+Upload limit enforced (1MB). UI validates and surfaces user-friendly errors.
+If you want, I can:
+Set up Auth0 JWT validation middleware on the backend.
+Add environment examples and a quick-start README update.
+Normalize useAuth imports and tighten typing across the app.
+I scanned the manifests and main frontend/backend modules and mapped endpoints, screens, and models end-to-end.
