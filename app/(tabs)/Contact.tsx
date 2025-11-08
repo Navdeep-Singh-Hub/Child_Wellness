@@ -129,7 +129,12 @@ export default function Contact() {
   return (
     <PaperProvider>
       <SafeAreaView style={{ flex: 1, backgroundColor: '#F6F7FB' }}>
-        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+        <ScrollView
+          contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+          bounces={false}
+          overScrollMode="never"
+          showsVerticalScrollIndicator={false}
+        >
           {/* HERO */}
           <Card>
             <LinearGradient
