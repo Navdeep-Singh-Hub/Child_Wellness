@@ -1236,6 +1236,9 @@ function GameCard({ game, index, onPress }: { game: MenuGame; index: number; onP
 }
 
 export default function GamesScreen() {
+  // Enable scrolling only when content exceeds viewport
+  const [containerH, setContainerH] = useState(0);
+  const [contentH, setContentH] = useState(0);
   const [screen, setScreen] = useState<GameKey>('menu');
   const [stats, setStats] = useState<{ xp?: number; streakDays?: number } | null>(null);
 
@@ -1315,7 +1318,10 @@ export default function GamesScreen() {
           style={StyleSheet.absoluteFillObject}
         />
         <ScrollView
-          contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+          onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
+          onContentSizeChange={(_, h) => setContentH(h)}
+          scrollEnabled={contentH > containerH + 1}
+          contentContainerStyle={{ padding: 20, paddingBottom: 40, flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
           bounces={false}
           overScrollMode="never"

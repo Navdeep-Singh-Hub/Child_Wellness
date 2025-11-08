@@ -7,6 +7,9 @@ type Stats = { xp: number; coins: number; hearts: number; streakDays: number; be
 
 export default function Index() {
   const [stats, setStats] = useState<Stats | null>(null);
+  // Enable scroll only when needed
+  const [containerH, setContainerH] = useState(0);
+  const [contentH, setContentH] = useState(0);
 
   const loadStats = useCallback(async () => {
     try {
@@ -43,7 +46,10 @@ export default function Index() {
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView
-        contentContainerStyle={{ padding: 16 }}
+        onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
+        onContentSizeChange={(_, h) => setContentH(h)}
+        scrollEnabled={contentH > containerH + 1}
+        contentContainerStyle={{ padding: 16, flexGrow: 1 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         bounces={false}
         overScrollMode="never"

@@ -79,6 +79,9 @@ export default function Contact() {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  // Enable scrolling only when content exceeds viewport height
+  const [containerH, setContainerH] = useState(0);
+  const [contentH, setContentH] = useState(0);
 
   const userEmail = session?.user?.email ?? '';
   const userName = session?.user?.name ?? '';
@@ -130,7 +133,10 @@ export default function Contact() {
     <PaperProvider>
       <SafeAreaView style={{ flex: 1, backgroundColor: '#F6F7FB' }}>
         <ScrollView
-          contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+          onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
+          onContentSizeChange={(_, h) => setContentH(h)}
+          scrollEnabled={contentH > containerH + 1}
+          contentContainerStyle={{ padding: 16, paddingBottom: 40, flexGrow: 1 }}
           bounces={false}
           overScrollMode="never"
           showsVerticalScrollIndicator={false}
