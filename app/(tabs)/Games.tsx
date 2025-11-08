@@ -590,6 +590,8 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
             numColumns={3}
             columnWrapperStyle={{ justifyContent: 'space-between', gap: 12 }}
             contentContainerStyle={{ gap: 12 }}
+            bounces={false}
+            overScrollMode="never"
             renderItem={({ item }) => (item ? <ChoiceCard tile={item} onPress={() => onPick(item)} /> : null)}
           />
         </View>
@@ -1116,6 +1118,8 @@ const POOL: Tile[] = useMemo(() => {
           keyExtractor={(it, i) => `${it.id}-${freezeKey}-${i}`}
           numColumns={2}
           columnWrapperStyle={{ justifyContent: "space-between" }}
+          bounces={false}
+          overScrollMode="never"
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => onPick(item)}
@@ -1313,6 +1317,8 @@ export default function GamesScreen() {
         <ScrollView
           contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
+          bounces={false}
+          overScrollMode="never"
         >
           {/* Header */}
           <Animated.View style={[menuStyles.headerWrap, headerStyle]}>

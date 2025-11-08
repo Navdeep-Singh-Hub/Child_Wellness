@@ -45,6 +45,9 @@ export default function Index() {
       <ScrollView
         contentContainerStyle={{ padding: 16 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        bounces={false}
+        overScrollMode="never"
+        showsVerticalScrollIndicator={false}
       >
         {/* Welcome */}
         <View className="items-center mb-6 mt-10">

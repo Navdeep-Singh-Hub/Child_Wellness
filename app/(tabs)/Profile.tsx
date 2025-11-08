@@ -100,7 +100,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       {/* Gradient background */}
       <LinearGradient
         colors={['#DDEBFF', '#F8F6FF', '#FFFFFF']}
@@ -189,7 +189,12 @@ export default function ProfileScreen() {
           transform: [{ translateY: slide }],
         }}
       >
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}>
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}
+          bounces={false}
+          overScrollMode="never"
+          showsVerticalScrollIndicator={false}
+        >
           <Text style={{ fontSize: 18, fontWeight: '800', color: '#111827', marginBottom: 8 }}>
             Your information
           </Text>

@@ -52,7 +52,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 const MENU_WIDTH = 280;
 const CLOSED_OFFSET = MENU_WIDTH + 16;
 
-function GridMenu() {
+function GridMenu({ inline = false }: { inline?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
@@ -113,9 +113,8 @@ function GridMenu() {
         onPress={() => setOpen(true)}
         activeOpacity={0.9}
         style={{
-          position: 'absolute',
-          right: 16,
-          top: Platform.select({
+          right: inline ? undefined : 16,
+          top: inline ? undefined : Platform.select({
             web: 16,
             ios: insets.top + 8,
             android: insets.top + 8,
@@ -139,48 +138,41 @@ function GridMenu() {
         <Ionicons name="menu" size={22} color="#fff" />
       </TouchableOpacity>
 
-      {/* Overlay */}
-      {open && (
-        <Pressable
-          onPress={() => setOpen(false)}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 999,
-          }}
-        >
+      {/* Full-screen overlay via Modal for consistent slide menu */}
+      <Modal visible={open} transparent animationType="none" onRequestClose={() => setOpen(false)}>
+        <View style={{ flex: 1 }}>
+          <Pressable
+            onPress={() => setOpen(false)}
+            style={[StyleSheet.absoluteFillObject, { zIndex: 999 }]}
+          >
+            <RNAnimated.View
+              style={{
+                flex: 1,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                opacity: overlayOpacity,
+              }}
+            />
+          </Pressable>
+
+          {/* Slide-out Menu (right side) */}
           <RNAnimated.View
             style={{
-              flex: 1,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              opacity: overlayOpacity,
+              position: 'absolute',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: MENU_WIDTH,
+              backgroundColor: '#FFFFFF',
+              zIndex: 1001,
+              transform: [{ translateX: slideAnim }],
+              shadowColor: '#000',
+              shadowOpacity: 0.3,
+              shadowRadius: 20,
+              shadowOffset: { width: -4, height: 0 },
+              elevation: 15,
+              paddingTop: insets.top + 20,
             }}
-          />
-        </Pressable>
-      )}
-
-      {/* Slide-out Menu (right side) */}
-      <RNAnimated.View
-        style={{
-          position: 'absolute',
-          right: 0,
-          top: 0,
-          bottom: 0,
-          width: MENU_WIDTH,
-          backgroundColor: '#FFFFFF',
-          zIndex: 1001,
-          transform: [{ translateX: slideAnim }],
-          shadowColor: '#000',
-          shadowOpacity: 0.3,
-          shadowRadius: 20,
-          shadowOffset: { width: -4, height: 0 },
-          elevation: 15,
-          paddingTop: insets.top + 20,
-        }}
-      >
+          >
         <View style={{ paddingHorizontal: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <Text style={{ fontSize: 24, fontWeight: '800', color: '#111827' }}>Menu</Text>
@@ -237,7 +229,9 @@ function GridMenu() {
             );
           })}
         </View>
-      </RNAnimated.View>
+          </RNAnimated.View>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -1249,8 +1243,6 @@ export default function AACGrid() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg, overflow: 'visible'}}>
-      {/* Menu - positioned absolutely */}
-      <GridMenu />
       
       {/* Top bar: Back (left) + Search + Language menu button (right) */}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
@@ -1260,7 +1252,7 @@ export default function AACGrid() {
             alignItems: 'center',
             columnGap: 10,
             rowGap: 10,
-            flexWrap: 'wrap',      // radios wrap on small screens
+            flexWrap: 'nowrap',      // keep in a single line
           }}
         >
           {/* Back button */}
@@ -1316,7 +1308,8 @@ export default function AACGrid() {
             </Text>
           </TouchableOpacity>
 
-          {/* Menu button is positioned absolutely, no need to render here */}
+          {/* Menu button inline with search + language */}
+            <GridMenu inline />
 
         </View>
       </View>
@@ -1350,7 +1343,9 @@ export default function AACGrid() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, columnGap: 8 }}
+          bounces={false}
+          overScrollMode="never"
+          contentContainerStyle={{ paddingHorizontal: 16, columnGap: 8, backgroundColor: theme.bg }}
         >
           {allCategories.map((item) => {
             const active = item.id === activeCat;
@@ -1376,7 +1371,9 @@ export default function AACGrid() {
           keyExtractor={(t) => t.id}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16, columnGap: 10 }}
+          bounces={false}
+          overScrollMode="never"
+          contentContainerStyle={{ paddingHorizontal: 16, columnGap: 10, backgroundColor: theme.bg }}
           renderItem={({ item }) => (
             <AnimatedCommonChip
               t={item}
@@ -1395,7 +1392,7 @@ export default function AACGrid() {
 
       {/* Grid */}
       <FlatList
-        style={{ flex: 1, marginTop: 6, paddingHorizontal: 16 }}
+        style={{ flex: 1, marginTop: 6, paddingHorizontal: 16, backgroundColor: theme.bg }}
         data={filteredTiles}
         key={`auto-cols-${cols}-${category.id}`}
         numColumns={cols}
@@ -1409,6 +1406,8 @@ export default function AACGrid() {
         maxToRenderPerBatch={12}
         windowSize={5}
         removeClippedSubviews
+        bounces={false}
+        overScrollMode="never"
         updateCellsBatchingPeriod={40}
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled={true}
@@ -1470,17 +1469,19 @@ export default function AACGrid() {
         </View>
       )}
 
-      {/* Floating add button */}
-      <View style={{ position: 'absolute', right: 16, bottom: addBtnBottom, zIndex: 100 }}>
-        <TouchableOpacity
-          onPress={() => setShowAddModal(true)}
-          activeOpacity={0.9}
-          style={{ backgroundColor: '#2563EB', paddingHorizontal: 16, paddingVertical: 14, borderRadius: 999, flexDirection: 'row', alignItems: 'center', ...shadow.m }}
-        >
-          <Ionicons name="add" size={18} color="#fff" />
-          <Text style={{ color: '#fff', fontWeight: '800', marginLeft: 6 }}>Add Tile</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Floating add button (hidden when modal open) */}
+      {!showAddModal && (
+        <View style={{ position: 'absolute', right: 16, bottom: addBtnBottom, zIndex: 100 }}>
+          <TouchableOpacity
+            onPress={() => setShowAddModal(true)}
+            activeOpacity={0.9}
+            style={{ backgroundColor: '#2563EB', paddingHorizontal: 16, paddingVertical: 14, borderRadius: 999, flexDirection: 'row', alignItems: 'center', ...shadow.m }}
+          >
+            <Ionicons name="add" size={18} color="#fff" />
+            <Text style={{ color: '#fff', fontWeight: '800', marginLeft: 6 }}>Add Tile</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Add Tile Modal */}
       {showAddModal && (
