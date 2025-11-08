@@ -68,6 +68,7 @@ tapGame.post('/finish', async (req, res) => {
     await user.save();
 
     res.json({
+      roundId: round._id.toString(),
       pointsAwarded: points,
       deltaMs,
       targetSeconds: Math.round(round.targetMs / 1000),
