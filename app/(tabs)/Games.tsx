@@ -11,7 +11,6 @@ import Animated, {
   FadeInDown,
   FadeInUp,
   cancelAnimation,
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -20,9 +19,11 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { CATEGORIES, type Tile, tileImages } from '@/constants/aac';
+import { ResultToast, SparkleBurst, Stepper } from '@/components/game/FX';
 import { icons } from '@/constants/icons';
 import { images } from '@/constants/images';
 import { fetchMyStats, finishTapRound, logGameAndAward, recordGame, startTapRound } from '@/utils/api';
+import ResultCard from '@/components/game/ResultCard';
 
 // -------------------- Shared UI helpers --------------------
 function Card({ children, style }: any) {
@@ -94,6 +95,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
   const [state, setState] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
   const [msg, setMsg] = useState<string | null>(null);
   const [summary, setSummary] = useState<{ xp: number; streak: number; games: number } | null>(null);
+  const [tapDeltaMs, setTapDeltaMs] = useState<number | null>(null);
 
   const startClientAt = useRef<number | null>(null);
   const raf = useRef<number | null>(null);
@@ -155,11 +157,13 @@ function TapTiming({ onBack }: { onBack: () => void }) {
     stopTicker();
     try {
       const res = await finishTapRound(roundId);
+      const delta = typeof (res as any).deltaMs === 'number' && !isNaN((res as any).deltaMs)
+        ? Math.abs((res as any).deltaMs)
+        : Math.abs(elapsedMs - (targetSec ?? 0) * 1000);
       setState('done');
+      setTapDeltaMs(delta);
       setMsg(
-        `Target ${res.targetSeconds}s · Yours ${(elapsedMs / 1000).toFixed(1)}s · Δ ${Math.round(
-          res.deltaMs
-        )}ms → +${res.pointsAwarded} XP`
+        `Target ${res.targetSeconds}s · Yours ${(elapsedMs / 1000).toFixed(1)}s · Δ ${Math.round(delta)}ms → +${res.pointsAwarded} XP`
       );
       setSummary({
         xp: res.stats.points,
@@ -171,7 +175,8 @@ function TapTiming({ onBack }: { onBack: () => void }) {
           type: 'tap',
           correct: 1,
           total: 1,
-          accuracy: Math.max(0, 100 - Math.min(Math.abs(res.deltaMs) / 10, 100)), // crude map
+          // Softer mapping: 0ms -> 100, 2000ms -> 0
+          accuracy: Math.max(0, 100 - Math.min(delta / 20, 100)),
           xpAwarded: res.pointsAwarded,
           durationMs: elapsedMs,
         });
@@ -192,10 +197,12 @@ function TapTiming({ onBack }: { onBack: () => void }) {
 
   // Completion screen
   if (state === 'done' && summary && msg) {
-    // Extract delta from msg if available, otherwise estimate
-    const deltaMatch = msg.match(/Δ (\d+)ms/);
-    const deltaMs = deltaMatch ? parseInt(deltaMatch[1]) : 0;
-    const accuracy = Math.max(0, 100 - Math.min(Math.abs(deltaMs) / 10, 100));
+    // Prefer numeric delta captured from API; fallback to parsing string
+    const deltaMatch = msg.match(/Δ\s*(-?\d+)ms/);
+    const parsed = deltaMatch ? Math.abs(parseInt(deltaMatch[1])) : null;
+    const deltaMs = tapDeltaMs ?? parsed ?? 0;
+    // Softer mapping: 0ms => 100, 1000ms => 50, 2000ms => 0
+    const accuracy = Math.max(0, 100 - Math.min(deltaMs / 20, 100));
     return (
       <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
         <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
@@ -397,7 +404,9 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
   const [target, setTarget] = useState<Tile | null>(null);
   const [choices, setChoices] = useState<Tile[]>([]);
   const [done, setDone] = useState(false);
-  const [pmFeedback, setPmFeedback] = useState<null | 'correct' | 'wrong'>(null);
+  const [pmFeedback, setPmFeedback] = useState<null | 'ok' | 'bad'>(null);
+  const [fxKey, setFxKey] = useState(0);
+  const [locked, setLocked] = useState(false);
   const [finalScore, setFinalScore] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const pmToastOpacity = useSharedValue(0);
   const pmToastY = useSharedValue(12);
@@ -413,10 +422,13 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
     const correct = pool[Math.floor(Math.random() * pool.length)];
     const wrongs = pool.filter((t) => t && t.id !== correct.id);
     shuffle(wrongs);
-    const opts = [correct, ...wrongs.slice(0, 2)].filter(Boolean) as Tile[];
+    // Shuffle final options so correct isn't always first
+    const opts = shuffle([correct, ...wrongs.slice(0, 2)]).filter(Boolean) as Tile[];
 
     setTarget(correct);
     setChoices(opts);
+    setPmFeedback(null);
+    setLocked(false);
     if (correct?.label) speak(correct.label);
     pulse.value = 1;
   }, [pulse]);
@@ -426,13 +438,16 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
   }, [next]);
 
   const onPick = async (t: Tile) => {
-    const ok = !!target && t?.id === target.id;
+    if (locked || !target) return; // guard
+    setLocked(true);
+    const ok = t?.id === target.id;
     animatePulse(pulse, ok);
     if (ok) setScore((s) => s + 1);
-    setPmFeedback(ok ? 'correct' : 'wrong');
+    setPmFeedback(ok ? 'ok' : 'bad');
+    setFxKey((k) => k + 1);
     pmToastOpacity.value = 0; pmToastY.value = 12;
-    pmToastOpacity.value = withTiming(1, { duration: 180 });
-    pmToastY.value = withTiming(0, { duration: 180 });
+    pmToastOpacity.value = withTiming(1, { duration: 140 });
+    pmToastY.value = withTiming(0, { duration: 140 });
 
     if (round >= 5) {
       setDone(true);
@@ -453,57 +468,34 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
       speak('Well done!');
     } else {
       setRound((r) => r + 1);
-      setTimeout(() => { pmToastOpacity.value = withTiming(0, { duration: 160 }); next(); }, 220);
+      setTimeout(() => {
+        pmToastOpacity.value = withTiming(0, { duration: 120 });
+        next();
+      }, 180);
     }
   };
 
   // Completion screen
   if (done && finalScore) {
-    const allCorrect = finalScore.correct === finalScore.total;
     return (
       <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
         <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
           <Text className="text-white font-semibold">← Back</Text>
         </TouchableOpacity>
-
         <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center">
-          <Text className="text-6xl mb-4">{allCorrect ? '🎉' : '🎊'}</Text>
-          <Text className="text-3xl font-extrabold text-gray-900 mb-2">
-            {allCorrect ? 'Perfect Score!' : 'Game Complete!'}
-          </Text>
-          <Text className="text-xl text-gray-600 mb-6">
-            You got {finalScore.correct} out of {finalScore.total} correct!
-          </Text>
-
-          <View className="w-full bg-gray-50 rounded-2xl p-4 mb-4">
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-gray-700 font-semibold">Final Score:</Text>
-              <Text className="text-gray-900 font-extrabold text-lg">
-                {finalScore.correct}/{finalScore.total}
-              </Text>
-            </View>
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-gray-700 font-semibold">Accuracy:</Text>
-              <Text className="text-gray-900 font-extrabold text-lg">
-                {Math.round((finalScore.correct / finalScore.total) * 100)}%
-              </Text>
-            </View>
-            <View className="flex-row justify-between items-center">
-              <Text className="text-gray-700 font-semibold">XP Earned:</Text>
-              <Text className="text-green-600 font-extrabold text-lg">+{finalScore.xp} XP</Text>
-            </View>
-          </View>
-
-          <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
-
-          <BigButton title="Play Again" color="#22C55E" onPress={() => {
-            setRound(1);
-            setScore(0);
-            setDone(false);
-            setFinalScore(null);
-            setPmFeedback(null);
-            next();
-          }} />
+          <ResultCard
+            correct={finalScore.correct}
+            total={finalScore.total}
+            onPlayAgain={() => {
+              setRound(1);
+              setScore(0);
+              setDone(false);
+              setFinalScore(null);
+              setPmFeedback(null);
+              next();
+            }}
+            onHome={onBack}
+          />
         </View>
       </SafeAreaView>
     );
@@ -542,34 +534,10 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
         borderWidth: 1,
         borderColor: '#E5E7EB',
       }}>
-        <View style={{ 
-          flexDirection: 'row', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          marginBottom: 16,
-        }}>
-          <View style={{
-            backgroundColor: '#22C55E',
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderRadius: 12,
-          }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>
-              Round {round}/5
-            </Text>
-          </View>
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: '#FEF3C7',
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderRadius: 12,
-          }}>
-            <Text style={{ fontSize: 16, fontWeight: '800', color: '#92400E' }}>
-              Score: {score}
-            </Text>
-          </View>
+        {/* HUD */}
+        <Stepper step={round} total={5} />
+        <View style={{ alignSelf: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: '#111827', marginBottom: 10 }}>
+          <Text style={{ color: '#fff', fontWeight: '800' }}>Score: {score}</Text>
         </View>
 
         <View style={{ alignItems: 'center', marginBottom: 24 }}>
@@ -582,6 +550,9 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
             </Text>
           </Animated.View>
         </View>
+
+        {/* Fireworks on correct */}
+        {pmFeedback === 'ok' && <SparkleBurst key={fxKey} visible color="#22C55E" />}
 
         <View style={{ marginBottom: 20 }}>
           <FlatList
@@ -596,17 +567,10 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
           />
         </View>
 
-        <Animated.View style={[{ marginTop: 6 }, pmToastStyle]}>
-          {pmFeedback === 'correct' ? (
-            <View style={{ backgroundColor: '#DCFCE7', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 }}>
-              <Text className="text-green-800 font-extrabold">✅ Correct! +10 XP</Text>
-            </View>
-          ) : pmFeedback === 'wrong' ? (
-            <View style={{ backgroundColor: '#FEE2E2', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18 }}>
-              <Text className="text-red-800 font-extrabold">✗ Try the next one</Text>
-            </View>
-          ) : null}
-        </Animated.View>
+        {/* Toast overlay */}
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center', zIndex: 40 }}>
+          <ResultToast text={pmFeedback === 'ok' ? 'Correct!' : 'Oops!'} type={pmFeedback === 'ok' ? 'ok' : 'bad'} show={!!pmFeedback} />
+        </View>
 
         {done ? <Text className="mt-3 text-green-600 font-semibold text-center">Saved! XP updated ✅</Text> : null}
       </View>
@@ -1413,9 +1377,12 @@ function ChoiceCard({ tile, onPress }: { tile?: Tile; onPress: () => void }) {
     >
       <TouchableOpacity
         onPress={() => {
+          // Call the game callback immediately — no waiting
+          onPress();
+          // Run button pop animation in parallel (purely visual)
           cancelAnimation(scale);
-          scale.value = withTiming(1.05, { duration: 90 }, (f) => {
-            if (f) scale.value = withSpring(1, { damping: 18, stiffness: 260 }, () => runOnJS(onPress)());
+          scale.value = withTiming(1.05, { duration: 70 }, (f) => {
+            if (f) scale.value = withSpring(1, { damping: 16, stiffness: 280 });
           });
         }}
         activeOpacity={0.9}
