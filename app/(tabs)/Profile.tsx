@@ -38,6 +38,9 @@ export default function ProfileScreen() {
 
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  // Enable scroll only when content exceeds viewport
+  const [containerH, setContainerH] = useState(0);
+  const [contentH, setContentH] = useState(0);
 
   // --- Simple entrance animations (no extra libs) ---
   const fade = useRef(new Animated.Value(0)).current;
@@ -190,7 +193,10 @@ export default function ProfileScreen() {
         }}
       >
         <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28 }}
+          onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
+          onContentSizeChange={(_, h) => setContentH(h)}
+          scrollEnabled={contentH > containerH + 1}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 28, flexGrow: 1 }}
           bounces={false}
           overScrollMode="never"
           showsVerticalScrollIndicator={false}
