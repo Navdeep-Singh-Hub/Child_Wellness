@@ -1285,7 +1285,7 @@ export default function GamesScreen() {
           onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
           onContentSizeChange={(_, h) => setContentH(h)}
           scrollEnabled={contentH > containerH + 1}
-          contentContainerStyle={{ padding: 20, paddingBottom: 40, flexGrow: 1 }}
+          contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
           bounces={false}
           overScrollMode="never"
