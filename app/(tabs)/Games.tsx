@@ -1282,13 +1282,16 @@ export default function GamesScreen() {
           style={StyleSheet.absoluteFillObject}
         />
         <ScrollView
+          style={{ flex: 1 }}
           onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
           onContentSizeChange={(_, h) => setContentH(h)}
-          scrollEnabled={contentH > containerH + 1}
+          scrollEnabled={contentH > containerH + 10}
           contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
           bounces={false}
+          alwaysBounceVertical={false}
           overScrollMode="never"
+          nestedScrollEnabled={false}
         >
           {/* Header */}
           <Animated.View style={[menuStyles.headerWrap, headerStyle]}>
