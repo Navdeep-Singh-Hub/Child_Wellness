@@ -132,15 +132,19 @@ export default function Contact() {
   return (
     <PaperProvider>
       <SafeAreaView style={{ flex: 1, backgroundColor: '#F6F7FB' }}>
-        <ScrollView
-          onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
-          onContentSizeChange={(_, h) => setContentH(h)}
-          scrollEnabled={contentH > containerH + 1}
-          contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-          bounces={false}
-          overScrollMode="never"
-          showsVerticalScrollIndicator={false}
-        >
+        <View style={{ flex: 1 }}>
+          <ScrollView
+            style={{ flex: 1 }}
+            onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
+            onContentSizeChange={(_, h) => setContentH(h)}
+            scrollEnabled={contentH > containerH + 10}
+            contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+            bounces={false}
+            alwaysBounceVertical={false}
+            overScrollMode="never"
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled={false}
+          >
           {/* HERO */}
           <Card>
             <LinearGradient
@@ -369,7 +373,8 @@ export default function Contact() {
               Typically responds within a few hours.
             </Text>
           </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
       </SafeAreaView>
     </PaperProvider>
   );
