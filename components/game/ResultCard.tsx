@@ -7,12 +7,15 @@ import { SparkleBurst } from './FX';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-export default function ResultCard({ correct, total, onPlayAgain, onHome }: {
+export default function ResultCard({ correct, total, onPlayAgain, onHome, xpAwarded, accuracy }: {
   correct: number; total: number;
   onPlayAgain?: () => void; onHome?: () => void;
+  xpAwarded?: number;
+  accuracy?: number;
 }) {
   const pct = total ? correct / total : 0;
   const prog = useSharedValue(0);
+  const displayedAccuracy = accuracy !== undefined ? accuracy : Math.round(pct * 100);
 
   useEffect(() => { prog.value = 0; prog.value = withTiming(pct, { duration: 700 }); }, [pct]);
 
@@ -34,11 +37,29 @@ export default function ResultCard({ correct, total, onPlayAgain, onHome }: {
           </Svg>
           <View style={{ position: 'absolute', alignItems: 'center' }}>
             <Text style={{ fontSize: 30, fontWeight: '900', color: '#111827' }}>{correct}/{total}</Text>
-            <Text style={{ marginTop: 2, color: '#6B7280', fontWeight: '700' }}>{Math.round(pct*100)}%</Text>
+            <Text style={{ marginTop: 2, color: '#6B7280', fontWeight: '700' }}>{displayedAccuracy}%</Text>
           </View>
         </View>
         <SparkleBurst visible={pct >= 0.6} color={pct >= 0.8 ? '#F59E0B' : '#22C55E'} />
       </View>
+
+      {/* Additional stats */}
+      {(xpAwarded !== undefined || accuracy !== undefined) && (
+        <View style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 12, marginBottom: 12, width: '100%' }}>
+          {xpAwarded !== undefined && (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Text style={{ color: '#6B7280', fontWeight: '600' }}>XP Earned:</Text>
+              <Text style={{ color: '#111827', fontWeight: '800' }}>+{xpAwarded}</Text>
+            </View>
+          )}
+          {accuracy !== undefined && (
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Text style={{ color: '#6B7280', fontWeight: '600' }}>Accuracy:</Text>
+              <Text style={{ color: '#111827', fontWeight: '800' }}>{displayedAccuracy}%</Text>
+            </View>
+          )}
+        </View>
+      )}
 
       <View style={{ alignItems: 'center', gap: 10, marginTop: 6 }}>
         {onPlayAgain && (

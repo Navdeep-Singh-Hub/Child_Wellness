@@ -123,50 +123,90 @@ export default function ProfileScreen() {
           marginBottom: 13,
         }}
       >
-        <View
+        <Animated.View
           style={{
-            backgroundColor: 'rgba(255,255,255,0.9)',
+            backgroundColor: 'rgba(255,255,255,0.95)',
             borderRadius: 24,
-            padding: 16,
+            padding: 20,
             borderWidth: 1,
-            borderColor: 'rgba(17,17,17,0.06)',
+            borderColor: 'rgba(17,17,17,0.08)',
             shadowColor: '#000',
-            shadowOpacity: 0.08,
-            shadowRadius: 10,
-            shadowOffset: { width: 0, height: 6 },
-            elevation: 4,
+            shadowOpacity: 0.12,
+            shadowRadius: 16,
+            shadowOffset: { width: 0, height: 8 },
+            elevation: 6,
+            transform: [{ scale: pulse }],
           }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {user?.imageUrl ? (
-              <Image source={{ uri: user.imageUrl }} style={{ width: 72, height: 72, borderRadius: 999 }} />
-            ) : (
-              <View style={{ width: 72, height: 72, borderRadius: 999, backgroundColor: '#E5E7EB' }} />
-            )}
+            <Animated.View
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: 999,
+                backgroundColor: '#E5E7EB',
+                overflow: 'hidden',
+                borderWidth: 3,
+                borderColor: '#FFFFFF',
+                shadowColor: '#000',
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 4,
+              }}
+            >
+              {user?.imageUrl ? (
+                <Image source={{ uri: user.imageUrl }} style={{ width: '100%', height: '100%' }} />
+              ) : (
+                <View style={{ width: '100%', height: '100%', backgroundColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="person" size={40} color="#9CA3AF" />
+                </View>
+              )}
+            </Animated.View>
 
-            <View style={{ marginLeft: 12, flex: 1 }}>
-              <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827' }}>
+            <View style={{ marginLeft: 16, flex: 1 }}>
+              <Text style={{ fontSize: 22, fontWeight: '900', color: '#111827', marginBottom: 4 }}>
                 {user?.fullName || user?.username || 'Your profile'}
               </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-                <Ionicons name="mail-outline" size={14} color="#6B7280" />
-                <Text style={{ marginLeft: 6, color: '#6B7280' }}>
-                  {user?.primaryEmail || 'Signed in'}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, marginBottom: 10 }}>
+                <Ionicons name="mail-outline" size={16} color="#6B7280" />
+                <Text style={{ marginLeft: 6, color: '#6B7280', fontSize: 14 }}>
+                  {user?.primaryEmail || email || 'Signed in'}
                 </Text>
               </View>
 
               {/* tiny badges */}
-              <View style={{ flexDirection: 'row', marginTop: 8 }}>
-                <View style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, marginRight: 8 }}>
-                  <Text style={{ color: '#3730A3', fontWeight: '800', fontSize: 12 }}>AAC</Text>
-                </View>
-                <View style={{ backgroundColor: '#ECFEFF', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 }}>
-                  <Text style={{ color: '#0E7490', fontWeight: '800', fontSize: 12 }}>Kid-friendly</Text>
-                </View>
+              <View style={{ flexDirection: 'row', marginTop: 4 }}>
+                <Animated.View 
+                  style={{ 
+                    backgroundColor: '#EEF2FF', 
+                    paddingHorizontal: 12, 
+                    paddingVertical: 6, 
+                    borderRadius: 999, 
+                    marginRight: 8,
+                    borderWidth: 1,
+                    borderColor: '#DBEAFE',
+                  }}
+                >
+                  <Text style={{ color: '#3730A3', fontWeight: '800', fontSize: 11 }}>AAC</Text>
+                </Animated.View>
+                <Animated.View 
+                  style={{ 
+                    backgroundColor: '#ECFEFF', 
+                    paddingHorizontal: 12, 
+                    paddingVertical: 6, 
+                    borderRadius: 999,
+                    borderWidth: 1,
+                    borderColor: '#CFFAFE',
+                  }}
+                >
+                  <Text style={{ color: '#0E7490', fontWeight: '800', fontSize: 11 }}>Kid-friendly</Text>
+                </Animated.View>
               </View>
             </View>
 
-            <TouchableOpacity
+            <Animated.View style={{ transform: [{ scale: pulse }] }}>
+              <TouchableOpacity
                 onPress={async () => {
                   try {
                     await logout();
@@ -175,13 +215,28 @@ export default function ProfileScreen() {
                     router.replace('/(public)');
                   }
                 }}
-                style={{ marginLeft: 'auto', backgroundColor: '#EF4444', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999 }}
-                activeOpacity={0.9}
-            >
-                <Text style={{ color: 'white', fontWeight: '700' }}>Sign Out</Text>
-            </TouchableOpacity>
+                style={{ 
+                  marginLeft: 'auto', 
+                  backgroundColor: '#EF4444', 
+                  paddingHorizontal: 16, 
+                  paddingVertical: 12, 
+                  borderRadius: 999,
+                  shadowColor: '#EF4444',
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  shadowOffset: { width: 0, height: 4 },
+                  elevation: 4,
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="log-out-outline" size={16} color="#fff" />
+                  <Text style={{ color: 'white', fontWeight: '700', marginLeft: 6, fontSize: 14 }}>Sign Out</Text>
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
           </View>
-        </View>
+        </Animated.View>
       </Animated.View>
 
       {/* Body */}
