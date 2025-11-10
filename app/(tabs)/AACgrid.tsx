@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
-import { usePathname, useRouter } from "expo-router";
+import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import * as Speech from 'expo-speech';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Toast from 'react-native-toast-message';
@@ -97,6 +97,7 @@ function GridMenu({ inline = false }: { inline?: boolean }) {
     { title: 'Grids', route: '/(tabs)/AACgrid', icon: 'grid-outline' },
     { title: 'Profile', route: '/(tabs)/Profile', icon: 'person-outline' },
     { title: 'Contact Us', route: '/(tabs)/Contact', icon: 'mail-outline' },
+    { title: 'Add Tile', route: '/(tabs)/AACgrid?addTile=true', icon: 'add-circle-outline', isAction: true },
   ];
 
   const navigateTo = (route: string) => {
@@ -195,32 +196,47 @@ function GridMenu({ inline = false }: { inline?: boolean }) {
         <View style={{ paddingTop: 12 }}>
           {menuItems.map((item, index) => {
             const isActive = pathname === item.route || (item.route === '/(tabs)' && pathname === '/');
+            const isAction = (item as any).isAction;
             return (
               <TouchableOpacity
                 key={item.title}
-                onPress={() => navigateTo(item.route)}
+                onPress={() => {
+                  if (isAction && item.title === 'Add Tile') {
+                    setOpen(false);
+                    // Trigger add modal via context or direct call
+                    setTimeout(() => {
+                      // This will be handled by the parent component
+                      router.setParams({ addTile: 'true' });
+                    }, 100);
+                  } else {
+                    navigateTo(item.route);
+                  }
+                }}
                 activeOpacity={0.7}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
                   paddingVertical: 16,
                   paddingHorizontal: 20,
-                  backgroundColor: isActive ? '#F0F9FF' : 'transparent',
+                  backgroundColor: isActive ? '#F0F9FF' : (isAction ? '#EEF2FF' : 'transparent'),
                   borderLeftWidth: isActive ? 4 : 0,
                   borderLeftColor: '#2563EB',
+                  marginTop: isAction ? 8 : 0,
+                  borderTopWidth: isAction ? 1 : 0,
+                  borderTopColor: '#E5E7EB',
                 }}
               >
                 <Ionicons
                   name={item.icon as any}
                   size={22}
-                  color={isActive ? '#2563EB' : '#6B7280'}
+                  color={isActive ? '#2563EB' : (isAction ? '#6366F1' : '#6B7280')}
                   style={{ marginRight: 16 }}
                 />
                 <Text
                   style={{
                     fontSize: 16,
-                    fontWeight: isActive ? '700' : '600',
-                    color: isActive ? '#2563EB' : '#374151',
+                    fontWeight: isActive ? '700' : (isAction ? '700' : '600'),
+                    color: isActive ? '#2563EB' : (isAction ? '#6366F1' : '#374151'),
                   }}
                 >
                   {item.title}
@@ -944,6 +960,7 @@ export default function AACGrid() {
   const HEADER_H=56;
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [query, setQuery] = useState('');
   const [utterance, setUtterance] = useState<string[]>([]);
   const [activeCat, setActiveCat] = useState<Category['id']>('transport');
@@ -961,6 +978,15 @@ export default function AACGrid() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [customTiles, setCustomTiles] = useState<CustomTile[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  
+  // Check for addTile param and open modal
+  useEffect(() => {
+    if (params.addTile === 'true') {
+      setShowAddModal(true);
+      // Clear the param
+      router.setParams({ addTile: undefined });
+    }
+  }, [params.addTile]);
   const [newId, setNewId] = useState('');
   const [newLabel, setNewLabel] = useState('');
   const [newEmoji, setNewEmoji] = useState('');
@@ -1081,44 +1107,71 @@ export default function AACGrid() {
     try {
       const form = new FormData();
       const filename = `image-${Date.now()}.jpg`;
-      const type = 'image/jpeg';
+      
+      // Determine file type from URI or default to jpeg
+      let type = 'image/jpeg';
+      if (pickedUri.toLowerCase().endsWith('.png')) type = 'image/png';
+      else if (pickedUri.toLowerCase().endsWith('.gif')) type = 'image/gif';
+      else if (pickedUri.toLowerCase().endsWith('.webp')) type = 'image/webp';
 
-      if (pickedUri.startsWith('blob:')) {
+      if (Platform.OS === 'web' && pickedUri.startsWith('blob:')) {
+        // Web: convert blob to File
         const response = await fetch(pickedUri);
         const blob = await response.blob();
         const file = new File([blob], filename, { type });
         form.append('file', file);
       } else {
-        // @ts-ignore (RN FormData file)
-        form.append('file', { uri: pickedUri, name: filename, type });
+        // React Native: use file object format
+        // For React Native, we need to read the file and convert it
+        if (Platform.OS !== 'web') {
+          // Read file as base64 or use the URI directly
+          // @ts-ignore - React Native FormData format
+          form.append('file', {
+            uri: Platform.OS === 'android' ? pickedUri : pickedUri.replace('file://', ''),
+            name: filename,
+            type: type,
+          } as any);
+        } else {
+          // Web fallback
+          form.append('file', { uri: pickedUri, name: filename, type } as any);
+        }
       }
 
       const { authHeaders } = await import('@/utils/api');
-      const headers = await authHeaders?.({ multipart: true }) ?? {};
-      for (const k of Object.keys(headers)) {
-        if (k.toLowerCase() === 'content-type') delete (headers as any)[k];
-      }
+      const headers = await authHeaders({ multipart: true });
+      
+      // Remove Content-Type header to let browser/RN set it with boundary
+      const uploadHeaders: any = { ...headers };
+      delete uploadHeaders['Content-Type'];
+      delete uploadHeaders['content-type'];
+
+      console.log('Uploading image:', { filename, type, uri: pickedUri.substring(0, 50) + '...' });
 
       const res = await fetch(`${API_BASE_URL}/api/upload`, {
         method: 'POST',
-        headers,
+        headers: uploadHeaders,
         body: form,
       });
 
       if (!res.ok) {
         const text = await res.text();
+        console.error('Upload failed:', text);
         // Turn Multer/HTML errors into a clean message
         let msg = 'Upload failed';
         if (/File too large/i.test(text)) msg = 'Image too large (max 1MB).';
         else if (/MulterError/i.test(text)) msg = 'Upload error. Please try a smaller image.';
+        else if (/No file uploaded/i.test(text)) msg = 'No file was uploaded. Please try again.';
         showError(msg);
         throw new Error(msg);
       }
       
       const data = await res.json();
+      console.log('Upload success:', data.url);
       return data.url as string;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Upload error:', error);
+      const errorMsg = error?.message || 'Failed to upload image';
+      showError(errorMsg);
       throw error;
     } finally {
       setUploading(false);
@@ -1469,19 +1522,6 @@ export default function AACGrid() {
         </View>
       )}
 
-      {/* Floating add button (hidden when modal open) */}
-      {!showAddModal && (
-        <View style={{ position: 'absolute', right: 16, bottom: addBtnBottom, zIndex: 100 }}>
-          <TouchableOpacity
-            onPress={() => setShowAddModal(true)}
-            activeOpacity={0.9}
-            style={{ backgroundColor: '#2563EB', paddingHorizontal: 16, paddingVertical: 14, borderRadius: 999, flexDirection: 'row', alignItems: 'center', ...shadow.m }}
-          >
-            <Ionicons name="add" size={18} color="#fff" />
-            <Text style={{ color: '#fff', fontWeight: '800', marginLeft: 6 }}>Add Tile</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       {/* Add Tile Modal */}
       {showAddModal && (

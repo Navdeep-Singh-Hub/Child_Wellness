@@ -268,13 +268,17 @@ app.post('/api/me/profile', requireAuth, async (req, res) => {
 // POST /api/me/game-log
 app.post('/api/me/game-log', requireAuth, async (req, res) => {
   try {
-    const userId = req.userId || req.auth0Id;
-    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const auth0Id = req.auth0Id;
+    if (!auth0Id) return res.status(401).json({ error: 'Unauthorized' });
 
     const { type, correct, total, accuracy, xpAwarded, durationMs } = req.body || {};
     if (!type || typeof correct !== 'number' || typeof total !== 'number') {
       return res.status(400).json({ error: 'Missing fields' });
     }
+
+    // Get or create user to get userId (ObjectId)
+    const user = await ensureUser(auth0Id, req.auth0Email || '', req.auth0Name || '');
+    const userId = user._id;
 
     let session = await Session.findOne({ userId });
     if (!session) session = await Session.create({ userId });
@@ -294,7 +298,42 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
     session.totalGamesPlayed = (session.totalGamesPlayed || 0) + 1;
 
     await session.save();
-    res.json({ ok: true, points: session.points, totalGamesPlayed: session.totalGamesPlayed, last: session.gameLogs.at(-1) });
+
+    // Update accuracy using O(1) running counters + EMA (no need to scan all logs)
+    const userDoc = await User.findById(userId); // we already ensured user earlier
+    if (!userDoc.rewards) userDoc.rewards = {};
+
+    // 1) Running totals
+    const r = userDoc.rewards;
+    r.correctSum = (r.correctSum || 0) + Number(correct || 0);
+    r.totalSum   = (r.totalSum   || 0) + Number(total   || 0);
+    r.totalGamesPlayed = (r.totalGamesPlayed || 0) + 1;
+
+    // 2) Bayesian smoothing over the lifetime data to prevent volatility on small N.
+    //    Prior = Beta(α, β) ~ "expected accuracy" around 70% (tweakable).
+    const alpha = 7;   // prior 'virtual' correct
+    const beta  = 3;   // prior 'virtual' incorrect
+    const bayes = (r.correctSum + alpha) / (r.totalSum + alpha + beta); // 0..1
+
+    // 3) Recency Exponential Moving Average on *this game's* accuracy.
+    //    Good games nudge it up fast; bad games nudge it down fast.
+    const thisGameAcc = total > 0 ? (correct / total) * 100 : 0;
+    const k = 0.2; // smoothing factor (0.1 conservative, 0.3 snappier)
+    r.accEMA = (r.accEMA ?? thisGameAcc) * (1 - k) + thisGameAcc * k; // in %
+
+    // 4) Final displayed accuracy is a blend: mostly long-term (Bayes), some recent (EMA)
+    const blended = 0.75 * (bayes * 100) + 0.25 * (r.accEMA || 0);
+    r.accuracy = Math.round(Math.max(0, Math.min(100, blended)));
+
+    await userDoc.save();
+
+    res.json({ 
+      ok: true, 
+      points: session.points, 
+      totalGamesPlayed: session.totalGamesPlayed, 
+      last: session.gameLogs.at(-1),
+      accuracy: r.accuracy, // send back for optional optimistic UI
+    });
   } catch (e) {
     console.error('game-log error', e);
     res.status(500).json({ error: 'Server error' });
@@ -313,6 +352,7 @@ app.get('/api/me/stats', requireAuth, async (req, res) => {
     streakDays: user.rewards?.streakDays ?? 0,
     bestStreak: user.rewards?.bestStreak ?? 0,
     lastPlayedDate: user.rewards?.lastPlayedDate ?? null,
+    accuracy: user.rewards?.accuracy ?? 0,
   });
 });
 

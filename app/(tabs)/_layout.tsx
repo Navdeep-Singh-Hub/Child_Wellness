@@ -60,6 +60,7 @@ function SlideOutMenu() {
     { title: "Grids", route: "/(tabs)/AACgrid", icon: "grid-outline" },
     { title: "Profile", route: "/(tabs)/Profile", icon: "person-outline" },
     { title: "Contact Us", route: "/(tabs)/Contact", icon: "mail-outline" },
+    { title: "Add Tile", route: "/(tabs)/AACgrid?addTile=true", icon: "add-circle-outline", isAction: true },
   ];
 
   const navigateTo = (route: string) => {
@@ -166,6 +167,7 @@ function SlideOutMenu() {
         <View style={{ paddingTop: 12 }}>
           {menuItems.map((item, index) => {
             const isActive = pathname === item.route || (item.route === "/(tabs)" && pathname === "/");
+            const isAction = (item as any).isAction;
             return (
               <TouchableOpacity
                 key={item.title}
@@ -176,22 +178,25 @@ function SlideOutMenu() {
                   alignItems: "center",
                   paddingVertical: 16,
                   paddingHorizontal: 20,
-                  backgroundColor: isActive ? "#F0F9FF" : "transparent",
+                  backgroundColor: isActive ? "#F0F9FF" : (isAction ? "#EEF2FF" : "transparent"),
                   borderLeftWidth: isActive ? 4 : 0,
                   borderLeftColor: "#2563EB",
+                  marginTop: isAction ? 8 : 0,
+                  borderTopWidth: isAction ? 1 : 0,
+                  borderTopColor: "#E5E7EB",
                 }}
               >
                 <Ionicons
                   name={item.icon as any}
                   size={22}
-                  color={isActive ? "#2563EB" : "#6B7280"}
+                  color={isActive ? "#2563EB" : (isAction ? "#6366F1" : "#6B7280")}
                   style={{ marginRight: 16 }}
                 />
                 <Text
                   style={{
                     fontSize: 16,
-                    fontWeight: isActive ? "700" : "600",
-                    color: isActive ? "#2563EB" : "#374151",
+                    fontWeight: isActive ? "700" : (isAction ? "700" : "600"),
+                    color: isActive ? "#2563EB" : (isAction ? "#6366F1" : "#374151"),
                   }}
                 >
                   {item.title}

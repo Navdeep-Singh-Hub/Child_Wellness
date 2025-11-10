@@ -138,7 +138,7 @@ export default function Contact() {
             onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
             onContentSizeChange={(_, h) => setContentH(h)}
             scrollEnabled={contentH > containerH + 10}
-            contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+            contentContainerStyle={{ padding: 16 }}
             bounces={false}
             alwaysBounceVertical={false}
             overScrollMode="never"

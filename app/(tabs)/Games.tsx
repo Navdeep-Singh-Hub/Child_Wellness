@@ -3,6 +3,7 @@
 
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -89,6 +90,7 @@ const PICTURE_POOL: Tile[] = (() => {
 
 // -------------------- Game: Tap Timing --------------------
 function TapTiming({ onBack }: { onBack: () => void }) {
+  const router = useRouter();
   const [roundId, setRoundId] = useState<string | null>(null);
   const [targetSec, setTargetSec] = useState<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -170,16 +172,23 @@ function TapTiming({ onBack }: { onBack: () => void }) {
         streak: res.stats.streakDays,
         games: res.stats.totalGamesPlayed,
       });
+      // Calculate accuracy based on timing performance using standard formula
+      // Perfect timing (0ms) = 100%, within 500ms = 100%, within 1000ms = 80%, within 1500ms = 60%, within 2000ms = 40%, >2000ms = 20%
+      const timingAccuracy = delta <= 500 ? 100 : delta <= 1000 ? 80 : delta <= 1500 ? 60 : delta <= 2000 ? 40 : 20;
+      // Convert to correct/total format: if accuracy >= 50%, count as correct
+      const isCorrect = timingAccuracy >= 50 ? 1 : 0;
+      
       try {
         await logGameAndAward({
           type: 'tap',
-          correct: 1,
+          correct: isCorrect,
           total: 1,
-          // Softer mapping: 0ms -> 100, 2000ms -> 0
-          accuracy: Math.max(0, 100 - Math.min(delta / 20, 100)),
+          accuracy: timingAccuracy, // Store the actual accuracy percentage
           xpAwarded: res.pointsAwarded,
           durationMs: elapsedMs,
         });
+        // 🔁 tell Home to refetch
+        router.setParams({ refreshStats: Date.now().toString() });
       } catch {}
       speak('Great job!');
     } catch (e: any) {
@@ -200,9 +209,13 @@ function TapTiming({ onBack }: { onBack: () => void }) {
     // Prefer numeric delta captured from API; fallback to parsing string
     const deltaMatch = msg.match(/Δ\s*(-?\d+)ms/);
     const parsed = deltaMatch ? Math.abs(parseInt(deltaMatch[1])) : null;
-    const deltaMs = tapDeltaMs ?? parsed ?? 0;
+    // Use tapDeltaMs if available, otherwise parse from message, fallback to 0
+    const deltaMs = tapDeltaMs !== null && tapDeltaMs !== undefined ? tapDeltaMs : (parsed !== null ? parsed : 0);
     // Softer mapping: 0ms => 100, 1000ms => 50, 2000ms => 0
-    const accuracy = Math.max(0, 100 - Math.min(deltaMs / 20, 100));
+    // Formula: accuracy = 100 - (deltaMs / 20), clamped to 0-100
+    // Ensure we have a valid deltaMs value before calculating
+    const calculatedAccuracy = deltaMs >= 0 ? Math.max(0, Math.min(100, 100 - (deltaMs / 20))) : 0;
+    const accuracy = calculatedAccuracy;
     return (
       <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
         <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
@@ -220,7 +233,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
             <View className="flex-row justify-between items-center mb-2">
               <Text className="text-gray-700 font-semibold">Accuracy:</Text>
               <Text className="text-gray-900 font-extrabold text-lg">
-                {Math.round(accuracy)}%
+                {Math.max(0, Math.round(accuracy))}%
               </Text>
             </View>
             <View className="flex-row justify-between items-center mb-2">
@@ -399,6 +412,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
 
 // -------------------- Game: Picture Match --------------------
 function PictureMatch({ onBack }: { onBack: () => void }) {
+  const router = useRouter();
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [target, setTarget] = useState<Tile | null>(null);
@@ -464,6 +478,8 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
           accuracy: (correctCount / total) * 100,
           xpAwarded: xp,
         });
+        // 🔁 tell Home to refetch
+        router.setParams({ refreshStats: Date.now().toString() });
       } catch {}
       speak('Well done!');
     } else {
@@ -486,6 +502,8 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
           <ResultCard
             correct={finalScore.correct}
             total={finalScore.total}
+            xpAwarded={finalScore.xp}
+            accuracy={(finalScore.correct / finalScore.total) * 100}
             onPlayAgain={() => {
               setRound(1);
               setScore(0);
@@ -494,7 +512,11 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
               setPmFeedback(null);
               next();
             }}
-            onHome={onBack}
+            onHome={() => {
+              // Refresh home stats when going back
+              router.setParams({ refreshStats: Date.now().toString() });
+              onBack();
+            }}
           />
         </View>
       </SafeAreaView>
@@ -542,7 +564,7 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
 
         <View style={{ alignItems: 'center', marginBottom: 24 }}>
           <Text style={{ fontSize: 28, fontWeight: '800', color: '#111827', marginBottom: 8, textAlign: 'center' }}>
-            Find: "{target.label}"
+            Find {target.label}
           </Text>
           <Animated.View style={[{ alignItems: 'center' }, pulseStyle]}>
             <Text style={{ color: '#6B7280', fontSize: 14, fontWeight: '600' }}>
@@ -580,6 +602,7 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
 
 // -------------------- Game: Quick Sort (Food vs Transport) --------------------
 function QuickSort({ onBack }: { onBack: () => void }) {
+  const router = useRouter();
   const [qIndex, setQIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [item, setItem] = useState<Tile | null>(null);
@@ -663,6 +686,8 @@ function QuickSort({ onBack }: { onBack: () => void }) {
           accuracy: (finalCorrect / total) * 100,
           xpAwarded: xp,
         });
+        // 🔁 tell Home to refetch
+        router.setParams({ refreshStats: Date.now().toString() });
       } catch {}
 
       speak('Great sorting!');
@@ -889,6 +914,7 @@ function QuickSort({ onBack }: { onBack: () => void }) {
 
 /* ======================= FIND EMOJI — Reanimated v3 (web-safe) ======================= */
 function FindEmoji({ onBack }: { onBack: () => void }) {
+  const router = useRouter();
 // Create a safe pool: must have a visual (emoji/image) and always have a label
 const POOL: Tile[] = useMemo(() => {
   const list = (EMOTIONS || []).filter(Boolean).filter(t => t.emoji || (t as any).imageKey);
@@ -977,6 +1003,8 @@ const POOL: Tile[] = useMemo(() => {
             accuracy: (finalCorrect / TOTAL) * 100,
             xpAwarded: xp,
           });
+          // 🔁 tell Home to refetch
+          router.setParams({ refreshStats: Date.now().toString() });
         } catch {}
       })();
     } else {
@@ -1286,7 +1314,7 @@ export default function GamesScreen() {
           onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
           onContentSizeChange={(_, h) => setContentH(h)}
           scrollEnabled={contentH > containerH + 10}
-          contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+          contentContainerStyle={{ padding: 20 }}
           showsVerticalScrollIndicator={false}
           bounces={false}
           alwaysBounceVertical={false}

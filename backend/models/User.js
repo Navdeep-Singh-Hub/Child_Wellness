@@ -16,6 +16,12 @@ const RewardsSchema = new Schema({
   bestStreak:   { type: Number, default: 0 },
   lastPlayedDate: String, // 'YYYY-MM-DD' in Asia/Kolkata
   totalGamesPlayed: { type: Number, default: 0 },
+  accuracy:     { type: Number, default: 0 }, // displayed accuracy (0..100)
+  
+  // NEW: running counters + EMA to avoid O(n) scans and to weight recency
+  correctSum: { type: Number, default: 0 },
+  totalSum:   { type: Number, default: 0 },
+  accEMA:     { type: Number, default: 0 }, // 0..100 exponential moving average of per-game accuracy
 });
 
 const UserSchema = new Schema({
