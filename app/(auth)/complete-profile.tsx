@@ -18,8 +18,165 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
+import Animated, {
+  Easing as ReanimatedEasing,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming
+} from 'react-native-reanimated';
+
+// Animated Alert Component for Missing Fields
+function AnimatedAlert({ 
+  visible, 
+  message, 
+  fields, 
+  onDismiss 
+}: { 
+  visible: boolean; 
+  message: string; 
+  fields: string[]; 
+  onDismiss: () => void;
+}) {
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(-20);
+  const scale = useSharedValue(0.9);
+
+  useEffect(() => {
+    if (visible) {
+      opacity.value = 0;
+      translateY.value = -20;
+      scale.value = 0.9;
+      opacity.value = withTiming(1, { duration: 300, easing: ReanimatedEasing.out(ReanimatedEasing.cubic) });
+      translateY.value = withSpring(0, { damping: 15, stiffness: 200 });
+      scale.value = withSpring(1, { damping: 15, stiffness: 200 });
+    } else {
+      opacity.value = withTiming(0, { duration: 200 });
+      translateY.value = withTiming(-20, { duration: 200 });
+      scale.value = withTiming(0.9, { duration: 200 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
+  }));
+
+  // Always render to maintain hook consistency - use pointerEvents to prevent interaction when hidden
+  return (
+    <Animated.View
+      pointerEvents={visible ? 'auto' : 'none'}
+      style={[
+        {
+          position: 'absolute',
+          top: Platform.OS === 'ios' ? 60 : 20,
+          left: 16,
+          right: 16,
+          zIndex: visible ? 1000 : -1,
+          backgroundColor: '#FEF2F2',
+          borderRadius: 20,
+          padding: 16,
+          borderWidth: 2,
+          borderColor: '#FCA5A5',
+          shadowColor: '#DC2626',
+          shadowOpacity: 0.3,
+          shadowRadius: 20,
+          shadowOffset: { width: 0, height: 8 },
+          elevation: visible ? 10 : 0,
+        },
+        animatedStyle,
+      ]}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: fields.length > 0 ? 12 : 0 }}>
+        <View
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: '#DC2626',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 12,
+          }}
+        >
+          <Ionicons name="alert-circle" size={24} color="#fff" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: '#991B1B', marginBottom: 4 }}>
+            {message}
+          </Text>
+          {fields.length > 0 && (
+            <View style={{ marginTop: 8 }}>
+              {fields.map((field, index) => (
+                <View
+                  key={index}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginBottom: 6,
+                    paddingVertical: 4,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: '#DC2626',
+                      marginRight: 8,
+                    }}
+                  />
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#7F1D1D' }}>
+                    {field}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+        <TouchableOpacity
+          onPress={onDismiss}
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            backgroundColor: 'rgba(220, 38, 38, 0.1)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginLeft: 8,
+          }}
+        >
+          <Ionicons name="close" size={18} color="#DC2626" />
+        </TouchableOpacity>
+      </View>
+    </Animated.View>
+  );
+}
+
+// Shake animation hook
+function useShake() {
+  const shake = useSharedValue(0);
+  const trigger = () => {
+    shake.value = withSequence(
+      withTiming(-8, { duration: 50, easing: ReanimatedEasing.linear }),
+      withTiming(8, { duration: 50, easing: ReanimatedEasing.linear }),
+      withTiming(-8, { duration: 50, easing: ReanimatedEasing.linear }),
+      withTiming(8, { duration: 50, easing: ReanimatedEasing.linear }),
+      withTiming(0, { duration: 50, easing: ReanimatedEasing.linear })
+    );
+  };
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }],
+  }));
+  return { style, trigger };
+}
 
 export default function CompleteProfile() {
   // const { isSignedIn } = useAuth();
@@ -29,6 +186,16 @@ export default function CompleteProfile() {
   // loading + saving
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  
+  // Alert state
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+  
+  // Shake animations for invalid fields
+  const firstNameShake = useShake();
+  const dobShake = useShake();
+  const phoneShake = useShake();
 
   // form state (⚠️ keep same keys; backend depends on these)
   const [firstName, setFirstName] = useState('');
@@ -79,8 +246,9 @@ export default function CompleteProfile() {
       try {
         const p = await getMyProfile();
 
-        // already complete? go home
-        if (p.firstName && p.dob) {
+        // already complete? go home (require phone too)
+        const hasMinPhone = (q: any) => String(q?.phoneNumber || '').replace(/\D/g, '').length >= 10;
+        if (p.firstName && p.dob && hasMinPhone(p)) {
           router.replace('/(tabs)');
           return;
         }
@@ -131,6 +299,9 @@ export default function CompleteProfile() {
       const formattedDate = toYYYYMMDD(selected);
       console.log('Setting DOB to:', formattedDate);
       setDob(formattedDate);
+      if (showAlert) {
+        setShowAlert(false);
+      }
     }
     setShowDobPicker(false);
   };
@@ -139,6 +310,9 @@ export default function CompleteProfile() {
     const formattedDate = toYYYYMMDD(dobDraft);
     console.log('iOS date picker - setting DOB to:', formattedDate);
     setDob(formattedDate);
+    if (showAlert) {
+      setShowAlert(false);
+    }
     setShowDobPicker(false);
   };
 
@@ -146,17 +320,34 @@ export default function CompleteProfile() {
     console.log('=== SAVE BUTTON CLICKED ===');
     console.log('Form data:', { firstName, lastName, dob, gender, phoneCountryCode, phoneNumber });
     
+    // Collect all missing fields
+    const missing: string[] = [];
+    
     if (firstName.trim().length === 0) {
-      Alert.alert('Missing info', 'Please enter your first name.');
-      return;
+      missing.push('First name');
+      firstNameShake.trigger();
     }
     if (!dob || !/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
-      Alert.alert('Missing/invalid DOB', 'Please select your date of birth using the "Pick" button.');
-      return;
+      missing.push('Date of birth');
+      dobShake.trigger();
     }
     const cleanedPhone = phoneNumber.replace(/\D/g, '');
     if (cleanedPhone.length < 10) {
-      Alert.alert('Missing phone number', 'Please enter a valid phone number (at least 10 digits).');
+      missing.push('Phone number (at least 10 digits)');
+      phoneShake.trigger();
+    }
+
+    // Show animated alert if there are missing fields
+    if (missing.length > 0) {
+      setAlertMessage('Please fill in all required fields');
+      setMissingFields(missing);
+      setShowAlert(true);
+      
+      // Auto-dismiss after 5 seconds
+      setTimeout(() => {
+        setShowAlert(false);
+      }, 5000);
+      
       return;
     }
 
@@ -206,6 +397,14 @@ export default function CompleteProfile() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#F7FBFF]">
+      {/* Animated Alert for Missing Fields */}
+      <AnimatedAlert
+        visible={showAlert}
+        message={alertMessage}
+        fields={missingFields}
+        onDismiss={() => setShowAlert(false)}
+      />
+      
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
@@ -245,24 +444,31 @@ export default function CompleteProfile() {
             </View>
 
             <Text className="text-xs font-bold text-gray-500 mb-1">First name</Text>
-            <View
-              className={`flex-row items-center rounded-2xl px-3 py-3 mb-2 border ${
-                firstNameError ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'
-              }`}
-            >
-              <Ionicons
-                name="person-outline"
-                size={18}
-                color={firstNameError ? '#DC2626' : '#6B7280'}
-              />
-              <TextInput
-                value={firstName}
-                onChangeText={setFirstName}
-                placeholder="e.g. Aarav"
-                placeholderTextColor="#9CA3AF"
-                className="ml-2 flex-1 text-[16px] text-[#0F172A]"
-              />
-            </View>
+            <Animated.View style={firstNameShake.style}>
+              <View
+                className={`flex-row items-center rounded-2xl px-3 py-3 mb-2 border ${
+                  firstNameError ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'
+                }`}
+              >
+                <Ionicons
+                  name="person-outline"
+                  size={18}
+                  color={firstNameError ? '#DC2626' : '#6B7280'}
+                />
+                <TextInput
+                  value={firstName}
+                  onChangeText={(text) => {
+                    setFirstName(text);
+                    if (showAlert && text.trim().length > 0) {
+                      setShowAlert(false);
+                    }
+                  }}
+                  placeholder="e.g. Aarav"
+                  placeholderTextColor="#9CA3AF"
+                  className="ml-2 flex-1 text-[16px] text-[#0F172A]"
+                />
+              </View>
+            </Animated.View>
             {!!firstNameError && (
               <Text className="text-xs text-red-600 mb-2">{firstNameError}</Text>
             )}
@@ -294,7 +500,7 @@ export default function CompleteProfile() {
             <Text className="text-xs font-bold text-gray-500 mb-1">Date of birth</Text>
 
             {/* Read-only box + Pick button (friendly for kids/parents) */}
-            <View className="flex-row items-center gap-2">
+            <Animated.View style={[dobShake.style, { flexDirection: 'row', alignItems: 'center', gap: 8 }]}>
               <View
                 className={`flex-1 flex-row items-center rounded-2xl px-3 py-3 border ${
                   dobError ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'
@@ -320,7 +526,7 @@ export default function CompleteProfile() {
                   <Text className="text-white font-extrabold text-[14px] ml-2">Pick</Text>
                 </View>
               </TouchableOpacity>
-          </View>
+            </Animated.View>
 
             <Text className={`text-xs mt-1 ${dobError ? 'text-red-600' : 'text-gray-500'}`}>
               {dobError ? 'Please use format YYYY-MM-DD' : 'We use this to show age-wise tips and games.'}
@@ -409,7 +615,13 @@ export default function CompleteProfile() {
                       <TouchableOpacity onPress={() => setShowDobPicker(false)} className="px-4 py-2 rounded-xl bg-gray-200 mr-2">
                         <Text className="font-bold text-gray-800">Cancel</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity onPress={() => { setDob(toYYYYMMDD(dobDraft)); setShowDobPicker(false); }} className="px-4 py-2 rounded-xl bg-[#2563EB]">
+                      <TouchableOpacity onPress={() => { 
+                        setDob(toYYYYMMDD(dobDraft)); 
+                        if (showAlert) {
+                          setShowAlert(false);
+                        }
+                        setShowDobPicker(false); 
+                      }} className="px-4 py-2 rounded-xl bg-[#2563EB]">
                         <Text className="font-bold text-white">Save</Text>
                       </TouchableOpacity>
                     </View>
@@ -430,7 +642,7 @@ export default function CompleteProfile() {
             </View>
 
             <Text className="text-xs font-bold text-gray-500 mb-1">Phone number (required)</Text>
-            <View className="flex-row items-center gap-2">
+            <Animated.View style={[phoneShake.style, { flexDirection: 'row', alignItems: 'center', gap: 8 }]}>
               <View className={`flex-row items-center rounded-2xl px-3 py-3 border ${
                 phoneError ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'
               }`} style={{ width: 100 }}>
@@ -459,7 +671,13 @@ export default function CompleteProfile() {
                 />
                 <TextInput
                   value={phoneNumber}
-                  onChangeText={setPhoneNumber}
+                  onChangeText={(text) => {
+                    setPhoneNumber(text);
+                    const cleaned = text.replace(/\D/g, '');
+                    if (showAlert && cleaned.length >= 10) {
+                      setShowAlert(false);
+                    }
+                  }}
                   placeholder="1234567890"
                   placeholderTextColor="#9CA3AF"
                   className="ml-2 flex-1 text-[16px] text-[#0F172A]"
@@ -467,7 +685,7 @@ export default function CompleteProfile() {
                   maxLength={15}
                 />
               </View>
-            </View>
+            </Animated.View>
             {!!phoneError && (
               <Text className="text-xs text-red-600 mt-1">{phoneError}</Text>
             )}

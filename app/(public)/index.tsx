@@ -1,9 +1,24 @@
 import { useAuth } from '@/app/_layout';
 import { images } from '@/constants/images';
-import { ensureUser, getMyProfile } from '@/utils/api';
+import { getMyProfile } from '@/utils/api';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Easing,
+  Image,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import LoginButton from '../comonents/login';
 
 export default function RootIndex() {
@@ -11,22 +26,43 @@ export default function RootIndex() {
   const [checkingProfile, setCheckingProfile] = useState(false);
   const [redirectPath, setRedirectPath] = useState<string | null>(null);
 
+  // Animation values (declare before any conditional returns to keep hook order stable)
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 700,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   useEffect(() => {
     if (session?.profile) {
       setCheckingProfile(true);
       (async () => {
         try {
-          // Extract Auth0 user info
-          const auth0Id = session.profile.sub || session.profile.user_id || '';
-          const email = session.profile.email || '';
-          const name = session.profile.name || session.profile.nickname || '';
-          
-          // Save user to MongoDB
-          await ensureUser(auth0Id, email, name);
-          
-          // Check if profile is complete
+          // Single call: server ensures user inside /me/profile
+          const hasMinPhone = (p: any) => String(p?.phoneNumber || '').replace(/\D/g, '').length >= 10;
           const profile = await getMyProfile();
-          if (profile.firstName && profile.dob) {
+          if (profile.firstName && profile.dob && hasMinPhone(profile)) {
             // Profile complete, go to tabs
             setRedirectPath('/(tabs)');
           } else {
@@ -48,9 +84,34 @@ export default function RootIndex() {
   if (session) {
     if (checkingProfile) {
       return (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" />
-        </View>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+          <LinearGradient
+            colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              backgroundColor: '#3B82F6',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 20,
+              shadowColor: '#3B82F6',
+              shadowOpacity: 0.3,
+              shadowRadius: 16,
+              shadowOffset: { width: 0, height: 8 },
+              elevation: 8,
+            }}>
+              <Image source={images.logo} style={{ width: 48, height: 48 }} />
+            </View>
+            <ActivityIndicator size="large" color="#3B82F6" />
+            <Text style={{ marginTop: 16, fontSize: 16, fontWeight: '600', color: '#64748B' }}>
+              Setting things up...
+            </Text>
+          </View>
+        </SafeAreaView>
       );
     }
     if (redirectPath) {
@@ -58,83 +119,385 @@ export default function RootIndex() {
     }
     // Still checking, show loader
     return (
-      <View className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" />
-      </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+        <LinearGradient
+          colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+        </View>
+      </SafeAreaView>
     );
   }
 
   // Show beautiful homepage for unauthenticated users
   return (
-    <View className="flex-1 bg-white">
+    <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
+      
       {/* Header with Login Button */}
-      <View className="flex-row justify-between items-center px-6 pt-12 pb-4 bg-gradient-to-b from-blue-50 to-white">
-        <View className="flex-row items-center">
-          <Image source={images.logo} style={{ width: 48, height: 48 }} />
-          <Text className="text-2xl font-bold text-gray-900 ml-3">Child Wellness</Text>
+      <Animated.View
+        style={[
+          styles.header,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
+      >
+        <View style={styles.headerContent}>
+          <View style={styles.logoContainer}>
+            <LinearGradient
+              colors={['#3B82F6', '#6366F1']}
+              style={styles.logoGradient}
+            >
+              <Image source={images.logo} style={styles.logo} />
+            </LinearGradient>
+            <Text style={styles.logoText}>Child Wellness</Text>
+          </View>
+          <LoginButton />
         </View>
-        <LoginButton />
-      </View>
+      </Animated.View>
 
       {/* Hero Section */}
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
-        <View className="items-center px-6 py-12">
-          <Text className="text-4xl font-extrabold text-gray-900 text-center mb-4">
-            Your Child's Health{'\n'}and Development{'\n'}in One Place
-          </Text>
-          <Text className="text-lg text-gray-600 text-center mb-8">
-            Empowering children with AAC tools, games, and personalized learning experiences
-          </Text>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View
+          style={[
+            styles.heroSection,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
+            },
+          ]}
+        >
+          <View style={styles.heroContent}>
+            <Text style={styles.heroTitle}>
+              Your Child's Health{'\n'}and Development{'\n'}in One Place
+            </Text>
+            <Text style={styles.heroSubtitle}>
+              Empowering children with AAC tools, games, and personalized learning experiences
+            </Text>
+          </View>
 
           {/* Features Grid */}
-          <View className="w-full">
-            <View className="flex-row flex-wrap justify-between mb-6">
-              <View className="w-[48%] bg-blue-50 rounded-2xl p-6 mb-4">
-                <Image source={images.logo} style={{ width: 48, height: 48 }} className="mb-3" />
-                <Text className="text-lg font-bold text-gray-900 mb-2">AAC Grid</Text>
-                <Text className="text-sm text-gray-600">
-                  Communicate with visual symbols and tiles
-                </Text>
-              </View>
-
-              <View className="w-[48%] bg-purple-50 rounded-2xl p-6 mb-4">
-                <Image source={images.trophyIcon} style={{ width: 48, height: 48 }} className="mb-3" />
-                <Text className="text-lg font-bold text-gray-900 mb-2">Interactive Games</Text>
-                <Text className="text-sm text-gray-600">
-                  Fun learning activities for skill development
-                </Text>
-              </View>
-
-              <View className="w-[48%] bg-green-50 rounded-2xl p-6 mb-4">
-                <Image source={images.starIcon} style={{ width: 48, height: 48 }} className="mb-3" />
-                <Text className="text-lg font-bold text-gray-900 mb-2">Progress Tracking</Text>
-                <Text className="text-sm text-gray-600">
-                  Monitor your child's growth and achievements
-                </Text>
-              </View>
-
-              <View className="w-[48%] bg-orange-50 rounded-2xl p-6 mb-4">
-                <Image source={images.streakIcon} style={{ width: 48, height: 48 }} className="mb-3" />
-                <Text className="text-lg font-bold text-gray-900 mb-2">Daily Streaks</Text>
-                <Text className="text-sm text-gray-600">
-                  Build consistent learning habits
-                </Text>
-              </View>
-            </View>
+          <View style={styles.featuresContainer}>
+            <FeatureCard
+              index={0}
+              icon="grid-outline"
+              title="AAC Grid"
+              description="Communicate with visual symbols and tiles"
+              gradient={['#DBEAFE', '#EFF6FF']}
+              iconColor="#2563EB"
+              delay={100}
+            />
+            <FeatureCard
+              index={1}
+              icon="game-controller-outline"
+              title="Interactive Games"
+              description="Fun learning activities for skill development"
+              gradient={['#F3E8FF', '#FAF5FF']}
+              iconColor="#7C3AED"
+              delay={200}
+            />
+            <FeatureCard
+              index={2}
+              icon="trending-up-outline"
+              title="Progress Tracking"
+              description="Monitor your child's growth and achievements"
+              gradient={['#D1FAE5', '#ECFDF5']}
+              iconColor="#10B981"
+              delay={300}
+            />
+            <FeatureCard
+              index={3}
+              icon="flame"
+              title="Daily Streaks"
+              description="Build consistent learning habits"
+              gradient={['#FED7AA', '#FFF7ED']}
+              iconColor="#F97316"
+              delay={400}
+            />
           </View>
 
           {/* CTA Section */}
-          <View className="w-full bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-8 items-center">
-            <Text className="text-2xl font-bold text-white mb-3 text-center">
-              Ready to Get Started?
-            </Text>
-            <Text className="text-blue-100 text-center mb-6">
-              Join thousands of families empowering their children's communication and learning
-            </Text>
-            <LoginButton />
-          </View>
-        </View>
+          <Animated.View
+            style={[
+              styles.ctaSection,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            <LinearGradient
+              colors={['#3B82F6', '#6366F1', '#8B5CF6']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.ctaGradient}
+            >
+              <View style={styles.ctaContent}>
+                <View style={styles.ctaIconContainer}>
+                  <Ionicons name="sparkles" size={32} color="#FFFFFF" />
+                </View>
+                <Text style={styles.ctaTitle}>Ready to Get Started?</Text>
+                <Text style={styles.ctaSubtitle}>
+                  Join thousands of families empowering their children's communication and learning
+                </Text>
+                <View style={styles.ctaButtonWrapper}>
+                  <LoginButton />
+                </View>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+        </Animated.View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
+
+// Feature Card Component with animations
+function FeatureCard({
+  index,
+  icon,
+  title,
+  description,
+  gradient,
+  iconColor,
+  delay,
+}: {
+  index: number;
+  icon: string;
+  title: string;
+  description: string;
+  gradient: [string, string];
+  iconColor: string;
+  delay: number;
+}) {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        delay,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        delay,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        styles.featureCard,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
+    >
+      <Pressable
+        style={styles.featurePressable}
+        android_ripple={{ color: 'rgba(0,0,0,0.05)' }}
+      >
+        <LinearGradient
+          colors={gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.featureGradient}
+        >
+          <View style={[styles.featureIconContainer, { backgroundColor: iconColor + '15' }]}>
+            <Ionicons name={icon as any} size={32} color={iconColor} />
+          </View>
+          <Text style={styles.featureTitle}>{title}</Text>
+          <Text style={styles.featureDescription}>{description}</Text>
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+const { width } = Dimensions.get('window');
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 12 : 20,
+    paddingBottom: 16,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    shadowColor: '#3B82F6',
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  logo: {
+    width: 36,
+    height: 36,
+  },
+  logoText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.5,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  heroSection: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  heroContent: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  heroTitle: {
+    fontSize: 36,
+    fontWeight: '900',
+    color: '#0F172A',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 44,
+    letterSpacing: -1,
+  },
+  heroSubtitle: {
+    fontSize: 17,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: 8,
+  },
+  featuresContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 32,
+  },
+  featureCard: {
+    width: (width - 48) / 2,
+    marginBottom: 16,
+  },
+  featurePressable: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 4,
+  },
+  featureGradient: {
+    padding: 20,
+    borderRadius: 24,
+    minHeight: 160,
+  },
+  featureIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  featureTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 6,
+  },
+  featureDescription: {
+    fontSize: 13,
+    color: '#64748B',
+    lineHeight: 20,
+  },
+  ctaSection: {
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  ctaGradient: {
+    borderRadius: 32,
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#6366F1',
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 8,
+  },
+  ctaContent: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  ctaIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  ctaTitle: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 12,
+    letterSpacing: -0.5,
+  },
+  ctaSubtitle: {
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+    paddingHorizontal: 8,
+  },
+  ctaButtonWrapper: {
+    width: '100%',
+    alignItems: 'center',
+  },
+});

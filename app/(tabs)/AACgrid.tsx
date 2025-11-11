@@ -499,15 +499,36 @@ async function pickVoice(lang: LangKey): Promise<Speech.Voice | null> {
 }
 
 const TWO = (l: LangKey) => l.slice(0, 2).toLowerCase();
+
+// Normalize text for better TTS pronunciation, especially for iOS
+function normalizeForSpeech(text: string, lang: LangKey): string {
+  // Handle special case: single capital "I" should be spoken as pronoun, not "capital i"
+  // iOS TTS sometimes reads standalone "I" as the letter name
+  // Solution: For standalone "I", add a space to help TTS recognize it as a word
+  if (lang === 'en-US') {
+    const trimmed = text.trim();
+    // If it's exactly "I" (capital) as a standalone word
+    // Add a space to help iOS TTS recognize it as the pronoun, not the letter
+    if (trimmed === 'I' && trimmed.length === 1) {
+      // The space helps TTS interpret it as a word in context
+      return 'I ';
+    }
+  }
+  return text;
+}
+
 async function speakSmart(text: string, lang: LangKey) {
   const v = await pickVoice(lang);
+  
+  // Normalize text for better pronunciation
+  const normalizedText = normalizeForSpeech(text, lang);
 
   // Only use a voice id if it matches the chosen language (en/hi/pa/ta/te).
   const okLang = v?.language?.toLowerCase().startsWith(TWO(lang)) ?? false;
 
   const isIndian = lang !== 'en-US';
   Speech.stop();
-  Speech.speak(text, {
+  Speech.speak(normalizedText, {
     language: lang,                         // ← always force target language
     ...(okLang ? { voice: v!.identifier } : {}), // ← avoid mismatched voice (the Tamil hijack)
     rate: isIndian ? 0.95 : 1.0,
