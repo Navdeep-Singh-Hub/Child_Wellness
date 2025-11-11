@@ -2,6 +2,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, usePathname, useRouter } from "expo-router";
 import React from "react";
+import RequireCompleteProfile from "./RequireCompleteProfile";
 import { Animated, Dimensions, Platform, Pressable, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -217,9 +218,9 @@ export default function Layout() {
   // Hide global menu on AACgrid screen (it has its own GridMenu)
   const showGlobalMenu = !(pathname?.includes('AACgrid') || pathname?.includes('/AACgrid'));
   return (
-    <>
+    <RequireCompleteProfile>
       <Stack screenOptions={{ headerShown: false }} />
       {showGlobalMenu ? <SlideOutMenu /> : null}
-    </>
+    </RequireCompleteProfile>
   );
 }
