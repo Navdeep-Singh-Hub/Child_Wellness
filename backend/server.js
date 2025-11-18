@@ -9,6 +9,7 @@ import { Session } from './models/Session.js';
 import { User } from './models/User.js';
 import { tapGame } from './routes/tapGame.js';
 import { Message } from './models/Message.js';
+import { smartExplorerRouter } from './routes/smartExplorer.js';
 
 const app = express();
 // Behind proxies (Vercel/Render/Nginx), respect X-Forwarded-* headers
@@ -19,6 +20,8 @@ app.use(cors({
     'https://child-wellness.vercel.app',
     'http://localhost:19006',
     'http://localhost:3000',
+    'http://localhost:8081',
+    'http://localhost:8080',
   ],
   credentials: true
 }));
@@ -142,6 +145,7 @@ function requireAuth(req, res, next) {
 
 // Add tap game routes
 app.use('/api/tap', requireAuth, tapGame);
+app.use('/api/smart-explorer', requireAuth, smartExplorerRouter);
 // app.use('/api/content', content);
 // app.use('/api/utterances', utterances);
 
@@ -271,7 +275,7 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
     const auth0Id = req.auth0Id;
     if (!auth0Id) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { type, correct, total, accuracy, xpAwarded, durationMs } = req.body || {};
+    const { type, correct, total, accuracy, xpAwarded, durationMs, meta } = req.body || {};
     if (!type || typeof correct !== 'number' || typeof total !== 'number') {
       return res.status(400).json({ error: 'Missing fields' });
     }
@@ -292,6 +296,7 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
       xpAwarded: xpAwarded || 0,
       durationMs: durationMs || 0,
       at: new Date(),
+      meta: meta || {},
     });
 
     session.points = (session.points || 0) + (xpAwarded || 0);
@@ -324,6 +329,70 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
     // 4) Final displayed accuracy is a blend: mostly long-term (Bayes), some recent (EMA)
     const blended = 0.75 * (bayes * 100) + 0.25 * (r.accEMA || 0);
     r.accuracy = Math.round(Math.max(0, Math.min(100, blended)));
+
+    // 5) Update quiz-specific stats if this is a quiz game
+    if (type === 'quiz' && meta) {
+      if (!r.quiz) r.quiz = {};
+      const quiz = r.quiz;
+      
+      // Update overall quiz stats
+      quiz.totalGamesPlayed = (quiz.totalGamesPlayed || 0) + 1;
+      quiz.totalQuestions = (quiz.totalQuestions || 0) + Number(total || 0);
+      quiz.totalCorrect = (quiz.totalCorrect || 0) + Number(correct || 0);
+      quiz.totalXP = (quiz.totalXP || 0) + Number(xpAwarded || 0);
+      
+      // Update overall accuracy
+      if (quiz.totalQuestions > 0) {
+        quiz.overallAccuracy = Math.round((quiz.totalCorrect / quiz.totalQuestions) * 100);
+      }
+      
+      // Update level tracking
+      const levelReached = meta.level || 1;
+      if (levelReached > (quiz.bestLevel || 0)) {
+        quiz.bestLevel = levelReached;
+      }
+      // Update current level (use the level reached in this game)
+      quiz.currentLevel = levelReached;
+      
+      // Update last played date
+      const today = new Date();
+      const todayYmd = today.toISOString().slice(0, 10);
+      quiz.lastPlayedDate = todayYmd;
+      
+      // Update category performance
+      if (meta.categoryPerformance && typeof meta.categoryPerformance === 'object') {
+        if (!quiz.categoryPerformance) {
+          quiz.categoryPerformance = new Map();
+        } else if (!(quiz.categoryPerformance instanceof Map) && typeof quiz.categoryPerformance === 'object') {
+          quiz.categoryPerformance = new Map(Object.entries(quiz.categoryPerformance));
+        }
+        
+        Object.entries(meta.categoryPerformance).forEach(([category, stats]) => {
+          if (stats && typeof stats === 'object') {
+            const catStats = quiz.categoryPerformance.get(category) || {
+              totalQuestions: 0,
+              correctAnswers: 0,
+              accuracy: 0,
+              lastPlayedDate: todayYmd,
+            };
+            
+            catStats.totalQuestions = (catStats.totalQuestions || 0) + (stats.totalQuestions || 0);
+            catStats.correctAnswers = (catStats.correctAnswers || 0) + (stats.correctAnswers || 0);
+            catStats.lastPlayedDate = todayYmd;
+            
+            if (catStats.totalQuestions > 0) {
+              catStats.accuracy = Math.round((catStats.correctAnswers / catStats.totalQuestions) * 100);
+            }
+            
+            quiz.categoryPerformance.set(category, catStats);
+          }
+        });
+      }
+      
+      userDoc.markModified('rewards');
+      userDoc.markModified('rewards.quiz');
+      userDoc.markModified('rewards.quiz.categoryPerformance');
+    }
 
     await userDoc.save();
 

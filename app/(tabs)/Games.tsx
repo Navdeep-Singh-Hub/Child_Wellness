@@ -19,12 +19,12 @@ import Animated, {
   withTiming
 } from 'react-native-reanimated';
 
-import { CATEGORIES, type Tile, tileImages } from '@/constants/aac';
 import { ResultToast, SparkleBurst, Stepper } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
+import { CATEGORIES, type Tile, tileImages } from '@/constants/aac';
 import { icons } from '@/constants/icons';
 import { images } from '@/constants/images';
 import { fetchMyStats, finishTapRound, logGameAndAward, recordGame, startTapRound } from '@/utils/api';
-import ResultCard from '@/components/game/ResultCard';
 
 // -------------------- Shared UI helpers --------------------
 function Card({ children, style }: any) {
@@ -912,6 +912,601 @@ function QuickSort({ onBack }: { onBack: () => void }) {
   );
 }
 
+/* ======================= QUIZ CHALLENGE — Educational Quiz Game ======================= */
+type QuestionCategory = 'colors' | 'numbers' | 'animals' | 'shapes' | 'birds';
+
+type Question = {
+  category: QuestionCategory;
+  question: string;
+  correctAnswer: string;
+  options: string[];
+  emoji?: string;
+};
+
+function QuizChallenge({ onBack }: { onBack: () => void }) {
+  const router = useRouter();
+  const [level, setLevel] = useState(1);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+  const [locked, setLocked] = useState(false);
+  const [gameFinished, setGameFinished] = useState(false);
+  const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number; level: number } | null>(null);
+  const [questionsThisLevel, setQuestionsThisLevel] = useState(0);
+  const [correctThisLevel, setCorrectThisLevel] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  // Track category performance for this game
+  const [categoryStats, setCategoryStats] = useState<Record<string, { total: number; correct: number }>>({});
+
+  // Animation values
+  const questionScale = useSharedValue(1);
+  const optionScale = useSharedValue(1);
+  const confettiOpacity = useSharedValue(0);
+  const levelUpScale = useSharedValue(0);
+  const sparkleRotation = useSharedValue(0);
+
+  const questionStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: questionScale.value }],
+  }));
+
+  const optionStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: optionScale.value }],
+  }));
+
+  const confettiStyle = useAnimatedStyle(() => ({
+    opacity: confettiOpacity.value,
+  }));
+
+  const levelUpStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: levelUpScale.value }],
+  }));
+
+  // Question pools with increasing difficulty
+  const generateQuestion = useCallback((category: QuestionCategory, difficulty: number): Question => {
+    const colors = ['Red', 'Blue', 'Green', 'Yellow', 'Orange', 'Purple', 'Pink', 'Brown', 'Black', 'White', 'Gray', 'Cyan', 'Magenta', 'Turquoise', 'Maroon'];
+    const numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
+    const animals = ['Dog', 'Cat', 'Lion', 'Tiger', 'Elephant', 'Bear', 'Rabbit', 'Monkey', 'Horse', 'Cow', 'Pig', 'Sheep', 'Duck', 'Chicken', 'Fish', 'Whale', 'Dolphin', 'Shark', 'Eagle', 'Owl'];
+    const shapes = ['Circle', 'Square', 'Triangle', 'Rectangle', 'Star', 'Heart', 'Diamond', 'Oval', 'Pentagon', 'Hexagon', 'Octagon', 'Crescent', 'Arrow', 'Cross', 'Plus'];
+    const birds = ['Eagle', 'Owl', 'Parrot', 'Sparrow', 'Crow', 'Pigeon', 'Duck', 'Swan', 'Peacock', 'Penguin', 'Flamingo', 'Hummingbird', 'Woodpecker', 'Robin', 'Canary'];
+
+    const colorEmojis: Record<string, string> = {
+      'Red': '🔴', 'Blue': '🔵', 'Green': '🟢', 'Yellow': '🟡', 'Orange': '🟠',
+      'Purple': '🟣', 'Pink': '🩷', 'Brown': '🟤', 'Black': '⚫', 'White': '⚪'
+    };
+
+    const numberEmojis: Record<string, string> = {
+      '1': '1️⃣', '2': '2️⃣', '3': '3️⃣', '4': '4️⃣', '5': '5️⃣',
+      '6': '6️⃣', '7': '7️⃣', '8': '8️⃣', '9': '9️⃣', '10': '🔟'
+    };
+
+    const animalEmojis: Record<string, string> = {
+      'Dog': '🐕', 'Cat': '🐈', 'Lion': '🦁', 'Tiger': '🐅', 'Elephant': '🐘',
+      'Bear': '🐻', 'Rabbit': '🐰', 'Monkey': '🐵', 'Horse': '🐴', 'Cow': '🐄'
+    };
+
+    const shapeEmojis: Record<string, string> = {
+      'Circle': '⭕', 'Square': '⬜', 'Triangle': '🔺', 'Rectangle': '▭', 'Star': '⭐',
+      'Heart': '❤️', 'Diamond': '💎', 'Oval': '🔵', 'Pentagon': '⬟', 'Hexagon': '⬡'
+    };
+
+    const birdEmojis: Record<string, string> = {
+      'Eagle': '🦅', 'Owl': '🦉', 'Parrot': '🦜', 'Sparrow': '🐦', 'Crow': '🐦‍⬛',
+      'Pigeon': '🕊️', 'Duck': '🦆', 'Swan': '🦢', 'Peacock': '🦚', 'Penguin': '🐧'
+    };
+
+    let pool: string[] = [];
+    let emojiMap: Record<string, string> = {};
+    let questionText = '';
+
+    switch (category) {
+      case 'colors':
+        pool = colors;
+        emojiMap = colorEmojis;
+        questionText = difficulty <= 2 ? 'What color is this?' : difficulty <= 4 ? 'Which color matches?' : 'Identify the color:';
+        break;
+      case 'numbers':
+        pool = numbers;
+        emojiMap = numberEmojis;
+        questionText = difficulty <= 2 ? 'What number is this?' : difficulty <= 4 ? 'Count and choose:' : 'What number comes next?';
+        break;
+      case 'animals':
+        pool = animals;
+        emojiMap = animalEmojis;
+        questionText = difficulty <= 2 ? 'What animal is this?' : difficulty <= 4 ? 'Which animal matches?' : 'Identify the animal:';
+        break;
+      case 'shapes':
+        pool = shapes;
+        emojiMap = shapeEmojis;
+        questionText = difficulty <= 2 ? 'What shape is this?' : difficulty <= 4 ? 'Which shape matches?' : 'Identify the shape:';
+        break;
+      case 'birds':
+        pool = birds;
+        emojiMap = birdEmojis;
+        questionText = difficulty <= 2 ? 'What bird is this?' : difficulty <= 4 ? 'Which bird matches?' : 'Identify the bird:';
+        break;
+    }
+
+    // Increase difficulty: more options, harder questions
+    const numOptions = Math.min(3 + Math.floor(difficulty / 2), 4);
+    const poolSize = Math.min(pool.length, 5 + difficulty * 2);
+    const availablePool = pool.slice(0, poolSize);
+    
+    const correct = availablePool[Math.floor(Math.random() * availablePool.length)];
+    const wrongs = shuffle(availablePool.filter(item => item !== correct));
+    const options = shuffle([correct, ...wrongs.slice(0, numOptions - 1)]);
+
+    return {
+      category,
+      question: questionText,
+      correctAnswer: correct,
+      options,
+      emoji: emojiMap[correct] || '❓',
+    };
+  }, []);
+
+  const generateLevelQuestions = useCallback((currentLevel: number): Question[] => {
+    const categories: QuestionCategory[] = ['colors', 'numbers', 'animals', 'shapes', 'birds'];
+    const shuffledCategories = shuffle([...categories]);
+    return shuffledCategories.map(cat => generateQuestion(cat, currentLevel));
+  }, [generateQuestion]);
+
+  const [levelQuestions, setLevelQuestions] = useState<Question[]>([]);
+
+  useEffect(() => {
+    if (!gameFinished) {
+      const questions = generateLevelQuestions(level);
+      setLevelQuestions(questions);
+      setCurrentQuestion(questions[0]);
+      setCurrentQuestionIndex(0);
+      setQuestionsThisLevel(questions.length);
+      setCorrectThisLevel(0);
+      questionScale.value = withSpring(1.05, { damping: 12 }, () => {
+        questionScale.value = withSpring(1, { damping: 14 });
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [level, gameFinished, generateLevelQuestions]);
+
+  const handleAnswer = async (answer: string) => {
+    if (locked || !currentQuestion) return;
+    
+    setLocked(true);
+    setSelectedAnswer(answer);
+    const isCorrect = answer === currentQuestion.correctAnswer;
+    const category = currentQuestion.category;
+    
+    // Update category stats
+    setCategoryStats(prev => {
+      const catStats = prev[category] || { total: 0, correct: 0 };
+      return {
+        ...prev,
+        [category]: {
+          total: catStats.total + 1,
+          correct: catStats.correct + (isCorrect ? 1 : 0),
+        },
+      };
+    });
+    
+    if (isCorrect) {
+      setScore(s => s + 1);
+      setCorrectThisLevel(c => c + 1);
+      setFeedback('correct');
+      optionScale.value = withSpring(1.1, { damping: 10 }, () => {
+        optionScale.value = withSpring(1, { damping: 12 });
+      });
+      speak('Correct! Great job!');
+    } else {
+      setFeedback('wrong');
+      optionScale.value = withTiming(0.95, { duration: 100 }, () => {
+        optionScale.value = withSpring(1, { damping: 12 });
+      });
+      speak('Try again next time!');
+    }
+
+    setTimeout(async () => {
+      const newCorrectCount = isCorrect ? correctThisLevel + 1 : correctThisLevel;
+      
+      if (currentQuestionIndex < levelQuestions.length - 1) {
+        // Next question in this level
+        const nextIndex = currentQuestionIndex + 1;
+        setCurrentQuestionIndex(nextIndex);
+        setCurrentQuestion(levelQuestions[nextIndex]);
+        setSelectedAnswer(null);
+        setFeedback(null);
+        setLocked(false);
+        questionScale.value = withSpring(1.05, { damping: 12 }, () => {
+          questionScale.value = withSpring(1, { damping: 14 });
+        });
+      } else {
+        // Level complete - check if all correct
+        if (newCorrectCount === questionsThisLevel) {
+          // All correct - level up!
+          setShowLevelUp(true);
+          confettiOpacity.value = withTiming(1, { duration: 300 });
+          levelUpScale.value = withSpring(1.2, { damping: 10 }, () => {
+            levelUpScale.value = withSpring(1, { damping: 12 });
+          });
+          sparkleRotation.value = withRepeat(
+            withTiming(360, { duration: 2000, easing: Easing.linear }),
+            -1,
+            false
+          );
+          speak(`Level ${level + 1} unlocked! Amazing!`);
+          
+          setTimeout(() => {
+            confettiOpacity.value = withTiming(0, { duration: 500 });
+            levelUpScale.value = withTiming(0, { duration: 300 });
+            cancelAnimation(sparkleRotation);
+            setShowLevelUp(false);
+            setLevel(level + 1);
+            setCurrentQuestionIndex(0);
+            setSelectedAnswer(null);
+            setFeedback(null);
+            setLocked(false);
+          }, 2000);
+        } else {
+          // Not all correct - game over
+          const totalQuestions = (level - 1) * 5 + questionsThisLevel;
+          const totalCorrect = score + (isCorrect ? 1 : 0);
+          const xpEarned = totalCorrect * 15 + (level - 1) * 25;
+          
+          setFinalStats({
+            correct: totalCorrect,
+            total: totalQuestions,
+            xp: xpEarned,
+            level: level,
+          });
+          setGameFinished(true);
+
+          try {
+            // Prepare category performance metadata
+            const categoryPerformance: Record<string, { totalQuestions: number; correctAnswers: number }> = {};
+            Object.entries(categoryStats).forEach(([category, stats]) => {
+              categoryPerformance[category] = {
+                totalQuestions: stats.total,
+                correctAnswers: stats.correct,
+              };
+            });
+
+            await recordGame(xpEarned); // Update XP in user rewards
+            await logGameAndAward({
+              type: 'quiz',
+              correct: totalCorrect,
+              total: totalQuestions,
+              accuracy: (totalCorrect / totalQuestions) * 100,
+              xpAwarded: xpEarned,
+              meta: {
+                level: level,
+                categoryPerformance: categoryPerformance,
+              },
+            });
+            // 🔁 tell Home to refetch
+            router.setParams({ refreshStats: Date.now().toString() });
+          } catch (e) {
+            console.error('Failed to save quiz game:', e);
+          }
+          
+          speak(`Game over! You reached level ${level}!`);
+        }
+      }
+    }, isCorrect ? 1500 : 2000);
+  };
+
+  // Game finished screen
+  if (gameFinished && finalStats) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
+        <TouchableOpacity 
+          onPress={onBack} 
+          className="absolute top-12 left-6 px-4 py-2 rounded-full" 
+          style={{ backgroundColor: '#000' }}
+        >
+          <Text className="text-white font-semibold">← Back</Text>
+        </TouchableOpacity>
+
+        <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center">
+          <Text className="text-6xl mb-4">🎓</Text>
+          <Text className="text-3xl font-extrabold text-gray-900 mb-2">Quiz Complete!</Text>
+          <Text className="text-xl text-gray-600 mb-2 text-center">
+            You reached Level {finalStats.level}!
+          </Text>
+          <Text className="text-lg text-gray-500 mb-6 text-center">
+            {finalStats.correct} out of {finalStats.total} correct
+          </Text>
+
+          <View className="w-full bg-gray-50 rounded-2xl p-4 mb-4">
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-gray-700 font-semibold">Final Score:</Text>
+              <Text className="text-gray-900 font-extrabold text-lg">
+                {finalStats.correct}/{finalStats.total}
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-gray-700 font-semibold">Accuracy:</Text>
+              <Text className="text-gray-900 font-extrabold text-lg">
+                {Math.round((finalStats.correct / finalStats.total) * 100)}%
+              </Text>
+            </View>
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-gray-700 font-semibold">Level Reached:</Text>
+              <Text className="text-purple-600 font-extrabold text-lg">Level {finalStats.level}</Text>
+            </View>
+            <View className="flex-row justify-between items-center">
+              <Text className="text-gray-700 font-semibold">XP Earned:</Text>
+              <Text className="text-green-600 font-extrabold text-lg">+{finalStats.xp} XP</Text>
+            </View>
+          </View>
+
+          <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
+
+          <BigButton 
+            title="Play Again" 
+            color="#9333EA" 
+            onPress={() => {
+              setLevel(1);
+              setScore(0);
+              setCurrentQuestionIndex(0);
+              setGameFinished(false);
+              setFinalStats(null);
+              setFeedback(null);
+              setLocked(false);
+              setSelectedAnswer(null);
+              setCategoryStats({});
+            }} 
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!currentQuestion) return null;
+
+  const categoryColors: Record<QuestionCategory, string> = {
+    colors: '#EF4444',
+    numbers: '#3B82F6',
+    animals: '#10B981',
+    shapes: '#F59E0B',
+    birds: '#8B5CF6',
+  };
+
+  const categoryGradients: Record<QuestionCategory, [string, string]> = {
+    colors: ['#EF4444', '#F87171'],
+    numbers: ['#3B82F6', '#60A5FA'],
+    animals: ['#10B981', '#34D399'],
+    shapes: ['#F59E0B', '#FBBF24'],
+    birds: ['#8B5CF6', '#A78BFA'],
+  };
+
+  const bgColor = categoryColors[currentQuestion.category];
+  const gradient = categoryGradients[currentQuestion.category];
+
+  return (
+    <SafeAreaView className="flex-1 items-center justify-center p-6" style={{ backgroundColor: `${bgColor}15` }}>
+      <TouchableOpacity 
+        onPress={onBack} 
+        className="absolute top-12 left-6 px-4 py-2 rounded-full z-10" 
+        style={{ 
+          backgroundColor: '#111827',
+          shadowColor: '#000',
+          shadowOpacity: 0.2,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: 6,
+        }}
+      >
+        <Text className="text-white font-semibold">← Back</Text>
+      </TouchableOpacity>
+
+      {/* Level Up Animation */}
+      {showLevelUp && (
+        <Animated.View 
+          style={[
+            {
+              position: 'absolute',
+              top: '30%',
+              zIndex: 50,
+              alignItems: 'center',
+            },
+            levelUpStyle,
+          ]}
+          pointerEvents="none"
+        >
+          <Text style={{ fontSize: 64, fontWeight: '900', color: '#9333EA' }}>⭐</Text>
+          <Text style={{ fontSize: 32, fontWeight: '800', color: '#9333EA', marginTop: 8 }}>
+            Level {level + 1}!
+          </Text>
+        </Animated.View>
+      )}
+
+      {/* Confetti Effect */}
+      <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, pointerEvents: 'none' }, confettiStyle]}>
+        <SparkleBurst visible color={bgColor} />
+      </Animated.View>
+
+      <View style={{
+        width: '100%',
+        maxWidth: 500,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 32,
+        padding: 28,
+        shadowColor: '#000',
+        shadowOpacity: 0.15,
+        shadowRadius: 24,
+        shadowOffset: { width: 0, height: 10 },
+        elevation: 12,
+        borderWidth: 2,
+        borderColor: `${bgColor}40`,
+      }}>
+        {/* Header */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <View style={{
+            backgroundColor: bgColor,
+            paddingHorizontal: 16,
+            paddingVertical: 8,
+            borderRadius: 20,
+          }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '800' }}>
+              Level {level}
+            </Text>
+          </View>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#F3F4F6',
+            paddingHorizontal: 14,
+            paddingVertical: 8,
+            borderRadius: 20,
+          }}>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: '#1F2937' }}>
+              Score: {score} 🎯
+            </Text>
+          </View>
+        </View>
+
+        {/* Progress Indicator */}
+        <View style={{ marginBottom: 24 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: '#6B7280' }}>
+              Question {currentQuestionIndex + 1} of {questionsThisLevel}
+            </Text>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: '#6B7280' }}>
+              {currentQuestion.category.charAt(0).toUpperCase() + currentQuestion.category.slice(1)}
+            </Text>
+          </View>
+          <View style={{ height: 6, backgroundColor: '#E5E7EB', borderRadius: 3, overflow: 'hidden' }}>
+            <LinearGradient
+              colors={gradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                height: '100%',
+                width: `${((currentQuestionIndex + 1) / questionsThisLevel) * 100}%`,
+                borderRadius: 3,
+              }}
+            />
+          </View>
+        </View>
+
+        {/* Question */}
+        <Animated.View style={[{ alignItems: 'center', marginBottom: 32 }, questionStyle]}>
+          <View style={{
+            width: 120,
+            height: 120,
+            borderRadius: 60,
+            backgroundColor: `${bgColor}20`,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 20,
+            borderWidth: 4,
+            borderColor: bgColor,
+          }}>
+            <Text style={{ fontSize: 64 }}>{currentQuestion.emoji}</Text>
+          </View>
+          <Text style={{ 
+            fontSize: 24, 
+            fontWeight: '800', 
+            color: '#111827', 
+            marginBottom: 8,
+            textAlign: 'center',
+          }}>
+            {currentQuestion.question}
+          </Text>
+        </Animated.View>
+
+        {/* Options */}
+        <View style={{ gap: 12 }}>
+          {currentQuestion.options.map((option, index) => {
+            const isSelected = selectedAnswer === option;
+            const isCorrect = option === currentQuestion.correctAnswer;
+            const showFeedback = feedback !== null;
+            
+            let optionBg = '#F3F4F6';
+            let optionBorder = '#E5E7EB';
+            let textColor = '#111827';
+            
+            if (showFeedback) {
+              if (isSelected && isCorrect) {
+                optionBg = '#10B981';
+                optionBorder = '#10B981';
+                textColor = '#FFFFFF';
+              } else if (isSelected && !isCorrect) {
+                optionBg = '#EF4444';
+                optionBorder = '#EF4444';
+                textColor = '#FFFFFF';
+              } else if (!isSelected && isCorrect && feedback === 'wrong') {
+                optionBg = '#D1FAE5';
+                optionBorder = '#10B981';
+                textColor = '#065F46';
+              }
+            }
+
+            return (
+              <Animated.View key={option} style={optionStyle}>
+                <TouchableOpacity
+                  onPress={() => handleAnswer(option)}
+                  disabled={locked}
+                  activeOpacity={0.8}
+                  style={{
+                    backgroundColor: optionBg,
+                    borderWidth: 2,
+                    borderColor: optionBorder,
+                    borderRadius: 20,
+                    padding: 20,
+                    alignItems: 'center',
+                    shadowColor: isSelected ? bgColor : '#000',
+                    shadowOpacity: isSelected ? 0.3 : 0.1,
+                    shadowRadius: isSelected ? 12 : 4,
+                    shadowOffset: { width: 0, height: isSelected ? 6 : 2 },
+                    elevation: isSelected ? 8 : 2,
+                  }}
+                >
+                  <Text style={{
+                    fontSize: 20,
+                    fontWeight: '800',
+                    color: textColor,
+                  }}>
+                    {option}
+                  </Text>
+                  {showFeedback && isSelected && (
+                    <Text style={{ marginTop: 4, fontSize: 24 }}>
+                      {isCorrect ? '✅' : '❌'}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          })}
+        </View>
+
+        {/* Feedback Toast */}
+        {feedback && (
+          <Animated.View
+            entering={FadeInUp.springify().damping(14)}
+            style={{
+              marginTop: 16,
+              backgroundColor: feedback === 'correct' ? '#D1FAE5' : '#FEE2E2',
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderRadius: 16,
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{
+              fontSize: 18,
+              fontWeight: '800',
+              color: feedback === 'correct' ? '#065F46' : '#991B1B',
+            }}>
+              {feedback === 'correct' ? '🎉 Correct! Great job!' : '😔 Not quite, but keep trying!'}
+            </Text>
+          </Animated.View>
+        )}
+      </View>
+    </SafeAreaView>
+  );
+}
+
 /* ======================= FIND EMOJI — Reanimated v3 (web-safe) ======================= */
 function FindEmoji({ onBack }: { onBack: () => void }) {
   const router = useRouter();
@@ -1163,7 +1758,7 @@ const POOL: Tile[] = useMemo(() => {
 
 
 // -------------------- Menu screen --------------------
-type GameKey = 'menu' | 'tap' | 'match' | 'sort' | 'emoji';
+type GameKey = 'menu' | 'tap' | 'match' | 'sort' | 'emoji' | 'quiz';
 
 type MenuGame = {
   id: GameKey;
@@ -1264,6 +1859,7 @@ export default function GamesScreen() {
   if (screen === 'match') return <PictureMatch onBack={() => setScreen('menu')} />;
   if (screen === 'sort') return <QuickSort onBack={() => setScreen('menu')} />;
   if (screen === 'emoji') return <FindEmoji onBack={() => setScreen('menu')} />;
+  if (screen === 'quiz') return <QuizChallenge onBack={() => setScreen('menu')} />;
 
   // Menu UI with beautiful cards
   const games: MenuGame[] = [
@@ -1300,6 +1896,14 @@ export default function GamesScreen() {
       color: '#06B6D4',
       gradient: ['#06B6D4', '#3B82F6'] as [string, string],
     },
+    {
+      id: 'quiz',
+      title: 'Quiz Challenge',
+      emoji: '🎓',
+      description: 'Test your knowledge! Colors, numbers, animals, shapes & birds!',
+      color: '#9333EA',
+      gradient: ['#9333EA', '#A855F7'] as [string, string],
+    },
   ];
 
   return (
@@ -1313,13 +1917,17 @@ export default function GamesScreen() {
           style={{ flex: 1 }}
           onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
           onContentSizeChange={(_, h) => setContentH(h)}
-          scrollEnabled={contentH > containerH + 10}
-          contentContainerStyle={{ padding: 20 }}
+          scrollEnabled={containerH > 0 && contentH > containerH + 1}
+          contentContainerStyle={[
+            { padding: 20, minHeight: containerH || undefined },
+            containerH > 0 && contentH <= containerH && { flexGrow: 1 }
+          ]}
           showsVerticalScrollIndicator={false}
           bounces={false}
           alwaysBounceVertical={false}
           overScrollMode="never"
           nestedScrollEnabled={false}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Header */}
           <Animated.View style={[menuStyles.headerWrap, headerStyle]}>

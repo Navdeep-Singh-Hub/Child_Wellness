@@ -109,12 +109,13 @@ export async function recordGame(pointsEarned: number) {
 }
 
 export async function logGameAndAward(payload: {
-  type: 'tap' | 'match' | 'sort' | 'emoji';
+  type: 'tap' | 'match' | 'sort' | 'emoji' | 'quiz';
   correct: number;
   total: number;
   accuracy: number; // 0..100
   xpAwarded: number;
   durationMs?: number;
+  meta?: Record<string, any>; // For quiz: { level, categoryPerformance }
 }) {
   const headers = await authHeaders();
   const res = await fetch(`${API_BASE_URL}/api/me/game-log`, {
@@ -292,6 +293,91 @@ export async function sendContactMessage(payload: { subject?: string; message: s
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}
+
+// ----- Smart Explorer API -----
+
+export type SmartSceneSummary = {
+  _id: string;
+  slug: string;
+  title: string;
+  imageUrl: string;
+  meta?: Record<string, unknown>;
+  itemCount: number;
+};
+
+export type SmartSceneDetail = {
+  scene: SmartSceneSummary;
+  items: Array<{
+    _id: string;
+    label: string;
+    altLabels?: string[];
+    bbox: { x: number; y: number; w: number; h: number };
+    tags?: string[];
+    tts?: Record<string, string | undefined>;
+  }>;
+  prompts: Array<any>;
+};
+
+async function apiGet(path: string) {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    headers: {
+      ...(await authHeaders()),
+      'x-auth0-id': 'dev_local_tester', // fallback for dev/testing
+    },
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+  }
+  return res.json();
+}
+
+async function apiPost(path: string, body?: any) {
+  const headers = await authHeaders();
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function fetchSmartScenes(): Promise<{ scenes: SmartSceneSummary[] }> {
+  return apiGet('/api/smart-explorer/scenes');
+}
+
+export async function fetchSmartSceneDetail(slug: string): Promise<SmartSceneDetail> {
+  return apiGet(`/api/smart-explorer/scenes/${encodeURIComponent(slug)}`);
+}
+
+export async function startSmartExplorerSession(payload: {
+  sceneSlug: string;
+  mode: 'learn' | 'play' | 'therapy';
+}) {
+  return apiPost('/api/smart-explorer/sessions/start', payload);
+}
+
+export async function submitSmartExplorerPrompt(
+  sessionId: string,
+  payload: {
+    promptId: string;
+    correct: boolean;
+    responseTimeMs: number;
+    incorrectTaps?: number;
+    hintsUsed?: string[];
+    events?: Array<{ event: string; data?: Record<string, unknown>; correct?: boolean }>;
+  },
+) {
+  return apiPost(`/api/smart-explorer/sessions/${sessionId}/prompt`, payload);
+}
+
+export async function completeSmartExplorerSession(sessionId: string) {
+  return apiPost(`/api/smart-explorer/sessions/${sessionId}/complete`);
 }
 
 

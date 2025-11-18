@@ -8,6 +8,65 @@ const CustomTileSchema = new Schema({
   // Optionally: category, language, createdAt etc.
 }, { _id: false });
 
+const SmartExplorerSceneStatsSchema = new Schema(
+  {
+    ewmaAccuracy: { type: Number, default: 0 },
+    promptsSeen: { type: Number, default: 0 },
+    tierUnlocked: {
+      type: String,
+      enum: ['tierA', 'tierB', 'tierC', 'tierD'],
+      default: 'tierA',
+    },
+    badges: [{ type: String }],
+  },
+  { _id: false },
+);
+
+const SmartExplorerStatsSchema = new Schema(
+  {
+    totalPrompts: { type: Number, default: 0 },
+    correctPrompts: { type: Number, default: 0 },
+    accuracy: { type: Number, default: 0 },
+    bestStreak: { type: Number, default: 0 },
+    lastPlayedDate: { type: String },
+    sceneMastery: {
+      type: Map,
+      of: SmartExplorerSceneStatsSchema,
+      default: () => ({}),
+    },
+  },
+  { _id: false },
+);
+
+const QuizCategoryStatsSchema = new Schema(
+  {
+    totalQuestions: { type: Number, default: 0 },
+    correctAnswers: { type: Number, default: 0 },
+    accuracy: { type: Number, default: 0 }, // 0..100
+    lastPlayedDate: { type: String },
+  },
+  { _id: false },
+);
+
+const QuizStatsSchema = new Schema(
+  {
+    totalGamesPlayed: { type: Number, default: 0 },
+    totalQuestions: { type: Number, default: 0 },
+    totalCorrect: { type: Number, default: 0 },
+    overallAccuracy: { type: Number, default: 0 }, // 0..100
+    bestLevel: { type: Number, default: 0 }, // Highest level reached
+    currentLevel: { type: Number, default: 1 }, // Current level (starts at 1)
+    totalXP: { type: Number, default: 0 },
+    lastPlayedDate: { type: String },
+    categoryPerformance: {
+      type: Map,
+      of: QuizCategoryStatsSchema,
+      default: () => ({}),
+    },
+  },
+  { _id: false },
+);
+
 const RewardsSchema = new Schema({
   xp:           { type: Number, default: 0 },
   coins:        { type: Number, default: 0 },
@@ -22,6 +81,9 @@ const RewardsSchema = new Schema({
   correctSum: { type: Number, default: 0 },
   totalSum:   { type: Number, default: 0 },
   accEMA:     { type: Number, default: 0 }, // 0..100 exponential moving average of per-game accuracy
+
+  smartExplorer: { type: SmartExplorerStatsSchema, default: () => ({}) },
+  quiz: { type: QuizStatsSchema, default: () => ({}) },
 });
 
 const UserSchema = new Schema({

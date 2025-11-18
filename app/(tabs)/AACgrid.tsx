@@ -94,6 +94,7 @@ function GridMenu({ inline = false }: { inline?: boolean }) {
   const menuItems = [
     { title: 'Home', route: '/(tabs)', icon: 'home-outline' },
     { title: 'Games', route: '/(tabs)/Games', icon: 'game-controller-outline' },
+    { title: 'Smart Explorer', route: '/(tabs)/SmartExplorer', icon: 'map-outline' },
     { title: 'Grids', route: '/(tabs)/AACgrid', icon: 'grid-outline' },
     { title: 'Profile', route: '/(tabs)/Profile', icon: 'person-outline' },
     { title: 'Contact Us', route: '/(tabs)/Contact', icon: 'mail-outline' },
@@ -195,8 +196,30 @@ function GridMenu({ inline = false }: { inline?: boolean }) {
 
         <View style={{ paddingTop: 12 }}>
           {menuItems.map((item, index) => {
-            const isActive = pathname === item.route || (item.route === '/(tabs)' && pathname === '/');
+            // Improved active detection: check multiple pathname variations
+            const normalizedPathname = (pathname || '').toLowerCase();
+            const normalizedRoute = (item.route || '').toLowerCase();
+            
+            // Extract route name from paths (e.g., "/(tabs)/Games" -> "games")
+            const routeName = normalizedRoute.split('/').pop()?.split('?')[0] || '';
+            const pathnameParts = normalizedPathname.split('/');
+            const currentRouteName = pathnameParts[pathnameParts.length - 1]?.split('?')[0] || '';
+            
+            // Check if active: exact match, route name matches, or home route special case
+            const isActive = 
+              normalizedPathname === normalizedRoute ||
+              normalizedPathname === normalizedRoute.replace('/(tabs)', '') ||
+              (normalizedRoute === '/(tabs)' && (normalizedPathname === '/' || normalizedPathname === '' || normalizedPathname === '/(tabs)')) ||
+              (routeName && routeName === currentRouteName && routeName !== '' && routeName !== 'tabs') ||
+              (normalizedPathname.includes(routeName) && routeName !== '' && routeName !== 'tabs' && !routeName.includes('addtile'));
+            
             const isAction = (item as any).isAction;
+            
+            // Get filled icon for active state (if available)
+            const iconName = isActive && !isAction && item.icon.includes('-outline')
+              ? (item.icon.replace('-outline', '') as any)
+              : (item.icon as any);
+            
             return (
               <TouchableOpacity
                 key={item.title}
@@ -227,7 +250,7 @@ function GridMenu({ inline = false }: { inline?: boolean }) {
                 }}
               >
                 <Ionicons
-                  name={item.icon as any}
+                  name={iconName}
                   size={22}
                   color={isActive ? '#2563EB' : (isAction ? '#6366F1' : '#6B7280')}
                   style={{ marginRight: 16 }}
@@ -241,6 +264,15 @@ function GridMenu({ inline = false }: { inline?: boolean }) {
                 >
                   {item.title}
                 </Text>
+                {isActive && (
+                  <View style={{
+                    marginLeft: 'auto',
+                    width: 6,
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor: '#2563EB',
+                  }} />
+                )}
               </TouchableOpacity>
             );
           })}
@@ -1391,24 +1423,79 @@ export default function AACGrid() {
 
       {/* Sentence strip */}
       <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
-        <View style={[{ minHeight: 50, borderWidth: 2, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: '#FFFFFF', borderColor: theme.accent + '55', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }, shadow.s]}>
-          {utterance.length === 0 ? (
-            <Text style={{ color: theme.accent, fontWeight: '600' }}>Build a sentence…</Text>
-          ) : (
-            utterance.map((tileId, i) => (
-              <View key={`${tileId}-${i}`} style={{ paddingHorizontal: 10, paddingVertical: 6, backgroundColor: theme.chip, borderRadius: 12, marginRight: 6, marginBottom: 6 }}>
-                <Text style={{ color: theme.text, fontWeight: '700' }}>{tWord(tileId, selectedLang)}</Text>
-              </View>
-            ))
-          )}
-        </View>
-        <View style={{ flexDirection: 'row', columnGap: 10, marginTop: 10 }}>
-          <TouchableOpacity onPress={onSpeakSentence} style={[styles.primaryBtn, { backgroundColor: theme.accent }]} activeOpacity={0.9}>
-            <Text style={{ color: '#fff', fontWeight: '800' }}>Speak</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setUtterance([])} style={[styles.secondaryBtn]} activeOpacity={0.9}>
-            <Text style={{ fontWeight: '700', color: '#111827' }}>Clear</Text>
-          </TouchableOpacity>
+        <View
+          style={[
+            {
+              minHeight: 60,
+              borderWidth: 2,
+              borderRadius: 16,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              backgroundColor: '#FFFFFF',
+              borderColor: theme.accent + '55',
+              flexDirection: 'row',
+              alignItems: 'flex-start',
+            },
+            shadow.s,
+          ]}
+        >
+          <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
+            {utterance.length === 0 ? (
+              <Text style={{ color: theme.accent, fontWeight: '600' }}>Build a sentence…</Text>
+            ) : (
+              utterance.map((tileId, i) => (
+                <View
+                  key={`${tileId}-${i}`}
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    backgroundColor: theme.chip,
+                    borderRadius: 12,
+                    marginRight: 6,
+                    marginBottom: 6,
+                  }}
+                >
+                  <Text style={{ color: theme.text, fontWeight: '700' }}>{tWord(tileId, selectedLang)}</Text>
+                </View>
+              ))
+            )}
+          </View>
+          <View style={{ flexDirection: 'row', columnGap: 8, marginLeft: 8 }}>
+            <TouchableOpacity
+              onPress={onSpeakSentence}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Speak sentence"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 14,
+                backgroundColor: theme.accent,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons name="volume-high-outline" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setUtterance([])}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Clear sentence"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 14,
+                backgroundColor: '#F3F4F6',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 1,
+                borderColor: '#E5E7EB',
+              }}
+            >
+              <Ionicons name="trash-outline" size={20} color="#111827" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
