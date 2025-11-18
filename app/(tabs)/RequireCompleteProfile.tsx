@@ -2,14 +2,20 @@ import React, { useEffect, useState } from "react";
 import { getMyProfile } from "@/utils/api";
 import { Redirect } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
+import { useAuth } from "@/app/_layout";
 
 const hasMinPhone = (p: any) => String(p?.phoneNumber || "").replace(/\D/g, "").length >= 10;
 
 export default function RequireCompleteProfile({ children }: { children: React.ReactNode }) {
-  const [status, setStatus] = useState<"checking" | "ok" | "incomplete">("checking");
+  const { session } = useAuth();
+  const [status, setStatus] = useState<"waiting-auth" | "checking" | "ok" | "incomplete">("waiting-auth");
 
   useEffect(() => {
     let alive = true;
+    if (!session) {
+      return;
+    }
+    setStatus("checking");
     (async () => {
       try {
         const p = await getMyProfile();
@@ -25,9 +31,9 @@ export default function RequireCompleteProfile({ children }: { children: React.R
     return () => {
       alive = false;
     };
-  }, []);
+  }, [session]);
 
-  if (status === "checking") {
+  if (status === "waiting-auth" || status === "checking") {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F8FAFC" }}>
         <ActivityIndicator size="large" color="#2563EB" />
