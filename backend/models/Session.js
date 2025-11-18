@@ -3,13 +3,15 @@ import mongoose, { Schema } from 'mongoose';
 const GameLogSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', index: true, required: true },
-    type:   { type: String, enum: ['tap', 'match', 'sort', 'emoji'], required: true },
+    type:   { type: String, enum: ['tap', 'match', 'sort', 'emoji', 'quiz'], required: true },
     correct:   { type: Number, default: 0 },
     total:     { type: Number, default: 0 },
     accuracy:  { type: Number, default: 0 }, // 0..100
     xpAwarded: { type: Number, default: 0 },
     durationMs:{ type: Number, default: 0 },
     at:        { type: Date,   default: Date.now },
+    // Quiz-specific metadata
+    meta: { type: Schema.Types.Mixed, default: () => ({}) }, // For quiz: { level, categories, categoryPerformance }
   },
   { _id: false }
 );

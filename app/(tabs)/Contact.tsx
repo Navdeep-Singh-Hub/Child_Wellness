@@ -137,13 +137,17 @@ export default function Contact() {
             style={{ flex: 1 }}
             onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
             onContentSizeChange={(_, h) => setContentH(h)}
-            scrollEnabled={contentH > containerH + 10}
-            contentContainerStyle={{ padding: 16 }}
+            scrollEnabled={containerH > 0 && contentH > containerH + 1}
+            contentContainerStyle={[
+              { padding: 16, minHeight: containerH || undefined },
+              containerH > 0 && contentH <= containerH && { flexGrow: 1 }
+            ]}
             bounces={false}
             alwaysBounceVertical={false}
             overScrollMode="never"
             showsVerticalScrollIndicator={false}
             nestedScrollEnabled={false}
+            keyboardShouldPersistTaps="handled"
           >
           {/* HERO */}
           <Card>

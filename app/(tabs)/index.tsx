@@ -16,6 +16,9 @@ import {
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
+  Platform,
+  PixelRatio,
 } from 'react-native';
 
 type Stats = { xp: number; coins: number; hearts: number; streakDays: number; bestStreak?: number; accuracy?: number; totalGamesPlayed?: number };
@@ -60,6 +63,11 @@ export default function Index() {
   const statAnimations = useRef<Record<string, { entrance: Animated.Value; press: Animated.Value }>>({});
   const quickAnimations = useRef<Record<string, { entrance: Animated.Value; press: Animated.Value }>>({});
   const moodAnimations = useRef<Record<string, Animated.Value>>({});
+
+  const { width } = useWindowDimensions();
+  const isSmall = width < 380;   // most phones in portrait
+  const isTiny = width < 340;    // very small screens
+  const fs = (n: number) => (isTiny ? n - 3 : isSmall ? n - 1 : n);
 
   const loadStats = useCallback(async () => {
     if (isLoadingRef.current) return;
@@ -153,6 +161,13 @@ export default function Index() {
       caption: 'Practice vocabulary tiles',
       icon: 'grid-outline',
       onPress: () => router.push('/(tabs)/AACgrid'),
+    },
+    {
+      key: 'smart',
+      label: 'Smart Explorer',
+      caption: 'Discover scenes with Scout',
+      icon: 'map-outline',
+      onPress: () => router.push('/(tabs)/SmartExplorer'),
     },
     {
       key: 'profile',
@@ -438,7 +453,11 @@ export default function Index() {
         onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
         onContentSizeChange={(_, h) => setContentH(h)}
         scrollEnabled={contentH > containerH + 1}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: isSmall ? 14 : 20 },
+          containerH > 0 && { minHeight: containerH },
+        ]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         bounces={false}
         overScrollMode="never"
@@ -453,7 +472,12 @@ export default function Index() {
             end={{ x: 1, y: 1 }}
             style={styles.heroGradient}
           >
-            <View style={styles.heroTopRow}>
+            <View
+              style={[
+                styles.heroTopRow,
+                isSmall && { flexDirection: 'column', alignItems: 'stretch', gap: 12 },
+              ]}
+            >
               <View style={{ flex: 1 }}>
                 <Text style={styles.heroGreeting}>Welcome back 👋</Text>
                 <Text style={styles.heroHeadline}>Here’s today’s momentum snapshot.</Text>
@@ -468,11 +492,16 @@ export default function Index() {
                   </View>
                 </View>
               </View>
-              <Animated.View style={styles.heroRingWrap}>
+              <Animated.View
+                style={[
+                  styles.heroRingWrap,
+                  isSmall && { alignSelf: 'center', marginTop: 8 },
+                ]}
+              >
                 <AnimatedAccuracyRing
                   value={accuracy}
-                  size={120}
-                  stroke={12}
+                  size={isSmall ? 100 : 120}
+                  stroke={isSmall ? 10 : 12}
                   progressColor="#4F46E5"
                   trackColor="#E0E7FF"
                   label="Accuracy"
@@ -481,6 +510,7 @@ export default function Index() {
                 <Text
                   style={[
                     styles.ringDelta,
+                    { fontSize: fs(12) },
                     accuracyTrend === 'positive'
                       ? styles.deltaPositive
                       : accuracyTrend === 'negative'
@@ -525,16 +555,19 @@ export default function Index() {
             const opacity = entrance;
 
             return (
-              <Animated.View
-                key={block.key}
-                style={[
-                  styles.statCard,
-                  {
-                    opacity,
-                    transform: [{ translateY }, { scale: press }],
-                    borderColor: soften(block.accent, 0.2),
-                  },
-                ]}
+                <Animated.View
+                  key={block.key}
+                  style={[
+                    styles.statCard,
+                    {
+                      // width responsive
+                      width: isSmall ? '100%' : '48%',
+                      opacity,
+                      transform: [{ translateY }, { scale: press }],
+                      borderColor: soften(block.accent, 0.2),
+                      padding: isSmall ? 16 : 20,
+                    },
+                  ]}
               >
                 <Pressable
                   onPressIn={() => handleStatPress(block.key, true)}
@@ -581,6 +614,7 @@ export default function Index() {
                 style={[
                   styles.quickCard,
                   {
+                    width: isSmall ? 200 : 220,
                     opacity,
                     transform: [{ translateY }, { scale: press }],
                   },
@@ -682,6 +716,7 @@ export default function Index() {
                   style={[
                     styles.moodCard,
                     {
+                      width: isSmall ? 220 : 260,
                       opacity: anim,
                       transform: [{ translateX }, { scale }],
                     },

@@ -58,6 +58,7 @@ function SlideOutMenu() {
   const menuItems = [
     { title: "Home", route: "/(tabs)", icon: "home-outline" },
     { title: "Games", route: "/(tabs)/Games", icon: "game-controller-outline" },
+    { title: "Smart Explorer", route: "/(tabs)/SmartExplorer", icon: "map-outline" },
     { title: "Grids", route: "/(tabs)/AACgrid", icon: "grid-outline" },
     { title: "Profile", route: "/(tabs)/Profile", icon: "person-outline" },
     { title: "Contact Us", route: "/(tabs)/Contact", icon: "mail-outline" },
@@ -167,8 +168,30 @@ function SlideOutMenu() {
 
         <View style={{ paddingTop: 12 }}>
           {menuItems.map((item, index) => {
-            const isActive = pathname === item.route || (item.route === "/(tabs)" && pathname === "/");
+            // Improved active detection: check multiple pathname variations
+            const normalizedPathname = (pathname || '').toLowerCase();
+            const normalizedRoute = (item.route || '').toLowerCase();
+            
+            // Extract route name from paths (e.g., "/(tabs)/Games" -> "games")
+            const routeName = normalizedRoute.split('/').pop()?.split('?')[0] || '';
+            const pathnameParts = normalizedPathname.split('/');
+            const currentRouteName = pathnameParts[pathnameParts.length - 1]?.split('?')[0] || '';
+            
+            // Check if active: exact match, route name matches, or home route special case
+            const isActive = 
+              normalizedPathname === normalizedRoute ||
+              normalizedPathname === normalizedRoute.replace('/(tabs)', '') ||
+              (normalizedRoute === "/(tabs)" && (normalizedPathname === "/" || normalizedPathname === "" || normalizedPathname === "/(tabs)")) ||
+              (routeName && routeName === currentRouteName && routeName !== '' && routeName !== 'tabs') ||
+              (normalizedPathname.includes(routeName) && routeName !== '' && routeName !== 'tabs' && !routeName.includes('addtile'));
+            
             const isAction = (item as any).isAction;
+            
+            // Get filled icon for active state (if available)
+            const iconName = isActive && !isAction && item.icon.includes('-outline')
+              ? (item.icon.replace('-outline', '') as any)
+              : (item.icon as any);
+            
             return (
               <TouchableOpacity
                 key={item.title}
@@ -188,7 +211,7 @@ function SlideOutMenu() {
                 }}
               >
                 <Ionicons
-                  name={item.icon as any}
+                  name={iconName}
                   size={22}
                   color={isActive ? "#2563EB" : (isAction ? "#6366F1" : "#6B7280")}
                   style={{ marginRight: 16 }}
@@ -202,6 +225,15 @@ function SlideOutMenu() {
                 >
                   {item.title}
                 </Text>
+                {isActive && (
+                  <View style={{
+                    marginLeft: 'auto',
+                    width: 6,
+                    height: 6,
+                    borderRadius: 3,
+                    backgroundColor: "#2563EB",
+                  }} />
+                )}
               </TouchableOpacity>
             );
           })}
