@@ -38,6 +38,23 @@ const SmartExplorerStatsSchema = new Schema(
   { _id: false },
 );
 
+const SkillStatSchema = new Schema(
+  {
+    totalPrompts: { type: Number, default: 0 },
+    correctPrompts: { type: Number, default: 0 },
+    accuracy: { type: Number, default: 0 },
+    avgResponseMs: { type: Number, default: 0 },
+    attempts: { type: Number, default: 0 },
+    ewmaAccuracy: { type: Number, default: 0 },
+    streak: { type: Number, default: 0 },
+    bestStreak: { type: Number, default: 0 },
+    level: { type: Number, default: 1 },
+    trend: { type: Number, default: 0 },
+    lastPlayedDate: { type: String },
+  },
+  { _id: false },
+);
+
 const QuizCategoryStatsSchema = new Schema(
   {
     totalQuestions: { type: Number, default: 0 },
@@ -76,6 +93,8 @@ const RewardsSchema = new Schema({
   lastPlayedDate: String, // 'YYYY-MM-DD' in Asia/Kolkata
   totalGamesPlayed: { type: Number, default: 0 },
   accuracy:     { type: Number, default: 0 }, // displayed accuracy (0..100)
+  globalLevel:  { type: Number, default: 1 },
+  levelLabel:   { type: String, default: 'Level 1 Explorer' },
   
   // NEW: running counters + EMA to avoid O(n) scans and to weight recency
   correctSum: { type: Number, default: 0 },
@@ -84,6 +103,11 @@ const RewardsSchema = new Schema({
 
   smartExplorer: { type: SmartExplorerStatsSchema, default: () => ({}) },
   quiz: { type: QuizStatsSchema, default: () => ({}) },
+  skills: {
+    type: Map,
+    of: SkillStatSchema,
+    default: () => ({}),
+  },
 });
 
 const UserSchema = new Schema({

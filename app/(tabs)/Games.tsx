@@ -21,6 +21,7 @@ import Animated, {
 
 import { ResultToast, SparkleBurst, Stepper } from '@/components/game/FX';
 import ResultCard from '@/components/game/ResultCard';
+import ReflectionPrompt from '@/components/game/ReflectionPrompt';
 import { CATEGORIES, type Tile, tileImages } from '@/constants/aac';
 import { icons } from '@/constants/icons';
 import { images } from '@/constants/images';
@@ -98,6 +99,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [summary, setSummary] = useState<{ xp: number; streak: number; games: number } | null>(null);
   const [tapDeltaMs, setTapDeltaMs] = useState<number | null>(null);
+  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
 
   const startClientAt = useRef<number | null>(null);
   const raf = useRef<number | null>(null);
@@ -179,7 +181,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
       const isCorrect = timingAccuracy >= 50 ? 1 : 0;
       
       try {
-        await logGameAndAward({
+        const result = await logGameAndAward({
           type: 'tap',
           correct: isCorrect,
           total: 1,
@@ -187,6 +189,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
           xpAwarded: res.pointsAwarded,
           durationMs: elapsedMs,
         });
+        setLogTimestamp(result?.last?.at ?? null);
         // 🔁 tell Home to refetch
         router.setParams({ refreshStats: Date.now().toString() });
       } catch {}
@@ -252,10 +255,13 @@ function TapTiming({ onBack }: { onBack: () => void }) {
 
           <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
 
+          <ReflectionPrompt logTimestamp={logTimestamp} />
+
           <BigButton title="Play Again" color="#2563EB" onPress={() => {
             setState('idle');
             setSummary(null);
             setMsg(null);
+            setLogTimestamp(null);
             prefetchRound();
           }} />
         </View>
@@ -422,6 +428,7 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
   const [fxKey, setFxKey] = useState(0);
   const [locked, setLocked] = useState(false);
   const [finalScore, setFinalScore] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const pmToastOpacity = useSharedValue(0);
   const pmToastY = useSharedValue(12);
   const pmToastStyle = useAnimatedStyle(() => ({ opacity: pmToastOpacity.value, transform: [{ translateY: pmToastY.value }] }));
@@ -471,13 +478,14 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
       setFinalScore({ correct: correctCount, total, xp });
       try {
         await recordGame(xp); // legacy XP
-        await logGameAndAward({
+        const result = await logGameAndAward({
           type: 'match',
           correct: correctCount,
           total,
           accuracy: (correctCount / total) * 100,
           xpAwarded: xp,
         });
+        setLogTimestamp(result?.last?.at ?? null);
         // 🔁 tell Home to refetch
         router.setParams({ refreshStats: Date.now().toString() });
       } catch {}
@@ -504,12 +512,14 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
             total={finalScore.total}
             xpAwarded={finalScore.xp}
             accuracy={(finalScore.correct / finalScore.total) * 100}
+            logTimestamp={logTimestamp}
             onPlayAgain={() => {
               setRound(1);
               setScore(0);
               setDone(false);
               setFinalScore(null);
               setPmFeedback(null);
+              setLogTimestamp(null);
               next();
             }}
             onHome={() => {
@@ -611,6 +621,7 @@ function QuickSort({ onBack }: { onBack: () => void }) {
   const [correctCat, setCorrectCat] = useState<CatId | null>(null);
   const [qsFeedback, setQsFeedback] = useState<null | 'correct' | 'wrong'>(null);
   const [finalScore, setFinalScore] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const qsToastOpacity = useSharedValue(0);
   const qsToastY = useSharedValue(12);
   const qsToastStyle = useAnimatedStyle(() => ({ opacity: qsToastOpacity.value, transform: [{ translateY: qsToastY.value }] }));
@@ -679,13 +690,14 @@ function QuickSort({ onBack }: { onBack: () => void }) {
 
       try {
         await recordGame(xp);
-        await logGameAndAward({
+        const result = await logGameAndAward({
           type: 'sort',
           correct: finalCorrect,
           total,
           accuracy: (finalCorrect / total) * 100,
           xpAwarded: xp,
         });
+        setLogTimestamp(result?.last?.at ?? null);
         // 🔁 tell Home to refetch
         router.setParams({ refreshStats: Date.now().toString() });
       } catch {}
@@ -736,12 +748,15 @@ function QuickSort({ onBack }: { onBack: () => void }) {
 
           <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
 
+          <ReflectionPrompt logTimestamp={logTimestamp} />
+
           <BigButton title="Play Again" color="#F59E0B" onPress={() => {
             setQIndex(0);
             setScore(0);
             setDone(false);
             setFinalScore(null);
             setQsFeedback(null);
+            setLogTimestamp(null);
             next();
           }} />
         </View>
@@ -934,6 +949,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
   const [locked, setLocked] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number; level: number } | null>(null);
+  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [questionsThisLevel, setQuestionsThisLevel] = useState(0);
   const [correctThisLevel, setCorrectThisLevel] = useState(0);
   const [showLevelUp, setShowLevelUp] = useState(false);
@@ -1171,7 +1187,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
             });
 
             await recordGame(xpEarned); // Update XP in user rewards
-            await logGameAndAward({
+            const result = await logGameAndAward({
               type: 'quiz',
               correct: totalCorrect,
               total: totalQuestions,
@@ -1182,6 +1198,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
                 categoryPerformance: categoryPerformance,
               },
             });
+            setLogTimestamp(result?.last?.at ?? null);
             // 🔁 tell Home to refetch
             router.setParams({ refreshStats: Date.now().toString() });
           } catch (e) {
@@ -1241,6 +1258,8 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
 
           <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
 
+          <ReflectionPrompt logTimestamp={logTimestamp} />
+
           <BigButton 
             title="Play Again" 
             color="#9333EA" 
@@ -1254,6 +1273,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
               setLocked(false);
               setSelectedAnswer(null);
               setCategoryStats({});
+              setLogTimestamp(null);
             }} 
           />
         </View>
@@ -1537,6 +1557,7 @@ const POOL: Tile[] = useMemo(() => {
   const [allCorrect, setAllCorrect] = useState(false);
   const [feedback, setFeedback] = useState<null | "correct" | "wrong">(null);
   const [finalScore, setFinalScore] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
 
   // Reanimated values (already imported at top of file)
   const scale = useSharedValue(1);
@@ -1591,13 +1612,14 @@ const POOL: Tile[] = useMemo(() => {
       (async () => {
         try {
           await recordGame(xp);
-          await logGameAndAward({
+          const result = await logGameAndAward({
             type: "emoji",
             correct: finalCorrect,
             total: TOTAL,
             accuracy: (finalCorrect / TOTAL) * 100,
             xpAwarded: xp,
           });
+          setLogTimestamp(result?.last?.at ?? null);
           // 🔁 tell Home to refetch
           router.setParams({ refreshStats: Date.now().toString() });
         } catch {}
@@ -1670,6 +1692,8 @@ const POOL: Tile[] = useMemo(() => {
 
           <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
 
+          <ReflectionPrompt logTimestamp={logTimestamp} />
+
           <BigButton title="Play Again" color="#2563EB" onPress={() => {
             setRound(1);
             setScore(0);
@@ -1678,6 +1702,7 @@ const POOL: Tile[] = useMemo(() => {
             setFinalScore(null);
             setFeedback(null);
             setLocked(false);
+            setLogTimestamp(null);
             makeRound();
           }} />
         </View>
@@ -1770,7 +1795,7 @@ type MenuGame = {
   icon?: any;
 };
 
-function GameCard({ game, index, onPress }: { game: MenuGame; index: number; onPress: () => void }) {
+function GameCard({ game, index, onPress, locked, unlockLevel }: { game: MenuGame; index: number; onPress: () => void; locked?: boolean; unlockLevel?: number }) {
   const press = useSharedValue(0);
   const softGradient = useMemo<[string, string]>(
     () => [`${game.gradient[0]}1C`, `${game.gradient[1]}05`],
@@ -1791,6 +1816,7 @@ function GameCard({ game, index, onPress }: { game: MenuGame; index: number; onP
         onPressOut={() => (press.value = withTiming(0, { duration: 160 }))}
         onPress={onPress}
         activeOpacity={0.92}
+        disabled={locked}
       >
         <Animated.View style={[menuStyles.gameCard, pressStyle]}
         >
@@ -1816,6 +1842,15 @@ function GameCard({ game, index, onPress }: { game: MenuGame; index: number; onP
             end={{ x: 1, y: 0 }}
             style={menuStyles.progressBar}
           />
+
+          {locked && (
+            <View style={menuStyles.lockOverlay}>
+              <Ionicons name="lock-closed" size={18} color="#1E293B" />
+              <Text style={menuStyles.lockText}>
+                {unlockLevel ? `Unlock at Level ${unlockLevel}` : 'Level up to unlock'}
+              </Text>
+            </View>
+          )}
         </Animated.View>
       </TouchableOpacity>
     </Animated.View>
@@ -1827,7 +1862,7 @@ export default function GamesScreen() {
   const [containerH, setContainerH] = useState(0);
   const [contentH, setContentH] = useState(0);
   const [screen, setScreen] = useState<GameKey>('menu');
-  const [stats, setStats] = useState<{ xp?: number; streakDays?: number } | null>(null);
+  const [stats, setStats] = useState<{ xp?: number; streakDays?: number; globalLevel?: number } | null>(null);
 
   const heroFloat = useSharedValue(0);
   const headerReveal = useSharedValue(0);
@@ -1850,7 +1885,7 @@ export default function GamesScreen() {
     (async () => {
       try {
         const s = await fetchMyStats();
-        setStats({ xp: s?.xp ?? 0, streakDays: s?.streakDays ?? 0 });
+        setStats({ xp: s?.xp ?? 0, streakDays: s?.streakDays ?? 0, globalLevel: s?.globalLevel ?? 1 });
       } catch {}
     })();
   }, []);
@@ -1905,6 +1940,18 @@ export default function GamesScreen() {
       gradient: ['#9333EA', '#A855F7'] as [string, string],
     },
   ];
+
+  const levelGates: Partial<Record<GameKey, number>> = {
+    sort: 1.5,
+    emoji: 1.3,
+    quiz: 2.3,
+  };
+
+  const currentLevel = stats?.globalLevel ?? 1;
+  const computeLocked = (id: GameKey) => {
+    const gate = levelGates[id];
+    return typeof gate === 'number' ? currentLevel < gate : false;
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -1965,14 +2012,22 @@ export default function GamesScreen() {
             Choose a Game
           </Animated.Text>
           <View style={{ gap: 18 }}>
-            {games.map((game, index) => (
-              <GameCard
-                key={game.id}
-                game={game}
-                index={index}
-                onPress={() => setScreen(game.id as GameKey)}
-              />
-            ))}
+            {games.map((game, index) => {
+              const locked = computeLocked(game.id);
+              return (
+                <GameCard
+                  key={game.id}
+                  game={game}
+                  index={index}
+                  locked={locked}
+                  unlockLevel={levelGates[game.id]}
+                  onPress={() => {
+                    if (locked) return;
+                    setScreen(game.id as GameKey);
+                  }}
+                />
+              );
+            })}
           </View>
         </ScrollView>
       </View>
@@ -2175,5 +2230,23 @@ const menuStyles = StyleSheet.create({
   progressBar: {
     height: 5,
     borderRadius: 999,
+  },
+  lockOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  lockText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 8,
   },
 });

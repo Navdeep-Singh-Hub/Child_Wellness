@@ -71,7 +71,47 @@ export async function authHeaders(opts?: { multipart?: boolean }) {
   return headers;
 }
 
-export async function fetchMyStats() {
+export type Recommendation = {
+  id: string;
+  skillId: string | null;
+  skillTitle?: string;
+  icon?: string;
+  route: string;
+  gameMode: string;
+  activityTitle: string;
+  suggestedDifficulty?: string;
+  reason: string;
+  priority: 'high' | 'medium' | 'low';
+  accuracy?: number;
+  level?: number;
+  lastPlayedDate?: string | null;
+};
+
+export type NextAction = {
+  id: string;
+  skillId: string | null;
+  headline: string;
+  body: string;
+  actionLabel: string;
+  urgency: 'low' | 'medium' | 'high';
+  route: string;
+};
+
+export type StatsResponse = {
+  xp: number;
+  coins: number;
+  hearts: number;
+  streakDays: number;
+  bestStreak: number;
+  lastPlayedDate: string | null;
+  accuracy: number;
+  globalLevel?: number;
+  levelLabel?: string;
+  recommendations?: Recommendation[];
+  nextActions?: NextAction[];
+};
+
+export async function fetchMyStats(): Promise<StatsResponse> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/me/stats`, {
       headers: await authHeaders(),
@@ -115,7 +155,14 @@ export async function logGameAndAward(payload: {
   accuracy: number; // 0..100
   xpAwarded: number;
   durationMs?: number;
-  meta?: Record<string, any>; // For quiz: { level, categoryPerformance }
+  mode?: 'free-play' | 'therapy' | 'guided';
+  skillTags?: string[];
+  difficulty?: string;
+  responseTimeMs?: number;
+  hintsUsed?: number;
+  incorrectAttempts?: number;
+  feedback?: { mood?: number; notes?: string; observer?: string };
+  meta?: Record<string, any>; // include skill breakdowns etc.
 }) {
   const headers = await authHeaders();
   const res = await fetch(`${API_BASE_URL}/api/me/game-log`, {
@@ -124,6 +171,40 @@ export async function logGameAndAward(payload: {
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error('Log failed');
+  return res.json();
+}
+
+export type InsightsResponse = {
+  rangeDays: number;
+  dailySeries: Array<{ date: string; xp: number; games: number; accuracy: number; durationMs: number }>;
+  aggregate: { totalGames: number; totalXp: number; avgAccuracy: number; avgSessionMinutes: number };
+  strengths: Array<{ id: string; title: string; icon?: string; level: number; accuracy: number; trend: number }>;
+  focus: Array<{ id: string; title: string; icon?: string; level: number; accuracy: number; trend: number }>;
+  skills: Array<{ id: string; title: string; icon?: string; level: number; accuracy: number; trend: number }>;
+  modesBreakdown: Record<string, number>;
+  feedback: { averageMood: number | null; recentNotes: Array<{ at: string; text: string; observer?: string | null }> };
+};
+
+export async function fetchInsights(range: '7d' | '30d' | '90d' = '30d'): Promise<InsightsResponse> {
+  const res = await fetch(`${API_BASE_URL}/api/me/insights?range=${encodeURIComponent(range)}`, {
+    headers: await authHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to load insights (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function submitGameFeedback(payload: { at: string; mood?: number; notes?: string; observer?: string }) {
+  if (!payload?.at) throw new Error('Missing timestamp');
+  const res = await fetch(`${API_BASE_URL}/api/me/game-feedback`, {
+    method: 'POST',
+    headers: await authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to save feedback (${res.status})`);
+  }
   return res.json();
 }
 
@@ -234,6 +315,37 @@ export async function updateMyProfile(data: { firstName: string; lastName?: stri
     console.error('updateMyProfile error:', e);
     throw e;
   }
+}
+
+export type SkillStat = {
+  totalPrompts: number;
+  correctPrompts: number;
+  accuracy: number;
+  avgResponseMs: number;
+  attempts: number;
+  ewmaAccuracy: number;
+  streak: number;
+  bestStreak: number;
+  level: number;
+  trend: number;
+  lastPlayedDate: string | null;
+};
+
+export type SkillProfileEntry = {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  tags: string[];
+  stats: SkillStat | null;
+};
+
+export async function fetchSkillProfile(): Promise<{ skills: SkillProfileEntry[] }> {
+  const res = await fetch(`${API_BASE_URL}/api/me/skill-profile`, {
+    headers: await authHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to load skill profile');
+  return res.json();
 }
 
 // Helper function for authenticated requests

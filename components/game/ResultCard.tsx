@@ -4,14 +4,26 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import Animated, { useSharedValue, withTiming, useAnimatedProps } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { SparkleBurst } from './FX';
+import ReflectionPrompt from './ReflectionPrompt';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-export default function ResultCard({ correct, total, onPlayAgain, onHome, xpAwarded, accuracy }: {
-  correct: number; total: number;
-  onPlayAgain?: () => void; onHome?: () => void;
+export default function ResultCard({
+  correct,
+  total,
+  onPlayAgain,
+  onHome,
+  xpAwarded,
+  accuracy,
+  logTimestamp,
+}: {
+  correct: number;
+  total: number;
+  onPlayAgain?: () => void;
+  onHome?: () => void;
   xpAwarded?: number;
   accuracy?: number;
+  logTimestamp?: string | null;
 }) {
   const pct = total ? correct / total : 0;
   const prog = useSharedValue(0);
@@ -75,6 +87,8 @@ export default function ResultCard({ correct, total, onPlayAgain, onHome, xpAwar
           </TouchableOpacity>
         )}
       </View>
+
+      <ReflectionPrompt logTimestamp={logTimestamp} />
     </View>
   );
 }
