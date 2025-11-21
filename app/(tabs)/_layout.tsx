@@ -59,6 +59,7 @@ function SlideOutMenu() {
     { title: "Home", route: "/(tabs)", icon: "home-outline" },
     { title: "Games", route: "/(tabs)/Games", icon: "game-controller-outline" },
     { title: "Smart Explorer", route: "/(tabs)/SmartExplorer", icon: "map-outline" },
+    { title: "Insights", route: "/(tabs)/Insights", icon: "stats-chart-outline" },
     { title: "Grids", route: "/(tabs)/AACgrid", icon: "grid-outline" },
     { title: "Profile", route: "/(tabs)/Profile", icon: "person-outline" },
     { title: "Contact Us", route: "/(tabs)/Contact", icon: "mail-outline" },

@@ -1,5 +1,12 @@
 import AnimatedAccuracyRing from '@/components/AnimatedAccuracyRing';
-import { fetchMyStats } from '@/utils/api';
+import {
+  fetchMyStats,
+  fetchSkillProfile,
+  type SkillProfileEntry,
+  type StatsResponse,
+  type Recommendation,
+  type NextAction,
+} from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
@@ -21,7 +28,6 @@ import {
   PixelRatio,
 } from 'react-native';
 
-type Stats = { xp: number; coins: number; hearts: number; streakDays: number; bestStreak?: number; accuracy?: number; totalGamesPlayed?: number };
 type IoniconName = keyof typeof Ionicons.glyphMap;
 type StatBlock = {
   key: string;
@@ -36,6 +42,7 @@ type QuickAction = {
   label: string;
   caption: string;
   icon: IoniconName;
+  accent?: string;
   onPress: () => void;
 };
 type MoodCard = {
@@ -51,10 +58,11 @@ type MoodOption = 'energetic' | 'focused' | 'relaxed' | 'celebrating';
 export default function Index() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [stats, setStats] = useState<StatsResponse | null>(null);
   const [containerH, setContainerH] = useState(0);
   const [contentH, setContentH] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [skillProfile, setSkillProfile] = useState<SkillProfileEntry[] | null>(null);
   const [selectedMood, setSelectedMood] = useState<MoodOption>('focused');
   const prevAccRef = useRef<number>(0);
   const isLoadingRef = useRef(false);
@@ -76,8 +84,15 @@ export default function Index() {
       const s = await fetchMyStats();
       prevAccRef.current = stats?.accuracy ?? s?.accuracy ?? 0;
       setStats(s);
-    } catch {}
-    finally {
+    } catch (error) {
+      console.warn('Failed to load stats', error);
+    }
+    try {
+      const profile = await fetchSkillProfile();
+      setSkillProfile(profile.skills || []);
+    } catch (error) {
+      console.warn('Failed to load skill profile', error);
+    } finally {
       isLoadingRef.current = false;
     }
   }, [stats?.accuracy]);
@@ -147,43 +162,63 @@ export default function Index() {
     },
   ], [xp, coins, hearts, streak, bestStreak]);
 
-  const quickActions = useMemo<QuickAction[]>(() => [
-    {
-      key: 'play',
-      label: 'Play a Game',
-      caption: 'Boost XP with quick challenges',
-      icon: 'game-controller-outline',
-      onPress: () => router.push('/(tabs)/Games'),
-    },
-    {
-      key: 'aac',
-      label: 'Explore AAC Grid',
-      caption: 'Practice vocabulary tiles',
-      icon: 'grid-outline',
-      onPress: () => router.push('/(tabs)/AACgrid'),
-    },
-    {
-      key: 'smart',
-      label: 'Smart Explorer',
-      caption: 'Discover scenes with Scout',
-      icon: 'map-outline',
-      onPress: () => router.push('/(tabs)/SmartExplorer'),
-    },
-    {
-      key: 'profile',
-      label: 'Update Profile',
-      caption: 'Keep details up to date',
-      icon: 'person-circle-outline',
-      onPress: () => router.push('/(tabs)/Profile'),
-    },
-    {
-      key: 'contact',
-      label: 'Contact Coach',
-      caption: 'Share feedback or questions',
-      icon: 'chatbubble-ellipses-outline',
-      onPress: () => router.push('/(tabs)/Contact'),
-    },
-  ], [router]);
+  const quickActions = useMemo<QuickAction[]>(() => {
+    const defaults: QuickAction[] = [
+      {
+        key: 'play',
+        label: 'Play a Game',
+        caption: 'Boost XP with quick challenges',
+        icon: 'game-controller-outline',
+        accent: '#2563EB',
+        onPress: () => router.push('/(tabs)/Games'),
+      },
+      {
+        key: 'aac',
+        label: 'Explore AAC Grid',
+        caption: 'Practice vocabulary tiles',
+        icon: 'grid-outline',
+        accent: '#0EA5E9',
+        onPress: () => router.push('/(tabs)/AACgrid'),
+      },
+      {
+        key: 'smart',
+        label: 'Smart Explorer',
+        caption: 'Discover scenes with Scout',
+        icon: 'map-outline',
+        accent: '#14B8A6',
+        onPress: () => router.push('/(tabs)/SmartExplorer'),
+      },
+      {
+        key: 'profile',
+        label: 'Update Profile',
+        caption: 'Keep details up to date',
+        icon: 'person-circle-outline',
+        accent: '#6366F1',
+        onPress: () => router.push('/(tabs)/Profile'),
+      },
+      {
+        key: 'contact',
+        label: 'Contact Coach',
+        caption: 'Share feedback or questions',
+        icon: 'chatbubble-ellipses-outline',
+        accent: '#F59E0B',
+        onPress: () => router.push('/(tabs)/Contact'),
+      },
+    ];
+
+    if (stats?.recommendations?.length) {
+      return stats.recommendations.map((rec) => ({
+        key: rec.id,
+        label: rec.activityTitle,
+        caption: rec.reason,
+        icon: rec.priority === 'high' ? 'flame' : rec.priority === 'medium' ? 'flash-outline' : 'sparkles-outline',
+        accent: rec.priority === 'high' ? '#EA580C' : rec.priority === 'medium' ? '#2563EB' : '#22C55E',
+        onPress: () => router.push(rec.route as any),
+      }));
+    }
+
+    return defaults;
+  }, [router, stats?.recommendations]);
 
   const allMoodCards = useMemo<Record<MoodOption, MoodCard[]>>(() => ({
     energetic: [
@@ -282,6 +317,34 @@ export default function Index() {
 
   const moodCards = useMemo(() => allMoodCards[selectedMood], [selectedMood, allMoodCards]);
 
+  const { strengths, focusAreas } = useMemo(() => {
+    const entries = skillProfile || [];
+    if (!entries.length) return { strengths: [], focusAreas: [] };
+
+    const sortedByLevel = [...entries].sort((a, b) => {
+      const levelA = a.stats?.level ?? 0;
+      const levelB = b.stats?.level ?? 0;
+      if (levelA === levelB) {
+        const accA = a.stats?.accuracy ?? 0;
+        const accB = b.stats?.accuracy ?? 0;
+        return accB - accA;
+      }
+      return levelB - levelA;
+    });
+
+    const strong = sortedByLevel.filter((entry) => (entry.stats?.level ?? 0) >= 3).slice(0, 3);
+    const focus = [...entries]
+      .filter((entry) => !entry.stats || (entry.stats.level ?? 0) <= 2)
+      .sort((a, b) => {
+        const accA = a.stats?.accuracy ?? 0;
+        const accB = b.stats?.accuracy ?? 0;
+        return accA - accB;
+      })
+      .slice(0, 3);
+
+    return { strengths: strong, focusAreas: focus };
+  }, [skillProfile]);
+
   statBlocks.forEach((block) => {
     if (!statAnimations.current[block.key]) {
       statAnimations.current[block.key] = {
@@ -315,6 +378,29 @@ export default function Index() {
   const nextMilestone = Math.ceil((xp + 1) / 500) * 500;
   const previousMilestone = Math.max(0, nextMilestone - 500);
   const milestoneProgress = Math.min(1, (xp - previousMilestone) / Math.max(1, nextMilestone - previousMilestone));
+
+  const renderSkillCard = useCallback((skill: SkillProfileEntry) => {
+    const level = skill.stats?.level ?? 0;
+    const accuracyLabel = skill.stats ? `${skill.stats.accuracy ?? 0}% accuracy` : 'Not played yet';
+    const trend = skill.stats?.trend ?? 0;
+    const trendLabel =
+      trend > 0 ? `▲ ${trend}%` : trend < 0 ? `▼ ${Math.abs(trend)}%` : 'steady';
+
+    return (
+      <View key={skill.id} style={styles.skillCard}>
+        <View style={styles.skillIconBubble}>
+          <Text style={{ fontSize: 20 }}>{skill.icon}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.skillTitle}>{skill.title}</Text>
+          <Text style={styles.skillMeta}>
+            Level {level} · {accuracyLabel}
+          </Text>
+          <Text style={styles.skillTrend}>{trendLabel}</Text>
+        </View>
+      </View>
+    );
+  }, []);
 
   useEffect(() => {
     if (!stats) return;
@@ -482,6 +568,12 @@ export default function Index() {
                 <Text style={styles.heroGreeting}>Welcome back 👋</Text>
                 <Text style={styles.heroHeadline}>Here’s today’s momentum snapshot.</Text>
                 <View style={styles.heroChipRow}>
+                  {stats?.levelLabel ? (
+                    <View style={styles.heroChip}>
+                      <Ionicons name="shield-checkmark" size={16} color="#10B981" />
+                      <Text style={styles.heroChipText}>{stats.levelLabel}</Text>
+                    </View>
+                  ) : null}
                   <View style={styles.heroChip}>
                     <Ionicons name="flame" size={16} color="#F97316" />
                     <Text style={styles.heroChipText}>{streak} day streak</Text>
@@ -591,9 +683,42 @@ export default function Index() {
           })}
         </View>
 
+        {skillProfile && skillProfile.length ? (
+          <View style={styles.skillSection}>
+            <View style={styles.skillColumns}>
+              <View style={styles.skillColumn}>
+                <Text style={styles.skillColumnTitle}>Strong areas</Text>
+                {strengths.length
+                  ? strengths.map(renderSkillCard)
+                  : (
+                    <Text style={styles.skillEmpty}>
+                      Play more games to surface strengths.
+                    </Text>
+                  )}
+              </View>
+              <View style={styles.skillColumn}>
+                <Text style={styles.skillColumnTitle}>Focus areas</Text>
+                {focusAreas.length
+                  ? focusAreas.map(renderSkillCard)
+                  : (
+                    <Text style={styles.skillEmpty}>
+                      No focus areas yet. Keep practicing!
+                    </Text>
+                  )}
+              </View>
+            </View>
+          </View>
+        ) : null}
+
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Quick actions</Text>
-          <Text style={styles.sectionCaption}>Jump straight into practice or setup</Text>
+          <Text style={styles.sectionTitle}>
+            {stats?.recommendations?.length ? 'Recommended next' : 'Quick actions'}
+          </Text>
+          <Text style={styles.sectionCaption}>
+            {stats?.recommendations?.length
+              ? 'Based on current skill signals'
+              : 'Jump straight into practice or setup'}
+          </Text>
         </View>
 
         <ScrollView
@@ -643,6 +768,29 @@ export default function Index() {
             );
           })}
         </ScrollView>
+
+        {stats?.nextActions?.length ? (
+          <View style={styles.focusSection}>
+            <Text style={styles.sectionTitle}>Focus coaching</Text>
+            <Text style={styles.sectionCaption}>Suggestions tailored to weak or dormant skills</Text>
+            <View style={{ marginTop: 14, gap: 12 }}>
+              {stats.nextActions.map((card) => (
+                <View key={card.id} style={styles.focusCard}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.focusHeadline}>{card.headline}</Text>
+                    <Text style={styles.focusBody}>{card.body}</Text>
+                  </View>
+                  <Pressable
+                    style={styles.focusButton}
+                    onPress={() => router.push(card.route as any)}
+                  >
+                    <Text style={styles.focusButtonText}>{card.actionLabel}</Text>
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
 
         <View style={styles.sectionHeader}>
           <View style={styles.moodHeaderRow}>
@@ -969,6 +1117,71 @@ const styles = StyleSheet.create({
     color: '#64748B',
     lineHeight: 18,
   },
+  skillSection: {
+    marginTop: 12,
+  },
+  skillColumns: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
+  skillColumn: {
+    flex: 1,
+    minWidth: '48%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+  skillColumnTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  skillEmpty: {
+    color: '#94A3B8',
+    fontWeight: '600',
+  },
+  skillCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+  },
+  skillIconBubble: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  skillTitle: {
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  skillMeta: {
+    color: '#64748B',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  skillTrend: {
+    color: '#2563EB',
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 2,
+    textTransform: 'uppercase',
+  },
   quickScrollContent: {
     gap: 16,
     paddingRight: 8,
@@ -1011,6 +1224,42 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#64748B',
     lineHeight: 18,
+  },
+  focusSection: {
+    marginTop: 10,
+    gap: 8,
+  },
+  focusCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 16,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 14,
+  },
+  focusHeadline: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  focusBody: {
+    fontSize: 13,
+    color: '#475569',
+    lineHeight: 18,
+  },
+  focusButton: {
+    alignSelf: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#2563EB',
+    borderRadius: 14,
+  },
+  focusButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
   moodScrollContent: {
     gap: 16,

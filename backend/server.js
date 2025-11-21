@@ -10,6 +10,9 @@ import { User } from './models/User.js';
 import { tapGame } from './routes/tapGame.js';
 import { Message } from './models/Message.js';
 import { smartExplorerRouter } from './routes/smartExplorer.js';
+import { SKILL_LOOKUP } from './constants/skills.js';
+import { computeGlobalLevel, levelLabelFor, buildRecommendations, buildNextActions } from './lib/recommendations.js';
+import { buildInsights } from './lib/insights.js';
 
 const app = express();
 // Behind proxies (Vercel/Render/Nginx), respect X-Forwarded-* headers
@@ -146,6 +149,76 @@ function requireAuth(req, res, next) {
 // Add tap game routes
 app.use('/api/tap', requireAuth, tapGame);
 app.use('/api/smart-explorer', requireAuth, smartExplorerRouter);
+
+const SKILL_ALPHA = 0.3;
+const SKILL_LEVELS = [
+  { level: 4, threshold: 85, minStreak: 3 },
+  { level: 3, threshold: 70, minStreak: 0 },
+  { level: 2, threshold: 50, minStreak: 0 },
+  { level: 1, threshold: 0, minStreak: 0 },
+];
+
+function getSkillsMap(rewards = {}) {
+  if (!rewards.skills) {
+    rewards.skills = new Map();
+  } else if (!(rewards.skills instanceof Map) && typeof rewards.skills === 'object') {
+    rewards.skills = new Map(Object.entries(rewards.skills));
+  }
+  return rewards.skills;
+}
+
+function computeSkillLevel(accuracy, streak) {
+  for (const rule of SKILL_LEVELS) {
+    if (accuracy >= rule.threshold && streak >= (rule.minStreak || 0)) return rule.level;
+  }
+  return 1;
+}
+
+function updateSkillBucket(bucket, entry) {
+  const prompts = Number(entry.prompts ?? entry.total ?? entry.totalQuestions ?? 0);
+  const correct = Number(entry.correct ?? entry.correctPrompts ?? 0);
+  const attempts = Number(entry.attempts ?? prompts);
+  const avgResponseMs = Number(entry.avgResponseMs ?? entry.responseMs ?? 0);
+  const prevAccuracy = bucket.accuracy || 0;
+  const prevEwma = bucket.ewmaAccuracy || prevAccuracy;
+
+  bucket.totalPrompts = (bucket.totalPrompts || 0) + prompts;
+  bucket.correctPrompts = (bucket.correctPrompts || 0) + correct;
+  bucket.attempts = (bucket.attempts || 0) + attempts;
+
+  if (prompts > 0) {
+    const sessionAcc = Math.max(0, Math.min(100, (correct / Math.max(prompts, 1)) * 100));
+    bucket.accuracy =
+      bucket.totalPrompts > 0
+        ? Math.round((bucket.correctPrompts / bucket.totalPrompts) * 100)
+        : Math.round(sessionAcc);
+    bucket.ewmaAccuracy =
+      prevEwma != null ? (1 - SKILL_ALPHA) * prevEwma + SKILL_ALPHA * sessionAcc : sessionAcc;
+
+    if (avgResponseMs > 0) {
+      const prevAvg = bucket.avgResponseMs || avgResponseMs;
+      bucket.avgResponseMs =
+        bucket.totalPrompts > 0
+          ? Math.round(
+              (prevAvg * (bucket.totalPrompts - prompts) + avgResponseMs * prompts) /
+                Math.max(bucket.totalPrompts, 1),
+            )
+          : avgResponseMs;
+    }
+
+    if (sessionAcc >= 70) {
+      bucket.streak = (bucket.streak || 0) + 1;
+    } else {
+      bucket.streak = 0;
+    }
+    bucket.bestStreak = Math.max(bucket.bestStreak || 0, bucket.streak || 0);
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  bucket.lastPlayedDate = today;
+  bucket.level = computeSkillLevel(bucket.accuracy || 0, bucket.streak || 0);
+  bucket.trend = Math.round((bucket.accuracy || 0) - prevAccuracy);
+}
 // app.use('/api/content', content);
 // app.use('/api/utterances', utterances);
 
@@ -269,13 +342,67 @@ app.post('/api/me/profile', requireAuth, async (req, res) => {
 
 
 
+app.post('/api/me/game-feedback', requireAuth, async (req, res) => {
+  try {
+    const auth0Id = req.auth0Id;
+    if (!auth0Id) return res.status(401).json({ error: 'Unauthorized' });
+    const { at, mood, notes, observer } = req.body || {};
+    if (!at) return res.status(400).json({ error: 'Missing timestamp' });
+
+    const user = await ensureUser(auth0Id, req.auth0Email || '', req.auth0Name || '');
+    const session = await Session.findOne({ userId: user._id });
+    if (!session || !(session.gameLogs && session.gameLogs.length)) {
+      return res.status(404).json({ error: 'No game logs found' });
+    }
+
+    const target = session.gameLogs.find((log) => {
+      if (!log?.at) return false;
+      const logISO = (log.at instanceof Date ? log.at : new Date(log.at)).toISOString();
+      return logISO === new Date(at).toISOString();
+    });
+
+    if (!target) {
+      return res.status(404).json({ error: 'Game log not found' });
+    }
+
+    target.feedback = {
+      mood: typeof mood === 'number' ? mood : undefined,
+      notes: typeof notes === 'string' && notes.trim() ? notes.trim() : undefined,
+      observer: typeof observer === 'string' && observer.trim() ? observer.trim() : undefined,
+    };
+
+    await session.save();
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('game-feedback error', error);
+    res.status(500).json({ error: 'Failed to save feedback' });
+  }
+});
+
+
+
 // POST /api/me/game-log
 app.post('/api/me/game-log', requireAuth, async (req, res) => {
   try {
     const auth0Id = req.auth0Id;
     if (!auth0Id) return res.status(401).json({ error: 'Unauthorized' });
 
-    const { type, correct, total, accuracy, xpAwarded, durationMs, meta } = req.body || {};
+    const {
+      type,
+      correct,
+      total,
+      accuracy,
+      xpAwarded,
+      durationMs,
+      meta,
+      mode,
+      skillTags,
+      difficulty,
+      responseTimeMs,
+      hintsUsed,
+      incorrectAttempts,
+      feedback,
+    } = req.body || {};
     if (!type || typeof correct !== 'number' || typeof total !== 'number') {
       return res.status(400).json({ error: 'Missing fields' });
     }
@@ -290,11 +417,19 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
     session.gameLogs.push({
       userId,
       type,
+      mode: mode || meta?.mode || 'free-play',
+      difficulty: difficulty || meta?.difficulty,
+      skillTags: Array.isArray(skillTags || meta?.skillTags) ? (skillTags || meta?.skillTags) : [],
+      level: meta?.level,
       correct,
       total,
       accuracy: Math.max(0, Math.min(100, Math.round(accuracy))),
       xpAwarded: xpAwarded || 0,
       durationMs: durationMs || 0,
+      responseTimeMs: responseTimeMs || meta?.responseTimeMs || 0,
+      hintsUsed: typeof hintsUsed === 'number' ? hintsUsed : meta?.hintsUsed || 0,
+      incorrectAttempts: typeof incorrectAttempts === 'number' ? incorrectAttempts : meta?.incorrectAttempts || 0,
+      feedback: feedback || meta?.feedback,
       at: new Date(),
       meta: meta || {},
     });
@@ -394,6 +529,26 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
       userDoc.markModified('rewards.quiz.categoryPerformance');
     }
 
+    // 6) Update skill buckets when skills metadata is provided
+    const skillsMap = getSkillsMap(r);
+
+    if (Array.isArray(meta?.skills) && meta.skills.length) {
+      meta.skills.forEach((entry) => {
+        const skillId = entry?.id;
+        if (!skillId || !SKILL_LOOKUP[skillId]) return;
+        const bucket = skillsMap.get(skillId) || {};
+        updateSkillBucket(bucket, entry || {});
+        skillsMap.set(skillId, bucket);
+      });
+      userDoc.markModified('rewards.skills');
+    }
+
+    // Update global level + label whenever skills change
+    const globalLevel = computeGlobalLevel(skillsMap);
+    r.globalLevel = globalLevel;
+    r.levelLabel = levelLabelFor(globalLevel);
+    userDoc.markModified('rewards');
+
     await userDoc.save();
 
     res.json({ 
@@ -402,6 +557,7 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
       totalGamesPlayed: session.totalGamesPlayed, 
       last: session.gameLogs.at(-1),
       accuracy: r.accuracy, // send back for optional optimistic UI
+      globalLevel: r.globalLevel,
     });
   } catch (e) {
     console.error('game-log error', e);
@@ -410,19 +566,111 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
 });
 
 app.get('/api/me/stats', requireAuth, async (req, res) => {
-  const auth0Id = req.auth0Id;
-  const email = req.auth0Email || '';
-  const name = req.auth0Name || '';
-  const user = await ensureUser(auth0Id, email, name);
-  res.json({
-    xp: user.rewards?.xp ?? 0,
-    coins: user.rewards?.coins ?? 0,
-    hearts: user.rewards?.hearts ?? 5,
-    streakDays: user.rewards?.streakDays ?? 0,
-    bestStreak: user.rewards?.bestStreak ?? 0,
-    lastPlayedDate: user.rewards?.lastPlayedDate ?? null,
-    accuracy: user.rewards?.accuracy ?? 0,
-  });
+  try {
+    const auth0Id = req.auth0Id;
+    const email = req.auth0Email || '';
+    const name = req.auth0Name || '';
+    const user = await ensureUser(auth0Id, email, name);
+    const rewards = user.rewards || {};
+    const skillsMap = getSkillsMap(rewards);
+    let updated = false;
+
+    let globalLevel = rewards.globalLevel;
+    if (!globalLevel) {
+      globalLevel = computeGlobalLevel(skillsMap);
+      rewards.globalLevel = globalLevel;
+      updated = true;
+    }
+    if (!rewards.levelLabel) {
+      rewards.levelLabel = levelLabelFor(globalLevel);
+      updated = true;
+    }
+
+    if (updated) {
+      user.markModified('rewards');
+      await user.save();
+    }
+
+    const recommendations = buildRecommendations({ skillsMap });
+    const nextActions = buildNextActions({ skillsMap });
+
+    res.json({
+      xp: rewards?.xp ?? 0,
+      coins: rewards?.coins ?? 0,
+      hearts: rewards?.hearts ?? 5,
+      streakDays: rewards?.streakDays ?? 0,
+      bestStreak: rewards?.bestStreak ?? 0,
+      lastPlayedDate: rewards?.lastPlayedDate ?? null,
+      accuracy: rewards?.accuracy ?? 0,
+      globalLevel,
+      levelLabel: rewards.levelLabel,
+      recommendations,
+      nextActions,
+    });
+  } catch (error) {
+    console.error('stats endpoint error', error);
+    res.status(500).json({ error: 'Failed to load stats' });
+  }
+});
+
+app.get('/api/me/skill-profile', requireAuth, async (req, res) => {
+  try {
+    const auth0Id = req.auth0Id;
+    const email = req.auth0Email || '';
+    const name = req.auth0Name || '';
+    const user = await ensureUser(auth0Id, email, name);
+    const rewards = user.rewards || {};
+    const skillsMap = getSkillsMap(rewards);
+
+    const serializeBucket = (bucket) => {
+      if (!bucket) return null;
+      return {
+        totalPrompts: bucket.totalPrompts || 0,
+        correctPrompts: bucket.correctPrompts || 0,
+        accuracy: bucket.accuracy || 0,
+        avgResponseMs: bucket.avgResponseMs || 0,
+        attempts: bucket.attempts || 0,
+        ewmaAccuracy: bucket.ewmaAccuracy || 0,
+        streak: bucket.streak || 0,
+        bestStreak: bucket.bestStreak || 0,
+        level: bucket.level || 1,
+        trend: bucket.trend || 0,
+        lastPlayedDate: bucket.lastPlayedDate || null,
+      };
+    };
+
+    const payload = Object.values(SKILL_LOOKUP).map((skill) => {
+      const bucket = skillsMap.get ? skillsMap.get(skill.id) : skillsMap[skill.id];
+      return {
+        id: skill.id,
+        title: skill.title,
+        description: skill.description,
+        icon: skill.icon,
+        tags: skill.tags,
+        stats: serializeBucket(bucket),
+      };
+    });
+
+    res.json({ skills: payload, updatedAt: new Date().toISOString() });
+  } catch (error) {
+    console.error('skill-profile error', error);
+    res.status(500).json({ error: 'Failed to load skill profile' });
+  }
+});
+
+app.get('/api/me/insights', requireAuth, async (req, res) => {
+  try {
+    const auth0Id = req.auth0Id;
+    const email = req.auth0Email || '';
+    const name = req.auth0Name || '';
+    const range = typeof req.query?.range === 'string' ? req.query.range : '30d';
+    const user = await ensureUser(auth0Id, email, name);
+    const insights = await buildInsights({ userId: user._id, range, rewards: user.rewards });
+    res.json(insights);
+  } catch (error) {
+    console.error('insights endpoint error', error);
+    res.status(500).json({ error: 'Failed to load insights' });
+  }
 });
 
 app.post('/api/games/record', requireAuth, async (req, res) => {

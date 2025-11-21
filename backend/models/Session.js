@@ -4,13 +4,31 @@ const GameLogSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', index: true, required: true },
     type:   { type: String, enum: ['tap', 'match', 'sort', 'emoji', 'quiz'], required: true },
+    mode:   { type: String, enum: ['free-play', 'therapy', 'guided'], default: 'free-play' },
+    difficulty: { type: String },
+    skillTags: { type: [String], default: [] },
+    level: { type: Number },
     correct:   { type: Number, default: 0 },
     total:     { type: Number, default: 0 },
     accuracy:  { type: Number, default: 0 }, // 0..100
     xpAwarded: { type: Number, default: 0 },
     durationMs:{ type: Number, default: 0 },
+    responseTimeMs: { type: Number, default: 0 },
+    hintsUsed: { type: Number, default: 0 },
+    incorrectAttempts: { type: Number, default: 0 },
+    feedback: {
+      type: new Schema(
+        {
+          mood: { type: Number, min: 1, max: 5 },
+          notes: { type: String },
+          observer: { type: String },
+        },
+        { _id: false },
+      ),
+      default: undefined,
+    },
     at:        { type: Date,   default: Date.now },
-    // Quiz-specific metadata
+    // Quiz-specific metadata and future telemetry
     meta: { type: Schema.Types.Mixed, default: () => ({}) }, // For quiz: { level, categories, categoryPerformance }
   },
   { _id: false }
