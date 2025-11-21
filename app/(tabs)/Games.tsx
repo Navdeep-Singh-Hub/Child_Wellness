@@ -20,8 +20,8 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ResultToast, SparkleBurst, Stepper } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import ReflectionPrompt from '@/components/game/ReflectionPrompt';
+import ResultCard from '@/components/game/ResultCard';
 import { CATEGORIES, type Tile, tileImages } from '@/constants/aac';
 import { icons } from '@/constants/icons';
 import { images } from '@/constants/images';
