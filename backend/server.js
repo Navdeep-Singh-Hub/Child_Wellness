@@ -5,14 +5,14 @@ import fs from 'fs';
 import mongoose from 'mongoose';
 import multer from 'multer';
 import path from 'path';
+import { SKILL_LOOKUP } from './constants/skills.js';
+import { buildInsights } from './lib/insights.js';
+import { buildNextActions, buildRecommendations, computeGlobalLevel, levelLabelFor } from './lib/recommendations.js';
+import { Message } from './models/Message.js';
 import { Session } from './models/Session.js';
 import { User } from './models/User.js';
-import { tapGame } from './routes/tapGame.js';
-import { Message } from './models/Message.js';
 import { smartExplorerRouter } from './routes/smartExplorer.js';
-import { SKILL_LOOKUP } from './constants/skills.js';
-import { computeGlobalLevel, levelLabelFor, buildRecommendations, buildNextActions } from './lib/recommendations.js';
-import { buildInsights } from './lib/insights.js';
+import { tapGame } from './routes/tapGame.js';
 
 const app = express();
 // Behind proxies (Vercel/Render/Nginx), respect X-Forwarded-* headers
@@ -532,6 +532,7 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
     // 6) Update skill buckets when skills metadata is provided
     const skillsMap = getSkillsMap(r);
 
+    // Process meta.skills array if provided (detailed skill breakdown)
     if (Array.isArray(meta?.skills) && meta.skills.length) {
       meta.skills.forEach((entry) => {
         const skillId = entry?.id;
@@ -541,6 +542,38 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
         skillsMap.set(skillId, bucket);
       });
       userDoc.markModified('rewards.skills');
+    } else {
+      // Fallback: Process skillTags to automatically create skill entries
+      const tags = Array.isArray(skillTags) ? skillTags : (Array.isArray(meta?.skillTags) ? meta.skillTags : []);
+      if (tags.length > 0) {
+        // Map game type to default skill if no tags provided
+        const typeToSkill = {
+          'tap': 'timing-control',
+          'match': 'color-recognition',
+          'sort': 'category-sorting',
+          'emoji': 'emotion-identification',
+          'quiz': 'number-sense', // default, can be overridden by tags
+        };
+        
+        // Use tags if provided, otherwise infer from game type
+        const skillIds = tags.length > 0 ? tags : (typeToSkill[type] ? [typeToSkill[type]] : []);
+        
+        skillIds.forEach((skillId) => {
+          if (!skillId || !SKILL_LOOKUP[skillId]) return;
+          const bucket = skillsMap.get(skillId) || {};
+          // Create skill entry from game results
+          updateSkillBucket(bucket, {
+            prompts: total,
+            correct: correct,
+            total: total,
+            correctPrompts: correct,
+            avgResponseMs: responseTimeMs || 0,
+            attempts: total,
+          });
+          skillsMap.set(skillId, bucket);
+        });
+        userDoc.markModified('rewards.skills');
+      }
     }
 
     // Update global level + label whenever skills change

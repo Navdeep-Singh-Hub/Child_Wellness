@@ -188,6 +188,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
           accuracy: timingAccuracy, // Store the actual accuracy percentage
           xpAwarded: res.pointsAwarded,
           durationMs: elapsedMs,
+          skillTags: ['timing-control'],
         });
         setLogTimestamp(result?.last?.at ?? null);
         // 🔁 tell Home to refetch
@@ -484,6 +485,7 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
           total,
           accuracy: (correctCount / total) * 100,
           xpAwarded: xp,
+          skillTags: ['color-recognition'],
         });
         setLogTimestamp(result?.last?.at ?? null);
         // 🔁 tell Home to refetch
@@ -696,6 +698,7 @@ function QuickSort({ onBack }: { onBack: () => void }) {
           total,
           accuracy: (finalCorrect / total) * 100,
           xpAwarded: xp,
+          skillTags: ['category-sorting'],
         });
         setLogTimestamp(result?.last?.at ?? null);
         // 🔁 tell Home to refetch
@@ -1186,6 +1189,16 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
               };
             });
 
+            // Map quiz categories to skill IDs
+            const categoryToSkill: Record<string, string> = {
+              'colors': 'color-recognition',
+              'numbers': 'number-sense',
+              'animals': 'animal-knowledge',
+              'shapes': 'shape-awareness',
+              'birds': 'bird-knowledge',
+            };
+            const skillTags = Object.keys(categoryStats).map(cat => categoryToSkill[cat]).filter(Boolean);
+            
             await recordGame(xpEarned); // Update XP in user rewards
             const result = await logGameAndAward({
               type: 'quiz',
@@ -1193,6 +1206,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
               total: totalQuestions,
               accuracy: (totalCorrect / totalQuestions) * 100,
               xpAwarded: xpEarned,
+              skillTags: skillTags.length > 0 ? skillTags : ['number-sense'], // fallback
               meta: {
                 level: level,
                 categoryPerformance: categoryPerformance,
@@ -1618,6 +1632,7 @@ const POOL: Tile[] = useMemo(() => {
             total: TOTAL,
             accuracy: (finalCorrect / TOTAL) * 100,
             xpAwarded: xp,
+            skillTags: ['emotion-identification'],
           });
           setLogTimestamp(result?.last?.at ?? null);
           // 🔁 tell Home to refetch
