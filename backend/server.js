@@ -58,9 +58,9 @@ const fileFilter = (_, file, cb) => {
   console.log('Multer file filter - allowed:', ok);
   cb(ok ? null : new Error('Only image files allowed'), ok);
 };
-const upload = multer({ 
-  storage, 
-  fileFilter, 
+const upload = multer({
+  storage,
+  fileFilter,
   limits: { fileSize: 1 * 1024 * 1024 } // 1MB
 });
 
@@ -70,17 +70,17 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   console.log('Request body:', req.body);
   console.log('Request file:', req.file);
   console.log('User ID:', req.userId);
-  
+
   if (!req.file) {
     console.log('No file uploaded');
     return res.status(400).json({ error: 'No file uploaded' });
   }
-  
+
   // public URL for the image (proxy-safe) + relative path for future-proofing
   const proto = (req.get('x-forwarded-proto') || req.protocol || 'https').split(',')[0].trim();
-  const host  = (req.get('x-forwarded-host')  || req.get('host'));
-  const rel   = `/static/uploads/${req.file.filename}`;
-  const url   = `${proto}://${host}${rel}`;
+  const host = (req.get('x-forwarded-host') || req.get('host'));
+  const rel = `/static/uploads/${req.file.filename}`;
+  const url = `${proto}://${host}${rel}`;
   console.log('Generated URL:', url);
   res.json({ ok: true, url, path: rel });
 });
@@ -115,19 +115,19 @@ async function ensureUser(auth0Id, email, name) {
         }
       }
     },
-    { 
-      upsert: true, 
+    {
+      upsert: true,
       new: true,
       setDefaultsOnInsert: true
     }
   );
-  
+
   if (user.isNew) {
     console.log(`Created new user: ${auth0Id} with email: ${email}`);
   } else {
     console.log(`Found existing user: ${auth0Id} with email: ${email}`);
   }
-  
+
   return user;
 }
 
@@ -138,7 +138,7 @@ function requireAuth(req, res, next) {
   const auth0Id = req.body?.auth0Id || req.headers['x-auth0-id'] || 'auth0_test_user';
   const email = req.body?.email || req.headers['x-auth0-email'] || '';
   const name = req.body?.name || req.headers['x-auth0-name'] || '';
-  
+
   req.auth0Id = auth0Id;
   req.auth0Email = email;
   req.auth0Name = name;
@@ -200,9 +200,9 @@ function updateSkillBucket(bucket, entry) {
       bucket.avgResponseMs =
         bucket.totalPrompts > 0
           ? Math.round(
-              (prevAvg * (bucket.totalPrompts - prompts) + avgResponseMs * prompts) /
-                Math.max(bucket.totalPrompts, 1),
-            )
+            (prevAvg * (bucket.totalPrompts - prompts) + avgResponseMs * prompts) /
+            Math.max(bucket.totalPrompts, 1),
+          )
           : avgResponseMs;
     }
 
@@ -234,7 +234,7 @@ app.post('/api/users/ensure', requireAuth, async (req, res) => {
     const auth0Id = req.body?.auth0Id || req.auth0Id;
     const email = req.body?.email || req.auth0Email;
     const name = req.body?.name || req.auth0Name;
-    
+
     if (!auth0Id) {
       console.error('ensure-user: missing auth0Id', {
         headers: {
@@ -245,7 +245,7 @@ app.post('/api/users/ensure', requireAuth, async (req, res) => {
       });
       return res.status(401).json({ ok: false, error: 'Missing auth0Id' });
     }
-    
+
     const user = await ensureUser(auth0Id, email, name);
     res.json({
       ok: true,
@@ -446,13 +446,13 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
     // 1) Running totals
     const r = userDoc.rewards;
     r.correctSum = (r.correctSum || 0) + Number(correct || 0);
-    r.totalSum   = (r.totalSum   || 0) + Number(total   || 0);
+    r.totalSum = (r.totalSum || 0) + Number(total || 0);
     r.totalGamesPlayed = (r.totalGamesPlayed || 0) + 1;
 
     // 2) Bayesian smoothing over the lifetime data to prevent volatility on small N.
     //    Prior = Beta(α, β) ~ "expected accuracy" around 70% (tweakable).
     const alpha = 7;   // prior 'virtual' correct
-    const beta  = 3;   // prior 'virtual' incorrect
+    const beta = 3;   // prior 'virtual' incorrect
     const bayes = (r.correctSum + alpha) / (r.totalSum + alpha + beta); // 0..1
 
     // 3) Recency Exponential Moving Average on *this game's* accuracy.
@@ -469,18 +469,18 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
     if (type === 'quiz' && meta) {
       if (!r.quiz) r.quiz = {};
       const quiz = r.quiz;
-      
+
       // Update overall quiz stats
       quiz.totalGamesPlayed = (quiz.totalGamesPlayed || 0) + 1;
       quiz.totalQuestions = (quiz.totalQuestions || 0) + Number(total || 0);
       quiz.totalCorrect = (quiz.totalCorrect || 0) + Number(correct || 0);
       quiz.totalXP = (quiz.totalXP || 0) + Number(xpAwarded || 0);
-      
+
       // Update overall accuracy
       if (quiz.totalQuestions > 0) {
         quiz.overallAccuracy = Math.round((quiz.totalCorrect / quiz.totalQuestions) * 100);
       }
-      
+
       // Update level tracking
       const levelReached = meta.level || 1;
       if (levelReached > (quiz.bestLevel || 0)) {
@@ -488,12 +488,12 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
       }
       // Update current level (use the level reached in this game)
       quiz.currentLevel = levelReached;
-      
+
       // Update last played date
       const today = new Date();
       const todayYmd = today.toISOString().slice(0, 10);
       quiz.lastPlayedDate = todayYmd;
-      
+
       // Update category performance
       if (meta.categoryPerformance && typeof meta.categoryPerformance === 'object') {
         if (!quiz.categoryPerformance) {
@@ -501,7 +501,7 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
         } else if (!(quiz.categoryPerformance instanceof Map) && typeof quiz.categoryPerformance === 'object') {
           quiz.categoryPerformance = new Map(Object.entries(quiz.categoryPerformance));
         }
-        
+
         Object.entries(meta.categoryPerformance).forEach(([category, stats]) => {
           if (stats && typeof stats === 'object') {
             const catStats = quiz.categoryPerformance.get(category) || {
@@ -510,20 +510,20 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
               accuracy: 0,
               lastPlayedDate: todayYmd,
             };
-            
+
             catStats.totalQuestions = (catStats.totalQuestions || 0) + (stats.totalQuestions || 0);
             catStats.correctAnswers = (catStats.correctAnswers || 0) + (stats.correctAnswers || 0);
             catStats.lastPlayedDate = todayYmd;
-            
+
             if (catStats.totalQuestions > 0) {
               catStats.accuracy = Math.round((catStats.correctAnswers / catStats.totalQuestions) * 100);
             }
-            
+
             quiz.categoryPerformance.set(category, catStats);
           }
         });
       }
-      
+
       userDoc.markModified('rewards');
       userDoc.markModified('rewards.quiz');
       userDoc.markModified('rewards.quiz.categoryPerformance');
@@ -554,10 +554,10 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
           'emoji': 'emotion-identification',
           'quiz': 'number-sense', // default, can be overridden by tags
         };
-        
+
         // Use tags if provided, otherwise infer from game type
         const skillIds = tags.length > 0 ? tags : (typeToSkill[type] ? [typeToSkill[type]] : []);
-        
+
         skillIds.forEach((skillId) => {
           if (!skillId || !SKILL_LOOKUP[skillId]) return;
           const bucket = skillsMap.get(skillId) || {};
@@ -584,10 +584,10 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
 
     await userDoc.save();
 
-    res.json({ 
-      ok: true, 
-      points: session.points, 
-      totalGamesPlayed: session.totalGamesPlayed, 
+    res.json({
+      ok: true,
+      points: session.points,
+      totalGamesPlayed: session.totalGamesPlayed,
       last: session.gameLogs.at(-1),
       accuracy: r.accuracy, // send back for optional optimistic UI
       globalLevel: r.globalLevel,
@@ -799,13 +799,13 @@ app.put('/api/me/custom-tiles/:id', requireAuth, async (req, res) => {
   const user = await ensureUser(req.auth0Id, req.auth0Email || '', req.auth0Name || '');
   const tileIndex = (user.customTiles || []).findIndex(t => t.id === id);
   if (tileIndex === -1) return res.status(404).json({ error: 'tile not found' });
-  
+
   // Update the tile
-  user.customTiles[tileIndex] = { 
-    ...user.customTiles[tileIndex], 
-    label, 
-    emoji, 
-    imageUrl 
+  user.customTiles[tileIndex] = {
+    ...user.customTiles[tileIndex],
+    label,
+    emoji,
+    imageUrl
   };
   await user.save();
   res.json({ ok: true, tile: user.customTiles[tileIndex] });
