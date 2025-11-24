@@ -1,25 +1,25 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Speech from 'expo-speech';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
   Image,
   Modal,
-  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import {
+  API_BASE_URL,
   completeSmartExplorerSession,
   fetchSmartSceneDetail,
   fetchSmartScenes,
@@ -28,6 +28,15 @@ import {
   startSmartExplorerSession,
   submitSmartExplorerPrompt,
 } from '@/utils/api';
+
+function getSceneImageUrl(url: string) {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  // Remove leading slash if present to avoid double slashes if API_BASE_URL has one
+  const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
+  const cleanBase = API_BASE_URL.endsWith('/') ? API_BASE_URL : `${API_BASE_URL}/`;
+  return `${cleanBase}${cleanUrl}`;
+}
 
 type Mode = 'learn' | 'play' | 'therapy';
 
@@ -294,7 +303,7 @@ export default function SmartExplorerScreen() {
       activeOpacity={0.92}
       onPress={() => handleSelectScene(scene.slug)}
     >
-      <Image source={{ uri: scene.imageUrl }} style={styles.sceneImage} resizeMode="cover" />
+      <Image source={{ uri: getSceneImageUrl(scene.imageUrl) }} style={styles.sceneImage} resizeMode="cover" />
       <View style={styles.sceneInfo}>
         <Text style={styles.sceneTitle}>{scene.title}</Text>
         <Text style={styles.sceneSubtitle}>
@@ -454,7 +463,7 @@ export default function SmartExplorerScreen() {
     return (
       <View style={{ alignItems: 'center', marginTop: 16 }}>
         <View style={[styles.canvasWrapper, { width: imageWidth, aspectRatio: 16 / 9 }]}>
-          <Image source={{ uri: sceneDetail.scene.imageUrl }} style={styles.canvasImage} />
+          <Image source={{ uri: getSceneImageUrl(sceneDetail.scene.imageUrl) }} style={styles.canvasImage} />
           {sceneDetail.items.map((item) => {
             const { bbox } = item;
             const left = bbox.x * 100;

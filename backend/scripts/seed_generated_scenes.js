@@ -5,7 +5,7 @@ import { SmartPrompt } from '../models/SmartPrompt.js';
 import { SmartScene } from '../models/SmartScene.js';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/child_wellness';
-const BASE_URL = 'http://localhost:4000/static/uploads';
+const BASE_URL = '/static/uploads';
 
 const scenes = [
     {
