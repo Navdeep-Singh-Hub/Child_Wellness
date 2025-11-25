@@ -527,6 +527,8 @@ export default function Index() {
     outputRange: [24, 0],
   });
 
+  const canScroll = contentH > containerH + 1;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <LinearGradient
@@ -538,15 +540,16 @@ export default function Index() {
       <ScrollView
         onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
         onContentSizeChange={(_, h) => setContentH(h)}
-        scrollEnabled={contentH > containerH + 1}
+        scrollEnabled={canScroll}
         contentContainerStyle={[
           styles.scrollContent,
           { paddingHorizontal: isSmall ? 14 : 20 },
           containerH > 0 && { minHeight: containerH },
         ]}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        bounces={false}
-        overScrollMode="never"
+        refreshControl={canScroll ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined}
+        bounces={canScroll}
+        alwaysBounceVertical={canScroll}
+        overScrollMode={canScroll ? 'auto' : 'never'}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View

@@ -1968,6 +1968,8 @@ export default function GamesScreen() {
     return typeof gate === 'number' ? currentLevel < gate : false;
   };
 
+  const canScroll = contentH > containerH + 1;
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={{ flex: 1 }}>
@@ -1979,15 +1981,15 @@ export default function GamesScreen() {
           style={{ flex: 1 }}
           onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
           onContentSizeChange={(_, h) => setContentH(h)}
-          scrollEnabled={containerH > 0 && contentH > containerH + 1}
+          scrollEnabled={canScroll}
           contentContainerStyle={[
             { padding: 20, minHeight: containerH || undefined },
             containerH > 0 && contentH <= containerH && { flexGrow: 1 }
           ]}
           showsVerticalScrollIndicator={false}
-          bounces={false}
-          alwaysBounceVertical={false}
-          overScrollMode="never"
+          bounces={canScroll}
+          alwaysBounceVertical={canScroll}
+          overScrollMode={canScroll ? 'auto' : 'never'}
           nestedScrollEnabled={false}
           keyboardShouldPersistTaps="handled"
         >

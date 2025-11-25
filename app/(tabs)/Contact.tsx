@@ -79,7 +79,6 @@ export default function Contact() {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
-  // Enable scrolling only when content exceeds viewport height
   const [containerH, setContainerH] = useState(0);
   const [contentH, setContentH] = useState(0);
 
@@ -129,6 +128,8 @@ export default function Contact() {
     }
   };
 
+  const canScroll = contentH > containerH + 1;
+
   return (
     <PaperProvider>
       <SafeAreaView style={{ flex: 1, backgroundColor: '#F6F7FB' }}>
@@ -137,14 +138,14 @@ export default function Contact() {
             style={{ flex: 1 }}
             onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
             onContentSizeChange={(_, h) => setContentH(h)}
-            scrollEnabled={containerH > 0 && contentH > containerH + 1}
+            scrollEnabled={canScroll}
             contentContainerStyle={[
               { padding: 16, minHeight: containerH || undefined },
               containerH > 0 && contentH <= containerH && { flexGrow: 1 }
             ]}
-            bounces={false}
-            alwaysBounceVertical={false}
-            overScrollMode="never"
+            bounces={canScroll}
+            alwaysBounceVertical={canScroll}
+            overScrollMode={canScroll ? 'auto' : 'never'}
             showsVerticalScrollIndicator={false}
             nestedScrollEnabled={false}
             keyboardShouldPersistTaps="handled"

@@ -96,6 +96,8 @@ export default function SmartExplorerScreen() {
   const [showTherapyControls, setShowTherapyControls] = useState(false);
   const [summaryModalVisible, setSummaryModalVisible] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(true);
+  const [containerH, setContainerH] = useState(0);
+  const [contentH, setContentH] = useState(0);
 
   const promptStartRef = useRef<number>(0);
   const incorrectTapRef = useRef<number>(0);
@@ -574,6 +576,8 @@ export default function SmartExplorerScreen() {
     );
   };
 
+  const canScroll = contentH > containerH + 1;
+
   if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
@@ -585,7 +589,19 @@ export default function SmartExplorerScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
+      <ScrollView
+        onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
+        onContentSizeChange={(_, h) => setContentH(h)}
+        scrollEnabled={canScroll}
+        contentContainerStyle={[
+          { padding: 20, paddingBottom: 48 },
+          containerH > 0 && contentH <= containerH && { minHeight: containerH, flexGrow: 1 },
+        ]}
+        bounces={canScroll}
+        alwaysBounceVertical={canScroll}
+        overScrollMode={canScroll ? 'auto' : 'never'}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.headerRow}>
           <TouchableOpacity
             onPress={() => router.back()}
