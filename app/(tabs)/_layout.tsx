@@ -2,9 +2,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, usePathname, useRouter } from "expo-router";
 import React from "react";
-import RequireCompleteProfile from "./RequireCompleteProfile";
 import { Animated, Dimensions, Platform, Pressable, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import RequireCompleteProfile from "./RequireCompleteProfile";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MENU_WIDTH = 280;
