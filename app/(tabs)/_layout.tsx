@@ -2,7 +2,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, usePathname, useRouter } from "expo-router";
 import React from "react";
-import { Animated, Dimensions, Platform, Pressable, Text, TouchableOpacity, View } from "react-native";
+import { Animated, Dimensions, Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import RequireCompleteProfile from "./RequireCompleteProfile";
 
@@ -106,142 +106,136 @@ function SlideOutMenu() {
         <Ionicons name="menu" size={22} color="#fff" />
       </TouchableOpacity>
 
-      {/* Overlay */}
-      {open && (
-        <Pressable
-          onPress={() => setOpen(false)}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 999,
-          }}
-        >
+      <Modal visible={open} transparent animationType="none" onRequestClose={() => setOpen(false)}>
+        <View style={{ flex: 1 }}>
+          <Pressable
+            onPress={() => setOpen(false)}
+            style={[StyleSheet.absoluteFillObject, { zIndex: 999 }]}
+          >
+            <Animated.View
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                opacity: overlayOpacity,
+              }}
+            />
+          </Pressable>
+
+          {/* Slide-out Menu (right side) */}
           <Animated.View
             style={{
-              flex: 1,
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              opacity: overlayOpacity,
+              position: "absolute",
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: MENU_WIDTH,
+              backgroundColor: "#FFFFFF",
+              zIndex: 1001,
+              transform: [{ translateX: slideAnim }],
+              shadowColor: "#000",
+              shadowOpacity: 0.3,
+              shadowRadius: 20,
+              shadowOffset: { width: -4, height: 0 },
+              elevation: 15,
+              paddingTop: insets.top + 20,
             }}
-          />
-        </Pressable>
-      )}
-
-      {/* Slide-out Menu (right side) */}
-      <Animated.View
-        style={{
-          position: "absolute",
-          right: 0,
-          top: 0,
-          bottom: 0,
-          width: MENU_WIDTH,
-          backgroundColor: "#FFFFFF",
-          zIndex: 1001,
-          transform: [{ translateX: slideAnim }],
-          shadowColor: "#000",
-          shadowOpacity: 0.3,
-          shadowRadius: 20,
-          shadowOffset: { width: -4, height: 0 },
-          elevation: 15,
-          paddingTop: insets.top + 20,
-        }}
-      >
-        <View style={{ paddingHorizontal: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: "#E5E7EB" }}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-            <Text style={{ fontSize: 24, fontWeight: "800", color: "#111827" }}>Menu</Text>
-            <TouchableOpacity
-              onPress={() => setOpen(false)}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "#F3F4F6",
-              }}
-            >
-              <Ionicons name="close" size={20} color="#111827" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={{ paddingTop: 12 }}>
-          {menuItems.map((item, index) => {
-            // Improved active detection: check multiple pathname variations
-            const normalizedPathname = (pathname || '').toLowerCase();
-            const normalizedRoute = (item.route || '').toLowerCase();
-            
-            // Extract route name from paths (e.g., "/(tabs)/Games" -> "games")
-            const routeName = normalizedRoute.split('/').pop()?.split('?')[0] || '';
-            const pathnameParts = normalizedPathname.split('/');
-            const currentRouteName = pathnameParts[pathnameParts.length - 1]?.split('?')[0] || '';
-            
-            // Check if active: exact match, route name matches, or home route special case
-            const isActive = 
-              normalizedPathname === normalizedRoute ||
-              normalizedPathname === normalizedRoute.replace('/(tabs)', '') ||
-              (normalizedRoute === "/(tabs)" && (normalizedPathname === "/" || normalizedPathname === "" || normalizedPathname === "/(tabs)")) ||
-              (routeName && routeName === currentRouteName && routeName !== '' && routeName !== 'tabs') ||
-              (normalizedPathname.includes(routeName) && routeName !== '' && routeName !== 'tabs' && !routeName.includes('addtile'));
-            
-            const isAction = (item as any).isAction;
-            
-            // Get filled icon for active state (if available)
-            const iconName = isActive && !isAction && item.icon.includes('-outline')
-              ? (item.icon.replace('-outline', '') as any)
-              : (item.icon as any);
-            
-            return (
-              <TouchableOpacity
-                key={item.title}
-                onPress={() => navigateTo(item.route)}
-                activeOpacity={0.7}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 16,
-                  paddingHorizontal: 20,
-                  backgroundColor: isActive ? "#F0F9FF" : (isAction ? "#EEF2FF" : "transparent"),
-                  borderLeftWidth: isActive ? 4 : 0,
-                  borderLeftColor: "#2563EB",
-                  marginTop: isAction ? 8 : 0,
-                  borderTopWidth: isAction ? 1 : 0,
-                  borderTopColor: "#E5E7EB",
-                }}
-              >
-                <Ionicons
-                  name={iconName}
-                  size={22}
-                  color={isActive ? "#2563EB" : (isAction ? "#6366F1" : "#6B7280")}
-                  style={{ marginRight: 16 }}
-                />
-                <Text
+          >
+            <View style={{ paddingHorizontal: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: "#E5E7EB" }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <Text style={{ fontSize: 24, fontWeight: "800", color: "#111827" }}>Menu</Text>
+                <TouchableOpacity
+                  onPress={() => setOpen(false)}
                   style={{
-                    fontSize: 16,
-                    fontWeight: isActive ? "700" : (isAction ? "700" : "600"),
-                    color: isActive ? "#2563EB" : (isAction ? "#6366F1" : "#374151"),
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: "#F3F4F6",
                   }}
                 >
-                  {item.title}
-                </Text>
-                {isActive && (
-                  <View style={{
-                    marginLeft: 'auto',
-                    width: 6,
-                    height: 6,
-                    borderRadius: 3,
-                    backgroundColor: "#2563EB",
-                  }} />
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </Animated.View>
+                  <Ionicons name="close" size={20} color="#111827" />
+                </TouchableOpacity>
+              </View>
+            </View>
 
-      {/* No content wrapper; we overlay above existing content only when open */}
+            <View style={{ paddingTop: 12 }}>
+              {menuItems.map((item) => {
+                const normalizedPathname = (pathname || '').toLowerCase();
+                const normalizedRoute = (item.route || '').toLowerCase();
+                const routeName = normalizedRoute.split('/').pop()?.split('?')[0] || '';
+                const pathnameParts = normalizedPathname.split('/');
+                const currentRouteName = pathnameParts[pathnameParts.length - 1]?.split('?')[0] || '';
+                const isActive =
+                  normalizedPathname === normalizedRoute ||
+                  normalizedPathname === normalizedRoute.replace('/(tabs)', '') ||
+                  (normalizedRoute === "/(tabs)" && (normalizedPathname === "/" || normalizedPathname === "" || normalizedPathname === "/(tabs)")) ||
+                  (routeName && routeName === currentRouteName && routeName !== '' && routeName !== 'tabs') ||
+                  (normalizedPathname.includes(routeName) && routeName !== '' && routeName !== 'tabs' && !routeName.includes('addtile'));
+
+                const isAction = (item as any).isAction;
+                const iconName = isActive && !isAction && item.icon.includes('-outline')
+                  ? (item.icon.replace('-outline', '') as any)
+                  : (item.icon as any);
+
+                return (
+                  <TouchableOpacity
+                    key={item.title}
+                    onPress={() => {
+                      if (isAction && item.title === "Add Tile") {
+                        setOpen(false);
+                        setTimeout(() => {
+                          router.navigate(item.route as any);
+                        }, 100);
+                      } else {
+                        navigateTo(item.route);
+                      }
+                    }}
+                    activeOpacity={0.7}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingVertical: 16,
+                      paddingHorizontal: 20,
+                      backgroundColor: isActive ? "#F0F9FF" : (isAction ? "#EEF2FF" : "transparent"),
+                      borderLeftWidth: isActive ? 4 : 0,
+                      borderLeftColor: "#2563EB",
+                      marginTop: isAction ? 8 : 0,
+                      borderTopWidth: isAction ? 1 : 0,
+                      borderTopColor: "#E5E7EB",
+                    }}
+                  >
+                    <Ionicons
+                      name={iconName}
+                      size={22}
+                      color={isActive ? "#2563EB" : (isAction ? "#6366F1" : "#6B7280")}
+                      style={{ marginRight: 16 }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: isActive ? "700" : (isAction ? "700" : "600"),
+                        color: isActive ? "#2563EB" : (isAction ? "#6366F1" : "#374151"),
+                      }}
+                    >
+                      {item.title}
+                    </Text>
+                    {isActive && (
+                      <View style={{
+                        marginLeft: 'auto',
+                        width: 6,
+                        height: 6,
+                        borderRadius: 3,
+                        backgroundColor: "#2563EB",
+                      }} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </Animated.View>
+        </View>
+      </Modal>
     </>
   );
 }
