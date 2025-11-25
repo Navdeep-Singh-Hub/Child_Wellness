@@ -13,6 +13,8 @@ export default function InsightsScreen() {
   const [insights, setInsights] = useState<InsightsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [containerH, setContainerH] = useState(0);
+  const [contentH, setContentH] = useState(0);
 
   const load = React.useCallback(async () => {
     try {
@@ -48,13 +50,27 @@ export default function InsightsScreen() {
       .join(' ');
   }, [series]);
 
+  const canScroll = contentH > containerH + 1;
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <LinearGradient
         colors={['#EEF2FF', '#FFFFFF']}
         style={StyleSheet.absoluteFillObject}
       />
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
+        onContentSizeChange={(_, h) => setContentH(h)}
+        scrollEnabled={canScroll}
+        contentContainerStyle={[
+          styles.scroll,
+          containerH > 0 && contentH <= containerH && { minHeight: containerH, flexGrow: 1 },
+        ]}
+        bounces={canScroll}
+        alwaysBounceVertical={canScroll}
+        overScrollMode={canScroll ? 'auto' : 'never'}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Insights</Text>
           <Text style={styles.subtitle}>Track progress, spot trends, and plan next steps.</Text>
