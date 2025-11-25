@@ -64,7 +64,7 @@ function speak(text: string) {
   try {
     Speech.stop();
     Speech.speak(text, { rate: 0.98 });
-  } catch {}
+  } catch { }
 }
 
 // -------------------- Data pools (safe, kid-friendly) --------------------
@@ -179,7 +179,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
       const timingAccuracy = delta <= 500 ? 100 : delta <= 1000 ? 80 : delta <= 1500 ? 60 : delta <= 2000 ? 40 : 20;
       // Convert to correct/total format: if accuracy >= 50%, count as correct
       const isCorrect = timingAccuracy >= 50 ? 1 : 0;
-      
+
       try {
         const result = await logGameAndAward({
           type: 'tap',
@@ -193,7 +193,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
         setLogTimestamp(result?.last?.at ?? null);
         // 🔁 tell Home to refetch
         router.setParams({ refreshStats: Date.now().toString() });
-      } catch {}
+      } catch { }
       speak('Great job!');
     } catch (e: any) {
       setState('error');
@@ -274,10 +274,10 @@ function TapTiming({ onBack }: { onBack: () => void }) {
 
   return (
     <SafeAreaView className="flex-1 items-center justify-center p-6" style={{ backgroundColor: '#F0F9FF' }}>
-      <TouchableOpacity 
-        onPress={onBack} 
-        className="absolute top-12 left-6 px-4 py-2 rounded-full" 
-        style={{ 
+      <TouchableOpacity
+        onPress={onBack}
+        className="absolute top-12 left-6 px-4 py-2 rounded-full"
+        style={{
           backgroundColor: '#111827',
           shadowColor: '#000',
           shadowOpacity: 0.2,
@@ -333,9 +333,9 @@ function TapTiming({ onBack }: { onBack: () => void }) {
           borderWidth: 2,
           borderColor: '#E2E8F0',
         }}>
-          <Text style={{ 
-            fontSize: 72, 
-            fontWeight: '900', 
+          <Text style={{
+            fontSize: 72,
+            fontWeight: '900',
             color: state === 'running' ? '#2563EB' : '#1F2937',
             letterSpacing: -2,
           }}>
@@ -349,9 +349,9 @@ function TapTiming({ onBack }: { onBack: () => void }) {
               paddingVertical: 8,
               borderRadius: 16,
             }}>
-              <Text style={{ 
-                fontSize: 16, 
-                fontWeight: '700', 
+              <Text style={{
+                fontSize: 16,
+                fontWeight: '700',
                 color: '#92400E',
               }}>
                 Target: {targetSec}s
@@ -361,17 +361,17 @@ function TapTiming({ onBack }: { onBack: () => void }) {
         </View>
 
         {state !== 'running' ? (
-          <BigButton 
-            title="Start Round" 
-            color="#16A34A" 
-            onPress={onStart} 
+          <BigButton
+            title="Start Round"
+            color="#16A34A"
+            onPress={onStart}
             icon={icons.play}
           />
         ) : (
-          <BigButton 
-            title="TAP NOW!" 
-            color="#2563EB" 
-            onPress={onTap} 
+          <BigButton
+            title="TAP NOW!"
+            color="#2563EB"
+            onPress={onTap}
             icon={images.tapNowIcon}
           />
         )}
@@ -490,7 +490,7 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
         setLogTimestamp(result?.last?.at ?? null);
         // 🔁 tell Home to refetch
         router.setParams({ refreshStats: Date.now().toString() });
-      } catch {}
+      } catch { }
       speak('Well done!');
     } else {
       setRound((r) => r + 1);
@@ -539,10 +539,10 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
 
   return (
     <SafeAreaView className="flex-1 items-center justify-center p-6" style={{ backgroundColor: '#F0FDF4' }}>
-      <TouchableOpacity 
-        onPress={onBack} 
-        className="absolute top-12 left-6 px-4 py-2 rounded-full" 
-        style={{ 
+      <TouchableOpacity
+        onPress={onBack}
+        className="absolute top-12 left-6 px-4 py-2 rounded-full"
+        style={{
           backgroundColor: '#111827',
           shadowColor: '#000',
           shadowOpacity: 0.2,
@@ -703,7 +703,7 @@ function QuickSort({ onBack }: { onBack: () => void }) {
         setLogTimestamp(result?.last?.at ?? null);
         // 🔁 tell Home to refetch
         router.setParams({ refreshStats: Date.now().toString() });
-      } catch {}
+      } catch { }
 
       speak('Great sorting!');
     } else {
@@ -771,10 +771,10 @@ function QuickSort({ onBack }: { onBack: () => void }) {
 
   return (
     <SafeAreaView className="flex-1 items-center justify-center p-6" style={{ backgroundColor: '#FFF7ED' }}>
-      <TouchableOpacity 
-        onPress={onBack} 
-        className="absolute top-12 left-6 px-4 py-2 rounded-full" 
-        style={{ 
+      <TouchableOpacity
+        onPress={onBack}
+        className="absolute top-12 left-6 px-4 py-2 rounded-full"
+        style={{
           backgroundColor: '#111827',
           shadowColor: '#000',
           shadowOpacity: 0.2,
@@ -800,9 +800,9 @@ function QuickSort({ onBack }: { onBack: () => void }) {
         borderWidth: 1,
         borderColor: '#E5E7EB',
       }}>
-        <View style={{ 
-          flexDirection: 'row', 
-          justifyContent: 'space-between', 
+        <View style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: 20,
         }}>
@@ -1051,7 +1051,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
     const numOptions = Math.min(3 + Math.floor(difficulty / 2), 4);
     const poolSize = Math.min(pool.length, 5 + difficulty * 2);
     const availablePool = pool.slice(0, poolSize);
-    
+
     const correct = availablePool[Math.floor(Math.random() * availablePool.length)];
     const wrongs = shuffle(availablePool.filter(item => item !== correct));
     const options = shuffle([correct, ...wrongs.slice(0, numOptions - 1)]);
@@ -1090,12 +1090,12 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
 
   const handleAnswer = async (answer: string) => {
     if (locked || !currentQuestion) return;
-    
+
     setLocked(true);
     setSelectedAnswer(answer);
     const isCorrect = answer === currentQuestion.correctAnswer;
     const category = currentQuestion.category;
-    
+
     // Update category stats
     setCategoryStats(prev => {
       const catStats = prev[category] || { total: 0, correct: 0 };
@@ -1107,7 +1107,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
         },
       };
     });
-    
+
     if (isCorrect) {
       setScore(s => s + 1);
       setCorrectThisLevel(c => c + 1);
@@ -1126,7 +1126,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
 
     setTimeout(async () => {
       const newCorrectCount = isCorrect ? correctThisLevel + 1 : correctThisLevel;
-      
+
       if (currentQuestionIndex < levelQuestions.length - 1) {
         // Next question in this level
         const nextIndex = currentQuestionIndex + 1;
@@ -1153,7 +1153,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
             false
           );
           speak(`Level ${level + 1} unlocked! Amazing!`);
-          
+
           setTimeout(() => {
             confettiOpacity.value = withTiming(0, { duration: 500 });
             levelUpScale.value = withTiming(0, { duration: 300 });
@@ -1170,7 +1170,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
           const totalQuestions = (level - 1) * 5 + questionsThisLevel;
           const totalCorrect = score + (isCorrect ? 1 : 0);
           const xpEarned = totalCorrect * 15 + (level - 1) * 25;
-          
+
           setFinalStats({
             correct: totalCorrect,
             total: totalQuestions,
@@ -1198,7 +1198,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
               'birds': 'bird-knowledge',
             };
             const skillTags = Object.keys(categoryStats).map(cat => categoryToSkill[cat]).filter(Boolean);
-            
+
             await recordGame(xpEarned); // Update XP in user rewards
             const result = await logGameAndAward({
               type: 'quiz',
@@ -1218,7 +1218,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
           } catch (e) {
             console.error('Failed to save quiz game:', e);
           }
-          
+
           speak(`Game over! You reached level ${level}!`);
         }
       }
@@ -1229,9 +1229,9 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
   if (gameFinished && finalStats) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-        <TouchableOpacity 
-          onPress={onBack} 
-          className="absolute top-12 left-6 px-4 py-2 rounded-full" 
+        <TouchableOpacity
+          onPress={onBack}
+          className="absolute top-12 left-6 px-4 py-2 rounded-full"
           style={{ backgroundColor: '#000' }}
         >
           <Text className="text-white font-semibold">← Back</Text>
@@ -1274,9 +1274,9 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
 
           <ReflectionPrompt logTimestamp={logTimestamp} />
 
-          <BigButton 
-            title="Play Again" 
-            color="#9333EA" 
+          <BigButton
+            title="Play Again"
+            color="#9333EA"
             onPress={() => {
               setLevel(1);
               setScore(0);
@@ -1288,7 +1288,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
               setSelectedAnswer(null);
               setCategoryStats({});
               setLogTimestamp(null);
-            }} 
+            }}
           />
         </View>
       </SafeAreaView>
@@ -1318,10 +1318,10 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
 
   return (
     <SafeAreaView className="flex-1 items-center justify-center p-6" style={{ backgroundColor: `${bgColor}15` }}>
-      <TouchableOpacity 
-        onPress={onBack} 
-        className="absolute top-12 left-6 px-4 py-2 rounded-full z-10" 
-        style={{ 
+      <TouchableOpacity
+        onPress={onBack}
+        className="absolute top-12 left-6 px-4 py-2 rounded-full z-10"
+        style={{
           backgroundColor: '#111827',
           shadowColor: '#000',
           shadowOpacity: 0.2,
@@ -1335,7 +1335,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
 
       {/* Level Up Animation */}
       {showLevelUp && (
-        <Animated.View 
+        <Animated.View
           style={[
             {
               position: 'absolute',
@@ -1438,10 +1438,10 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
           }}>
             <Text style={{ fontSize: 64 }}>{currentQuestion.emoji}</Text>
           </View>
-          <Text style={{ 
-            fontSize: 24, 
-            fontWeight: '800', 
-            color: '#111827', 
+          <Text style={{
+            fontSize: 24,
+            fontWeight: '800',
+            color: '#111827',
             marginBottom: 8,
             textAlign: 'center',
           }}>
@@ -1455,11 +1455,11 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
             const isSelected = selectedAnswer === option;
             const isCorrect = option === currentQuestion.correctAnswer;
             const showFeedback = feedback !== null;
-            
+
             let optionBg = '#F3F4F6';
             let optionBorder = '#E5E7EB';
             let textColor = '#111827';
-            
+
             if (showFeedback) {
               if (isSelected && isCorrect) {
                 optionBg = '#10B981';
@@ -1544,18 +1544,18 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
 /* ======================= FIND EMOJI — Reanimated v3 (web-safe) ======================= */
 function FindEmoji({ onBack }: { onBack: () => void }) {
   const router = useRouter();
-// Create a safe pool: must have a visual (emoji/image) and always have a label
-const POOL: Tile[] = useMemo(() => {
-  const list = (EMOTIONS || []).filter(Boolean).filter(t => t.emoji || (t as any).imageKey);
-  return list.map((t) => ({
-    ...t,
-    // derive a readable label if missing
-    label: t.label ?? (typeof t.id === 'string'
-      ? t.id.replace(/[_-]+/g, ' ')
-      : String(t.id)
-    ),
-  }));
-}, []);
+  // Create a safe pool: must have a visual (emoji/image) and always have a label
+  const POOL: Tile[] = useMemo(() => {
+    const list = (EMOTIONS || []).filter(Boolean).filter(t => t.emoji || (t as any).imageKey);
+    return list.map((t) => ({
+      ...t,
+      // derive a readable label if missing
+      label: t.label ?? (typeof t.id === 'string'
+        ? t.id.replace(/[_-]+/g, ' ')
+        : String(t.id)
+      ),
+    }));
+  }, []);
 
 
   const TOTAL = 6;
@@ -1637,7 +1637,7 @@ const POOL: Tile[] = useMemo(() => {
           setLogTimestamp(result?.last?.at ?? null);
           // 🔁 tell Home to refetch
           router.setParams({ refreshStats: Date.now().toString() });
-        } catch {}
+        } catch { }
       })();
     } else {
       setRound(r => r + 1);
@@ -1764,9 +1764,9 @@ const POOL: Tile[] = useMemo(() => {
                 justifyContent: "center",
               }}
             >
-             <Text className="font-extrabold text-gray-900">
+              <Text className="font-extrabold text-gray-900">
                 {item.label ?? (typeof item.id === 'string' ? item.id.replace(/[_-]+/g, ' ') : String(item.id))}
-        </Text>
+              </Text>
 
 
             </TouchableOpacity>
@@ -1876,6 +1876,7 @@ export default function GamesScreen() {
   // Enable scrolling only when content exceeds viewport
   const [containerH, setContainerH] = useState(0);
   const [contentH, setContentH] = useState(0);
+  const [canScroll, setCanScroll] = useState(false);
   const [screen, setScreen] = useState<GameKey>('menu');
   const [stats, setStats] = useState<{ xp?: number; streakDays?: number; globalLevel?: number } | null>(null);
 
@@ -1896,12 +1897,28 @@ export default function GamesScreen() {
     transform: [{ translateY: (heroFloat.value - 0.5) * 10 }],
   }));
 
+  const handleContainerLayout = (e: any) => {
+    const h = e.nativeEvent.layout.height;
+    setContainerH(prev => (prev === h ? prev : h));
+  };
+
+  const handleContentLayout = (e: any) => {
+    const h = e.nativeEvent.layout.height;
+    setContentH(prev => (prev === h ? prev : h));
+  };
+
+  useEffect(() => {
+    if (!containerH || !contentH) return;
+    const next = contentH > containerH + 1;
+    if (next !== canScroll) setCanScroll(next);
+  }, [containerH, contentH, canScroll]);
+
   useEffect(() => {
     (async () => {
       try {
         const s = await fetchMyStats();
         setStats({ xp: s?.xp ?? 0, streakDays: s?.streakDays ?? 0, globalLevel: s?.globalLevel ?? 1 });
-      } catch {}
+      } catch { }
     })();
   }, []);
 
@@ -1968,7 +1985,63 @@ export default function GamesScreen() {
     return typeof gate === 'number' ? currentLevel < gate : false;
   };
 
-  const canScroll = contentH > containerH + 1;
+  const content = (
+    <View onLayout={handleContentLayout}>
+      {/* Header */}
+      <Animated.View style={[menuStyles.headerWrap, headerStyle]}>
+        <Animated.View style={[menuStyles.heroBadge, heroStyle]}>
+          <LinearGradient
+            colors={['#3B82F6', '#6366F1']}
+            style={menuStyles.heroGradient}
+          >
+            <Ionicons name="game-controller" size={40} color="#fff" />
+          </LinearGradient>
+        </Animated.View>
+        <Text style={menuStyles.heroTitle}>Games</Text>
+        {stats && (
+          <Animated.View
+            entering={FadeInDown.delay(120).springify().damping(18)}
+            style={menuStyles.statsRow}
+          >
+            <View style={menuStyles.statChip}>
+              <Ionicons name="star" size={16} color="#F59E0B" />
+              <Text style={menuStyles.statText}>{stats.xp} XP</Text>
+            </View>
+            <View style={menuStyles.statChip}>
+              <Ionicons name="flame" size={16} color="#F97316" />
+              <Text style={menuStyles.statText}>{stats.streakDays} days</Text>
+            </View>
+          </Animated.View>
+        )}
+      </Animated.View>
+
+      {/* Games Grid */}
+      <Animated.Text
+        entering={FadeInDown.delay(220)}
+        style={menuStyles.sectionHeading}
+      >
+        Choose a Game
+      </Animated.Text>
+      <View style={{ gap: 18 }}>
+        {games.map((game, index) => {
+          const locked = computeLocked(game.id);
+          return (
+            <GameCard
+              key={game.id}
+              game={game}
+              index={index}
+              locked={locked}
+              unlockLevel={levelGates[game.id]}
+              onPress={() => {
+                if (locked) return;
+                setScreen(game.id as GameKey);
+              }}
+            />
+          );
+        })}
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -1977,76 +2050,31 @@ export default function GamesScreen() {
           colors={['#E0F2FE', '#F1F5FF', '#FFFFFF'] as [string, string, string]}
           style={StyleSheet.absoluteFillObject}
         />
-        <ScrollView
-          style={{ flex: 1 }}
-          onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
-          onContentSizeChange={(_, h) => setContentH(h)}
-          scrollEnabled={canScroll}
-          contentContainerStyle={[
-            { padding: 20, minHeight: containerH || undefined },
-            containerH > 0 && contentH <= containerH && { flexGrow: 1 }
-          ]}
-          showsVerticalScrollIndicator={false}
-          bounces={canScroll}
-          alwaysBounceVertical={canScroll}
-          overScrollMode={canScroll ? 'auto' : 'never'}
-          nestedScrollEnabled={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Header */}
-          <Animated.View style={[menuStyles.headerWrap, headerStyle]}>
-            <Animated.View style={[menuStyles.heroBadge, heroStyle]}>
-              <LinearGradient
-                colors={['#3B82F6', '#6366F1']}
-                style={menuStyles.heroGradient}
-              >
-                <Ionicons name="game-controller" size={40} color="#fff" />
-              </LinearGradient>
-            </Animated.View>
-            <Text style={menuStyles.heroTitle}>Games</Text>
-            {stats && (
-              <Animated.View
-                entering={FadeInDown.delay(120).springify().damping(18)}
-                style={menuStyles.statsRow}
-              >
-                <View style={menuStyles.statChip}>
-                  <Ionicons name="star" size={16} color="#F59E0B" />
-                  <Text style={menuStyles.statText}>{stats.xp} XP</Text>
-                </View>
-                <View style={menuStyles.statChip}>
-                  <Ionicons name="flame" size={16} color="#F97316" />
-                  <Text style={menuStyles.statText}>{stats.streakDays} days</Text>
-                </View>
-              </Animated.View>
-            )}
-          </Animated.View>
 
-          {/* Games Grid */}
-          <Animated.Text
-            entering={FadeInDown.delay(220)}
-            style={menuStyles.sectionHeading}
+        {canScroll ? (
+          <ScrollView
+            onLayout={handleContainerLayout}
+            contentContainerStyle={[
+              { padding: 20, minHeight: containerH || undefined },
+              containerH > 0 && contentH <= containerH && { flexGrow: 1 },
+            ]}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+            alwaysBounceVertical={false}
+            overScrollMode="never"
+            nestedScrollEnabled={false}
+            keyboardShouldPersistTaps="handled"
           >
-            Choose a Game
-          </Animated.Text>
-          <View style={{ gap: 18 }}>
-            {games.map((game, index) => {
-              const locked = computeLocked(game.id);
-              return (
-                <GameCard
-                  key={game.id}
-                  game={game}
-                  index={index}
-                  locked={locked}
-                  unlockLevel={levelGates[game.id]}
-                  onPress={() => {
-                    if (locked) return;
-                    setScreen(game.id as GameKey);
-                  }}
-                />
-              );
-            })}
+            {content}
+          </ScrollView>
+        ) : (
+          <View
+            onLayout={handleContainerLayout}
+            style={{ padding: 20, flex: 1 }}
+          >
+            {content}
           </View>
-        </ScrollView>
+        )}
       </View>
     </SafeAreaView>
   );

@@ -1,10 +1,10 @@
+import { fetchInsights, type InsightsResponse } from '@/utils/api';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import Svg, { Polyline } from 'react-native-svg';
-import { fetchInsights, type InsightsResponse } from '@/utils/api';
-import { useFocusEffect } from '@react-navigation/native';
 
 const RANGE_OPTIONS: Array<'7d' | '30d' | '90d'> = ['7d', '30d', '90d'];
 
@@ -15,6 +15,7 @@ export default function InsightsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [containerH, setContainerH] = useState(0);
   const [contentH, setContentH] = useState(0);
+  const [canScroll, setCanScroll] = useState(false);
 
   const load = React.useCallback(async () => {
     try {
@@ -28,6 +29,22 @@ export default function InsightsScreen() {
       setLoading(false);
     }
   }, [range]);
+
+  const handleContainerLayout = (e: any) => {
+    const h = e.nativeEvent.layout.height;
+    setContainerH(prev => (prev === h ? prev : h));
+  };
+
+  const handleContentLayout = (e: any) => {
+    const h = e.nativeEvent.layout.height;
+    setContentH(prev => (prev === h ? prev : h));
+  };
+
+  React.useEffect(() => {
+    if (!containerH || !contentH) return;
+    const next = contentH > containerH + 1;
+    if (next !== canScroll) setCanScroll(next);
+  }, [containerH, contentH, canScroll]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -50,7 +67,136 @@ export default function InsightsScreen() {
       .join(' ');
   }, [series]);
 
-  const canScroll = contentH > containerH + 1;
+  const content = (
+    <View onLayout={handleContentLayout}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Insights</Text>
+        <Text style={styles.subtitle}>Track progress, spot trends, and plan next steps.</Text>
+      </View>
+
+      <View style={styles.rangeRow}>
+        {RANGE_OPTIONS.map((option) => {
+          const active = option === range;
+          return (
+            <Pressable
+              key={option}
+              onPress={() => setRange(option)}
+              style={[styles.rangeChip, active && styles.rangeChipActive]}
+            >
+              <Text style={[styles.rangeText, active && styles.rangeTextActive]}>{option.toUpperCase()}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {loading && (
+        <View style={styles.loading}>
+          <ActivityIndicator color="#2563EB" />
+          <Text style={{ marginTop: 8, color: '#475569', fontWeight: '600' }}>Syncing insights…</Text>
+        </View>
+      )}
+      {error && (
+        <View style={styles.errorBox}>
+          <Text style={{ color: '#DC2626', fontWeight: '700' }}>{error}</Text>
+          <Pressable onPress={load} style={styles.retryBtn}>
+            <Text style={{ color: '#fff', fontWeight: '700' }}>Retry</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {insights && !loading && !error ? (
+        <>
+          <View style={styles.metricsRow}>
+            <MetricCard
+              icon="sparkles-outline"
+              label="XP Earned"
+              value={`${insights.aggregate.totalXp}`}
+            />
+            <MetricCard
+              icon="analytics-outline"
+              label="Avg Accuracy"
+              value={`${insights.aggregate.avgAccuracy}%`}
+            />
+            <MetricCard
+              icon="timer-outline"
+              label="Avg Session"
+              value={`${insights.aggregate.avgSessionMinutes}m`}
+            />
+          </View>
+
+          <View style={styles.chartCard}>
+            <Text style={styles.chartTitle}>XP trend</Text>
+            <Text style={styles.chartCaption}>Per day across the selected window</Text>
+            <Svg width={260} height={120} style={{ marginTop: 16 }}>
+              <Polyline
+                points={chartPoints}
+                fill="none"
+                stroke="#2563EB"
+                strokeWidth={4}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Strengths</Text>
+            {insights.strengths.length ? (
+              insights.strengths.map((skill) => (
+                <SkillRow key={skill.id} skill={skill} trendPositive />
+              ))
+            ) : (
+              <Text style={styles.emptyText}>Play more to surface dominant skills.</Text>
+            )}
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Focus areas</Text>
+            {insights.focus.length ? (
+              insights.focus.map((skill) => (
+                <SkillRow key={skill.id} skill={skill} />
+              ))
+            ) : (
+              <Text style={styles.emptyText}>No focus flags right now.</Text>
+            )}
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Modes breakdown</Text>
+            <View style={{ gap: 10 }}>
+              {Object.entries(insights.modesBreakdown || {}).map(([mode, count]) => (
+                <View key={mode} style={styles.modeRow}>
+                  <Text style={styles.modeLabel}>{mode}</Text>
+                  <Text style={styles.modeValue}>{count}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Session feedback</Text>
+            {insights.feedback.averageMood ? (
+              <Text style={styles.feedbackMood}>Average mood: {insights.feedback.averageMood}/5</Text>
+            ) : (
+              <Text style={styles.emptyText}>Share reflections after games to unlock trends.</Text>
+            )}
+            {insights.feedback.recentNotes.length ? (
+              <View style={{ marginTop: 12, gap: 8 }}>
+                {insights.feedback.recentNotes.map((note, idx) => (
+                  <View key={`${note.at}-${idx}`} style={styles.noteCard}>
+                    <Text style={styles.noteText}>{note.text}</Text>
+                    <Text style={styles.noteMeta}>
+                      {new Date(note.at).toLocaleDateString()} {note.observer ? `· ${note.observer}` : ''}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </View>
+        </>
+      ) : null}
+    </View>
+  );
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -58,146 +204,29 @@ export default function InsightsScreen() {
         colors={['#EEF2FF', '#FFFFFF']}
         style={StyleSheet.absoluteFillObject}
       />
-      <ScrollView
-        onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
-        onContentSizeChange={(_, h) => setContentH(h)}
-        scrollEnabled={canScroll}
-        contentContainerStyle={[
-          styles.scroll,
-          containerH > 0 && contentH <= containerH && { minHeight: containerH, flexGrow: 1 },
-        ]}
-        bounces={canScroll}
-        alwaysBounceVertical={canScroll}
-        overScrollMode={canScroll ? 'auto' : 'never'}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <Text style={styles.title}>Insights</Text>
-          <Text style={styles.subtitle}>Track progress, spot trends, and plan next steps.</Text>
+
+      {canScroll ? (
+        <ScrollView
+          onLayout={handleContainerLayout}
+          contentContainerStyle={[
+            styles.scroll,
+            containerH > 0 && contentH <= containerH && { minHeight: containerH, flexGrow: 1 },
+          ]}
+          bounces
+          alwaysBounceVertical
+          overScrollMode="auto"
+          showsVerticalScrollIndicator={false}
+        >
+          {content}
+        </ScrollView>
+      ) : (
+        <View
+          onLayout={handleContainerLayout}
+          style={[styles.scroll, { flex: 1 }]}
+        >
+          {content}
         </View>
-
-        <View style={styles.rangeRow}>
-          {RANGE_OPTIONS.map((option) => {
-            const active = option === range;
-            return (
-              <Pressable
-                key={option}
-                onPress={() => setRange(option)}
-                style={[styles.rangeChip, active && styles.rangeChipActive]}
-              >
-                <Text style={[styles.rangeText, active && styles.rangeTextActive]}>{option.toUpperCase()}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {loading && (
-          <View style={styles.loading}>
-            <ActivityIndicator color="#2563EB" />
-            <Text style={{ marginTop: 8, color: '#475569', fontWeight: '600' }}>Syncing insights…</Text>
-          </View>
-        )}
-        {error && (
-          <View style={styles.errorBox}>
-            <Text style={{ color: '#DC2626', fontWeight: '700' }}>{error}</Text>
-            <Pressable onPress={load} style={styles.retryBtn}>
-              <Text style={{ color: '#fff', fontWeight: '700' }}>Retry</Text>
-            </Pressable>
-          </View>
-        )}
-
-        {insights && !loading && !error ? (
-          <>
-            <View style={styles.metricsRow}>
-              <MetricCard
-                icon="sparkles-outline"
-                label="XP Earned"
-                value={`${insights.aggregate.totalXp}`}
-              />
-              <MetricCard
-                icon="analytics-outline"
-                label="Avg Accuracy"
-                value={`${insights.aggregate.avgAccuracy}%`}
-              />
-              <MetricCard
-                icon="timer-outline"
-                label="Avg Session"
-                value={`${insights.aggregate.avgSessionMinutes}m`}
-              />
-            </View>
-
-            <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>XP trend</Text>
-              <Text style={styles.chartCaption}>Per day across the selected window</Text>
-              <Svg width={260} height={120} style={{ marginTop: 16 }}>
-                <Polyline
-                  points={chartPoints}
-                  fill="none"
-                  stroke="#2563EB"
-                  strokeWidth={4}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </Svg>
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Strengths</Text>
-              {insights.strengths.length ? (
-                insights.strengths.map((skill) => (
-                  <SkillRow key={skill.id} skill={skill} trendPositive />
-                ))
-              ) : (
-                <Text style={styles.emptyText}>Play more to surface dominant skills.</Text>
-              )}
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Focus areas</Text>
-              {insights.focus.length ? (
-                insights.focus.map((skill) => (
-                  <SkillRow key={skill.id} skill={skill} />
-                ))
-              ) : (
-                <Text style={styles.emptyText}>No focus flags right now.</Text>
-              )}
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Modes breakdown</Text>
-              <View style={{ gap: 10 }}>
-                {Object.entries(insights.modesBreakdown || {}).map(([mode, count]) => (
-                  <View key={mode} style={styles.modeRow}>
-                    <Text style={styles.modeLabel}>{mode}</Text>
-                    <Text style={styles.modeValue}>{count}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Session feedback</Text>
-              {insights.feedback.averageMood ? (
-                <Text style={styles.feedbackMood}>Average mood: {insights.feedback.averageMood}/5</Text>
-              ) : (
-                <Text style={styles.emptyText}>Share reflections after games to unlock trends.</Text>
-              )}
-              {insights.feedback.recentNotes.length ? (
-                <View style={{ marginTop: 12, gap: 8 }}>
-                  {insights.feedback.recentNotes.map((note, idx) => (
-                    <View key={`${note.at}-${idx}`} style={styles.noteCard}>
-                      <Text style={styles.noteText}>{note.text}</Text>
-                      <Text style={styles.noteMeta}>
-                        {new Date(note.at).toLocaleDateString()} {note.observer ? `· ${note.observer}` : ''}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-            </View>
-          </>
-        ) : null}
-      </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
