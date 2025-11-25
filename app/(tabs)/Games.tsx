@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   Easing,
   FadeInDown,
@@ -1873,10 +1873,6 @@ function GameCard({ game, index, onPress, locked, unlockLevel }: { game: MenuGam
 }
 
 export default function GamesScreen() {
-  // Enable scrolling only when content exceeds viewport
-  const [containerH, setContainerH] = useState(0);
-  const [contentH, setContentH] = useState(0);
-  const [canScroll, setCanScroll] = useState(false);
   const [screen, setScreen] = useState<GameKey>('menu');
   const [stats, setStats] = useState<{ xp?: number; streakDays?: number; globalLevel?: number } | null>(null);
 
@@ -1896,22 +1892,6 @@ export default function GamesScreen() {
   const heroStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: (heroFloat.value - 0.5) * 10 }],
   }));
-
-  const handleContainerLayout = (e: any) => {
-    const h = e.nativeEvent.layout.height;
-    setContainerH(prev => (prev === h ? prev : h));
-  };
-
-  const handleContentLayout = (e: any) => {
-    const h = e.nativeEvent.layout.height;
-    setContentH(prev => (prev === h ? prev : h));
-  };
-
-  useEffect(() => {
-    if (!containerH || !contentH) return;
-    const next = contentH > containerH + 1;
-    if (next !== canScroll) setCanScroll(next);
-  }, [containerH, contentH, canScroll]);
 
   useEffect(() => {
     (async () => {
@@ -1985,64 +1965,6 @@ export default function GamesScreen() {
     return typeof gate === 'number' ? currentLevel < gate : false;
   };
 
-  const content = (
-    <View onLayout={handleContentLayout}>
-      {/* Header */}
-      <Animated.View style={[menuStyles.headerWrap, headerStyle]}>
-        <Animated.View style={[menuStyles.heroBadge, heroStyle]}>
-          <LinearGradient
-            colors={['#3B82F6', '#6366F1']}
-            style={menuStyles.heroGradient}
-          >
-            <Ionicons name="game-controller" size={40} color="#fff" />
-          </LinearGradient>
-        </Animated.View>
-        <Text style={menuStyles.heroTitle}>Games</Text>
-        {stats && (
-          <Animated.View
-            entering={FadeInDown.delay(120).springify().damping(18)}
-            style={menuStyles.statsRow}
-          >
-            <View style={menuStyles.statChip}>
-              <Ionicons name="star" size={16} color="#F59E0B" />
-              <Text style={menuStyles.statText}>{stats.xp} XP</Text>
-            </View>
-            <View style={menuStyles.statChip}>
-              <Ionicons name="flame" size={16} color="#F97316" />
-              <Text style={menuStyles.statText}>{stats.streakDays} days</Text>
-            </View>
-          </Animated.View>
-        )}
-      </Animated.View>
-
-      {/* Games Grid */}
-      <Animated.Text
-        entering={FadeInDown.delay(220)}
-        style={menuStyles.sectionHeading}
-      >
-        Choose a Game
-      </Animated.Text>
-      <View style={{ gap: 18 }}>
-        {games.map((game, index) => {
-          const locked = computeLocked(game.id);
-          return (
-            <GameCard
-              key={game.id}
-              game={game}
-              index={index}
-              locked={locked}
-              unlockLevel={levelGates[game.id]}
-              onPress={() => {
-                if (locked) return;
-                setScreen(game.id as GameKey);
-              }}
-            />
-          );
-        })}
-      </View>
-    </View>
-  );
-
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={{ flex: 1 }}>
@@ -2050,31 +1972,61 @@ export default function GamesScreen() {
           colors={['#E0F2FE', '#F1F5FF', '#FFFFFF'] as [string, string, string]}
           style={StyleSheet.absoluteFillObject}
         />
+        <View style={{ flex: 1, padding: 20 }}>
+          {/* Header */}
+          <Animated.View style={[menuStyles.headerWrap, headerStyle]}>
+            <Animated.View style={[menuStyles.heroBadge, heroStyle]}>
+              <LinearGradient
+                colors={['#3B82F6', '#6366F1']}
+                style={menuStyles.heroGradient}
+              >
+                <Ionicons name="game-controller" size={40} color="#fff" />
+              </LinearGradient>
+            </Animated.View>
+            <Text style={menuStyles.heroTitle}>Games</Text>
+            {stats && (
+              <Animated.View
+                entering={FadeInDown.delay(120).springify().damping(18)}
+                style={menuStyles.statsRow}
+              >
+                <View style={menuStyles.statChip}>
+                  <Ionicons name="star" size={16} color="#F59E0B" />
+                  <Text style={menuStyles.statText}>{stats.xp} XP</Text>
+                </View>
+                <View style={menuStyles.statChip}>
+                  <Ionicons name="flame" size={16} color="#F97316" />
+                  <Text style={menuStyles.statText}>{stats.streakDays} days</Text>
+                </View>
+              </Animated.View>
+            )}
+          </Animated.View>
 
-        {canScroll ? (
-          <ScrollView
-            onLayout={handleContainerLayout}
-            contentContainerStyle={[
-              { padding: 20, minHeight: containerH || undefined },
-              containerH > 0 && contentH <= containerH && { flexGrow: 1 },
-            ]}
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-            alwaysBounceVertical={false}
-            overScrollMode="never"
-            nestedScrollEnabled={false}
-            keyboardShouldPersistTaps="handled"
+          {/* Games Grid */}
+          <Animated.Text
+            entering={FadeInDown.delay(220)}
+            style={menuStyles.sectionHeading}
           >
-            {content}
-          </ScrollView>
-        ) : (
-          <View
-            onLayout={handleContainerLayout}
-            style={{ padding: 20, flex: 1 }}
-          >
-            {content}
+            Choose a Game
+          </Animated.Text>
+          <View style={{ gap: 18 }}>
+            {games.map((game, index) => {
+              const locked = computeLocked(game.id);
+              return (
+                <GameCard
+                  key={game.id}
+                  game={game}
+                  index={index}
+                  locked={locked}
+                  unlockLevel={levelGates[game.id]}
+                  onPress={() => {
+                    if (locked) return;
+                    setScreen(game.id as GameKey);
+                  }}
+                />
+              );
+            })}
           </View>
-        )}
+        </View>
       </View>
     </SafeAreaView>
   );
