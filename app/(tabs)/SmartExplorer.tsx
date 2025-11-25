@@ -98,6 +98,7 @@ export default function SmartExplorerScreen() {
   const [showComingSoon, setShowComingSoon] = useState(true);
   const [containerH, setContainerH] = useState(0);
   const [contentH, setContentH] = useState(0);
+  const [canScroll, setCanScroll] = useState(false);
 
   const promptStartRef = useRef<number>(0);
   const incorrectTapRef = useRef<number>(0);
@@ -112,6 +113,22 @@ export default function SmartExplorerScreen() {
   }, [currentPrompt]);
 
   const isTherapyMode = mode === 'therapy';
+
+  const handleContainerLayout = (e: any) => {
+    const h = e.nativeEvent.layout.height;
+    setContainerH(prev => (prev === h ? prev : h));
+  };
+
+  const handleContentLayout = (e: any) => {
+    const h = e.nativeEvent.layout.height;
+    setContentH(prev => (prev === h ? prev : h));
+  };
+
+  useEffect(() => {
+    if (!containerH || !contentH) return;
+    const next = contentH > containerH + 1;
+    if (next !== canScroll) setCanScroll(next);
+  }, [containerH, contentH, canScroll]);
 
   const loadScenes = useCallback(async () => {
     setLoading(true);
@@ -576,7 +593,115 @@ export default function SmartExplorerScreen() {
     );
   };
 
-  const canScroll = contentH > containerH + 1;
+  const content = (
+    <View onLayout={handleContentLayout}>
+      <View style={styles.headerRow}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          activeOpacity={0.85}
+          style={styles.backButton}
+        >
+          <Ionicons name="chevron-back" size={18} color="#111827" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Smart Explorer</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <LinearGradient
+        colors={['#E0F2FE', '#F5F3FF', '#FFFFFF']}
+        style={styles.heroCard}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Text style={styles.heroEyebrow}>New</Text>
+        <Text style={styles.heroHeading}>Discover the world through play</Text>
+        <Text style={styles.heroCaption}>
+          Tap to explore rich scenes, follow Scout’s prompts, and build receptive language
+          skills with adaptive difficulty.
+        </Text>
+      </LinearGradient>
+
+      {showComingSoon && (
+        <LinearGradient
+          colors={['#EEF2FF', '#FDF2F8']}
+          style={styles.comingSoonCard}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.comingSoonIcon}>
+            <Ionicons name="sparkles" size={26} color="#7C3AED" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.comingSoonTitle}>Magic in progress ✨</Text>
+            <Text style={styles.comingSoonCaption}>
+              Smart Explorer is getting the final touches. You can browse scenes now while we polish the interactive adventures.
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => setShowComingSoon(false)}
+            activeOpacity={0.85}
+            style={styles.comingSoonButton}
+          >
+            <Text style={styles.comingSoonButtonText}>Got it</Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      )}
+
+      {error && (
+        <View style={styles.errorBanner}>
+          <Ionicons name="warning-outline" size={18} color="#DC2626" />
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
+
+      <Text style={styles.sectionHeading}>Choose a Scene</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
+        {scenes.map(renderSceneCard)}
+      </ScrollView>
+
+      {sceneDetail && (
+        <>
+          <Text style={styles.sectionHeading}>Select Mode</Text>
+          {renderModeToggle()}
+
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={handleStartSession}
+            activeOpacity={0.9}
+          >
+            <Ionicons name="play" size={18} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.primaryButtonLabel}>Start Session</Text>
+          </TouchableOpacity>
+        </>
+      )}
+
+      {session && (
+        <>
+          <View style={styles.statsStrip}>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Score</Text>
+              <Text style={styles.statValue}>{session.score}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Accuracy</Text>
+              <Text style={styles.statValue}>{session.accuracy}%</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statLabel}>Prompts</Text>
+              <Text style={styles.statValue}>
+                {session.correctPrompts}/{session.totalPrompts}
+              </Text>
+            </View>
+          </View>
+
+          {renderPromptCard()}
+          {renderSupports()}
+          {renderTherapyControls()}
+          {renderSceneCanvas()}
+        </>
+      )}
+    </View>
+  );
 
   if (loading) {
     return (
@@ -589,125 +714,24 @@ export default function SmartExplorerScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
-      <ScrollView
-        onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
-        onContentSizeChange={(_, h) => setContentH(h)}
-        scrollEnabled={canScroll}
-        contentContainerStyle={[
-          { padding: 20, paddingBottom: 48 },
-          containerH > 0 && contentH <= containerH && { minHeight: containerH, flexGrow: 1 },
-        ]}
-        bounces={canScroll}
-        alwaysBounceVertical={canScroll}
-        overScrollMode={canScroll ? 'auto' : 'never'}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            activeOpacity={0.85}
-            style={styles.backButton}
-          >
-            <Ionicons name="chevron-back" size={18} color="#111827" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Smart Explorer</Text>
-          <View style={{ width: 40 }} />
-        </View>
-
-        <LinearGradient
-          colors={['#E0F2FE', '#F5F3FF', '#FFFFFF']}
-          style={styles.heroCard}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+      {canScroll ? (
+        <ScrollView
+          onLayout={handleContainerLayout}
+          contentContainerStyle={{ padding: 20, paddingBottom: 48, minHeight: containerH }}
+          bounces={false}
+          overScrollMode="never"
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.heroEyebrow}>New</Text>
-          <Text style={styles.heroHeading}>Discover the world through play</Text>
-          <Text style={styles.heroCaption}>
-            Tap to explore rich scenes, follow Scout’s prompts, and build receptive language
-            skills with adaptive difficulty.
-          </Text>
-        </LinearGradient>
-
-        {showComingSoon && (
-          <LinearGradient
-            colors={['#EEF2FF', '#FDF2F8']}
-            style={styles.comingSoonCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.comingSoonIcon}>
-              <Ionicons name="sparkles" size={26} color="#7C3AED" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.comingSoonTitle}>Magic in progress ✨</Text>
-              <Text style={styles.comingSoonCaption}>
-                Smart Explorer is getting the final touches. You can browse scenes now while we polish the interactive adventures.
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => setShowComingSoon(false)}
-              activeOpacity={0.85}
-              style={styles.comingSoonButton}
-            >
-              <Text style={styles.comingSoonButtonText}>Got it</Text>
-            </TouchableOpacity>
-          </LinearGradient>
-        )}
-
-        {error && (
-          <View style={styles.errorBanner}>
-            <Ionicons name="warning-outline" size={18} color="#DC2626" />
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        )}
-
-        <Text style={styles.sectionHeading}>Choose a Scene</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-          {scenes.map(renderSceneCard)}
+          {content}
         </ScrollView>
-
-        {sceneDetail && (
-          <>
-            <Text style={styles.sectionHeading}>Select Mode</Text>
-            {renderModeToggle()}
-
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={handleStartSession}
-              activeOpacity={0.9}
-            >
-              <Ionicons name="play" size={18} color="#fff" style={{ marginRight: 8 }} />
-              <Text style={styles.primaryButtonLabel}>Start Session</Text>
-            </TouchableOpacity>
-          </>
-        )}
-
-        {session && (
-          <>
-            <View style={styles.statsStrip}>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Score</Text>
-                <Text style={styles.statValue}>{session.score}</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Accuracy</Text>
-                <Text style={styles.statValue}>{session.accuracy}%</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Prompts</Text>
-                <Text style={styles.statValue}>
-                  {session.correctPrompts}/{session.totalPrompts}
-                </Text>
-              </View>
-            </View>
-
-            {renderPromptCard()}
-            {renderSupports()}
-            {renderTherapyControls()}
-            {renderSceneCanvas()}
-          </>
-        )}
-      </ScrollView>
+      ) : (
+        <View
+          onLayout={handleContainerLayout}
+          style={{ flex: 1, padding: 20, paddingBottom: 48 }}
+        >
+          {content}
+        </View>
+      )}
 
       {renderSummaryModal()}
     </SafeAreaView>

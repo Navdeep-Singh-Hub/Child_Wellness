@@ -3,9 +3,7 @@ import {
   fetchMyStats,
   fetchSkillProfile,
   type SkillProfileEntry,
-  type StatsResponse,
-  type Recommendation,
-  type NextAction,
+  type StatsResponse
 } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -23,9 +21,7 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
-  Platform,
-  PixelRatio,
+  useWindowDimensions
 } from 'react-native';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
@@ -61,6 +57,7 @@ export default function Index() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [containerH, setContainerH] = useState(0);
   const [contentH, setContentH] = useState(0);
+  const [canScroll, setCanScroll] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [skillProfile, setSkillProfile] = useState<SkillProfileEntry[] | null>(null);
   const [selectedMood, setSelectedMood] = useState<MoodOption>('focused');
@@ -76,6 +73,22 @@ export default function Index() {
   const isSmall = width < 380;   // most phones in portrait
   const isTiny = width < 340;    // very small screens
   const fs = (n: number) => (isTiny ? n - 3 : isSmall ? n - 1 : n);
+
+  const handleContainerLayout = (e: any) => {
+    const h = e.nativeEvent.layout.height;
+    setContainerH(prev => (prev === h ? prev : h));
+  };
+
+  const handleContentLayout = (e: any) => {
+    const h = e.nativeEvent.layout.height;
+    setContentH(prev => (prev === h ? prev : h));
+  };
+
+  useEffect(() => {
+    if (!containerH || !contentH) return;
+    const next = contentH > containerH + 1;
+    if (next !== canScroll) setCanScroll(next);
+  }, [containerH, contentH, canScroll]);
 
   const loadStats = useCallback(async () => {
     if (isLoadingRef.current) return;
@@ -102,7 +115,7 @@ export default function Index() {
   useFocusEffect(
     useCallback(() => {
       loadStats();
-      return () => {};
+      return () => { };
     }, [loadStats])
   );
 
@@ -527,352 +540,329 @@ export default function Index() {
     outputRange: [24, 0],
   });
 
-  const canScroll = contentH > containerH + 1;
-
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <LinearGradient
-        colors={['#F8FAFC', '#FFFFFF']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <ScrollView
-        onLayout={(e) => setContainerH(e.nativeEvent.layout.height)}
-        onContentSizeChange={(_, h) => setContentH(h)}
-        scrollEnabled={canScroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingHorizontal: isSmall ? 14 : 20 },
-          containerH > 0 && { minHeight: containerH },
-        ]}
-        refreshControl={canScroll ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined}
-        bounces={canScroll}
-        alwaysBounceVertical={canScroll}
-        overScrollMode={canScroll ? 'auto' : 'never'}
-        showsVerticalScrollIndicator={false}
+  const content = (
+    <View onLayout={handleContentLayout}>
+      <Animated.View
+        style={[styles.heroCard, { opacity: heroAnim, transform: [{ translateY: heroTranslate }] }]}
       >
-        <Animated.View
-          style={[styles.heroCard, { opacity: heroAnim, transform: [{ translateY: heroTranslate }] }]}
+        <LinearGradient
+          colors={['#EBF3FF', '#F7F3FF', '#FFFFFF']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.heroGradient}
         >
-          <LinearGradient
-            colors={['#EBF3FF', '#F7F3FF', '#FFFFFF']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.heroGradient}
+          <View
+            style={[
+              styles.heroTopRow,
+              isSmall && { flexDirection: 'column', alignItems: 'stretch', gap: 12 },
+            ]}
           >
-            <View
-              style={[
-                styles.heroTopRow,
-                isSmall && { flexDirection: 'column', alignItems: 'stretch', gap: 12 },
-              ]}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={styles.heroGreeting}>Welcome back 👋</Text>
-                <Text style={styles.heroHeadline}>Here’s today’s momentum snapshot.</Text>
-                <View style={styles.heroChipRow}>
-                  {stats?.levelLabel ? (
-                    <View style={styles.heroChip}>
-                      <Ionicons name="shield-checkmark" size={16} color="#10B981" />
-                      <Text style={styles.heroChipText}>{stats.levelLabel}</Text>
-                    </View>
-                  ) : null}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.heroGreeting}>Welcome back 👋</Text>
+              <Text style={styles.heroHeadline}>Here’s today’s momentum snapshot.</Text>
+              <View style={styles.heroChipRow}>
+                {stats?.levelLabel ? (
                   <View style={styles.heroChip}>
-                    <Ionicons name="flame" size={16} color="#F97316" />
-                    <Text style={styles.heroChipText}>{streak} day streak</Text>
+                    <Ionicons name="shield-checkmark" size={16} color="#10B981" />
+                    <Text style={styles.heroChipText}>{stats.levelLabel}</Text>
                   </View>
-                  <View style={styles.heroChip}>
-                    <Ionicons name="flash-outline" size={16} color="#2563EB" />
-                    <Text style={styles.heroChipText}>{compactNumber(xp)} XP</Text>
-                  </View>
+                ) : null}
+                <View style={styles.heroChip}>
+                  <Ionicons name="flame" size={16} color="#F97316" />
+                  <Text style={styles.heroChipText}>{streak} day streak</Text>
+                </View>
+                <View style={styles.heroChip}>
+                  <Ionicons name="flash-outline" size={16} color="#2563EB" />
+                  <Text style={styles.heroChipText}>{compactNumber(xp)} XP</Text>
                 </View>
               </View>
-              <Animated.View
+            </View>
+            <Animated.View
+              style={[
+                styles.heroRingWrap,
+                isSmall && { alignSelf: 'center', marginTop: 8 },
+              ]}
+            >
+              <AnimatedAccuracyRing
+                value={accuracy}
+                size={isSmall ? 100 : 120}
+                stroke={isSmall ? 10 : 12}
+                progressColor="#4F46E5"
+                trackColor="#E0E7FF"
+                label="Accuracy"
+                durationMs={700}
+              />
+              <Text
                 style={[
-                  styles.heroRingWrap,
-                  isSmall && { alignSelf: 'center', marginTop: 8 },
-                ]}
-              >
-                <AnimatedAccuracyRing
-                  value={accuracy}
-                  size={isSmall ? 100 : 120}
-                  stroke={isSmall ? 10 : 12}
-                  progressColor="#4F46E5"
-                  trackColor="#E0E7FF"
-                  label="Accuracy"
-                  durationMs={700}
-                />
-                <Text
-                  style={[
-                    styles.ringDelta,
-                    { fontSize: fs(12) },
-                    accuracyTrend === 'positive'
-                      ? styles.deltaPositive
-                      : accuracyTrend === 'negative'
+                  styles.ringDelta,
+                  { fontSize: fs(12) },
+                  accuracyTrend === 'positive'
+                    ? styles.deltaPositive
+                    : accuracyTrend === 'negative'
                       ? styles.deltaNegative
                       : styles.deltaNeutral,
-                  ]}
-                >
-                  {accuracyTrend === 'positive'
-                    ? `▲ ${Math.abs(accuracyDelta)}% vs last check`
-                    : accuracyTrend === 'negative'
+                ]}
+              >
+                {accuracyTrend === 'positive'
+                  ? `▲ ${Math.abs(accuracyDelta)}% vs last check`
+                  : accuracyTrend === 'negative'
                     ? `▼ ${Math.abs(accuracyDelta)}% vs last check`
                     : 'Holding steady — nice!'}
-                </Text>
-              </Animated.View>
-            </View>
+              </Text>
+            </Animated.View>
+          </View>
 
-            <View style={styles.milestoneWrap}>
-              <View style={styles.milestoneHeader}>
-                <Text style={styles.milestoneTitle}>Next XP milestone</Text>
-                <Text style={styles.milestoneSubtitle}>
-                  {xp}/{nextMilestone} XP
-                </Text>
-              </View>
-              <View style={styles.milestoneBar}>
-                <Animated.View
-                  style={[styles.milestoneFill, { width: `${Math.round(milestoneProgress * 100)}%` }]}
-                />
-              </View>
+          <View style={styles.milestoneWrap}>
+            <View style={styles.milestoneHeader}>
+              <Text style={styles.milestoneTitle}>Next XP milestone</Text>
+              <Text style={styles.milestoneSubtitle}>
+                {xp}/{nextMilestone} XP
+              </Text>
             </View>
-          </LinearGradient>
-        </Animated.View>
+            <View style={styles.milestoneBar}>
+              <Animated.View
+                style={[styles.milestoneFill, { width: `${Math.round(milestoneProgress * 100)}%` }]}
+              />
+            </View>
+          </View>
+        </LinearGradient>
+      </Animated.View>
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Daily stats</Text>
-          <Text style={styles.sectionCaption}>Tap a stat to learn what improves it</Text>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Daily stats</Text>
+        <Text style={styles.sectionCaption}>Tap a stat to learn what improves it</Text>
+      </View>
+
+      <View style={styles.statGrid}>
+        {statBlocks.map((block) => {
+          const { entrance, press } = statAnimations.current[block.key];
+          const translateY = entrance.interpolate({ inputRange: [0, 1], outputRange: [20, 0] });
+          const opacity = entrance;
+
+          return (
+            <Animated.View
+              key={block.key}
+              style={[
+                styles.statCard,
+                {
+                  // width responsive
+                  width: isSmall ? '100%' : '48%',
+                  opacity,
+                  transform: [{ translateY }, { scale: press }],
+                  borderColor: soften(block.accent, 0.2),
+                  padding: isSmall ? 16 : 20,
+                },
+              ]}
+            >
+              <Pressable
+                onPressIn={() => handleStatPress(block.key, true)}
+                onPressOut={() => handleStatPress(block.key, false)}
+                hitSlop={6}
+              >
+                <View style={styles.statIconRow}>
+                  <LinearGradient
+                    colors={[soften(block.accent, 0.2), soften(block.accent, 0.12)]}
+                    style={styles.statIconWrap}
+                  >
+                    <Ionicons name={block.icon} size={20} color={block.accent} />
+                  </LinearGradient>
+                  <Text style={styles.statTitle}>{block.title}</Text>
+                </View>
+                <Text style={styles.statValue}>{block.value}</Text>
+                <Text style={styles.statCaption}>{block.caption}</Text>
+              </Pressable>
+            </Animated.View>
+          );
+        })}
+      </View>
+
+      {skillProfile && skillProfile.length ? (
+        <View style={styles.skillSection}>
+          <View style={styles.skillColumns}>
+            <View style={styles.skillColumn}>
+              <Text style={styles.skillColumnTitle}>Strong areas</Text>
+              {strengths.length
+                ? strengths.map(renderSkillCard)
+                : (
+                  <Text style={styles.skillEmpty}>
+                    Play more games to surface strengths.
+                  </Text>
+                )}
+            </View>
+            <View style={styles.skillColumn}>
+              <Text style={styles.skillColumnTitle}>Focus areas</Text>
+              {focusAreas.length
+                ? focusAreas.map(renderSkillCard)
+                : (
+                  <Text style={styles.skillEmpty}>
+                    No focus areas yet. Keep practicing!
+                  </Text>
+                )}
+            </View>
+          </View>
+        </View>
+      ) : null}
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>
+          {stats?.recommendations?.length ? 'Recommended next' : 'Quick actions'}
+        </Text>
+        <Text style={styles.sectionCaption}>
+          {stats?.recommendations?.length
+            ? 'Based on current skill signals'
+            : 'Jump straight into practice or setup'}
+        </Text>
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.quickScrollContent}
+        snapToAlignment="start"
+        decelerationRate="fast"
+      >
+        {quickActions.map((action) => {
+          const { entrance, press } = quickAnimations.current[action.key];
+          const translateY = entrance.interpolate({ inputRange: [0, 1], outputRange: [16, 0] });
+          const opacity = entrance;
+
+          return (
+            <Animated.View
+              key={action.key}
+              style={[
+                styles.quickCard,
+                {
+                  width: isSmall ? 200 : 220,
+                  opacity,
+                  transform: [{ translateY }, { scale: press }],
+                },
+              ]}
+            >
+              <Pressable
+                style={styles.quickPressable}
+                onPress={action.onPress}
+                onPressIn={() => handleQuickPress(action.key, true)}
+                onPressOut={() => handleQuickPress(action.key, false)}
+              >
+                <LinearGradient
+                  colors={['#FFFFFF', '#F5F7FF']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.quickGradient}
+                >
+                  <View style={styles.quickIconWrap}>
+                    <Ionicons name={action.icon} size={20} color="#2563EB" />
+                  </View>
+                  <Text style={styles.quickLabel}>{action.label}</Text>
+                  <Text style={styles.quickCaption}>{action.caption}</Text>
+                </LinearGradient>
+              </Pressable>
+            </Animated.View>
+          );
+        })}
+      </ScrollView>
+
+      {stats?.nextActions?.length ? (
+        <View style={styles.focusSection}>
+          <Text style={styles.sectionTitle}>Focus coaching</Text>
+          <Text style={styles.sectionCaption}>Suggestions tailored to weak or dormant skills</Text>
+          <View style={{ marginTop: 14, gap: 12 }}>
+            {stats.nextActions.map((card) => (
+              <View key={card.id} style={styles.focusCard}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.focusHeadline}>{card.headline}</Text>
+                  <Text style={styles.focusBody}>{card.body}</Text>
+                </View>
+                <Pressable
+                  style={styles.focusButton}
+                  onPress={() => router.push(card.route as any)}
+                >
+                  <Text style={styles.focusButtonText}>{card.actionLabel}</Text>
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
+      <View style={styles.sectionHeader}>
+        <View style={styles.moodHeaderRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.sectionTitle}>Daily inspiration</Text>
+            <Text style={styles.sectionCaption}>How are you feeling today?</Text>
+          </View>
         </View>
 
-        <View style={styles.statGrid}>
-          {statBlocks.map((block) => {
-            const { entrance, press } = statAnimations.current[block.key];
-            const translateY = entrance.interpolate({ inputRange: [0, 1], outputRange: [20, 0] });
-            const opacity = entrance;
+        <View style={styles.moodSelector}>
+          {(['energetic', 'focused', 'relaxed', 'celebrating'] as MoodOption[]).map((mood) => {
+            const isActive = selectedMood === mood;
+            const moodConfig = {
+              energetic: { icon: 'flash-outline', label: 'Energetic', color: '#F59E0B' },
+              focused: { icon: 'sparkles-outline', label: 'Focused', color: '#6366F1' },
+              relaxed: { icon: 'leaf-outline', label: 'Relaxed', color: '#10B981' },
+              celebrating: { icon: 'trophy-outline', label: 'Celebrating', color: '#EC4899' },
+            }[mood];
 
             return (
-                <Animated.View
-                  key={block.key}
-                  style={[
-                    styles.statCard,
-                    {
-                      // width responsive
-                      width: isSmall ? '100%' : '48%',
-                      opacity,
-                      transform: [{ translateY }, { scale: press }],
-                      borderColor: soften(block.accent, 0.2),
-                      padding: isSmall ? 16 : 20,
-                    },
-                  ]}
+              <Pressable
+                key={mood}
+                onPress={() => {
+                  if (!isActive) {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setSelectedMood(mood);
+                  }
+                }}
+                style={[styles.moodOption, isActive && styles.moodOptionActive]}
               >
-                <Pressable
-                  onPressIn={() => handleStatPress(block.key, true)}
-                  onPressOut={() => handleStatPress(block.key, false)}
-                  hitSlop={6}
+                <LinearGradient
+                  colors={isActive ? [moodConfig.color, moodConfig.color] : ['#FFFFFF', '#F9FAFB']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.moodOptionGradient}
                 >
-                  <View style={styles.statIconRow}>
-                    <LinearGradient
-                      colors={[soften(block.accent, 0.2), soften(block.accent, 0.12)]}
-                      style={styles.statIconWrap}
-                    >
-                      <Ionicons name={block.icon} size={20} color={block.accent} />
-                    </LinearGradient>
-                    <Text style={styles.statTitle}>{block.title}</Text>
-                  </View>
-                  <Text style={styles.statValue}>{block.value}</Text>
-                  <Text style={styles.statCaption}>{block.caption}</Text>
-                </Pressable>
-              </Animated.View>
+                  <Ionicons
+                    name={moodConfig.icon as IoniconName}
+                    size={18}
+                    color={isActive ? '#FFFFFF' : '#64748B'}
+                  />
+                  <Text
+                    style={[
+                      styles.moodOptionLabel,
+                      isActive && styles.moodOptionLabelActive,
+                    ]}
+                  >
+                    {moodConfig.label}
+                  </Text>
+                </LinearGradient>
+              </Pressable>
             );
           })}
         </View>
+      </View>
 
-        {skillProfile && skillProfile.length ? (
-          <View style={styles.skillSection}>
-            <View style={styles.skillColumns}>
-              <View style={styles.skillColumn}>
-                <Text style={styles.skillColumnTitle}>Strong areas</Text>
-                {strengths.length
-                  ? strengths.map(renderSkillCard)
-                  : (
-                    <Text style={styles.skillEmpty}>
-                      Play more games to surface strengths.
-                    </Text>
-                  )}
-              </View>
-              <View style={styles.skillColumn}>
-                <Text style={styles.skillColumnTitle}>Focus areas</Text>
-                {focusAreas.length
-                  ? focusAreas.map(renderSkillCard)
-                  : (
-                    <Text style={styles.skillEmpty}>
-                      No focus areas yet. Keep practicing!
-                    </Text>
-                  )}
-              </View>
-            </View>
-          </View>
-        ) : null}
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            {stats?.recommendations?.length ? 'Recommended next' : 'Quick actions'}
-          </Text>
-          <Text style={styles.sectionCaption}>
-            {stats?.recommendations?.length
-              ? 'Based on current skill signals'
-              : 'Jump straight into practice or setup'}
-          </Text>
-        </View>
-
+      <Animated.View style={{ opacity: moodTransitionAnim }}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.quickScrollContent}
-          snapToAlignment="start"
-          decelerationRate="fast"
+          contentContainerStyle={styles.moodScrollContent}
         >
-          {quickActions.map((action) => {
-            const { entrance, press } = quickAnimations.current[action.key];
-            const translateY = entrance.interpolate({ inputRange: [0, 1], outputRange: [16, 0] });
-            const opacity = entrance;
+          {moodCards.map((card, index) => {
+            const anim = moodAnimations.current[card.key];
+            const translateX = anim.interpolate({ inputRange: [0, 1], outputRange: [40, 0] });
+            const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] });
 
             return (
               <Animated.View
-                key={action.key}
+                key={card.key}
                 style={[
-                  styles.quickCard,
+                  styles.moodCard,
                   {
-                    width: isSmall ? 200 : 220,
-                    opacity,
-                    transform: [{ translateY }, { scale: press }],
+                    width: isSmall ? 220 : 260,
+                    opacity: anim,
+                    transform: [{ translateX }, { scale }],
                   },
                 ]}
               >
-                <Pressable
-                  style={styles.quickPressable}
-                  onPress={action.onPress}
-                  onPressIn={() => handleQuickPress(action.key, true)}
-                  onPressOut={() => handleQuickPress(action.key, false)}
-                >
-                  <LinearGradient
-                    colors={['#FFFFFF', '#F5F7FF']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.quickGradient}
-                  >
-                    <View style={styles.quickIconWrap}>
-                      <Ionicons name={action.icon} size={20} color="#2563EB" />
-                    </View>
-                    <Text style={styles.quickLabel}>{action.label}</Text>
-                    <Text style={styles.quickCaption}>{action.caption}</Text>
-                  </LinearGradient>
-                </Pressable>
-              </Animated.View>
-            );
-          })}
-        </ScrollView>
-
-        {stats?.nextActions?.length ? (
-          <View style={styles.focusSection}>
-            <Text style={styles.sectionTitle}>Focus coaching</Text>
-            <Text style={styles.sectionCaption}>Suggestions tailored to weak or dormant skills</Text>
-            <View style={{ marginTop: 14, gap: 12 }}>
-              {stats.nextActions.map((card) => (
-                <View key={card.id} style={styles.focusCard}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.focusHeadline}>{card.headline}</Text>
-                    <Text style={styles.focusBody}>{card.body}</Text>
-                  </View>
-                  <Pressable
-                    style={styles.focusButton}
-                    onPress={() => router.push(card.route as any)}
-                  >
-                    <Text style={styles.focusButtonText}>{card.actionLabel}</Text>
-                  </Pressable>
-                </View>
-              ))}
-            </View>
-          </View>
-        ) : null}
-
-        <View style={styles.sectionHeader}>
-          <View style={styles.moodHeaderRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.sectionTitle}>Daily inspiration</Text>
-              <Text style={styles.sectionCaption}>How are you feeling today?</Text>
-            </View>
-          </View>
-
-          <View style={styles.moodSelector}>
-            {(['energetic', 'focused', 'relaxed', 'celebrating'] as MoodOption[]).map((mood) => {
-              const isActive = selectedMood === mood;
-              const moodConfig = {
-                energetic: { icon: 'flash-outline', label: 'Energetic', color: '#F59E0B' },
-                focused: { icon: 'sparkles-outline', label: 'Focused', color: '#6366F1' },
-                relaxed: { icon: 'leaf-outline', label: 'Relaxed', color: '#10B981' },
-                celebrating: { icon: 'trophy-outline', label: 'Celebrating', color: '#EC4899' },
-              }[mood];
-
-              return (
-                <Pressable
-                  key={mood}
-                  onPress={() => {
-                    if (!isActive) {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setSelectedMood(mood);
-                    }
-                  }}
-                  style={[styles.moodOption, isActive && styles.moodOptionActive]}
-                >
-                  <LinearGradient
-                    colors={isActive ? [moodConfig.color, moodConfig.color] : ['#FFFFFF', '#F9FAFB']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.moodOptionGradient}
-                  >
-                    <Ionicons
-                      name={moodConfig.icon as IoniconName}
-                      size={18}
-                      color={isActive ? '#FFFFFF' : '#64748B'}
-                    />
-                    <Text
-                      style={[
-                        styles.moodOptionLabel,
-                        isActive && styles.moodOptionLabelActive,
-                      ]}
-                    >
-                      {moodConfig.label}
-                    </Text>
-                  </LinearGradient>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
-
-        <Animated.View style={{ opacity: moodTransitionAnim }}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.moodScrollContent}
-          >
-            {moodCards.map((card, index) => {
-              const anim = moodAnimations.current[card.key];
-              const translateX = anim.interpolate({ inputRange: [0, 1], outputRange: [40, 0] });
-              const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] });
-
-              return (
-                <Animated.View
-                  key={card.key}
-                  style={[
-                    styles.moodCard,
-                    {
-                      width: isSmall ? 220 : 260,
-                      opacity: anim,
-                      transform: [{ translateX }, { scale }],
-                    },
-                  ]}
-                >
                 <LinearGradient
                   colors={card.gradient}
                   start={{ x: 0, y: 0 }}
@@ -885,12 +875,51 @@ export default function Index() {
                   <Text style={styles.moodTitle}>{card.title}</Text>
                   <Text style={styles.moodDescription}>{card.description}</Text>
                 </LinearGradient>
-                </Animated.View>
-              );
-            })}
-          </ScrollView>
-        </Animated.View>
-      </ScrollView>
+              </Animated.View>
+            );
+          })}
+        </ScrollView>
+      </Animated.View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <LinearGradient
+        colors={['#F8FAFC', '#FFFFFF']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
+
+      {canScroll ? (
+        <ScrollView
+          onLayout={handleContainerLayout}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingHorizontal: isSmall ? 14 : 20 },
+            containerH > 0 && { minHeight: containerH },
+          ]}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          bounces={false}
+          overScrollMode="never"
+          showsVerticalScrollIndicator={false}
+        >
+          {content}
+        </ScrollView>
+      ) : (
+        <View
+          onLayout={handleContainerLayout}
+          style={[
+            styles.scrollContent,
+            { paddingHorizontal: isSmall ? 14 : 20, flex: 1 },
+          ]}
+        >
+          {content}
+        </View>
+      )}
     </SafeAreaView>
   );
 }
