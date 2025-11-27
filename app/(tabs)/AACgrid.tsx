@@ -175,108 +175,108 @@ function GridMenu({ inline = false }: { inline?: boolean }) {
               paddingTop: insets.top + 20,
             }}
           >
-        <View style={{ paddingHorizontal: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <Text style={{ fontSize: 24, fontWeight: '800', color: '#111827' }}>Menu</Text>
-            <TouchableOpacity
-              onPress={() => setOpen(false)}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#F3F4F6',
-              }}
-            >
-              <Ionicons name="close" size={20} color="#111827" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={{ paddingTop: 12 }}>
-          {menuItems.map((item, index) => {
-            // Improved active detection: check multiple pathname variations
-            const normalizedPathname = (pathname || '').toLowerCase();
-            const normalizedRoute = (item.route || '').toLowerCase();
-            
-            // Extract route name from paths (e.g., "/(tabs)/Games" -> "games")
-            const routeName = normalizedRoute.split('/').pop()?.split('?')[0] || '';
-            const pathnameParts = normalizedPathname.split('/');
-            const currentRouteName = pathnameParts[pathnameParts.length - 1]?.split('?')[0] || '';
-            
-            // Check if active: exact match, route name matches, or home route special case
-            const isActive = 
-              normalizedPathname === normalizedRoute ||
-              normalizedPathname === normalizedRoute.replace('/(tabs)', '') ||
-              (normalizedRoute === '/(tabs)' && (normalizedPathname === '/' || normalizedPathname === '' || normalizedPathname === '/(tabs)')) ||
-              (routeName && routeName === currentRouteName && routeName !== '' && routeName !== 'tabs') ||
-              (normalizedPathname.includes(routeName) && routeName !== '' && routeName !== 'tabs' && !routeName.includes('addtile'));
-            
-            const isAction = (item as any).isAction;
-            
-            // Get filled icon for active state (if available)
-            const iconName = isActive && !isAction && item.icon.includes('-outline')
-              ? (item.icon.replace('-outline', '') as any)
-              : (item.icon as any);
-            
-            return (
-              <TouchableOpacity
-                key={item.title}
-                onPress={() => {
-                  if (isAction && item.title === 'Add Tile') {
-                    setOpen(false);
-                    // Trigger add modal via context or direct call
-                    setTimeout(() => {
-                      // This will be handled by the parent component
-                      router.setParams({ addTile: 'true' });
-                    }, 100);
-                  } else {
-                    navigateTo(item.route);
-                  }
-                }}
-                activeOpacity={0.7}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingVertical: 16,
-                  paddingHorizontal: 20,
-                  backgroundColor: isActive ? '#F0F9FF' : (isAction ? '#EEF2FF' : 'transparent'),
-                  borderLeftWidth: isActive ? 4 : 0,
-                  borderLeftColor: '#2563EB',
-                  marginTop: isAction ? 8 : 0,
-                  borderTopWidth: isAction ? 1 : 0,
-                  borderTopColor: '#E5E7EB',
-                }}
-              >
-                <Ionicons
-                  name={iconName}
-                  size={22}
-                  color={isActive ? '#2563EB' : (isAction ? '#6366F1' : '#6B7280')}
-                  style={{ marginRight: 16 }}
-                />
-                <Text
+            <View style={{ paddingHorizontal: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text style={{ fontSize: 24, fontWeight: '800', color: '#111827' }}>Menu</Text>
+                <TouchableOpacity
+                  onPress={() => setOpen(false)}
                   style={{
-                    fontSize: 16,
-                    fontWeight: isActive ? '700' : (isAction ? '700' : '600'),
-                    color: isActive ? '#2563EB' : (isAction ? '#6366F1' : '#374151'),
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#F3F4F6',
                   }}
                 >
-                  {item.title}
-                </Text>
-                {isActive && (
-                  <View style={{
-                    marginLeft: 'auto',
-                    width: 6,
-                    height: 6,
-                    borderRadius: 3,
-                    backgroundColor: '#2563EB',
-                  }} />
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                  <Ionicons name="close" size={20} color="#111827" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={{ paddingTop: 12 }}>
+              {menuItems.map((item, index) => {
+                // Improved active detection: check multiple pathname variations
+                const normalizedPathname = (pathname || '').toLowerCase();
+                const normalizedRoute = (item.route || '').toLowerCase();
+
+                // Extract route name from paths (e.g., "/(tabs)/Games" -> "games")
+                const routeName = normalizedRoute.split('/').pop()?.split('?')[0] || '';
+                const pathnameParts = normalizedPathname.split('/');
+                const currentRouteName = pathnameParts[pathnameParts.length - 1]?.split('?')[0] || '';
+
+                // Check if active: exact match, route name matches, or home route special case
+                const isActive =
+                  normalizedPathname === normalizedRoute ||
+                  normalizedPathname === normalizedRoute.replace('/(tabs)', '') ||
+                  (normalizedRoute === '/(tabs)' && (normalizedPathname === '/' || normalizedPathname === '' || normalizedPathname === '/(tabs)')) ||
+                  (routeName && routeName === currentRouteName && routeName !== '' && routeName !== 'tabs') ||
+                  (normalizedPathname.includes(routeName) && routeName !== '' && routeName !== 'tabs' && !routeName.includes('addtile'));
+
+                const isAction = (item as any).isAction;
+
+                // Get filled icon for active state (if available)
+                const iconName = isActive && !isAction && item.icon.includes('-outline')
+                  ? (item.icon.replace('-outline', '') as any)
+                  : (item.icon as any);
+
+                return (
+                  <TouchableOpacity
+                    key={item.title}
+                    onPress={() => {
+                      if (isAction && item.title === 'Add Tile') {
+                        setOpen(false);
+                        // Trigger add modal via context or direct call
+                        setTimeout(() => {
+                          // This will be handled by the parent component
+                          router.setParams({ addTile: 'true' });
+                        }, 100);
+                      } else {
+                        navigateTo(item.route);
+                      }
+                    }}
+                    activeOpacity={0.7}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingVertical: 16,
+                      paddingHorizontal: 20,
+                      backgroundColor: isActive ? '#F0F9FF' : (isAction ? '#EEF2FF' : 'transparent'),
+                      borderLeftWidth: isActive ? 4 : 0,
+                      borderLeftColor: '#2563EB',
+                      marginTop: isAction ? 8 : 0,
+                      borderTopWidth: isAction ? 1 : 0,
+                      borderTopColor: '#E5E7EB',
+                    }}
+                  >
+                    <Ionicons
+                      name={iconName}
+                      size={22}
+                      color={isActive ? '#2563EB' : (isAction ? '#6366F1' : '#6B7280')}
+                      style={{ marginRight: 16 }}
+                    />
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: isActive ? '700' : (isAction ? '700' : '600'),
+                        color: isActive ? '#2563EB' : (isAction ? '#6366F1' : '#374151'),
+                      }}
+                    >
+                      {item.title}
+                    </Text>
+                    {isActive && (
+                      <View style={{
+                        marginLeft: 'auto',
+                        width: 6,
+                        height: 6,
+                        borderRadius: 3,
+                        backgroundColor: '#2563EB',
+                      }} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </RNAnimated.View>
         </View>
       </Modal>
@@ -298,7 +298,7 @@ const LANG_OPTIONS: { key: LangKey; label: string }[] = [
 // Per-language dictionary. Full parity across languages.
 const TRANSLATIONS: Record<LangKey, Record<string, string>> = {
   'en-US': {
-    i: 'I', want: 'want', more: 'more', help: 'help', go: 'go', stop: 'stop', yes: 'yes', no: 'no', please: 'please', thankyou: 'thank you',
+    i: 'i', want: 'want', more: 'more', help: 'help', go: 'go', stop: 'stop', yes: 'yes', no: 'no', please: 'please', thankyou: 'thank you',
     if: 'if', this: 'this', that: 'that', then: 'then', to: 'to',
     // Transport
     car: 'car', bike: 'bike', train: 'train', bus: 'bus', plane: 'plane', boat: 'boat', ship: 'ship', taxi: 'taxi', truck: 'truck', scooter: 'scooter',
@@ -551,7 +551,7 @@ function normalizeForSpeech(text: string, lang: LangKey): string {
 
 async function speakSmart(text: string, lang: LangKey) {
   const v = await pickVoice(lang);
-  
+
   // Normalize text for better pronunciation
   const normalizedText = normalizeForSpeech(text, lang);
 
@@ -754,11 +754,11 @@ function TileCard({
   }, [isFav]);
 
   const onHeart = () => {
-    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
+    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch { }
     heartScale.value = 1;
     heartScale.value = withSequence(
       withSpring(1.16, { stiffness: 520, damping: 28, mass: 0.6 }),
-      withSpring(1.0,  { stiffness: 240, damping: 18, mass: 0.9 }),
+      withSpring(1.0, { stiffness: 240, damping: 18, mass: 0.9 }),
     );
     heartBurst.value = 0;
     heartBurst.value = withTiming(1, { duration: 650 }, () => { heartBurst.value = 0; });
@@ -1010,7 +1010,7 @@ function showSuccess(msg: string) {
 
 // ---------- Screen ----------
 export default function AACGrid() {
-  const HEADER_H=56;
+  const HEADER_H = 56;
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -1031,7 +1031,7 @@ export default function AACGrid() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [customTiles, setCustomTiles] = useState<CustomTile[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
-  
+
   // Check for addTile param and open modal
   useEffect(() => {
     if (params.addTile === 'true') {
@@ -1044,22 +1044,22 @@ export default function AACGrid() {
   const [newLabel, setNewLabel] = useState('');
   const [newEmoji, setNewEmoji] = useState('');
   const [newImageUrl, setNewImageUrl] = useState('');
-  
+
   // NEW: choose between URL vs Upload
   type SourceMode = 'url' | 'upload';
   const [sourceMode, setSourceMode] = useState<SourceMode>('url');
-  
+
   // Upload state
   const [pickedUri, setPickedUri] = useState<string>(''); // local file URI
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  
+
   // Edit state
   type EditForm = { id: string; label: string; imageUrl?: string };
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
-  
+
   const FAV_CATEGORY_ID = 'favorites' as const;
   const MY_CATEGORY_ID = 'mytiles' as const;
 
@@ -1111,12 +1111,12 @@ export default function AACGrid() {
       try {
         const fav = await getFavorites();
         setFavorites(new Set(fav.favorites || []));
-      } catch {}
+      } catch { }
       try {
         const { tiles } = await getCustomTiles();
         const fixed = (tiles || []).map(t => ({ ...t, imageUrl: normImageUrl(t.imageUrl) }));
         setCustomTiles(fixed);
-      } catch {}
+      } catch { }
     })();
   }, []);
 
@@ -1128,13 +1128,13 @@ export default function AACGrid() {
       showError('Allow photo access to continue.');
       return;
     }
-  
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.9,
     });
     if (result.canceled) return;
-  
+
     const uri = result.assets[0].uri;
     try {
       const info: any = await FileSystem.getInfoAsync(uri as any);
@@ -1147,12 +1147,12 @@ export default function AACGrid() {
     } catch {
       // if size not available, we'll still allow; upload will catch failures.
     }
-  
+
     setFormError(null);
     setPickedUri(uri);
     Toast.show({ type: 'info', text1: 'Image selected', text2: 'Will upload on Save' });
   }
-  
+
 
   async function uploadPickedImage(): Promise<string> {
     if (!pickedUri) throw new Error('No image selected');
@@ -1160,7 +1160,7 @@ export default function AACGrid() {
     try {
       const form = new FormData();
       const filename = `image-${Date.now()}.jpg`;
-      
+
       // Determine file type from URI or default to jpeg
       let type = 'image/jpeg';
       if (pickedUri.toLowerCase().endsWith('.png')) type = 'image/png';
@@ -1192,7 +1192,7 @@ export default function AACGrid() {
 
       const { authHeaders } = await import('@/utils/api');
       const headers = await authHeaders({ multipart: true });
-      
+
       // Remove Content-Type header to let browser/RN set it with boundary
       const uploadHeaders: any = { ...headers };
       delete uploadHeaders['Content-Type'];
@@ -1217,7 +1217,7 @@ export default function AACGrid() {
         showError(msg);
         throw new Error(msg);
       }
-      
+
       const data = await res.json();
       console.log('Upload success:', data.url);
       return data.url as string;
@@ -1265,7 +1265,7 @@ export default function AACGrid() {
           headers: await authHeaders(),
           body: JSON.stringify({ label: editForm.label, imageUrl: finalUrl }),
         });
-      } catch {}
+      } catch { }
 
       updateMyTileLocal({
         id: editForm.id,
@@ -1288,7 +1288,7 @@ export default function AACGrid() {
             method: "DELETE",
             headers: await authHeaders(),
           });
-        } catch {}
+        } catch { }
         removeMyTileLocal(tile.id);
       } catch (e) {
         console.error("Delete failed", e);
@@ -1315,7 +1315,7 @@ export default function AACGrid() {
       });
       setAvailable(next);
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filteredCommon = useMemo(() => {
@@ -1348,8 +1348,8 @@ export default function AACGrid() {
   const addBtnBottom = (insets.bottom || 12) + Platform.select({ ios: 76, android: 84, default: 82 });
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.bg, overflow: 'visible'}}>
-      
+    <View style={{ flex: 1, backgroundColor: theme.bg, overflow: 'visible' }}>
+
       {/* Top bar: Back (left) + Search + Language menu button (right) */}
       <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
         <View
@@ -1415,7 +1415,7 @@ export default function AACGrid() {
           </TouchableOpacity>
 
           {/* Menu button inline with search + language */}
-            <GridMenu inline />
+          <GridMenu inline />
 
         </View>
       </View>
@@ -1559,8 +1559,8 @@ export default function AACGrid() {
         numColumns={cols}
         keyExtractor={(t) => t.id}
         columnWrapperStyle={cols > 1 ? { columnGap: 8, overflow: 'visible', position: 'relative' } : undefined}
-        contentContainerStyle={{ 
-          paddingBottom: 28, 
+        contentContainerStyle={{
+          paddingBottom: 28,
           rowGap: 8,
         }}
         initialNumToRender={12}
@@ -1596,7 +1596,7 @@ export default function AACGrid() {
           </View>
         )}
       />
-      
+
       {/* Language menu (modal sheet) */}
       {langMenuOpen && (
         <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)' }}>
@@ -1634,209 +1634,209 @@ export default function AACGrid() {
       {/* Add Tile Modal */}
       {showAddModal && (
         <View
-        style={{
-          position:'absolute', left:0, right:0, top:0, bottom:0,
-          backgroundColor:'rgba(0,0,0,0.35)',
-          alignItems:'center', justifyContent:'center', padding:16
-        }}
-        >
-        <View
           style={{
-            width:'100%', maxWidth:560, maxHeight:'80%',
-            backgroundColor:'#fff', borderRadius:16, overflow:'hidden'
+            position: 'absolute', left: 0, right: 0, top: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.35)',
+            alignItems: 'center', justifyContent: 'center', padding: 16
           }}
+        >
+          <View
+            style={{
+              width: '100%', maxWidth: 560, maxHeight: '80%',
+              backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden'
+            }}
           >
-          <ScrollView
-            contentContainerStyle={{ padding:16 }}
-            keyboardShouldPersistTaps="handled"
-            // ensures scrolling on web if content is tall
-            style={{ flexGrow:0 }}
+            <ScrollView
+              contentContainerStyle={{ padding: 16 }}
+              keyboardShouldPersistTaps="handled"
+              // ensures scrolling on web if content is tall
+              style={{ flexGrow: 0 }}
             >
-            <Text style={{ fontSize:18, fontWeight:'800', marginBottom:10 }}>Create custom tile</Text>
-            <NiceAlert message={formError} />
+              <Text style={{ fontSize: 18, fontWeight: '800', marginBottom: 10 }}>Create custom tile</Text>
+              <NiceAlert message={formError} />
 
 
-            {/* ID */}
-            <Text style={{ fontWeight:'700', color:'#374151' }}>ID (no spaces)</Text>
-            <TextInput value={newId} onChangeText={setNewId} placeholder="e.g. my_dog" style={styles.input} autoCapitalize="none" />
+              {/* ID */}
+              <Text style={{ fontWeight: '700', color: '#374151' }}>ID (no spaces)</Text>
+              <TextInput value={newId} onChangeText={setNewId} placeholder="e.g. my_dog" style={styles.input} autoCapitalize="none" />
 
-            {/* Label */}
-            <Text style={{ fontWeight:'700', color:'#374151', marginTop:8 }}>Label</Text>
-            <TextInput value={newLabel} onChangeText={setNewLabel} placeholder="e.g. My dog" style={styles.input} />
+              {/* Label */}
+              <Text style={{ fontWeight: '700', color: '#374151', marginTop: 8 }}>Label</Text>
+              <TextInput value={newLabel} onChangeText={setNewLabel} placeholder="e.g. My dog" style={styles.input} />
 
-            {/* Emoji */}
-            <Text style={{ fontWeight:'700', color:'#374151', marginTop:8 }}>Emoji (optional)</Text>
-            <TextInput value={newEmoji} onChangeText={setNewEmoji} placeholder="e.g. 🐶" style={styles.input} />
+              {/* Emoji */}
+              <Text style={{ fontWeight: '700', color: '#374151', marginTop: 8 }}>Emoji (optional)</Text>
+              <TextInput value={newEmoji} onChangeText={setNewEmoji} placeholder="e.g. 🐶" style={styles.input} />
 
-            {/* Source mode toggle */}
-            <View style={{ flexDirection:'row', marginTop:12, marginBottom:8 }}>
-              <TouchableOpacity
-                onPress={() => setSourceMode('url')}
-                style={{ paddingVertical:8, paddingHorizontal:12, borderRadius:999, backgroundColor: sourceMode==='url' ? '#2563EB' : '#E5E7EB', marginRight:8 }}
-              >
-                <Text style={{ color: sourceMode==='url' ? '#fff' : '#111827', fontWeight:'700' }}>Image URL</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setSourceMode('upload')}
-                style={{ paddingVertical:8, paddingHorizontal:12, borderRadius:999, backgroundColor: sourceMode==='upload' ? '#2563EB' : '#E5E7EB' }}
-              >
-                <Text style={{ color: sourceMode==='upload' ? '#fff' : '#111827', fontWeight:'700' }}>Upload</Text>
-              </TouchableOpacity>
-            </View>
-
-            {sourceMode === 'url' ? (
-              <>
-                <Text style={{ fontWeight:'700', color:'#374151' }}>Image URL</Text>
-                <Text style={{ fontSize:12, color:'#6B7280', marginTop:4 }}>
-                   Must start with http:// or https://
-                </Text>
-
-                <TextInput
-                  value={newImageUrl}
-                  onChangeText={setNewImageUrl}
-                  placeholder="https://example.com/picture.png"
-                  style={styles.input}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </>
-            ) : (
-              <>
-                {/* PICK + PREVIEW + (auto)UPLOAD on Save */}
+              {/* Source mode toggle */}
+              <View style={{ flexDirection: 'row', marginTop: 12, marginBottom: 8 }}>
                 <TouchableOpacity
-                  onPress={pickImageFromDevice}
-                  activeOpacity={0.9}
-                  style={{ backgroundColor:'#F3F4F6', borderWidth:1, borderColor:'#E5E7EB', borderRadius:12, padding:12, alignItems:'center', marginTop:4 }}
+                  onPress={() => setSourceMode('url')}
+                  style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, backgroundColor: sourceMode === 'url' ? '#2563EB' : '#E5E7EB', marginRight: 8 }}
                 >
-                  <Ionicons name="image-outline" size={20} color="#4B5563" />
-                  <Text style={{ marginTop:6, color:'#374151', fontWeight:'700' }}>
-                    {pickedUri ? 'Change image' : 'Choose image from device'}
+                  <Text style={{ color: sourceMode === 'url' ? '#fff' : '#111827', fontWeight: '700' }}>Image URL</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setSourceMode('upload')}
+                  style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, backgroundColor: sourceMode === 'upload' ? '#2563EB' : '#E5E7EB' }}
+                >
+                  <Text style={{ color: sourceMode === 'upload' ? '#fff' : '#111827', fontWeight: '700' }}>Upload</Text>
+                </TouchableOpacity>
+              </View>
+
+              {sourceMode === 'url' ? (
+                <>
+                  <Text style={{ fontWeight: '700', color: '#374151' }}>Image URL</Text>
+                  <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>
+                    Must start with http:// or https://
                   </Text>
-                  <Text style={{ marginTop:2, fontSize:12, color:'#6B7280' }}>
-                    Max size: 1MB
+
+                  <TextInput
+                    value={newImageUrl}
+                    onChangeText={setNewImageUrl}
+                    placeholder="https://example.com/picture.png"
+                    style={styles.input}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </>
+              ) : (
+                <>
+                  {/* PICK + PREVIEW + (auto)UPLOAD on Save */}
+                  <TouchableOpacity
+                    onPress={pickImageFromDevice}
+                    activeOpacity={0.9}
+                    style={{ backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 12, alignItems: 'center', marginTop: 4 }}
+                  >
+                    <Ionicons name="image-outline" size={20} color="#4B5563" />
+                    <Text style={{ marginTop: 6, color: '#374151', fontWeight: '700' }}>
+                      {pickedUri ? 'Change image' : 'Choose image from device'}
+                    </Text>
+                    <Text style={{ marginTop: 2, fontSize: 12, color: '#6B7280' }}>
+                      Max size: 1MB
+                    </Text>
+                  </TouchableOpacity>
+
+                  {pickedUri ? (
+                    <View style={{ alignItems: 'center', marginTop: 10 }}>
+                      <Image source={{ uri: pickedUri }} style={{ width: 120, height: 120, borderRadius: 12 }} />
+                      <Text style={{ marginTop: 6, fontSize: 12, color: '#6B7280' }}>Will upload on Save</Text>
+                    </View>
+                  ) : null}
+                </>
+              )}
+
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 14 }}>
+                <TouchableOpacity onPress={() => {
+                  setShowAddModal(false);
+                  setNewId('');
+                  setNewLabel('');
+                  setNewEmoji('');
+                  setNewImageUrl('');
+                  setPickedUri('');
+                  setSourceMode('url');
+                  setSaving(false);
+                  setUploading(false);
+                }} style={[styles.secondaryBtn, { marginRight: 8 }]}>
+                  <Text>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={async () => {
+                    if (saving || uploading) return;
+
+                    const id = newId.trim();
+                    const label = newLabel.trim();
+                    const emoji = newEmoji.trim();
+                    const imageUrlRaw = newImageUrl.trim();
+
+                    // Field validations
+                    if (!id && !label) {
+                      setFormError?.('ID and Label are required.');
+                      showError?.('ID and Label are required.');
+                      return;
+                    }
+                    if (!id) {
+                      setFormError?.('Please enter an ID (only letters, numbers, _ or -).');
+                      showError?.('Missing ID.');
+                      return;
+                    }
+                    if (!/^[a-zA-Z0-9_-]{2,40}$/.test(id)) {
+                      setFormError?.('Invalid ID. Use letters, numbers, _ or - (2–40 chars).');
+                      showError?.('Invalid ID format.');
+                      return;
+                    }
+                    if (!label) {
+                      setFormError?.('Please enter a Label.');
+                      showError?.('Missing Label.');
+                      return;
+                    }
+
+                    // Image requirement: either a valid URL (when mode=url) or a picked file (when mode=upload)
+                    if (sourceMode === 'url') {
+                      if (!imageUrlRaw) {
+                        setFormError?.('Please add an Image URL or switch to Upload.');
+                        showError?.('Missing Image URL.');
+                        return;
+                      }
+                      try {
+                        const u = new URL(imageUrlRaw);
+                        if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error();
+                      } catch {
+                        setFormError?.('That does not look like a valid http/https URL.');
+                        showError?.('Invalid URL.');
+                        return;
+                      }
+                    } else {
+                      if (!pickedUri) {
+                        setFormError?.('Please choose an image to upload (max 1MB).');
+                        showError?.('No image selected.');
+                        return;
+                      }
+                    }
+
+                    setFormError?.(null);
+                    setSaving(true);
+                    let finalImageUrl: string | undefined = imageUrlRaw || undefined;
+
+                    try {
+                      if (sourceMode === 'upload') {
+                        finalImageUrl = await uploadPickedImage();
+                      }
+
+                      const { tile } = await addCustomTile({
+                        id,
+                        label,
+                        emoji: emoji || undefined,
+                        imageUrl: finalImageUrl,
+                      });
+
+                      setCustomTiles(prev => [...prev, { ...tile, imageUrl: normImageUrl(tile.imageUrl) }]);
+
+                      // reset form
+                      setShowAddModal(false);
+                      setNewId(''); setNewLabel(''); setNewEmoji('');
+                      setNewImageUrl(''); setPickedUri('');
+                      setSourceMode('url');
+
+                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      showSuccess?.('Custom tile created.');
+                    } catch (e: any) {
+                      console.error('Error creating tile:', e);
+                      setFormError?.(e?.message || 'Could not create tile.');
+                      showError?.(e?.message || 'Could not create tile.');
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  disabled={uploading || saving}
+                  style={[styles.primaryBtn, { backgroundColor: (uploading || saving) ? '#9CA3AF' : '#2563EB' }]}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '800' }}>
+                    {uploading ? 'Uploading…' : saving ? 'Saving…' : 'Save'}
                   </Text>
                 </TouchableOpacity>
 
-                {pickedUri ? (
-                  <View style={{ alignItems:'center', marginTop:10 }}>
-                    <Image source={{ uri: pickedUri }} style={{ width: 120, height: 120, borderRadius: 12 }} />
-                    <Text style={{ marginTop:6, fontSize:12, color:'#6B7280' }}>Will upload on Save</Text>
-                  </View>
-                ) : null}
-              </>
-            )}
-
-            <View style={{ flexDirection:'row', justifyContent:'flex-end', marginTop:14 }}>
-              <TouchableOpacity onPress={() => { 
-                setShowAddModal(false); 
-                setNewId(''); 
-                setNewLabel(''); 
-                setNewEmoji(''); 
-                setNewImageUrl(''); 
-                setPickedUri(''); 
-                setSourceMode('url');
-                setSaving(false);
-                setUploading(false);
-              }} style={[styles.secondaryBtn, { marginRight: 8 }]}>
-                <Text>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={async () => {
-                  if (saving || uploading) return;
-
-                  const id = newId.trim();
-                  const label = newLabel.trim();
-                  const emoji = newEmoji.trim();
-                  const imageUrlRaw = newImageUrl.trim();
-
-                  // Field validations
-                  if (!id && !label) {
-                    setFormError?.('ID and Label are required.');
-                    showError?.('ID and Label are required.');
-                    return;
-                  }
-                  if (!id) {
-                    setFormError?.('Please enter an ID (only letters, numbers, _ or -).');
-                    showError?.('Missing ID.');
-                    return;
-                  }
-                  if (!/^[a-zA-Z0-9_-]{2,40}$/.test(id)) {
-                    setFormError?.('Invalid ID. Use letters, numbers, _ or - (2–40 chars).');
-                    showError?.('Invalid ID format.');
-                    return;
-                  }
-                  if (!label) {
-                    setFormError?.('Please enter a Label.');
-                    showError?.('Missing Label.');
-                    return;
-                  }
-
-                  // Image requirement: either a valid URL (when mode=url) or a picked file (when mode=upload)
-                  if (sourceMode === 'url') {
-                    if (!imageUrlRaw) {
-                      setFormError?.('Please add an Image URL or switch to Upload.');
-                      showError?.('Missing Image URL.');
-                      return;
-                    }
-                    try {
-                      const u = new URL(imageUrlRaw);
-                      if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error();
-                    } catch {
-                      setFormError?.('That does not look like a valid http/https URL.');
-                      showError?.('Invalid URL.');
-                      return;
-                    }
-                  } else {
-                    if (!pickedUri) {
-                      setFormError?.('Please choose an image to upload (max 1MB).');
-                      showError?.('No image selected.');
-                      return;
-                    }
-                  }
-
-                  setFormError?.(null);
-                  setSaving(true);
-                  let finalImageUrl: string | undefined = imageUrlRaw || undefined;
-
-                  try {
-                    if (sourceMode === 'upload') {
-                      finalImageUrl = await uploadPickedImage();
-                    }
-
-                    const { tile } = await addCustomTile({
-                      id,
-                      label,
-                      emoji: emoji || undefined,
-                      imageUrl: finalImageUrl,
-                    });
-
-                    setCustomTiles(prev => [...prev, { ...tile, imageUrl: normImageUrl(tile.imageUrl) }]);
-
-                    // reset form
-                    setShowAddModal(false);
-                    setNewId(''); setNewLabel(''); setNewEmoji('');
-                    setNewImageUrl(''); setPickedUri('');
-                    setSourceMode('url');
-
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    showSuccess?.('Custom tile created.');
-                  } catch (e: any) {
-                    console.error('Error creating tile:', e);
-                    setFormError?.(e?.message || 'Could not create tile.');
-                    showError?.(e?.message || 'Could not create tile.');
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
-                disabled={uploading || saving}
-                style={[styles.primaryBtn, { backgroundColor: (uploading || saving) ? '#9CA3AF' : '#2563EB' }]}
-              >
-                <Text style={{ color:'#fff', fontWeight:'800' }}>
-                  {uploading ? 'Uploading…' : saving ? 'Saving…' : 'Save'}
-                </Text>
-              </TouchableOpacity>
-
-            </View>
+              </View>
             </ScrollView>
           </View>
         </View>
@@ -1900,8 +1900,8 @@ export default function AACGrid() {
         </View>
       </Modal>
 
-        {/* Toast root (keep this as the last child in the screen) */}
-        <Toast position="top" topOffset={60} visibilityTime={2000} />
+      {/* Toast root (keep this as the last child in the screen) */}
+      <Toast position="top" topOffset={60} visibilityTime={2000} />
     </View>
   );
 }
@@ -1909,8 +1909,8 @@ export default function AACGrid() {
 // ---------- styles ----------
 const shadow = {
   xs: { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  s:  { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
-  m:  { shadowColor: '#000', shadowOpacity: 0.1,  shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 5 },
+  s: { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 3 },
+  m: { shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 5 },
 };
 
 const styles = StyleSheet.create({
@@ -1955,19 +1955,19 @@ const styles = StyleSheet.create({
     opacity: 0,
     pointerEvents: 'none',
   },
-  emojiWrap: { 
-    width: '100%', 
+  emojiWrap: {
+    width: '100%',
     height: '100%',
-    alignItems: 'center', 
+    alignItems: 'center',
     justifyContent: 'center',
     position: 'absolute',
   },
   emojiText: { fontSize: 48 },
-  overlayLabelWrap: { 
-    position: 'absolute', 
+  overlayLabelWrap: {
+    position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 12, 
+    bottom: 12,
     alignItems: 'center',
     zIndex: 2,
   },
@@ -1984,9 +1984,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.08)',
   },
-  overlayLabelText: { 
-    fontWeight: '700', 
-    color: '#111827', 
+  overlayLabelText: {
+    fontWeight: '700',
+    color: '#111827',
     fontSize: 11,
     letterSpacing: 0.2,
   },
