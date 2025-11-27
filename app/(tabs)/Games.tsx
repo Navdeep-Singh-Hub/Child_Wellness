@@ -218,7 +218,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
     // Softer mapping: 0ms => 100, 1000ms => 50, 2000ms => 0
     // Formula: accuracy = 100 - (deltaMs / 20), clamped to 0-100
     // Ensure we have a valid deltaMs value before calculating
-    const calculatedAccuracy = deltaMs >= 0 ? Math.max(0, Math.min(100, 100 - (deltaMs / 20))) : 0;
+    const calculatedAccuracy = deltaMs >= 0 ? Math.max(0, Math.min(100, 100 - (deltaMs / 50))) : 0;
     const accuracy = calculatedAccuracy;
     return (
       <SafeAreaView className="flex-1 bg-white">
@@ -453,7 +453,7 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
     setChoices(opts);
     setPmFeedback(null);
     setLocked(false);
-    if (correct?.label) speak(correct.label);
+    if (correct?.label) speak('Find ' + correct.label);
     pulse.value = 1;
   }, [pulse]);
 
