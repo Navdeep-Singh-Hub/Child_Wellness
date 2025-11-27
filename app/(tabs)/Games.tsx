@@ -712,7 +712,7 @@ function QuickSort({ onBack }: { onBack: () => void }) {
       speak('Great sorting!');
     } else {
       setQIndex((i) => i + 1);
-      setTimeout(() => { qsToastOpacity.value = withTiming(0, { duration: 220 }); next(); }, 400);
+      setTimeout(() => { qsToastOpacity.value = withTiming(0, { duration: 220 }); }, 400);
     }
   };
 
