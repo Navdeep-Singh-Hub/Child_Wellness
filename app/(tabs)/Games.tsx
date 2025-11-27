@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   Easing,
   FadeInDown,
@@ -1972,7 +1972,7 @@ export default function GamesScreen() {
           colors={['#E0F2FE', '#F1F5FF', '#FFFFFF'] as [string, string, string]}
           style={StyleSheet.absoluteFillObject}
         />
-        <View style={{ flex: 1, padding: 20 }}>
+        <ScrollView contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
           {/* Header */}
           <Animated.View style={[menuStyles.headerWrap, headerStyle]}>
             <Animated.View style={[menuStyles.heroBadge, heroStyle]}>
@@ -2026,9 +2026,9 @@ export default function GamesScreen() {
               );
             })}
           </View>
-        </View>
+        </ScrollView>
       </View>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
 
