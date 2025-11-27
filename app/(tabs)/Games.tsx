@@ -221,51 +221,53 @@ function TapTiming({ onBack }: { onBack: () => void }) {
     const calculatedAccuracy = deltaMs >= 0 ? Math.max(0, Math.min(100, 100 - (deltaMs / 20))) : 0;
     const accuracy = calculatedAccuracy;
     return (
-      <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
+      <SafeAreaView className="flex-1 bg-white">
+        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full z-10" style={{ backgroundColor: '#000' }}>
           <Text className="text-white font-semibold">← Back</Text>
         </TouchableOpacity>
 
-        <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center">
-          <Text className="text-6xl mb-4">🎯</Text>
-          <Text className="text-3xl font-extrabold text-gray-900 mb-2">Game Complete!</Text>
-          <Text className="text-xl text-gray-600 mb-6 text-center">
-            {msg}
-          </Text>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center mt-16">
+            <Text className="text-6xl mb-4">🎯</Text>
+            <Text className="text-3xl font-extrabold text-gray-900 mb-2">Game Complete!</Text>
+            <Text className="text-xl text-gray-600 mb-6 text-center">
+              {msg}
+            </Text>
 
-          <View className="w-full bg-gray-50 rounded-2xl p-4 mb-4">
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-gray-700 font-semibold">Accuracy:</Text>
-              <Text className="text-gray-900 font-extrabold text-lg">
-                {Math.max(0, Math.round(accuracy))}%
-              </Text>
+            <View className="w-full bg-gray-50 rounded-2xl p-4 mb-4">
+              <View className="flex-row justify-between items-center mb-2">
+                <Text className="text-gray-700 font-semibold">Accuracy:</Text>
+                <Text className="text-gray-900 font-extrabold text-lg">
+                  {Math.max(0, Math.round(accuracy))}%
+                </Text>
+              </View>
+              <View className="flex-row justify-between items-center mb-2">
+                <Text className="text-gray-700 font-semibold">Total XP:</Text>
+                <Text className="text-gray-900 font-extrabold text-lg">{summary.xp}</Text>
+              </View>
+              <View className="flex-row justify-between items-center mb-2">
+                <Text className="text-gray-700 font-semibold">Streak:</Text>
+                <Text className="text-gray-900 font-extrabold text-lg">{summary.streak} days 🔥</Text>
+              </View>
+              <View className="flex-row justify-between items-center">
+                <Text className="text-gray-700 font-semibold">Games Played:</Text>
+                <Text className="text-gray-900 font-extrabold text-lg">{summary.games}</Text>
+              </View>
             </View>
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-gray-700 font-semibold">Total XP:</Text>
-              <Text className="text-gray-900 font-extrabold text-lg">{summary.xp}</Text>
-            </View>
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-gray-700 font-semibold">Streak:</Text>
-              <Text className="text-gray-900 font-extrabold text-lg">{summary.streak} days 🔥</Text>
-            </View>
-            <View className="flex-row justify-between items-center">
-              <Text className="text-gray-700 font-semibold">Games Played:</Text>
-              <Text className="text-gray-900 font-extrabold text-lg">{summary.games}</Text>
-            </View>
+
+            <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
+
+            <ReflectionPrompt logTimestamp={logTimestamp} />
+
+            <BigButton title="Play Again" color="#2563EB" onPress={() => {
+              setState('idle');
+              setSummary(null);
+              setMsg(null);
+              setLogTimestamp(null);
+              prefetchRound();
+            }} />
           </View>
-
-          <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
-
-          <ReflectionPrompt logTimestamp={logTimestamp} />
-
-          <BigButton title="Play Again" color="#2563EB" onPress={() => {
-            setState('idle');
-            setSummary(null);
-            setMsg(null);
-            setLogTimestamp(null);
-            prefetchRound();
-          }} />
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -504,33 +506,35 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
   // Completion screen
   if (done && finalScore) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
+      <SafeAreaView className="flex-1 bg-white">
+        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full z-10" style={{ backgroundColor: '#000' }}>
           <Text className="text-white font-semibold">← Back</Text>
         </TouchableOpacity>
-        <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center">
-          <ResultCard
-            correct={finalScore.correct}
-            total={finalScore.total}
-            xpAwarded={finalScore.xp}
-            accuracy={(finalScore.correct / finalScore.total) * 100}
-            logTimestamp={logTimestamp}
-            onPlayAgain={() => {
-              setRound(1);
-              setScore(0);
-              setDone(false);
-              setFinalScore(null);
-              setPmFeedback(null);
-              setLogTimestamp(null);
-              next();
-            }}
-            onHome={() => {
-              // Refresh home stats when going back
-              router.setParams({ refreshStats: Date.now().toString() });
-              onBack();
-            }}
-          />
-        </View>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center mt-16">
+            <ResultCard
+              correct={finalScore.correct}
+              total={finalScore.total}
+              xpAwarded={finalScore.xp}
+              accuracy={(finalScore.correct / finalScore.total) * 100}
+              logTimestamp={logTimestamp}
+              onPlayAgain={() => {
+                setRound(1);
+                setScore(0);
+                setDone(false);
+                setFinalScore(null);
+                setPmFeedback(null);
+                setLogTimestamp(null);
+                next();
+              }}
+              onHome={() => {
+                // Refresh home stats when going back
+                router.setParams({ refreshStats: Date.now().toString() });
+                onBack();
+              }}
+            />
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -716,53 +720,55 @@ function QuickSort({ onBack }: { onBack: () => void }) {
   if (done && finalScore) {
     const allCorrect = finalScore.correct === finalScore.total;
     return (
-      <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
+      <SafeAreaView className="flex-1 bg-white">
+        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full z-10" style={{ backgroundColor: '#000' }}>
           <Text className="text-white font-semibold">← Back</Text>
         </TouchableOpacity>
 
-        <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center">
-          <Text className="text-6xl mb-4">{allCorrect ? '🎉' : '🎊'}</Text>
-          <Text className="text-3xl font-extrabold text-gray-900 mb-2">
-            {allCorrect ? 'Perfect Score!' : 'Game Complete!'}
-          </Text>
-          <Text className="text-xl text-gray-600 mb-6">
-            You got {finalScore.correct} out of {finalScore.total} correct!
-          </Text>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center mt-16">
+            <Text className="text-6xl mb-4">{allCorrect ? '🎉' : '🎊'}</Text>
+            <Text className="text-3xl font-extrabold text-gray-900 mb-2">
+              {allCorrect ? 'Perfect Score!' : 'Game Complete!'}
+            </Text>
+            <Text className="text-xl text-gray-600 mb-6">
+              You got {finalScore.correct} out of {finalScore.total} correct!
+            </Text>
 
-          <View className="w-full bg-gray-50 rounded-2xl p-4 mb-4">
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-gray-700 font-semibold">Final Score:</Text>
-              <Text className="text-gray-900 font-extrabold text-lg">
-                {finalScore.correct}/{finalScore.total}
-              </Text>
+            <View className="w-full bg-gray-50 rounded-2xl p-4 mb-4">
+              <View className="flex-row justify-between items-center mb-2">
+                <Text className="text-gray-700 font-semibold">Final Score:</Text>
+                <Text className="text-gray-900 font-extrabold text-lg">
+                  {finalScore.correct}/{finalScore.total}
+                </Text>
+              </View>
+              <View className="flex-row justify-between items-center mb-2">
+                <Text className="text-gray-700 font-semibold">Accuracy:</Text>
+                <Text className="text-gray-900 font-extrabold text-lg">
+                  {Math.round((finalScore.correct / finalScore.total) * 100)}%
+                </Text>
+              </View>
+              <View className="flex-row justify-between items-center">
+                <Text className="text-gray-700 font-semibold">XP Earned:</Text>
+                <Text className="text-green-600 font-extrabold text-lg">+{finalScore.xp} XP</Text>
+              </View>
             </View>
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-gray-700 font-semibold">Accuracy:</Text>
-              <Text className="text-gray-900 font-extrabold text-lg">
-                {Math.round((finalScore.correct / finalScore.total) * 100)}%
-              </Text>
-            </View>
-            <View className="flex-row justify-between items-center">
-              <Text className="text-gray-700 font-semibold">XP Earned:</Text>
-              <Text className="text-green-600 font-extrabold text-lg">+{finalScore.xp} XP</Text>
-            </View>
+
+            <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
+
+            <ReflectionPrompt logTimestamp={logTimestamp} />
+
+            <BigButton title="Play Again" color="#F59E0B" onPress={() => {
+              setQIndex(0);
+              setScore(0);
+              setDone(false);
+              setFinalScore(null);
+              setQsFeedback(null);
+              setLogTimestamp(null);
+              next();
+            }} />
           </View>
-
-          <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
-
-          <ReflectionPrompt logTimestamp={logTimestamp} />
-
-          <BigButton title="Play Again" color="#F59E0B" onPress={() => {
-            setQIndex(0);
-            setScore(0);
-            setDone(false);
-            setFinalScore(null);
-            setQsFeedback(null);
-            setLogTimestamp(null);
-            next();
-          }} />
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
