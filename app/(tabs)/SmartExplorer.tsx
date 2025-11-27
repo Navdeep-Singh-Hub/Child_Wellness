@@ -585,7 +585,7 @@ export default function SmartExplorerScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
-      <View style={{ flex: 1, padding: 20, paddingBottom: 48 }}>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <TouchableOpacity
             onPress={() => router.back()}
@@ -612,89 +612,97 @@ export default function SmartExplorerScreen() {
           </Text>
         </LinearGradient>
 
-        {showComingSoon && (
-          <LinearGradient
-            colors={['#EEF2FF', '#FDF2F8']}
-            style={styles.comingSoonCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.comingSoonIcon}>
-              <Ionicons name="sparkles" size={26} color="#7C3AED" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.comingSoonTitle}>Magic in progress ✨</Text>
-              <Text style={styles.comingSoonCaption}>
-                Smart Explorer is getting the final touches. You can browse scenes now while we polish the interactive adventures.
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => setShowComingSoon(false)}
-              activeOpacity={0.85}
-              style={styles.comingSoonButton}
+        {
+          showComingSoon && (
+            <LinearGradient
+              colors={['#EEF2FF', '#FDF2F8']}
+              style={styles.comingSoonCard}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
             >
-              <Text style={styles.comingSoonButtonText}>Got it</Text>
-            </TouchableOpacity>
-          </LinearGradient>
-        )}
+              <View style={styles.comingSoonIcon}>
+                <Ionicons name="sparkles" size={26} color="#7C3AED" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.comingSoonTitle}>Magic in progress ✨</Text>
+                <Text style={styles.comingSoonCaption}>
+                  Smart Explorer is getting the final touches. You can browse scenes now while we polish the interactive adventures.
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowComingSoon(false)}
+                activeOpacity={0.85}
+                style={styles.comingSoonButton}
+              >
+                <Text style={styles.comingSoonButtonText}>Got it</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          )
+        }
 
-        {error && (
-          <View style={styles.errorBanner}>
-            <Ionicons name="warning-outline" size={18} color="#DC2626" />
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        )}
+        {
+          error && (
+            <View style={styles.errorBanner}>
+              <Ionicons name="warning-outline" size={18} color="#DC2626" />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )
+        }
 
         <Text style={styles.sectionHeading}>Choose a Scene</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
           {scenes.map(renderSceneCard)}
         </ScrollView>
 
-        {sceneDetail && (
-          <>
-            <Text style={styles.sectionHeading}>Select Mode</Text>
-            {renderModeToggle()}
+        {
+          sceneDetail && (
+            <>
+              <Text style={styles.sectionHeading}>Select Mode</Text>
+              {renderModeToggle()}
 
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={handleStartSession}
-              activeOpacity={0.9}
-            >
-              <Ionicons name="play" size={18} color="#fff" style={{ marginRight: 8 }} />
-              <Text style={styles.primaryButtonLabel}>Start Session</Text>
-            </TouchableOpacity>
-          </>
-        )}
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={handleStartSession}
+                activeOpacity={0.9}
+              >
+                <Ionicons name="play" size={18} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.primaryButtonLabel}>Start Session</Text>
+              </TouchableOpacity>
+            </>
+          )
+        }
 
-        {session && (
-          <>
-            <View style={styles.statsStrip}>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Score</Text>
-                <Text style={styles.statValue}>{session.score}</Text>
+        {
+          session && (
+            <>
+              <View style={styles.statsStrip}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>Score</Text>
+                  <Text style={styles.statValue}>{session.score}</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>Accuracy</Text>
+                  <Text style={styles.statValue}>{session.accuracy}%</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text style={styles.statLabel}>Prompts</Text>
+                  <Text style={styles.statValue}>
+                    {session.correctPrompts}/{session.totalPrompts}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Accuracy</Text>
-                <Text style={styles.statValue}>{session.accuracy}%</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Prompts</Text>
-                <Text style={styles.statValue}>
-                  {session.correctPrompts}/{session.totalPrompts}
-                </Text>
-              </View>
-            </View>
 
-            {renderPromptCard()}
-            {renderSupports()}
-            {renderTherapyControls()}
-            {renderSceneCanvas()}
-          </>
-        )}
-      </View>
+              {renderPromptCard()}
+              {renderSupports()}
+              {renderTherapyControls()}
+              {renderSceneCanvas()}
+            </>
+          )
+        }
+      </ScrollView>
 
       {renderSummaryModal()}
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
 

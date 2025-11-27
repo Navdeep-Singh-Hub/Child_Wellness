@@ -528,7 +528,7 @@ export default function Index() {
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
-      <View style={{ flex: 1, paddingHorizontal: isSmall ? 14 : 20, paddingVertical: 24 }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: isSmall ? 14 : 20, paddingVertical: 24 }} showsVerticalScrollIndicator={false}>
         <Animated.View
           style={[styles.heroCard, { opacity: heroAnim, transform: [{ translateY: heroTranslate }] }]}
         >
@@ -663,32 +663,34 @@ export default function Index() {
           })}
         </View>
 
-        {skillProfile && skillProfile.length ? (
-          <View style={styles.skillSection}>
-            <View style={styles.skillColumns}>
-              <View style={styles.skillColumn}>
-                <Text style={styles.skillColumnTitle}>Strong areas</Text>
-                {strengths.length
-                  ? strengths.map(renderSkillCard)
-                  : (
-                    <Text style={styles.skillEmpty}>
-                      Play more games to surface strengths.
-                    </Text>
-                  )}
-              </View>
-              <View style={styles.skillColumn}>
-                <Text style={styles.skillColumnTitle}>Focus areas</Text>
-                {focusAreas.length
-                  ? focusAreas.map(renderSkillCard)
-                  : (
-                    <Text style={styles.skillEmpty}>
-                      No focus areas yet. Keep practicing!
-                    </Text>
-                  )}
+        {
+          skillProfile && skillProfile.length ? (
+            <View style={styles.skillSection}>
+              <View style={styles.skillColumns}>
+                <View style={styles.skillColumn}>
+                  <Text style={styles.skillColumnTitle}>Strong areas</Text>
+                  {strengths.length
+                    ? strengths.map(renderSkillCard)
+                    : (
+                      <Text style={styles.skillEmpty}>
+                        Play more games to surface strengths.
+                      </Text>
+                    )}
+                </View>
+                <View style={styles.skillColumn}>
+                  <Text style={styles.skillColumnTitle}>Focus areas</Text>
+                  {focusAreas.length
+                    ? focusAreas.map(renderSkillCard)
+                    : (
+                      <Text style={styles.skillEmpty}>
+                        No focus areas yet. Keep practicing!
+                      </Text>
+                    )}
+                </View>
               </View>
             </View>
-          </View>
-        ) : null}
+          ) : null
+        }
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>
@@ -749,28 +751,30 @@ export default function Index() {
           })}
         </ScrollView>
 
-        {stats?.nextActions?.length ? (
-          <View style={styles.focusSection}>
-            <Text style={styles.sectionTitle}>Focus coaching</Text>
-            <Text style={styles.sectionCaption}>Suggestions tailored to weak or dormant skills</Text>
-            <View style={{ marginTop: 14, gap: 12 }}>
-              {stats.nextActions.map((card) => (
-                <View key={card.id} style={styles.focusCard}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.focusHeadline}>{card.headline}</Text>
-                    <Text style={styles.focusBody}>{card.body}</Text>
+        {
+          stats?.nextActions?.length ? (
+            <View style={styles.focusSection}>
+              <Text style={styles.sectionTitle}>Focus coaching</Text>
+              <Text style={styles.sectionCaption}>Suggestions tailored to weak or dormant skills</Text>
+              <View style={{ marginTop: 14, gap: 12 }}>
+                {stats.nextActions.map((card) => (
+                  <View key={card.id} style={styles.focusCard}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.focusHeadline}>{card.headline}</Text>
+                      <Text style={styles.focusBody}>{card.body}</Text>
+                    </View>
+                    <Pressable
+                      style={styles.focusButton}
+                      onPress={() => router.push(card.route as any)}
+                    >
+                      <Text style={styles.focusButtonText}>{card.actionLabel}</Text>
+                    </Pressable>
                   </View>
-                  <Pressable
-                    style={styles.focusButton}
-                    onPress={() => router.push(card.route as any)}
-                  >
-                    <Text style={styles.focusButtonText}>{card.actionLabel}</Text>
-                  </Pressable>
-                </View>
-              ))}
+                ))}
+              </View>
             </View>
-          </View>
-        ) : null}
+          ) : null
+        }
 
         <View style={styles.sectionHeader}>
           <View style={styles.moodHeaderRow}>
@@ -867,8 +871,8 @@ export default function Index() {
             })}
           </ScrollView>
         </Animated.View>
-      </View>
-    </SafeAreaView>
+      </ScrollView >
+    </SafeAreaView >
   );
 }
 
