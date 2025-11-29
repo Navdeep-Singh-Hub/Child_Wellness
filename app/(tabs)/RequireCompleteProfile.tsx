@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { useAuth } from "@/app/_layout";
 import { getMyProfile } from "@/utils/api";
 import { Redirect } from "expo-router";
+import React, { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
-import { useAuth } from "@/app/_layout";
 
 const hasMinPhone = (p: any) => String(p?.phoneNumber || "").replace(/\D/g, "").length >= 10;
 
