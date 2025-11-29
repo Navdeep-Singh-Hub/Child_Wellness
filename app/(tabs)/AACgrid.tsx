@@ -532,6 +532,8 @@ async function pickVoice(lang: LangKey): Promise<Speech.Voice | null> {
 
 const TWO = (l: LangKey) => l.slice(0, 2).toLowerCase();
 
+const DEFAULT_SPEECH_RATE = 0.78;
+
 // Normalize text for better TTS pronunciation, especially for iOS
 function normalizeForSpeech(text: string, lang: LangKey): string {
   // Handle special case: single capital "I" should be spoken as pronoun, not "capital i"
@@ -549,7 +551,7 @@ function normalizeForSpeech(text: string, lang: LangKey): string {
   return text;
 }
 
-async function speakSmart(text: string, lang: LangKey) {
+async function speakSmart(text: string, lang: LangKey, rateOverride?: number) {
   const v = await pickVoice(lang);
 
   // Normalize text for better pronunciation
@@ -558,17 +560,29 @@ async function speakSmart(text: string, lang: LangKey) {
   // Only use a voice id if it matches the chosen language (en/hi/pa/ta/te).
   const okLang = v?.language?.toLowerCase().startsWith(TWO(lang)) ?? false;
 
-  const isIndian = lang !== 'en-US';
   Speech.stop();
   Speech.speak(normalizedText, {
-    language: lang,                         // ← always force target language
-    ...(okLang ? { voice: v!.identifier } : {}), // ← avoid mismatched voice (the Tamil hijack)
-    rate: isIndian ? 0.95 : 1.0,
+    language: lang,
+    ...(okLang ? { voice: v!.identifier } : {}),
     pitch: 1.02,
+    rate: typeof rateOverride === 'number' ? rateOverride : DEFAULT_SPEECH_RATE,
   });
 }
 
+function speakStretched(sentence: string, lang: LangKey, wordGapMs = 420, rate?: number) {
+  const words = sentence.trim().split(/\s+/);
+  const maxWords = 60;
+  const list = words.slice(0, maxWords);
 
+  list.forEach((w, i) => {
+    const delay = i * (wordGapMs + 10);
+    scheduleSpeak(w, lang, delay, rate);
+  });
+
+  if (words.length > maxWords) {
+    scheduleSpeak('...', lang, list.length * (wordGapMs + 10), rate);
+  }
+}
 
 function tWord(id: string, lang: LangKey) {
   return TRANSLATIONS[lang]?.[id] ?? id;
@@ -578,10 +592,10 @@ function tSentence(ids: string[], lang: LangKey) {
 }
 
 // ---------- TTS scheduler: run speech AFTER animations ----------
-function scheduleSpeak(text: string, lang: LangKey, delayMs = 30) {
+function scheduleSpeak(text: string, lang: LangKey, delayMs = 30, rate?: number) {
   const run = () => {
     setTimeout(() => {
-      speakSmart(text, lang);
+      speakSmart(text, lang, rate);
     }, Math.max(0, delayMs));
   };
   try {
@@ -1018,6 +1032,7 @@ export default function AACGrid() {
   const [utterance, setUtterance] = useState<string[]>([]);
   const [activeCat, setActiveCat] = useState<Category['id']>('transport');
   const [selectedLang, setSelectedLang] = useState<LangKey>('en-US');
+  const [speechRate, setSpeechRate] = useState<number>(DEFAULT_SPEECH_RATE); // 0.6-0.9 is a good range for kids
   const [available, setAvailable] = useState<Record<LangKey, boolean>>({
     'en-US': true, 'hi-IN': false, 'pa-IN': false, 'ta-IN': false, 'te-IN': false,
   });
@@ -1334,14 +1349,19 @@ export default function AACGrid() {
     Haptics.selectionAsync();
     setUtterance(s => [...s, t.id]);
     const say = tWord(t.id, selectedLang);
-    scheduleSpeak(say, selectedLang, 10);
+    scheduleSpeak(say, selectedLang, 10, speechRate);
   };
 
   const onSpeakSentence = () => {
     if (!utterance.length) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const say = tSentence(utterance, selectedLang);
-    scheduleSpeak(say, selectedLang, 10);
+    const sentence = tSentence(utterance, selectedLang);
+
+    // Option A: simple slower single-speak (uncomment if preferred)
+    // scheduleSpeak(sentence, selectedLang, 10, speechRate);
+
+    // Option B (recommended for kids): speak stretched, word-by-word
+    speakStretched(sentence, selectedLang, 420, speechRate); // 420ms gap — tweak between 300-600ms
   };
 
   const theme = CATEGORY_STYLES[activeCat];
@@ -1541,7 +1561,7 @@ export default function AACGrid() {
               onPress={(tile) => {
                 Haptics.selectionAsync();
                 setUtterance(s => [...s, tile.id]);
-                scheduleSpeak(tWord(tile.id, selectedLang), selectedLang, 10);
+                scheduleSpeak(tWord(tile.id, selectedLang), selectedLang, 10, speechRate);
               }}
             />
           )}
