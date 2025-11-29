@@ -531,8 +531,7 @@ async function pickVoice(lang: LangKey): Promise<Speech.Voice | null> {
 }
 
 const TWO = (l: LangKey) => l.slice(0, 2).toLowerCase();
-
-const DEFAULT_SPEECH_RATE = 0.78;
+const DEFAULT_SPEECH_RATE = 0.8;
 
 // Normalize text for better TTS pronunciation, especially for iOS
 function normalizeForSpeech(text: string, lang: LangKey): string {
@@ -562,27 +561,14 @@ async function speakSmart(text: string, lang: LangKey, rateOverride?: number) {
 
   Speech.stop();
   Speech.speak(normalizedText, {
-    language: lang,
-    ...(okLang ? { voice: v!.identifier } : {}),
+    language: lang,                         // ? always force target language
+    ...(okLang ? { voice: v!.identifier } : {}), // ? avoid mismatched voice (the Tamil hijack)
     pitch: 1.02,
     rate: typeof rateOverride === 'number' ? rateOverride : DEFAULT_SPEECH_RATE,
   });
 }
 
-function speakStretched(sentence: string, lang: LangKey, wordGapMs = 420, rate?: number) {
-  const words = sentence.trim().split(/\s+/);
-  const maxWords = 60;
-  const list = words.slice(0, maxWords);
 
-  list.forEach((w, i) => {
-    const delay = i * (wordGapMs + 10);
-    scheduleSpeak(w, lang, delay, rate);
-  });
-
-  if (words.length > maxWords) {
-    scheduleSpeak('...', lang, list.length * (wordGapMs + 10), rate);
-  }
-}
 
 function tWord(id: string, lang: LangKey) {
   return TRANSLATIONS[lang]?.[id] ?? id;
@@ -1032,7 +1018,7 @@ export default function AACGrid() {
   const [utterance, setUtterance] = useState<string[]>([]);
   const [activeCat, setActiveCat] = useState<Category['id']>('transport');
   const [selectedLang, setSelectedLang] = useState<LangKey>('en-US');
-  const [speechRate, setSpeechRate] = useState<number>(DEFAULT_SPEECH_RATE); // 0.6-0.9 is a good range for kids
+  const [speechRate, setSpeechRate] = useState<number>(DEFAULT_SPEECH_RATE);
   const [available, setAvailable] = useState<Record<LangKey, boolean>>({
     'en-US': true, 'hi-IN': false, 'pa-IN': false, 'ta-IN': false, 'te-IN': false,
   });
@@ -1355,13 +1341,8 @@ export default function AACGrid() {
   const onSpeakSentence = () => {
     if (!utterance.length) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const sentence = tSentence(utterance, selectedLang);
-
-    // Option A: simple slower single-speak (uncomment if preferred)
-    // scheduleSpeak(sentence, selectedLang, 10, speechRate);
-
-    // Option B (recommended for kids): speak stretched, word-by-word
-    speakStretched(sentence, selectedLang, 420, speechRate); // 420ms gap — tweak between 300-600ms
+    const say = tSentence(utterance, selectedLang);
+    scheduleSpeak(say, selectedLang, 10, speechRate);
   };
 
   const theme = CATEGORY_STYLES[activeCat];
@@ -2117,3 +2098,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+
+
+
+
