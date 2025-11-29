@@ -7,13 +7,13 @@ import {
 } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -22,6 +22,7 @@ import {
   View,
   useWindowDimensions
 } from 'react-native';
+import Reanimated, { FadeInDown, FadeInUp, Layout } from 'react-native-reanimated';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 type StatBlock = {
@@ -31,6 +32,7 @@ type StatBlock = {
   caption: string;
   icon: IoniconName;
   accent: string;
+  gradient: [string, string];
 };
 type QuickAction = {
   key: string;
@@ -50,6 +52,9 @@ type MoodCard = {
 
 type MoodOption = 'energetic' | 'focused' | 'relaxed' | 'celebrating';
 
+const AnimatedBlurView = Reanimated.createAnimatedComponent(BlurView);
+const AnimatedPressable = Reanimated.createAnimatedComponent(Pressable);
+
 export default function Index() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -60,14 +65,9 @@ export default function Index() {
   const prevAccRef = useRef<number>(0);
   const isLoadingRef = useRef(false);
 
-  const heroAnim = useRef(new Animated.Value(0)).current;
-  const statAnimations = useRef<Record<string, { entrance: Animated.Value; press: Animated.Value }>>({});
-  const quickAnimations = useRef<Record<string, { entrance: Animated.Value; press: Animated.Value }>>({});
-  const moodAnimations = useRef<Record<string, Animated.Value>>({});
-
   const { width } = useWindowDimensions();
-  const isSmall = width < 380;   // most phones in portrait
-  const isTiny = width < 340;    // very small screens
+  const isSmall = width < 380;
+  const isTiny = width < 340;
   const fs = (n: number) => (isTiny ? n - 3 : isSmall ? n - 1 : n);
 
   const loadStats = useCallback(async () => {
@@ -90,20 +90,12 @@ export default function Index() {
     }
   }, [stats?.accuracy]);
 
-  // Avoid duplicate initial fetch; rely on focus only
-
   useFocusEffect(
     useCallback(() => {
       loadStats();
       return () => { };
     }, [loadStats])
   );
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadStats();
-    setRefreshing(false);
-  }, [loadStats]);
 
   const xp = stats?.xp ?? 0;
   const coins = stats?.coins ?? 0;
@@ -117,85 +109,65 @@ export default function Index() {
       key: 'xp',
       title: 'XP Progress',
       value: compactNumber(xp),
-      caption: 'Total experience collected',
-      icon: 'flash-outline',
-      accent: '#2563EB',
+      caption: 'Total collected',
+      icon: 'flash',
+      accent: '#3B82F6',
+      gradient: ['#3B82F6', '#2563EB'],
     },
     {
       key: 'coins',
       title: 'Coins',
       value: compactNumber(coins),
-      caption: 'Spend them in rewards',
-      icon: 'pricetag-outline',
+      caption: 'Spend rewards',
+      icon: 'pricetag',
       accent: '#F59E0B',
+      gradient: ['#FBBF24', '#D97706'],
     },
     {
       key: 'streak',
-      title: 'Current Streak',
+      title: 'Streak',
       value: `${streak} day${streak === 1 ? '' : 's'}`,
-      caption: streak > 0 ? 'Keep the daily habit alive' : 'Start a streak today',
+      caption: streak > 0 ? 'Keep it up!' : 'Start today',
       icon: 'flame',
       accent: '#F97316',
+      gradient: ['#FB923C', '#EA580C'],
     },
     {
       key: 'hearts',
       title: 'Lives',
       value: `${hearts}`,
-      caption: hearts === 5 ? 'Fully charged hearts' : 'Play to earn more hearts',
+      caption: 'Play power',
       icon: 'heart',
       accent: '#EF4444',
+      gradient: ['#F87171', '#DC2626'],
     },
-    {
-      key: 'best',
-      title: 'Best Streak',
-      value: `${bestStreak} day${bestStreak === 1 ? '' : 's'}`,
-      caption: bestStreak > 0 ? 'Your personal record' : 'Set your first high score',
-      icon: 'trophy-outline',
-      accent: '#14B8A6',
-    },
-  ], [xp, coins, hearts, streak, bestStreak]);
+  ], [xp, coins, hearts, streak]);
 
   const quickActions = useMemo<QuickAction[]>(() => {
     const defaults: QuickAction[] = [
       {
         key: 'play',
-        label: 'Play a Game',
-        caption: 'Boost XP with quick challenges',
-        icon: 'game-controller-outline',
-        accent: '#2563EB',
+        label: 'Play Game',
+        caption: 'Boost XP now',
+        icon: 'game-controller',
+        accent: '#8B5CF6',
         onPress: () => router.push('/(tabs)/Games'),
       },
       {
         key: 'aac',
-        label: 'Explore AAC Grid',
-        caption: 'Practice vocabulary tiles',
-        icon: 'grid-outline',
+        label: 'AAC Grid',
+        caption: 'Practice words',
+        icon: 'grid',
         accent: '#0EA5E9',
         onPress: () => router.push('/(tabs)/AACgrid'),
       },
       {
         key: 'smart',
-        label: 'Smart Explorer',
-        caption: 'Discover scenes with Scout',
-        icon: 'map-outline',
-        accent: '#14B8A6',
+        label: 'Explorer',
+        caption: 'Find scenes',
+        icon: 'map',
+        accent: '#10B981',
         onPress: () => router.push('/(tabs)/SmartExplorer'),
-      },
-      {
-        key: 'profile',
-        label: 'Update Profile',
-        caption: 'Keep details up to date',
-        icon: 'person-circle-outline',
-        accent: '#6366F1',
-        onPress: () => router.push('/(tabs)/Profile'),
-      },
-      {
-        key: 'contact',
-        label: 'Contact Coach',
-        caption: 'Share feedback or questions',
-        icon: 'chatbubble-ellipses-outline',
-        accent: '#F59E0B',
-        onPress: () => router.push('/(tabs)/Contact'),
       },
     ];
 
@@ -204,7 +176,7 @@ export default function Index() {
         key: rec.id,
         label: rec.activityTitle,
         caption: rec.reason,
-        icon: rec.priority === 'high' ? 'flame' : rec.priority === 'medium' ? 'flash-outline' : 'sparkles-outline',
+        icon: rec.priority === 'high' ? 'flame' : rec.priority === 'medium' ? 'flash' : 'sparkles',
         accent: rec.priority === 'high' ? '#EA580C' : rec.priority === 'medium' ? '#2563EB' : '#22C55E',
         onPress: () => router.push(rec.route as any),
       }));
@@ -217,152 +189,70 @@ export default function Index() {
     energetic: [
       {
         key: 'tap-timing',
-        title: 'Tap Timing Challenge',
-        description: 'Get your energy flowing with fast-paced timing games!',
-        gradient: ['#FEF3C7', '#FFFBEB'],
-        icon: 'flash-outline',
+        title: 'Tap Timing',
+        description: 'Fast-paced timing games!',
+        gradient: ['#FEF3C7', '#F59E0B'],
+        icon: 'flash',
       },
       {
         key: 'quick-sort',
-        title: 'Quick Sort Rush',
-        description: 'Categorize items quickly to boost reaction speed.',
-        gradient: ['#FED7AA', '#FFF7ED'],
-        icon: 'speedometer-outline',
-      },
-      {
-        key: 'movement',
-        title: 'Active Break',
-        description: 'Take a movement break to recharge your energy.',
-        gradient: ['#FECACA', '#FEF2F2'],
-        icon: 'bicycle-outline',
+        title: 'Quick Sort',
+        description: 'Categorize items quickly.',
+        gradient: ['#FFEDD5', '#F97316'],
+        icon: 'speedometer',
       },
     ],
     focused: [
       {
         key: 'picture-match',
         title: 'Picture Match',
-        description: 'Improve concentration with matching challenges.',
-        gradient: ['#E0EAFF', '#F8FAFF'],
-        icon: 'sparkles-outline',
+        description: 'Improve concentration.',
+        gradient: ['#DBEAFE', '#3B82F6'],
+        icon: 'sparkles',
       },
       {
         key: 'find-emoji',
-        title: 'Emoji Recognition',
-        description: 'Practice identifying emotions and feelings.',
-        gradient: ['#E0E7FF', '#F5F3FF'],
-        icon: 'happy-outline',
-      },
-      {
-        key: 'accuracy',
-        title: 'Accuracy Builder',
-        description: 'Focus on precision to improve your overall score.',
-        gradient: ['#D1FAE5', '#ECFDF5'],
-        icon: 'checkmark-circle-outline',
+        title: 'Emoji Find',
+        description: 'Identify emotions.',
+        gradient: ['#E0E7FF', '#6366F1'],
+        icon: 'happy',
       },
     ],
     relaxed: [
       {
         key: 'aac-explore',
-        title: 'Explore AAC Grid',
-        description: 'Take your time exploring vocabulary at your own pace.',
-        gradient: ['#E0F2FE', '#F0F9FF'],
-        icon: 'grid-outline',
+        title: 'AAC Explore',
+        description: 'Explore at your own pace.',
+        gradient: ['#E0F2FE', '#0EA5E9'],
+        icon: 'grid',
       },
       {
         key: 'review',
-        title: 'Review Progress',
-        description: 'Look back at your achievements and celebrate growth.',
-        gradient: ['#F3E8FF', '#FAF5FF'],
-        icon: 'book-outline',
-      },
-      {
-        key: 'breathe',
-        title: 'Mindful Practice',
-        description: 'Practice vocabulary with calm, focused attention.',
-        gradient: ['#E7F3EE', '#F5FFF9'],
-        icon: 'leaf-outline',
+        title: 'Review',
+        description: 'Look back at achievements.',
+        gradient: ['#F3E8FF', '#A855F7'],
+        icon: 'book',
       },
     ],
     celebrating: [
       {
         key: 'streak-celebration',
-        title: 'Streak Milestone',
-        description: `You're on a ${streak}-day streak! Keep it going!`,
-        gradient: ['#FEF3C7', '#FFFBEB'],
-        icon: 'trophy-outline',
-      },
-      {
-        key: 'best-score',
-        title: 'Personal Best',
-        description: `Your best streak is ${bestStreak} days! Amazing work!`,
-        gradient: ['#FECACA', '#FEF2F2'],
-        icon: 'star-outline',
+        title: 'Milestone',
+        description: `You're on a ${streak}-day streak!`,
+        gradient: ['#FEF9C3', '#EAB308'],
+        icon: 'trophy',
       },
       {
         key: 'share',
-        title: 'Share Achievement',
-        description: 'Share your progress with family and friends!',
-        gradient: ['#E0EAFF', '#F8FAFF'],
-        icon: 'share-social-outline',
+        title: 'Share',
+        description: 'Share your progress!',
+        gradient: ['#FCE7F3', '#EC4899'],
+        icon: 'share-social',
       },
     ],
-  }), [streak, bestStreak]);
+  }), [streak]);
 
   const moodCards = useMemo(() => allMoodCards[selectedMood], [selectedMood, allMoodCards]);
-
-  const { strengths, focusAreas } = useMemo(() => {
-    const entries = skillProfile || [];
-    if (!entries.length) return { strengths: [], focusAreas: [] };
-
-    const sortedByLevel = [...entries].sort((a, b) => {
-      const levelA = a.stats?.level ?? 0;
-      const levelB = b.stats?.level ?? 0;
-      if (levelA === levelB) {
-        const accA = a.stats?.accuracy ?? 0;
-        const accB = b.stats?.accuracy ?? 0;
-        return accB - accA;
-      }
-      return levelB - levelA;
-    });
-
-    const strong = sortedByLevel.filter((entry) => (entry.stats?.level ?? 0) >= 3).slice(0, 3);
-    const focus = [...entries]
-      .filter((entry) => !entry.stats || (entry.stats.level ?? 0) <= 2)
-      .sort((a, b) => {
-        const accA = a.stats?.accuracy ?? 0;
-        const accB = b.stats?.accuracy ?? 0;
-        return accA - accB;
-      })
-      .slice(0, 3);
-
-    return { strengths: strong, focusAreas: focus };
-  }, [skillProfile]);
-
-  statBlocks.forEach((block) => {
-    if (!statAnimations.current[block.key]) {
-      statAnimations.current[block.key] = {
-        entrance: new Animated.Value(0),
-        press: new Animated.Value(1),
-      };
-    }
-  });
-
-  quickActions.forEach((action) => {
-    if (!quickAnimations.current[action.key]) {
-      quickAnimations.current[action.key] = {
-        entrance: new Animated.Value(0),
-        press: new Animated.Value(1),
-      };
-    }
-  });
-
-  const moodTransitionAnim = useRef(new Animated.Value(1)).current;
-
-  moodCards.forEach((card) => {
-    if (!moodAnimations.current[card.key]) {
-      moodAnimations.current[card.key] = new Animated.Value(0);
-    }
-  });
 
   const accuracyDeltaRaw = accuracy - prevAccRef.current;
   const accuracyDelta = Number(accuracyDeltaRaw.toFixed(1));
@@ -372,960 +262,545 @@ export default function Index() {
   const previousMilestone = Math.max(0, nextMilestone - 500);
   const milestoneProgress = Math.min(1, (xp - previousMilestone) / Math.max(1, nextMilestone - previousMilestone));
 
-  const renderSkillCard = useCallback((skill: SkillProfileEntry) => {
-    const level = skill.stats?.level ?? 0;
-    const accuracyLabel = skill.stats ? `${skill.stats.accuracy ?? 0}% accuracy` : 'Not played yet';
-    const trend = skill.stats?.trend ?? 0;
-    const trendLabel =
-      trend > 0 ? `▲ ${trend}%` : trend < 0 ? `▼ ${Math.abs(trend)}%` : 'steady';
-
-    return (
-      <View key={skill.id} style={styles.skillCard}>
-        <View style={styles.skillIconBubble}>
-          <Text style={{ fontSize: 20 }}>{skill.icon}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.skillTitle}>{skill.title}</Text>
-          <Text style={styles.skillMeta}>
-            Level {level} · {accuracyLabel}
-          </Text>
-          <Text style={styles.skillTrend}>{trendLabel}</Text>
-        </View>
-      </View>
-    );
-  }, []);
-
-  useEffect(() => {
-    if (!stats) return;
-
-    heroAnim.setValue(0);
-    Animated.timing(heroAnim, {
-      toValue: 1,
-      duration: 650,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-
-    const statEntrances = statBlocks.map((block) =>
-      Animated.timing(statAnimations.current[block.key].entrance, {
-        toValue: 1,
-        duration: 620,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      })
-    );
-    Animated.stagger(80, statEntrances).start();
-
-    const quickEntrances = quickActions.map((action) =>
-      Animated.timing(quickAnimations.current[action.key].entrance, {
-        toValue: 1,
-        duration: 600,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      })
-    );
-    Animated.stagger(70, quickEntrances).start();
-
-    const moodEntrances = moodCards.map((card) =>
-      Animated.timing(moodAnimations.current[card.key], {
-        toValue: 1,
-        duration: 700,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      })
-    );
-    Animated.stagger(120, moodEntrances).start();
-  }, [stats, statBlocks, quickActions, moodCards, heroAnim]);
-
-  useEffect(() => {
-    moodTransitionAnim.setValue(0);
-    moodCards.forEach((card) => {
-      moodAnimations.current[card.key]?.setValue(0);
-    });
-
-    Animated.parallel([
-      Animated.timing(moodTransitionAnim, {
-        toValue: 1,
-        duration: 400,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      ...moodCards.map((card, index) =>
-        Animated.timing(moodAnimations.current[card.key], {
-          toValue: 1,
-          duration: 600,
-          delay: index * 100,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        })
-      ),
-    ]).start();
-  }, [selectedMood, moodCards, moodTransitionAnim]);
-
-  const handleStatPress = (key: string, active: boolean) => {
-    const anim = statAnimations.current[key]?.press;
-    if (!anim) return;
-    Animated.spring(anim, {
-      toValue: active ? 0.95 : 1,
-      friction: 6,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handleQuickPress = (key: string, active: boolean) => {
-    const anim = quickAnimations.current[key]?.press;
-    if (!anim) return;
-    Animated.spring(anim, {
-      toValue: active ? 0.94 : 1,
-      friction: 6,
-      useNativeDriver: true,
-    }).start();
-  };
-
   if (!stats) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={styles.loadingContainer}>
         <LinearGradient
-          colors={['#F8FAFC', '#F1F5F9']}
+          colors={['#EEF2FF', '#C7D2FE', '#A5B4FC']}
           style={StyleSheet.absoluteFillObject}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         />
-        <View style={styles.loadingContainer}>
-          <Animated.View
-            style={{
-              width: 80,
-              height: 80,
-              borderRadius: 40,
-              backgroundColor: '#2563EB',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 24,
-              shadowColor: '#2563EB',
-              shadowOpacity: 0.3,
-              shadowRadius: 16,
-              shadowOffset: { width: 0, height: 8 },
-              elevation: 8,
-            }}
-          >
-            <Ionicons name="sparkles" size={40} color="#FFFFFF" />
-          </Animated.View>
-          <Text style={styles.loadingTitle}>Loading your progress…</Text>
-          <Text style={styles.loadingCaption}>Fetching the latest stats and streaks.</Text>
-        </View>
-      </SafeAreaView>
+        <BlurView intensity={40} style={styles.loadingCard}>
+          <ActivityIndicator size="large" color="#4F46E5" />
+          <Text style={styles.loadingText}>Loading magic...</Text>
+        </BlurView>
+      </View>
     );
   }
 
-  const heroTranslate = heroAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [24, 0],
-  });
-
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.container}>
+      {/* Rich Mesh Gradient Background */}
       <LinearGradient
-        colors={['#F8FAFC', '#FFFFFF']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        colors={['#F0F9FF', '#E0F2FE', '#DBEAFE']}
         style={StyleSheet.absoluteFillObject}
       />
-      <ScrollView contentContainerStyle={{ paddingHorizontal: isSmall ? 14 : 20, paddingVertical: 24 }} showsVerticalScrollIndicator={false}>
-        <Animated.View
-          style={[styles.heroCard, { opacity: heroAnim, transform: [{ translateY: heroTranslate }] }]}
-        >
-          <LinearGradient
-            colors={['#EBF3FF', '#F7F3FF', '#FFFFFF']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.heroGradient}
+      <View style={[StyleSheet.absoluteFillObject, { opacity: 0.6 }]}>
+        <LinearGradient
+          colors={['transparent', 'rgba(99, 102, 241, 0.15)', 'rgba(168, 85, 247, 0.15)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+      </View>
+
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Section */}
+        <SafeAreaView>
+          <Reanimated.View
+            entering={FadeInDown.delay(100).springify()}
+            style={styles.header}
           >
-            <View
-              style={[
-                styles.heroTopRow,
-                isSmall && { flexDirection: 'column', alignItems: 'stretch', gap: 12 },
-              ]}
+            <View>
+              <Text style={styles.greeting}>Welcome back 👋</Text>
+              <Text style={styles.subGreeting}>Ready to play & learn?</Text>
+            </View>
+            <Pressable
+              onPress={() => router.push('/(tabs)/Profile')}
+              style={styles.profileButton}
             >
-              <View style={{ flex: 1 }}>
-                <Text style={styles.heroGreeting}>Welcome back 👋</Text>
-                <Text style={styles.heroHeadline}>Here’s today’s momentum snapshot.</Text>
-                <View style={styles.heroChipRow}>
-                  {stats?.levelLabel ? (
-                    <View style={styles.heroChip}>
-                      <Ionicons name="shield-checkmark" size={16} color="#10B981" />
-                      <Text style={styles.heroChipText}>{stats.levelLabel}</Text>
-                    </View>
-                  ) : null}
-                  <View style={styles.heroChip}>
-                    <Ionicons name="flame" size={16} color="#F97316" />
-                    <Text style={styles.heroChipText}>{streak} day streak</Text>
+              <LinearGradient
+                colors={['#6366F1', '#4F46E5']}
+                style={styles.profileGradient}
+              >
+                <Ionicons name="person" size={20} color="#fff" />
+              </LinearGradient>
+            </Pressable>
+          </Reanimated.View>
+        </SafeAreaView>
+
+        {/* Hero Card - Glassmorphism */}
+        <Reanimated.View
+          entering={FadeInDown.delay(200).springify()}
+          style={styles.heroContainer}
+        >
+          <BlurView intensity={Platform.OS === 'ios' ? 60 : 100} tint="light" style={styles.heroCard}>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.6)', 'rgba(255,255,255,0.2)']}
+              style={StyleSheet.absoluteFillObject}
+            />
+
+            <View style={styles.heroContent}>
+              <View style={styles.heroLeft}>
+                <View style={styles.levelBadge}>
+                  <LinearGradient colors={['#10B981', '#059669']} style={StyleSheet.absoluteFillObject} />
+                  <Ionicons name="shield-checkmark" size={14} color="#fff" />
+                  <Text style={styles.levelText}>{stats.levelLabel || 'Novice'}</Text>
+                </View>
+                <Text style={styles.heroTitle}>Daily Momentum</Text>
+                <Text style={styles.heroSubtitle}>
+                  {accuracyTrend === 'positive' ? 'Rising up! 🚀' : 'Keep going! 💪'}
+                </Text>
+
+                {/* Milestone Bar */}
+                <View style={styles.milestoneContainer}>
+                  <View style={styles.milestoneHeader}>
+                    <Text style={styles.milestoneLabel}>Next Level</Text>
+                    <Text style={styles.milestoneValue}>{xp}/{nextMilestone} XP</Text>
                   </View>
-                  <View style={styles.heroChip}>
-                    <Ionicons name="flash-outline" size={16} color="#2563EB" />
-                    <Text style={styles.heroChipText}>{compactNumber(xp)} XP</Text>
+                  <View style={styles.progressBarBg}>
+                    <Reanimated.View
+                      layout={Layout.springify()}
+                      style={[styles.progressBarFill, { width: `${milestoneProgress * 100}%` }]}
+                    />
                   </View>
                 </View>
               </View>
-              <Animated.View
-                style={[
-                  styles.heroRingWrap,
-                  isSmall && { alignSelf: 'center', marginTop: 8 },
-                ]}
-              >
+
+              <View style={styles.heroRight}>
                 <AnimatedAccuracyRing
                   value={accuracy}
-                  size={isSmall ? 100 : 120}
-                  stroke={isSmall ? 10 : 12}
+                  size={100}
+                  stroke={10}
                   progressColor="#4F46E5"
-                  trackColor="#E0E7FF"
+                  trackColor="rgba(79, 70, 229, 0.1)"
                   label="Accuracy"
-                  durationMs={700}
-                />
-                <Text
-                  style={[
-                    styles.ringDelta,
-                    { fontSize: fs(12) },
-                    accuracyTrend === 'positive'
-                      ? styles.deltaPositive
-                      : accuracyTrend === 'negative'
-                        ? styles.deltaNegative
-                        : styles.deltaNeutral,
-                  ]}
-                >
-                  {accuracyTrend === 'positive'
-                    ? `▲ ${Math.abs(accuracyDelta)}% vs last check`
-                    : accuracyTrend === 'negative'
-                      ? `▼ ${Math.abs(accuracyDelta)}% vs last check`
-                      : 'Holding steady — nice!'}
-                </Text>
-              </Animated.View>
-            </View>
-
-            <View style={styles.milestoneWrap}>
-              <View style={styles.milestoneHeader}>
-                <Text style={styles.milestoneTitle}>Next XP milestone</Text>
-                <Text style={styles.milestoneSubtitle}>
-                  {xp}/{nextMilestone} XP
-                </Text>
-              </View>
-              <View style={styles.milestoneBar}>
-                <Animated.View
-                  style={[styles.milestoneFill, { width: `${Math.round(milestoneProgress * 100)}%` }]}
+                  durationMs={1000}
                 />
               </View>
             </View>
-          </LinearGradient>
-        </Animated.View>
+          </BlurView>
+        </Reanimated.View>
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Daily stats</Text>
-          <Text style={styles.sectionCaption}>Tap a stat to learn what improves it</Text>
-        </View>
-
-        <View style={styles.statGrid}>
-          {statBlocks.map((block) => {
-            const { entrance, press } = statAnimations.current[block.key];
-            const translateY = entrance.interpolate({ inputRange: [0, 1], outputRange: [20, 0] });
-            const opacity = entrance;
-
-            return (
-              <Animated.View
+        {/* Stats Grid */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Your Progress</Text>
+          <View style={styles.statsGrid}>
+            {statBlocks.map((block, index) => (
+              <Reanimated.View
                 key={block.key}
-                style={[
-                  styles.statCard,
-                  {
-                    // width responsive
-                    width: isSmall ? '100%' : '48%',
-                    opacity,
-                    transform: [{ translateY }, { scale: press }],
-                    borderColor: soften(block.accent, 0.2),
-                    padding: isSmall ? 16 : 20,
-                  },
-                ]}
+                entering={FadeInUp.delay(300 + index * 100).springify()}
+                style={styles.statCardWrapper}
               >
-                <Pressable
-                  onPressIn={() => handleStatPress(block.key, true)}
-                  onPressOut={() => handleStatPress(block.key, false)}
-                  hitSlop={6}
-                >
-                  <View style={styles.statIconRow}>
-                    <LinearGradient
-                      colors={[soften(block.accent, 0.2), soften(block.accent, 0.12)]}
-                      style={styles.statIconWrap}
-                    >
-                      <Ionicons name={block.icon} size={20} color={block.accent} />
-                    </LinearGradient>
+                <BlurView intensity={40} tint="light" style={styles.statCard}>
+                  <View style={[styles.iconCircle, { backgroundColor: block.accent + '20' }]}>
+                    <Ionicons name={block.icon} size={22} color={block.accent} />
+                  </View>
+                  <View>
+                    <Text style={styles.statValue}>{block.value}</Text>
                     <Text style={styles.statTitle}>{block.title}</Text>
                   </View>
-                  <Text style={styles.statValue}>{block.value}</Text>
-                  <Text style={styles.statCaption}>{block.caption}</Text>
-                </Pressable>
-              </Animated.View>
-            );
-          })}
+                </BlurView>
+              </Reanimated.View>
+            ))}
+          </View>
         </View>
 
-        {
-          skillProfile && skillProfile.length ? (
-            <View style={styles.skillSection}>
-              <View style={styles.skillColumns}>
-                <View style={styles.skillColumn}>
-                  <Text style={styles.skillColumnTitle}>Strong areas</Text>
-                  {strengths.length
-                    ? strengths.map(renderSkillCard)
-                    : (
-                      <Text style={styles.skillEmpty}>
-                        Play more games to surface strengths.
-                      </Text>
-                    )}
-                </View>
-                <View style={styles.skillColumn}>
-                  <Text style={styles.skillColumnTitle}>Focus areas</Text>
-                  {focusAreas.length
-                    ? focusAreas.map(renderSkillCard)
-                    : (
-                      <Text style={styles.skillEmpty}>
-                        No focus areas yet. Keep practicing!
-                      </Text>
-                    )}
-                </View>
-              </View>
-            </View>
-          ) : null
-        }
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            {stats?.recommendations?.length ? 'Recommended next' : 'Quick actions'}
-          </Text>
-          <Text style={styles.sectionCaption}>
-            {stats?.recommendations?.length
-              ? 'Based on current skill signals'
-              : 'Jump straight into practice or setup'}
-          </Text>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.quickScrollContent}
-          snapToAlignment="start"
-          decelerationRate="fast"
-        >
-          {quickActions.map((action) => {
-            const { entrance, press } = quickAnimations.current[action.key];
-            const translateY = entrance.interpolate({ inputRange: [0, 1], outputRange: [16, 0] });
-            const opacity = entrance;
-
-            return (
-              <Animated.View
+        {/* Quick Actions - Horizontal Scroll */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickActionsScroll}
+          >
+            {quickActions.map((action, index) => (
+              <Reanimated.View
                 key={action.key}
-                style={[
-                  styles.quickCard,
-                  {
-                    width: isSmall ? 200 : 220,
-                    opacity,
-                    transform: [{ translateY }, { scale: press }],
-                  },
-                ]}
+                entering={FadeInDown.delay(500 + index * 100).springify()}
               >
                 <Pressable
-                  style={styles.quickPressable}
-                  onPress={action.onPress}
-                  onPressIn={() => handleQuickPress(action.key, true)}
-                  onPressOut={() => handleQuickPress(action.key, false)}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    action.onPress();
+                  }}
+                  style={({ pressed }) => [
+                    styles.actionCard,
+                    { transform: [{ scale: pressed ? 0.96 : 1 }] }
+                  ]}
                 >
                   <LinearGradient
-                    colors={['#FFFFFF', '#F5F7FF']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.quickGradient}
+                    colors={['#FFFFFF', '#F8FAFC']}
+                    style={styles.actionGradient}
                   >
-                    <View style={styles.quickIconWrap}>
-                      <Ionicons name={action.icon} size={20} color="#2563EB" />
+                    <View style={[styles.actionIcon, { backgroundColor: action.accent + '15' }]}>
+                      <Ionicons name={action.icon} size={24} color={action.accent} />
                     </View>
-                    <Text style={styles.quickLabel}>{action.label}</Text>
-                    <Text style={styles.quickCaption}>{action.caption}</Text>
+                    <Text style={styles.actionLabel}>{action.label}</Text>
+                    <Text style={styles.actionCaption}>{action.caption}</Text>
                   </LinearGradient>
                 </Pressable>
-              </Animated.View>
-            );
-          })}
-        </ScrollView>
+              </Reanimated.View>
+            ))}
+          </ScrollView>
+        </View>
 
-        {
-          stats?.nextActions?.length ? (
-            <View style={styles.focusSection}>
-              <Text style={styles.sectionTitle}>Focus coaching</Text>
-              <Text style={styles.sectionCaption}>Suggestions tailored to weak or dormant skills</Text>
-              <View style={{ marginTop: 14, gap: 12 }}>
-                {stats.nextActions.map((card) => (
-                  <View key={card.id} style={styles.focusCard}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.focusHeadline}>{card.headline}</Text>
-                      <Text style={styles.focusBody}>{card.body}</Text>
-                    </View>
-                    <Pressable
-                      style={styles.focusButton}
-                      onPress={() => router.push(card.route as any)}
-                    >
-                      <Text style={styles.focusButtonText}>{card.actionLabel}</Text>
-                    </Pressable>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ) : null
-        }
-
-        <View style={styles.sectionHeader}>
-          <View style={styles.moodHeaderRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.sectionTitle}>Daily inspiration</Text>
-              <Text style={styles.sectionCaption}>How are you feeling today?</Text>
-            </View>
-          </View>
-
+        {/* Mood Selector */}
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>How are you feeling?</Text>
           <View style={styles.moodSelector}>
             {(['energetic', 'focused', 'relaxed', 'celebrating'] as MoodOption[]).map((mood) => {
               const isActive = selectedMood === mood;
-              const moodConfig = {
-                energetic: { icon: 'flash-outline', label: 'Energetic', color: '#F59E0B' },
-                focused: { icon: 'sparkles-outline', label: 'Focused', color: '#6366F1' },
-                relaxed: { icon: 'leaf-outline', label: 'Relaxed', color: '#10B981' },
-                celebrating: { icon: 'trophy-outline', label: 'Celebrating', color: '#EC4899' },
+              const config = {
+                energetic: { icon: 'flash', color: '#F59E0B' },
+                focused: { icon: 'sparkles', color: '#6366F1' },
+                relaxed: { icon: 'leaf', color: '#10B981' },
+                celebrating: { icon: 'trophy', color: '#EC4899' },
               }[mood];
 
               return (
                 <Pressable
                   key={mood}
                   onPress={() => {
-                    if (!isActive) {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setSelectedMood(mood);
-                    }
+                    Haptics.selectionAsync();
+                    setSelectedMood(mood);
                   }}
-                  style={[styles.moodOption, isActive && styles.moodOptionActive]}
+                  style={[
+                    styles.moodButton,
+                    isActive && { backgroundColor: config.color + '15', borderColor: config.color }
+                  ]}
                 >
-                  <LinearGradient
-                    colors={isActive ? [moodConfig.color, moodConfig.color] : ['#FFFFFF', '#F9FAFB']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.moodOptionGradient}
-                  >
-                    <Ionicons
-                      name={moodConfig.icon as IoniconName}
-                      size={18}
-                      color={isActive ? '#FFFFFF' : '#64748B'}
-                    />
-                    <Text
-                      style={[
-                        styles.moodOptionLabel,
-                        isActive && styles.moodOptionLabelActive,
-                      ]}
+                  <Ionicons
+                    name={config.icon as any}
+                    size={20}
+                    color={isActive ? config.color : '#9CA3AF'}
+                  />
+                  {isActive && (
+                    <Reanimated.Text
+                      entering={FadeInDown.duration(200)}
+                      style={[styles.moodLabel, { color: config.color }]}
                     >
-                      {moodConfig.label}
-                    </Text>
-                  </LinearGradient>
+                      {mood.charAt(0).toUpperCase() + mood.slice(1)}
+                    </Reanimated.Text>
+                  )}
                 </Pressable>
               );
             })}
           </View>
         </View>
 
-        <Animated.View style={{ opacity: moodTransitionAnim }}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.moodScrollContent}
-          >
-            {moodCards.map((card, index) => {
-              const anim = moodAnimations.current[card.key];
-              const translateX = anim.interpolate({ inputRange: [0, 1], outputRange: [40, 0] });
-              const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] });
-
-              return (
-                <Animated.View
-                  key={card.key}
-                  style={[
-                    styles.moodCard,
-                    {
-                      width: isSmall ? 220 : 260,
-                      opacity: anim,
-                      transform: [{ translateX }, { scale }],
-                    },
-                  ]}
+        {/* Mood Cards */}
+        <View style={styles.moodCardsContainer}>
+          {moodCards.map((card, index) => (
+            <Reanimated.View
+              key={card.key}
+              entering={FadeInUp.delay(index * 100).springify()}
+              layout={Layout.springify()}
+            >
+              <Pressable style={styles.moodCard}>
+                <LinearGradient
+                  colors={card.gradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.moodCardGradient}
                 >
-                  <LinearGradient
-                    colors={card.gradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.moodGradient}
-                  >
-                    <View style={styles.moodIconWrap}>
-                      <Ionicons name={card.icon} size={22} color="#1E293B" />
+                  <View style={styles.moodCardContent}>
+                    <View style={styles.moodCardIcon}>
+                      <Ionicons name={card.icon} size={24} color="#fff" />
                     </View>
-                    <Text style={styles.moodTitle}>{card.title}</Text>
-                    <Text style={styles.moodDescription}>{card.description}</Text>
-                  </LinearGradient>
-                </Animated.View>
-              );
-            })}
-          </ScrollView>
-        </Animated.View>
-      </ScrollView >
-    </SafeAreaView >
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.moodCardTitle}>{card.title}</Text>
+                      <Text style={styles.moodCardDesc}>{card.description}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.8)" />
+                  </View>
+                </LinearGradient>
+              </Pressable>
+            </Reanimated.View>
+          ))}
+        </View>
+
+      </ScrollView>
+    </View>
   );
 }
 
-const compactNumber = (value: number): string => {
-  if (!Number.isFinite(value)) return '0';
-  if (Math.abs(value) >= 1000) {
-    const short = (value / 1000).toFixed(1);
-    return `${short.replace(/\.0$/, '')}k`;
-  }
-  return `${value}`;
-};
-
-const soften = (hex: string, alpha: number): string => {
-  const trimmed = hex.replace('#', '');
-  if (trimmed.length !== 6) return hex;
-  const num = parseInt(trimmed, 16);
-  const r = (num >> 16) & 255;
-  const g = (num >> 8) & 255;
-  const b = num & 255;
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
+function compactNumber(n: number) {
+  return Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
+}
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  scrollContent: {
-    paddingVertical: 24,
-    paddingHorizontal: 20,
-    gap: 28,
+    backgroundColor: '#F0F9FF',
   },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loadingTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  loadingCaption: {
-    marginTop: 8,
-    color: '#64748B',
-  },
-  heroCard: {
-    borderRadius: 28,
-    overflow: 'hidden',
-    shadowColor: '#4773FF',
-    shadowOpacity: 0.12,
-    shadowRadius: 28,
-    shadowOffset: { width: 0, height: 16 },
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.1)',
-  },
-  heroGradient: {
-    borderRadius: 28,
+  loadingCard: {
     padding: 24,
-  },
-  heroTopRow: {
-    flexDirection: 'row',
+    borderRadius: 20,
     alignItems: 'center',
-    gap: 20,
+    overflow: 'hidden',
   },
-  heroGreeting: {
-    fontSize: 13,
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#4F46E5',
+    fontWeight: '600',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    marginBottom: 20,
+  },
+  greeting: {
+    fontSize: 28,
     fontWeight: '800',
-    color: '#2563EB',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  heroHeadline: {
-    marginTop: 4,
-    fontSize: 24,
-    fontWeight: '900',
-    color: '#0F172A',
-    lineHeight: 30,
+    color: '#1E293B',
     letterSpacing: -0.5,
   },
-  heroChipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginTop: 16,
+  subGreeting: {
+    fontSize: 15,
+    color: '#64748B',
+    marginTop: 4,
+    fontWeight: '500',
   },
-  heroChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 999,
-    backgroundColor: 'rgba(37, 99, 235, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.2)',
+  profileButton: {
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  heroChipText: {
-    marginLeft: 6,
-    fontWeight: '600',
-    color: '#1E293B',
-  },
-  heroRingWrap: {
+  profileGradient: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ringDelta: {
-    marginTop: 6,
-    fontSize: 12,
-    fontWeight: '600',
+  heroContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 32,
   },
-  deltaPositive: {
-    color: '#16A34A',
-  },
-  deltaNegative: {
-    color: '#DC2626',
-  },
-  deltaNeutral: {
-    color: '#64748B',
-  },
-  milestoneWrap: {
-    marginTop: 24,
-    padding: 20,
-    borderRadius: 22,
-    backgroundColor: 'rgba(15, 23, 42, 0.05)',
+  heroCard: {
+    borderRadius: 32,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(15, 23, 42, 0.08)',
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+  heroContent: {
+    flexDirection: 'row',
+    padding: 24,
+    alignItems: 'center',
+  },
+  heroLeft: {
+    flex: 1,
+    paddingRight: 16,
+  },
+  levelBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 12,
+    gap: 4,
+  },
+  levelText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  heroTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    marginBottom: 16,
+  },
+  milestoneContainer: {
+    marginTop: 8,
   },
   milestoneHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 6,
   },
-  milestoneTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  milestoneSubtitle: {
-    fontSize: 13,
+  milestoneLabel: {
+    fontSize: 12,
     fontWeight: '600',
-    color: '#2563EB',
+    color: '#64748B',
   },
-  milestoneBar: {
-    marginTop: 14,
-    height: 12,
-    borderRadius: 999,
-    backgroundColor: 'rgba(37, 99, 235, 0.15)',
+  milestoneValue: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#4F46E5',
+  },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    borderRadius: 4,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.2)',
   },
-  milestoneFill: {
-    flex: 1,
-    borderRadius: 999,
-    backgroundColor: '#2563EB',
-    shadowColor: '#2563EB',
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#4F46E5',
+    borderRadius: 4,
   },
-  sectionHeader: {
-    gap: 4,
+  heroRight: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sectionContainer: {
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#0F172A',
-    letterSpacing: -0.3,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1E293B',
+    paddingHorizontal: 20,
+    marginBottom: 16,
   },
-  sectionCaption: {
-    fontSize: 13,
-    color: '#64748B',
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  statGrid: {
+  statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: 16,
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  statCardWrapper: {
+    width: '48%',
   },
   statCard: {
-    width: '48%',
-    borderRadius: 22,
-    padding: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    shadowColor: '#2563EB',
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 5,
-  },
-  statIconRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-    gap: 10,
+    padding: 16,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.4)',
   },
-  statIconWrap: {
+  iconCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.06)',
-  },
-  statTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1E293B',
-    flexShrink: 1,
+    marginRight: 12,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
+    color: '#1E293B',
   },
-  statCaption: {
+  statTitle: {
     fontSize: 12,
     color: '#64748B',
-    lineHeight: 18,
+    fontWeight: '500',
   },
-  skillSection: {
-    marginTop: 12,
-  },
-  skillColumns: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  quickActionsScroll: {
+    paddingHorizontal: 20,
     gap: 16,
   },
-  skillColumn: {
-    flex: 1,
-    minWidth: '48%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    shadowColor: '#0F172A',
+  actionCard: {
+    width: 140,
+    height: 160,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 10,
     elevation: 3,
   },
-  skillColumnTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 4,
-  },
-  skillEmpty: {
-    color: '#94A3B8',
-    fontWeight: '600',
-  },
-  skillCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-  },
-  skillIconBubble: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
-    backgroundColor: '#F8FAFC',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  skillTitle: {
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  skillMeta: {
-    color: '#64748B',
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  skillTrend: {
-    color: '#2563EB',
-    fontSize: 11,
-    fontWeight: '700',
-    marginTop: 2,
-    textTransform: 'uppercase',
-  },
-  quickScrollContent: {
-    gap: 16,
-    paddingRight: 8,
-  },
-  quickCard: {
-    width: 220,
-  },
-  quickPressable: {
-    borderRadius: 22,
-    overflow: 'hidden',
-  },
-  quickGradient: {
-    padding: 20,
+  actionGradient: {
+    flex: 1,
     borderRadius: 24,
-    gap: 12,
-    shadowColor: '#2563EB',
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 4,
+    padding: 16,
+    justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.08)',
+    borderColor: '#F1F5F9',
   },
-  quickIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+  actionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(37, 99, 235, 0.2)',
   },
-  quickLabel: {
+  actionLabel: {
     fontSize: 16,
     fontWeight: '700',
     color: '#1E293B',
+    marginTop: 12,
   },
-  quickCaption: {
-    fontSize: 13,
-    color: '#64748B',
-    lineHeight: 18,
-  },
-  focusSection: {
-    marginTop: 10,
-    gap: 8,
-  },
-  focusCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: 16,
-    borderRadius: 22,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    gap: 14,
-  },
-  focusHeadline: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 4,
-  },
-  focusBody: {
-    fontSize: 13,
-    color: '#475569',
-    lineHeight: 18,
-  },
-  focusButton: {
-    alignSelf: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#2563EB',
-    borderRadius: 14,
-  },
-  focusButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  moodScrollContent: {
-    gap: 16,
-    paddingRight: 8,
-  },
-  moodCard: {
-    width: 260,
-  },
-  moodGradient: {
-    borderRadius: 26,
-    padding: 22,
-    gap: 12,
-    minHeight: 160,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
-  },
-  moodIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(15, 23, 42, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  moodTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  moodDescription: {
-    fontSize: 13,
-    color: '#475569',
-    lineHeight: 18,
-  },
-  moodHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
+  actionCaption: {
+    fontSize: 12,
+    color: '#94A3B8',
   },
   moodSelector: {
     flexDirection: 'row',
+    paddingHorizontal: 20,
     gap: 10,
-    marginTop: 8,
   },
-  moodOption: {
-    flex: 1,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  moodOptionActive: {
-    shadowColor: '#2563EB',
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  moodOptionGradient: {
+  moodButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 13,
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    gap: 8,
-    borderRadius: 18,
-    borderWidth: 1.5,
-    borderColor: 'rgba(148, 163, 184, 0.25)',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 6,
   },
-  moodOptionLabel: {
-    fontSize: 13,
+  moodLabel: {
+    fontSize: 14,
     fontWeight: '600',
-    color: '#64748B',
   },
-  moodOptionLabelActive: {
-    color: '#FFFFFF',
+  moodCardsContainer: {
+    paddingHorizontal: 20,
+    gap: 16,
+  },
+  moodCard: {
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  moodCardGradient: {
+    borderRadius: 24,
+    padding: 20,
+  },
+  moodCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  moodCardIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  moodCardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  moodCardDesc: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.9)',
+    marginTop: 2,
   },
 });

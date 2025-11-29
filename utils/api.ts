@@ -48,9 +48,9 @@ export function setAuth0UserInfo(info: { auth0Id?: string; email?: string; name?
 export async function authHeaders(opts?: { multipart?: boolean }) {
   const token = tokenProvider ? await tokenProvider().catch(() => undefined) : undefined;
   const headers: Record<string, string> = {};
-  
+
   if (token) headers['Authorization'] = `Bearer ${token}`;
-  
+
   // Add Auth0 user info to headers for backend
   if (auth0UserInfo?.auth0Id) {
     headers['x-auth0-id'] = auth0UserInfo.auth0Id;
@@ -61,13 +61,13 @@ export async function authHeaders(opts?: { multipart?: boolean }) {
   if (auth0UserInfo?.name) {
     headers['x-auth0-name'] = auth0UserInfo.name;
   }
-  
+
   // ONLY set JSON for non-multipart calls
   if (!opts?.multipart) {
     headers['Content-Type'] = 'application/json';
     headers['Accept'] = 'application/json';
   }
-  
+
   return headers;
 }
 
@@ -128,13 +128,13 @@ export async function recordGame(pointsEarned: number) {
     console.log(`Attempting to POST to: ${API_BASE_URL}/api/games/record`);
     const headers = await authHeaders();
     console.log('Auth headers:', headers);
-    
+
     const res = await fetch(`${API_BASE_URL}/api/games/record`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ xp: pointsEarned, coins: 1 }),
     });
-    
+
     console.log('Response status:', res.status);
     if (!res.ok) {
       const errorText = await res.text();
@@ -239,7 +239,7 @@ export async function ensureUser(auth0Id: string, email: string, name?: string) 
     console.log(`Attempting to POST to: ${API_BASE_URL}/api/users/ensure`);
     const headers = await authHeaders();
     console.log('Auth headers:', headers);
-    
+
     const res = await fetch(`${API_BASE_URL}/api/users/ensure`, {
       method: 'POST',
       headers,
@@ -249,7 +249,7 @@ export async function ensureUser(auth0Id: string, email: string, name?: string) 
         name: name || email || 'User',
       }),
     });
-    
+
     console.log('Response status:', res.status);
     if (!res.ok) {
       const errorText = await res.text();
@@ -271,11 +271,11 @@ export async function getMyProfile(): Promise<Profile> {
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const p = await res.json();
-  return { 
-    firstName: p.firstName || '', 
-    lastName: p.lastName || '', 
-    email: p.email || '', 
-    dob: p.dob ? new Date(p.dob).toISOString().slice(0,10) : null,
+  return {
+    firstName: p.firstName || '',
+    lastName: p.lastName || '',
+    email: p.email || '',
+    dob: p.dob ? new Date(p.dob).toISOString().slice(0, 10) : null,
     gender: p.gender || null,
     phoneCountryCode: p.phoneCountryCode || '+91',
     phoneNumber: p.phoneNumber || ''
@@ -286,28 +286,28 @@ export async function updateMyProfile(data: { firstName: string; lastName?: stri
   try {
     console.log('updateMyProfile called with data:', data);
     console.log('API_BASE_URL:', API_BASE_URL);
-    
+
     const headers = await authHeaders();
     console.log('Auth headers:', headers);
-    
+
     const url = `${API_BASE_URL}/api/me/profile`;
     console.log('Making POST request to:', url);
-    
+
     const res = await fetch(url, {
       method: 'POST',
       headers,
       body: JSON.stringify(data),
     });
-    
+
     console.log('Response status:', res.status);
     console.log('Response ok:', res.ok);
-    
+
     if (!res.ok) {
       const errorText = await res.text();
       console.error('Error response:', errorText);
       throw new Error(`HTTP ${res.status}: ${errorText}`);
     }
-    
+
     const result = await res.json();
     console.log('Response data:', result);
     return result;
@@ -352,7 +352,7 @@ export async function fetchSkillProfile(): Promise<{ skills: SkillProfileEntry[]
 async function authedFetch(endpoint: string, options: RequestInit = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
   const headers = await authHeaders();
-  
+
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -360,12 +360,12 @@ async function authedFetch(endpoint: string, options: RequestInit = {}) {
       ...options.headers,
     },
   });
-  
+
   if (!res.ok) {
     const errorText = await res.text();
     throw new Error(`HTTP ${res.status}: ${errorText}`);
   }
-  
+
   return res.json();
 }
 
@@ -400,7 +400,7 @@ export async function deleteCustomTile(id: string): Promise<{ ok: true }> {
 }
 
 // Contact API
-export async function sendContactMessage(payload: { subject?: string; message: string }): Promise<{ ok: boolean; id?: string }>{
+export async function sendContactMessage(payload: { subject?: string; message: string }): Promise<{ ok: boolean; id?: string }> {
   return authedFetch('/api/me/contact', {
     method: 'POST',
     body: JSON.stringify(payload),
