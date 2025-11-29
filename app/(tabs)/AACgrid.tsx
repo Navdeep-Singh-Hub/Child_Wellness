@@ -591,6 +591,32 @@ function scheduleSpeak(text: string, lang: LangKey, delayMs = 30, rate?: number)
   }
 }
 
+// --- speak sentence by small chunks/words for kid-friendly pacing
+function speakStretched(sentence: string, lang: LangKey, wordGapMs = 420, rate?: number) {
+  // Normalize spaces and split into words - but keep short punctuation chunks together
+  const raw = sentence.trim().replace(/\s+/g, ' ');
+  // Optionally chunk into phrases of up to N words to keep it natural
+  const CHUNK_SIZE = 3; // speak in small phrase chunks (3 words each) for better flow
+  const words = raw.split(' ');
+  const chunks: string[] = [];
+  for (let i = 0; i < words.length; i += CHUNK_SIZE) {
+    chunks.push(words.slice(i, i + CHUNK_SIZE).join(' '));
+  }
+
+  // limit to a reasonable number of chunks to avoid infinite long sequences
+  const MAX_CHUNKS = 80;
+  const list = chunks.slice(0, MAX_CHUNKS);
+
+  list.forEach((chunk, i) => {
+    const delay = i * (wordGapMs + 10);
+    scheduleSpeak(chunk, lang, delay, rate);
+  });
+
+  if (chunks.length > MAX_CHUNKS) {
+    scheduleSpeak('...', lang, list.length * (wordGapMs + 10), rate);
+  }
+}
+
 // ---------- Small helpers ----------
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -1019,6 +1045,10 @@ export default function AACGrid() {
   const [activeCat, setActiveCat] = useState<Category['id']>('transport');
   const [selectedLang, setSelectedLang] = useState<LangKey>('en-US');
   const [speechRate, setSpeechRate] = useState<number>(DEFAULT_SPEECH_RATE);
+  // UI controls for speech speed/mode
+  type SpeechMode = 'normal' | 'slow' | 'stretched';
+  const [speechMode, setSpeechMode] = useState<SpeechMode>('normal');
+  const [speedModalOpen, setSpeedModalOpen] = useState(false);
   const [available, setAvailable] = useState<Record<LangKey, boolean>>({
     'en-US': true, 'hi-IN': false, 'pa-IN': false, 'ta-IN': false, 'te-IN': false,
   });
@@ -1335,14 +1365,28 @@ export default function AACGrid() {
     Haptics.selectionAsync();
     setUtterance(s => [...s, t.id]);
     const say = tWord(t.id, selectedLang);
-    scheduleSpeak(say, selectedLang, 10, speechRate);
+
+    if (speechMode === 'stretched') {
+      // speak small phrase chunk with more gap
+      speakStretched(say, selectedLang, 420, speechRate);
+    } else {
+      // normal or slow -> single chunk but with adjusted rate
+      scheduleSpeak(say, selectedLang, 10, speechRate);
+    }
   };
 
   const onSpeakSentence = () => {
     if (!utterance.length) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const say = tSentence(utterance, selectedLang);
-    scheduleSpeak(say, selectedLang, 10, speechRate);
+
+    if (speechMode === 'stretched') {
+      // speak the whole sentence stretched (phrase-by-phrase)
+      speakStretched(say, selectedLang, 420, speechRate);
+    } else {
+      // normal sentence (single speak) - speechRate will be used
+      scheduleSpeak(say, selectedLang, 10, speechRate);
+    }
   };
 
   const theme = CATEGORY_STYLES[activeCat];
@@ -1412,6 +1456,25 @@ export default function AACGrid() {
             <Ionicons name="globe-outline" size={18} color={theme.text} />
             <Text style={{ fontWeight: '800', color: theme.text }}>
               {LANG_OPTIONS.find(l => l.key === selectedLang)?.label || 'Language'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Speech speed button */}
+          <TouchableOpacity
+            onPress={() => setSpeedModalOpen(true)}
+            style={{
+              marginLeft: 6,
+              width: 44,
+              height: 44,
+              borderRadius: 10,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#111827',
+            }}
+            accessibilityLabel="Speech speed"
+          >
+            <Text style={{ color: '#fff', fontWeight: '700' }}>
+              {speechMode === 'stretched' ? 'S' : speechMode === 'slow' ? 'Sl' : 'N'}
             </Text>
           </TouchableOpacity>
 
@@ -1899,6 +1962,42 @@ export default function AACGrid() {
             </TouchableOpacity>
           </View>
         </View>
+      </Modal>
+
+      {/* Speed control modal */}
+      <Modal visible={speedModalOpen} transparent animationType="fade" onRequestClose={() => setSpeedModalOpen(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 20 }} onPress={() => setSpeedModalOpen(false)}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 16 }}>
+            <Text style={{ fontWeight: '800', fontSize: 18, marginBottom: 8 }}>Speech speed</Text>
+            <Text style={{ color: '#6B7280', marginBottom: 12 }}>Mode: {speechMode}</Text>
+
+            {/* Slider row (use plain RN Slider or a few buttons if you don't have slider) */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <TouchableOpacity onPress={() => { setSpeechRate(0.64); setSpeechMode('slow'); }} style={{ padding: 8, borderRadius: 8, backgroundColor: '#F3F4F6' }}>
+                <Text>Slow</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setSpeechRate(DEFAULT_SPEECH_RATE); setSpeechMode('normal'); }} style={{ padding: 8, borderRadius: 8, backgroundColor: '#F3F4F6' }}>
+                <Text>Normal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setSpeechRate(0.82); setSpeechMode('stretched'); }} style={{ padding: 8, borderRadius: 8, backgroundColor: '#F3F4F6' }}>
+                <Text>Stretched</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ marginTop: 12 }}>
+              <Text style={{ fontSize: 12, color: '#6B7280' }}>Fine tune speed: {speechRate.toFixed(2)}</Text>
+              {/* If you have @react-native-community/slider installed use that; otherwise keep presets */}
+              {/* Example using a simple RN slider placeholder: */}
+              {/* <Slider minimumValue={0.5} maximumValue={1.0} value={speechRate} onValueChange={(v)=>setSpeechRate(Number(v.toFixed(2)))} step={0.01} /> */}
+            </View>
+
+            <View style={{ marginTop: 12, flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+              <TouchableOpacity onPress={() => setSpeedModalOpen(false)} style={{ padding: 8 }}>
+                <Text style={{ color: '#6B7280' }}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Pressable>
       </Modal>
 
       {/* Toast root (keep this as the last child in the screen) */}
