@@ -60,11 +60,75 @@ function BigButton({
   );
 }
 
-function speak(text: string) {
+// Better TTS helpers: speak one piece, or a sequence (question + options)
+// defaultRate chosen to be slightly slower for kids — tweak as needed
+const DEFAULT_TTS_RATE = 0.78;
+let lastSpokenQuestionId: number | string | null = null;
+let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+
+function clearScheduledSpeech() {
+  scheduledSpeechTimers.forEach(t => clearTimeout(t));
+  scheduledSpeechTimers = [];
   try {
     Speech.stop();
-    Speech.speak(text, { rate: 0.98 });
   } catch { }
+}
+
+function speak(text: string, rate = DEFAULT_TTS_RATE) {
+  try {
+    clearScheduledSpeech();
+    Speech.speak(text, { rate });
+  } catch (e) {
+    console.warn('speak error', e);
+  }
+}
+
+/**
+ * Speak a sequence of short phrases with small gaps.
+ * texts: array of strings to speak in order.
+ * rate: speech rate (0.4..1.5)
+ * gapMs: gap between phrases (ms)
+ */
+function speakSequence(texts: string[], rate = DEFAULT_TTS_RATE, gapMs = 450) {
+  try {
+    clearScheduledSpeech();
+    if (!texts || texts.length === 0) return;
+    // speak first immediately
+    Speech.speak(texts[0], { rate });
+
+    // subsequent items with small timeout
+    for (let i = 1; i < texts.length; i++) {
+      const delay = gapMs * i;
+      const timer = setTimeout(() => {
+        // Note: calling Speech.speak repeatedly queues new utterances on native platforms
+        Speech.speak(texts[i], { rate });
+      }, delay);
+      scheduledSpeechTimers.push(timer);
+    }
+  } catch (e) {
+    console.warn('speakSequence error', e);
+  }
+}
+
+/** Helper to speak a question + options nicely:
+ * e.g. question: "What number is this?"
+ * options: ["One", "Two", "Three"]
+ */
+function speakQuestionWithOptions(
+  question: string,
+  options: string[],
+  questionId?: number | string | null,
+  rate = DEFAULT_TTS_RATE
+) {
+  if (!question) return;
+  if (questionId !== undefined && questionId !== null && lastSpokenQuestionId === questionId) return;
+  lastSpokenQuestionId = questionId ?? null;
+
+  // speak the question first, then "Options:" then each option
+  const optionTexts = options && options.length
+    ? ['Options:', ...options.map((o, idx) => `${idx + 1}. ${o}`)]
+    : [];
+  speakSequence([question, ...optionTexts], rate, 600); // 600ms gap — comfortable for kids
 }
 
 // -------------------- Data pools (safe, kid-friendly) --------------------
@@ -988,6 +1052,25 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
     transform: [{ scale: levelUpScale.value }],
   }));
 
+  const handleBack = () => {
+    clearScheduledSpeech();
+    lastSpokenQuestionId = null;
+    onBack();
+  };
+
+  useEffect(() => {
+    if (!currentQuestion) return;
+    // speak question + options when it becomes active - pass an id (index) so the speak helper is idempotent
+    speakQuestionWithOptions(currentQuestion.question, currentQuestion.options, currentQuestionIndex);
+  }, [currentQuestion, currentQuestionIndex]);
+
+  useEffect(() => {
+    return () => {
+      clearScheduledSpeech();
+      lastSpokenQuestionId = null;
+    };
+  }, []);
+
   // Question pools with increasing difficulty
   const generateQuestion = useCallback((category: QuestionCategory, difficulty: number): Question => {
     const colors = ['Red', 'Blue', 'Green', 'Yellow', 'Orange', 'Purple', 'Pink', 'Brown', 'Black', 'White', 'Gray', 'Cyan', 'Magenta', 'Turquoise', 'Maroon'];
@@ -1087,6 +1170,8 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
       setCurrentQuestionIndex(0);
       setQuestionsThisLevel(questions.length);
       setCorrectThisLevel(0);
+      // speak first question immediately:
+      if (questions[0]) speakQuestionWithOptions(questions[0].question, questions[0].options, 0);
       questionScale.value = withSpring(1.05, { damping: 12 }, () => {
         questionScale.value = withSpring(1, { damping: 14 });
       });
@@ -1236,7 +1321,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
         <TouchableOpacity
-          onPress={onBack}
+          onPress={handleBack}
           className="absolute top-12 left-6 px-4 py-2 rounded-full"
           style={{ backgroundColor: '#000' }}
         >
@@ -1325,7 +1410,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
   return (
     <SafeAreaView className="flex-1 items-center justify-center p-6" style={{ backgroundColor: `${bgColor}15` }}>
       <TouchableOpacity
-        onPress={onBack}
+        onPress={handleBack}
         className="absolute top-12 left-6 px-4 py-2 rounded-full z-10"
         style={{
           backgroundColor: '#111827',
