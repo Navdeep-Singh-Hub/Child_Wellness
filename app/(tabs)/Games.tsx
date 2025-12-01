@@ -1698,13 +1698,38 @@ function FindEmoji({ onBack }: { onBack: () => void }) {
 
     setTarget(correct);
     setOptions(opts);
-    setFreezeKey(Date.now());   // keep FlatList stable this round
+    const newFreezeKey = Date.now();
+    setFreezeKey(newFreezeKey);   // keep FlatList stable this round
     setFeedback(null);
     setLocked(false);
     pulse();
+    
+    // Speak question with options after state updates
+    setTimeout(() => {
+      const question = "What feeling is this?";
+      const optionLabels = opts.map(opt => 
+        opt.label ?? (typeof opt.id === 'string' ? opt.id.replace(/[_-]+/g, ' ') : String(opt.id))
+      );
+      speakQuestionWithOptions(question, optionLabels, newFreezeKey);
+    }, 100);
   }, [POOL]);
 
   useEffect(() => { if (POOL.length) makeRound(); }, [POOL.length, makeRound]);
+
+  // Handle back navigation with speech cleanup
+  const handleBack = useCallback(() => {
+    clearScheduledSpeech();
+    lastSpokenQuestionId = null;
+    onBack();
+  }, [onBack]);
+
+  // Cleanup speech on unmount
+  useEffect(() => {
+    return () => {
+      clearScheduledSpeech();
+      lastSpokenQuestionId = null;
+    };
+  }, []);
 
   const afterAnswer = (ok: boolean) => {
     if (round >= TOTAL) {
@@ -1750,7 +1775,7 @@ function FindEmoji({ onBack }: { onBack: () => void }) {
   if (!POOL.length || !target || options.length !== 4) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
+        <TouchableOpacity onPress={handleBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
           <Text className="text-white font-semibold">← Back</Text>
         </TouchableOpacity>
         <View className="rounded-3xl p-6 bg-white border border-gray-200">
@@ -1764,7 +1789,7 @@ function FindEmoji({ onBack }: { onBack: () => void }) {
   if (finished && finalScore) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
+        <TouchableOpacity onPress={handleBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
           <Text className="text-white font-semibold">← Back</Text>
         </TouchableOpacity>
 
@@ -1818,7 +1843,7 @@ function FindEmoji({ onBack }: { onBack: () => void }) {
 
   return (
     <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-      <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
+      <TouchableOpacity onPress={handleBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
         <Text className="text-white font-semibold">← Back</Text>
       </TouchableOpacity>
 
