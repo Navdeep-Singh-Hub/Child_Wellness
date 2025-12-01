@@ -21,6 +21,8 @@ app.use(cors());
 app.use(cors({
   origin: [
     'https://child-wellness.vercel.app',
+    'https://autismplay.in',
+    'https://www.autismplay.in',
     'http://localhost:19006',
     'http://localhost:3000',
     'http://localhost:8081',
