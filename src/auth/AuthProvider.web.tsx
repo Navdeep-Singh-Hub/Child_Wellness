@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     domain={domain}
     clientId={clientId}
     authorizationParams={{
-      redirect_uri: window.location.origin,
+      redirect_uri: `${window.location.origin}/${process.env.EXPO_PUBLIC_AUTH_REDIRECT_PATH}`,
       scope: "openid profile email",
       ...(audience ? { audience } : {}),
     }}
