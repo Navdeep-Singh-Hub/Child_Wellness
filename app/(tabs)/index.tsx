@@ -317,56 +317,59 @@ export default function Index() {
       >
         {/* Header Section */}
         <Animated.View style={[styles.header, { opacity: headerOpacity, transform: [{ translateY: headerTranslateY }] }]}>
-          <View>
-            <Text style={styles.greeting}>Hello there! 👋</Text>
-            <Text style={styles.subGreeting}>Ready to learn today?</Text>
+          <View style={styles.headerContent}>
+            <View style={styles.greetingContainer}>
+              <Text style={styles.greeting}>Hello there! 👋</Text>
+              <Text style={styles.subGreeting}>Ready to learn today?</Text>
+            </View>
+            {stats?.levelLabel && (
+              <View style={styles.headerBadge}>
+                <Ionicons name="trophy" size={16} color="#F59E0B" />
+                <Text style={styles.headerBadgeText}>{stats.levelLabel}</Text>
+              </View>
+            )}
           </View>
-          <Pressable
-            onPress={() => router.push('/(tabs)/Profile')}
-            style={styles.profileButton}
-          >
-            <LinearGradient
-              colors={['#3B82F6', '#2563EB']}
-              style={styles.profileGradient}
-            >
-              <Ionicons name="person" size={20} color="#FFF" />
-            </LinearGradient>
-          </Pressable>
         </Animated.View>
 
         {/* Hero Card */}
         <Animated.View style={{ opacity: heroAnim, transform: [{ scale: heroAnim }] }}>
           <GlassCard style={styles.heroCard}>
             <LinearGradient
-              colors={['rgba(59, 130, 246, 0.1)', 'rgba(37, 99, 235, 0.05)']}
+              colors={['rgba(99, 102, 241, 0.12)', 'rgba(139, 92, 246, 0.08)', 'rgba(59, 130, 246, 0.05)']}
               style={StyleSheet.absoluteFill}
             />
             <View style={styles.heroContent}>
               <View style={styles.heroLeft}>
                 <View style={styles.levelBadge}>
-                  <Ionicons name="shield-checkmark" size={14} color="#059669" />
+                  <Ionicons name="sparkles" size={16} color="#6366F1" />
                   <Text style={styles.levelText}>{stats.levelLabel || 'Explorer'}</Text>
                 </View>
-                <Text style={styles.heroTitle}>Keep it up!</Text>
-                <Text style={styles.heroSubtitle}>You're doing great today.</Text>
+                <Text style={styles.heroTitle}>Keep it up! 🎉</Text>
+                <Text style={styles.heroSubtitle}>You're making amazing progress today.</Text>
 
                 <View style={styles.heroStatsRow}>
                   <View style={styles.heroStat}>
-                    <Ionicons name="flame" size={16} color="#F97316" />
+                    <Ionicons name="flame" size={18} color="#F97316" />
                     <Text style={styles.heroStatText}>{streak} Day Streak</Text>
                   </View>
+                  {bestStreak > streak && (
+                    <View style={[styles.heroStat, { marginLeft: 8 }]}>
+                      <Ionicons name="trophy" size={16} color="#F59E0B" />
+                      <Text style={[styles.heroStatText, { color: '#92400E' }]}>Best: {bestStreak}</Text>
+                    </View>
+                  )}
                 </View>
               </View>
 
               <View style={styles.heroRight}>
                 <AnimatedAccuracyRing
                   value={accuracy}
-                  size={100}
-                  stroke={10}
-                  progressColor="#4F46E5"
-                  trackColor="rgba(79, 70, 229, 0.1)"
+                  size={110}
+                  stroke={12}
+                  progressColor="#6366F1"
+                  trackColor="rgba(99, 102, 241, 0.15)"
                   label="Accuracy"
-                  durationMs={1000}
+                  durationMs={1200}
                 />
               </View>
             </View>
@@ -483,7 +486,7 @@ export default function Index() {
           </View>
         </GlassCard>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 40 }} />
       </Animated.ScrollView>
     </View>
   );
@@ -523,43 +526,62 @@ const styles = StyleSheet.create({
     left: -100,
   },
   scrollContent: {
-    padding: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    padding: 24,
+    paddingTop: Platform.OS === 'ios' ? 64 : 44,
+    paddingBottom: 32,
   },
   header: {
+    marginBottom: 28,
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
+    alignItems: 'flex-start',
+  },
+  greetingContainer: {
+    flex: 1,
   },
   greeting: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#1E293B',
-    letterSpacing: -0.5,
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: -0.8,
+    marginBottom: 6,
   },
   subGreeting: {
-    fontSize: 16,
+    fontSize: 17,
     color: '#64748B',
-    marginTop: 4,
+    fontWeight: '500',
   },
-  profileButton: {
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  profileGradient: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  headerBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#FFFBEB',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  headerBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#92400E',
+    marginLeft: 6,
   },
   heroCard: {
-    padding: 24,
-    minHeight: 160,
+    padding: 28,
+    minHeight: 180,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
   },
   heroContent: {
     flexDirection: 'row',
@@ -567,36 +589,41 @@ const styles = StyleSheet.create({
   },
   heroLeft: {
     flex: 1,
+    paddingRight: 12,
   },
   heroRight: {
-    marginLeft: 16,
+    marginLeft: 8,
   },
   levelBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(5, 150, 105, 0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     alignSelf: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(99, 102, 241, 0.2)',
   },
   levelText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#059669',
-    marginLeft: 4,
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#4F46E5',
+    marginLeft: 6,
   },
   heroTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1E293B',
-    marginBottom: 4,
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#0F172A',
+    marginBottom: 6,
+    letterSpacing: -0.5,
   },
   heroSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#64748B',
-    marginBottom: 16,
+    marginBottom: 18,
+    fontWeight: '500',
   },
   heroStatsRow: {
     flexDirection: 'row',
@@ -612,112 +639,139 @@ const styles = StyleSheet.create({
     borderColor: '#FFEDD5',
   },
   heroStatText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: '#C2410C',
     marginLeft: 6,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginTop: 32,
-    marginBottom: 16,
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 36,
+    marginBottom: 18,
+    letterSpacing: -0.3,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-  },
-  statBlockContainer: {
-    width: (width - 52) / 2,
-  },
-  statCard: {
-    padding: 16,
-    alignItems: 'center',
-    height: 140,
-    justifyContent: 'center',
-  },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1E293B',
-  },
-  statLabel: {
-    fontSize: 13,
-    color: '#64748B',
-    marginTop: 4,
-  },
-  quickActionsContainer: {
-    paddingRight: 20,
-  },
-  actionCard: {
-    width: 140,
-    height: 160,
-    borderRadius: 24,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  actionGradient: {
-    flex: 1,
-    padding: 16,
     justifyContent: 'space-between',
   },
-  actionIcon: {
+  statBlockContainer: {
+    width: '48%', // Use percentage for better responsiveness
+    marginBottom: 12,
+  },
+  statCard: {
+    padding: 20,
+    alignItems: 'center',
+    height: 150,
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  iconCircle: {
     width: 48,
     height: 48,
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  statValue: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: -0.5,
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#64748B',
+    marginTop: 6,
+    fontWeight: '600',
+  },
+  quickActionsContainer: {
+    paddingRight: 20,
+  },
+  actionCard: {
+    width: 150,
+    height: 170,
+    borderRadius: 28,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+  },
+  actionGradient: {
+    flex: 1,
+    padding: 18,
+    justifyContent: 'space-between',
+  },
+  actionIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
   actionLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 8,
   },
   actionCaption: {
-    fontSize: 12,
-    color: '#94A3B8',
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '500',
+    marginTop: 4,
   },
   moodContainer: {
-    padding: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   moodRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 8,
   },
   moodButton: {
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 16,
-    borderWidth: 1,
+    padding: 14,
+    borderRadius: 20,
+    borderWidth: 2,
     borderColor: 'transparent',
-    width: (width - 80) / 4,
+    width: (width - 88) / 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   moodEmoji: {
-    fontSize: 24,
-    marginBottom: 8,
+    fontSize: 28,
+    marginBottom: 10,
   },
   moodLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#64748B',
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });
