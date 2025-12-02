@@ -6,8 +6,15 @@ const FALLBACK_BASE = Platform.select({
   default: 'http://localhost:4000', // Default to localhost for web
 });
 
-export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || FALLBACK_BASE!;
+// Normalize API_BASE_URL: remove trailing slash and /api if present
+// (since all endpoints already include /api/)
+let rawBase = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || FALLBACK_BASE!;
+// Remove trailing slash
+rawBase = rawBase.replace(/\/+$/, '');
+// Remove trailing /api if present (to avoid double /api/api/)
+rawBase = rawBase.replace(/\/api$/, '');
+
+export const API_BASE_URL = rawBase;
 
 // Debug log to verify API URL
 console.log('API_BASE_URL =', process.env.EXPO_PUBLIC_API_BASE_URL || FALLBACK_BASE);
