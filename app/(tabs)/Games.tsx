@@ -286,8 +286,19 @@ function TapTiming({ onBack }: { onBack: () => void }) {
     const accuracy = calculatedAccuracy;
     return (
       <SafeAreaView className="flex-1 bg-white">
-        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full z-10" style={{ backgroundColor: '#000' }}>
-          <Text className="text-white font-semibold">← Back</Text>
+        <TouchableOpacity
+          onPress={onBack}
+          className="absolute top-12 left-6 px-4 py-2 rounded-full z-10"
+          style={{
+            backgroundColor: '#111827',
+            shadowColor: '#000',
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 6,
+          }}
+        >
+          <Text className="text-white font-semibold">← Back to Games</Text>
         </TouchableOpacity>
 
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
@@ -352,7 +363,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
           elevation: 6,
         }}
       >
-        <Text className="text-white font-semibold">← Back</Text>
+        <Text className="text-white font-semibold">← Back to Games</Text>
       </TouchableOpacity>
 
       <View style={{
@@ -571,8 +582,19 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
   if (done && finalScore) {
     return (
       <SafeAreaView className="flex-1 bg-white">
-        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full z-10" style={{ backgroundColor: '#000' }}>
-          <Text className="text-white font-semibold">← Back</Text>
+        <TouchableOpacity
+          onPress={onBack}
+          className="absolute top-12 left-6 px-4 py-2 rounded-full z-10"
+          style={{
+            backgroundColor: '#111827',
+            shadowColor: '#000',
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 6,
+          }}
+        >
+          <Text className="text-white font-semibold">← Back to Games</Text>
         </TouchableOpacity>
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
           <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center mt-16">
@@ -619,7 +641,7 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
           elevation: 6,
         }}
       >
-        <Text className="text-white font-semibold">← Back</Text>
+        <Text className="text-white font-semibold">← Back to Games</Text>
       </TouchableOpacity>
 
       <View style={{
@@ -785,8 +807,19 @@ function QuickSort({ onBack }: { onBack: () => void }) {
     const allCorrect = finalScore.correct === finalScore.total;
     return (
       <SafeAreaView className="flex-1 bg-white">
-        <TouchableOpacity onPress={onBack} className="absolute top-12 left-6 px-4 py-2 rounded-full z-10" style={{ backgroundColor: '#000' }}>
-          <Text className="text-white font-semibold">← Back</Text>
+        <TouchableOpacity
+          onPress={onBack}
+          className="absolute top-12 left-6 px-4 py-2 rounded-full z-10"
+          style={{
+            backgroundColor: '#111827',
+            shadowColor: '#000',
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 6,
+          }}
+        >
+          <Text className="text-white font-semibold">← Back to Games</Text>
         </TouchableOpacity>
 
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
@@ -853,7 +886,7 @@ function QuickSort({ onBack }: { onBack: () => void }) {
           elevation: 6,
         }}
       >
-        <Text className="text-white font-semibold">← Back</Text>
+        <Text className="text-white font-semibold">← Back to Games</Text>
       </TouchableOpacity>
 
       <View style={{
@@ -1323,9 +1356,16 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
         <TouchableOpacity
           onPress={handleBack}
           className="absolute top-12 left-6 px-4 py-2 rounded-full"
-          style={{ backgroundColor: '#000' }}
+          style={{
+            backgroundColor: '#111827',
+            shadowColor: '#000',
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 6,
+          }}
         >
-          <Text className="text-white font-semibold">← Back</Text>
+          <Text className="text-white font-semibold">← Back to Games</Text>
         </TouchableOpacity>
 
         <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center">
@@ -1421,7 +1461,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
           elevation: 6,
         }}
       >
-        <Text className="text-white font-semibold">← Back</Text>
+        <Text className="text-white font-semibold">← Back to Games</Text>
       </TouchableOpacity>
 
       {/* Level Up Animation */}
@@ -1775,8 +1815,19 @@ function FindEmoji({ onBack }: { onBack: () => void }) {
   if (!POOL.length || !target || options.length !== 4) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-        <TouchableOpacity onPress={handleBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
-          <Text className="text-white font-semibold">← Back</Text>
+        <TouchableOpacity
+          onPress={handleBack}
+          className="absolute top-12 left-6 px-4 py-2 rounded-full"
+          style={{
+            backgroundColor: '#111827',
+            shadowColor: '#000',
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 6,
+          }}
+        >
+          <Text className="text-white font-semibold">← Back to Games</Text>
         </TouchableOpacity>
         <View className="rounded-3xl p-6 bg-white border border-gray-200">
           <Text>No emoji tiles found.</Text>
@@ -1789,8 +1840,19 @@ function FindEmoji({ onBack }: { onBack: () => void }) {
   if (finished && finalScore) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-        <TouchableOpacity onPress={handleBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
-          <Text className="text-white font-semibold">← Back</Text>
+        <TouchableOpacity
+          onPress={handleBack}
+          className="absolute top-12 left-6 px-4 py-2 rounded-full"
+          style={{
+            backgroundColor: '#111827',
+            shadowColor: '#000',
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 6,
+          }}
+        >
+          <Text className="text-white font-semibold">← Back to Games</Text>
         </TouchableOpacity>
 
         <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center">
@@ -1843,8 +1905,19 @@ function FindEmoji({ onBack }: { onBack: () => void }) {
 
   return (
     <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
-      <TouchableOpacity onPress={handleBack} className="absolute top-12 left-6 px-4 py-2 rounded-full" style={{ backgroundColor: '#000' }}>
-        <Text className="text-white font-semibold">← Back</Text>
+      <TouchableOpacity
+        onPress={handleBack}
+        className="absolute top-12 left-6 px-4 py-2 rounded-full"
+        style={{
+          backgroundColor: '#111827',
+          shadowColor: '#000',
+          shadowOpacity: 0.2,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: 6,
+        }}
+      >
+        <Text className="text-white font-semibold">← Back to Games</Text>
       </TouchableOpacity>
 
       <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center">
