@@ -16,7 +16,7 @@ import {
   Easing,
   Platform,
   Pressable,
-  RefreshControl,
+  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -84,7 +84,6 @@ const GlassCard = ({ children, style, intensity = 0.92, animated = false, glow =
 export default function Index() {
   const router = useRouter();
   const [stats, setStats] = useState<StatsResponse | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [skillProfile, setSkillProfile] = useState<SkillProfileEntry[] | null>(null);
   const [selectedMood, setSelectedMood] = useState<MoodOption>('focused');
 
@@ -123,12 +122,6 @@ export default function Index() {
       loadStats();
     }, [loadStats])
   );
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadStats();
-    setRefreshing(false);
-  }, [loadStats]);
 
   // Data
   const xp = stats?.xp ?? 0;
@@ -310,7 +303,7 @@ export default function Index() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <LinearGradient
         colors={['#FDF4FF', '#FAE8FF', '#F0F9FF', '#E0F2FE']}
@@ -327,7 +320,6 @@ export default function Index() {
       <Animated.ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: true }
@@ -531,11 +523,11 @@ export default function Index() {
           <View style={styles.moodRow}>
             {(['energetic', 'focused', 'relaxed', 'celebrating'] as MoodOption[]).map((mood) => {
               const isSelected = selectedMood === mood;
-              const config = {
-                energetic: { emoji: '⚡', color: '#F59E0B', gradient: ['#FEF3C7', '#FDE68A'] },
-                focused: { emoji: '🎯', color: '#8B5CF6', gradient: ['#E9D5FF', '#DDD6FE'] },
-                relaxed: { emoji: '🍃', color: '#10B981', gradient: ['#D1FAE5', '#A7F3D0'] },
-                celebrating: { emoji: '🏆', color: '#EC4899', gradient: ['#FCE7F3', '#FBCFE8'] },
+              const config: { emoji: string; color: string; gradient: [string, string] } = {
+                energetic: { emoji: '⚡', color: '#F59E0B', gradient: ['#FEF3C7', '#FDE68A'] as [string, string] },
+                focused: { emoji: '🎯', color: '#8B5CF6', gradient: ['#E9D5FF', '#DDD6FE'] as [string, string] },
+                relaxed: { emoji: '🍃', color: '#10B981', gradient: ['#D1FAE5', '#A7F3D0'] as [string, string] },
+                celebrating: { emoji: '🏆', color: '#EC4899', gradient: ['#FCE7F3', '#FBCFE8'] as [string, string] },
               }[mood];
 
               return (
@@ -584,7 +576,7 @@ export default function Index() {
 
         <View style={{ height: 40 }} />
       </Animated.ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
