@@ -1,12 +1,20 @@
 // components/game/ResultCard.tsx
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import Animated, { useSharedValue, withTiming, useAnimatedProps } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
+import Lottie from 'lottie-react';
 import { SparkleBurst } from './FX';
 import ReflectionPrompt from './ReflectionPrompt';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+let NativeLottie: any = null;
+if (Platform.OS !== 'web') {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  NativeLottie = require('lottie-react-native').default;
+}
+const celebratoryCat = require('../../assets/animation/black rainbow cat.json');
+const chillCat = require('../../assets/animation/cat Mark loading.json');
 
 export default function ResultCard({
   correct,
@@ -34,8 +42,31 @@ export default function ResultCard({
   const R = 56, C = 2 * Math.PI * R;
   const props: any = useAnimatedProps(() => ({ strokeDashoffset: C * (1 - prog.value) } as any));
 
+  const showCelebration = displayedAccuracy >= 80;
+  const catMessage = showCelebration ? 'Sparkle Cat is proud of you!' : 'Cat is cheering you on!';
+
   return (
     <View style={{ padding: 16 }}>
+      <View style={{ alignItems: 'center', marginBottom: 16 }}>
+        {Platform.OS === 'web' ? (
+          <Lottie
+            animationData={showCelebration ? celebratoryCat : chillCat}
+            loop={!showCelebration}
+            autoplay
+            style={{ width: 200, height: 200 }}
+          />
+        ) : NativeLottie ? (
+          <NativeLottie
+            source={showCelebration ? celebratoryCat : chillCat}
+            autoPlay
+            loop={!showCelebration}
+            style={{ width: 180, height: 180 }}
+          />
+        ) : (
+          <Text style={{ fontSize: 64 }}>{showCelebration ? '😺🎉' : '😺✨'}</Text>
+        )}
+        <Text style={{ marginTop: 8, fontWeight: '700', color: '#6B21A8' }}>{catMessage}</Text>
+      </View>
       <View style={{ alignItems: 'center', marginVertical: 12 }}>
         <View style={{ width: 160, height: 160, alignItems: 'center', justifyContent: 'center' }}>
           <Svg width={160} height={160}>

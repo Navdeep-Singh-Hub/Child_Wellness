@@ -305,42 +305,26 @@ function TapTiming({ onBack }: { onBack: () => void }) {
           <View className="w-full max-w-xl rounded-3xl p-6 bg-white border border-gray-200 items-center mt-16">
             <Text className="text-6xl mb-4">🎯</Text>
             <Text className="text-3xl font-extrabold text-gray-900 mb-2">Game Complete!</Text>
-            <Text className="text-xl text-gray-600 mb-6 text-center">
+            <Text className="text-xl text-gray-600 mb-4 text-center">
               {msg}
             </Text>
 
-            <View className="w-full bg-gray-50 rounded-2xl p-4 mb-4">
-              <View className="flex-row justify-between items-center mb-2">
-                <Text className="text-gray-700 font-semibold">Accuracy:</Text>
-                <Text className="text-gray-900 font-extrabold text-lg">
-                  {Math.max(0, Math.round(accuracy))}%
-                </Text>
-              </View>
-              <View className="flex-row justify-between items-center mb-2">
-                <Text className="text-gray-700 font-semibold">Total XP:</Text>
-                <Text className="text-gray-900 font-extrabold text-lg">{summary.xp}</Text>
-              </View>
-              <View className="flex-row justify-between items-center mb-2">
-                <Text className="text-gray-700 font-semibold">Streak:</Text>
-                <Text className="text-gray-900 font-extrabold text-lg">{summary.streak} days 🔥</Text>
-              </View>
-              <View className="flex-row justify-between items-center">
-                <Text className="text-gray-700 font-semibold">Games Played:</Text>
-                <Text className="text-gray-900 font-extrabold text-lg">{summary.games}</Text>
-              </View>
-            </View>
+            <ResultCard
+              correct={Math.round(accuracy)}
+              total={100}
+              xpAwarded={summary.xp}
+              accuracy={accuracy}
+              logTimestamp={logTimestamp}
+              onPlayAgain={() => {
+                setState('idle');
+                setSummary(null);
+                setMsg(null);
+                setLogTimestamp(null);
+                prefetchRound();
+              }}
+            />
 
-            <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
-
-            <ReflectionPrompt logTimestamp={logTimestamp} />
-
-            <BigButton title="Play Again" color="#2563EB" onPress={() => {
-              setState('idle');
-              setSummary(null);
-              setMsg(null);
-              setLogTimestamp(null);
-              prefetchRound();
-            }} />
+            <Text className="text-green-600 font-semibold text-center mt-4">Saved! XP updated ✅</Text>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -805,6 +789,7 @@ function QuickSort({ onBack }: { onBack: () => void }) {
   // Completion screen
   if (done && finalScore) {
     const allCorrect = finalScore.correct === finalScore.total;
+    const accuracyPct = Math.round((finalScore.correct / finalScore.total) * 100);
     return (
       <SafeAreaView className="flex-1 bg-white">
         <TouchableOpacity
@@ -828,42 +813,26 @@ function QuickSort({ onBack }: { onBack: () => void }) {
             <Text className="text-3xl font-extrabold text-gray-900 mb-2">
               {allCorrect ? 'Perfect Score!' : 'Game Complete!'}
             </Text>
-            <Text className="text-xl text-gray-600 mb-6">
+            <Text className="text-xl text-gray-600 mb-4">
               You got {finalScore.correct} out of {finalScore.total} correct!
             </Text>
 
-            <View className="w-full bg-gray-50 rounded-2xl p-4 mb-4">
-              <View className="flex-row justify-between items-center mb-2">
-                <Text className="text-gray-700 font-semibold">Final Score:</Text>
-                <Text className="text-gray-900 font-extrabold text-lg">
-                  {finalScore.correct}/{finalScore.total}
-                </Text>
-              </View>
-              <View className="flex-row justify-between items-center mb-2">
-                <Text className="text-gray-700 font-semibold">Accuracy:</Text>
-                <Text className="text-gray-900 font-extrabold text-lg">
-                  {Math.round((finalScore.correct / finalScore.total) * 100)}%
-                </Text>
-              </View>
-              <View className="flex-row justify-between items-center">
-                <Text className="text-gray-700 font-semibold">XP Earned:</Text>
-                <Text className="text-green-600 font-extrabold text-lg">+{finalScore.xp} XP</Text>
-              </View>
-            </View>
-
-            <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
-
-            <ReflectionPrompt logTimestamp={logTimestamp} />
-
-            <BigButton title="Play Again" color="#F59E0B" onPress={() => {
-              setQIndex(0);
-              setScore(0);
-              setDone(false);
-              setFinalScore(null);
-              setQsFeedback(null);
-              setLogTimestamp(null);
-              next();
-            }} />
+            <ResultCard
+              correct={finalScore.correct}
+              total={finalScore.total}
+              xpAwarded={finalScore.xp}
+              accuracy={accuracyPct}
+              logTimestamp={logTimestamp}
+              onPlayAgain={() => {
+                setQIndex(0);
+                setScore(0);
+                setDone(false);
+                setFinalScore(null);
+                setQsFeedback(null);
+                setLogTimestamp(null);
+                next();
+              }}
+            />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -1351,6 +1320,7 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
 
   // Game finished screen
   if (gameFinished && finalStats) {
+    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
     return (
       <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
         <TouchableOpacity
@@ -1374,41 +1344,17 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
           <Text className="text-xl text-gray-600 mb-2 text-center">
             You reached Level {finalStats.level}!
           </Text>
-          <Text className="text-lg text-gray-500 mb-6 text-center">
+          <Text className="text-lg text-gray-500 mb-4 text-center">
             {finalStats.correct} out of {finalStats.total} correct
           </Text>
 
-          <View className="w-full bg-gray-50 rounded-2xl p-4 mb-4">
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-gray-700 font-semibold">Final Score:</Text>
-              <Text className="text-gray-900 font-extrabold text-lg">
-                {finalStats.correct}/{finalStats.total}
-              </Text>
-            </View>
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-gray-700 font-semibold">Accuracy:</Text>
-              <Text className="text-gray-900 font-extrabold text-lg">
-                {Math.round((finalStats.correct / finalStats.total) * 100)}%
-              </Text>
-            </View>
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-gray-700 font-semibold">Level Reached:</Text>
-              <Text className="text-purple-600 font-extrabold text-lg">Level {finalStats.level}</Text>
-            </View>
-            <View className="flex-row justify-between items-center">
-              <Text className="text-gray-700 font-semibold">XP Earned:</Text>
-              <Text className="text-green-600 font-extrabold text-lg">+{finalStats.xp} XP</Text>
-            </View>
-          </View>
-
-          <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
-
-          <ReflectionPrompt logTimestamp={logTimestamp} />
-
-          <BigButton
-            title="Play Again"
-            color="#9333EA"
-            onPress={() => {
+          <ResultCard
+            correct={finalStats.correct}
+            total={finalStats.total}
+            xpAwarded={finalStats.xp}
+            accuracy={accuracyPct}
+            logTimestamp={logTimestamp}
+            onPlayAgain={() => {
               setLevel(1);
               setScore(0);
               setCurrentQuestionIndex(0);
@@ -1421,6 +1367,8 @@ function QuizChallenge({ onBack }: { onBack: () => void }) {
               setLogTimestamp(null);
             }}
           />
+
+          <Text className="text-green-600 font-semibold text-center mt-4">Saved! XP updated ✅</Text>
         </View>
       </SafeAreaView>
     );
@@ -1838,6 +1786,7 @@ function FindEmoji({ onBack }: { onBack: () => void }) {
 
   // Game finished - show completion screen
   if (finished && finalScore) {
+    const accuracyPct = Math.round((finalScore.correct / finalScore.total) * 100);
     return (
       <SafeAreaView className="flex-1 items-center justify-center p-6 bg-white">
         <TouchableOpacity
@@ -1860,44 +1809,30 @@ function FindEmoji({ onBack }: { onBack: () => void }) {
           <Text className="text-3xl font-extrabold text-gray-900 mb-2">
             {allCorrect ? 'Perfect Score!' : 'Game Complete!'}
           </Text>
-          <Text className="text-xl text-gray-600 mb-6">
+          <Text className="text-xl text-gray-600 mb-4">
             You got {finalScore.correct} out of {finalScore.total} correct!
           </Text>
 
-          <View className="w-full bg-gray-50 rounded-2xl p-4 mb-4">
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-gray-700 font-semibold">Final Score:</Text>
-              <Text className="text-gray-900 font-extrabold text-lg">
-                {finalScore.correct}/{finalScore.total}
-              </Text>
-            </View>
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-gray-700 font-semibold">Accuracy:</Text>
-              <Text className="text-gray-900 font-extrabold text-lg">
-                {Math.round((finalScore.correct / finalScore.total) * 100)}%
-              </Text>
-            </View>
-            <View className="flex-row justify-between items-center">
-              <Text className="text-gray-700 font-semibold">XP Earned:</Text>
-              <Text className="text-green-600 font-extrabold text-lg">+{finalScore.xp} XP</Text>
-            </View>
-          </View>
+          <ResultCard
+            correct={finalScore.correct}
+            total={finalScore.total}
+            xpAwarded={finalScore.xp}
+            accuracy={accuracyPct}
+            logTimestamp={logTimestamp}
+            onPlayAgain={() => {
+              setRound(1);
+              setScore(0);
+              setFinished(false);
+              setAllCorrect(false);
+              setFinalScore(null);
+              setFeedback(null);
+              setLocked(false);
+              setLogTimestamp(null);
+              makeRound();
+            }}
+          />
 
-          <Text className="text-green-600 font-semibold text-center mb-4">Saved! XP updated ✅</Text>
-
-          <ReflectionPrompt logTimestamp={logTimestamp} />
-
-          <BigButton title="Play Again" color="#2563EB" onPress={() => {
-            setRound(1);
-            setScore(0);
-            setFinished(false);
-            setAllCorrect(false);
-            setFinalScore(null);
-            setFeedback(null);
-            setLocked(false);
-            setLogTimestamp(null);
-            makeRound();
-          }} />
+          <Text className="text-green-600 font-semibold text-center mt-4">Saved! XP updated ✅</Text>
         </View>
       </SafeAreaView>
     );
