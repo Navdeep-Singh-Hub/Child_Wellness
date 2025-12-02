@@ -1,9 +1,9 @@
 // components/game/ResultCard.tsx
-import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, Platform } from 'react-native';
-import Animated, { useSharedValue, withTiming, useAnimatedProps } from 'react-native-reanimated';
-import Svg, { Circle } from 'react-native-svg';
 import Lottie from 'lottie-react';
+import React, { useEffect } from 'react';
+import { Platform, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { useAnimatedProps, useSharedValue, withTiming } from 'react-native-reanimated';
+import Svg, { Circle } from 'react-native-svg';
 import { SparkleBurst } from './FX';
 import ReflectionPrompt from './ReflectionPrompt';
 
@@ -46,41 +46,70 @@ export default function ResultCard({
   const catMessage = showCelebration ? 'Sparkle Cat is proud of you!' : 'Cat is cheering you on!';
 
   return (
-    <View style={{ padding: 16 }}>
-      <View style={{ alignItems: 'center', marginBottom: 16 }}>
+    <View
+      style={{
+        alignSelf: 'center',
+        width: '100%',
+        maxWidth: 380,
+        paddingVertical: 20,
+        paddingHorizontal: 18,
+        borderRadius: 24,
+        backgroundColor: '#FFFFFF',
+        shadowColor: '#000',
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 6,
+      }}
+    >
+      <View style={{ alignItems: 'center', marginBottom: 12 }}>
         {Platform.OS === 'web' ? (
           <Lottie
             animationData={showCelebration ? celebratoryCat : chillCat}
             loop={!showCelebration}
             autoplay
-            style={{ width: 200, height: 200 }}
+            style={{ width: 180, height: 180 }}
           />
         ) : NativeLottie ? (
           <NativeLottie
             source={showCelebration ? celebratoryCat : chillCat}
             autoPlay
             loop={!showCelebration}
-            style={{ width: 180, height: 180 }}
+            style={{ width: 170, height: 170 }}
           />
         ) : (
           <Text style={{ fontSize: 64 }}>{showCelebration ? '😺🎉' : '😺✨'}</Text>
         )}
-        <Text style={{ marginTop: 8, fontWeight: '700', color: '#6B21A8' }}>{catMessage}</Text>
+        <Text
+          style={{
+            marginTop: 6,
+            fontWeight: '700',
+            color: '#6B21A8',
+            fontSize: 14,
+            textAlign: 'center',
+          }}
+        >
+          {catMessage}
+        </Text>
       </View>
-      <View style={{ alignItems: 'center', marginVertical: 12 }}>
-        <View style={{ width: 160, height: 160, alignItems: 'center', justifyContent: 'center' }}>
-          <Svg width={160} height={160}>
-            <Circle cx={80} cy={80} r={R} stroke="#E5E7EB" strokeWidth={10} fill="none" />
+      <View style={{ alignItems: 'center', marginBottom: 12 }}>
+        <View style={{ width: 150, height: 150, alignItems: 'center', justifyContent: 'center' }}>
+          <Svg width={150} height={150}>
+            <Circle cx={75} cy={75} r={R} stroke="#E5E7EB" strokeWidth={10} fill="none" />
             <AnimatedCircle
-              cx={80} cy={80} r={R}
+              cx={75} cy={75} r={R}
               stroke="#22C55E" strokeWidth={10} fill="none"
               strokeDasharray={`${C} ${C}`} animatedProps={props}
               strokeLinecap="round"
             />
           </Svg>
           <View style={{ position: 'absolute', alignItems: 'center' }}>
-            <Text style={{ fontSize: 30, fontWeight: '900', color: '#111827' }}>{correct}/{total}</Text>
-            <Text style={{ marginTop: 2, color: '#6B7280', fontWeight: '700' }}>{displayedAccuracy}%</Text>
+            <Text style={{ fontSize: 26, fontWeight: '900', color: '#111827' }}>
+              {correct}/{total}
+            </Text>
+            <Text style={{ marginTop: 2, color: '#6B7280', fontWeight: '700', fontSize: 13 }}>
+              {displayedAccuracy}%
+            </Text>
           </View>
         </View>
         <SparkleBurst visible={pct >= 0.6} color={pct >= 0.8 ? '#F59E0B' : '#22C55E'} />
@@ -88,33 +117,75 @@ export default function ResultCard({
 
       {/* Additional stats */}
       {(xpAwarded !== undefined || accuracy !== undefined) && (
-        <View style={{ backgroundColor: '#F9FAFB', borderRadius: 12, padding: 12, marginBottom: 12, width: '100%' }}>
+        <View
+          style={{
+            backgroundColor: '#F9FAFB',
+            borderRadius: 16,
+            paddingVertical: 10,
+            paddingHorizontal: 14,
+            marginBottom: 10,
+            width: '100%',
+          }}
+        >
           {xpAwarded !== undefined && (
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-              <Text style={{ color: '#6B7280', fontWeight: '600' }}>XP Earned:</Text>
-              <Text style={{ color: '#111827', fontWeight: '800' }}>+{xpAwarded}</Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 6,
+              }}
+            >
+              <Text style={{ color: '#6B7280', fontWeight: '600', fontSize: 13 }}>XP Earned</Text>
+              <Text style={{ color: '#16A34A', fontWeight: '800', fontSize: 14 }}>+{xpAwarded} XP</Text>
             </View>
           )}
           {accuracy !== undefined && (
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={{ color: '#6B7280', fontWeight: '600' }}>Accuracy:</Text>
-              <Text style={{ color: '#111827', fontWeight: '800' }}>{displayedAccuracy}%</Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ color: '#6B7280', fontWeight: '600', fontSize: 13 }}>Accuracy</Text>
+              <Text style={{ color: '#111827', fontWeight: '800', fontSize: 14 }}>{displayedAccuracy}%</Text>
             </View>
           )}
         </View>
       )}
 
-      <View style={{ alignItems: 'center', gap: 10, marginTop: 6 }}>
+      <View style={{ alignItems: 'center', gap: 8, marginTop: 8, width: '100%' }}>
         {onPlayAgain && (
-          <TouchableOpacity onPress={onPlayAgain} activeOpacity={0.9}
-            style={{ backgroundColor:'#2563EB', paddingHorizontal:16, paddingVertical:12, borderRadius:12 }}>
-            <Text style={{ color:'#fff', fontWeight:'800' }}>Play again</Text>
+          <TouchableOpacity
+            onPress={onPlayAgain}
+            activeOpacity={0.9}
+            style={{
+              backgroundColor: '#2563EB',
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderRadius: 999,
+              alignSelf: 'stretch',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Play again</Text>
           </TouchableOpacity>
         )}
         {onHome && (
-          <TouchableOpacity onPress={onHome} activeOpacity={0.9}
-            style={{ backgroundColor:'#E5E7EB', paddingHorizontal:16, paddingVertical:12, borderRadius:12 }}>
-            <Text style={{ color:'#111827', fontWeight:'800' }}>Back to games</Text>
+          <TouchableOpacity
+            onPress={onHome}
+            activeOpacity={0.9}
+            style={{
+              backgroundColor: '#E5E7EB',
+              paddingHorizontal: 16,
+              paddingVertical: 11,
+              borderRadius: 999,
+              alignSelf: 'stretch',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: '#111827', fontWeight: '800', fontSize: 14 }}>Back to games</Text>
           </TouchableOpacity>
         )}
       </View>
