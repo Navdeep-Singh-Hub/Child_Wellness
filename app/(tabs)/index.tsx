@@ -16,6 +16,7 @@ import {
   Easing,
   Platform,
   Pressable,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -84,8 +85,11 @@ const GlassCard = ({ children, style, intensity = 0.92, animated = false, glow =
 export default function Index() {
   const router = useRouter();
   const [stats, setStats] = useState<StatsResponse | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [skillProfile, setSkillProfile] = useState<SkillProfileEntry[] | null>(null);
   const [selectedMood, setSelectedMood] = useState<MoodOption>('focused');
+  const [canScroll, setCanScroll] = useState(true);
+  const [layoutHeight, setLayoutHeight] = useState(0);
 
   // Animations
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -122,6 +126,12 @@ export default function Index() {
       loadStats();
     }, [loadStats])
   );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadStats();
+    setRefreshing(false);
+  }, [loadStats]);
 
   // Data
   const xp = stats?.xp ?? 0;
@@ -320,11 +330,21 @@ export default function Index() {
       <Animated.ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: true }
         )}
         scrollEventThrottle={16}
+        scrollEnabled={Platform.OS === 'android' ? canScroll : true}
+        onLayout={(e) => {
+          setLayoutHeight(e.nativeEvent.layout.height);
+        }}
+        onContentSizeChange={(_, contentHeight) => {
+          if (Platform.OS === 'android') {
+            setCanScroll(contentHeight > layoutHeight + 24);
+          }
+        }}
       >
         {/* Enhanced Header Section */}
         <Animated.View style={[styles.header, { opacity: headerOpacity, transform: [{ translateY: headerTranslateY }] }]}>
