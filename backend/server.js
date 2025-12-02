@@ -18,6 +18,29 @@ const app = express();
 // Behind proxies (Vercel/Render/Nginx), respect X-Forwarded-* headers
 app.set('trust proxy', true);
 
+// Handle OPTIONS requests FIRST - before any middleware that might redirect
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'https://child-wellness.vercel.app',
+    'https://autismplay.in',
+    'https://www.autismplay.in',
+    'http://localhost:19006',
+    'http://localhost:3000',
+    'http://localhost:8081',
+    'http://localhost:8080',
+  ];
+  
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-auth0-id, x-auth0-email, x-auth0-name');
+    res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
+  }
+  res.status(204).end();
+});
+
 // CORS configuration - single instance with proper options
 app.use(cors({
   origin: [
@@ -90,11 +113,6 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   const url = `${proto}://${host}${rel}`;
   console.log('Generated URL:', url);
   res.json({ ok: true, url, path: rel });
-});
-
-// Handle OPTIONS requests for CORS preflight (before JSON middleware)
-app.options('*', (req, res) => {
-  res.status(204).end();
 });
 
 // JSON middleware - MUST be after multer routes
