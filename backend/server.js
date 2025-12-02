@@ -17,7 +17,8 @@ import { tapGame } from './routes/tapGame.js';
 const app = express();
 // Behind proxies (Vercel/Render/Nginx), respect X-Forwarded-* headers
 app.set('trust proxy', true);
-app.use(cors());
+
+// CORS configuration - single instance with proper options
 app.use(cors({
   origin: [
     'https://child-wellness.vercel.app',
@@ -28,7 +29,11 @@ app.use(cors({
     'http://localhost:8081',
     'http://localhost:8080',
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth0-id', 'x-auth0-email', 'x-auth0-name'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 // TODO: Auth0 JWT middleware goes here
@@ -85,6 +90,11 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   const url = `${proto}://${host}${rel}`;
   console.log('Generated URL:', url);
   res.json({ ok: true, url, path: rel });
+});
+
+// Handle OPTIONS requests for CORS preflight (before JSON middleware)
+app.options('*', (req, res) => {
+  res.status(204).end();
 });
 
 // JSON middleware - MUST be after multer routes
