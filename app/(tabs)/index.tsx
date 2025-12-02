@@ -90,6 +90,7 @@ export default function Index() {
   const [selectedMood, setSelectedMood] = useState<MoodOption>('focused');
   const [canScroll, setCanScroll] = useState(true);
   const [layoutHeight, setLayoutHeight] = useState(0);
+  const enablePullToRefresh = Platform.OS !== 'android' || canScroll;
 
   // Animations
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -328,9 +329,18 @@ export default function Index() {
       <View style={[styles.blob, styles.blob3]} />
 
       <Animated.ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { flexGrow: 1 }]}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
+        showsHorizontalScrollIndicator={false}
+        overScrollMode="never"
+        bounces={false}
+        directionalLockEnabled
+        alwaysBounceHorizontal={false}
+        contentInsetAdjustmentBehavior="never"
+        refreshControl={enablePullToRefresh
+          ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />
+          : undefined
+        }
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: true }
