@@ -98,10 +98,7 @@ export default function AnimatedAccuracyRing({
 
   return (
     <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-      {label ? (
-        <Text style={{ position: "absolute", top: 8, fontSize: 12, color: "#6b7280" }}>{label}</Text>
-      ) : null}
-      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ position: "absolute" }}>
         <Circle
           cx={size / 2}
           cy={size / 2}
@@ -125,9 +122,30 @@ export default function AnimatedAccuracyRing({
           />
         ) : null}
       </Svg>
-      {showPercentText ? (
-        <Text style={{ position: "absolute", fontWeight: "800", fontSize: 18 }}>{v}%</Text>
-      ) : null}
+      <View style={{ 
+        position: "absolute", 
+        alignItems: "center", 
+        justifyContent: "center",
+        width: size,
+        height: size,
+      }}>
+        {showPercentText ? (
+          <Text style={{ 
+            fontWeight: "900", 
+            fontSize: size * 0.2, 
+            color: "#0F172A",
+            letterSpacing: -1,
+          }}>{v}%</Text>
+        ) : null}
+        {label ? (
+          <Text style={{ 
+            fontSize: size * 0.12, 
+            color: "#64748B",
+            fontWeight: "600",
+            marginTop: showPercentText ? 4 : 0,
+          }}>{label}</Text>
+        ) : null}
+      </View>
     </View>
   );
 }

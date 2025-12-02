@@ -34,6 +34,7 @@ type StatBlock = {
   icon: IoniconName;
   accent: string;
   gradient: [string, string];
+  glowColor: string;
 };
 type QuickAction = {
   key: string;
@@ -41,16 +42,10 @@ type QuickAction = {
   caption: string;
   icon: IoniconName;
   accent: string;
+  gradient: [string, string];
   onPress: () => void;
 };
 type MoodOption = 'energetic' | 'focused' | 'relaxed' | 'celebrating';
-type MoodCard = {
-  key: string;
-  title: string;
-  description: string;
-  gradient: [string, string];
-  icon: IoniconName;
-};
 
 // --- Helpers ---
 const { width } = Dimensions.get('window');
@@ -60,22 +55,22 @@ const compactNumber = (n: number) =>
 
 // --- Components ---
 
-// Glass Card Component
-const GlassCard = ({ children, style, intensity = 0.8, animated = false }: any) => {
+// Enhanced Glass Card Component with better styling
+const GlassCard = ({ children, style, intensity = 0.92, animated = false, glow = false }: any) => {
   const ViewComponent = animated ? Animated.View : View;
   return (
     <ViewComponent
       style={[
         {
           backgroundColor: `rgba(255, 255, 255, ${intensity})`,
-          borderRadius: 24,
-          borderWidth: 1,
-          borderColor: 'rgba(255, 255, 255, 0.6)',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.05,
-          shadowRadius: 12,
-          elevation: 4,
+          borderRadius: 28,
+          borderWidth: 1.5,
+          borderColor: 'rgba(255, 255, 255, 0.8)',
+          shadowColor: glow ? '#6366F1' : '#000',
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: glow ? 0.2 : 0.08,
+          shadowRadius: glow ? 24 : 16,
+          elevation: 8,
           overflow: 'hidden',
         },
         style,
@@ -98,6 +93,7 @@ export default function Index() {
   const heroAnim = useRef(new Animated.Value(0)).current;
   const statAnimations = useRef<Record<string, Animated.Value>>({});
   const quickAnimations = useRef<Record<string, Animated.Value>>({});
+  const moodAnimations = useRef<Record<string, Animated.Value>>({});
 
   const isLoadingRef = useRef(false);
   const prevAccRef = useRef<number>(0);
@@ -149,8 +145,9 @@ export default function Index() {
       value: compactNumber(xp),
       caption: 'Total collected',
       icon: 'flash',
-      accent: '#4F46E5',
-      gradient: ['#EEF2FF', '#C7D2FE'],
+      accent: '#8B5CF6',
+      gradient: ['#F3E8FF', '#E9D5FF'],
+      glowColor: '#8B5CF6',
     },
     {
       key: 'coins',
@@ -159,7 +156,8 @@ export default function Index() {
       caption: 'Rewards',
       icon: 'star',
       accent: '#F59E0B',
-      gradient: ['#FFFBEB', '#FDE68A'],
+      gradient: ['#FFFBEB', '#FEF3C7'],
+      glowColor: '#F59E0B',
     },
     {
       key: 'streak',
@@ -169,6 +167,7 @@ export default function Index() {
       icon: 'flame',
       accent: '#F97316',
       gradient: ['#FFF7ED', '#FFEDD5'],
+      glowColor: '#F97316',
     },
     {
       key: 'hearts',
@@ -177,7 +176,8 @@ export default function Index() {
       caption: 'Remaining',
       icon: 'heart',
       accent: '#EF4444',
-      gradient: ['#FEF2F2', '#FECACA'],
+      gradient: ['#FEF2F2', '#FEE2E2'],
+      glowColor: '#EF4444',
     },
   ], [xp, coins, hearts, streak]);
 
@@ -189,6 +189,7 @@ export default function Index() {
         caption: 'Earn XP',
         icon: 'game-controller',
         accent: '#8B5CF6',
+        gradient: ['#8B5CF6', '#7C3AED'],
         onPress: () => router.push('/(tabs)/Games'),
       },
       {
@@ -197,6 +198,7 @@ export default function Index() {
         caption: 'Practice',
         icon: 'grid',
         accent: '#0EA5E9',
+        gradient: ['#0EA5E9', '#0284C7'],
         onPress: () => router.push('/(tabs)/AACgrid'),
       },
       {
@@ -205,6 +207,7 @@ export default function Index() {
         caption: 'Discover',
         icon: 'map',
         accent: '#10B981',
+        gradient: ['#10B981', '#059669'],
         onPress: () => router.push('/(tabs)/SmartExplorer'),
       },
       {
@@ -213,6 +216,7 @@ export default function Index() {
         caption: 'Update',
         icon: 'person',
         accent: '#EC4899',
+        gradient: ['#EC4899', '#DB2777'],
         onPress: () => router.push('/(tabs)/Profile'),
       },
     ];
@@ -226,28 +230,40 @@ export default function Index() {
   quickActions.forEach(a => {
     if (!quickAnimations.current[a.key]) quickAnimations.current[a.key] = new Animated.Value(0);
   });
+  (['energetic', 'focused', 'relaxed', 'celebrating'] as MoodOption[]).forEach(m => {
+    if (!moodAnimations.current[m]) moodAnimations.current[m] = new Animated.Value(0);
+  });
 
   useEffect(() => {
     if (!stats) return;
 
     Animated.timing(heroAnim, {
       toValue: 1,
-      duration: 800,
-      easing: Easing.out(Easing.back(1.5)),
+      duration: 1000,
+      easing: Easing.out(Easing.back(1.2)),
       useNativeDriver: true,
     }).start();
 
-    const statStagger = Animated.stagger(100, statBlocks.map(b =>
+    const statStagger = Animated.stagger(120, statBlocks.map(b =>
       Animated.spring(statAnimations.current[b.key], {
         toValue: 1,
-        friction: 8,
-        tension: 40,
+        friction: 7,
+        tension: 50,
         useNativeDriver: true,
       })
     ));
 
-    const quickStagger = Animated.stagger(80, quickActions.map(a =>
+    const quickStagger = Animated.stagger(100, quickActions.map(a =>
       Animated.spring(quickAnimations.current[a.key], {
+        toValue: 1,
+        friction: 6,
+        tension: 60,
+        useNativeDriver: true,
+      })
+    ));
+
+    const moodStagger = Animated.stagger(80, (['energetic', 'focused', 'relaxed', 'celebrating'] as MoodOption[]).map(m =>
+      Animated.spring(moodAnimations.current[m], {
         toValue: 1,
         friction: 8,
         tension: 50,
@@ -256,22 +272,24 @@ export default function Index() {
     ));
 
     Animated.sequence([
-      Animated.delay(200),
+      Animated.delay(300),
       statStagger,
+      Animated.delay(150),
+      quickStagger,
       Animated.delay(100),
-      quickStagger
+      moodStagger
     ]).start();
 
   }, [stats]);
 
   const headerTranslateY = scrollY.interpolate({
-    inputRange: [0, 100],
-    outputRange: [0, -50],
+    inputRange: [0, 120],
+    outputRange: [0, -60],
     extrapolate: 'clamp',
   });
 
   const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 100],
+    inputRange: [0, 120],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
@@ -280,11 +298,11 @@ export default function Index() {
     return (
       <View style={styles.loadingContainer}>
         <LinearGradient
-          colors={['#F0F9FF', '#E0F2FE', '#DBEAFE']}
+          colors={['#FDF4FF', '#FAE8FF', '#F5D0FE']}
           style={StyleSheet.absoluteFill}
         />
         <Animated.View style={{ transform: [{ scale: 1.2 }] }}>
-          <Ionicons name="sparkles" size={48} color="#3B82F6" />
+          <Ionicons name="sparkles" size={56} color="#8B5CF6" />
         </Animated.View>
         <Text style={styles.loadingText}>Loading your world...</Text>
       </View>
@@ -295,68 +313,96 @@ export default function Index() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <LinearGradient
-        colors={['#F0F9FF', '#E0F2FE', '#F5F3FF']}
+        colors={['#FDF4FF', '#FAE8FF', '#F0F9FF', '#E0F2FE']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Background Decorative Blobs */}
+      {/* Enhanced Background Decorative Elements */}
       <View style={[styles.blob, styles.blob1]} />
       <View style={[styles.blob, styles.blob2]} />
+      <View style={[styles.blob, styles.blob3]} />
 
       <Animated.ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#8B5CF6" />}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: true }
         )}
         scrollEventThrottle={16}
       >
-        {/* Header Section */}
+        {/* Enhanced Header Section */}
         <Animated.View style={[styles.header, { opacity: headerOpacity, transform: [{ translateY: headerTranslateY }] }]}>
           <View style={styles.headerContent}>
             <View style={styles.greetingContainer}>
               <Text style={styles.greeting}>Hello there! 👋</Text>
-              <Text style={styles.subGreeting}>Ready to learn today?</Text>
+              <Text style={styles.subGreeting}>Ready for an amazing day?</Text>
             </View>
             {stats?.levelLabel && (
-              <View style={styles.headerBadge}>
-                <Ionicons name="trophy" size={16} color="#F59E0B" />
-                <Text style={styles.headerBadgeText}>{stats.levelLabel}</Text>
-              </View>
+              <GlassCard style={styles.headerBadge} intensity={0.95}>
+                <LinearGradient
+                  colors={['#FEF3C7', '#FDE68A']}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={styles.headerBadgeContent}>
+                  <Ionicons name="trophy" size={18} color="#F59E0B" />
+                  <Text style={styles.headerBadgeText}>{stats.levelLabel}</Text>
+                </View>
+              </GlassCard>
             )}
           </View>
         </Animated.View>
 
-        {/* Hero Card */}
-        <Animated.View style={{ opacity: heroAnim, transform: [{ scale: heroAnim }] }}>
-          <GlassCard style={styles.heroCard}>
+        {/* Enhanced Hero Card */}
+        <Animated.View style={{ 
+          opacity: heroAnim, 
+          transform: [{ scale: heroAnim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] 
+        }}>
+          <GlassCard style={styles.heroCard} glow={true}>
             <LinearGradient
-              colors={['rgba(99, 102, 241, 0.12)', 'rgba(139, 92, 246, 0.08)', 'rgba(59, 130, 246, 0.05)']}
+              colors={['rgba(139, 92, 246, 0.15)', 'rgba(124, 58, 237, 0.1)', 'rgba(99, 102, 241, 0.08)']}
               style={StyleSheet.absoluteFill}
             />
             <View style={styles.heroContent}>
               <View style={styles.heroLeft}>
-                <View style={styles.levelBadge}>
-                  <Ionicons name="sparkles" size={16} color="#6366F1" />
-                  <Text style={styles.levelText}>{stats.levelLabel || 'Explorer'}</Text>
-                </View>
+                <GlassCard style={styles.levelBadge} intensity={0.9}>
+                  <LinearGradient
+                    colors={['rgba(139, 92, 246, 0.2)', 'rgba(124, 58, 237, 0.15)']}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={styles.levelBadgeContent}>
+                    <Ionicons name="sparkles" size={18} color="#8B5CF6" />
+                    <Text style={styles.levelText}>{stats.levelLabel || 'Explorer'}</Text>
+                  </View>
+                </GlassCard>
                 <Text style={styles.heroTitle}>Keep it up! 🎉</Text>
                 <Text style={styles.heroSubtitle}>You're making amazing progress today.</Text>
 
                 <View style={styles.heroStatsRow}>
-                  <View style={styles.heroStat}>
-                    <Ionicons name="flame" size={18} color="#F97316" />
-                    <Text style={styles.heroStatText}>{streak} Day Streak</Text>
-                  </View>
-                  {bestStreak > streak && (
-                    <View style={[styles.heroStat, { marginLeft: 8 }]}>
-                      <Ionicons name="trophy" size={16} color="#F59E0B" />
-                      <Text style={[styles.heroStatText, { color: '#92400E' }]}>Best: {bestStreak}</Text>
+                  <GlassCard style={styles.heroStat} intensity={0.95}>
+                    <LinearGradient
+                      colors={['#FFF7ED', '#FFEDD5']}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <View style={styles.heroStatContent}>
+                      <Ionicons name="flame" size={20} color="#F97316" />
+                      <Text style={styles.heroStatText}>{streak} Day{streak !== 1 ? 's' : ''}</Text>
                     </View>
+                  </GlassCard>
+                  {bestStreak > streak && (
+                    <GlassCard style={[styles.heroStat, { marginLeft: 10 }]} intensity={0.95}>
+                      <LinearGradient
+                        colors={['#FFFBEB', '#FEF3C7']}
+                        style={StyleSheet.absoluteFill}
+                      />
+                      <View style={styles.heroStatContent}>
+                        <Ionicons name="trophy" size={18} color="#F59E0B" />
+                        <Text style={[styles.heroStatText, { color: '#92400E' }]}>Best: {bestStreak}</Text>
+                      </View>
+                    </GlassCard>
                   )}
                 </View>
               </View>
@@ -364,19 +410,19 @@ export default function Index() {
               <View style={styles.heroRight}>
                 <AnimatedAccuracyRing
                   value={accuracy}
-                  size={110}
-                  stroke={12}
-                  progressColor="#6366F1"
-                  trackColor="rgba(99, 102, 241, 0.15)"
+                  size={130}
+                  stroke={14}
+                  progressColor="#8B5CF6"
+                  trackColor="rgba(139, 92, 246, 0.2)"
                   label="Accuracy"
-                  durationMs={1200}
+                  durationMs={1500}
                 />
               </View>
             </View>
           </GlassCard>
         </Animated.View>
 
-        {/* Stats Grid */}
+        {/* Enhanced Stats Grid */}
         <Text style={styles.sectionTitle}>Your Progress</Text>
         <View style={styles.statsGrid}>
           {statBlocks.map((block) => (
@@ -390,29 +436,36 @@ export default function Index() {
                     {
                       translateY: statAnimations.current[block.key].interpolate({
                         inputRange: [0, 1],
-                        outputRange: [50, 0]
+                        outputRange: [60, 0]
+                      })
+                    },
+                    {
+                      scale: statAnimations.current[block.key].interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.8, 1]
                       })
                     }
                   ]
                 }
               ]}
             >
-              <GlassCard style={styles.statCard}>
+              <GlassCard style={styles.statCard} intensity={0.95}>
                 <LinearGradient
                   colors={block.gradient}
-                  style={[StyleSheet.absoluteFill, { opacity: 0.5 }]}
+                  style={[StyleSheet.absoluteFill, { opacity: 0.6 }]}
                 />
                 <View style={[styles.iconCircle, { backgroundColor: block.accent }]}>
-                  <Ionicons name={block.icon} size={20} color="#FFF" />
+                  <Ionicons name={block.icon} size={24} color="#FFF" />
                 </View>
                 <Text style={styles.statValue}>{block.value}</Text>
                 <Text style={styles.statLabel}>{block.title}</Text>
+                <Text style={styles.statCaption}>{block.caption}</Text>
               </GlassCard>
             </Animated.View>
           ))}
         </View>
 
-        {/* Quick Actions */}
+        {/* Enhanced Quick Actions */}
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <ScrollView
           horizontal
@@ -425,7 +478,20 @@ export default function Index() {
               key={action.key}
               style={{
                 opacity: quickAnimations.current[action.key],
-                transform: [{ scale: quickAnimations.current[action.key] }],
+                transform: [
+                  { 
+                    scale: quickAnimations.current[action.key].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.7, 1]
+                    })
+                  },
+                  {
+                    translateX: quickAnimations.current[action.key].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [50, 0]
+                    })
+                  }
+                ],
                 marginRight: 16,
               }}
             >
@@ -433,54 +499,84 @@ export default function Index() {
                 onPress={action.onPress}
                 style={({ pressed }) => [
                   styles.actionCard,
-                  pressed && { transform: [{ scale: 0.95 }] }
+                  pressed && { transform: [{ scale: 0.96 }] }
                 ]}
               >
                 <LinearGradient
-                  colors={['#FFFFFF', '#F8FAFC']}
+                  colors={action.gradient}
                   style={styles.actionGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
                 >
-                  <View style={[styles.actionIcon, { backgroundColor: `${action.accent}15` }]}>
-                    <Ionicons name={action.icon} size={24} color={action.accent} />
+                  <View style={[styles.actionIcon, { backgroundColor: 'rgba(255, 255, 255, 0.3)' }]}>
+                    <Ionicons name={action.icon} size={28} color="#FFF" />
                   </View>
-                  <Text style={styles.actionLabel}>{action.label}</Text>
-                  <Text style={styles.actionCaption}>{action.caption}</Text>
+                  <View style={styles.actionTextContainer}>
+                    <Text style={styles.actionLabel}>{action.label}</Text>
+                    <Text style={styles.actionCaption}>{action.caption}</Text>
+                  </View>
                 </LinearGradient>
               </Pressable>
             </Animated.View>
           ))}
         </ScrollView>
 
-        {/* Mood Selector */}
+        {/* Enhanced Mood Selector */}
         <Text style={styles.sectionTitle}>How are you feeling?</Text>
-        <GlassCard style={styles.moodContainer}>
+        <GlassCard style={styles.moodContainer} intensity={0.95}>
+          <LinearGradient
+            colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
+            style={StyleSheet.absoluteFill}
+          />
           <View style={styles.moodRow}>
             {(['energetic', 'focused', 'relaxed', 'celebrating'] as MoodOption[]).map((mood) => {
               const isSelected = selectedMood === mood;
               const config = {
-                energetic: { emoji: '⚡', color: '#F59E0B' },
-                focused: { emoji: '🎯', color: '#6366F1' },
-                relaxed: { emoji: '🍃', color: '#10B981' },
-                celebrating: { emoji: '🏆', color: '#EC4899' },
+                energetic: { emoji: '⚡', color: '#F59E0B', gradient: ['#FEF3C7', '#FDE68A'] },
+                focused: { emoji: '🎯', color: '#8B5CF6', gradient: ['#E9D5FF', '#DDD6FE'] },
+                relaxed: { emoji: '🍃', color: '#10B981', gradient: ['#D1FAE5', '#A7F3D0'] },
+                celebrating: { emoji: '🏆', color: '#EC4899', gradient: ['#FCE7F3', '#FBCFE8'] },
               }[mood];
 
               return (
-                <Pressable
+                <Animated.View
                   key={mood}
-                  onPress={() => setSelectedMood(mood)}
-                  style={[
-                    styles.moodButton,
-                    isSelected && { backgroundColor: `${config.color}15`, borderColor: config.color }
-                  ]}
+                  style={{
+                    flex: 1,
+                    opacity: moodAnimations.current[mood],
+                    transform: [
+                      {
+                        scale: moodAnimations.current[mood].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.5, 1]
+                        })
+                      }
+                    ]
+                  }}
                 >
-                  <Text style={styles.moodEmoji}>{config.emoji}</Text>
-                  <Text style={[
-                    styles.moodLabel,
-                    isSelected && { color: config.color, fontWeight: '700' }
-                  ]}>
-                    {mood.charAt(0).toUpperCase() + mood.slice(1)}
-                  </Text>
-                </Pressable>
+                  <Pressable
+                    onPress={() => setSelectedMood(mood)}
+                    style={({ pressed }) => [
+                      styles.moodButton,
+                      isSelected && styles.moodButtonSelected,
+                      pressed && { transform: [{ scale: 0.95 }] }
+                    ]}
+                  >
+                    {isSelected && (
+                      <LinearGradient
+                        colors={config.gradient}
+                        style={StyleSheet.absoluteFill}
+                      />
+                    )}
+                    <Text style={styles.moodEmoji}>{config.emoji}</Text>
+                    <Text style={[
+                      styles.moodLabel,
+                      isSelected && { color: config.color, fontWeight: '800' }
+                    ]}>
+                      {mood.charAt(0).toUpperCase() + mood.slice(1)}
+                    </Text>
+                  </Pressable>
+                </Animated.View>
               );
             })}
           </View>
@@ -495,7 +591,7 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F9FF',
+    backgroundColor: '#FDF4FF',
   },
   loadingContainer: {
     flex: 1,
@@ -503,35 +599,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#3B82F6',
-    fontWeight: '600',
+    marginTop: 20,
+    fontSize: 18,
+    color: '#8B5CF6',
+    fontWeight: '700',
   },
   blob: {
     position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    opacity: 0.4,
+    width: 350,
+    height: 350,
+    borderRadius: 175,
+    opacity: 0.3,
   },
   blob1: {
-    backgroundColor: '#C7D2FE',
-    top: -100,
-    right: -100,
+    backgroundColor: '#E9D5FF',
+    top: -150,
+    right: -150,
   },
   blob2: {
-    backgroundColor: '#FECACA',
-    bottom: -50,
-    left: -100,
+    backgroundColor: '#FBCFE8',
+    bottom: -100,
+    left: -150,
+  },
+  blob3: {
+    backgroundColor: '#BFDBFE',
+    top: '40%',
+    right: -100,
+    width: 250,
+    height: 250,
+    borderRadius: 125,
   },
   scrollContent: {
     padding: 24,
-    paddingTop: Platform.OS === 'ios' ? 64 : 44,
-    paddingBottom: 32,
+    paddingTop: Platform.OS === 'ios' ? 70 : 50,
+    paddingBottom: 40,
   },
   header: {
-    marginBottom: 28,
+    marginBottom: 32,
   },
   headerContent: {
     flexDirection: 'row',
@@ -542,236 +646,231 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   greeting: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: '900',
-    color: '#0F172A',
-    letterSpacing: -0.8,
-    marginBottom: 6,
+    color: '#1E1B4B',
+    letterSpacing: -1,
+    marginBottom: 8,
   },
   subGreeting: {
-    fontSize: 17,
+    fontSize: 18,
     color: '#64748B',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   headerBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+  },
+  headerBadgeContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFBEB',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-    shadowColor: '#F59E0B',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   headerBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '800',
     color: '#92400E',
-    marginLeft: 6,
+    marginLeft: 8,
   },
   heroCard: {
-    padding: 28,
-    minHeight: 180,
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 8,
+    padding: 32,
+    minHeight: 200,
   },
   heroContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   heroLeft: {
     flex: 1,
-    paddingRight: 12,
+    paddingRight: 16,
   },
   heroRight: {
     marginLeft: 8,
   },
   levelBadge: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginBottom: 16,
+  },
+  levelBadgeContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    alignSelf: 'flex-start',
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(99, 102, 241, 0.2)',
   },
   levelText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '800',
-    color: '#4F46E5',
-    marginLeft: 6,
+    color: '#6D28D9',
+    marginLeft: 8,
   },
   heroTitle: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 6,
-    letterSpacing: -0.5,
+    color: '#1E1B4B',
+    marginBottom: 8,
+    letterSpacing: -0.8,
   },
   heroSubtitle: {
-    fontSize: 15,
+    fontSize: 16,
     color: '#64748B',
-    marginBottom: 18,
-    fontWeight: '500',
+    marginBottom: 20,
+    fontWeight: '600',
   },
   heroStatsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   heroStat: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  heroStatContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF7ED',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#FFEDD5',
   },
   heroStatText: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '800',
     color: '#C2410C',
-    marginLeft: 6,
+    marginLeft: 8,
   },
   sectionTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginTop: 36,
-    marginBottom: 18,
-    letterSpacing: -0.3,
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#1E1B4B',
+    marginTop: 40,
+    marginBottom: 20,
+    letterSpacing: -0.5,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    gap: 12,
   },
   statBlockContainer: {
-    width: '48%', // Use percentage for better responsiveness
-    marginBottom: 12,
+    width: (width - 60) / 2,
   },
   statCard: {
-    padding: 20,
+    padding: 24,
     alignItems: 'center',
-    height: 150,
+    minHeight: 170,
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
   },
   iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 6,
   },
   statValue: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '900',
-    color: '#0F172A',
-    letterSpacing: -0.5,
+    color: '#1E1B4B',
+    letterSpacing: -1,
+    marginBottom: 4,
   },
   statLabel: {
-    fontSize: 14,
-    color: '#64748B',
-    marginTop: 6,
-    fontWeight: '600',
+    fontSize: 16,
+    color: '#475569',
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  statCaption: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '500',
   },
   quickActionsContainer: {
     paddingRight: 20,
   },
   actionCard: {
-    width: 150,
-    height: 170,
-    borderRadius: 28,
+    width: 160,
+    height: 180,
+    borderRadius: 32,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.8)',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
   },
   actionGradient: {
     flex: 1,
-    padding: 18,
+    padding: 20,
     justifyContent: 'space-between',
   },
   actionIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  actionTextContainer: {
+    marginTop: 'auto',
   },
   actionLabel: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginTop: 8,
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFF',
+    marginBottom: 4,
   },
   actionCaption: {
     fontSize: 13,
-    color: '#64748B',
-    fontWeight: '500',
-    marginTop: 4,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '600',
   },
   moodContainer: {
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
   },
   moodRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: 10,
   },
   moodButton: {
     alignItems: 'center',
-    padding: 14,
-    borderRadius: 20,
+    padding: 16,
+    borderRadius: 24,
     borderWidth: 2,
+    borderColor: 'rgba(148, 163, 184, 0.3)',
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    overflow: 'hidden',
+  },
+  moodButtonSelected: {
     borderColor: 'transparent',
-    width: (width - 88) / 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6,
   },
   moodEmoji: {
-    fontSize: 28,
-    marginBottom: 10,
+    fontSize: 32,
+    marginBottom: 12,
   },
   moodLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#64748B',
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });
