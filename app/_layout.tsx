@@ -27,13 +27,7 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <AuthTokenProvider>
-        <Stack>
-          <Stack.Screen name="(public)/index" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)/Profile" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)/complete-profile" options={{ headerShown: false }} />
-        </Stack>
+        <Stack screenOptions={{ headerShown: false }} />
       </AuthTokenProvider>
     </AuthProvider>
   );
