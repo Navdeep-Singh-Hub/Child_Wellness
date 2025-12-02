@@ -329,7 +329,8 @@ export default function Index() {
       <View style={[styles.blob, styles.blob3]} />
 
       <Animated.ScrollView
-        contentContainerStyle={[styles.scrollContent, { flexGrow: 1 }]}
+        style={{ flex: 1, backgroundColor: 'transparent' }}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
         overScrollMode="never"
