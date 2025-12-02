@@ -159,7 +159,7 @@ export default function RootIndex() {
             >
               <Image source={images.logo} style={styles.logo} />
             </LinearGradient>
-            <Text style={styles.logoText}>Child Wellness</Text>
+            <Text style={styles.logoText}>Autism Play</Text>
           </View>
           <LoginButton />
         </View>
