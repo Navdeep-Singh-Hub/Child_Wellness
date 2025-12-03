@@ -1,4 +1,5 @@
 import AnimatedAccuracyRing from '@/components/AnimatedAccuracyRing';
+import { images } from '@/constants/images';
 import {
   fetchMyStats,
   fetchSkillProfile,
@@ -9,11 +10,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import Lottie from 'lottie-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Animated,
   Dimensions,
   Easing,
+  Image,
   Platform,
   Pressable,
   RefreshControl,
@@ -51,6 +55,13 @@ type MoodOption = 'energetic' | 'focused' | 'relaxed' | 'celebrating';
 // --- Helpers ---
 const { width } = Dimensions.get('window');
 const isSmall = width < 380;
+const homeProgressLoaderAnimation = require('@/assets/animation/loading.json');
+
+let NativeLottie: any = null;
+if (Platform.OS !== 'web') {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  NativeLottie = require('lottie-react-native').default;
+}
 const compactNumber = (n: number) =>
   Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
 
@@ -81,6 +92,46 @@ const GlassCard = ({ children, style, intensity = 0.92, animated = false, glow =
     </ViewComponent>
   );
 };
+
+function HomeLoadingContent() {
+  const loaderSize = width > 500 ? 320 : 240;
+  return (
+    <View style={styles.homeLoadingContainer}>
+      <View style={styles.homeLoaderBadge}>
+        <Image source={images.logo} style={styles.homeLoaderBadgeLogo} />
+      </View>
+      <View style={styles.homeLoaderCard}>
+        <HomeLoadingAnimation size={loaderSize} />
+      </View>
+    </View>
+  );
+}
+
+function HomeLoadingAnimation({ size = 240 }: { size?: number }) {
+  if (Platform.OS === 'web') {
+    return (
+      <Lottie
+        animationData={homeProgressLoaderAnimation}
+        loop
+        autoplay
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+
+  if (NativeLottie) {
+    return (
+      <NativeLottie
+        source={homeProgressLoaderAnimation}
+        autoPlay
+        loop
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+
+  return <ActivityIndicator size="large" color="#8B5CF6" />;
+}
 
 export default function Index() {
   const router = useRouter();
@@ -300,16 +351,16 @@ export default function Index() {
 
   if (!stats) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" />
         <LinearGradient
-          colors={['#FDF4FF', '#FAE8FF', '#F5D0FE']}
+          colors={['#FDF4FF', '#FAE8FF', '#F0F9FF', '#E0F2FE']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
-        <Animated.View style={{ transform: [{ scale: 1.2 }] }}>
-          <Ionicons name="sparkles" size={56} color="#8B5CF6" />
-        </Animated.View>
-        <Text style={styles.loadingText}>Loading your world...</Text>
-      </View>
+        <HomeLoadingContent />
+      </SafeAreaView>
     );
   }
 
@@ -616,6 +667,45 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FDF4FF',
     overflow: 'hidden',
+  },
+  homeLoadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 24,
+    paddingTop: 120,
+  },
+  homeLoaderBadge: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    shadowColor: '#3B82F6',
+    shadowOpacity: 0.25,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
+  },
+  homeLoaderBadgeLogo: {
+    width: 48,
+    height: 48,
+  },
+  homeLoaderCard: {
+    width: width > 500 ? 340 : 270,
+    height: width > 500 ? 340 : 270,
+    borderRadius: 40,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.12,
+    shadowRadius: 32,
+    shadowOffset: { width: 0, height: 20 },
+    elevation: 14,
   },
   loadingContainer: {
     flex: 1,

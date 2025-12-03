@@ -2,7 +2,6 @@ import { useAuth } from "@/app/_layout";
 import { getMyProfile } from "@/utils/api";
 import { Redirect } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, View } from "react-native";
 
 const hasMinPhone = (p: any) => String(p?.phoneNumber || "").replace(/\D/g, "").length >= 10;
 
@@ -32,14 +31,6 @@ export default function RequireCompleteProfile({ children }: { children: React.R
       alive = false;
     };
   }, [session]);
-
-  if (status === "waiting-auth" || status === "checking") {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F8FAFC" }}>
-        <ActivityIndicator size="large" color="#2563EB" />
-      </View>
-    );
-  }
 
   if (status === "incomplete") {
     return <Redirect href="/(auth)/complete-profile" />;

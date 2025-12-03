@@ -4,6 +4,7 @@ import { getMyProfile } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect } from 'expo-router';
+import Lottie from 'lottie-react';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -20,6 +21,13 @@ import {
   View,
 } from 'react-native';
 import LoginButton from '../comonents/login';
+
+const progressLoaderAnimation = require('@/assets/animation/loading.json');
+
+let NativeLottie: any = null;
+if (Platform.OS !== 'web') {
+  NativeLottie = require('lottie-react-native').default;
+}
 
 export default function RootIndex() {
   const { session } = useAuth();
@@ -89,28 +97,7 @@ export default function RootIndex() {
             colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
             style={StyleSheet.absoluteFillObject}
           />
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <View style={{
-              width: 80,
-              height: 80,
-              borderRadius: 40,
-              backgroundColor: '#3B82F6',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 20,
-              shadowColor: '#3B82F6',
-              shadowOpacity: 0.3,
-              shadowRadius: 16,
-              shadowOffset: { width: 0, height: 8 },
-              elevation: 8,
-            }}>
-              <Image source={images.logo} style={{ width: 48, height: 48 }} />
-            </View>
-            <ActivityIndicator size="large" color="#3B82F6" />
-            <Text style={{ marginTop: 16, fontSize: 16, fontWeight: '600', color: '#64748B' }}>
-              Setting things up...
-            </Text>
-          </View>
+        <AuthLoadingContent />
         </SafeAreaView>
       );
     }
@@ -124,9 +111,7 @@ export default function RootIndex() {
           colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
           style={StyleSheet.absoluteFillObject}
         />
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-        </View>
+        <AuthLoadingContent />
       </SafeAreaView>
     );
   }
@@ -265,6 +250,46 @@ export default function RootIndex() {
   );
 }
 
+const AuthLoadingContent = () => {
+  const loaderSize = width > 500 ? 320 : 240;
+  return (
+    <View style={styles.authLoadingContainer}>
+      <View style={styles.loaderBadge}>
+        <Image source={images.logo} style={styles.loaderBadgeLogo} />
+      </View>
+      <View style={styles.loaderCard}>
+        <LoadingAnimation size={loaderSize} />
+      </View>
+    </View>
+  );
+};
+
+const LoadingAnimation = ({ size = 240 }: { size?: number }) => {
+  if (Platform.OS === 'web') {
+    return (
+      <Lottie
+        animationData={progressLoaderAnimation}
+        loop
+        autoplay
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+
+  if (NativeLottie) {
+    return (
+      <NativeLottie
+        source={progressLoaderAnimation}
+        autoPlay
+        loop
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+
+  return <ActivityIndicator size="large" color="#3B82F6" />;
+};
+
 // Feature Card Component with animations
 function FeatureCard({
   index,
@@ -342,6 +367,51 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  authLoadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 24,
+    paddingTop: 120,
+  },
+  loaderBadge: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    shadowColor: '#3B82F6',
+    shadowOpacity: 0.25,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
+  },
+  loaderBadgeLogo: {
+    width: 48,
+    height: 48,
+  },
+  loaderCard: {
+    width: width > 500 ? 340 : 270,
+    height: width > 500 ? 340 : 270,
+    borderRadius: 40,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.12,
+    shadowRadius: 32,
+    shadowOffset: { width: 0, height: 20 },
+    elevation: 14,
+  },
+  loaderCopy: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0F172A',
+    marginBottom: 16,
   },
   header: {
     paddingHorizontal: 20,
