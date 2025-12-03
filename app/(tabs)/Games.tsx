@@ -20,7 +20,6 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ResultToast, SparkleBurst, Stepper } from '@/components/game/FX';
-import ReflectionPrompt from '@/components/game/ReflectionPrompt';
 import ResultCard from '@/components/game/ResultCard';
 import { CATEGORIES, type Tile, tileImages } from '@/constants/aac';
 import { icons } from '@/constants/icons';
@@ -170,6 +169,17 @@ function TapTiming({ onBack }: { onBack: () => void }) {
   const prefetch = useRef<{ roundId: string; targetSeconds: number } | null>(null);
   // removed per-second speech
 
+  // === Accuracy helper based on numeric difference (seconds)
+  // - within 1s (<=1.0) => 100%
+  // - 1s -> 10s => linear drop 100 -> 0 (span = 9s)
+  // - >=10s => 0%
+  const calcAccuracyFromSeconds = (diffSec: number) => {
+    if (diffSec <= 1) return 100;
+    if (diffSec >= 10) return 0;
+    const acc = 100 * (1 - (diffSec - 1) / 9); // linear between 1 and 10
+    return Math.max(0, Math.min(100, acc));
+  };
+
   const stopTicker = () => {
     if (raf.current != null) cancelAnimationFrame(raf.current);
     raf.current = null;
@@ -225,31 +235,36 @@ function TapTiming({ onBack }: { onBack: () => void }) {
     stopTicker();
     try {
       const res = await finishTapRound(roundId);
-      const delta = typeof (res as any).deltaMs === 'number' && !isNaN((res as any).deltaMs)
-        ? Math.abs((res as any).deltaMs)
-        : Math.abs(elapsedMs - (targetSec ?? 0) * 1000);
+
+      // === NEW: compute accuracy from the numeric seconds difference (client-side)
+      const elapsedSec = elapsedMs / 1000;
+      const diffSec = Math.abs(elapsedSec - (targetSec ?? 0));
+      const deltaMsFromClient = Math.round(diffSec * 1000);
+
+      // set client-derived tap delta (keeps UI consistent)
+      setTapDeltaMs(deltaMsFromClient);
+
       setState('done');
-      setTapDeltaMs(delta);
       setMsg(
-        `Target ${res.targetSeconds}s · Yours ${(elapsedMs / 1000).toFixed(1)}s · Δ ${Math.round(delta)}ms → +${res.pointsAwarded} XP`
+        `Target ${res.targetSeconds}s · Yours ${(elapsedMs / 1000).toFixed(1)}s · Δ ${deltaMsFromClient}ms → +${res.pointsAwarded} XP`
       );
       setSummary({
         xp: res.stats.points,
         streak: res.stats.streakDays,
         games: res.stats.totalGamesPlayed,
       });
-      // Calculate accuracy based on timing performance using standard formula
-      // Perfect timing (0ms) = 100%, within 500ms = 100%, within 1000ms = 80%, within 1500ms = 60%, within 2000ms = 40%, >2000ms = 20%
-      const timingAccuracy = delta <= 500 ? 100 : delta <= 1000 ? 80 : delta <= 1500 ? 60 : delta <= 2000 ? 40 : 20;
-      // Convert to correct/total format: if accuracy >= 50%, count as correct
-      const isCorrect = timingAccuracy >= 50 ? 1 : 0;
+
+      // Use numeric-difference-based accuracy
+      const accuracy = calcAccuracyFromSeconds(diffSec);
+      // isCorrect: within 1s counts as correct
+      const isCorrect = diffSec <= 1 ? 1 : 0;
 
       try {
         const result = await logGameAndAward({
           type: 'tap',
           correct: isCorrect,
           total: 1,
-          accuracy: timingAccuracy, // Store the actual accuracy percentage
+          accuracy: Math.round(accuracy), // store integer percent
           xpAwarded: res.pointsAwarded,
           durationMs: elapsedMs,
           skillTags: ['timing-control'],
@@ -274,16 +289,14 @@ function TapTiming({ onBack }: { onBack: () => void }) {
 
   // Completion screen
   if (state === 'done' && summary && msg) {
-    // Prefer numeric delta captured from API; fallback to parsing string
-    const deltaMatch = msg.match(/Δ\s*(-?\d+)ms/);
-    const parsed = deltaMatch ? Math.abs(parseInt(deltaMatch[1])) : null;
-    // Use tapDeltaMs if available, otherwise parse from message, fallback to 0
-    const deltaMs = tapDeltaMs !== null && tapDeltaMs !== undefined ? tapDeltaMs : (parsed !== null ? parsed : 0);
-    // Softer mapping: 0ms => 100, 1000ms => 50, 2000ms => 0
-    // Formula: accuracy = 100 - (deltaMs / 20), clamped to 0-100
-    // Ensure we have a valid deltaMs value before calculating
-    const calculatedAccuracy = deltaMs >= 0 ? Math.max(0, Math.min(100, 100 - (deltaMs / 50))) : 0;
+    // Prefer client-derived tapDeltaMs (we no longer rely on server delta for accuracy)
+    const deltaMs = tapDeltaMs ?? 0;
+
+    // derive diffSec from client delta for display calculation
+    const diffSecForDisplay = Math.abs(deltaMs) / 1000;
+    const calculatedAccuracy = calcAccuracyFromSeconds(diffSecForDisplay);
     const accuracy = calculatedAccuracy;
+
     return (
       <SafeAreaView className="flex-1 bg-white">
         <TouchableOpacity
@@ -477,6 +490,7 @@ function TapTiming({ onBack }: { onBack: () => void }) {
     </SafeAreaView>
   );
 }
+
 
 // -------------------- Game: Picture Match --------------------
 function PictureMatch({ onBack }: { onBack: () => void }) {
