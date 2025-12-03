@@ -275,6 +275,21 @@ export default function CompleteProfile() {
     return `${y}-${m}-${day}`;
   };
 
+  const handleManualDobInput = (value: string) => {
+    const digitsOnly = value.replace(/\D/g, '').slice(0, 8);
+    let formatted = digitsOnly;
+    if (digitsOnly.length > 4) {
+      formatted = `${digitsOnly.slice(0, 4)}-${digitsOnly.slice(4, 6)}`;
+    }
+    if (digitsOnly.length > 6) {
+      formatted = `${formatted}-${digitsOnly.slice(6, 8)}`;
+    }
+    setDob(formatted);
+    if (showAlert && /^\d{4}-\d{2}-\d{2}$/.test(formatted)) {
+      setShowAlert(false);
+    }
+  };
+
   const openDobPicker = () => {
     // sync draft with current dob (or sensible default)
     setDobDraft(initialDate);
@@ -502,7 +517,7 @@ export default function CompleteProfile() {
             {/* Read-only box + Pick button (friendly for kids/parents) */}
             <Animated.View style={[dobShake.style, { flexDirection: 'row', alignItems: 'center', gap: 8 }]}>
               <View
-                className={`flex-1 flex-row items-center rounded-2xl px-3 py-3 border ${
+                className={`flex-1 flex-row items-center rounded-2xl px-3 py-1 border ${
                   dobError ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'
                 }`}
               >
@@ -511,9 +526,17 @@ export default function CompleteProfile() {
                   size={18}
                   color={dobError ? '#DC2626' : '#6B7280'}
                 />
-                <Text className="ml-2 text-[16px] text-[#0F172A]">
-                  {dob || 'YYYY-MM-DD'}
-                </Text>
+                <TextInput
+                  value={dob}
+                  onChangeText={handleManualDobInput}
+                  placeholder="YYYY-MM-DD"
+                  keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'number-pad'}
+                  inputMode="numeric"
+                  returnKeyType="done"
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                  style={{ flex: 1, marginLeft: 8, fontSize: 16, color: '#0F172A', paddingVertical: Platform.OS === 'ios' ? 12 : 8 }}
+                />
               </View>
 
               <TouchableOpacity
