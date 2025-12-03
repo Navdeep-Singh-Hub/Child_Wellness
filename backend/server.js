@@ -341,11 +341,19 @@ app.post('/api/me/profile', requireAuth, async (req, res) => {
     const user = await ensureUser(auth0Id, email, name);
     if (typeof firstName === 'string') user.firstName = firstName.trim();
     if (typeof lastName === 'string') user.lastName = lastName.trim();
-    // Allow updating dob whenever a valid value is provided
-    if (dob) {
-      const parsed = new Date(dob);
-      if (!isNaN(parsed.getTime())) {
-        user.dob = parsed;
+    // Allow updating dob whenever a valid value is provided.
+    // Parse strictly as YYYY-MM-DD instead of relying on Date(dob) heuristics.
+    if (typeof dob === 'string' && dob.trim()) {
+      const trimmed = dob.trim();
+      const m = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (m) {
+        const year = Number(m[1]);
+        const month = Number(m[2]);
+        const day = Number(m[3]);
+        const parsed = new Date(Date.UTC(year, month - 1, day));
+        if (!isNaN(parsed.getTime())) {
+          user.dob = parsed;
+        }
       }
     }
     // Allow setting gender only if not already set
