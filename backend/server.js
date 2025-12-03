@@ -341,10 +341,12 @@ app.post('/api/me/profile', requireAuth, async (req, res) => {
     const user = await ensureUser(auth0Id, email, name);
     if (typeof firstName === 'string') user.firstName = firstName.trim();
     if (typeof lastName === 'string') user.lastName = lastName.trim();
-    // Allow setting dob only if not already set
-    if (!user.dob && dob) {
+    // Allow updating dob whenever a valid value is provided
+    if (dob) {
       const parsed = new Date(dob);
-      if (!isNaN(parsed.getTime())) user.dob = parsed;
+      if (!isNaN(parsed.getTime())) {
+        user.dob = parsed;
+      }
     }
     // Allow setting gender only if not already set
     if (!user.gender && gender && ['male', 'female', 'other', 'prefer-not-to-say'].includes(gender)) {
