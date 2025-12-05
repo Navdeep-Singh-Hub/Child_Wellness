@@ -324,6 +324,57 @@ export async function updateMyProfile(data: { firstName: string; lastName?: stri
   }
 }
 
+// ----- Therapy Progress APIs -----
+export type TherapyProgress = {
+  therapy: string;
+  levels: Array<{
+    levelNumber: number;
+    sessions: Array<{
+      sessionNumber: number;
+      completedGames: string[];
+      completed: boolean;
+      lastPlayedAt?: string;
+    }>;
+  }>;
+  currentLevel: number;
+  currentSession: number;
+  updatedAt?: string;
+};
+
+export async function fetchTherapyProgress(): Promise<{ therapies: TherapyProgress[] }> {
+  const res = await fetch(`${API_BASE_URL}/api/therapy/progress`, {
+    headers: await authHeaders(),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function initTherapyProgress(): Promise<{ ok: boolean; therapies: TherapyProgress[] }> {
+  const res = await fetch(`${API_BASE_URL}/api/therapy/progress/init`, {
+    method: 'POST',
+    headers: await authHeaders(),
+    body: JSON.stringify({}),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function advanceTherapyProgress(payload: {
+  therapy: string;
+  levelNumber: number;
+  sessionNumber: number;
+  gameId?: string;
+  markCompleted?: boolean;
+}): Promise<{ ok: boolean; therapy: TherapyProgress }> {
+  const res = await fetch(`${API_BASE_URL}/api/therapy/progress/advance`, {
+    method: 'POST',
+    headers: await authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
 export type SkillStat = {
   totalPrompts: number;
   correctPrompts: number;

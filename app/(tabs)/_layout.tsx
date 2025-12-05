@@ -58,6 +58,7 @@ function SlideOutMenu() {
   const menuItems = [
     { title: "Home", route: "/(tabs)", icon: "home-outline" },
     { title: "Games", route: "/(tabs)/Games", icon: "game-controller-outline" },
+    { title: "Therapy Progress", route: "/(tabs)/TherapyProgress", icon: "medkit-outline" },
     { title: "Smart Explorer", route: "/(tabs)/SmartExplorer", icon: "map-outline" },
     { title: "Insights", route: "/(tabs)/Insights", icon: "stats-chart-outline" },
     { title: "Grids", route: "/(tabs)/AACgrid", icon: "grid-outline" },
