@@ -13,6 +13,7 @@ import { Session } from './models/Session.js';
 import { User } from './models/User.js';
 import { smartExplorerRouter } from './routes/smartExplorer.js';
 import { tapGame } from './routes/tapGame.js';
+import { therapyProgressRouter } from './routes/therapyProgress.js';
 
 const app = express();
 // Behind proxies (Vercel/Render/Nginx), respect X-Forwarded-* headers
@@ -179,6 +180,7 @@ function requireAuth(req, res, next) {
 // Add tap game routes
 app.use('/api/tap', requireAuth, tapGame);
 app.use('/api/smart-explorer', requireAuth, smartExplorerRouter);
+app.use('/api/therapy', requireAuth, therapyProgressRouter);
 
 const SKILL_ALPHA = 0.3;
 const SKILL_LEVELS = [
