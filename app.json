@@ -14,10 +14,16 @@
       "AUTH0_CLIENT_ID_WEB": "pK2uzbNONOHaPUPWbD9s7Y3qx6nYntEW"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to track your eye movements and measure attention during the Follow the Ball game. All processing happens locally on your device."
+      }
     },
     "android": {
       "usesCleartextTraffic": true,
+      "permissions": [
+        "CAMERA"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -48,7 +54,13 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to track eye movements and measure attention during gameplay. All processing happens locally on your device."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
