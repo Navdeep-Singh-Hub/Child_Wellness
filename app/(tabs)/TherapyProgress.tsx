@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
   advanceTherapyProgress,
   fetchTherapyProgress,
@@ -289,13 +290,16 @@ function SessionsGrid({
   saving: boolean;
   onComplete: (therapyId: string, levelNumber: number, sessionNumber: number) => void;
 }) {
+  const router = useRouter();
   const currentLevel = therapy.currentLevel;
   const currentSession = therapy.currentSession;
   const isCurrentLevel = level.levelNumber === currentLevel;
+  const isFollowBallAvailable =
+    therapyMeta.id === 'speech' && level.levelNumber === 1 && therapy.currentSession >= 1;
   return (
     <View style={{ gap: 12 }}>
       <TouchableOpacity onPress={() => {}}>
-        <Text style={{ color: '#2563EB', fontWeight: '700' }}>← Back to Speech Therapy</Text>
+        <Text style={{ color: '#2563EB', fontWeight: '700' }}>← Back to {therapyMeta.label}</Text>
       </TouchableOpacity>
       <View style={[styles.banner, { borderColor: therapyMeta.color }]}>
         <View style={[styles.iconBadge, { backgroundColor: `${therapyMeta.color}20` }]}>
@@ -321,9 +325,28 @@ function SessionsGrid({
                 completed ? { borderColor: therapyMeta.color, borderWidth: 2 } : null,
               ]}
               activeOpacity={unlocked ? 0.9 : 1}
-              onPress={() =>
-                unlocked ? onComplete(therapyMeta.id, level.levelNumber, sess.sessionNumber) : null
-              }
+              onPress={() => {
+                if (!unlocked) return;
+                const isSpeechLvl1Sess1 =
+                  therapyMeta.id === 'speech' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 1;
+                if (isSpeechLvl1Sess1) {
+                  router.push({
+                    pathname: '/(tabs)/SessionGames',
+                    params: {
+                      therapy: therapyMeta.id,
+                      level: level.levelNumber.toString(),
+                      session: sess.sessionNumber.toString(),
+                    },
+                  });
+                } else {
+                  Alert.alert(
+                    'Game not available',
+                    'Follow the Ball is only available in Speech Therapy Level 1 Session 1.'
+                  );
+                }
+              }}
             >
               <Text style={[styles.levelTitle, { color: labelColor }]}>
                 Session {sess.sessionNumber}

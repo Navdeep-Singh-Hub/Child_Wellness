@@ -156,7 +156,7 @@ export async function recordGame(pointsEarned: number) {
 }
 
 export async function logGameAndAward(payload: {
-  type: 'tap' | 'match' | 'sort' | 'emoji' | 'quiz';
+  type: 'tap' | 'match' | 'sort' | 'emoji' | 'quiz' | 'follow-ball';
   correct: number;
   total: number;
   accuracy: number; // 0..100

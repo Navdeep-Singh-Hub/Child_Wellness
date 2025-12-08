@@ -3,7 +3,7 @@ import mongoose, { Schema } from 'mongoose';
 const GameLogSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', index: true, required: true },
-    type:   { type: String, enum: ['tap', 'match', 'sort', 'emoji', 'quiz'], required: true },
+    type:   { type: String, enum: ['tap', 'match', 'sort', 'emoji', 'quiz', 'follow-ball'], required: true },
     mode:   { type: String, enum: ['free-play', 'therapy', 'guided'], default: 'free-play' },
     difficulty: { type: String },
     skillTags: { type: [String], default: [] },

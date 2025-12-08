@@ -1,0 +1,1086 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, withSpring, Easing } from 'react-native-reanimated';
+import * as Speech from 'expo-speech';
+import { LinearGradient } from 'expo-linear-gradient';
+import { logGameAndAward, advanceTherapyProgress } from '@/utils/api';
+import { useRouter } from 'expo-router';
+import ResultCard from './ResultCard';
+import { SparkleBurst, ResultToast } from './FX';
+import { EyeTrackingCamera } from './EyeTrackingCamera';
+import { GazeVisualization } from './GazeVisualization';
+import { CameraConsent } from './CameraConsent';
+import { EyeTrackingResult, BallPosition, isEyeTrackingAvailable } from '@/utils/eyeTracking';
+import { Platform } from 'react-native';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const DEFAULT_TTS_RATE = 0.75;
+let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+
+function clearScheduledSpeech() {
+  scheduledSpeechTimers.forEach(t => clearTimeout(t));
+  scheduledSpeechTimers = [];
+  try {
+    Speech.stop();
+  } catch { }
+}
+
+function speak(text: string, rate = DEFAULT_TTS_RATE) {
+  try {
+    clearScheduledSpeech();
+    Speech.speak(text, { rate });
+  } catch (e) {
+    console.warn('speak error', e);
+  }
+}
+
+type Phase = 'moving' | 'glow' | 'feedback';
+
+type Direction = 'leftToRight' | 'rightToLeft' | 'upToDown' | 'downToUp';
+
+interface RoundResult {
+  reactionTimeMs: number | null;
+  tappedWhileMoving: boolean;
+  timedOut: boolean;
+}
+
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+
+interface FollowTheBallProps {
+  onBack: () => void;
+  therapyId?: string;
+  levelNumber?: number;
+  sessionNumber?: number;
+  gameId?: string; // e.g., 'game-1'
+}
+
+export const FollowTheBall: React.FC<FollowTheBallProps> = ({
+  onBack,
+  therapyId,
+  levelNumber,
+  sessionNumber,
+  gameId = 'game-1',
+}) => {
+  const router = useRouter();
+  const [phase, setPhase] = useState<Phase>('moving');
+  const [direction, setDirection] = useState<Direction>('leftToRight');
+  const [ballPos, setBallPos] = useState({ x: 10, y: 50 }); // percentage
+  const [attentionScore, setAttentionScore] = useState(50); // 0–100
+  const [round, setRound] = useState(1);
+  const [gameFinished, setGameFinished] = useState(false);
+  const [finalStats, setFinalStats] = useState<{
+    totalRounds: number;
+    successfulRounds: number;
+    avgReactionTime: number;
+    tappedWhileMovingCount: number;
+    timedOutCount: number;
+    finalAttentionScore: number;
+    avgGazeScore?: number;
+    gazeSamples?: number;
+  } | null>(null);
+  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+
+  const tappedWhileMovingRef = useRef(false);
+  const glowStartTimeRef = useRef<number | null>(null);
+  const roundTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const roundResultsRef = useRef<RoundResult[]>([]);
+
+  const TOTAL_ROUNDS = 8; // 8 rounds per game
+
+  // Animation values
+  const ballScale = useSharedValue(1);
+  const glowOpacity = useSharedValue(0);
+  const attentionBarWidth = useSharedValue(50);
+  const [sparkleKey, setSparkleKey] = useState(0);
+  const [feedbackToast, setFeedbackToast] = useState<'success' | 'early' | 'timeout' | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+
+  // Eye tracking state
+  const [eyeTrackingEnabled, setEyeTrackingEnabled] = useState(false);
+  const [showCameraConsent, setShowCameraConsent] = useState(false);
+  const [gazeData, setGazeData] = useState<EyeTrackingResult | null>(null);
+  const [gazeScore, setGazeScore] = useState(0); // 0-100 based on gaze-ball alignment
+  const [gazeHistory, setGazeHistory] = useState<EyeTrackingResult[]>([]);
+  const [showGazeVisualization, setShowGazeVisualization] = useState(false);
+
+  const ballAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: ballScale.value }],
+  }));
+
+  const glowAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
+  }));
+
+  const attentionBarStyle = useAnimatedStyle(() => ({
+    width: `${attentionBarWidth.value}%`,
+  }));
+
+  // Update attention bar animation when score changes
+  useEffect(() => {
+    attentionBarWidth.value = withSpring(attentionScore, {
+      damping: 15,
+      stiffness: 100,
+    });
+  }, [attentionScore]);
+
+  // Pick next direction randomly
+  const pickNextDirection = (): Direction => {
+    const dirs: Direction[] = ['leftToRight', 'rightToLeft', 'upToDown', 'downToUp'];
+    return dirs[Math.floor(Math.random() * dirs.length)];
+  };
+
+  // Start a new round
+  const startRound = () => {
+    setPhase('moving');
+    setFeedbackToast(null);
+    setShowFeedback(false);
+    tappedWhileMovingRef.current = false;
+    glowStartTimeRef.current = null;
+    glowOpacity.value = 0;
+    ballScale.value = 1;
+
+    const dir = pickNextDirection();
+    setDirection(dir);
+
+    // TTS: Announce new round
+    if (round === 1) {
+      speak('Welcome! Watch the ball with your eyes. When it glows, tap it!', DEFAULT_TTS_RATE);
+    } else {
+      speak(`Round ${round}. Watch the ball!`, DEFAULT_TTS_RATE);
+    }
+
+    // Set starting position by direction
+    switch (dir) {
+      case 'leftToRight':
+        setBallPos({ x: 5, y: 50 });
+        break;
+      case 'rightToLeft':
+        setBallPos({ x: 95, y: 50 });
+        break;
+      case 'upToDown':
+        setBallPos({ x: 50, y: 10 });
+        break;
+      case 'downToUp':
+        setBallPos({ x: 50, y: 90 });
+        break;
+    }
+
+    // Animate the movement
+    startMovement(dir);
+  };
+
+  const startMovement = (dir: Direction) => {
+    const durationMs = 3000; // 3s move
+    const startTime = performance.now();
+
+    const animate = (now: number) => {
+      const t = Math.min(1, (now - startTime) / durationMs); // 0..1
+      let x = ballPos.x;
+      let y = ballPos.y;
+
+      if (dir === 'leftToRight') {
+        x = 5 + 90 * t;
+        y = 50;
+      } else if (dir === 'rightToLeft') {
+        x = 95 - 90 * t;
+        y = 50;
+      } else if (dir === 'upToDown') {
+        x = 50;
+        y = 10 + 80 * t;
+      } else if (dir === 'downToUp') {
+        x = 50;
+        y = 90 - 80 * t;
+      }
+
+      setBallPos({ x, y });
+
+      if (t < 1) {
+        animFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        // Done moving → enter glow phase
+        setPhase('glow');
+        glowStartTimeRef.current = performance.now();
+
+        // TTS: Tell child to tap
+        speak('Tap the ball now!', DEFAULT_TTS_RATE);
+
+        // Start glow animation
+        glowOpacity.value = withRepeat(
+          withTiming(1, { duration: 500, easing: Easing.inOut(Easing.ease) }),
+          -1,
+          true
+        );
+        ballScale.value = withRepeat(
+          withSpring(1.25, { damping: 8, stiffness: 200 }),
+          -1,
+          true
+        );
+
+        // Timeout if child doesn't tap
+        if (roundTimeoutRef.current) clearTimeout(roundTimeoutRef.current);
+        roundTimeoutRef.current = setTimeout(() => {
+          setFeedbackToast('timeout');
+          setShowFeedback(true);
+          speak('Time is up. Let\'s try the next one!', DEFAULT_TTS_RATE);
+          setTimeout(() => setShowFeedback(false), 2000);
+          handleRoundEnd({
+            reactionTimeMs: null,
+            tappedWhileMoving: tappedWhileMovingRef.current,
+            timedOut: true,
+          });
+        }, 3500); // 3.5s to respond
+      }
+    };
+
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    animFrameRef.current = requestAnimationFrame(animate);
+  };
+
+  // Handle tap on ball
+  const handleBallTap = () => {
+    if (phase === 'moving') {
+      // Tapped too early
+      tappedWhileMovingRef.current = true;
+      setFeedbackToast('early');
+      setShowFeedback(true);
+      speak('Wait for the ball to glow!', DEFAULT_TTS_RATE);
+      setTimeout(() => setShowFeedback(false), 1500);
+      return;
+    }
+
+    if (phase === 'glow') {
+      const now = performance.now();
+      const rt = glowStartTimeRef.current != null ? now - glowStartTimeRef.current : null;
+
+      if (roundTimeoutRef.current) clearTimeout(roundTimeoutRef.current);
+
+      // Stop glow animations
+      glowOpacity.value = withTiming(0, { duration: 200 });
+      ballScale.value = withSpring(1, { damping: 12 });
+
+      // Positive feedback based on reaction time
+      if (rt && rt <= 800) {
+        speak('Super fast! Great job!', DEFAULT_TTS_RATE);
+      } else if (rt && rt <= 1500) {
+        speak('Good! Well done!', DEFAULT_TTS_RATE);
+      } else {
+        speak('Nice!', DEFAULT_TTS_RATE);
+      }
+
+      setFeedbackToast('success');
+      setShowFeedback(true);
+
+      handleRoundEnd({
+        reactionTimeMs: rt,
+        tappedWhileMoving: tappedWhileMovingRef.current,
+        timedOut: false,
+      });
+    }
+  };
+
+  // Handle gaze detection from camera
+  const handleGazeDetected = (result: EyeTrackingResult) => {
+    setGazeData(result);
+    
+    // Update gaze history
+    setGazeHistory((prev) => {
+      const newHistory = [...prev, result].slice(-100); // Keep last 100 samples
+      return newHistory;
+    });
+
+    // Update gaze score if ball position is available
+    if (result.attentionScore > 0) {
+      setGazeScore((prev) => {
+        // Smooth the gaze score with exponential moving average
+        return prev * 0.7 + result.attentionScore * 0.3;
+      });
+    }
+  };
+
+  // Calculate combined attention score
+  const calculateCombinedAttentionScore = (behavioralScore: number, gazeScoreValue: number): number => {
+    if (!eyeTrackingEnabled || gazeScoreValue === 0) {
+      return behavioralScore; // Fallback to behavioral only
+    }
+    // Combine: 60% behavioral, 40% gaze-based
+    return (behavioralScore * 0.6) + (gazeScoreValue * 0.4);
+  };
+
+  const updateAttention = (result: RoundResult) => {
+    let delta = 0;
+
+    if (result.tappedWhileMoving) {
+      delta -= 6; // impulsive / random tapping
+    }
+
+    if (result.timedOut) {
+      delta -= 8; // didn't respond
+    } else if (result.reactionTimeMs != null) {
+      const rt = result.reactionTimeMs;
+      if (rt <= 800) delta += 10; // super fast
+      else if (rt <= 1500) delta += 6; // good
+      else if (rt <= 2500) delta += 3; // okay
+      else delta -= 2; // very slow
+    }
+
+    // Small bonus for completing a round at all
+    delta += 1;
+
+    setAttentionScore((prev) => {
+      const newBehavioralScore = clamp(prev + delta, 0, 100);
+      // Combine with gaze score
+      return calculateCombinedAttentionScore(newBehavioralScore, gazeScore);
+    });
+  };
+
+  const handleRoundEnd = (result: RoundResult) => {
+    setPhase('feedback');
+    updateAttention(result);
+    roundResultsRef.current.push(result);
+
+    // Show sparkle animation on success
+    if (!result.timedOut && !result.tappedWhileMoving) {
+      setSparkleKey(Date.now());
+    }
+
+    // Show feedback briefly then start next round or finish game
+    setTimeout(() => {
+      setShowFeedback(false);
+      if (round >= TOTAL_ROUNDS) {
+        finishGame();
+      } else {
+        setRound((r) => r + 1);
+        startRound();
+      }
+    }, result.timedOut ? 2000 : 1500);
+  };
+
+  const finishGame = async () => {
+    const results = roundResultsRef.current;
+    const successfulRounds = results.filter(
+      (r) => !r.timedOut && !r.tappedWhileMoving && r.reactionTimeMs != null
+    ).length;
+    const reactionTimes = results
+      .filter((r) => r.reactionTimeMs != null)
+      .map((r) => r.reactionTimeMs!);
+    const avgReactionTime =
+      reactionTimes.length > 0
+        ? reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length
+        : 0;
+    const tappedWhileMovingCount = results.filter((r) => r.tappedWhileMoving).length;
+    const timedOutCount = results.filter((r) => r.timedOut).length;
+
+    // Calculate average gaze score for this game
+    const avgGazeScore = gazeHistory.length > 0
+      ? gazeHistory.reduce((sum, r) => sum + (r.attentionScore || 0), 0) / gazeHistory.length
+      : 0;
+
+    const stats = {
+      totalRounds: TOTAL_ROUNDS,
+      successfulRounds,
+      avgReactionTime: Math.round(avgReactionTime),
+      tappedWhileMovingCount,
+      timedOutCount,
+      finalAttentionScore: attentionScore,
+      avgGazeScore: Math.round(avgGazeScore),
+      gazeSamples: gazeHistory.length,
+    };
+
+    setFinalStats(stats);
+    setGameFinished(true);
+
+    // TTS: Celebrate completion
+    if (successfulRounds >= TOTAL_ROUNDS * 0.8) {
+      speak('Amazing! You did great!', DEFAULT_TTS_RATE);
+    } else if (successfulRounds >= TOTAL_ROUNDS * 0.5) {
+      speak('Good job! You completed the game!', DEFAULT_TTS_RATE);
+    } else {
+      speak('Well done! Keep practicing!', DEFAULT_TTS_RATE);
+    }
+
+    // Calculate XP based on performance
+    const xpAwarded = successfulRounds * 10 + Math.floor(attentionScore / 10);
+
+    try {
+      // Log game with attention metrics
+      const result = await logGameAndAward({
+        type: 'follow-ball',
+        correct: successfulRounds,
+        total: TOTAL_ROUNDS,
+        accuracy: (successfulRounds / TOTAL_ROUNDS) * 100,
+        xpAwarded,
+        skillTags: ['visual-tracking', 'attention', 'reaction-time'],
+        meta: {
+          attentionScore,
+          avgReactionTimeMs: avgReactionTime,
+          tappedWhileMovingCount,
+          timedOutCount,
+          eyeTrackingEnabled,
+          avgGazeScore: Math.round(avgGazeScore),
+          gazeSamples: gazeHistory.length,
+          roundResults: results.map((r) => ({
+            reactionTimeMs: r.reactionTimeMs,
+            tappedWhileMoving: r.tappedWhileMoving,
+            timedOut: r.timedOut,
+          })),
+        },
+      });
+      setLogTimestamp(result?.last?.at ?? null);
+
+      // Update therapy progress if in therapy mode
+      if (therapyId && levelNumber && sessionNumber) {
+        await advanceTherapyProgress({
+          therapy: therapyId,
+          levelNumber,
+          sessionNumber,
+          gameId,
+          markCompleted: false, // Don't auto-complete session
+        });
+      }
+
+      // Tell Home to refetch stats
+      router.setParams({ refreshStats: Date.now().toString() });
+    } catch (e) {
+      console.error('Failed to save game:', e);
+    }
+  };
+
+  // Show camera consent on mount if eye tracking is available
+  useEffect(() => {
+    if (Platform.OS === 'web' && isEyeTrackingAvailable()) {
+      // Check if user has previously declined
+      const hasDeclined = localStorage.getItem('eyeTrackingDeclined') === 'true';
+      if (!hasDeclined) {
+        setShowCameraConsent(true);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    startRound();
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (roundTimeoutRef.current) clearTimeout(roundTimeoutRef.current);
+      clearScheduledSpeech();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Map attention score to label + emoji
+  const getAttentionLabel = () => {
+    if (attentionScore >= 81) return { label: 'Focus Hero', emoji: '🦸' };
+    if (attentionScore >= 61) return { label: 'Super Focus', emoji: '🤩' };
+    if (attentionScore >= 41) return { label: 'Good Focus', emoji: '😊' };
+    if (attentionScore >= 21) return { label: 'Waking Up', emoji: '🙂' };
+    return { label: 'Sleepy Eyes', emoji: '😴' };
+  };
+
+  const { label, emoji } = getAttentionLabel();
+
+  // Get current ball position for eye tracking
+  const currentBallPosition: BallPosition = {
+    x: ballPos.x,
+    y: ballPos.y,
+    radius: 4, // 4% of screen (approximate ball size)
+  };
+
+  // Handle camera consent
+  const handleAcceptCamera = () => {
+    setShowCameraConsent(false);
+    setEyeTrackingEnabled(true);
+    setShowGazeVisualization(true);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('eyeTrackingDeclined');
+    }
+  };
+
+  const handleDeclineCamera = () => {
+    setShowCameraConsent(false);
+    setEyeTrackingEnabled(false);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('eyeTrackingDeclined', 'true');
+    }
+  };
+
+  // Game finished screen
+  if (gameFinished && finalStats) {
+    const accuracyPct = Math.round((finalStats.successfulRounds / finalStats.totalRounds) * 100);
+    return (
+      <SafeAreaView style={styles.container}>
+        <TouchableOpacity
+          onPress={onBack}
+          style={styles.backButton}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+
+        <View style={styles.completionContainer}>
+          <LinearGradient
+            colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <View style={styles.completionContent}>
+            <View style={styles.completionEmojiContainer}>
+              <Text style={styles.completionEmoji}>🎯</Text>
+            </View>
+            <Text style={styles.completionTitle}>Game Complete!</Text>
+            <Text style={styles.completionSubtitle}>
+              You completed {finalStats.totalRounds} rounds!
+            </Text>
+
+            <View style={styles.statsContainer}>
+              <View style={styles.statCard}>
+                <View style={styles.statIconContainer}>
+                  <Text style={styles.statIcon}>{emoji}</Text>
+                </View>
+                <View style={styles.statContent}>
+                  <Text style={styles.statLabel}>Focus Power</Text>
+                  <Text style={[styles.statValue, { color: getAttentionColor(finalStats.finalAttentionScore) }]}>
+                    {label} ({Math.round(finalStats.finalAttentionScore)})
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.statCard}>
+                <View style={[styles.statIconContainer, { backgroundColor: '#22C55E20' }]}>
+                  <Text style={styles.statIcon}>✅</Text>
+                </View>
+                <View style={styles.statContent}>
+                  <Text style={styles.statLabel}>Successful Rounds</Text>
+                  <Text style={[styles.statValue, { color: '#22C55E' }]}>
+                    {finalStats.successfulRounds}/{finalStats.totalRounds}
+                  </Text>
+                </View>
+              </View>
+
+              {finalStats.avgReactionTime > 0 && (
+                <View style={styles.statCard}>
+                  <View style={[styles.statIconContainer, { backgroundColor: '#3B82F620' }]}>
+                    <Text style={styles.statIcon}>⚡</Text>
+                  </View>
+                  <View style={styles.statContent}>
+                    <Text style={styles.statLabel}>Avg Reaction Time</Text>
+                    <Text style={[styles.statValue, { color: '#3B82F6' }]}>
+                      {finalStats.avgReactionTime}ms
+                    </Text>
+                  </View>
+                </View>
+              )}
+              {eyeTrackingEnabled && finalStats.avgGazeScore !== undefined && finalStats.avgGazeScore > 0 && (
+                <View style={styles.statCard}>
+                  <View style={[styles.statIconContainer, { backgroundColor: '#9333EA20' }]}>
+                    <Text style={styles.statIcon}>👁️</Text>
+                  </View>
+                  <View style={styles.statContent}>
+                    <Text style={styles.statLabel}>Eye Tracking Score</Text>
+                    <Text style={[styles.statValue, { color: '#9333EA' }]}>
+                      {finalStats.avgGazeScore}/100 ({finalStats.gazeSamples || 0} samples)
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </View>
+          </View>
+
+          <ResultCard
+            correct={finalStats.successfulRounds}
+            total={finalStats.totalRounds}
+            xpAwarded={finalStats.successfulRounds * 10 + Math.floor(finalStats.finalAttentionScore / 10)}
+            accuracy={accuracyPct}
+            logTimestamp={logTimestamp}
+            onPlayAgain={() => {
+              setRound(1);
+              setAttentionScore(50);
+              setGameFinished(false);
+              setFinalStats(null);
+              roundResultsRef.current = [];
+              startRound();
+            }}
+            onHome={onBack}
+          />
+
+          <Text style={styles.savedText}>Saved! XP updated ✅</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Show camera consent screen
+  if (showCameraConsent) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <CameraConsent
+          onAccept={handleAcceptCamera}
+          onDecline={handleDeclineCamera}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <Text style={styles.backButtonText}>← Back</Text>
+      </TouchableOpacity>
+
+      {/* Eye Tracking Camera (hidden, processing frames) */}
+      {eyeTrackingEnabled && Platform.OS === 'web' && (
+        <EyeTrackingCamera
+          onGazeDetected={handleGazeDetected}
+          ballPosition={currentBallPosition}
+          enabled={eyeTrackingEnabled && phase === 'moving'}
+          showPreview={false}
+          processingFps={10}
+        />
+      )}
+
+      {/* Gaze Visualization Overlay */}
+      {showGazeVisualization && gazeData?.gazePoint && (
+        <GazeVisualization
+          gazePoint={gazeData.gazePoint}
+          visible={eyeTrackingEnabled && phase === 'moving'}
+          showTrail={false}
+        />
+      )}
+
+      {/* Attention Meter */}
+      <View style={styles.attentionMeter}>
+        <View style={styles.attentionHeader}>
+          <View style={styles.attentionTitleContainer}>
+            <Text style={styles.attentionTitle}>🔋 FOCUS POWER</Text>
+          </View>
+          <View style={[styles.attentionBadge, { backgroundColor: getAttentionColor(attentionScore) + '20' }]}>
+            <Text style={styles.attentionEmoji}>{emoji}</Text>
+            <Text style={[styles.attentionLabel, { color: getAttentionColor(attentionScore) }]}>
+              {label}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.barContainer}>
+          <Animated.View style={[styles.barFill, attentionBarStyle]}>
+            <LinearGradient
+              colors={getAttentionGradient(attentionScore)}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.barGradient}
+            />
+          </Animated.View>
+        </View>
+        <Text style={styles.attentionScoreText}>{Math.round(attentionScore)}/100</Text>
+      </View>
+
+      {/* Round Info */}
+      <View style={styles.roundInfo}>
+        <View style={styles.roundBadge}>
+          <Text style={styles.roundText}>
+            Round {round} of {TOTAL_ROUNDS}
+          </Text>
+        </View>
+      </View>
+
+      {/* Game Area */}
+      <View style={styles.gameArea}>
+        <LinearGradient
+          colors={['#E0F2FE', '#DBEAFE', '#BFDBFE']}
+          style={StyleSheet.absoluteFillObject}
+        />
+        
+        <Animated.View
+          style={[
+            styles.ball,
+            {
+              left: `${ballPos.x}%`,
+              top: `${ballPos.y}%`,
+            },
+            ballAnimatedStyle,
+          ]}
+        >
+          <TouchableOpacity
+            onPress={handleBallTap}
+            activeOpacity={0.9}
+            style={[
+              styles.ballButton,
+              phase === 'glow' && styles.ballGlow,
+            ]}
+          >
+            <LinearGradient
+              colors={phase === 'glow' ? ['#FCD34D', '#FBBF24'] : ['#3B82F6', '#2563EB']}
+              style={StyleSheet.absoluteFillObject}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+            <Animated.View style={[styles.glowOverlay, glowAnimatedStyle]}>
+              <LinearGradient
+                colors={['#FCD34D', '#F59E0B']}
+                style={StyleSheet.absoluteFillObject}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              />
+            </Animated.View>
+            {phase === 'glow' && (
+              <View style={styles.sparkleContainer}>
+                <Text style={styles.sparkleEmoji}>✨</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+
+        {/* Phase hint */}
+        <View style={styles.hintContainer}>
+          <View style={styles.hintBubble}>
+            <Text style={styles.hintText}>
+              {phase === 'moving'
+                ? '👀 Watch the ball with your eyes…'
+                : phase === 'glow'
+                ? '✨ Now tap the glowing ball!'
+                : '🎉 Great watching!'}
+            </Text>
+          </View>
+        </View>
+
+        {/* Feedback Toast */}
+        {showFeedback && (
+          <View style={styles.toastContainer} pointerEvents="none">
+            <ResultToast
+              text={
+                feedbackToast === 'success'
+                  ? 'Great job!'
+                  : feedbackToast === 'early'
+                  ? 'Wait for it to glow!'
+                  : 'Time\'s up!'
+              }
+              type={feedbackToast === 'success' ? 'ok' : 'bad'}
+              show={showFeedback}
+            />
+          </View>
+        )}
+
+        {/* Sparkle animation on success */}
+        {phase === 'feedback' && !feedbackToast && (
+          <SparkleBurst key={sparkleKey} visible color="#FCD34D" />
+        )}
+      </View>
+    </SafeAreaView>
+  );
+};
+
+// Helper functions for attention meter colors
+const getAttentionColor = (score: number): string => {
+  if (score >= 81) return '#9333EA'; // Focus Hero - purple
+  if (score >= 61) return '#F59E0B'; // Super Focus - amber
+  if (score >= 41) return '#22C55E'; // Good Focus - green
+  if (score >= 21) return '#3B82F6'; // Waking Up - blue
+  return '#64748B'; // Sleepy Eyes - gray
+};
+
+const getAttentionGradient = (score: number): [string, string] => {
+  if (score >= 81) return ['#9333EA', '#A855F7'];
+  if (score >= 61) return ['#F59E0B', '#FBBF24'];
+  if (score >= 41) return ['#22C55E', '#4ADE80'];
+  if (score >= 21) return ['#3B82F6', '#60A5FA'];
+  return ['#64748B', '#94A3B8'];
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F0F9FF',
+    padding: 16,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    zIndex: 10,
+    backgroundColor: '#111827',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  attentionMeter: {
+    marginTop: 60,
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  attentionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  attentionTitleContainer: {
+    flex: 1,
+  },
+  attentionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: 0.5,
+  },
+  attentionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  attentionEmoji: {
+    fontSize: 18,
+  },
+  attentionLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  barContainer: {
+    width: '100%',
+    height: 16,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: 10,
+  },
+  barGradient: {
+    flex: 1,
+    borderRadius: 10,
+  },
+  attentionScoreText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    textAlign: 'center',
+  },
+  roundInfo: {
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  roundBadge: {
+    backgroundColor: '#1E293B',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  roundText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.5,
+  },
+  gameArea: {
+    flex: 1,
+    borderRadius: 28,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: '#BAE6FD',
+    position: 'relative',
+    shadowColor: '#3B82F6',
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+  },
+  ball: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    transform: [{ translateX: -40 }, { translateY: -40 }],
+    zIndex: 10,
+  },
+  ballButton: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#3B82F6',
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 12,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  ballGlow: {
+    shadowColor: '#FCD34D',
+    shadowOpacity: 0.8,
+  },
+  glowOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 40,
+  },
+  sparkleContainer: {
+    position: 'absolute',
+    top: -10,
+    right: -10,
+  },
+  sparkleEmoji: {
+    fontSize: 24,
+  },
+  hintContainer: {
+    position: 'absolute',
+    bottom: 24,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 5,
+  },
+  hintBubble: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
+  },
+  hintText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1E293B',
+    textAlign: 'center',
+  },
+  toastContainer: {
+    position: 'absolute',
+    top: '20%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 20,
+  },
+  completionContainer: {
+    flex: 1,
+    marginTop: 60,
+  },
+  completionContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  completionEmojiContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    shadowColor: '#3B82F6',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+    borderWidth: 3,
+    borderColor: '#DBEAFE',
+  },
+  completionEmoji: {
+    fontSize: 64,
+  },
+  completionTitle: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#0F172A',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  completionSubtitle: {
+    fontSize: 18,
+    color: '#475569',
+    marginBottom: 32,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  statsContainer: {
+    width: '100%',
+    maxWidth: 400,
+    gap: 12,
+    marginBottom: 20,
+  },
+  statCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  statIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  statIcon: {
+    fontSize: 24,
+  },
+  statContent: {
+    flex: 1,
+  },
+  statLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  savedText: {
+    color: '#22C55E',
+    fontWeight: '700',
+    fontSize: 14,
+    marginTop: 16,
+  },
+});
+
