@@ -1,3 +1,4 @@
+import { BigTapTarget } from '@/components/game/BigTapTarget';
 import { FollowTheBall } from '@/components/game/FollowTheBall';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -5,7 +6,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type GameKey = 'menu' | 'follow-ball';
+type GameKey = 'menu' | 'follow-ball' | 'big-tap';
 
 type GameInfo = {
   id: string;
@@ -29,8 +30,11 @@ export default function SessionGamesScreen() {
   const therapyId = params.therapy || 'speech';
   const levelNumber = params.level ? parseInt(params.level, 10) : 1;
   const sessionNumber = params.session ? parseInt(params.session, 10) : 1;
+
   const isFollowBallAvailable =
     therapyId === 'speech' && levelNumber === 1 && sessionNumber === 1;
+  const isBigTapAvailable =
+    therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 1;
 
   const GAMES: GameInfo[] = [
     {
@@ -41,15 +45,15 @@ export default function SessionGamesScreen() {
       color: '#3B82F6',
       available: isFollowBallAvailable,
     },
-    // Placeholder for future games
     {
-      id: 'game-2',
-      title: 'Game 2',
-      emoji: '🎮',
-      description: 'Coming soon...',
-      color: '#9CA3AF',
-      available: false,
+      id: 'big-tap',
+      title: 'Big Tap Target',
+      emoji: '🟢',
+      description: 'Tap the big circle to make it burst! Build finger tap & scanning.',
+      color: '#22C55E',
+      available: isBigTapAvailable,
     },
+    // Placeholder for future games
     {
       id: 'game-3',
       title: 'Game 3',
@@ -88,6 +92,10 @@ export default function SessionGamesScreen() {
     );
   }
 
+  if (currentGame === 'big-tap') {
+    return <BigTapTarget onBack={() => setCurrentGame('menu')} />;
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -122,9 +130,9 @@ export default function SessionGamesScreen() {
                 { borderColor: game.color },
               ]}
               onPress={() => {
-                if (game.available && game.id === 'follow-ball') {
-                  setCurrentGame('follow-ball');
-                }
+                if (!game.available) return;
+                if (game.id === 'follow-ball') setCurrentGame('follow-ball');
+                if (game.id === 'big-tap') setCurrentGame('big-tap');
               }}
               disabled={!game.available}
               activeOpacity={0.8}

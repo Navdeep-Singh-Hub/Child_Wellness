@@ -1,8 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, withSpring, Easing } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+  withSpring,
+  Easing,
+  useAnimatedReaction,
+  runOnJS,
+} from 'react-native-reanimated';
 import * as Speech from 'expo-speech';
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { logGameAndAward, advanceTherapyProgress } from '@/utils/api';
 import { useRouter } from 'expo-router';
@@ -66,7 +76,6 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>('moving');
   const [direction, setDirection] = useState<Direction>('leftToRight');
-  const [ballPos, setBallPos] = useState({ x: 10, y: 50 }); // percentage
   const [attentionScore, setAttentionScore] = useState(50); // 0–100
   const [round, setRound] = useState(1);
   const [gameFinished, setGameFinished] = useState(false);
@@ -93,6 +102,9 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
   // Animation values
   const ballScale = useSharedValue(1);
   const glowOpacity = useSharedValue(0);
+  const ballX = useSharedValue(10);
+  const ballY = useSharedValue(50);
+  const ballPosRef = useRef({ x: 10, y: 50 });
   const attentionBarWidth = useSharedValue(50);
   const [sparkleKey, setSparkleKey] = useState(0);
   const [feedbackToast, setFeedbackToast] = useState<'success' | 'early' | 'timeout' | null>(null);
@@ -101,13 +113,20 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
   // Eye tracking state
   const [eyeTrackingEnabled, setEyeTrackingEnabled] = useState(false);
   const [showCameraConsent, setShowCameraConsent] = useState(false);
+  const [eyeTrackingInitError, setEyeTrackingInitError] = useState<string | null>(null);
   const [gazeData, setGazeData] = useState<EyeTrackingResult | null>(null);
   const [gazeScore, setGazeScore] = useState(0); // 0-100 based on gaze-ball alignment
   const [gazeHistory, setGazeHistory] = useState<EyeTrackingResult[]>([]);
   const [showGazeVisualization, setShowGazeVisualization] = useState(false);
+  const [practiceMode, setPracticeMode] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [soundOn, setSoundOn] = useState(true);
+  const [hapticsOn, setHapticsOn] = useState(false);
 
   const ballAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: ballScale.value }],
+    left: `${ballX.value}%`,
+    top: `${ballY.value}%`,
   }));
 
   const glowAnimatedStyle = useAnimatedStyle(() => ({
@@ -126,6 +145,19 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
     });
   }, [attentionScore]);
 
+  useAnimatedReaction(
+    () => ({ x: ballX.value, y: ballY.value }),
+    (pos) => {
+      runOnJS(() => {
+        ballPosRef.current = pos;
+      })();
+    }
+  );
+
+  const speakIfEnabled = (msg: string) => {
+    if (soundOn) speak(msg, DEFAULT_TTS_RATE);
+  };
+
   // Pick next direction randomly
   const pickNextDirection = (): Direction => {
     const dirs: Direction[] = ['leftToRight', 'rightToLeft', 'upToDown', 'downToUp'];
@@ -133,7 +165,9 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
   };
 
   // Start a new round
-  const startRound = () => {
+  const startRound = (roundNumber?: number) => {
+    const activeRound = roundNumber ?? round;
+    if (isPaused) return;
     setPhase('moving');
     setFeedbackToast(null);
     setShowFeedback(false);
@@ -146,25 +180,29 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
     setDirection(dir);
 
     // TTS: Announce new round
-    if (round === 1) {
-      speak('Welcome! Watch the ball with your eyes. When it glows, tap it!', DEFAULT_TTS_RATE);
+    if (activeRound === 1) {
+      speakIfEnabled('Welcome! Watch the ball with your eyes. When it glows, tap it!');
     } else {
-      speak(`Round ${round}. Watch the ball!`, DEFAULT_TTS_RATE);
+      speakIfEnabled(`Round ${activeRound}. Watch the ball!`);
     }
 
     // Set starting position by direction
     switch (dir) {
       case 'leftToRight':
-        setBallPos({ x: 5, y: 50 });
+        ballX.value = 5;
+        ballY.value = 50;
         break;
       case 'rightToLeft':
-        setBallPos({ x: 95, y: 50 });
+        ballX.value = 95;
+        ballY.value = 50;
         break;
       case 'upToDown':
-        setBallPos({ x: 50, y: 10 });
+        ballX.value = 50;
+        ballY.value = 10;
         break;
       case 'downToUp':
-        setBallPos({ x: 50, y: 90 });
+        ballX.value = 50;
+        ballY.value = 90;
         break;
     }
 
@@ -173,70 +211,63 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
   };
 
   const startMovement = (dir: Direction) => {
-    const durationMs = 3000; // 3s move
-    const startTime = performance.now();
+    const baseDuration = 3000;
+    const speedFactor = 0.9 ** (round - 1); // slightly faster each round
+    const durationMs = Math.max(1500, baseDuration * speedFactor);
 
-    const animate = (now: number) => {
-      const t = Math.min(1, (now - startTime) / durationMs); // 0..1
-      let x = ballPos.x;
-      let y = ballPos.y;
+    let targetX = ballX.value;
+    let targetY = ballY.value;
 
-      if (dir === 'leftToRight') {
-        x = 5 + 90 * t;
-        y = 50;
-      } else if (dir === 'rightToLeft') {
-        x = 95 - 90 * t;
-        y = 50;
-      } else if (dir === 'upToDown') {
-        x = 50;
-        y = 10 + 80 * t;
-      } else if (dir === 'downToUp') {
-        x = 50;
-        y = 90 - 80 * t;
+    if (dir === 'leftToRight') {
+      targetX = 95;
+      targetY = 50;
+    } else if (dir === 'rightToLeft') {
+      targetX = 5;
+      targetY = 50;
+    } else if (dir === 'upToDown') {
+      targetX = 50;
+      targetY = 90;
+    } else if (dir === 'downToUp') {
+      targetX = 50;
+      targetY = 10;
+    }
+
+    ballX.value = withTiming(targetX, { duration: durationMs, easing: Easing.inOut(Easing.ease) });
+    ballY.value = withTiming(targetY, { duration: durationMs, easing: Easing.inOut(Easing.ease) });
+
+    setTimeout(() => {
+      if (isPaused) return;
+      setPhase('glow');
+      glowStartTimeRef.current = performance.now();
+      if (hapticsOn) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       }
+      speakIfEnabled('Tap the ball now!');
 
-      setBallPos({ x, y });
+      glowOpacity.value = withRepeat(
+        withTiming(1, { duration: 500, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      );
+      ballScale.value = withRepeat(
+        withSpring(1.25, { damping: 8, stiffness: 200 }),
+        -1,
+        true
+      );
 
-      if (t < 1) {
-        animFrameRef.current = requestAnimationFrame(animate);
-      } else {
-        // Done moving → enter glow phase
-        setPhase('glow');
-        glowStartTimeRef.current = performance.now();
-
-        // TTS: Tell child to tap
-        speak('Tap the ball now!', DEFAULT_TTS_RATE);
-
-        // Start glow animation
-        glowOpacity.value = withRepeat(
-          withTiming(1, { duration: 500, easing: Easing.inOut(Easing.ease) }),
-          -1,
-          true
-        );
-        ballScale.value = withRepeat(
-          withSpring(1.25, { damping: 8, stiffness: 200 }),
-          -1,
-          true
-        );
-
-        // Timeout if child doesn't tap
-        if (roundTimeoutRef.current) clearTimeout(roundTimeoutRef.current);
-        roundTimeoutRef.current = setTimeout(() => {
-          setFeedbackToast('timeout');
-          setShowFeedback(true);
-          speak('Time is up. Let\'s try the next one!', DEFAULT_TTS_RATE);
-          setTimeout(() => setShowFeedback(false), 2000);
-          handleRoundEnd({
-            reactionTimeMs: null,
-            tappedWhileMoving: tappedWhileMovingRef.current,
-            timedOut: true,
-          });
-        }, 3500); // 3.5s to respond
-      }
-    };
-
-    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    animFrameRef.current = requestAnimationFrame(animate);
+      if (roundTimeoutRef.current) clearTimeout(roundTimeoutRef.current);
+      roundTimeoutRef.current = setTimeout(() => {
+        setFeedbackToast('timeout');
+        setShowFeedback(true);
+        speakIfEnabled('Time is up. Let\'s try the next one!');
+        setTimeout(() => setShowFeedback(false), 2000);
+        handleRoundEnd({
+          reactionTimeMs: null,
+          tappedWhileMoving: tappedWhileMovingRef.current,
+          timedOut: true,
+        });
+      }, 3500);
+    }, durationMs);
   };
 
   // Handle tap on ball
@@ -246,7 +277,7 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
       tappedWhileMovingRef.current = true;
       setFeedbackToast('early');
       setShowFeedback(true);
-      speak('Wait for the ball to glow!', DEFAULT_TTS_RATE);
+      speakIfEnabled('Wait for the ball to glow!');
       setTimeout(() => setShowFeedback(false), 1500);
       return;
     }
@@ -263,11 +294,11 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
 
       // Positive feedback based on reaction time
       if (rt && rt <= 800) {
-        speak('Super fast! Great job!', DEFAULT_TTS_RATE);
+        speakIfEnabled('Super fast! Great job!');
       } else if (rt && rt <= 1500) {
-        speak('Good! Well done!', DEFAULT_TTS_RATE);
+        speakIfEnabled('Good! Well done!');
       } else {
-        speak('Nice!', DEFAULT_TTS_RATE);
+        speakIfEnabled('Nice!');
       }
 
       setFeedbackToast('success');
@@ -352,8 +383,11 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
       if (round >= TOTAL_ROUNDS) {
         finishGame();
       } else {
-        setRound((r) => r + 1);
-        startRound();
+        setRound((r) => {
+          const next = r + 1;
+          startRound(next);
+          return next;
+        });
       }
     }, result.timedOut ? 2000 : 1500);
   };
@@ -394,12 +428,15 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
 
     // TTS: Celebrate completion
     if (successfulRounds >= TOTAL_ROUNDS * 0.8) {
-      speak('Amazing! You did great!', DEFAULT_TTS_RATE);
+      speakIfEnabled('Amazing! You did great!');
     } else if (successfulRounds >= TOTAL_ROUNDS * 0.5) {
-      speak('Good job! You completed the game!', DEFAULT_TTS_RATE);
+      speakIfEnabled('Good job! You completed the game!');
     } else {
-      speak('Well done! Keep practicing!', DEFAULT_TTS_RATE);
+      speakIfEnabled('Well done! Keep practicing!');
     }
+
+    // Skip logging if practice mode
+    if (practiceMode) return;
 
     // Calculate XP based on performance
     const xpAwarded = successfulRounds * 10 + Math.floor(attentionScore / 10);
@@ -460,7 +497,7 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
   }, []);
 
   useEffect(() => {
-    startRound();
+    startRound(1);
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       if (roundTimeoutRef.current) clearTimeout(roundTimeoutRef.current);
@@ -482,8 +519,8 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
 
   // Get current ball position for eye tracking
   const currentBallPosition: BallPosition = {
-    x: ballPos.x,
-    y: ballPos.y,
+    x: ballPosRef.current.x,
+    y: ballPosRef.current.y,
     radius: 4, // 4% of screen (approximate ball size)
   };
 
@@ -505,19 +542,30 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
     }
   };
 
+  // Stop all timers/speech/animations before leaving
+  const handleBack = () => {
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    if (roundTimeoutRef.current) clearTimeout(roundTimeoutRef.current);
+    glowOpacity.value = 0;
+    ballScale.value = 1;
+    setIsPaused(true);
+    clearScheduledSpeech();
+    onBack();
+  };
+
   // Game finished screen
   if (gameFinished && finalStats) {
     const accuracyPct = Math.round((finalStats.successfulRounds / finalStats.totalRounds) * 100);
     return (
       <SafeAreaView style={styles.container}>
         <TouchableOpacity
-          onPress={onBack}
+          onPress={handleBack}
           style={styles.backButton}
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
 
-        <View style={styles.completionContainer}>
+        <ScrollView contentContainerStyle={styles.completionScroll}>
           <LinearGradient
             colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
             style={StyleSheet.absoluteFillObject}
@@ -602,8 +650,10 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
             onHome={onBack}
           />
 
-          <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-        </View>
+          <Text style={styles.savedText}>
+            {practiceMode ? 'Practice mode - results not saved' : 'Saved! XP updated ✅'}
+          </Text>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -622,9 +672,76 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={onBack} style={styles.backButton}>
+      <TouchableOpacity onPress={handleBack} style={styles.backButton}>
         <Text style={styles.backButtonText}>← Back</Text>
       </TouchableOpacity>
+
+      {/* Toggles */}
+      <View style={styles.toggleRow}>
+        <TouchableOpacity
+          style={[styles.toggleButton, soundOn ? styles.toggleOn : styles.toggleOff]}
+          onPress={() => setSoundOn((v) => !v)}
+        >
+          <Text style={styles.toggleText}>Sound {soundOn ? 'On' : 'Off'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.toggleButton, hapticsOn ? styles.toggleOn : styles.toggleOff]}
+          onPress={() => setHapticsOn((v) => !v)}
+        >
+          <Text style={styles.toggleText}>Haptics {hapticsOn ? 'On' : 'Off'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.toggleButton, practiceMode ? styles.toggleOn : styles.toggleOff]}
+          onPress={() => setPracticeMode((v) => !v)}
+        >
+          <Text style={styles.toggleText}>Practice {practiceMode ? 'On' : 'Off'}</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.toggleRow}>
+        <TouchableOpacity
+          style={[styles.toggleButton, isPaused ? styles.toggleOff : styles.toggleOn]}
+          onPress={() => {
+            if (!isPaused) {
+              setIsPaused(true);
+              if (roundTimeoutRef.current) clearTimeout(roundTimeoutRef.current);
+              glowOpacity.value = 0;
+              ballScale.value = 1;
+            } else {
+              setIsPaused(false);
+              startRound();
+            }
+          }}
+        >
+          <Text style={styles.toggleText}>{isPaused ? 'Resume' : 'Pause'}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.toggleButton, eyeTrackingEnabled ? styles.toggleOn : styles.toggleOff]}
+          onPress={() => {
+            if (eyeTrackingEnabled) {
+              setEyeTrackingEnabled(false);
+              setShowGazeVisualization(false);
+            } else {
+              setShowCameraConsent(true);
+            }
+          }}
+        >
+          <Text style={styles.toggleText}>Eye Tracking {eyeTrackingEnabled ? 'On' : 'Off'}</Text>
+        </TouchableOpacity>
+
+        {eyeTrackingInitError && (
+          <TouchableOpacity
+            style={[styles.toggleButton, styles.toggleOff]}
+            onPress={() => {
+              setEyeTrackingInitError(null);
+              setShowCameraConsent(true);
+            }}
+          >
+            <Text style={styles.toggleText}>Retry Eye Tracking</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* Eye Tracking Camera (hidden, processing frames) */}
       {eyeTrackingEnabled && Platform.OS === 'web' && (
@@ -634,6 +751,8 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
           enabled={eyeTrackingEnabled && phase === 'moving'}
           showPreview={false}
           processingFps={10}
+          onError={(msg) => setEyeTrackingInitError(msg)}
+          onReady={() => setEyeTrackingInitError(null)}
         />
       )}
 
@@ -691,10 +810,6 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
         <Animated.View
           style={[
             styles.ball,
-            {
-              left: `${ballPos.x}%`,
-              top: `${ballPos.y}%`,
-            },
             ballAnimatedStyle,
           ]}
         >
@@ -823,6 +938,35 @@ const styles = StyleSheet.create({
     elevation: 4,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  toggleOn: {
+    backgroundColor: '#ECFDF3',
+    borderColor: '#22C55E',
+  },
+  toggleOff: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#CBD5E1',
+  },
+  toggleText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F172A',
   },
   attentionHeader: {
     flexDirection: 'row',
@@ -990,6 +1134,10 @@ const styles = StyleSheet.create({
   completionContainer: {
     flex: 1,
     marginTop: 60,
+  },
+  completionScroll: {
+    flexGrow: 1,
+    paddingBottom: 32,
   },
   completionContent: {
     flex: 1,

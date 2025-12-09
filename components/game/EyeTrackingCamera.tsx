@@ -29,6 +29,8 @@ interface EyeTrackingCameraProps {
   enabled: boolean;
   showPreview?: boolean;
   processingFps?: number; // Frames per second to process (default: 10)
+  onError?: (msg: string) => void;
+  onReady?: () => void;
 }
 
 export const EyeTrackingCamera: React.FC<EyeTrackingCameraProps> = ({
@@ -37,6 +39,8 @@ export const EyeTrackingCamera: React.FC<EyeTrackingCameraProps> = ({
   enabled,
   showPreview = false,
   processingFps = 10,
+  onError,
+  onReady,
 }) => {
   // For web, use browser MediaDevices API directly
   const [permission, setPermission] = useState<{ granted: boolean } | null>(null);
@@ -81,12 +85,18 @@ export const EyeTrackingCamera: React.FC<EyeTrackingCameraProps> = ({
         .then((success) => {
           setIsInitialized(success);
           if (!success) {
-            setError('Failed to initialize eye tracking. Please ensure you are using a modern browser.');
+            const msg = 'Failed to initialize eye tracking. Please ensure you are using a modern browser.';
+            setError(msg);
+            onError?.(msg);
+          } else {
+            onReady?.();
           }
         })
         .catch((err) => {
           console.error('Eye tracking initialization error:', err);
-          setError('Eye tracking not available');
+          const msg = 'Eye tracking not available';
+          setError(msg);
+          onError?.(msg);
           setIsInitialized(false);
         });
     } else if (enabled && Platform.OS !== 'web') {
@@ -154,7 +164,9 @@ export const EyeTrackingCamera: React.FC<EyeTrackingCameraProps> = ({
   const handleRequestPermission = async () => {
     const result = await requestPermission();
     if (!result.granted) {
-      setError('Camera permission is required for eye tracking');
+      const msg = 'Camera permission is required for eye tracking';
+      setError(msg);
+      onError?.(msg);
     }
   };
 

@@ -331,7 +331,12 @@ function SessionsGrid({
                   therapyMeta.id === 'speech' &&
                   level.levelNumber === 1 &&
                   sess.sessionNumber === 1;
-                if (isSpeechLvl1Sess1) {
+                const isOccupationalLvl1Sess1 =
+                  therapyMeta.id === 'occupational' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 1;
+
+                if (isSpeechLvl1Sess1 || isOccupationalLvl1Sess1) {
                   router.push({
                     pathname: '/(tabs)/SessionGames',
                     params: {
@@ -343,7 +348,7 @@ function SessionsGrid({
                 } else {
                   Alert.alert(
                     'Game not available',
-                    'Follow the Ball is only available in Speech Therapy Level 1 Session 1.'
+                    'Games are currently only available in Speech L1 Session 1 and Occupational L1 Session 1.'
                   );
                 }
               }}
