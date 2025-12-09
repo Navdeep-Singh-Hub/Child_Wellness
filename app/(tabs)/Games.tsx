@@ -21,6 +21,7 @@ import Animated, {
 
 import { ResultToast, SparkleBurst, Stepper } from '@/components/game/FX';
 import ResultCard from '@/components/game/ResultCard';
+import { BigTapTarget } from '@/components/game/BigTapTarget';
 import { CATEGORIES, type Tile, tileImages } from '@/constants/aac';
 import { icons } from '@/constants/icons';
 import { images } from '@/constants/images';
@@ -1936,7 +1937,7 @@ function FindEmoji({ onBack }: { onBack: () => void }) {
 
 
 // -------------------- Menu screen --------------------
-type GameKey = 'menu' | 'tap' | 'match' | 'sort' | 'emoji' | 'quiz';
+type GameKey = 'menu' | 'bigTap' | 'tap' | 'match' | 'sort' | 'emoji' | 'quiz';
 
 type MenuGame = {
   id: GameKey;
@@ -2040,6 +2041,7 @@ export default function GamesScreen() {
     })();
   }, []);
 
+  if (screen === 'bigTap') return <BigTapTarget onBack={() => setScreen('menu')} />;
   if (screen === 'tap') return <TapTiming onBack={() => setScreen('menu')} />;
   if (screen === 'match') return <PictureMatch onBack={() => setScreen('menu')} />;
   if (screen === 'sort') return <QuickSort onBack={() => setScreen('menu')} />;
@@ -2048,6 +2050,15 @@ export default function GamesScreen() {
 
   // Menu UI with beautiful cards
   const games: MenuGame[] = [
+    {
+      id: 'bigTap',
+      title: 'Big Tap Target',
+      emoji: '🫧',
+      description: 'Tap the big bubble to pop it! Track stars as you go.',
+      color: '#22C55E',
+      gradient: ['#22C55E', '#16A34A'] as [string, string],
+      icon: images.tapIcon,
+    },
     {
       id: 'tap',
       title: 'Tap Timing',
