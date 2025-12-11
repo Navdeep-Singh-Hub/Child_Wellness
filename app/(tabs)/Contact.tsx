@@ -3,18 +3,18 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useMemo, useState } from 'react';
 import {
-  Alert,
-  Linking,
-  SafeAreaView,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View
+    Alert,
+    Linking,
+    SafeAreaView,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { ActivityIndicator, Button, Chip, PaperProvider, TextInput } from 'react-native-paper';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
-import { useAuth } from '@/app/_layout';
+import { useAuth } from '@/app/providers/AuthProvider';
 import { sendContactMessage } from '@/utils/api';
 
 const Pressy = ({

@@ -1,4 +1,4 @@
-import { useAuth } from '@/app/_layout';
+import { useAuth } from '@/app/providers/AuthProvider';
 import { images } from '@/constants/images';
 import { getMyProfile } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,18 +7,18 @@ import { Redirect } from 'expo-router';
 import Lottie from 'lottie-react';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Animated,
-  Dimensions,
-  Easing,
-  Image,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Animated,
+    Dimensions,
+    Easing,
+    Image,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 import LoginButton from '../comonents/login';
 

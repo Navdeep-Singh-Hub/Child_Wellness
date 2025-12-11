@@ -1,4 +1,4 @@
-import { useAuth } from "@/app/_layout";
+import { useAuth } from "@/app/providers/AuthProvider";
 import { getMyProfile } from "@/utils/api";
 import { Redirect } from "expo-router";
 import React, { useEffect, useState } from "react";

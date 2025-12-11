@@ -1,6 +1,6 @@
-import { useAuth } from '@/app/_layout';
 import { setAuth0UserInfo, setTokenProvider } from '@/utils/api';
 import React, { useEffect } from 'react';
+import { useAuth } from './AuthProvider';
 
 export default function AuthTokenProvider({ children }: { children: React.ReactNode }) {
   const { session, getAccessToken } = useAuth();

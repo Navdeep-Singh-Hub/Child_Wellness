@@ -1,4 +1,4 @@
-import { useAuth } from '@/app/_layout';
+import { useAuth } from '@/app/providers/AuthProvider';
 import React from 'react';
 import { Image, Text, View } from 'react-native';
 

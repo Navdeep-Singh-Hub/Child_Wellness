@@ -1,0 +1,4 @@
+- [ ] Move app/providers/AuthProvider.tsx to src/providers/AuthProvider.tsx
+- [ ] Update imports in app/_layout.tsx and app/providers/AuthTokenProvider.tsx
+- [ ] Delete old app/providers/AuthProvider.tsx
+- [ ] Restart expo with clear cache

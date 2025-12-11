@@ -8,33 +8,31 @@ import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
-  Easing,
-  FadeInDown,
-  FadeInUp,
-  cancelAnimation,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSpring,
-  withTiming
+    Easing,
+    FadeInDown,
+    FadeInUp,
+    cancelAnimation,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSpring,
+    withTiming
 } from 'react-native-reanimated';
 
-import { ResultToast, SparkleBurst, Stepper } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { BigTapTarget } from '@/components/game/BigTapTarget';
+import { ResultToast, SparkleBurst, Stepper } from '@/components/game/FX';
+import BalloonPopGame from '@/components/game/MovingTargetTapGame';
+import MultiTapFunGame from '@/components/game/MultiTapFunGame';
+import ResultCard from '@/components/game/ResultCard';
+import TapAndHoldGame from '@/components/game/TapAndHoldGame';
+import TapRedCircleGame from '@/components/game/TapRedCircleGame';
 import { CATEGORIES, type Tile, tileImages } from '@/constants/aac';
 import { icons } from '@/constants/icons';
 import { images } from '@/constants/images';
 import { fetchMyStats, finishTapRound, logGameAndAward, recordGame, startTapRound } from '@/utils/api';
 
 // -------------------- Shared UI helpers --------------------
-function Card({ children, style }: any) {
-  return (
-    <View className="w-full max-w-xl rounded-3xl p-5 bg-white border border-gray-200" style={style}>
-      {children}
-    </View>
-  );
-}
+// Small reusable card was unused and removed to avoid an unused symbol lint warning.
 
 function BigButton({
   title,
@@ -64,7 +62,7 @@ function BigButton({
 // defaultRate chosen to be slightly slower for kids — tweak as needed
 const DEFAULT_TTS_RATE = 0.78;
 let lastSpokenQuestionId: number | string | null = null;
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -139,7 +137,7 @@ function tilesByCat(id: CatId): Tile[] {
 }
 const TRANSPORT = tilesByCat('transport');
 const FOOD = tilesByCat('food');
-const ANIMALS = tilesByCat('animals');   // optional, not used directly below but kept for future games
+// animals pool intentionally omitted when not used to avoid unused variable warnings
 const EMOTIONS = tilesByCat('emotions'); // used by Emoji game
 const JOBS = tilesByCat('jobs');
 const ACTIONS = tilesByCat('actions');
@@ -508,7 +506,6 @@ function PictureMatch({ onBack }: { onBack: () => void }) {
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const pmToastOpacity = useSharedValue(0);
   const pmToastY = useSharedValue(12);
-  const pmToastStyle = useAnimatedStyle(() => ({ opacity: pmToastOpacity.value, transform: [{ translateY: pmToastY.value }] }));
 
   const pulse = useSharedValue(1);
   const pulseStyle = useScaleStyle(pulse);
@@ -1678,12 +1675,12 @@ function FindEmoji({ onBack }: { onBack: () => void }) {
     transform: [{ translateY: toastY.value }],
   }));
 
-  const pulse = () => {
+  const pulse = useCallback(() => {
     scale.value = 1;
     scale.value = withSpring(1.06, { damping: 14, stiffness: 240 }, () => {
       scale.value = withSpring(1, { damping: 14, stiffness: 220 });
     });
-  };
+  }, [scale]);
 
   const showToast = () => {
     toastOpacity.value = 0;
@@ -1715,7 +1712,7 @@ function FindEmoji({ onBack }: { onBack: () => void }) {
       );
       speakQuestionWithOptions(question, optionLabels, newFreezeKey);
     }, 100);
-  }, [POOL]);
+  }, [POOL, pulse]);
 
   useEffect(() => { if (POOL.length) makeRound(); }, [POOL.length, makeRound]);
 
@@ -1937,7 +1934,7 @@ function FindEmoji({ onBack }: { onBack: () => void }) {
 
 
 // -------------------- Menu screen --------------------
-type GameKey = 'menu' | 'bigTap' | 'tap' | 'match' | 'sort' | 'emoji' | 'quiz';
+type GameKey = 'menu' | 'bigTap' | 'tap' | 'match' | 'sort' | 'emoji' | 'quiz' | 'tapRedCircle' | 'balloonPop' | 'tapAndHold' | 'multiTap';
 
 type MenuGame = {
   id: GameKey;
@@ -2047,6 +2044,10 @@ export default function GamesScreen() {
   if (screen === 'sort') return <QuickSort onBack={() => setScreen('menu')} />;
   if (screen === 'emoji') return <FindEmoji onBack={() => setScreen('menu')} />;
   if (screen === 'quiz') return <QuizChallenge onBack={() => setScreen('menu')} />;
+  if (screen === 'tapRedCircle') return <TapRedCircleGame onBack={() => setScreen('menu')} />;
+  if (screen === 'balloonPop') return <BalloonPopGame onBack={() => setScreen('menu')} />;
+  if (screen === 'tapAndHold') return <TapAndHoldGame onBack={() => setScreen('menu')} />;
+  if (screen === 'multiTap') return <MultiTapFunGame onBack={() => setScreen('menu')} />;
 
   // Menu UI with beautiful cards
   const games: MenuGame[] = [
@@ -2099,6 +2100,38 @@ export default function GamesScreen() {
       description: 'Test your knowledge! Colors, numbers, animals, shapes & birds!',
       color: '#9333EA',
       gradient: ['#9333EA', '#A855F7'] as [string, string],
+    },
+    {
+      id: 'tapRedCircle',
+      title: 'Red Circle Tap',
+      emoji: '🔴',
+      description: 'Tap the glowing red circle to build motor control and attention!',
+      color: '#EF4444',
+      gradient: ['#EF4444', '#DC2626'] as [string, string],
+    },
+    {
+      id: 'balloonPop',
+      title: 'Balloon Pop',
+      emoji: '🎈',
+      description: 'Tap the balloon as it moves slowly across the screen. Build hand-eye coordination!',
+      color: '#8B5CF6',
+      gradient: ['#8B5CF6', '#D946EF'] as [string, string],
+    },
+    {
+      id: 'tapAndHold',
+      title: 'Tap and Hold',
+      emoji: '✨',
+      description: 'Tap and hold the button for 2 seconds. Build finger control and endurance!',
+      color: '#3B82F6',
+      gradient: ['#3B82F6', '#06B6D4'] as [string, string],
+    },
+    {
+      id: 'multiTap',
+      title: 'Multi-Tap Fun',
+      emoji: '🎈',
+      description: 'Tap all 5 balloons one by one! Build coordination and finger precision!',
+      color: '#F472B6',
+      gradient: ['#F472B6', '#EC4899'] as [string, string],
     },
   ];
 
@@ -2209,22 +2242,11 @@ function animateWrong(v: any) {
 // -------------------- Small components --------------------
 function ChoiceCard({ tile, onPress }: { tile?: Tile; onPress: () => void }) {
   if (!tile || !tile.id) return null;
-  const scale = useSharedValue(1);
-  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  // Use a simple, non-hook-based implementation to avoid accidental "hooks called conditionally" lint
   return (
-    <Animated.View
-      style={[{ width: '31%', aspectRatio: 1, marginBottom: 10, borderRadius: 14, overflow: 'hidden' }, style]}
-    >
+    <View style={{ width: '31%', aspectRatio: 1, marginBottom: 10, borderRadius: 14, overflow: 'hidden' }}>
       <TouchableOpacity
-        onPress={() => {
-          // Call the game callback immediately — no waiting
-          onPress();
-          // Run button pop animation in parallel (purely visual)
-          cancelAnimation(scale);
-          scale.value = withTiming(1.05, { duration: 70 }, (f) => {
-            if (f) scale.value = withSpring(1, { damping: 16, stiffness: 280 });
-          });
-        }}
+        onPress={() => onPress()}
         activeOpacity={0.9}
         style={{ flex: 1, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#fff' }}
       >
@@ -2233,17 +2255,17 @@ function ChoiceCard({ tile, onPress }: { tile?: Tile; onPress: () => void }) {
         ) : tile.imageKey && tileImages[tile.imageKey] ? (
           <Image source={tileImages[tile.imageKey]} style={{ width: '100%', height: '78%' }} resizeMode="cover" />
         ) : (
-          <View className="flex-1 items-center justify-center">
-            <Text className="text-4xl">🧩</Text>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 28 }}>🧩</Text>
           </View>
         )}
         <View style={{ height: '22%', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC' }}>
-          <Text className="font-bold text-gray-800" numberOfLines={1}>
+          <Text style={{ fontWeight: '700', color: '#1F2937' }} numberOfLines={1}>
             {tile.label}
           </Text>
         </View>
       </TouchableOpacity>
-    </Animated.View>
+    </View>
   );
 }
 

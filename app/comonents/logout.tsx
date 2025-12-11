@@ -1,4 +1,4 @@
-import { useAuth } from '@/app/_layout';
+import { useAuth } from '@/app/providers/AuthProvider';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Text, TouchableOpacity } from 'react-native';
