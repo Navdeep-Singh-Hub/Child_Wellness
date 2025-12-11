@@ -1,22 +1,22 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
 import {
-  ActivityIndicator,
-  Alert,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import {
-  advanceTherapyProgress,
-  fetchTherapyProgress,
-  initTherapyProgress,
-  type TherapyProgress,
+    advanceTherapyProgress,
+    fetchTherapyProgress,
+    initTherapyProgress,
+    type TherapyProgress,
 } from '@/utils/api';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 const THERAPIES = [
   { id: 'speech', label: 'Speech Therapy', desc: 'Improve communication and speech skills', color: '#2563EB', icon: 'mic' },
@@ -313,7 +313,10 @@ function SessionsGrid({
       <Text style={styles.sectionTitle}>Sessions</Text>
       <View style={styles.grid}>
         {level.sessions.map((sess) => {
-          const unlocked = isCurrentLevel && sess.sessionNumber <= currentSession;
+          // Unlock logic: allow current session and next session (for progression)
+          // Also allow Level 1 Session 3 for testing/development
+          const isLevel1Session3 = therapyMeta.id === 'occupational' && level.levelNumber === 1 && sess.sessionNumber === 3;
+          const unlocked = (isCurrentLevel && sess.sessionNumber <= currentSession + 1) || isLevel1Session3;
           const completed = sess.completed;
           const labelColor = unlocked ? '#0F172A' : '#9CA3AF';
           return (
@@ -335,8 +338,20 @@ function SessionsGrid({
                   therapyMeta.id === 'occupational' &&
                   level.levelNumber === 1 &&
                   sess.sessionNumber === 1;
+                const isOccupationalLvl1Sess2 =
+                  therapyMeta.id === 'occupational' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 2;
+                const isOccupationalLvl1Sess3 =
+                  therapyMeta.id === 'occupational' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 3;
+                const isOccupationalLvl2Sess1 =
+                  therapyMeta.id === 'occupational' &&
+                  level.levelNumber === 2 &&
+                  sess.sessionNumber === 1;
 
-                if (isSpeechLvl1Sess1 || isOccupationalLvl1Sess1) {
+                if (isSpeechLvl1Sess1 || isOccupationalLvl1Sess1 || isOccupationalLvl1Sess2 || isOccupationalLvl1Sess3 || isOccupationalLvl2Sess1) {
                   router.push({
                     pathname: '/(tabs)/SessionGames',
                     params: {
@@ -348,7 +363,7 @@ function SessionsGrid({
                 } else {
                   Alert.alert(
                     'Game not available',
-                    'Games are currently only available in Speech L1 Session 1 and Occupational L1 Session 1.'
+                    'Games are currently available in Speech L1 Session 1, Occupational L1 Sessions 1-3, and Occupational L2 Session 1.'
                   );
                 }
               }}

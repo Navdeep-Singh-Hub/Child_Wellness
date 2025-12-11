@@ -11,6 +11,7 @@ import { buildNextActions, buildRecommendations, computeGlobalLevel, levelLabelF
 import { Message } from './models/Message.js';
 import { Session } from './models/Session.js';
 import { User } from './models/User.js';
+import gameRoutes from './routes/gameRoutes.js';
 import { smartExplorerRouter } from './routes/smartExplorer.js';
 import { tapGame } from './routes/tapGame.js';
 import { therapyProgressRouter } from './routes/therapyProgress.js';
@@ -176,11 +177,11 @@ function requireAuth(req, res, next) {
   req.userId = auth0Id; // Keep for backward compatibility
   next();
 }
-
 // Add tap game routes
 app.use('/api/tap', requireAuth, tapGame);
 app.use('/api/smart-explorer', requireAuth, smartExplorerRouter);
 app.use('/api/therapy', requireAuth, therapyProgressRouter);
+app.use('/api/games', requireAuth, gameRoutes);
 
 const SKILL_ALPHA = 0.3;
 const SKILL_LEVELS = [
@@ -321,7 +322,7 @@ app.get('/api/me/profile', requireAuth, async (req, res) => {
       phoneCountryCode: user.phoneCountryCode || '+91',
       phoneNumber: user.phoneNumber || '',
     });
-  } catch (e) {
+  } catch (_e) {
     res.status(500).json({ error: 'Failed to load profile' });
   }
 });
