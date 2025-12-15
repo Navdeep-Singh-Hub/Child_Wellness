@@ -3,7 +3,7 @@ import mongoose, { Schema } from 'mongoose';
 const GameLogSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', index: true, required: true },
-    type:   { type: String, enum: ['tap', 'match', 'sort', 'emoji', 'quiz', 'follow-ball', 'movingTarget', 'pop', 'tapAndHold', 'multiTap', 'smallCircleTap', 'tapOnlySmall', 'shrinkingTarget', 'trackThenTap', 'multipleSmallTargets', 'tapSlowly', 'tapFast', 'slowThenFast'], required: true },
+    type:   { type: String, enum: ['tap', 'match', 'sort', 'emoji', 'quiz', 'follow-ball', 'movingTarget', 'pop', 'tapAndHold', 'multiTap', 'smallCircleTap', 'tapOnlySmall', 'shrinkingTarget', 'trackThenTap', 'multipleSmallTargets', 'tapSlowly', 'tapFast', 'slowThenFast', 'tapWithSound', 'raceTheDot', 'holdTheButton', 'growTheBalloon', 'launchRocket', 'squishTheJelly', 'holdTheLight', 'dragBallToGoal', 'followTheLine', 'dragAnimalHome', 'dragSlowly', 'puzzlePieceDrag', 'tapTheNumbers', 'tapLightsInOrder', 'followTheArrows', 'tapColoursInOrder', 'tapTheBigOne', 'tapTheSmallOne', 'tapTheShapeIShowYou', 'findTheOddOneOut', 'matchShapeToOutline', 'tinyDotTap', 'tapTheCenterOfTheTarget', 'movingSmallTarget', 'tapOnlyTheSmallestShape', 'tapTheHiddenSmallObject', 'shrinkingCircleTap', 'tapWhenStarIsSmallest', 'shrinkStopTap', 'multipleShrinkingTargets', 'shrinkingObjectMovement', 'pinchToPop', 'pinchAndDrag', 'twoFingerSimultaneousTap', 'pinchToResize', 'pinchToOpenTreasureBox'], required: true },
     mode:   { type: String, enum: ['free-play', 'therapy', 'guided'], default: 'free-play' },
     difficulty: { type: String },
     skillTags: { type: [String], default: [] },
