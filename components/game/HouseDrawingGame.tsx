@@ -188,6 +188,9 @@ const HouseDrawingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, [currentDotIndex, dots, roundActive, done, endGame, playSuccess, playWarning]);
 
   useEffect(() => {
+    try {
+      Speech.speak('Connect the dots in order to draw a house!', { rate: 0.78 });
+    } catch {}
     generateDots();
   }, [round, generateDots]);
 

@@ -197,6 +197,9 @@ const DragBallToGoalGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     goalX.value = goalXPos;
     goalY.value = goalYPos;
 
+    try {
+      Speech.speak('Press the ball and drag it to the goal box. Release when it\'s inside!', { rate: 0.78 });
+    } catch {}
     // Randomize start position slightly
     const startXPos = 10 + Math.random() * 10; // 10-20%
     const startYPos = 40 + Math.random() * 20; // 40-60%

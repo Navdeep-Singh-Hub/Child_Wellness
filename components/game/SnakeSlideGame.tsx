@@ -269,6 +269,9 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Follow the smooth snake curve!', { rate: 0.78 });
+    } catch {}
     // Create smooth S-curve
     startX.value = 15;
     startY.value = 40 + Math.random() * 20;

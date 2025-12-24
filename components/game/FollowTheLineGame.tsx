@@ -232,6 +232,9 @@ const FollowTheLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               objectX.value = withSpring(lineStartX.value, { damping: 10, stiffness: 100 });
               objectY.value = withSpring(lineStartY.value, { damping: 10, stiffness: 100 });
               setRoundActive(true);
+              try {
+                Speech.speak('Drag the object along the thick line from start to end. Stay on the line!', { rate: 0.78 });
+              } catch {}
             }, 1500);
           }
           return newScore;
@@ -257,6 +260,11 @@ const FollowTheLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   // Initialize line path
   useEffect(() => {
+    if (round === 1) {
+      try {
+        Speech.speak('Drag the object along the thick line from start to end. Stay on the line!', { rate: 0.78 });
+      } catch {}
+    }
     // Random line direction (horizontal, vertical, or diagonal)
     const direction = Math.floor(Math.random() * 3);
     if (direction === 0) {

@@ -298,6 +298,9 @@ const MoonPathGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Trace the moon path curve!', { rate: 0.78 });
+    } catch {}
     centerX.value = 50;
     centerY.value = 50;
     radius.value = 25 + Math.random() * 15;

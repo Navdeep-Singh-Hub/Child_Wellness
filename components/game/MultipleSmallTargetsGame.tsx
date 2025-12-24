@@ -247,6 +247,9 @@ const MultipleSmallTargetsGame: React.FC<{ onBack?: () => void }> = ({ onBack })
 
   // Initialize first round
   useEffect(() => {
+    try {
+      Speech.speak('Tap all the small dots to clear the screen!', { rate: 0.78 });
+    } catch {}
     spawnDots();
   }, []);
 

@@ -347,6 +347,9 @@ const BallRollPathGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Roll the ball along the path! Drag to control the ball\'s movement.', { rate: 0.78 });
+    } catch {}
     // Generate curved rolling path
     const points: Array<{ x: number; y: number }> = [];
     const startX = 20;

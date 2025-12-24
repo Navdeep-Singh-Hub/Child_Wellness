@@ -337,6 +337,9 @@ const MiniSquareLocksGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Trace the mini square lock with precision!', { rate: 0.78 });
+    } catch {}
     const centerX = 50;
     const centerY = 50;
     const size = SQUARE_SIZE;

@@ -160,6 +160,9 @@ const TapColoursInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
       if (index >= newSequence.length) {
         setShowSequence(false);
         setRoundActive(true);
+        try {
+          Speech.speak('Watch the color sequence, then tap them in the same order!', { rate: 0.78 });
+        } catch {}
         return;
       }
 

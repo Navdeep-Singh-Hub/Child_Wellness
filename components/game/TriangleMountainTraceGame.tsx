@@ -347,6 +347,9 @@ const TriangleMountainTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }
     objectY.value = pathPoints.current[0].y;
     progress.value = 0;
     lastProgress.current = 0;
+    try {
+      Speech.speak('Trace the triangle mountain with your whole arm!', { rate: 0.78 });
+    } catch {}
     updatePaths();
   }, [round, updatePaths]);
 

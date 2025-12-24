@@ -176,7 +176,18 @@ const FaceSymmetryDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
     setMouth(null);
     setTargetFeature('eye');
     setRoundActive(true);
+    try {
+      Speech.speak('Tap to place left eye, right will mirror', { rate: 0.78 });
+    } catch {}
   }, [round]);
+
+  useEffect(() => {
+    if (targetFeature === 'mouth') {
+      try {
+        Speech.speak('Tap to place mouth, centered', { rate: 0.78 });
+      } catch {}
+    }
+  }, [targetFeature]);
 
   const handleBack = useCallback(() => {
     onBack?.();

@@ -306,6 +306,9 @@ const TinyCircleCoinsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     objectX.value = centerX.value + radius.value;
     objectY.value = centerY.value;
     updatePaths();
+    try {
+      Speech.speak('Trace the tiny circle coin with precision!', { rate: 0.78 });
+    } catch {}
   }, [round, updatePaths]);
 
   useEffect(() => {

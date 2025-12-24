@@ -210,6 +210,9 @@ const ShadowMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Match the shape to its exact shadow outline!', { rate: 0.78 });
+    } catch {}
     generateRound();
   }, [round, generateRound]);
 
