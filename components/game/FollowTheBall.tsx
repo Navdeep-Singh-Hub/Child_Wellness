@@ -1,30 +1,29 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-  withSpring,
-  Easing,
-  useAnimatedReaction,
-  runOnJS,
-} from 'react-native-reanimated';
-import * as Speech from 'expo-speech';
+import { advanceTherapyProgress, logGameAndAward } from '@/utils/api';
+import { BallPosition, EyeTrackingResult, isEyeTrackingAvailable } from '@/utils/eyeTracking';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { logGameAndAward, advanceTherapyProgress } from '@/utils/api';
 import { useRouter } from 'expo-router';
-import ResultCard from './ResultCard';
-import { SparkleBurst, ResultToast } from './FX';
-import { EyeTrackingCamera } from './EyeTrackingCamera';
-import { GazeVisualization } from './GazeVisualization';
+import * as Speech from 'expo-speech';
+import React, { useEffect, useRef, useState } from 'react';
+import { Dimensions, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import Animated, {
+    Easing,
+    runOnJS,
+    useAnimatedReaction,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSpring,
+    withTiming,
+} from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraConsent } from './CameraConsent';
-import { EyeTrackingResult, BallPosition, isEyeTrackingAvailable } from '@/utils/eyeTracking';
-import { Platform } from 'react-native';
+import { EyeTrackingCamera } from './EyeTrackingCamera';
+import { ResultToast, SparkleBurst } from './FX';
+import { GazeVisualization } from './GazeVisualization';
+import ResultCard from './ResultCard';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+// Will use useWindowDimensions hook inside component for responsive sizing
 
 const DEFAULT_TTS_RATE = 0.75;
 let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
@@ -74,6 +73,27 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
   gameId = 'game-1',
 }) => {
   const router = useRouter();
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
+  
+  // Ball size in pixels
+  const BALL_SIZE = 80;
+  const BALL_HALF = BALL_SIZE / 2; // 40px
+  
+  // Calculate safe boundaries (accounting for ball size and transform)
+  // Ball is positioned using left/top percentages, then translated by -40px
+  // So if left is X%, the actual left edge is at X% - 40px
+  // We need: X% - 40px >= 0 and X% + 40px <= 100%
+  // Convert 40px to percentage: (40 / SCREEN_WIDTH) * 100
+  // Use a safety margin of 50px (more than ball half) to ensure full visibility
+  const SAFETY_MARGIN = 50;
+  const BALL_OFFSET_PCT_X = (SAFETY_MARGIN / SCREEN_WIDTH) * 100;
+  const BALL_OFFSET_PCT_Y = (SAFETY_MARGIN / SCREEN_HEIGHT) * 100;
+  
+  // Clamp to reasonable bounds (at least 10% margin, at most 90% to ensure visibility)
+  const MIN_X = Math.max(10, BALL_OFFSET_PCT_X);
+  const MAX_X = Math.min(90, 100 - BALL_OFFSET_PCT_X);
+  const MIN_Y = Math.max(10, BALL_OFFSET_PCT_Y);
+  const MAX_Y = Math.min(90, 100 - BALL_OFFSET_PCT_Y);
   const [phase, setPhase] = useState<Phase>('moving');
   const [direction, setDirection] = useState<Direction>('leftToRight');
   const [attentionScore, setAttentionScore] = useState(50); // 0–100
@@ -186,23 +206,23 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
       speakIfEnabled(`Round ${activeRound}. Watch the ball!`);
     }
 
-    // Set starting position by direction
+    // Set starting position by direction (using safe boundaries)
     switch (dir) {
       case 'leftToRight':
-        ballX.value = 5;
+        ballX.value = MIN_X;
         ballY.value = 50;
         break;
       case 'rightToLeft':
-        ballX.value = 95;
+        ballX.value = MAX_X;
         ballY.value = 50;
         break;
       case 'upToDown':
         ballX.value = 50;
-        ballY.value = 10;
+        ballY.value = MIN_Y;
         break;
       case 'downToUp':
         ballX.value = 50;
-        ballY.value = 90;
+        ballY.value = MAX_Y;
         break;
     }
 
@@ -219,17 +239,17 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
     let targetY = ballY.value;
 
     if (dir === 'leftToRight') {
-      targetX = 95;
+      targetX = MAX_X;
       targetY = 50;
     } else if (dir === 'rightToLeft') {
-      targetX = 5;
+      targetX = MIN_X;
       targetY = 50;
     } else if (dir === 'upToDown') {
       targetX = 50;
-      targetY = 90;
+      targetY = MAX_Y;
     } else if (dir === 'downToUp') {
       targetX = 50;
-      targetY = 10;
+      targetY = MIN_Y;
     }
 
     ballX.value = withTiming(targetX, { duration: durationMs, easing: Easing.inOut(Easing.ease) });
