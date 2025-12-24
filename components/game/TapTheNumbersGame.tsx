@@ -197,6 +197,11 @@ const TapTheNumbersGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Reset sequence when round changes
   useEffect(() => {
     if (!done && roundActive) {
+      if (round === 1 || currentSequenceIndex === 0) {
+        try {
+          Speech.speak('Tap the numbers in order: 1, then 2, then 3!', { rate: 0.78 });
+        } catch {}
+      }
       setCurrentSequenceIndex(0);
     }
   }, [round, done, roundActive]);

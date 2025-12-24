@@ -112,6 +112,9 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setRedPosition(newPos);
     setRound((r) => r + 1);
     setIsDisabled(false);
+    try {
+      Speech.speak('Look! The red circle is glowing. Tap the red circle!', { rate: 0.78 });
+    } catch {}
   };
 
   const playSuccessSound = useSoundEffect(SUCCESS_SOUND);

@@ -222,6 +222,9 @@ const StickDesignCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setTargetPattern(pattern);
     setUserPattern([]);
     setRoundActive(true);
+    try {
+      Speech.speak('Copy the pre-writing stroke design!', { rate: 0.78 });
+    } catch {}
   }, [round]);
 
   const handleBack = useCallback(() => {

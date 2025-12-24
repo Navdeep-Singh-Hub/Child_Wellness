@@ -90,6 +90,11 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setIsComplete(false);
     setRoundActive(true);
     holdStartTimeRef.current = null;
+    if (round === 1) {
+      try {
+        Speech.speak('Tap and hold the button for 2 seconds. Don\'t let go!', { rate: 0.78 });
+      } catch {}
+    }
     progressAnim.setValue(0);
     buttonGlow.setValue(0);
     buttonScale.setValue(1);
@@ -223,6 +228,9 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } else {
         setRound((r) => r + 1);
         setTimeout(() => {
+          try {
+            Speech.speak('Tap and hold the button for 2 seconds. Don\'t let go!', { rate: 0.78 });
+          } catch {}
           resetRound();
         }, 800);
       }

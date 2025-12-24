@@ -226,6 +226,9 @@ const RaceTheDotGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   // Initialize first round
   useEffect(() => {
+    try {
+      Speech.speak(isFastMode ? 'Tap fast repeatedly to race the dot to the goal!' : 'Tap to keep the dot moving slowly toward the goal!', { rate: 0.78 });
+    } catch {}
     startRound();
   }, []);
 

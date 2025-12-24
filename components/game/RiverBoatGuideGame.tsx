@@ -301,6 +301,9 @@ const RiverBoatGuideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Keep the boat in the river! Follow the curvy path carefully.', { rate: 0.78 });
+    } catch {}
     // Generate curvy river path
     const points: Array<{ x: number; y: number }> = [];
     const startX = 20;

@@ -109,6 +109,9 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, [xAnim, scaleAnim]);
 
   useEffect(() => {
+    try {
+      Speech.speak('Watch the slow balloon and tap it before it reaches the other side!', { rate: 0.78 });
+    } catch {}
     startRound();
     return () => {
       currentAnimRef.current?.stop();
@@ -153,6 +156,9 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         if (justHit) setHits((h) => h + 1);
         setRound(nextRound);
         setTimeout(() => {
+          try {
+            Speech.speak('Watch the slow balloon and tap it before it reaches the other side!', { rate: 0.78 });
+          } catch {}
           startRound();
         }, 600);
       }

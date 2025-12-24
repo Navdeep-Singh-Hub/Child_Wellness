@@ -225,6 +225,9 @@ const MultiTapFunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           setTimeout(() => {
             setRound((r) => r + 1);
             setTimeout(() => {
+              try {
+                Speech.speak('Tap all the balloons!', { rate: 0.78 });
+              } catch {}
               spawnBalloons();
             }, 400);
           }, 600);
@@ -236,6 +239,9 @@ const MultiTapFunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   // Initialize first round
   useEffect(() => {
+    try {
+      Speech.speak('Tap all the balloons! Tap each balloon one by one.', { rate: 0.78 });
+    } catch {}
     spawnBalloons();
   }, []);
 

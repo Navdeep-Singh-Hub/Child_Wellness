@@ -208,6 +208,9 @@ const MirrorMazeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     rightX.value = MIRROR_LINE_X + (MIRROR_LINE_X - newMaze.startX);
     rightY.value = newMaze.startY;
     setRoundActive(true);
+    try {
+      Speech.speak('Move both objects together. Drag on the left, right mirrors!', { rate: 0.78 });
+    } catch {}
   }, [round]);
 
   const handleBack = useCallback(() => {

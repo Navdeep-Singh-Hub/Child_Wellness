@@ -196,6 +196,9 @@ const CookieCutterMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Shape fits only if aligned perfectly!', { rate: 0.78 });
+    } catch {}
     generateRound();
   }, [round, generateRound]);
 

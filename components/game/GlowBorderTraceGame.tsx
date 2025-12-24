@@ -322,6 +322,9 @@ const GlowBorderTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     objectX.value = centerX.value + radius.value;
     objectY.value = centerY.value;
     updatePaths();
+    try {
+      Speech.speak('Trace the thick glowing border!', { rate: 0.78 });
+    } catch {}
   }, [round, updatePaths]);
 
   useEffect(() => {

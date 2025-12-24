@@ -319,6 +319,9 @@ const ShrinkModeTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     objectX.value = centerX.value + newRadius;
     objectY.value = centerY.value;
     updatePaths();
+    try {
+      Speech.speak('Trace the circle as it shrinks smaller each round!', { rate: 0.78 });
+    } catch {}
   }, [round, updatePaths]);
 
   useEffect(() => {

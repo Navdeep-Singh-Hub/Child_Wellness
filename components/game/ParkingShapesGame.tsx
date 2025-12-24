@@ -220,6 +220,9 @@ const ParkingShapesGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, [roundActive, done]);
 
   useEffect(() => {
+    try {
+      Speech.speak('Rotate and align the shape correctly!', { rate: 0.78 });
+    } catch {}
     generateRound();
   }, [round, generateRound]);
 

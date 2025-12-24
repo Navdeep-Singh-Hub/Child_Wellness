@@ -360,6 +360,9 @@ const ZigZagRaceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Race along the zig-zag path! Take your time and follow carefully.', { rate: 0.78 });
+    } catch {}
     // Generate zig-zag race path
     const points: Array<{ x: number; y: number }> = [];
     const numSegments = 8 + Math.floor(Math.random() * 4);

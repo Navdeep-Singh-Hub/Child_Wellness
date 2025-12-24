@@ -181,6 +181,9 @@ const MirrorLineDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setLeftPath([]);
     setRightPath([]);
     setRoundActive(true);
+    try {
+      Speech.speak('Draw on the left side, and it will mirror on the right!', { rate: 0.78 });
+    } catch {}
   }, [round]);
 
   const handleBack = useCallback(() => {

@@ -5,16 +5,16 @@ import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Easing,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SparkleBurst } from './FX';
 import ResultCard from './ResultCard';
@@ -88,6 +88,11 @@ const TapWithSoundGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Beat loop - plays sound and lights up circle
   useEffect(() => {
     if (done) return;
+    if (score === 0) {
+      try {
+        Speech.speak('Listen to the drum beat and tap with it! Start slow, then tap fast.', { rate: 0.78 });
+      } catch {}
+    }
 
     const playBeat = () => {
       const now = Date.now();

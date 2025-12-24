@@ -229,6 +229,9 @@ const DragSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   // Initialize path
   useEffect(() => {
+    try {
+      Speech.speak('Drag the bar slowly along the path. Watch the speed meter!', { rate: 0.78 });
+    } catch {}
     // Horizontal path
     pathStartX.value = 15;
     pathEndX.value = 85;

@@ -69,6 +69,13 @@ const GrowTheBalloonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
+
+  // Initial speech on mount
+  useEffect(() => {
+    try {
+      Speech.speak('Press and hold to inflate the balloon. Release when it\'s big to make it float!', { rate: 0.78 });
+    } catch {}
+  }, []);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
@@ -160,7 +167,13 @@ const GrowTheBalloonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           }, 2500);
         } else {
           setTimeout(() => {
-            setRound((r) => r + 1);
+            setRound((r) => {
+              const nextRound = r + 1;
+              try {
+                Speech.speak('Press and hold to inflate the balloon. Release when it\'s big to make it float!', { rate: 0.78 });
+              } catch {}
+              return nextRound;
+            });
             setInflateProgress(0);
             setIsFloating(false);
             isFloatingRef.current = false;

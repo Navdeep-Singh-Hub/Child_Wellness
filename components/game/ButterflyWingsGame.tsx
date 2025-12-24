@@ -181,6 +181,9 @@ const ButterflyWingsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setLeftWingPath([]);
     setRightWingPath([]);
     setRoundActive(true);
+    try {
+      Speech.speak('Draw one wing on the left, and it will mirror on the right!', { rate: 0.78 });
+    } catch {}
   }, [round]);
 
   const handleBack = useCallback(() => {

@@ -225,6 +225,9 @@ const TrackThenTapSmallObjectGame: React.FC<{ onBack?: () => void }> = ({ onBack
         } else {
           runOnJS(setRound)((r) => r + 1);
           setTimeout(() => {
+            try {
+              Speech.speak('Follow the object with your eyes. When it stops, tap it quickly!', { rate: 0.78 });
+            } catch {}
             runOnJS(startRound)();
           }, 600);
         }
@@ -278,6 +281,9 @@ const TrackThenTapSmallObjectGame: React.FC<{ onBack?: () => void }> = ({ onBack
 
   // Initialize first round
   useEffect(() => {
+    try {
+      Speech.speak('Follow the object with your eyes. When it stops, tap it quickly!', { rate: 0.78 });
+    } catch {}
     startRound();
   }, []);
 

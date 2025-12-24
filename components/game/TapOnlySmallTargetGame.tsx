@@ -218,6 +218,9 @@ const TapOnlySmallTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
           setTimeout(() => {
             setRound((r) => r + 1);
             setTimeout(() => {
+              try {
+                Speech.speak('Watch for the small shape to glow, then tap only the small one!', { rate: 0.78 });
+              } catch {}
               startRound();
             }, 400);
           }, 600);
@@ -294,6 +297,9 @@ const TapOnlySmallTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
 
   // Initialize first round
   useEffect(() => {
+    try {
+      Speech.speak('Watch for the small shape to glow, then tap only the small one!', { rate: 0.78 });
+    } catch {}
     startRound();
   }, []);
 

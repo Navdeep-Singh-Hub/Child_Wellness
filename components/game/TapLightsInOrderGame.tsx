@@ -161,6 +161,9 @@ const TapLightsInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
       if (index >= sequenceToShow.length) {
         setIsShowingSequence(false);
         setRoundActive(true);
+        try {
+          Speech.speak('Watch the sequence, then tap the shapes in the same order!', { rate: 0.78 });
+        } catch {}
         return;
       }
 

@@ -279,6 +279,9 @@ const CurvyRoadDriveGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Drive along the curvy road!', { rate: 0.78 });
+    } catch {}
     startX.value = 15;
     startY.value = 50;
     controlX1.value = 30;
