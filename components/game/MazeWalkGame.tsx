@@ -328,6 +328,9 @@ const MazeWalkGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Follow the clear path through the maze. Stay on track!', { rate: 0.78 });
+    } catch {}
     // Generate simple maze path (easy - one clear path)
     const points: Array<{ x: number; y: number }> = [];
     const startX = 20;

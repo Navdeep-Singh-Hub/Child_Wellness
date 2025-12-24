@@ -329,6 +329,9 @@ const DontTouchGrassGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Stay on the path! Don\'t touch the grass on either side.', { rate: 0.78 });
+    } catch {}
     // Generate winding path through grass
     const points: Array<{ x: number; y: number }> = [];
     const startX = 20;

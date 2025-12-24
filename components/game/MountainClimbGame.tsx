@@ -342,6 +342,9 @@ const MountainClimbGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Follow the zig-zag path up the mountain! Change direction smoothly.', { rate: 0.78 });
+    } catch {}
     // Generate zig-zag mountain path (up and right)
     const points: Array<{ x: number; y: number }> = [];
     const numSegments = 5 + Math.floor(Math.random() * 3);

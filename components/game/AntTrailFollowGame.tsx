@@ -311,6 +311,9 @@ const AntTrailFollowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Follow the dotted trail! Stay on the path made of dots.', { rate: 0.78 });
+    } catch {}
     // Generate wavy trail path
     const points: Array<{ x: number; y: number }> = [];
     const startX = 20;

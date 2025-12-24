@@ -223,6 +223,9 @@ const HiddenShapeRevealGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
   }, [currentDotIndex, dots, roundActive, done, endGame, playSuccess, playWarning, shapeOpacity]);
 
   useEffect(() => {
+    try {
+      Speech.speak('Connect the dots in order to reveal the hidden shape!', { rate: 0.78 });
+    } catch {}
     generateDots();
   }, [round, generateDots]);
 

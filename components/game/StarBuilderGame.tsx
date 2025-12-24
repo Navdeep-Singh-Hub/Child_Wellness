@@ -203,6 +203,9 @@ const StarBuilderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, [currentDotIndex, dots, roundActive, done, endGame, playSuccess, playWarning]);
 
   useEffect(() => {
+    try {
+      Speech.speak('Connect the dots in order to build a star!', { rate: 0.78 });
+    } catch {}
     generateDots();
   }, [round, generateDots]);
 

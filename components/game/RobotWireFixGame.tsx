@@ -337,6 +337,9 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Follow the zig-zag wire to fix the robot! Trace the path carefully.', { rate: 0.78 });
+    } catch {}
     // Generate zig-zag wire path
     const points: Array<{ x: number; y: number }> = [];
     const numSegments = 7 + Math.floor(Math.random() * 3);

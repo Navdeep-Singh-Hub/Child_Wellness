@@ -84,6 +84,11 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Blink animation loop
   useEffect(() => {
     if (done) return;
+    if (score === 0) {
+      try {
+        Speech.speak('Wait for the circle to light up, then tap! Tap only when it\'s glowing.', { rate: 0.78 });
+      } catch {}
+    }
 
     const blinkLoop = () => {
       // Turn on (light up)

@@ -337,6 +337,9 @@ const LightningBoltGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Trace the lightning bolt with sharp angles! Follow the zig-zag path.', { rate: 0.78 });
+    } catch {}
     // Generate lightning bolt (sharp angles, top to bottom)
     const points: Array<{ x: number; y: number }> = [];
     const numSegments = 6 + Math.floor(Math.random() * 3);

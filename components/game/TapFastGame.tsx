@@ -77,6 +77,11 @@ const TapFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Rapid blink animation loop
   useEffect(() => {
     if (done) return;
+    if (score === 0) {
+      try {
+        Speech.speak('The circle blinks rapidly. Tap quickly to match the pace!', { rate: 0.78 });
+      } catch {}
+    }
 
     const blinkLoop = () => {
       const now = Date.now();

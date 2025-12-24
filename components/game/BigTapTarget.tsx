@@ -1,6 +1,7 @@
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn, runOnJS, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
@@ -96,6 +97,9 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
   };
 
   useEffect(() => {
+    try {
+      Speech.speak('Tap the big bubble! Burst it to earn a star!', { rate: 0.78 });
+    } catch {}
     spawnTarget();
   }, []);
 

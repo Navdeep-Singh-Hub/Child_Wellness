@@ -383,6 +383,9 @@ const DotBorderShapesGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     progress.value = 0;
     lastProgress.current = 0;
     updatePaths();
+    try {
+      Speech.speak('Trace the dotted border shape with precision!', { rate: 0.78 });
+    } catch {}
   }, [round, generateShape, updatePaths]);
 
   useEffect(() => {

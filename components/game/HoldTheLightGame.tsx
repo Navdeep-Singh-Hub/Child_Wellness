@@ -238,6 +238,11 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Reset round state
   useEffect(() => {
     if (roundActive && !done) {
+      if (round === 1 || score === 0) {
+        try {
+          Speech.speak('Press and hold to make the bulb glow brighter. Release at full brightness!', { rate: 0.78 });
+        } catch {}
+      }
       setGlowProgress(0);
       glowProgressRef.current = 0;
       setIsPressed(false);
@@ -248,7 +253,7 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       bulbScale.value = 1;
       flickerOpacity.value = 1;
     }
-  }, [round, roundActive, done]);
+  }, [round, roundActive, done, score]);
 
   // End game
   const endGame = useCallback(

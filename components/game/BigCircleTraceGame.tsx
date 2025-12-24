@@ -306,6 +306,9 @@ const BigCircleTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     objectX.value = centerX.value + radius.value;
     objectY.value = centerY.value;
     updatePaths();
+    try {
+      Speech.speak('Trace the big circle with your whole arm!', { rate: 0.78 });
+    } catch {}
   }, [round, updatePaths]);
 
   useEffect(() => {

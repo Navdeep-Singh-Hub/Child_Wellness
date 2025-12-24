@@ -317,6 +317,9 @@ const CarefulTraceChallengeGame: React.FC<{ onBack?: () => void }> = ({ onBack }
     objectY.value = centerY.value;
     offTrackCount.current = 0;
     updatePaths();
+    try {
+      Speech.speak('Trace slowly and carefully with precision!', { rate: 0.78 });
+    } catch {}
   }, [round, updatePaths]);
 
   useEffect(() => {

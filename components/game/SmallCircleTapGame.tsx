@@ -161,6 +161,9 @@ const SmallCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   // Initialize first target
   useEffect(() => {
+    try {
+      Speech.speak('Use your index finger to tap the small circle. Be precise!', { rate: 0.78 });
+    } catch {}
     spawnTarget();
   }, [spawnTarget]);
 

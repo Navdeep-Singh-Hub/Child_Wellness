@@ -174,6 +174,9 @@ const BlockPatternCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
     setTargetPattern(pattern);
     setUserPattern([]);
     setRoundActive(true);
+    try {
+      Speech.speak('Copy the pattern by tapping square or circle blocks!', { rate: 0.78 });
+    } catch {}
   }, [round]);
 
   const handleBack = useCallback(() => {
