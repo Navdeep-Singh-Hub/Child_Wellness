@@ -6,9 +6,26 @@ import Auth0 from "react-native-auth0";
 
 type Session = { accessToken?: string; idToken?: string; profile?: any };
 
-const domain = Constants.expoConfig?.extra?.EXPO_PUBLIC_AUTH0_DOMAIN!;
-const clientId = Constants.expoConfig?.extra?.EXPO_PUBLIC_AUTH0_CLIENT_ID_NATIVE!;
-const audience = Constants.expoConfig?.extra?.EXPO_PUBLIC_AUTH0_AUDIENCE as string | undefined;
+const extra = (Constants as any).expoConfig?.extra ?? {};
+// Strip protocol if present (react-native-auth0 requires hostname only)
+const stripProtocol = (url: string) => {
+  if (!url) return url;
+  return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+};
+const domainRaw =
+  (process.env.EXPO_PUBLIC_AUTH0_DOMAIN as string) || (extra.AUTH0_DOMAIN as string);
+const domain = stripProtocol(domainRaw);
+const clientId =
+  (process.env.EXPO_PUBLIC_AUTH0_CLIENT_ID_NATIVE as string) || (extra.AUTH0_CLIENT_ID_NATIVE as string);
+const audience =
+  (process.env.EXPO_PUBLIC_AUTH0_AUDIENCE as string) || (extra.AUTH0_AUDIENCE as string) || undefined;
+
+if (!domain || !clientId) {
+  console.error("Auth0 native config missing. domain:", domain, "clientId:", clientId);
+  throw new Error("Auth0 native: missing domain or clientId (check EXPO_PUBLIC_* or expo.extra)");
+}
+
+console.log("Auth0 Native - Domain:", domain, "ClientId:", clientId?.substring(0, 10) + "...");
 
 const auth0 = new Auth0({ domain, clientId });
 
@@ -35,7 +52,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async () => {
-    const redirectUri = Linking.createURL("/callback"); // gcwapp://.../callback
+    const redirectUri = Linking.createURL("/callback"); // childwellness://.../callback
+    console.log("=== AUTH0 LOGIN DEBUG ===");
+    console.log("Redirect URI:", redirectUri);
+    console.log("Domain:", domain);
+    console.log("ClientId:", clientId?.substring(0, 15) + "...");
+    console.log("=========================");
     const res = await auth0.webAuth.authorize({
       scope: "openid profile email offline_access",
       ...(audience ? { audience } : {}),
@@ -59,6 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signup = async (emailHint?: string) => {
     const redirectUri = Linking.createURL("/callback");
+    console.log("Auth0 Signup - Redirect URI:", redirectUri);
     const res = await auth0.webAuth.authorize({
       scope: "openid profile email offline_access",
       ...(audience ? { audience } : {}),

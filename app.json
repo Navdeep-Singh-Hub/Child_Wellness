@@ -4,19 +4,22 @@
     "slug": "ChildWellness",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icons/logo.png",
     "scheme": "ChildWellness",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "extra": {
-      "AUTH0_CLIENT_ID_NATIVE": "mVqiDhhSeBZ3BGUddxCvqheVb0VJcaGC",
+      "EXPO_PUBLIC_AUTH0_DOMAIN": "child-wellness.us.auth0.com",
+      "EXPO_PUBLIC_AUTH0_CLIENT_ID_NATIVE": "mVqiDhhSeBZ3BGUddxCvqheVb0VJcaGC",
+      "EXPO_PUBLIC_AUTH0_CLIENT_ID_WEB": "pK2uzbNONOHaPUPWbD9s7Y3qx6nYntEW",
       "AUTH0_DOMAIN": "child-wellness.us.auth0.com",
+      "AUTH0_CLIENT_ID_NATIVE": "mVqiDhhSeBZ3BGUddxCvqheVb0VJcaGC",
       "AUTH0_CLIENT_ID_WEB": "pK2uzbNONOHaPUPWbD9s7Y3qx6nYntEW"
     },
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "This app uses the camera to track your eye movements and measure attention during the Follow the Ball game. All processing happens locally on your device."
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your camera for jaw awareness exercises. All processing happens locally on your device."
       }
     },
     "android": {
@@ -24,28 +27,28 @@
       "permissions": [
         "CAMERA"
       ],
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.ChildWellness",
+      "minSdkVersion": 26
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/icons/logo.png"
     },
     "plugins": [
-      ["react-native-auth0", 
-      { "domain": "child-wellness.us.auth0.com" }],
+      [
+        "react-native-auth0",
+        {
+          "domain": "child-wellness.us.auth0.com"
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/icons/logo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -58,7 +61,21 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to track eye movements and measure attention during gameplay. All processing happens locally on your device."
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to track eye movements, measure attention, and detect jaw movements for speech therapy games. All processing happens locally on your device."
+        }
+      ],
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "$(PRODUCT_NAME) needs access to your camera for jaw awareness exercises. All processing happens locally on your device."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
         }
       ]
     ],

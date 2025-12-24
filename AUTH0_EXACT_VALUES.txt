@@ -1,0 +1,32 @@
+COPY AND PASTE THESE EXACT VALUES INTO AUTH0:
+
+==========================================
+ALLOWED CALLBACK URLS
+==========================================
+ChildWellness:///callback,childwellness://callback,com.anonymous.ChildWellness://callback
+
+IMPORTANT: NO SPACES after commas!
+
+==========================================
+ALLOWED LOGOUT URLS
+==========================================
+ChildWellness:///logout,childwellness://logout,com.anonymous.ChildWellness://logout
+
+IMPORTANT: NO SPACES after commas! Make sure these end with /logout, NOT /callback!
+
+==========================================
+APPLICATION LOGIN URI
+==========================================
+(Leave this field EMPTY - clear all text)
+
+==========================================
+STEPS:
+==========================================
+1. Go to Auth0 Dashboard > Applications > child-wellness > Settings
+2. Scroll to "Application URIs" section
+3. In "Allowed Callback URLs" - DELETE ALL, then paste the callback URLs above
+4. In "Allowed Logout URLs" - DELETE ALL, then paste the logout URLs above
+5. In "Application Login URI" - DELETE ALL text (leave empty)
+6. Click "Save"
+7. Try logging in again
+
