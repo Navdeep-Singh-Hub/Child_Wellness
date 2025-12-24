@@ -25,6 +25,7 @@ app.options('*', (req, res) => {
   const origin = req.headers.origin;
   const allowedOrigins = [
     'https://child-wellness.vercel.app',
+    'https://games-lpnk.onrender.com',
     'https://autismplay.in',
     'https://www.autismplay.in',
     'http://localhost:19006',
