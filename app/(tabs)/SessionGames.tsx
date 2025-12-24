@@ -6,6 +6,7 @@ import FindTheOddOneOutGame from '@/components/game/FindTheOddOneOutGame';
 import FollowTheArrowsGame from '@/components/game/FollowTheArrowsGame';
 import { FollowTheBall } from '@/components/game/FollowTheBall';
 import FollowTheLineGame from '@/components/game/FollowTheLineGame';
+import { FollowWhereILookGame } from '@/components/game/FollowWhereILookGame';
 import GrowTheBalloonGame from '@/components/game/GrowTheBalloonGame';
 import HoldTheButtonGame from '@/components/game/HoldTheButtonGame';
 import HoldTheLightGame from '@/components/game/HoldTheLightGame';
@@ -40,38 +41,96 @@ import MazeWalkGame from '@/components/game/MazeWalkGame';
 import MoonPathGame from '@/components/game/MoonPathGame';
 import MountainClimbGame from '@/components/game/MountainClimbGame';
 // import RainbowTraceGame from '@/components/game/RainbowTraceGame'; // File is empty
+import { BallRollCurvedTrackGame } from '@/components/game/BallRollCurvedTrackGame';
+import { CatchTheBouncingStar } from '@/components/game/CatchTheBouncingStar';
+import { DriveCarCurvyRoadGame } from '@/components/game/DriveCarCurvyRoadGame';
+import { EyesOnlyGame } from '@/components/game/EyesOnlyGame';
+import { EyesThenObjectGame } from '@/components/game/EyesThenObjectGame';
+import { FindSoundSourceGame } from '@/components/game/FindSoundSourceGame';
+import { FindTheSoundSourceGame } from '@/components/game/FindTheSoundSourceGame';
+import { FollowGazeToAnimationGame } from '@/components/game/FollowGazeToAnimationGame';
+import { FollowMyEyesGame } from '@/components/game/FollowMyEyesGame';
+import { FollowMyPointGame } from '@/components/game/FollowMyPointGame';
+import { FollowSlowMovementGame } from '@/components/game/FollowSlowMovementGame';
+import { FollowTheArrowGame } from '@/components/game/FollowTheArrowGame';
+import { FoodVsToyGame } from '@/components/game/FoodVsToyGame';
+import { GrowingFlowerGame } from '@/components/game/GrowingFlowerGame';
+import { JawAwarenessCrocodileGame } from '@/components/game/JawAwarenessCrocodileGame';
+import { JawPushChallengeGame } from '@/components/game/JawPushChallengeGame';
+import { JawRhythmTapGame } from '@/components/game/JawRhythmTapGame';
+import { JawStrengthBuilderGame } from '@/components/game/JawStrengthBuilderGame';
+import { JawSwingAdventureGame } from '@/components/game/JawSwingAdventureGame';
+import { LoudVsSoftGame } from '@/components/game/LoudVsSoftGame';
+import { MovingArmPointingGame } from '@/components/game/MovingArmPointingGame';
+import { MovingTargetWithExtraObjectsGame } from '@/components/game/MovingTargetWithExtraObjectsGame';
+import { MultiPointFollowGame } from '@/components/game/MultiPointFollowGame';
+import { PaintCurvedSnakeGame } from '@/components/game/PaintCurvedSnakeGame';
+import { PassTheBallGame } from '@/components/game/PassTheBallGame';
+import { PointToObjectAppearsGame } from '@/components/game/PointToObjectAppearsGame';
+import { RainbowCurveTraceGame } from '@/components/game/RainbowCurveTraceGame';
 import RiverBoatGuideGame from '@/components/game/RiverBoatGuideGame';
 import RobotWireFixGame from '@/components/game/RobotWireFixGame';
 import SawPathGame from '@/components/game/SawPathGame';
+import { SequenceWithDistractionGame } from '@/components/game/SequenceWithDistractionGame';
+import { ShapesAppearOneByOneGame } from '@/components/game/ShapesAppearOneByOneGame';
+import { ShowMeTheToyGame } from '@/components/game/ShowMeTheToyGame';
 import ShrinkStopTapGame from '@/components/game/ShrinkStopTapGame';
+import { SlowTaskWithPopUpDistractionGame } from '@/components/game/SlowTaskWithPopUpDistractionGame';
 import SlowThenFastGame from '@/components/game/SlowThenFastGame';
+import { SlowToFastGame } from '@/components/game/SlowToFastGame';
 import SmallCircleTapGame from '@/components/game/SmallCircleTapGame';
 import SmileMakerGame from '@/components/game/SmileMakerGame';
 import SnakeSlideGame from '@/components/game/SnakeSlideGame';
+import { SoundDistractionChallengeGame } from '@/components/game/SoundDistractionChallengeGame';
+import { SoundToChoiceGame } from '@/components/game/SoundToChoiceGame';
+import { SoundToTapGame } from '@/components/game/SoundToTapGame';
 import SquishTheJellyGame from '@/components/game/SquishTheJellyGame';
 import StarBuilderGame from '@/components/game/StarBuilderGame';
+import { StopWhenSoundStopsGame } from '@/components/game/StopWhenSoundStopsGame';
 import TapAndHoldGame from '@/components/game/TapAndHoldGame'; // Game 4: Tap and Hold
 import TapColoursInOrderGame from '@/components/game/TapColoursInOrderGame';
 import TapFastGame from '@/components/game/TapFastGame';
+import { TapForChoiceGame } from '@/components/game/TapForChoiceGame';
+import { TapForMagicGame } from '@/components/game/TapForMagicGame';
 import TapLightsInOrderGame from '@/components/game/TapLightsInOrderGame';
+import { TapOnlyOnYourTurnGame } from '@/components/game/TapOnlyOnYourTurnGame';
 import TapOnlySmallTargetGame from '@/components/game/TapOnlySmallTargetGame'; // Level 2 Game 1: Small Circle Tap
 import TapOnlyTheSmallestShapeGame from '@/components/game/TapOnlyTheSmallestShapeGame';
 import TapRedCircleGame from '@/components/game/TapRedCircleGame';
 import TapSlowlyGame from '@/components/game/TapSlowlyGame';
 import TapTheBigOneGame from '@/components/game/TapTheBigOneGame';
 import TapTheCenterOfTheTargetGame from '@/components/game/TapTheCenterOfTheTargetGame';
+import { TapTheCircleGame } from '@/components/game/TapTheCircleGame';
 import TapTheHiddenSmallObjectGame from '@/components/game/TapTheHiddenSmallObjectGame';
 import TapTheNumbersGame from '@/components/game/TapTheNumbersGame';
+import { TapThePointedObjectGame } from '@/components/game/TapThePointedObjectGame';
 import TapTheShapeIShowYouGame from '@/components/game/TapTheShapeIShowYouGame';
 import TapTheSmallOneGame from '@/components/game/TapTheSmallOneGame';
+import { TapTheTargetIgnoreDistractionGame } from '@/components/game/TapTheTargetIgnoreDistractionGame';
+import { TapToAnimateGame } from '@/components/game/TapToAnimateGame';
+import { TapToMakeSoundGame } from '@/components/game/TapToMakeSoundGame';
+import { TapToRevealGame } from '@/components/game/TapToRevealGame';
+import { TapWhatIShowYouGame } from '@/components/game/TapWhatIShowYouGame';
+import { TapWhatYouLikeGame } from '@/components/game/TapWhatYouLikeGame';
 import TapWhenStarIsSmallestGame from '@/components/game/TapWhenStarIsSmallestGame';
 import { TapWhereItLightsUpGame } from '@/components/game/TapWhereItLightsUpGame';
 import TapWithSoundGame from '@/components/game/TapWithSoundGame';
+import { TimerBarTapGame } from '@/components/game/TimerBarTapGame';
 import TinyDotTapGame from '@/components/game/TinyDotTapGame';
+import { TouchTheBallGame } from '@/components/game/TouchTheBallGame';
 import { TouchTheDotGame } from '@/components/game/TouchTheDotGame';
+import { TraceSmilingMouthGame } from '@/components/game/TraceSmilingMouthGame';
+import { TrackAndFreezeGame } from '@/components/game/TrackAndFreezeGame';
 import TrackThenTapSmallObjectGame from '@/components/game/TrackThenTapSmallObjectGame';
+import { TurnTimerGame } from '@/components/game/TurnTimerGame';
 import TwoFingerSimultaneousTapGame from '@/components/game/TwoFingerSimultaneousTapGame';
+import { WaitForTheSignalGame } from '@/components/game/WaitForTheSignalGame';
+import { WatchAndWaitGame } from '@/components/game/WatchAndWaitGame';
 import { WhereIsItGame } from '@/components/game/WhereIsItGame';
+import { WhichOneMovedGame } from '@/components/game/WhichOneMovedGame';
+import { WhichSideGame } from '@/components/game/WhichSideGame';
+import { WhichSoundGame } from '@/components/game/WhichSoundGame';
+import { YourTurnToCompleteGame } from '@/components/game/YourTurnToCompleteGame';
 import ZigZagRaceGame from '@/components/game/ZigZagRaceGame';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -79,7 +138,172 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type GameKey = 'menu' | 'follow-ball' | 'big-tap' | 'tap-red-circle' | 'game-3' | 'game-4' | 'game-5' | 'small-circle-tap' | 'tap-only-small' | 'shrinking-target' | 'track-then-tap' | 'multiple-small-targets' | 'tap-slowly' | 'tap-fast' | 'slow-then-fast' | 'tap-with-sound' | 'race-the-dot' | 'hold-the-button' | 'grow-the-balloon' | 'launch-rocket' | 'squish-the-jelly' | 'hold-the-light' | 'drag-ball-to-goal' | 'follow-the-line' | 'drag-animal-home' | 'drag-slowly' | 'puzzle-piece-drag' | 'tap-the-numbers' | 'tap-lights-in-order' | 'follow-the-arrows' | 'tap-colours-in-order' | 'tap-the-big-one' | 'tap-the-small-one' | 'tap-the-shape-i-show-you' | 'find-the-odd-one-out' | 'match-shape-to-outline' | 'tiny-dot-tap' | 'tap-the-center-of-the-target' | 'moving-small-target' | 'tap-only-the-smallest-shape' | 'tap-the-hidden-small-object' | 'shrinking-circle-tap' | 'tap-when-star-is-smallest' | 'shrink-stop-tap' | 'multiple-shrinking-targets' | 'shrinking-object-movement' | 'pinch-to-pop' | 'pinch-and-drag' | 'two-finger-simultaneous-tap' | 'pinch-to-resize' | 'pinch-to-open-treasure-box' | 'touch-the-dot' | 'where-is-it' | 'follow-and-touch' | 'tap-where-it-lights-up' | 'match-and-touch' | 'rainbow-trace' | 'snake-slide' | 'moon-path' | 'smile-maker' | 'curvy-road-drive' | 'mountain-climb' | 'lightning-bolt' | 'saw-path' | 'robot-wire-fix' | 'zig-zag-race' | 'maze-walk' | 'river-boat-guide' | 'ant-trail-follow' | 'ball-roll-path' | 'dont-touch-grass' | 'dot-to-dot-animal' | 'star-builder' | 'house-drawing' | 'hidden-shape-reveal' | 'connect-in-order-glow' | 'puzzle-drop-shapes' | 'shadow-match' | 'cookie-cutter-match' | 'parking-shapes' | 'fast-match' | 'big-circle-trace' | 'big-square-walk' | 'triangle-mountain-trace' | 'paint-the-shape' | 'glow-border-trace' | 'tiny-circle-coins' | 'mini-square-locks' | 'dot-border-shapes' | 'careful-trace-challenge' | 'shrink-mode-trace' | 'copy-the-line-pattern' | 'block-pattern-copy' | 'color-pattern-match' | 'stick-design-copy' | 'look-hide-draw' | 'mirror-line-draw' | 'butterfly-wings' | 'face-symmetry-draw' | 'half-shape-complete' | 'mirror-maze';
+type GameKey =
+  | 'menu'
+  | 'follow-ball'
+
+  // Speech additions
+  | 'catch-star'
+  | 'slow-to-fast'
+  | 'track-freeze'
+  | 'follow-look'
+  | 'tap-magic'
+  | 'tap-animate'
+  | 'tap-reveal'
+  | 'tap-sound'
+  | 'tap-choice'
+  | 'sound-to-tap'
+  | 'which-sound'
+  | 'find-sound-source'
+  | 'stop-when-sound-stops'
+  | 'loud-vs-soft'
+  | 'follow-my-eyes'
+  | 'eyes-then-object'
+  | 'which-side'
+  | 'follow-gaze-animation'
+  | 'eyes-only'
+  | 'follow-my-point'
+  | 'point-to-object-appears'
+  | 'tap-the-pointed-object'
+  | 'moving-arm-pointing'
+  | 'multi-point-follow'
+  | 'tap-what-you-like'
+  | 'which-one-moved'
+  | 'sound-to-choice'
+  | 'show-me-the-toy'
+  | 'food-vs-toy'
+  | 'pass-the-ball'
+  | 'tap-only-on-your-turn'
+  | 'your-turn-to-complete'
+  | 'wait-for-the-signal'
+  | 'turn-timer'
+  | 'watch-and-wait'
+  | 'growing-flower'
+  | 'timer-bar-tap'
+  | 'follow-slow-movement'
+  | 'shapes-appear-one-by-one'
+  | 'touch-the-ball'
+  | 'tap-the-circle'
+  | 'find-the-sound-source'
+  | 'tap-what-i-show-you'
+  | 'follow-the-arrow'
+  | 'tap-the-target-ignore-distraction'
+  | 'sound-distraction-challenge'
+  | 'slow-task-with-pop-up-distraction'
+  | 'sequence-with-distraction'
+  | 'moving-target-with-extra-objects'
+  | 'jaw-awareness-crocodile'
+  | 'jaw-swing-adventure'
+  | 'jaw-push-challenge'
+  | 'jaw-rhythm-tap'
+  | 'jaw-strength-builder'
+  | 'rainbow-curve-trace'
+  | 'drive-car-curvy-road'
+  | 'trace-smiling-mouth'
+  | 'ball-roll-curved-track'
+  | 'paint-curved-snake'
+
+  // OT + shared keys
+  | 'big-tap'
+  | 'tap-red-circle'
+  | 'game-3'
+  | 'game-4'
+  | 'game-5'
+  | 'small-circle-tap'
+  | 'tap-only-small'
+  | 'shrinking-target'
+  | 'track-then-tap'
+  | 'multiple-small-targets'
+  | 'tap-slowly'
+  | 'tap-fast'
+  | 'slow-then-fast'
+  | 'tap-with-sound'
+  | 'race-the-dot'
+  | 'hold-the-button'
+  | 'grow-the-balloon'
+  | 'launch-rocket'
+  | 'squish-the-jelly'
+  | 'hold-the-light'
+  | 'drag-ball-to-goal'
+  | 'follow-the-line'
+  | 'drag-animal-home'
+  | 'drag-slowly'
+  | 'puzzle-piece-drag'
+  | 'tap-the-numbers'
+  | 'tap-lights-in-order'
+  | 'follow-the-arrows'
+  | 'tap-colours-in-order'
+  | 'tap-the-big-one'
+  | 'tap-the-small-one'
+  | 'tap-the-shape-i-show-you'
+  | 'find-the-odd-one-out'
+  | 'match-shape-to-outline'
+  | 'tiny-dot-tap'
+  | 'tap-the-center-of-the-target'
+  | 'moving-small-target'
+  | 'tap-only-the-smallest-shape'
+  | 'tap-the-hidden-small-object'
+  | 'shrinking-circle-tap'
+  | 'tap-when-star-is-smallest'
+  | 'shrink-stop-tap'
+  | 'multiple-shrinking-targets'
+  | 'shrinking-object-movement'
+  | 'pinch-to-pop'
+  | 'pinch-and-drag'
+  | 'two-finger-simultaneous-tap'
+  | 'pinch-to-resize'
+  | 'pinch-to-open-treasure-box'
+  | 'touch-the-dot'
+  | 'where-is-it'
+  | 'follow-and-touch'
+  | 'tap-where-it-lights-up'
+  | 'match-and-touch'
+  | 'rainbow-trace'
+  | 'snake-slide'
+  | 'moon-path'
+  | 'smile-maker'
+  | 'curvy-road-drive'
+  | 'mountain-climb'
+  | 'lightning-bolt'
+  | 'saw-path'
+  | 'robot-wire-fix'
+  | 'zig-zag-race'
+  | 'maze-walk'
+  | 'river-boat-guide'
+  | 'ant-trail-follow'
+  | 'ball-roll-path'
+  | 'dont-touch-grass'
+  | 'dot-to-dot-animal'
+  | 'star-builder'
+  | 'house-drawing'
+  | 'hidden-shape-reveal'
+  | 'connect-in-order-glow'
+  | 'puzzle-drop-shapes'
+  | 'shadow-match'
+  | 'cookie-cutter-match'
+  | 'parking-shapes'
+  | 'fast-match'
+  | 'big-circle-trace'
+  | 'big-square-walk'
+  | 'triangle-mountain-trace'
+  | 'paint-the-shape'
+  | 'glow-border-trace'
+  | 'tiny-circle-coins'
+  | 'mini-square-locks'
+  | 'dot-border-shapes'
+  | 'careful-trace-challenge'
+  | 'shrink-mode-trace'
+  | 'copy-the-line-pattern'
+  | 'block-pattern-copy'
+  | 'color-pattern-match'
+  | 'stick-design-copy'
+  | 'look-hide-draw'
+  | 'mirror-line-draw'
+  | 'butterfly-wings'
+  | 'face-symmetry-draw'
+  | 'half-shape-complete'
+  | 'mirror-maze';
+
 
 type GameInfo = {
   id: string;
@@ -106,6 +330,34 @@ export default function SessionGamesScreen() {
 
   const isFollowBallAvailable =
     therapyId === 'speech' && levelNumber === 1 && sessionNumber === 1;
+
+  const isCatchStarAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 1;
+
+  const isSlowToFastAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 1;
+
+  const isTrackFreezeAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 1;
+
+  const isFollowLookAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 1;
+
+  // Level 1 Session 2 games
+  const isTapMagicAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 2;
+
+  const isTapAnimateAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 2;
+
+  const isTapRevealAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 2;
+
+  const isTapSoundAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 2;
+
+  const isTapChoiceAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 2;
 
   // Level 1 Session 1 games (ONLY for Session 1)
   const isBigTapAvailable =
@@ -450,6 +702,157 @@ export default function SessionGamesScreen() {
     therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 10;
   const isMirrorMazeAvailable =
     therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 10;
+  // Level 1 Session 3 games - Speech Therapy
+  const isSoundToTapAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 3;
+
+  const isWhichSoundAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 3;
+
+  const isFindSoundSourceAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 3;
+
+  const isStopWhenSoundStopsAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 3;
+
+  const isLoudVsSoftAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 3;
+
+  // Level 1 Session 4 games - Speech Therapy
+  const isFollowMyEyesAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 4;
+
+  const isEyesThenObjectAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 4;
+
+  const isWhichSideAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 4;
+
+  const isFollowGazeToAnimationAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 4;
+
+  const isEyesOnlyAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 4;
+
+  // Level 1 Session 5 games - Speech Therapy (Pointing Games)
+  const isFollowMyPointAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 5;
+
+  const isPointToObjectAppearsAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 5;
+
+  const isTapThePointedObjectAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 5;
+
+  const isMovingArmPointingAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 5;
+
+  const isMultiPointFollowAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 5;
+
+  // Level 1 Session 6 games - Speech Therapy (Choice & Instruction Games)
+  const isTapWhatYouLikeAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 6;
+
+  const isWhichOneMovedAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 6;
+
+  const isSoundToChoiceAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 6;
+
+  const isShowMeTheToyAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 6;
+
+  const isFoodVsToyAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 6;
+
+  // Level 1 Session 7 games - Speech Therapy (Turn-taking & Waiting Games)
+  const isPassTheBallAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 7;
+
+  const isTapOnlyOnYourTurnAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 7;
+
+  const isYourTurnToCompleteAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 7;
+
+  const isWaitForTheSignalAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 7;
+
+  const isTurnTimerAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 7;
+
+  // Level 1 Session 8 games - Speech Therapy (Sustained Attention Games)
+  const isWatchAndWaitAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 8;
+
+  const isGrowingFlowerAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 8;
+
+  const isTimerBarTapAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 8;
+
+  const isFollowSlowMovementAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 8;
+
+  const isShapesAppearOneByOneAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 8;
+
+  // Level 1 Session 9 games - Speech Therapy (Instruction Following Games)
+  const isTouchTheBallAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 9;
+
+  const isTapTheCircleAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 9;
+
+  const isFindTheSoundSourceAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 9;
+
+  const isTapWhatIShowYouAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 9;
+
+  const isFollowTheArrowAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 9;
+
+  // Level 1 Session 10 games - Speech Therapy (Distraction Filtering Games)
+  const isTapTheTargetIgnoreDistractionAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 10;
+
+  const isSoundDistractionChallengeAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 10;
+
+  const isSlowTaskWithPopUpDistractionAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 10;
+
+  const isSequenceWithDistractionAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 10;
+
+  const isMovingTargetWithExtraObjectsAvailable =
+    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 10;
+
+  // Level 2 Session 1 games - Speech Therapy (Jaw Awareness Games)
+  const isJawAwarenessCrocodileAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 1;
+  const isJawSwingAdventureAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 1;
+  const isJawPushChallengeAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 1;
+  const isJawRhythmTapAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 1;
+  const isJawStrengthBuilderAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 1;
+
+  // Level 2 Session 2 games (Occupational Therapy - Curve Tracing)
+  const isRainbowCurveTraceAvailable =
+    (therapyId === 'occupational' || therapyId === 'speech') && levelNumber === 2 && sessionNumber === 2;
+  const isDriveCarCurvyRoadAvailable =
+    (therapyId === 'occupational' || therapyId === 'speech') && levelNumber === 2 && sessionNumber === 2;
+  const isTraceSmilingMouthAvailable =
+    (therapyId === 'occupational' || therapyId === 'speech') && levelNumber === 2 && sessionNumber === 2;
+  const isBallRollCurvedTrackAvailable =
+    (therapyId === 'occupational' || therapyId === 'speech') && levelNumber === 2 && sessionNumber === 2;
+  const isPaintCurvedSnakeAvailable =
+    (therapyId === 'occupational' || therapyId === 'speech') && levelNumber === 2 && sessionNumber === 2;
 
   const GAMES: GameInfo[] = [
     {
@@ -459,6 +862,78 @@ export default function SessionGamesScreen() {
       description: 'Watch the ball and tap when it glows! Build your Focus Power.',
       color: '#3B82F6',
       available: isFollowBallAvailable,
+    },
+    {
+      id: 'catch-star',
+      title: 'Catch the Bouncing Star',
+      emoji: '⭐',
+      description: 'Tap the star as it bounces around! Build visual tracking and coordination.',
+      color: '#FCD34D',
+      available: isCatchStarAvailable,
+    },
+    {
+      id: 'slow-to-fast',
+      title: 'Slow → Fast Game',
+      emoji: '⭐',
+      description: 'Tap the object as it moves! Speed increases after 3 taps.',
+      color: '#F59E0B',
+      available: isSlowToFastAvailable,
+    },
+    {
+      id: 'track-freeze',
+      title: 'Track & Freeze',
+      emoji: '🚗',
+      description: 'Follow the car... tap only when it stops! Build impulse control.',
+      color: '#EF4444',
+      available: isTrackFreezeAvailable,
+    },
+    {
+      id: 'follow-look',
+      title: 'Follow Where I Look',
+      emoji: '👀',
+      description: 'Watch my eyes! Tap the object where I\'m looking. Build gaze following.',
+      color: '#F59E0B',
+      available: isFollowLookAvailable,
+    },
+    {
+      id: 'tap-magic',
+      title: 'Tap for Magic',
+      emoji: '✨',
+      description: 'Tap the button to make magic happen! Build cause & effect understanding.',
+      color: '#8B5CF6',
+      available: isTapMagicAvailable,
+    },
+    {
+      id: 'tap-animate',
+      title: 'Tap to Animate',
+      emoji: '🐕',
+      description: 'Tap the animal to make him jump, dance, or laugh! Build control & preference.',
+      color: '#F59E0B',
+      available: isTapAnimateAvailable,
+    },
+    {
+      id: 'tap-reveal',
+      title: 'Tap to Reveal',
+      emoji: '☁️',
+      description: 'Tap the cloud to see what\'s hiding! Build anticipation & attention.',
+      color: '#3B82F6',
+      available: isTapRevealAvailable,
+    },
+    {
+      id: 'tap-sound',
+      title: 'Tap to Make Sound',
+      emoji: '🥁',
+      description: 'Tap the instrument to hear it play! Build sound association & listening.',
+      color: '#F59E0B',
+      available: isTapSoundAvailable,
+    },
+    {
+      id: 'tap-choice',
+      title: 'Tap for Choice',
+      emoji: '🎯',
+      description: 'Tap what you like! Choose between two items. Builds early choice-making.',
+      color: '#3B82F6',
+      available: isTapChoiceAvailable,
     },
     {
       id: 'big-tap',
@@ -1263,6 +1738,415 @@ export default function SessionGamesScreen() {
     //   color: '#22C55E',
     //   available: isMirrorMazeAvailable,
     // },
+    // Speech Therapy Level 1 Session 3 games
+    {
+      id: 'sound-to-tap',
+      title: 'Sound → Tap',
+      emoji: '🔔',
+      description: 'Listen to the sound, then tap when the circle appears! Build sound detection and reaction timing.',
+      color: '#3B82F6',
+      available: isSoundToTapAvailable,
+    },
+    {
+      id: 'which-sound',
+      title: 'Which Sound?',
+      emoji: '🎵',
+      description: 'Listen to the sound and tap the matching picture! Build sound discrimination.',
+      color: '#8B5CF6',
+      available: isWhichSoundAvailable,
+    },
+    {
+      id: 'find-sound-source',
+      title: 'Find the Sound Source',
+      emoji: '🔍',
+      description: 'Listen to the sound and find what made it! Link sounds to objects.',
+      color: '#F59E0B',
+      available: isFindSoundSourceAvailable,
+    },
+    {
+      id: 'stop-when-sound-stops',
+      title: 'Stop When Sound Stops',
+      emoji: '🛑',
+      description: 'Watch the ball move with sound. Tap when the sound stops! Build self-control and auditory focus.',
+      color: '#22C55E',
+      available: isStopWhenSoundStopsAvailable,
+    },
+    {
+      id: 'loud-vs-soft',
+      title: 'Loud vs Soft',
+      emoji: '🔊',
+      description: 'Listen! Loud sound? Tap big! Soft sound? Tap small! Build volume discrimination.',
+      color: '#EC4899',
+      available: isLoudVsSoftAvailable,
+    },
+    // Speech Therapy Level 1 Session 4 games
+    {
+      id: 'follow-my-eyes',
+      title: 'Follow My Eyes',
+      emoji: '👁️',
+      description: 'Watch where I look! Tap the toy that appears on that side. Build gaze following and joint attention.',
+      color: '#60A5FA',
+      available: isFollowMyEyesAvailable,
+    },
+    {
+      id: 'eyes-then-object',
+      title: 'Eyes Then Object',
+      emoji: '👀',
+      description: 'Watch my eyes, wait for the pause, then tap the toy! Build gaze interpretation and processing time.',
+      color: '#3B82F6',
+      available: isEyesThenObjectAvailable,
+    },
+    {
+      id: 'which-side',
+      title: 'Which Side?',
+      emoji: '🤔',
+      description: 'I\'m looking at one of the toys. Can you find it? Build visual scanning and decision-making.',
+      color: '#8B5CF6',
+      available: isWhichSideAvailable,
+    },
+    {
+      id: 'follow-gaze-animation',
+      title: 'Follow My Gaze to Animation',
+      emoji: '🎈',
+      description: 'Watch me look up! Tap the balloon that floats up. Build vertical gaze following and tracking.',
+      color: '#EF4444',
+      available: isFollowGazeToAnimationAvailable,
+    },
+    {
+      id: 'eyes-only',
+      title: 'Eyes Only',
+      emoji: '👁️',
+      description: 'Only my eyes move! Watch carefully and tap the correct toy. Build subtle social cue reading.',
+      color: '#10B981',
+      available: isEyesOnlyAvailable,
+    },
+    // Speech Therapy Level 1 Session 5 games (Pointing Games)
+    {
+      id: 'follow-my-point',
+      title: 'Follow My Point',
+      emoji: '👆',
+      description: 'Watch me point! Tap the object I\'m pointing to. Build gesture following and joint attention.',
+      color: '#FCD34D',
+      available: isFollowMyPointAvailable,
+    },
+    {
+      id: 'point-to-object-appears',
+      title: 'Point → Object Appears',
+      emoji: '✨',
+      description: 'I point, then the object appears! Tap it when you see it. Build gesture anticipation and social prediction.',
+      color: '#60A5FA',
+      available: isPointToObjectAppearsAvailable,
+    },
+    {
+      id: 'tap-the-pointed-object',
+      title: 'Tap the Pointed Object',
+      emoji: '🎯',
+      description: 'Three objects appear. I point to one—can you find it? Build discrimination and social interpretation.',
+      color: '#8B5CF6',
+      available: isTapThePointedObjectAvailable,
+    },
+    {
+      id: 'moving-arm-pointing',
+      title: 'Moving Arm Pointing',
+      emoji: '🤲',
+      description: 'Watch my arm move slowly and point! Follow the motion and tap. Build visual tracking and gesture integration.',
+      color: '#3B82F6',
+      available: isMovingArmPointingAvailable,
+    },
+    {
+      id: 'multi-point-follow',
+      title: 'Multi-Point Follow',
+      emoji: '⚡',
+      description: 'I point left, then right—follow quickly! Build rapid attention shifting and sustained engagement.',
+      color: '#EF4444',
+      available: isMultiPointFollowAvailable,
+    },
+    // Speech Therapy Level 1 Session 6 games (Choice & Instruction Games)
+    {
+      id: 'tap-what-you-like',
+      title: 'Tap What You Like',
+      emoji: '💝',
+      description: 'Choose the one you like! No wrong answer—build confidence and preference expression.',
+      color: '#FCD34D',
+      available: isTapWhatYouLikeAvailable,
+    },
+    {
+      id: 'which-one-moved',
+      title: 'Which One Moved?',
+      emoji: '👀',
+      description: 'Watch carefully! One picture wiggles—tap the one that moved. Build visual discrimination.',
+      color: '#60A5FA',
+      available: isWhichOneMovedAvailable,
+    },
+    {
+      id: 'sound-to-choice',
+      title: 'Sound → Choice',
+      emoji: '🔊',
+      description: 'Listen to the sound, then tap the matching picture! Link sounds to objects.',
+      color: '#8B5CF6',
+      available: isSoundToChoiceAvailable,
+    },
+    {
+      id: 'show-me-the-toy',
+      title: 'Show Me The Toy',
+      emoji: '👆',
+      description: 'I\'ll tell you which one to tap! Follow simple instructions and build vocabulary.',
+      color: '#3B82F6',
+      available: isShowMeTheToyAvailable,
+    },
+    {
+      id: 'food-vs-toy',
+      title: 'Food vs Toy',
+      emoji: '🗂️',
+      description: 'Tap the food or tap the toy! Learn to sort by category and build cognitive reasoning.',
+      color: '#EF4444',
+      available: isFoodVsToyAvailable,
+    },
+    // Speech Therapy Level 1 Session 7 games (Turn-taking & Waiting)
+    {
+      id: 'pass-the-ball',
+      title: 'Pass the Ball',
+      emoji: '⚽',
+      description: 'Take turns passing the ball! Learn turn-taking and waiting.',
+      color: '#22C55E',
+      available: isPassTheBallAvailable,
+    },
+    {
+      id: 'tap-only-on-your-turn',
+      title: 'Tap Only On Your Turn',
+      emoji: '🟢',
+      description: 'Tap when you see GO! Wait when you see STOP! Build self-control.',
+      color: '#EF4444',
+      available: isTapOnlyOnYourTurnAvailable,
+    },
+    {
+      id: 'your-turn-to-complete',
+      title: 'Your Turn to Complete',
+      emoji: '🧩',
+      description: 'Take turns placing puzzle pieces! Learn alternating turns.',
+      color: '#6366F1',
+      available: isYourTurnToCompleteAvailable,
+    },
+    {
+      id: 'wait-for-the-signal',
+      title: 'Wait for the Signal',
+      emoji: '🫧',
+      description: 'Watch the spinner! Tap only when it turns green. Build waiting skills.',
+      color: '#06B6D4',
+      available: isWaitForTheSignalAvailable,
+    },
+    {
+      id: 'turn-timer',
+      title: 'Turn Timer',
+      emoji: '⏱️',
+      description: 'Wait for the timer to fill, then tap! Learn timed waiting.',
+      color: '#FCD34D',
+      available: isTurnTimerAvailable,
+    },
+    // Speech Therapy Level 1 Session 8 games (Sustained Attention Games)
+    {
+      id: 'watch-and-wait',
+      title: 'Watch and Wait',
+      emoji: '🎈',
+      description: 'Watch the object move slowly, then tap when the ring appears! Build sustained attention.',
+      color: '#FCD34D',
+      available: isWatchAndWaitAvailable,
+    },
+    {
+      id: 'growing-flower',
+      title: 'Growing Flower',
+      emoji: '🌻',
+      description: 'Watch the flower grow! Tap when it\'s fully bloomed. Build patience and delayed gratification.',
+      color: '#22C55E',
+      available: isGrowingFlowerAvailable,
+    },
+    {
+      id: 'timer-bar-tap',
+      title: 'Timer Bar → Tap',
+      emoji: '⭐',
+      description: 'Watch the bar fill! Tap only when it\'s full. Build time perception and control.',
+      color: '#3B82F6',
+      available: isTimerBarTapAvailable,
+    },
+    {
+      id: 'follow-slow-movement',
+      title: 'Follow the Slow Movement',
+      emoji: '🐢',
+      description: 'Follow the slow-moving object with your eyes, then tap when it stops! Build extended attention.',
+      color: '#8B5CF6',
+      available: isFollowSlowMovementAvailable,
+    },
+    {
+      id: 'shapes-appear-one-by-one',
+      title: 'Shapes Appear One By One',
+      emoji: '🔵',
+      description: 'Watch shapes appear one by one, then tap all three! Build multi-step attention and memory.',
+      color: '#EC4899',
+      available: isShapesAppearOneByOneAvailable,
+    },
+    // Level 1 Session 9 games - Speech Therapy (Instruction Following Games)
+    {
+      id: 'touch-the-ball',
+      title: 'Touch the Ball',
+      emoji: '⚽',
+      description: 'Listen to the instruction and touch the correct object! Build receptive command understanding.',
+      color: '#3B82F6',
+      available: isTouchTheBallAvailable,
+    },
+    {
+      id: 'tap-the-circle',
+      title: 'Tap the Circle',
+      emoji: '⭕',
+      description: 'Follow the shape instruction! Tap the correct shape. Build shape recognition and discrimination.',
+      color: '#8B5CF6',
+      available: isTapTheCircleAvailable,
+    },
+    {
+      id: 'find-the-sound-source',
+      title: 'Find the Sound Source',
+      emoji: '🔊',
+      description: 'Listen to the sound, then show me the matching object! Build sound-object linking.',
+      color: '#F59E0B',
+      available: isFindTheSoundSourceAvailable,
+    },
+    {
+      id: 'tap-what-i-show-you',
+      title: 'Tap What I Show You',
+      emoji: '✨',
+      description: 'Watch the glowing object, then tap it! Build visual instruction comprehension.',
+      color: '#22C55E',
+      available: isTapWhatIShowYouAvailable,
+    },
+    {
+      id: 'follow-the-arrow',
+      title: 'Follow the Arrow',
+      emoji: '➡️',
+      description: 'Follow the arrow and tap the object it points to! Build gestural cue understanding.',
+      color: '#EC4899',
+      available: isFollowTheArrowAvailable,
+    },
+    // Level 1 Session 10 games - Speech Therapy (Distraction Filtering Games)
+    {
+      id: 'tap-the-target-ignore-distraction',
+      title: 'Tap the Target, Ignore Distraction',
+      emoji: '🎯',
+      description: 'Tap the target object only! Ignore the flying distraction. Build selective attention.',
+      color: '#FCD34D',
+      available: isTapTheTargetIgnoreDistractionAvailable,
+    },
+    {
+      id: 'sound-distraction-challenge',
+      title: 'Sound Distraction Challenge',
+      emoji: '🔊',
+      description: 'Wait for the target to glow while sounds play! Build auditory filtering.',
+      color: '#3B82F6',
+      available: isSoundDistractionChallengeAvailable,
+    },
+    {
+      id: 'slow-task-with-pop-up-distraction',
+      title: 'Slow Task + Pop-up Distraction',
+      emoji: '🌻',
+      description: 'Watch the flower grow while ignoring pop-ups! Build sustained attention.',
+      color: '#22C55E',
+      available: isSlowTaskWithPopUpDistractionAvailable,
+    },
+    {
+      id: 'sequence-with-distraction',
+      title: 'Sequence with Distraction',
+      emoji: '🔢',
+      description: 'Tap shapes in order while ignoring distractions! Build multi-step focus.',
+      color: '#8B5CF6',
+      available: isSequenceWithDistractionAvailable,
+    },
+    {
+      id: 'moving-target-with-extra-objects',
+      title: 'Moving Target + Extra Objects',
+      emoji: '⚽',
+      description: 'Tap the moving target only! Ignore other moving objects. Build visual filtering.',
+      color: '#F59E0B',
+      available: isMovingTargetWithExtraObjectsAvailable,
+    },
+    {
+      id: 'jaw-awareness-crocodile',
+      title: 'Jaw Awareness Crocodile',
+      emoji: '🐊',
+      description: 'Copy the crocodile! Open and close your mouth to match. Build jaw awareness and control.',
+      color: '#22C55E',
+      available: isJawAwarenessCrocodileAvailable,
+    },
+    {
+      id: 'jaw-swing-adventure',
+      title: 'Jaw Swing Adventure',
+      emoji: '🦸',
+      description: 'Move your jaw left and right to control the character! Build lateral jaw movement.',
+      color: '#FCD34D',
+      available: isJawSwingAdventureAvailable,
+    },
+    {
+      id: 'jaw-push-challenge',
+      title: 'Jaw Push Challenge',
+      emoji: '🚀',
+      description: 'Push your jaw forward to collect objects! Build jaw protrusion strength.',
+      color: '#0EA5E9',
+      available: isJawPushChallengeAvailable,
+    },
+    {
+      id: 'jaw-rhythm-tap',
+      title: 'Jaw Rhythm Tap',
+      emoji: '🎵',
+      description: 'Tap to open and close your jaw in rhythm! Build coordination and timing.',
+      color: '#A855F7',
+      available: isJawRhythmTapAvailable,
+    },
+    {
+      id: 'jaw-strength-builder',
+      title: 'Jaw Strength Builder',
+      emoji: '🏗️',
+      description: 'Hold your jaw open or closed to build structures! Build jaw strength and endurance.',
+      color: '#F59E0B',
+      available: isJawStrengthBuilderAvailable,
+    },
+    // Level 2 Session 2 games (Occupational Therapy - Curve Tracing)
+    {
+      id: 'rainbow-curve-trace',
+      title: 'Rainbow Curve Trace',
+      emoji: '🌈',
+      description: 'Trace a big, smooth curve with a glowing finger! Build wrist rotation and prepare for letters.',
+      color: '#8B5CF6',
+      available: isRainbowCurveTraceAvailable,
+    },
+    {
+      id: 'drive-car-curvy-road',
+      title: 'Drive the Car on Curvy Road',
+      emoji: '🚗',
+      description: 'Follow a curved road using drag with a small car! Build continuous motion control and visual tracking.',
+      color: '#22C55E',
+      available: isDriveCarCurvyRoadAvailable,
+    },
+    {
+      id: 'trace-smiling-mouth',
+      title: 'Trace the Smiling Mouth',
+      emoji: '😊',
+      description: 'Trace a big smile to make the face happy! Build emotion-based engagement and natural curved shape recognition.',
+      color: '#FCD34D',
+      available: isTraceSmilingMouthAvailable,
+    },
+    {
+      id: 'ball-roll-curved-track',
+      title: 'Ball Roll on Curved Track',
+      emoji: '⚽',
+      description: 'Drag to roll a ball along a curved rail to reach a star! Build bilateral coordination prep and smooth directional movement.',
+      color: '#3B82F6',
+      available: isBallRollCurvedTrackAvailable,
+    },
+    {
+      id: 'paint-curved-snake',
+      title: 'Paint the Curved Snake',
+      emoji: '🐍',
+      description: 'Trace to color a snake body outline with a curved body! Build motivation and encourage full-path completion.',
+      color: '#10B981',
+      available: isPaintCurvedSnakeAvailable,
+    },
   ];
 
   // ---------- Game render switches ----------
@@ -1277,6 +2161,42 @@ export default function SessionGamesScreen() {
         gameId="game-1"
       />
     );
+  }
+
+  if (currentGame === 'catch-star') {
+    return <CatchTheBouncingStar onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'slow-to-fast') {
+    return <SlowToFastGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'track-freeze') {
+    return <TrackAndFreezeGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'follow-look') {
+    return <FollowWhereILookGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-magic') {
+    return <TapForMagicGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-animate') {
+    return <TapToAnimateGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-reveal') {
+    return <TapToRevealGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-sound') {
+    return <TapToMakeSoundGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-choice') {
+    return <TapForChoiceGame onBack={() => setCurrentGame('menu')} />;
   }
 
   if (currentGame === 'big-tap') {
@@ -1686,6 +2606,210 @@ export default function SessionGamesScreen() {
   //   return <MirrorMazeGame onBack={() => setCurrentGame('menu')} />;
   // }
 
+  // Speech Therapy Level 1 Session 3 games
+  if (currentGame === 'sound-to-tap') {
+    return <SoundToTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'which-sound') {
+    return <WhichSoundGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'find-sound-source') {
+    return <FindSoundSourceGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'stop-when-sound-stops') {
+    return <StopWhenSoundStopsGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'loud-vs-soft') {
+    return <LoudVsSoftGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Speech Therapy Level 1 Session 4 games
+  if (currentGame === 'follow-my-eyes') {
+    return <FollowMyEyesGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'eyes-then-object') {
+    return <EyesThenObjectGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'which-side') {
+    return <WhichSideGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'follow-gaze-animation') {
+    return <FollowGazeToAnimationGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'eyes-only') {
+    return <EyesOnlyGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Speech Therapy Level 1 Session 5 games (Pointing Games)
+  if (currentGame === 'follow-my-point') {
+    return <FollowMyPointGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'point-to-object-appears') {
+    return <PointToObjectAppearsGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-the-pointed-object') {
+    return <TapThePointedObjectGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'moving-arm-pointing') {
+    return <MovingArmPointingGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'multi-point-follow') {
+    return <MultiPointFollowGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Speech Therapy Level 1 Session 6 games (Choice & Instruction Games)
+  if (currentGame === 'tap-what-you-like') {
+    return <TapWhatYouLikeGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'which-one-moved') {
+    return <WhichOneMovedGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'sound-to-choice') {
+    return <SoundToChoiceGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'show-me-the-toy') {
+    return <ShowMeTheToyGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'food-vs-toy') {
+    return <FoodVsToyGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'pass-the-ball') {
+    return <PassTheBallGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-only-on-your-turn') {
+    return <TapOnlyOnYourTurnGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'your-turn-to-complete') {
+    return <YourTurnToCompleteGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'wait-for-the-signal') {
+    return <WaitForTheSignalGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'turn-timer') {
+    return <TurnTimerGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'watch-and-wait') {
+    return <WatchAndWaitGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'growing-flower') {
+    return <GrowingFlowerGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'timer-bar-tap') {
+    return <TimerBarTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'follow-slow-movement') {
+    return <FollowSlowMovementGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'shapes-appear-one-by-one') {
+    return <ShapesAppearOneByOneGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'touch-the-ball') {
+    return <TouchTheBallGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-the-circle') {
+    return <TapTheCircleGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'find-the-sound-source') {
+    return <FindTheSoundSourceGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-what-i-show-you') {
+    return <TapWhatIShowYouGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'follow-the-arrow') {
+    return <FollowTheArrowGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-the-target-ignore-distraction') {
+    return <TapTheTargetIgnoreDistractionGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'sound-distraction-challenge') {
+    return <SoundDistractionChallengeGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'slow-task-with-pop-up-distraction') {
+    return <SlowTaskWithPopUpDistractionGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'sequence-with-distraction') {
+    return <SequenceWithDistractionGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'moving-target-with-extra-objects') {
+    return <MovingTargetWithExtraObjectsGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'jaw-awareness-crocodile') {
+    return <JawAwarenessCrocodileGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'jaw-swing-adventure') {
+    return <JawSwingAdventureGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'jaw-push-challenge') {
+    return <JawPushChallengeGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'jaw-rhythm-tap') {
+    return <JawRhythmTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'jaw-strength-builder') {
+    return <JawStrengthBuilderGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'rainbow-curve-trace') {
+    return <RainbowCurveTraceGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'drive-car-curvy-road') {
+    return <DriveCarCurvyRoadGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'trace-smiling-mouth') {
+    return <TraceSmilingMouthGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'ball-roll-curved-track') {
+    return <BallRollCurvedTrackGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'paint-curved-snake') {
+    return <PaintCurvedSnakeGame onBack={() => setCurrentGame('menu')} />;
+  }
+
   // ---------- Menu UI ----------
 
   return (
@@ -1722,15 +2846,34 @@ export default function SessionGamesScreen() {
             </View>
           ) : (
             GAMES.filter(game => game.available).map((game) => (
-            <TouchableOpacity
-              key={game.id}
-              style={[
-                styles.gameCard,
-                { borderColor: game.color },
-              ]}
-              onPress={() => {
-                if (game.id === 'follow-ball') setCurrentGame('follow-ball');
-                if (game.id === 'big-tap') setCurrentGame('big-tap');
+              <TouchableOpacity
+                key={game.id}
+                style={[
+                  styles.gameCard,
+                  { borderColor: game.color },
+                ]}
+                onPress={() => {
+                  if (game.id === 'follow-ball') setCurrentGame('follow-ball');
+                  if (game.id === 'catch-star') setCurrentGame('catch-star');
+                  if (game.id === 'slow-to-fast') setCurrentGame('slow-to-fast');
+                  if (game.id === 'track-freeze') setCurrentGame('track-freeze');
+                  if (game.id === 'follow-look') setCurrentGame('follow-look');
+                  if (game.id === 'tap-magic') setCurrentGame('tap-magic');
+                  if (game.id === 'tap-animate') setCurrentGame('tap-animate');
+                  if (game.id === 'tap-reveal') setCurrentGame('tap-reveal');
+                  if (game.id === 'tap-sound') setCurrentGame('tap-sound');
+                  if (game.id === 'tap-choice') setCurrentGame('tap-choice');
+                  if (game.id === 'sound-to-tap') setCurrentGame('sound-to-tap');
+                  if (game.id === 'which-sound') setCurrentGame('which-sound');
+                  if (game.id === 'find-sound-source') setCurrentGame('find-sound-source');
+                  if (game.id === 'stop-when-sound-stops') setCurrentGame('stop-when-sound-stops');
+                  if (game.id === 'loud-vs-soft') setCurrentGame('loud-vs-soft');
+                  if (game.id === 'follow-my-eyes') setCurrentGame('follow-my-eyes');
+                  if (game.id === 'eyes-then-object') setCurrentGame('eyes-then-object');
+                  if (game.id === 'which-side') setCurrentGame('which-side');
+                  if (game.id === 'follow-gaze-animation') setCurrentGame('follow-gaze-animation');
+                  if (game.id === 'eyes-only') setCurrentGame('eyes-only');
+                  if (game.id === 'big-tap') setCurrentGame('big-tap');
                   if (game.id === 'tap-red-circle') setCurrentGame('tap-red-circle');
                   if (game.id === 'game-3') setCurrentGame('game-3');
                   if (game.id === 'game-4') setCurrentGame('game-4');
@@ -1839,6 +2982,46 @@ export default function SessionGamesScreen() {
                   // if (game.id === 'face-symmetry-draw') setCurrentGame('face-symmetry-draw');
                   // if (game.id === 'half-shape-complete') setCurrentGame('half-shape-complete');
                   // if (game.id === 'mirror-maze') setCurrentGame('mirror-maze');
+                  if (game.id === 'follow-my-point') setCurrentGame('follow-my-point');
+                  if (game.id === 'point-to-object-appears') setCurrentGame('point-to-object-appears');
+                  if (game.id === 'tap-the-pointed-object') setCurrentGame('tap-the-pointed-object');
+                  if (game.id === 'moving-arm-pointing') setCurrentGame('moving-arm-pointing');
+                  if (game.id === 'multi-point-follow') setCurrentGame('multi-point-follow');
+                  if (game.id === 'tap-what-you-like') setCurrentGame('tap-what-you-like');
+                  if (game.id === 'which-one-moved') setCurrentGame('which-one-moved');
+                  if (game.id === 'sound-to-choice') setCurrentGame('sound-to-choice');
+                  if (game.id === 'show-me-the-toy') setCurrentGame('show-me-the-toy');
+                  if (game.id === 'food-vs-toy') setCurrentGame('food-vs-toy');
+                  if (game.id === 'pass-the-ball') setCurrentGame('pass-the-ball');
+                  if (game.id === 'tap-only-on-your-turn') setCurrentGame('tap-only-on-your-turn');
+                  if (game.id === 'your-turn-to-complete') setCurrentGame('your-turn-to-complete');
+                  if (game.id === 'wait-for-the-signal') setCurrentGame('wait-for-the-signal');
+                  if (game.id === 'turn-timer') setCurrentGame('turn-timer');
+                  if (game.id === 'watch-and-wait') setCurrentGame('watch-and-wait');
+                  if (game.id === 'growing-flower') setCurrentGame('growing-flower');
+                  if (game.id === 'timer-bar-tap') setCurrentGame('timer-bar-tap');
+                  if (game.id === 'follow-slow-movement') setCurrentGame('follow-slow-movement');
+                  if (game.id === 'shapes-appear-one-by-one') setCurrentGame('shapes-appear-one-by-one');
+                  if (game.id === 'touch-the-ball') setCurrentGame('touch-the-ball');
+                  if (game.id === 'tap-the-circle') setCurrentGame('tap-the-circle');
+                  if (game.id === 'find-the-sound-source') setCurrentGame('find-the-sound-source');
+                  if (game.id === 'tap-what-i-show-you') setCurrentGame('tap-what-i-show-you');
+                  if (game.id === 'follow-the-arrow') setCurrentGame('follow-the-arrow');
+                  if (game.id === 'tap-the-target-ignore-distraction') setCurrentGame('tap-the-target-ignore-distraction');
+                  if (game.id === 'sound-distraction-challenge') setCurrentGame('sound-distraction-challenge');
+                  if (game.id === 'slow-task-with-pop-up-distraction') setCurrentGame('slow-task-with-pop-up-distraction');
+                  if (game.id === 'sequence-with-distraction') setCurrentGame('sequence-with-distraction');
+                  if (game.id === 'moving-target-with-extra-objects') setCurrentGame('moving-target-with-extra-objects');
+                  if (game.id === 'jaw-awareness-crocodile') setCurrentGame('jaw-awareness-crocodile');
+                  if (game.id === 'jaw-swing-adventure') setCurrentGame('jaw-swing-adventure');
+                  if (game.id === 'jaw-push-challenge') setCurrentGame('jaw-push-challenge');
+                  if (game.id === 'jaw-rhythm-tap') setCurrentGame('jaw-rhythm-tap');
+                  if (game.id === 'jaw-strength-builder') setCurrentGame('jaw-strength-builder');
+                  if (game.id === 'rainbow-curve-trace') setCurrentGame('rainbow-curve-trace');
+                  if (game.id === 'drive-car-curvy-road') setCurrentGame('drive-car-curvy-road');
+                  if (game.id === 'trace-smiling-mouth') setCurrentGame('trace-smiling-mouth');
+                  if (game.id === 'ball-roll-curved-track') setCurrentGame('ball-roll-curved-track');
+                  if (game.id === 'paint-curved-snake') setCurrentGame('paint-curved-snake');
                 }}
               activeOpacity={0.8}
             >

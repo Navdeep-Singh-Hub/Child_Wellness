@@ -1,21 +1,21 @@
 import {
-    advanceTherapyProgress,
-    fetchTherapyProgress,
-    initTherapyProgress,
-    type TherapyProgress,
+  advanceTherapyProgress,
+  fetchTherapyProgress,
+  initTherapyProgress,
+  type TherapyProgress,
 } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const THERAPIES = [
@@ -249,7 +249,12 @@ function LevelsGrid({
       <Text style={styles.sectionTitle}>Levels</Text>
       <View style={styles.grid}>
         {levels.map((lvl) => {
-          const unlocked = true; // Unlock all levels for testing
+          // const unlocked = true; // Unlock all levels for testing
+          // Unlock Level 2 for speech therapy if Level 2 Session 1 is available
+          // Unlock Level 2 for occupational therapy if Level 2 Session 2 is available
+          const isSpeechLvl2 = therapyMeta.id === 'speech' && lvl.levelNumber === 2;
+          const isOccupationalLvl2 = therapyMeta.id === 'occupational' && lvl.levelNumber === 2;
+          const unlocked = lvl.levelNumber <= currentLevel || isSpeechLvl2 || isOccupationalLvl2;
           return (
             <TouchableOpacity
               key={lvl.levelNumber}
@@ -314,7 +319,28 @@ function SessionsGrid({
       <View style={styles.grid}>
         {level.sessions.map((sess) => {
           // Unlock all sessions for testing
-          const unlocked = true; // Unlock all sessions for testing
+          // const unlocked = true; // Unlock all sessions for testing
+          // Unlock logic: allow current session and next session (for progression)
+          // Always unlock Session 1, 2, 3, 4, 5, and 6 of Level 1 for all therapies
+          const isLevel1Session1 = level.levelNumber === 1 && sess.sessionNumber === 1;
+          const isLevel1Session2 = level.levelNumber === 1 && sess.sessionNumber === 2;
+          const isLevel1Session3 = level.levelNumber === 1 && sess.sessionNumber === 3;
+          const isLevel1Session4 = level.levelNumber === 1 && sess.sessionNumber === 4;
+          const isLevel1Session5 = level.levelNumber === 1 && sess.sessionNumber === 5;
+          const isLevel1Session6 = level.levelNumber === 1 && sess.sessionNumber === 6;
+          // Unlock Level 2 Session 1 for speech therapy
+          const isSpeechLvl2Sess1 = therapyMeta.id === 'speech' && level.levelNumber === 2 && sess.sessionNumber === 1;
+          // Unlock Level 2 Session 2 for speech therapy
+          const isSpeechLvl2Sess2 = therapyMeta.id === 'speech' && level.levelNumber === 2 && sess.sessionNumber === 2;
+          // Unlock Level 2 Session 2 for occupational therapy
+          const isOccupationalLvl2Sess2 = therapyMeta.id === 'occupational' && level.levelNumber === 2 && sess.sessionNumber === 2;
+          // Explicitly unlock Level 1 Sessions 1-10 for all therapies, Level 2 Sessions 1-2 for speech, and Level 2 Session 2 for occupational
+          const unlocked = 
+            (level.levelNumber === 1 && sess.sessionNumber >= 1 && sess.sessionNumber <= 10) ||
+            isSpeechLvl2Sess1 ||
+            isSpeechLvl2Sess2 ||
+            isOccupationalLvl2Sess2 ||
+            (isCurrentLevel && sess.sessionNumber <= currentSession + 1);
           const completed = sess.completed;
           const labelColor = unlocked ? '#0F172A' : '#9CA3AF';
           return (
@@ -329,22 +355,99 @@ function SessionsGrid({
               onPress={() => {
                 if (!unlocked) return;
                 
-                // Allow navigation to any session for testing (all sessions are unlocked)
-                // Speech L1 Session 1
-                if (therapyMeta.id === 'speech' && level.levelNumber === 1 && sess.sessionNumber === 1) {
-                  router.push({
-                    pathname: '/(tabs)/SessionGames',
-                    params: {
-                      therapy: therapyMeta.id,
-                      level: level.levelNumber.toString(),
-                      session: sess.sessionNumber.toString(),
-                    },
-                  });
-                  return;
-                }
-                
+                // Check all available session combinations
+                const isSpeechLvl1Sess1 =
+                  therapyMeta.id === 'speech' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 1;
+                const isSpeechLvl1Sess2 =
+                  therapyMeta.id === 'speech' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 2;
+                const isSpeechLvl1Sess3 =
+                  therapyMeta.id === 'speech' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 3;
+                const isSpeechLvl1Sess4 =
+                  therapyMeta.id === 'speech' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 4;
+                const isSpeechLvl1Sess5 =
+                  therapyMeta.id === 'speech' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 5;
+                const isSpeechLvl1Sess6 =
+                  therapyMeta.id === 'speech' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 6;
+                const isSpeechLvl1Sess7 =
+                  therapyMeta.id === 'speech' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 7;
+                const isSpeechLvl1Sess8 =
+                  therapyMeta.id === 'speech' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 8;
+                const isSpeechLvl1Sess9 =
+                  therapyMeta.id === 'speech' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 9;
+                const isSpeechLvl1Sess10 =
+                  therapyMeta.id === 'speech' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 10;
+                const isSpeechLvl2Sess1 =
+                  therapyMeta.id === 'speech' &&
+                  level.levelNumber === 2 &&
+                  sess.sessionNumber === 1;
+                const isSpeechLvl2Sess2 =
+                  therapyMeta.id === 'speech' &&
+                  level.levelNumber === 2 &&
+                  sess.sessionNumber === 2;
+                const isOccupationalLvl1Sess1 =
+                  therapyMeta.id === 'occupational' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 1;
+                const isOccupationalLvl1Sess2 =
+                  therapyMeta.id === 'occupational' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 2;
+                const isOccupationalLvl1Sess3 =
+                  therapyMeta.id === 'occupational' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber === 3;
                 // Occupational L1 - all sessions (1-10)
-                if (therapyMeta.id === 'occupational' && level.levelNumber === 1) {
+                const isOccupationalLvl1Any =
+                  therapyMeta.id === 'occupational' &&
+                  level.levelNumber === 1 &&
+                  sess.sessionNumber >= 1 &&
+                  sess.sessionNumber <= 10;
+                const isOccupationalLvl2Sess1 =
+                  therapyMeta.id === 'occupational' &&
+                  level.levelNumber === 2 &&
+                  sess.sessionNumber === 1;
+                const isOccupationalLvl2Sess2 =
+                  therapyMeta.id === 'occupational' &&
+                  level.levelNumber === 2 &&
+                  sess.sessionNumber === 2;
+                // Occupational L2 - all sessions (1-10)
+                const isOccupationalLvl2Any =
+                  therapyMeta.id === 'occupational' &&
+                  level.levelNumber === 2 &&
+                  sess.sessionNumber >= 1 &&
+                  sess.sessionNumber <= 10;
+
+                // Navigate if session is available
+                if (
+                  isSpeechLvl1Sess1 || isSpeechLvl1Sess2 || isSpeechLvl1Sess3 || isSpeechLvl1Sess4 || 
+                  isSpeechLvl1Sess5 || isSpeechLvl1Sess6 || isSpeechLvl1Sess7 || isSpeechLvl1Sess8 || 
+                  isSpeechLvl1Sess9 || isSpeechLvl1Sess10 || 
+                  isSpeechLvl2Sess1 || isSpeechLvl2Sess2 || 
+                  isOccupationalLvl1Sess1 || isOccupationalLvl1Sess2 || isOccupationalLvl1Sess3 || 
+                  isOccupationalLvl1Any || 
+                  isOccupationalLvl2Sess1 || isOccupationalLvl2Sess2 || 
+                  isOccupationalLvl2Any
+                ) {
                   router.push({
                     pathname: '/(tabs)/SessionGames',
                     params: {
@@ -353,27 +456,12 @@ function SessionsGrid({
                       session: sess.sessionNumber.toString(),
                     },
                   });
-                  return;
+                } else {
+                  Alert.alert(
+                    'Game not available',
+                    'Games are currently available in Speech L1 Sessions 1-10, Speech L2 Sessions 1-2, Occupational L1 Sessions 1-10, and Occupational L2 Sessions 1-10.'
+                  );
                 }
-                
-                // Occupational L2 (Level 11 - Section 2: Visual-Motor Integration) - all sessions
-                if (therapyMeta.id === 'occupational' && level.levelNumber === 2) {
-                  router.push({
-                    pathname: '/(tabs)/SessionGames',
-                    params: {
-                      therapy: therapyMeta.id,
-                      level: level.levelNumber.toString(),
-                      session: sess.sessionNumber.toString(),
-                    },
-                  });
-                  return;
-                }
-                
-                // Fallback alert
-                Alert.alert(
-                  'Game not available',
-                  'Games are currently available in Speech L1 Session 1, Occupational L1 Sessions 1-10, and Occupational L2 (Level 11) Sessions 1-10.'
-                );
               }}
             >
               <Text style={[styles.levelTitle, { color: labelColor }]}>
