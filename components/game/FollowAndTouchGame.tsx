@@ -1,3 +1,17 @@
+/**
+ * OT Level 11 - Game 3: Follow and Touch
+ * 
+ * Core Goal: Dynamic Eye-Hand Coordination
+ * - A large object moves slowly
+ * - It stops
+ * - Child taps when it stops
+ * 
+ * Skills trained:
+ * - visual tracking
+ * - motor timing
+ * - hand control
+ */
+
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -43,20 +57,21 @@ const usePopSound = () => {
   return play;
 };
 
-interface BigTapTargetProps {
+interface FollowAndTouchGameProps {
   onBack: () => void;
 }
 
-export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
+export const FollowAndTouchGame: React.FC<FollowAndTouchGameProps> = ({ onBack }) => {
   const [score, setScore] = useState(0);
-  const [targetsLeft, setTargetsLeft] = useState(12);
+  const [targetsLeft, setTargetsLeft] = useState(10);
   const [done, setDone] = useState(false);
+  const [isMoving, setIsMoving] = useState(true);
+  const [isStopped, setIsStopped] = useState(false);
   const [color, setColor] = useState(COLORS[0]);
   const [sparkleKey, setSparkleKey] = useState(0);
-  // soft pop reinforcement
   const playPop = usePopSound();
 
-  const sizePct = 26; // 26% of screen (within 20–30% target)
+  const sizePct = 20;
   const radiusPct = sizePct / 2;
 
   const targetX = useSharedValue(50);
@@ -66,37 +81,52 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
 
   const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
 
-  const spawnTarget = () => {
-    const margin = radiusPct + 5; // avoid edges
-    const x = margin + Math.random() * (100 - margin * 2);
-    const y = margin + Math.random() * (100 - margin * 2);
-    targetX.value = withTiming(x, { duration: 200 });
-    targetY.value = withTiming(y, { duration: 200 });
-    scale.value = withTiming(1, { duration: 180 });
-    opacity.value = withTiming(1, { duration: 180 });
+  const moveAndStop = () => {
+    setIsMoving(true);
+    setIsStopped(false);
     setColor(randomColor());
+    
+    // Move to random position slowly
+    const margin = radiusPct + 5;
+    const newX = margin + Math.random() * (100 - margin * 2);
+    const newY = margin + Math.random() * (100 - margin * 2);
+    
+    targetX.value = withTiming(newX, { duration: 2000 }, (finished) => {
+      if (finished) {
+        runOnJS(setIsMoving)(false);
+        runOnJS(setIsStopped)(true);
+      }
+    });
+    targetY.value = withTiming(newY, { duration: 2000 });
+    scale.value = withTiming(1, { duration: 2000 });
+    opacity.value = withTiming(1, { duration: 2000 });
   };
 
   const handleTap = () => {
+    if (!isStopped || isMoving) return;
+    
     Haptics.selectionAsync().catch(() => {});
     playPop();
-    scale.value = withSequence(withTiming(1.2, { duration: 80 }), withTiming(0, { duration: 120 }));
-    opacity.value = withTiming(0, { duration: 140 });
+    scale.value = withSequence(withTiming(1.2, { duration: 100 }), withTiming(0, { duration: 150 }));
+    opacity.value = withTiming(0, { duration: 180 });
     setSparkleKey(Date.now());
     setScore((s) => s + 1);
+    setIsStopped(false);
     setTargetsLeft((t) => {
       const next = t - 1;
       if (next <= 0) {
         runOnJS(setDone)(true);
       } else {
-        runOnJS(spawnTarget)();
+        setTimeout(() => {
+          runOnJS(moveAndStop)();
+        }, 500);
       }
       return next;
     });
   };
 
   useEffect(() => {
-    spawnTarget();
+    moveAndStop();
   }, []);
 
   const circleStyle = useAnimatedStyle(() => ({
@@ -105,7 +135,11 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
     borderRadius: 999,
     left: `${targetX.value}%`,
     top: `${targetY.value}%`,
-    transform: [{ translateX: -(sizePct / 2) + '%' as any }, { translateY: -(sizePct / 2) + '%' as any }, { scale: scale.value }],
+    transform: [
+      { translateX: -(sizePct / 2) + '%' as any },
+      { translateY: -(sizePct / 2) + '%' as any },
+      { scale: scale.value }
+    ],
     opacity: opacity.value,
   }));
 
@@ -131,18 +165,21 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
           >
             🎉✨🌟
           </Animated.Text>
-          <Text style={styles.title}>Amazing Tapping! 🎯</Text>
-          <Text style={styles.subtitle}>You popped {score} beautiful bubbles! 🫧</Text>
+          <Text style={styles.title}>Great Tracking! 👀</Text>
+          <Text style={styles.subtitle}>You followed and touched {score} targets! ⭐</Text>
           <View style={styles.statsBox}>
-            <Text style={styles.statsText}>Perfect Score: {score}/12 ⭐</Text>
+            <Text style={styles.statsText}>Perfect Score: {score}/10 ⭐</Text>
+            <Text style={styles.badgeText}>🏅 Eye–Hand Explorer Badge</Text>
           </View>
           <TouchableOpacity 
             style={styles.primaryButton} 
             onPress={() => {
               setScore(0);
-              setTargetsLeft(12);
+              setTargetsLeft(10);
               setDone(false);
-              spawnTarget();
+              setIsMoving(true);
+              setIsStopped(false);
+              moveAndStop();
             }}
             activeOpacity={0.8}
           >
@@ -210,11 +247,18 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
           style={StyleSheet.absoluteFillObject}
         />
         <View style={styles.instructionWrap}>
-          <Text style={styles.instructionTitle}>✨ Tap the Big Bubble ✨</Text>
-          <Text style={styles.instructionSubtitle}>Burst it to earn a star! 🌟</Text>
+          <Text style={styles.instructionTitle}>👀 Follow and Touch 👀</Text>
+          <Text style={styles.instructionSubtitle}>
+            {isMoving ? 'Watch it move...' : isStopped ? 'Tap it now! ✨' : 'Get ready...'}
+          </Text>
         </View>
         <Animated.View style={[styles.circle, circleStyle]}>
-          <TouchableOpacity style={styles.hitArea} activeOpacity={0.7} onPress={handleTap}>
+          <TouchableOpacity 
+            style={styles.hitArea} 
+            activeOpacity={0.7} 
+            onPress={handleTap}
+            disabled={isMoving || !isStopped}
+          >
             <LinearGradient
               colors={[color, `${color}CC`, '#fff']}
               start={{ x: 0, y: 0 }}
@@ -225,6 +269,11 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
+        {isStopped && !isMoving && (
+          <View style={styles.pulseIndicator}>
+            <Text style={styles.pulseText}>✨ TAP NOW ✨</Text>
+          </View>
+        )}
         <SparkleBurst key={sparkleKey} visible color={color} count={15} size={8} />
       </View>
     </SafeAreaView>
@@ -369,6 +418,25 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     shadowOffset: { width: 0, height: 0 },
   },
+  pulseIndicator: {
+    position: 'absolute',
+    bottom: 40,
+    backgroundColor: 'rgba(34, 197, 94, 0.9)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
+    shadowColor: '#22C55E',
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  pulseText: {
+    color: '#fff',
+    fontWeight: '900',
+    fontSize: 18,
+    letterSpacing: 1,
+  },
   completion: {
     flex: 1,
     alignItems: 'center',
@@ -397,7 +465,7 @@ const styles = StyleSheet.create({
   },
   statsBox: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 16,
     marginBottom: 24,
@@ -406,11 +474,18 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
+    alignItems: 'center',
   },
   statsText: {
     fontSize: 18,
     fontWeight: '800',
     color: '#78350F',
+    marginBottom: 8,
+  },
+  badgeText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#10B981',
   },
   primaryButton: {
     borderRadius: 16,
@@ -450,7 +525,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-
 
 

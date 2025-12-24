@@ -356,8 +356,8 @@ function SessionsGrid({
                   return;
                 }
                 
-                // Occupational L2 Session 1
-                if (therapyMeta.id === 'occupational' && level.levelNumber === 2 && sess.sessionNumber === 1) {
+                // Occupational L2 (Level 11 - Section 2: Visual-Motor Integration) - all sessions
+                if (therapyMeta.id === 'occupational' && level.levelNumber === 2) {
                   router.push({
                     pathname: '/(tabs)/SessionGames',
                     params: {
@@ -372,7 +372,7 @@ function SessionsGrid({
                 // Fallback alert
                 Alert.alert(
                   'Game not available',
-                  'Games are currently available in Speech L1 Session 1, Occupational L1 Sessions 1-10, and Occupational L2 Session 1.'
+                  'Games are currently available in Speech L1 Session 1, Occupational L1 Sessions 1-10, and Occupational L2 (Level 11) Sessions 1-10.'
                 );
               }}
             >

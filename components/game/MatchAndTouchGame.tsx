@@ -1,13 +1,28 @@
+/**
+ * OT Level 11 - Game 5: Match & Touch
+ * 
+ * Core Goal: Shape Recognition & Hand Accuracy
+ * - A shape is shown at the top
+ * - Same shape appears among 2 others
+ * - Child taps the matching one
+ * 
+ * Skills trained:
+ * - shape recognition
+ * - visual discrimination
+ * - hand accuracy
+ */
+
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeIn, runOnJS, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { FadeIn, runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SparkleBurst } from './FX';
 
-const COLORS = ['#22C55E', '#3B82F6', '#F59E0B', '#F472B6', '#8B5CF6', '#06B6D4'];
+const SHAPES = ['circle', 'square', 'triangle', 'star', 'heart'];
+const COLORS = ['#22C55E', '#3B82F6', '#F59E0B', '#F472B6', '#8B5CF6'];
 const POP_URI = 'https://actions.google.com/sounds/v1/cartoon/pop.ogg';
 const STAR_ICON = require('../../assets/icons/star.png');
 
@@ -43,71 +58,136 @@ const usePopSound = () => {
   return play;
 };
 
-interface BigTapTargetProps {
+interface MatchAndTouchGameProps {
   onBack: () => void;
 }
 
-export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
-  const [score, setScore] = useState(0);
-  const [targetsLeft, setTargetsLeft] = useState(12);
-  const [done, setDone] = useState(false);
-  const [color, setColor] = useState(COLORS[0]);
-  const [sparkleKey, setSparkleKey] = useState(0);
-  // soft pop reinforcement
-  const playPop = usePopSound();
-
-  const sizePct = 26; // 26% of screen (within 20–30% target)
-  const radiusPct = sizePct / 2;
-
-  const targetX = useSharedValue(50);
-  const targetY = useSharedValue(50);
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
-
-  const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
-
-  const spawnTarget = () => {
-    const margin = radiusPct + 5; // avoid edges
-    const x = margin + Math.random() * (100 - margin * 2);
-    const y = margin + Math.random() * (100 - margin * 2);
-    targetX.value = withTiming(x, { duration: 200 });
-    targetY.value = withTiming(y, { duration: 200 });
-    scale.value = withTiming(1, { duration: 180 });
-    opacity.value = withTiming(1, { duration: 180 });
-    setColor(randomColor());
+const renderShape = (shape: string, color: string, size: number) => {
+  const baseStyle = {
+    width: size,
+    height: size,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   };
 
-  const handleTap = () => {
-    Haptics.selectionAsync().catch(() => {});
-    playPop();
-    scale.value = withSequence(withTiming(1.2, { duration: 80 }), withTiming(0, { duration: 120 }));
-    opacity.value = withTiming(0, { duration: 140 });
-    setSparkleKey(Date.now());
-    setScore((s) => s + 1);
-    setTargetsLeft((t) => {
-      const next = t - 1;
-      if (next <= 0) {
-        runOnJS(setDone)(true);
-      } else {
-        runOnJS(spawnTarget)();
-      }
-      return next;
-    });
+  switch (shape) {
+    case 'circle':
+      return (
+        <LinearGradient
+          colors={[color, `${color}CC`, '#fff']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[baseStyle, { borderRadius: size / 2 }]}
+        >
+          <View style={styles.shapeInnerGlow} />
+        </LinearGradient>
+      );
+    case 'square':
+      return (
+        <LinearGradient
+          colors={[color, `${color}CC`, '#fff']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[baseStyle, { borderRadius: 12 }]}
+        >
+          <View style={styles.shapeInnerGlow} />
+        </LinearGradient>
+      );
+    case 'triangle':
+      return (
+        <View style={baseStyle}>
+          <View
+            style={{
+              width: 0,
+              height: 0,
+              backgroundColor: 'transparent',
+              borderStyle: 'solid',
+              borderLeftWidth: size / 2,
+              borderRightWidth: size / 2,
+              borderBottomWidth: size * 0.866,
+              borderLeftColor: 'transparent',
+              borderRightColor: 'transparent',
+              borderBottomColor: color,
+            }}
+          />
+        </View>
+      );
+    case 'star':
+      return (
+        <View style={baseStyle}>
+          <Text style={{ fontSize: size * 0.8, color }}>⭐</Text>
+        </View>
+      );
+    case 'heart':
+      return (
+        <View style={baseStyle}>
+          <Text style={{ fontSize: size * 0.8, color }}>❤️</Text>
+        </View>
+      );
+    default:
+      return null;
+  }
+};
+
+export const MatchAndTouchGame: React.FC<MatchAndTouchGameProps> = ({ onBack }) => {
+  const [score, setScore] = useState(0);
+  const [targetsLeft, setTargetsLeft] = useState(10);
+  const [done, setDone] = useState(false);
+  const [targetShape, setTargetShape] = useState<string>('');
+  const [options, setOptions] = useState<string[]>([]);
+  const [correctIndex, setCorrectIndex] = useState(0);
+  const [sparkleKey, setSparkleKey] = useState(0);
+  const playPop = usePopSound();
+
+  const startRound = () => {
+    // Select a random target shape
+    const shapeIndex = Math.floor(Math.random() * SHAPES.length);
+    const target = SHAPES[shapeIndex];
+    setTargetShape(target);
+    
+    // Create options: correct shape + 2 random wrong shapes
+    const wrongShapes = SHAPES.filter(s => s !== target);
+    const shuffled = wrongShapes.sort(() => Math.random() - 0.5);
+    const wrongOptions = shuffled.slice(0, 2);
+    
+    // Randomly place correct answer
+    const correctPos = Math.floor(Math.random() * 3);
+    const newOptions = [...wrongOptions];
+    newOptions.splice(correctPos, 0, target);
+    setOptions(newOptions);
+    setCorrectIndex(correctPos);
+  };
+
+  const handleTap = (index: number) => {
+    if (done) return;
+    
+    const isCorrect = index === correctIndex;
+    
+    if (isCorrect) {
+      Haptics.selectionAsync().catch(() => {});
+      playPop();
+      setSparkleKey(Date.now());
+      setScore((s) => s + 1);
+      setTargetsLeft((t) => {
+        const next = t - 1;
+        if (next <= 0) {
+          runOnJS(setDone)(true);
+        } else {
+          setTimeout(() => {
+            runOnJS(startRound)();
+          }, 800);
+        }
+        return next;
+      });
+    } else {
+      // Gentle feedback for wrong tap
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+    }
   };
 
   useEffect(() => {
-    spawnTarget();
+    startRound();
   }, []);
-
-  const circleStyle = useAnimatedStyle(() => ({
-    width: `${sizePct}%`,
-    height: `${sizePct}%`,
-    borderRadius: 999,
-    left: `${targetX.value}%`,
-    top: `${targetY.value}%`,
-    transform: [{ translateX: -(sizePct / 2) + '%' as any }, { translateY: -(sizePct / 2) + '%' as any }, { scale: scale.value }],
-    opacity: opacity.value,
-  }));
 
   if (done) {
     return (
@@ -131,18 +211,19 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
           >
             🎉✨🌟
           </Animated.Text>
-          <Text style={styles.title}>Amazing Tapping! 🎯</Text>
-          <Text style={styles.subtitle}>You popped {score} beautiful bubbles! 🫧</Text>
+          <Text style={styles.title}>Great Matching! 🎯</Text>
+          <Text style={styles.subtitle}>You matched {score} shapes! ⭐</Text>
           <View style={styles.statsBox}>
-            <Text style={styles.statsText}>Perfect Score: {score}/12 ⭐</Text>
+            <Text style={styles.statsText}>Perfect Score: {score}/10 ⭐</Text>
+            <Text style={styles.badgeText}>🏅 Eye–Hand Explorer Badge</Text>
           </View>
           <TouchableOpacity 
             style={styles.primaryButton} 
             onPress={() => {
               setScore(0);
-              setTargetsLeft(12);
+              setTargetsLeft(10);
               setDone(false);
-              spawnTarget();
+              startRound();
             }}
             activeOpacity={0.8}
           >
@@ -210,22 +291,38 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
           style={StyleSheet.absoluteFillObject}
         />
         <View style={styles.instructionWrap}>
-          <Text style={styles.instructionTitle}>✨ Tap the Big Bubble ✨</Text>
-          <Text style={styles.instructionSubtitle}>Burst it to earn a star! 🌟</Text>
+          <Text style={styles.instructionTitle}>🎯 Match & Touch 🎯</Text>
+          <Text style={styles.instructionSubtitle}>Find the matching shape below! ✨</Text>
         </View>
-        <Animated.View style={[styles.circle, circleStyle]}>
-          <TouchableOpacity style={styles.hitArea} activeOpacity={0.7} onPress={handleTap}>
-            <LinearGradient
-              colors={[color, `${color}CC`, '#fff']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.circleFill}
-            >
-              <View style={styles.circleInnerGlow} />
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-        <SparkleBurst key={sparkleKey} visible color={color} count={15} size={8} />
+        
+        {/* Target shape at top */}
+        <View style={styles.targetSection}>
+          <Text style={styles.targetLabel}>Find this shape:</Text>
+          <View style={styles.targetShapeContainer}>
+            {renderShape(targetShape, COLORS[0], 80)}
+          </View>
+        </View>
+
+        {/* Options at bottom */}
+        <View style={styles.optionsRow}>
+          {options.map((shape, index) => {
+            const shapeIndex = SHAPES.indexOf(shape);
+            const color = COLORS[shapeIndex % COLORS.length];
+            return (
+              <TouchableOpacity
+                key={index}
+                style={styles.optionTouchArea}
+                activeOpacity={0.7}
+                onPress={() => handleTap(index)}
+              >
+                <View style={styles.optionContainer}>
+                  {renderShape(shape, color, 100)}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        <SparkleBurst key={sparkleKey} visible color={COLORS[0]} count={15} size={8} />
       </View>
     </SafeAreaView>
   );
@@ -317,15 +414,11 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
     elevation: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  circle: {
-    position: 'absolute',
+    justifyContent: 'space-between',
+    paddingVertical: 40,
   },
   instructionWrap: {
     alignItems: 'center',
-    marginBottom: 40,
     paddingHorizontal: 20,
   },
   instructionTitle: {
@@ -344,22 +437,42 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '600',
   },
-  hitArea: {
-    flex: 1,
-    borderRadius: 999,
-    overflow: 'hidden',
+  targetSection: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  targetLabel: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#065F46',
+    marginBottom: 12,
+  },
+  targetShapeContainer: {
     shadowColor: '#000',
     shadowOpacity: 0.3,
-    shadowRadius: 20,
+    shadowRadius: 15,
     shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
+    elevation: 10,
   },
-  circleFill: {
-    flex: 1,
-    justifyContent: 'center',
+  optionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
     alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 20,
+    marginBottom: 20,
   },
-  circleInnerGlow: {
+  optionTouchArea: {
+    padding: 8,
+  },
+  optionContainer: {
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
+  },
+  shapeInnerGlow: {
     width: '60%',
     height: '60%',
     borderRadius: 999,
@@ -397,7 +510,7 @@ const styles = StyleSheet.create({
   },
   statsBox: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 16,
     marginBottom: 24,
@@ -406,11 +519,18 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
+    alignItems: 'center',
   },
   statsText: {
     fontSize: 18,
     fontWeight: '800',
     color: '#78350F',
+    marginBottom: 8,
+  },
+  badgeText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#10B981',
   },
   primaryButton: {
     borderRadius: 16,
@@ -450,7 +570,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-
-
 

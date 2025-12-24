@@ -1,6 +1,7 @@
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -89,6 +90,9 @@ const PinchToPopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const balloonOpacity = useSharedValue(1);
   const wiggleRotation = useSharedValue(0);
   const feedbackOpacity = useSharedValue(0);
+  const glowIntensity = useSharedValue(0);
+  const floatY = useSharedValue(0);
+  const progressWidth = useSharedValue(0);
 
   const roundActiveRef = useRef(false);
   const roundRef = useRef(1);
@@ -235,6 +239,23 @@ const PinchToPopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     balloonScale.value = 1;
     balloonOpacity.value = 1;
     wiggleRotation.value = 0;
+    glowIntensity.value = 0;
+    floatY.value = 0;
+    
+    // Start glow pulse
+    glowIntensity.value = withSequence(
+      withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+      withTiming(0.3, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+    );
+    const glowInterval = setInterval(() => {
+      if (roundActiveRef.current && !isPoppedRef.current) {
+        glowIntensity.value = withSequence(
+          withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.3, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+        );
+      }
+    }, 2000);
+    setTimeout(() => clearInterval(glowInterval), 10000);
   }, [done, balloonX, balloonY, balloonScale, balloonOpacity, wiggleRotation, feedbackOpacity]);
 
   // Pinch gesture
@@ -248,6 +269,10 @@ const PinchToPopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       // Scale down as user pinches (scale < 1 means pinching inward)
       const currentScale = 1 - (1 - e.scale) * 0.5; // Dampen the effect
       balloonScale.value = Math.max(0.3, currentScale);
+      
+      // Increase glow as pinching
+      const pinchProgress = 1 - e.scale;
+      glowIntensity.value = Math.min(1, 0.3 + pinchProgress * 2);
 
       // If pinched enough, trigger pop
       if (e.scale < (1 - PINCH_THRESHOLD)) {
@@ -282,6 +307,30 @@ const PinchToPopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     startRound();
   }, []);
 
+  // Floating animation
+  useEffect(() => {
+    if (roundActive && !isPoppedRef.current) {
+      floatY.value = withSequence(
+        withTiming(-8, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(8, { duration: 2000, easing: Easing.inOut(Easing.ease) })
+      );
+      const interval = setInterval(() => {
+        if (roundActive && !isPoppedRef.current) {
+          floatY.value = withSequence(
+            withTiming(-8, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+            withTiming(8, { duration: 2000, easing: Easing.inOut(Easing.ease) })
+          );
+        }
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [roundActive, floatY]);
+
+  // Progress animation
+  useEffect(() => {
+    progressWidth.value = withTiming((score / TOTAL_ROUNDS) * 100, { duration: 300 });
+  }, [score, progressWidth]);
+
   // Animated styles
   const balloonAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -291,11 +340,24 @@ const PinchToPopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       top: `${balloonY.value}%`,
       transform: [
         { translateX: -BALLOON_SIZE / 2 },
-        { translateY: -BALLOON_SIZE / 2 },
+        { translateY: -BALLOON_SIZE / 2 + floatY.value },
         { scale: balloonScale.value },
         { rotate: `${wiggleRotation.value}deg` },
       ],
       opacity: balloonOpacity.value,
+    };
+  });
+
+  const glowStyle = useAnimatedStyle(() => {
+    return {
+      opacity: glowIntensity.value * 0.6,
+      transform: [{ scale: 1 + glowIntensity.value * 0.2 }],
+    };
+  });
+
+  const progressStyle = useAnimatedStyle(() => {
+    return {
+      width: `${progressWidth.value}%`,
     };
   });
 
@@ -342,15 +404,29 @@ const PinchToPopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={['#FEE2E2', '#FECACA', '#FCA5A5', '#F87171']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
       <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+        <LinearGradient
+          colors={['#1E293B', '#0F172A']}
+          style={styles.backChipGradient}
+        >
+          <Text style={styles.backChipText}>← Back</Text>
+        </LinearGradient>
       </TouchableOpacity>
 
       <View style={styles.headerBlock}>
-        <Text style={styles.title}>Pinch to Pop</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • Score: {score}
-        </Text>
+        <Text style={styles.title}>🎈 Pinch to Pop 🎈</Text>
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <Animated.View style={[styles.progressFill, progressStyle]} />
+          </View>
+          <Text style={styles.progressText}>{score}/{TOTAL_ROUNDS}</Text>
+        </View>
         <Text style={styles.helper}>
           Use two fingers to pinch the balloon!
         </Text>
@@ -359,24 +435,40 @@ const PinchToPopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       {/* Play area */}
       <GestureDetector gesture={combinedGesture}>
         <View style={styles.playArea}>
+          <LinearGradient
+            colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
           <Animated.View
             style={[
               styles.balloon,
               balloonAnimatedStyle,
             ]}
           >
-            <Text style={styles.balloonEmoji}>🎈</Text>
+            <Animated.View style={[styles.glowRing, glowStyle]} />
+            <LinearGradient
+              colors={['#EF4444', '#DC2626', '#B91C1C']}
+              style={styles.balloonGradient}
+            >
+              <Text style={styles.balloonEmoji}>🎈</Text>
+            </LinearGradient>
           </Animated.View>
 
           {/* Feedback */}
           {showFeedback && lastResult && (
             <Animated.View style={[styles.feedbackContainer, feedbackStyle]}>
-              <Text style={[
-                styles.feedbackText,
-                lastResult === 'hit' ? styles.feedbackSuccess : styles.feedbackError,
-              ]}>
-                {lastResult === 'hit' ? 'Pop!' : 'Try two fingers!'}
-              </Text>
+              <LinearGradient
+                colors={lastResult === 'hit' 
+                  ? ['#22C55E', '#16A34A'] 
+                  : ['#EF4444', '#DC2626']}
+                style={styles.feedbackGradient}
+              >
+                <Text style={styles.feedbackText}>
+                  {lastResult === 'hit' ? '✨ Pop! ✨' : '👆 Try two fingers!'}
+                </Text>
+              </LinearGradient>
             </Animated.View>
           )}
 
@@ -397,20 +489,21 @@ const PinchToPopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F4F8',
   },
   backChip: {
     alignSelf: 'flex-start',
     margin: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
     borderRadius: 20,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  backChipGradient: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
   },
   backChipText: {
     fontSize: 14,
@@ -422,39 +515,79 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginBottom: 8,
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#78350F',
+    marginBottom: 16,
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  subtitle: {
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  progressBar: {
+    width: 200,
+    height: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#22C55E',
+    borderRadius: 6,
+  },
+  progressText: {
     fontSize: 16,
-    color: '#64748B',
-    marginBottom: 8,
+    fontWeight: '800',
+    color: '#78350F',
   },
   helper: {
-    fontSize: 14,
-    color: '#94A3B8',
+    fontSize: 15,
+    color: '#92400E',
     textAlign: 'center',
+    fontWeight: '600',
   },
   playArea: {
     flex: 1,
     position: 'relative',
     margin: 20,
+    borderRadius: 24,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: '#FCD34D',
   },
   balloon: {
     position: 'absolute',
-    backgroundColor: '#EF4444',
+    borderRadius: 1000,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  balloonGradient: {
+    width: '100%',
+    height: '100%',
     borderRadius: 1000,
     borderWidth: 4,
     borderColor: '#DC2626',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+  },
+  glowRing: {
+    position: 'absolute',
+    width: BALLOON_SIZE * 1.4,
+    height: BALLOON_SIZE * 1.4,
+    borderRadius: BALLOON_SIZE * 0.7,
+    backgroundColor: '#EF4444',
+    opacity: 0.3,
   },
   balloonEmoji: {
     fontSize: 60,
@@ -464,15 +597,23 @@ const styles = StyleSheet.create({
     top: '50%',
     left: '50%',
     transform: [{ translateX: -100 }, { translateY: -20 }],
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  feedbackGradient: {
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 12,
   },
   feedbackText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '900',
     textAlign: 'center',
+    color: '#FFFFFF',
   },
   feedbackSuccess: {
     color: '#22C55E',

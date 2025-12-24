@@ -1,6 +1,7 @@
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -287,11 +288,14 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             padding: 24,
           }}
         >
-          <View style={styles.resultCard}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>✨</Text>
-            <Text style={styles.resultTitle}>Excellent holding!</Text>
+          <LinearGradient
+            colors={['#FFFFFF', '#EFF6FF']}
+            style={styles.resultCard}
+          >
+            <Text style={{ fontSize: 72, marginBottom: 20 }}>✨💪</Text>
+            <Text style={styles.resultTitle}>Excellent Holding! 🎯</Text>
             <Text style={styles.resultSubtitle}>
-              You held the button {finalStats.correct} out of {finalStats.total} times.
+              You held the button {finalStats.correct} out of {finalStats.total} times! ⭐
             </Text>
             <ResultCard
               correct={finalStats.correct}
@@ -309,7 +313,7 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               }}
             />
             <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
+          </LinearGradient>
         </ScrollView>
       </SafeAreaView>
     );
@@ -328,17 +332,33 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={['#EFF6FF', '#DBEAFE', '#BFDBFE']}
+        style={StyleSheet.absoluteFillObject}
+      />
       <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+        <LinearGradient
+          colors={['#1E293B', '#0F172A']}
+          style={styles.backChipGradient}
+        >
+          <Text style={styles.backChipText}>← Back</Text>
+        </LinearGradient>
       </TouchableOpacity>
 
       <View style={styles.headerBlock}>
-        <Text style={styles.title}>Tap and Hold</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • ✨ Holds: {successfulHolds}
-        </Text>
+        <Text style={styles.title}>✨ Tap and Hold ✨</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statBadge}>
+            <Text style={styles.statLabel}>Round</Text>
+            <Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text>
+          </View>
+          <View style={[styles.statBadge, styles.holdBadge]}>
+            <Text style={styles.statLabel}>✨ Holds</Text>
+            <Text style={styles.statValue}>{successfulHolds}</Text>
+          </View>
+        </View>
         <Text style={styles.helper}>
-          Tap and hold the button for 2 seconds. Don't let go!
+          Tap and hold the button for 2 seconds. Don't let go! 💪
         </Text>
       </View>
 
@@ -427,12 +447,17 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       </View>
 
       <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: finger isolation • force control • motor endurance • proprioception
-        </Text>
-        <Text style={styles.footerSub}>
-          Important for pencil grasp and feeding skills.
-        </Text>
+        <LinearGradient
+          colors={['#FFFFFF', '#EFF6FF']}
+          style={styles.footerGradient}
+        >
+          <Text style={styles.footerMain}>
+            Skills: finger isolation • force control • motor endurance • proprioception
+          </Text>
+          <Text style={styles.footerSub}>
+            Important for pencil grasp and feeding skills.
+          </Text>
+        </LinearGradient>
       </View>
     </SafeAreaView>
   );
@@ -450,10 +475,17 @@ const styles = StyleSheet.create({
     top: 50,
     left: 16,
     zIndex: 10,
-    backgroundColor: '#0F172A',
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  backChipGradient: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
   },
   backChipText: {
     color: '#fff',
@@ -466,10 +498,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#1E40AF',
+    marginBottom: 12,
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  statBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  holdBadge: {
+    backgroundColor: '#DBEAFE',
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '900',
     color: '#0F172A',
-    marginBottom: 6,
   },
   subtitle: {
     fontSize: 16,
@@ -477,10 +543,11 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   helper: {
-    fontSize: 14,
-    color: '#475569',
+    fontSize: 15,
+    color: '#1E40AF',
     textAlign: 'center',
     paddingHorizontal: 18,
+    fontWeight: '600',
   },
   playArea: {
     flex: 1,
@@ -557,41 +624,60 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   footerBox: {
-    paddingVertical: 14,
     marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  footerGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
   },
   footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1E40AF',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   footerSub: {
     fontSize: 13,
-    color: '#64748B',
+    color: '#3B82F6',
     textAlign: 'center',
+    fontWeight: '500',
   },
   resultCard: {
     width: '100%',
     maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
+    borderRadius: 28,
+    padding: 32,
     alignItems: 'center',
     marginTop: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
   },
   resultTitle: {
-    fontSize: 26,
+    fontSize: 32,
     fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 8,
+    color: '#1E40AF',
+    marginBottom: 12,
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   resultSubtitle: {
-    fontSize: 16,
-    color: '#475569',
-    marginBottom: 16,
+    fontSize: 18,
+    color: '#64748B',
+    marginBottom: 24,
     textAlign: 'center',
+    fontWeight: '600',
   },
   savedText: {
     color: '#22C55E',
