@@ -196,6 +196,9 @@ const FastMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Match shapes quickly! No rotation needed.', { rate: 0.78 });
+    } catch {}
     generateRound();
   }, [round, generateRound]);
 

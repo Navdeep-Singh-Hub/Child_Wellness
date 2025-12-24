@@ -337,6 +337,9 @@ const SawPathGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Follow the up-down saw path. Controlled motion left to right!', { rate: 0.78 });
+    } catch {}
     // Generate saw path (up-down zig-zag, left to right)
     const points: Array<{ x: number; y: number }> = [];
     const numSegments = 6 + Math.floor(Math.random() * 4);

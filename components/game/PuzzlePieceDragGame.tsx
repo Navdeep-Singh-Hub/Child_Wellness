@@ -206,6 +206,9 @@ const PuzzlePieceDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   // Initialize puzzle
   useEffect(() => {
+    try {
+      Speech.speak('Drag the puzzle piece to its matching outline. Match the shapes!', { rate: 0.78 });
+    } catch {}
     // Random puzzle shape
     const shapes: PuzzleShape[] = ['circle', 'square', 'triangle', 'star', 'heart'];
     const randomShape = shapes[Math.floor(Math.random() * shapes.length)];

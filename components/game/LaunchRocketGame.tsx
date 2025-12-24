@@ -69,6 +69,13 @@ const LaunchRocketGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
+
+  // Initial speech on mount
+  useEffect(() => {
+    try {
+      Speech.speak('Press and hold to fill the fuel bar. Release when full to launch!', { rate: 0.78 });
+    } catch {}
+  }, []);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
@@ -179,7 +186,13 @@ const LaunchRocketGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           }, 2500);
         } else {
           setTimeout(() => {
-            setRound((r) => r + 1);
+            setRound((r) => {
+              const nextRound = r + 1;
+              try {
+                Speech.speak('Press and hold to fill the fuel bar. Release when full to launch!', { rate: 0.78 });
+              } catch {}
+              return nextRound;
+            });
             setFuelProgress(0);
             setIsLaunching(false);
             isLaunchingRef.current = false;

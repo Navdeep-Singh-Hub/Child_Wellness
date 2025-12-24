@@ -179,17 +179,26 @@ const LookHideDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     patternOpacity.value = 1;
     setRoundActive(false);
 
+    try {
+      Speech.speak('Look at the pattern carefully', { rate: 0.78 });
+    } catch {}
+
     // Show pattern
     const showTimer = setTimeout(() => {
       setPhase('hide');
       patternOpacity.value = withTiming(0, { duration: 300 });
+      try {
+        Speech.speak('Pattern is hidden. Remember it!', { rate: 0.78 });
+      } catch {}
     }, SHOW_DURATION);
 
     // Hide pattern
     const hideTimer = setTimeout(() => {
       setPhase('draw');
       setRoundActive(true);
-      Speech.speak('Now draw what you saw!', { rate: 0.78 });
+      try {
+        Speech.speak('Now select the pattern you saw!', { rate: 0.78 });
+      } catch {}
     }, SHOW_DURATION + HIDE_DURATION);
 
     return () => {

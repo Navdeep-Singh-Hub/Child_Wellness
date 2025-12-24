@@ -203,6 +203,9 @@ const PuzzleDropShapesGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Drag the shape to match the outline!', { rate: 0.78 });
+    } catch {}
     generateRound();
   }, [round, generateRound]);
 

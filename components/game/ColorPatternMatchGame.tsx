@@ -184,6 +184,9 @@ const ColorPatternMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
     setTargetPattern(pattern);
     setUserPattern([]);
     setRoundActive(true);
+    try {
+      Speech.speak('Copy the color pattern by tapping colors in order!', { rate: 0.78 });
+    } catch {}
   }, [round]);
 
   const handleBack = useCallback(() => {

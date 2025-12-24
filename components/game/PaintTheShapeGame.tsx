@@ -376,6 +376,9 @@ const PaintTheShapeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    try {
+      Speech.speak('Trace to fill the shape with color!', { rate: 0.78 });
+    } catch {}
     const shapes: ShapeType[] = ['star', 'heart', 'pentagon'];
     const shape = shapes[Math.floor(Math.random() * shapes.length)];
     setCurrentShape(shape);

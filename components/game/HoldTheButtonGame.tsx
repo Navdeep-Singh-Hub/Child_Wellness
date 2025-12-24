@@ -70,6 +70,13 @@ const HoldTheButtonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
+
+  // Initial speech on mount
+  useEffect(() => {
+    try {
+      Speech.speak('Press and hold until the ring fills completely. Release when you see the green flash!', { rate: 0.78 });
+    } catch {}
+  }, []);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
@@ -175,7 +182,13 @@ const HoldTheButtonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           }, 800);
         } else {
           setTimeout(() => {
-            setRound((r) => r + 1);
+            setRound((r) => {
+              const nextRound = r + 1;
+              try {
+                Speech.speak('Press and hold until the ring fills completely. Release when you see the green flash!', { rate: 0.78 });
+              } catch {}
+              return nextRound;
+            });
             setHoldProgress(0);
             ringProgress.value = 0;
             setRoundActive(true);

@@ -308,6 +308,9 @@ const ConnectInOrderGlowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
   }, [currentDotIndex, dots, roundActive, done, endGame, playSuccess, playWarning]);
 
   useEffect(() => {
+    try {
+      Speech.speak('Tap the glowing dot in order!', { rate: 0.78 });
+    } catch {}
     generateDots();
   }, [round, generateDots]);
 

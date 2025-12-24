@@ -194,6 +194,9 @@ const HalfShapeCompleteGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
     setCurrentShape(shapes[Math.floor(Math.random() * shapes.length)]);
     setUserPath([]);
     setRoundActive(true);
+    try {
+      Speech.speak('Draw the missing half of the shape on the right!', { rate: 0.78 });
+    } catch {}
   }, [round]);
 
   const handleBack = useCallback(() => {

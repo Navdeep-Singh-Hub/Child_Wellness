@@ -88,6 +88,11 @@ const SlowThenFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Blink animation loop
   useEffect(() => {
     if (done) return;
+    if (score === 0) {
+      try {
+        Speech.speak(`Tap when the circle lights up. After ${TAPS_TO_SWITCH} taps, the speed will switch!`, { rate: 0.78 });
+      } catch {}
+    }
 
     const blinkLoop = () => {
       // Turn on (light up)

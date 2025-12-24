@@ -176,6 +176,9 @@ const CopyTheLinePatternGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
     setTargetPattern(pattern);
     setUserPattern([]);
     setRoundActive(true);
+    try {
+      Speech.speak('Copy the pattern by tapping vertical or horizontal lines!', { rate: 0.78 });
+    } catch {}
   }, [round]);
 
   const handleBack = useCallback(() => {

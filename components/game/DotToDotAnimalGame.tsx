@@ -202,6 +202,9 @@ const DotToDotAnimalGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, [currentDotIndex, dots, roundActive, done, endGame, playSuccess, playWarning]);
 
   useEffect(() => {
+    try {
+      Speech.speak('Connect the dots in order to reveal the animal!', { rate: 0.78 });
+    } catch {}
     generateDots();
   }, [round, generateDots]);
 

@@ -208,6 +208,9 @@ const DragAnimalHomeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   // Initialize round
   useEffect(() => {
+    try {
+      Speech.speak('Drag the animal to its home! Match the animal with its home.', { rate: 0.78 });
+    } catch {}
     // Random animal type
     const animals: AnimalType[] = ['cat', 'bee', 'turtle'];
     const randomAnimal = animals[Math.floor(Math.random() * animals.length)];

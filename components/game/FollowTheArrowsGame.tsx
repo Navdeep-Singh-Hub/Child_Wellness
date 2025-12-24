@@ -163,6 +163,9 @@ const FollowTheArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       if (index >= newSequence.length) {
         setShowSequence(false);
         setRoundActive(true);
+        try {
+          Speech.speak('Watch the arrow sequence, then tap them in the same order!', { rate: 0.78 });
+        } catch {}
         return;
       }
 

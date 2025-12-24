@@ -202,6 +202,9 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   // Initialize first target
   useEffect(() => {
+    try {
+      Speech.speak('Tap the target! It gets smaller each time. If you struggle, it grows bigger to help you.', { rate: 0.78 });
+    } catch {}
     spawnTarget();
   }, []);
 

@@ -347,6 +347,9 @@ const BigSquareWalkGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     ];
     objectX.value = pathPoints.current[0].x;
     objectY.value = pathPoints.current[0].y;
+    try {
+      Speech.speak('Walk around the big square with your whole arm!', { rate: 0.78 });
+    } catch {}
     progress.value = 0;
     lastProgress.current = 0;
     updatePaths();
