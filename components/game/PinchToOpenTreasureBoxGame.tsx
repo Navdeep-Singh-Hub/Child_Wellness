@@ -1,6 +1,7 @@
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -100,6 +101,11 @@ const PinchToOpenTreasureBoxGame: React.FC<{ onBack?: () => void }> = ({ onBack 
   const chestScale = useSharedValue(1);
   const chestRotation = useSharedValue(0);
   const feedbackOpacity = useSharedValue(0);
+  const lock1Glow = useSharedValue(0);
+  const lock2Glow = useSharedValue(0);
+  const chestGlow = useSharedValue(0);
+  const progressWidth = useSharedValue(0);
+  const treasureParticles = useSharedValue(0);
 
   const roundActiveRef = useRef(false);
   const roundRef = useRef(1);
@@ -359,6 +365,69 @@ const PinchToOpenTreasureBoxGame: React.FC<{ onBack?: () => void }> = ({ onBack 
     startRound();
   }, []);
 
+  // Glow animations for locks
+  useEffect(() => {
+    if (roundActive && !isLock1UnlockedRef.current) {
+      lock1Glow.value = withSequence(
+        withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.3, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+      );
+      const interval = setInterval(() => {
+        if (roundActiveRef.current && !isLock1UnlockedRef.current) {
+          lock1Glow.value = withSequence(
+            withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+            withTiming(0.3, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+          );
+        }
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [roundActive, lock1Glow, isLock1UnlockedRef]);
+
+  useEffect(() => {
+    if (roundActive && !isLock2UnlockedRef.current) {
+      lock2Glow.value = withSequence(
+        withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.3, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+      );
+      const interval = setInterval(() => {
+        if (roundActiveRef.current && !isLock2UnlockedRef.current) {
+          lock2Glow.value = withSequence(
+            withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+            withTiming(0.3, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+          );
+        }
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [roundActive, lock2Glow, isLock2UnlockedRef]);
+
+  // Chest glow when both unlocked
+  useEffect(() => {
+    if (isLock1Unlocked && isLock2Unlocked && !isChestOpenRef.current) {
+      chestGlow.value = withSequence(
+        withTiming(1, { duration: 500, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.5, { duration: 500, easing: Easing.inOut(Easing.ease) })
+      );
+      const interval = setInterval(() => {
+        if (isChestOpenRef.current) {
+          clearInterval(interval);
+          return;
+        }
+        chestGlow.value = withSequence(
+          withTiming(1, { duration: 500, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.5, { duration: 500, easing: Easing.inOut(Easing.ease) })
+        );
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isLock1Unlocked, isLock2Unlocked, chestGlow]);
+
+  // Progress animation
+  useEffect(() => {
+    progressWidth.value = withTiming((score / TOTAL_ROUNDS) * 100, { duration: 300 });
+  }, [score, progressWidth]);
+
   // Animated styles
   const lock1AnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -411,6 +480,33 @@ const PinchToOpenTreasureBoxGame: React.FC<{ onBack?: () => void }> = ({ onBack 
     };
   });
 
+  const lock1GlowStyle = useAnimatedStyle(() => {
+    return {
+      opacity: lock1Glow.value * 0.6,
+      transform: [{ scale: 1 + lock1Glow.value * 0.2 }],
+    };
+  });
+
+  const lock2GlowStyle = useAnimatedStyle(() => {
+    return {
+      opacity: lock2Glow.value * 0.6,
+      transform: [{ scale: 1 + lock2Glow.value * 0.2 }],
+    };
+  });
+
+  const chestGlowStyle = useAnimatedStyle(() => {
+    return {
+      opacity: chestGlow.value * 0.4,
+      transform: [{ scale: 1 + chestGlow.value * 0.1 }],
+    };
+  });
+
+  const progressStyle = useAnimatedStyle(() => {
+    return {
+      width: `${progressWidth.value}%`,
+    };
+  });
+
   const handleBack = useCallback(() => {
     if (onBack) {
       onBack();
@@ -448,15 +544,29 @@ const PinchToOpenTreasureBoxGame: React.FC<{ onBack?: () => void }> = ({ onBack 
 
   return (
     <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={['#FEF3C7', '#FDE68A', '#FCD34D', '#FBBF24']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
       <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+        <LinearGradient
+          colors={['#1E293B', '#0F172A']}
+          style={styles.backChipGradient}
+        >
+          <Text style={styles.backChipText}>← Back</Text>
+        </LinearGradient>
       </TouchableOpacity>
 
       <View style={styles.headerBlock}>
-        <Text style={styles.title}>Pinch to Open Treasure Box</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • Score: {score}
-        </Text>
+        <Text style={styles.title}>📦 Pinch to Open Treasure 📦</Text>
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <Animated.View style={[styles.progressFill, progressStyle]} />
+          </View>
+          <Text style={styles.progressText}>{score}/{TOTAL_ROUNDS}</Text>
+        </View>
         <Text style={styles.helper}>
           Pinch both locks at the same time!
         </Text>
@@ -465,30 +575,59 @@ const PinchToOpenTreasureBoxGame: React.FC<{ onBack?: () => void }> = ({ onBack 
       {/* Play area */}
       <GestureDetector gesture={combinedGesture}>
         <View style={styles.playArea}>
+          <LinearGradient
+            colors={['#FFFBEB', '#FEF3C7', '#FDE68A', '#FCD34D', '#FBBF24']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          
           {/* Chest */}
           <Animated.View style={[styles.chest, chestAnimatedStyle]}>
-            <Text style={styles.chestEmoji}>📦</Text>
+            <Animated.View style={[styles.glowRing, chestGlowStyle]} />
+            <LinearGradient
+              colors={['#92400E', '#78350F', '#5C2E0A']}
+              style={styles.chestGradient}
+            >
+              <Text style={styles.chestEmoji}>📦</Text>
+            </LinearGradient>
           </Animated.View>
 
           {/* Lock 1 */}
           <Animated.View style={[styles.lock, lock1AnimatedStyle]}>
-            <Text style={styles.lockEmoji}>🔒</Text>
+            <Animated.View style={[styles.glowRing, lock1GlowStyle]} />
+            <LinearGradient
+              colors={['#6B7280', '#4B5563', '#374151']}
+              style={styles.lockGradient}
+            >
+              <Text style={styles.lockEmoji}>🔒</Text>
+            </LinearGradient>
           </Animated.View>
 
           {/* Lock 2 */}
           <Animated.View style={[styles.lock, lock2AnimatedStyle]}>
-            <Text style={styles.lockEmoji}>🔒</Text>
+            <Animated.View style={[styles.glowRing, lock2GlowStyle]} />
+            <LinearGradient
+              colors={['#6B7280', '#4B5563', '#374151']}
+              style={styles.lockGradient}
+            >
+              <Text style={styles.lockEmoji}>🔒</Text>
+            </LinearGradient>
           </Animated.View>
 
           {/* Feedback */}
           {showFeedback && lastResult && (
             <Animated.View style={[styles.feedbackContainer, feedbackStyle]}>
-              <Text style={[
-                styles.feedbackText,
-                lastResult === 'hit' ? styles.feedbackSuccess : styles.feedbackError,
-              ]}>
-                {lastResult === 'hit' ? 'Treasure!' : 'Pinch both locks!'}
-              </Text>
+              <LinearGradient
+                colors={lastResult === 'hit' 
+                  ? ['#FCD34D', '#F59E0B'] 
+                  : ['#EF4444', '#DC2626']}
+                style={styles.feedbackGradient}
+              >
+                <Text style={styles.feedbackText}>
+                  {lastResult === 'hit' ? '✨ Treasure! ✨' : '👆 Pinch both locks!'}
+                </Text>
+              </LinearGradient>
             </Animated.View>
           )}
 
@@ -509,20 +648,21 @@ const PinchToOpenTreasureBoxGame: React.FC<{ onBack?: () => void }> = ({ onBack 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F4F8',
   },
   backChip: {
     alignSelf: 'flex-start',
     margin: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
     borderRadius: 20,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  backChipGradient: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
   },
   backChipText: {
     fontSize: 14,
@@ -534,58 +674,103 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginBottom: 8,
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#78350F',
+    marginBottom: 16,
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  subtitle: {
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  progressBar: {
+    width: 200,
+    height: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#22C55E',
+    borderRadius: 6,
+  },
+  progressText: {
     fontSize: 16,
-    color: '#64748B',
-    marginBottom: 8,
+    fontWeight: '800',
+    color: '#78350F',
   },
   helper: {
-    fontSize: 14,
-    color: '#94A3B8',
+    fontSize: 15,
+    color: '#92400E',
     textAlign: 'center',
+    fontWeight: '600',
   },
   playArea: {
     flex: 1,
     position: 'relative',
     margin: 20,
+    borderRadius: 24,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: '#FCD34D',
   },
   chest: {
     position: 'absolute',
-    backgroundColor: '#92400E',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#92400E',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 12,
+    zIndex: 5,
+  },
+  chestGradient: {
+    width: '100%',
+    height: '100%',
     borderRadius: 20,
     borderWidth: 4,
     borderColor: '#78350F',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    zIndex: 5,
   },
   chestEmoji: {
     fontSize: 100,
   },
   lock: {
     position: 'absolute',
-    backgroundColor: '#6B7280',
+    borderRadius: 1000,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    shadowColor: '#6B7280',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  lockGradient: {
+    width: '100%',
+    height: '100%',
     borderRadius: 1000,
     borderWidth: 3,
     borderColor: '#4B5563',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 6,
+  },
+  glowRing: {
+    position: 'absolute',
+    width: LOCK_SIZE * 1.5,
+    height: LOCK_SIZE * 1.5,
+    borderRadius: LOCK_SIZE * 0.75,
+    backgroundColor: '#FCD34D',
   },
   lockEmoji: {
     fontSize: 40,
@@ -595,16 +780,24 @@ const styles = StyleSheet.create({
     top: '50%',
     left: '50%',
     transform: [{ translateX: -100 }, { translateY: -20 }],
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
     zIndex: 20,
   },
+  feedbackGradient: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
   feedbackText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '900',
     textAlign: 'center',
+    color: '#FFFFFF',
   },
   feedbackSuccess: {
     color: '#22C55E',

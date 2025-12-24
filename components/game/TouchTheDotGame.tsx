@@ -1,3 +1,15 @@
+/**
+ * OT Level 11 - Game 1: Touch the Dot
+ * 
+ * Core Goal: Eye-Hand Coordination (Touch Where You See)
+ * - Large dot appears at random positions
+ * - Child taps the dot
+ * - Dot disappears → reward animation
+ * - New dot appears elsewhere
+ * 
+ * Success Criteria: 10 correct taps in one session
+ */
+
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -43,20 +55,20 @@ const usePopSound = () => {
   return play;
 };
 
-interface BigTapTargetProps {
+interface TouchTheDotGameProps {
   onBack: () => void;
 }
 
-export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
+export const TouchTheDotGame: React.FC<TouchTheDotGameProps> = ({ onBack }) => {
   const [score, setScore] = useState(0);
-  const [targetsLeft, setTargetsLeft] = useState(12);
+  const [targetsLeft, setTargetsLeft] = useState(10);
   const [done, setDone] = useState(false);
   const [color, setColor] = useState(COLORS[0]);
   const [sparkleKey, setSparkleKey] = useState(0);
-  // soft pop reinforcement
   const playPop = usePopSound();
 
-  const sizePct = 26; // 26% of screen (within 20–30% target)
+  // Target size: medium circle (12% of screen)
+  const sizePct = 12; // 12% of screen width - smaller circle
   const radiusPct = sizePct / 2;
 
   const targetX = useSharedValue(50);
@@ -70,18 +82,18 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
     const margin = radiusPct + 5; // avoid edges
     const x = margin + Math.random() * (100 - margin * 2);
     const y = margin + Math.random() * (100 - margin * 2);
-    targetX.value = withTiming(x, { duration: 200 });
-    targetY.value = withTiming(y, { duration: 200 });
-    scale.value = withTiming(1, { duration: 180 });
-    opacity.value = withTiming(1, { duration: 180 });
+    targetX.value = withTiming(x, { duration: 300 });
+    targetY.value = withTiming(y, { duration: 300 });
+    scale.value = withTiming(1, { duration: 250 });
+    opacity.value = withTiming(1, { duration: 250 });
     setColor(randomColor());
   };
 
   const handleTap = () => {
     Haptics.selectionAsync().catch(() => {});
     playPop();
-    scale.value = withSequence(withTiming(1.2, { duration: 80 }), withTiming(0, { duration: 120 }));
-    opacity.value = withTiming(0, { duration: 140 });
+    scale.value = withSequence(withTiming(1.2, { duration: 100 }), withTiming(0, { duration: 150 }));
+    opacity.value = withTiming(0, { duration: 180 });
     setSparkleKey(Date.now());
     setScore((s) => s + 1);
     setTargetsLeft((t) => {
@@ -105,7 +117,11 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
     borderRadius: 999,
     left: `${targetX.value}%`,
     top: `${targetY.value}%`,
-    transform: [{ translateX: -(sizePct / 2) + '%' as any }, { translateY: -(sizePct / 2) + '%' as any }, { scale: scale.value }],
+    transform: [
+      { translateX: -(sizePct / 2) + '%' as any },
+      { translateY: -(sizePct / 2) + '%' as any },
+      { scale: scale.value }
+    ],
     opacity: opacity.value,
   }));
 
@@ -131,16 +147,17 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
           >
             🎉✨🌟
           </Animated.Text>
-          <Text style={styles.title}>Amazing Tapping! 🎯</Text>
-          <Text style={styles.subtitle}>You popped {score} beautiful bubbles! 🫧</Text>
+          <Text style={styles.title}>Eye–Hand Explorer! 🎯</Text>
+          <Text style={styles.subtitle}>You touched {score} dots perfectly! ⭐</Text>
           <View style={styles.statsBox}>
-            <Text style={styles.statsText}>Perfect Score: {score}/12 ⭐</Text>
+            <Text style={styles.statsText}>Perfect Score: {score}/10 ⭐</Text>
+            <Text style={styles.badgeText}>🏅 Eye–Hand Explorer Badge</Text>
           </View>
           <TouchableOpacity 
             style={styles.primaryButton} 
             onPress={() => {
               setScore(0);
-              setTargetsLeft(12);
+              setTargetsLeft(10);
               setDone(false);
               spawnTarget();
             }}
@@ -210,19 +227,16 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
           style={StyleSheet.absoluteFillObject}
         />
         <View style={styles.instructionWrap}>
-          <Text style={styles.instructionTitle}>✨ Tap the Big Bubble ✨</Text>
-          <Text style={styles.instructionSubtitle}>Burst it to earn a star! 🌟</Text>
+          <Text style={styles.instructionTitle}>✨ Touch the Dot ✨</Text>
+          <Text style={styles.instructionSubtitle}>Tap the dot when you see it! 🌟</Text>
         </View>
         <Animated.View style={[styles.circle, circleStyle]}>
-          <TouchableOpacity style={styles.hitArea} activeOpacity={0.7} onPress={handleTap}>
-            <LinearGradient
-              colors={[color, `${color}CC`, '#fff']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.circleFill}
-            >
-              <View style={styles.circleInnerGlow} />
-            </LinearGradient>
+          <TouchableOpacity 
+            style={styles.hitArea} 
+            activeOpacity={0.7} 
+            onPress={handleTap}
+          >
+            <View style={[styles.dot, { backgroundColor: color }]} />
           </TouchableOpacity>
         </Animated.View>
         <SparkleBurst key={sparkleKey} visible color={color} count={15} size={8} />
@@ -346,28 +360,20 @@ const styles = StyleSheet.create({
   },
   hitArea: {
     flex: 1,
-    borderRadius: 999,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
-  },
-  circleFill: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  circleInnerGlow: {
-    width: '60%',
-    height: '60%',
+  dot: {
+    width: '100%',
+    height: '100%',
     borderRadius: 999,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    shadowColor: '#fff',
-    shadowOpacity: 0.8,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 0 },
+    borderWidth: 3,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 10,
   },
   completion: {
     flex: 1,
@@ -397,7 +403,7 @@ const styles = StyleSheet.create({
   },
   statsBox: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 16,
     marginBottom: 24,
@@ -406,11 +412,18 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
+    alignItems: 'center',
   },
   statsText: {
     fontSize: 18,
     fontWeight: '800',
     color: '#78350F',
+    marginBottom: 8,
+  },
+  badgeText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#10B981',
   },
   primaryButton: {
     borderRadius: 16,
@@ -450,7 +463,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-
-
 

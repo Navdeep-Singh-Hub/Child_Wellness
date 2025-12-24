@@ -1,6 +1,7 @@
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -144,7 +145,7 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       scale.value = 1;
       opacity.value = 1;
     }, 400);
-  }, [done, score, targetPosition, scale, opacity, sparkleX, sparkleY, playPop, spawnTarget]);
+  }, [done, score, targetPosition, scale, opacity, sparkleX, sparkleY, playPop, spawnTarget, endGame]);
 
   // Handle miss (tap outside target)
   const handleMiss = useCallback(() => {
@@ -235,11 +236,14 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             padding: 24,
           }}
         >
-          <View style={styles.resultCard}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>🎯</Text>
-            <Text style={styles.resultTitle}>Amazing precision!</Text>
+          <LinearGradient
+            colors={['#FFFFFF', '#FEF3C7']}
+            style={styles.resultCard}
+          >
+            <Text style={{ fontSize: 72, marginBottom: 20 }}>🎯✨</Text>
+            <Text style={styles.resultTitle}>Amazing Precision! 🎉</Text>
             <Text style={styles.resultSubtitle}>
-              You tapped {finalStats.correct} out of {finalStats.total} targets.
+              You tapped {finalStats.correct} out of {finalStats.total} targets! ⭐
             </Text>
             <Text style={styles.resultSubtitle}>
               Final size: {currentSize.toFixed(0)}px
@@ -261,7 +265,7 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               }}
             />
             <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
+          </LinearGradient>
         </ScrollView>
       </SafeAreaView>
     );
@@ -272,47 +276,75 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
+        style={StyleSheet.absoluteFillObject}
+      />
       <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+        <LinearGradient
+          colors={['#1E293B', '#0F172A']}
+          style={styles.backChipGradient}
+        >
+          <Text style={styles.backChipText}>← Back</Text>
+        </LinearGradient>
       </TouchableOpacity>
 
       <View style={styles.headerBlock}>
-        <Text style={styles.title}>Shrinking Target</Text>
-        <Text style={styles.subtitle}>
-          Target {score + 1}/{TOTAL_TARGETS} • Size: {sizePercentage}%
-        </Text>
+        <Text style={styles.title}>🎯 Shrinking Target 🎯</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statBadge}>
+            <Text style={styles.statLabel}>Target</Text>
+            <Text style={styles.statValue}>{score + 1}/{TOTAL_TARGETS}</Text>
+          </View>
+          <View style={[styles.statBadge, styles.statBadgeAccent]}>
+            <Text style={styles.statLabel}>Size</Text>
+            <Text style={styles.statValue}>{sizePercentage}%</Text>
+          </View>
+        </View>
         <Text style={styles.helper}>
-          Tap the target! It gets smaller each time. If you struggle, it grows bigger to help you.
+          Tap the target! It gets smaller each time. If you struggle, it grows bigger to help you. ✨
         </Text>
       </View>
 
-      <Pressable style={styles.playArea} onPress={handleMiss}>
-        <Animated.View
-          style={[
-            styles.targetContainer,
-            {
-              left: `${targetPosition.x}%`,
-              top: `${targetPosition.y}%`,
-              transform: [{ translateX: -currentSize / 2 }, { translateY: -currentSize / 2 }],
-            },
-            targetStyle,
-          ]}
-        >
-          <Pressable
-            onPress={handleTap}
+      <View style={styles.playArea}>
+        <LinearGradient
+          colors={['#F0FDF4', '#DCFCE7', '#BBF7D0']}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <Pressable style={StyleSheet.absoluteFillObject} onPress={handleMiss}>
+          <Animated.View
             style={[
-              styles.target,
+              styles.targetContainer,
               {
-                width: currentSize,
-                height: currentSize,
-                borderRadius: currentSize / 2,
-                backgroundColor: currentColor,
+                left: `${targetPosition.x}%`,
+                top: `${targetPosition.y}%`,
+                transform: [{ translateX: -currentSize / 2 }, { translateY: -currentSize / 2 }],
               },
+              targetStyle,
             ]}
           >
-            <View style={styles.targetInner} />
-          </Pressable>
-        </Animated.View>
+            <Pressable
+              onPress={handleTap}
+              style={styles.targetPressable}
+            >
+              <LinearGradient
+                colors={[currentColor, `${currentColor}DD`, `${currentColor}AA`]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[
+                  styles.target,
+                  {
+                    width: currentSize,
+                    height: currentSize,
+                    borderRadius: currentSize / 2,
+                  },
+                ]}
+              >
+                <View style={styles.targetInner} />
+              </LinearGradient>
+            </Pressable>
+          </Animated.View>
+        </Pressable>
 
         {/* Sparkle burst on tap */}
         {score > 0 && (
@@ -320,15 +352,20 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             <SparkleBurst />
           </Animated.View>
         )}
-      </Pressable>
+      </View>
 
       <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: graded motor control • progressive finger precision • adaptability
-        </Text>
-        <Text style={styles.footerSub}>
-          The target shrinks as you succeed, building precision. If you miss, it grows to help you!
-        </Text>
+        <LinearGradient
+          colors={['#FFFFFF', '#FEF3C7']}
+          style={styles.footerGradient}
+        >
+          <Text style={styles.footerMain}>
+            Skills: graded motor control • progressive finger precision • adaptability
+          </Text>
+          <Text style={styles.footerSub}>
+            The target shrinks as you succeed, building precision. If you miss, it grows to help you!
+          </Text>
+        </LinearGradient>
       </View>
     </SafeAreaView>
   );
@@ -346,15 +383,23 @@ const styles = StyleSheet.create({
     top: 50,
     left: 16,
     zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 6,
+  },
+  backChipGradient: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
   },
   backChipText: {
     color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
+    fontWeight: '800',
+    fontSize: 15,
+    letterSpacing: 0.3,
   },
   headerBlock: {
     marginTop: 72,
@@ -362,10 +407,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#78350F',
+    marginBottom: 12,
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  statBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 18,
+    alignItems: 'center',
+    minWidth: 100,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 5,
+  },
+  statBadgeAccent: {
+    backgroundColor: '#FEF3C7',
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
     marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 16,
@@ -373,80 +456,113 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   helper: {
-    fontSize: 14,
-    color: '#475569',
+    fontSize: 15,
+    color: '#92400E',
     textAlign: 'center',
     paddingHorizontal: 18,
+    fontWeight: '600',
   },
   playArea: {
     flex: 1,
     position: 'relative',
     marginBottom: 16,
+    borderRadius: 24,
+    overflow: 'hidden',
+    marginHorizontal: 8,
+    borderWidth: 3,
+    borderColor: '#A7F3D0',
   },
   targetContainer: {
     position: 'absolute',
+  },
+  targetPressable: {
+    overflow: 'hidden',
   },
   target: {
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
+    shadowOpacity: 0.4,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
   },
   targetInner: {
     width: '40%',
     height: '40%',
     borderRadius: 999,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    shadowColor: '#fff',
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
   },
   sparkleContainer: {
     position: 'absolute',
     transform: [{ translateX: -20 }, { translateY: -20 }],
   },
   footerBox: {
-    paddingVertical: 14,
     marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  footerGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
   },
   footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#78350F',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   footerSub: {
     fontSize: 13,
-    color: '#64748B',
+    color: '#92400E',
     textAlign: 'center',
+    fontWeight: '500',
   },
   resultCard: {
     width: '100%',
     maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
+    borderRadius: 28,
+    padding: 32,
     alignItems: 'center',
     marginTop: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
   },
   resultTitle: {
-    fontSize: 26,
+    fontSize: 32,
     fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 8,
+    color: '#78350F',
+    marginBottom: 12,
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   resultSubtitle: {
-    fontSize: 16,
-    color: '#475569',
-    marginBottom: 8,
+    fontSize: 18,
+    color: '#64748B',
+    marginBottom: 12,
     textAlign: 'center',
+    fontWeight: '600',
   },
   savedText: {
     color: '#22C55E',
-    fontWeight: '600',
+    fontWeight: '700',
     marginTop: 16,
     textAlign: 'center',
+    fontSize: 15,
   },
 });
 

@@ -1,6 +1,7 @@
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Easing, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -177,12 +178,21 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     const isRed = type === "red";
     const isRedTarget = isRed;
 
-    const baseShape = (
-      <View
-        style={[
-          styles.shape,
-          isRed ? styles.redCircle : styles.blueSquare,
-        ]}
+    const baseShape = isRed ? (
+      <LinearGradient
+        colors={['#EF4444', '#DC2626', '#B91C1C']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.shape}
+      >
+        <View style={styles.shapeInnerGlow} />
+      </LinearGradient>
+    ) : (
+      <LinearGradient
+        colors={['#3B82F6', '#2563EB', '#1D4ED8']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.shape}
       />
     );
 
@@ -239,11 +249,14 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>← Back</Text>
         </TouchableOpacity>
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-          <View style={{ width: '100%', maxWidth: 400, borderRadius: 24, backgroundColor: '#fff', padding: 24, alignItems: 'center', marginTop: 16 }}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>🎉</Text>
-            <Text style={{ fontSize: 28, fontWeight: '900', color: '#0F172A', marginBottom: 8 }}>Game Complete!</Text>
-            <Text style={{ fontSize: 16, color: '#475569', marginBottom: 16, textAlign: 'center' }}>
-              You tapped correctly {finalStats.correct} out of {finalStats.total} times!
+          <LinearGradient
+            colors={['#FFFFFF', '#FEF2F2']}
+            style={{ width: '100%', maxWidth: 400, borderRadius: 28, padding: 32, alignItems: 'center', marginTop: 16, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 10 }}
+          >
+            <Text style={{ fontSize: 72, marginBottom: 20 }}>🎉✨</Text>
+            <Text style={{ fontSize: 32, fontWeight: '900', color: '#991B1B', marginBottom: 12, textShadowColor: 'rgba(255, 255, 255, 0.8)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }}>Game Complete! 🎯</Text>
+            <Text style={{ fontSize: 18, color: '#64748B', marginBottom: 24, textAlign: 'center', fontWeight: '600' }}>
+              You tapped correctly {finalStats.correct} out of {finalStats.total} times! ⭐
             </Text>
             <ResultCard
               correct={finalStats.correct}
@@ -261,7 +274,7 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               }}
             />
             <Text style={{ color: '#22C55E', fontWeight: '600', marginTop: 16, textAlign: 'center' }}>Saved! XP updated ✅</Text>
-          </View>
+          </LinearGradient>
         </ScrollView>
       </SafeAreaView>
     );
@@ -269,25 +282,34 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={['#FEF2F2', '#FEE2E2', '#FECACA']}
+        style={StyleSheet.absoluteFillObject}
+      />
       <TouchableOpacity
         onPress={handleBack}
-        style={{
-          position: 'absolute',
-          top: 50,
-          left: 16,
-          zIndex: 10,
-          backgroundColor: '#111827',
-          paddingHorizontal: 16,
-          paddingVertical: 8,
-          borderRadius: 20,
-        }}
+        style={styles.backButton}
       >
-        <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>← Back</Text>
+        <LinearGradient
+          colors={['#1E293B', '#0F172A']}
+          style={styles.backButtonGradient}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </LinearGradient>
       </TouchableOpacity>
 
-      <View style={{ alignItems: 'center', marginTop: 70, marginBottom: 16 }}>
-        <Text style={styles.title}>Tap the BIG RED CIRCLE</Text>
-        <Text style={styles.subtitle}>Round: {round}/8 • ⭐ {stars}</Text>
+      <View style={styles.headerSection}>
+        <Text style={styles.title}>🎯 Tap the BIG RED CIRCLE 🎯</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statBadge}>
+            <Text style={styles.statLabel}>Round</Text>
+            <Text style={styles.statValue}>{round}/8</Text>
+          </View>
+          <View style={[styles.statBadge, styles.starBadge]}>
+            <Text style={styles.statLabel}>⭐ Stars</Text>
+            <Text style={styles.statValue}>{stars}</Text>
+          </View>
+        </View>
       </View>
 
       <Animated.View
@@ -301,12 +323,17 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       </Animated.View>
 
       <View style={styles.instructionBox}>
-        <Text style={styles.instructionText}>
-          Look! The red circle is glowing. Tap the red circle!
-        </Text>
-        <Text style={styles.helperText}>
-          Wrong taps will just gently shake the screen – no problem 🙂
-        </Text>
+        <LinearGradient
+          colors={['#FFFFFF', '#FEF2F2']}
+          style={styles.instructionGradient}
+        >
+          <Text style={styles.instructionText}>
+            ✨ Look! The red circle is glowing. Tap the red circle! ✨
+          </Text>
+          <Text style={styles.helperText}>
+            Wrong taps will just gently shake the screen – no problem 🙂
+          </Text>
+        </LinearGradient>
       </View>
     </SafeAreaView>
   );
@@ -321,16 +348,72 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 48,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 8,
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    zIndex: 10,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
   },
-  subtitle: {
-    fontSize: 16,
+  backButtonGradient: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  headerSection: {
+    alignItems: 'center',
+    marginTop: 70,
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "900",
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: 16,
+    color: '#991B1B',
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  starBadge: {
+    backgroundColor: '#FEF3C7',
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#0F172A',
   },
   shapesRow: {
     flexDirection: "row",
@@ -339,43 +422,62 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   shapeTouchArea: {
-    padding: 8,
+    padding: 12,
   },
   shape: {
     width: SHAPE_SIZE,
     height: SHAPE_SIZE,
     justifyContent: "center",
     alignItems: "center",
-  },
-  redCircle: {
     borderRadius: SHAPE_SIZE / 2,
-    backgroundColor: "red",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
   },
-  blueSquare: {
-    borderRadius: 20,
-    backgroundColor: "blue",
+  shapeInnerGlow: {
+    width: '50%',
+    height: '50%',
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    shadowColor: '#fff',
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
   },
   glowWrapper: {
-    shadowColor: "red",
-    shadowOpacity: 0.8,
-    shadowRadius: 15,
+    shadowColor: "#EF4444",
+    shadowOpacity: 1,
+    shadowRadius: 25,
     shadowOffset: { width: 0, height: 0 },
-    elevation: 8, // Android
+    elevation: 15,
   },
   instructionBox: {
-    padding: 12,
     marginBottom: 24,
-    borderRadius: 12,
-    backgroundColor: "white",
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  instructionGradient: {
+    padding: 16,
   },
   instructionText: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: "800",
+    marginBottom: 8,
+    color: '#991B1B',
+    textAlign: 'center',
   },
   helperText: {
     fontSize: 14,
-    color: "#555",
+    color: "#64748B",
+    textAlign: 'center',
+    fontWeight: '500',
   },
 });
 

@@ -1,6 +1,7 @@
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -92,6 +93,10 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
   const target2Scale = useSharedValue(1);
   const target2Opacity = useSharedValue(1);
   const feedbackOpacity = useSharedValue(0);
+  const target1Pulse = useSharedValue(1);
+  const target2Pulse = useSharedValue(1);
+  const connectionOpacity = useSharedValue(0.3);
+  const progressWidth = useSharedValue(0);
 
   const roundActiveRef = useRef(false);
   const roundRef = useRef(1);
@@ -316,6 +321,38 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
     };
   }, []);
 
+  // Pulsing animation for targets
+  useEffect(() => {
+    if (roundActive) {
+      target1Pulse.value = withSequence(
+        withTiming(1.1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) })
+      );
+      target2Pulse.value = withSequence(
+        withTiming(1.1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) })
+      );
+      const interval = setInterval(() => {
+        if (roundActiveRef.current) {
+          target1Pulse.value = withSequence(
+            withTiming(1.1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+            withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) })
+          );
+          target2Pulse.value = withSequence(
+            withTiming(1.1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+            withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) })
+          );
+        }
+      }, 1600);
+      return () => clearInterval(interval);
+    }
+  }, [roundActive, target1Pulse, target2Pulse]);
+
+  // Progress animation
+  useEffect(() => {
+    progressWidth.value = withTiming((score / TOTAL_ROUNDS) * 100, { duration: 300 });
+  }, [score, progressWidth]);
+
   // Animated styles
   const target1AnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -326,7 +363,7 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
       transform: [
         { translateX: -TARGET_SIZE / 2 },
         { translateY: -TARGET_SIZE / 2 },
-        { scale: target1Scale.value },
+        { scale: target1Scale.value * target1Pulse.value },
       ],
       opacity: target1Opacity.value,
     };
@@ -341,9 +378,34 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
       transform: [
         { translateX: -TARGET_SIZE / 2 },
         { translateY: -TARGET_SIZE / 2 },
-        { scale: target2Scale.value },
+        { scale: target2Scale.value * target2Pulse.value },
       ],
       opacity: target2Opacity.value,
+    };
+  });
+
+  const connectionStyle = useAnimatedStyle(() => {
+    const distance = Math.abs(target2X.value - target1X.value);
+    const angle = Math.atan2(
+      target2Y.value - target1Y.value,
+      target2X.value - target1X.value
+    ) * (180 / Math.PI);
+    return {
+      opacity: connectionOpacity.value,
+      width: distance,
+      left: `${target1X.value}%`,
+      top: `${target1Y.value}%`,
+      transform: [
+        { translateX: -TARGET_SIZE / 2 },
+        { translateY: -TARGET_SIZE / 2 },
+        { rotate: `${angle}deg` },
+      ],
+    };
+  });
+
+  const progressStyle = useAnimatedStyle(() => {
+    return {
+      width: `${progressWidth.value}%`,
     };
   });
 
@@ -390,15 +452,29 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
 
   return (
     <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={['#FEF9C3', '#FEF08A', '#FDE047', '#FACC15']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
       <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+        <LinearGradient
+          colors={['#1E293B', '#0F172A']}
+          style={styles.backChipGradient}
+        >
+          <Text style={styles.backChipText}>← Back</Text>
+        </LinearGradient>
       </TouchableOpacity>
 
       <View style={styles.headerBlock}>
-        <Text style={styles.title}>Two-Finger Simultaneous Tap</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • Score: {score}
-        </Text>
+        <Text style={styles.title}>⭐ Two-Finger Tap ⭐</Text>
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <Animated.View style={[styles.progressFill, progressStyle]} />
+          </View>
+          <Text style={styles.progressText}>{score}/{TOTAL_ROUNDS}</Text>
+        </View>
         <Text style={styles.helper}>
           Tap both targets at the same time!
         </Text>
@@ -406,6 +482,15 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
 
       {/* Play area */}
       <View style={styles.playArea}>
+        <LinearGradient
+          colors={['#FFFBEB', '#FEF3C7', '#FDE68A', '#FCD34D']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+        
+        {/* Connection line */}
+        <Animated.View style={[styles.connectionLine, connectionStyle]} />
         {/* Left target */}
         <Pressable
           onPress={() => handleTargetTap('left')}
@@ -413,7 +498,12 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
           style={styles.targetPressable}
         >
           <Animated.View style={[styles.target, target1AnimatedStyle]}>
-            <Text style={styles.targetEmoji}>⭐</Text>
+            <LinearGradient
+              colors={['#FCD34D', '#F59E0B', '#D97706']}
+              style={styles.targetGradient}
+            >
+              <Text style={styles.targetEmoji}>⭐</Text>
+            </LinearGradient>
           </Animated.View>
         </Pressable>
 
@@ -424,21 +514,30 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
           style={styles.targetPressable}
         >
           <Animated.View style={[styles.target, target2AnimatedStyle]}>
-            <Text style={styles.targetEmoji}>⭐</Text>
+            <LinearGradient
+              colors={['#FCD34D', '#F59E0B', '#D97706']}
+              style={styles.targetGradient}
+            >
+              <Text style={styles.targetEmoji}>⭐</Text>
+            </LinearGradient>
           </Animated.View>
         </Pressable>
 
-        {/* Feedback */}
-        {showFeedback && lastResult && (
-          <Animated.View style={[styles.feedbackContainer, feedbackStyle]}>
-            <Text style={[
-              styles.feedbackText,
-              lastResult === 'hit' ? styles.feedbackSuccess : styles.feedbackError,
-            ]}>
-              {lastResult === 'hit' ? 'Perfect!' : 'Try together!'}
-            </Text>
-          </Animated.View>
-        )}
+          {/* Feedback */}
+          {showFeedback && lastResult && (
+            <Animated.View style={[styles.feedbackContainer, feedbackStyle]}>
+              <LinearGradient
+                colors={lastResult === 'hit' 
+                  ? ['#22C55E', '#16A34A'] 
+                  : ['#EF4444', '#DC2626']}
+                style={styles.feedbackGradient}
+              >
+                <Text style={styles.feedbackText}>
+                  {lastResult === 'hit' ? '✨ Perfect! ✨' : '👆 Try together!'}
+                </Text>
+              </LinearGradient>
+            </Animated.View>
+          )}
 
         {/* Sparkle effect */}
         {sparkleKey > 0 && (
@@ -456,20 +555,21 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F4F8',
   },
   backChip: {
     alignSelf: 'flex-start',
     margin: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
     borderRadius: 20,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  backChipGradient: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
   },
   backChipText: {
     fontSize: 14,
@@ -481,25 +581,58 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginBottom: 8,
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#78350F',
+    marginBottom: 16,
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  subtitle: {
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  progressBar: {
+    width: 200,
+    height: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#22C55E',
+    borderRadius: 6,
+  },
+  progressText: {
     fontSize: 16,
-    color: '#64748B',
-    marginBottom: 8,
+    fontWeight: '800',
+    color: '#78350F',
   },
   helper: {
-    fontSize: 14,
-    color: '#94A3B8',
+    fontSize: 15,
+    color: '#92400E',
     textAlign: 'center',
+    fontWeight: '600',
   },
   playArea: {
     flex: 1,
     position: 'relative',
     margin: 20,
+    borderRadius: 24,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: '#FCD34D',
+  },
+  connectionLine: {
+    position: 'absolute',
+    height: 3,
+    backgroundColor: '#F59E0B',
+    borderRadius: 2,
+    zIndex: 1,
   },
   targetPressable: {
     position: 'absolute',
@@ -508,17 +641,23 @@ const styles = StyleSheet.create({
   },
   target: {
     position: 'absolute',
-    backgroundColor: '#FCD34D',
+    borderRadius: 1000,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#FCD34D',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  targetGradient: {
+    width: '100%',
+    height: '100%',
     borderRadius: 1000,
     borderWidth: 4,
     borderColor: '#F59E0B',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   targetEmoji: {
     fontSize: 50,
@@ -528,16 +667,24 @@ const styles = StyleSheet.create({
     top: '50%',
     left: '50%',
     transform: [{ translateX: -100 }, { translateY: -20 }],
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
     zIndex: 20,
   },
+  feedbackGradient: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
   feedbackText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '900',
     textAlign: 'center',
+    color: '#FFFFFF',
   },
   feedbackSuccess: {
     color: '#22C55E',

@@ -1,6 +1,7 @@
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -258,11 +259,14 @@ const MultiTapFunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             padding: 24,
           }}
         >
-          <View style={styles.resultCard}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>🎈</Text>
-            <Text style={styles.resultTitle}>All balloons popped!</Text>
+          <LinearGradient
+            colors={['#FFFFFF', '#FDF2F8']}
+            style={styles.resultCard}
+          >
+            <Text style={{ fontSize: 72, marginBottom: 20 }}>🎈✨</Text>
+            <Text style={styles.resultTitle}>All Balloons Popped! 🎉</Text>
             <Text style={styles.resultSubtitle}>
-              You popped {finalStats.correct} out of {finalStats.total} balloons.
+              You popped {finalStats.correct} out of {finalStats.total} balloons! ⭐
             </Text>
             <ResultCard
               correct={finalStats.correct}
@@ -280,7 +284,7 @@ const MultiTapFunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               }}
             />
             <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
+          </LinearGradient>
         </ScrollView>
       </SafeAreaView>
     );
@@ -288,21 +292,41 @@ const MultiTapFunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={['#FDF2F8', '#FCE7F3', '#FBCFE8']}
+        style={StyleSheet.absoluteFillObject}
+      />
       <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+        <LinearGradient
+          colors={['#1E293B', '#0F172A']}
+          style={styles.backChipGradient}
+        >
+          <Text style={styles.backChipText}>← Back</Text>
+        </LinearGradient>
       </TouchableOpacity>
 
       <View style={styles.headerBlock}>
-        <Text style={styles.title}>Multi-Tap Fun</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 🎈 Popped: {totalPopped}
-        </Text>
+        <Text style={styles.title}>🎈 Multi-Tap Fun 🎈</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statBadge}>
+            <Text style={styles.statLabel}>Round</Text>
+            <Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text>
+          </View>
+          <View style={[styles.statBadge, styles.popBadge]}>
+            <Text style={styles.statLabel}>🎈 Popped</Text>
+            <Text style={styles.statValue}>{totalPopped}</Text>
+          </View>
+        </View>
         <Text style={styles.helper}>
-          Tap all {BALLOONS_PER_ROUND} balloons! {BALLOONS_PER_ROUND - poppedCount} left in this round.
+          Tap all {BALLOONS_PER_ROUND} balloons! {BALLOONS_PER_ROUND - poppedCount} left in this round. ✨
         </Text>
       </View>
 
       <View style={styles.playArea}>
+        <LinearGradient
+          colors={['#F0FDF4', '#DCFCE7', '#BBF7D0']}
+          style={StyleSheet.absoluteFillObject}
+        />
         {balloons.map((balloon) => (
           <Animated.View
             key={balloon.id}
@@ -323,30 +347,38 @@ const MultiTapFunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           >
             <Pressable
               onPress={() => handleBalloonTap(balloon)}
-              style={[
-                styles.balloon,
-                {
-                  backgroundColor: balloon.color,
-                },
-              ]}
+              style={styles.balloonPressable}
               disabled={balloon.popped}
             >
-              <Text style={styles.balloonEmoji}>🎈</Text>
+              <LinearGradient
+                colors={[balloon.color, `${balloon.color}DD`, `${balloon.color}AA`]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.balloon}
+              >
+                <Text style={styles.balloonEmoji}>🎈</Text>
+                <View style={styles.balloonGlow} />
+              </LinearGradient>
             </Pressable>
           </Animated.View>
         ))}
 
         {/* Sparkle effect */}
-        <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color="#3B82F6" />
+        <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color="#EC4899" count={20} size={8} />
       </View>
 
       <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: repetitive motor practice • coordination in multiple locations • finger precision
-        </Text>
-        <Text style={styles.footerSub}>
-          Tap each balloon one by one to build intentional touch skills.
-        </Text>
+        <LinearGradient
+          colors={['#FFFFFF', '#FDF2F8']}
+          style={styles.footerGradient}
+        >
+          <Text style={styles.footerMain}>
+            Skills: repetitive motor practice • coordination in multiple locations • finger precision
+          </Text>
+          <Text style={styles.footerSub}>
+            Tap each balloon one by one to build intentional touch skills.
+          </Text>
+        </LinearGradient>
       </View>
     </SafeAreaView>
   );
@@ -364,10 +396,17 @@ const styles = StyleSheet.create({
     top: 50,
     left: 16,
     zIndex: 10,
-    backgroundColor: '#0F172A',
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  backChipGradient: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
   },
   backChipText: {
     color: '#fff',
@@ -380,10 +419,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#9F1239',
+    marginBottom: 12,
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  statBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  popBadge: {
+    backgroundColor: '#FCE7F3',
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '900',
     color: '#0F172A',
-    marginBottom: 6,
   },
   subtitle: {
     fontSize: 16,
@@ -391,17 +464,27 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   helper: {
-    fontSize: 14,
-    color: '#475569',
+    fontSize: 15,
+    color: '#9F1239',
     textAlign: 'center',
     paddingHorizontal: 18,
+    fontWeight: '600',
   },
   playArea: {
     flex: 1,
     position: 'relative',
+    borderRadius: 24,
+    overflow: 'hidden',
+    marginHorizontal: 8,
+    borderWidth: 3,
+    borderColor: '#FBCFE8',
   },
   balloonContainer: {
     position: 'absolute',
+    width: BALLOON_SIZE,
+    height: BALLOON_SIZE,
+  },
+  balloonPressable: {
     width: BALLOON_SIZE,
     height: BALLOON_SIZE,
   },
@@ -412,50 +495,79 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
+  },
+  balloonGlow: {
+    position: 'absolute',
+    width: '40%',
+    height: '40%',
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    top: '20%',
+    left: '30%',
   },
   balloonEmoji: {
-    fontSize: 48,
+    fontSize: 52,
+    zIndex: 1,
   },
   footerBox: {
-    paddingVertical: 14,
     marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  footerGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
   },
   footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#9F1239',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   footerSub: {
     fontSize: 13,
-    color: '#64748B',
+    color: '#EC4899',
     textAlign: 'center',
+    fontWeight: '500',
   },
   resultCard: {
     width: '100%',
     maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
+    borderRadius: 28,
+    padding: 32,
     alignItems: 'center',
     marginTop: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 10,
   },
   resultTitle: {
-    fontSize: 26,
+    fontSize: 32,
     fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 8,
+    color: '#9F1239',
+    marginBottom: 12,
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   resultSubtitle: {
-    fontSize: 16,
-    color: '#475569',
-    marginBottom: 16,
+    fontSize: 18,
+    color: '#64748B',
+    marginBottom: 24,
     textAlign: 'center',
+    fontWeight: '600',
   },
   savedText: {
     color: '#22C55E',

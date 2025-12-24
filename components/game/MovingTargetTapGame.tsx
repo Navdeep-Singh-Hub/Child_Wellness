@@ -1,20 +1,21 @@
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  Easing,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    Easing,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import ResultCard from './ResultCard';
 
@@ -240,11 +241,14 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             padding: 24,
           }}
         >
-          <View style={styles.resultCard}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>🎈</Text>
-            <Text style={styles.resultTitle}>Great tracking!</Text>
+          <LinearGradient
+            colors={['#FFFFFF', '#FEF3C7']}
+            style={styles.resultCard}
+          >
+            <Text style={{ fontSize: 72, marginBottom: 20 }}>🎈✨</Text>
+            <Text style={styles.resultTitle}>Great Tracking! 🎯</Text>
             <Text style={styles.resultSubtitle}>
-              You popped the balloon {finalStats.correct} out of {finalStats.total} times.
+              You popped the balloon {finalStats.correct} out of {finalStats.total} times! ⭐
             </Text>
             <ResultCard
               correct={finalStats.correct}
@@ -262,7 +266,7 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               }}
             />
             <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
+          </LinearGradient>
         </ScrollView>
       </SafeAreaView>
     );
@@ -277,43 +281,72 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
+        style={StyleSheet.absoluteFillObject}
+      />
       <TouchableOpacity
         onPress={handleBack}
         style={styles.backChip}
       >
-        <Text style={styles.backChipText}>← Back</Text>
+        <LinearGradient
+          colors={['#1E293B', '#0F172A']}
+          style={styles.backChipGradient}
+        >
+          <Text style={styles.backChipText}>← Back</Text>
+        </LinearGradient>
       </TouchableOpacity>
 
       <View style={styles.headerBlock}>
-        <Text style={styles.title}>Moving Balloon Tap</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 🎯 Hits: {hits}
-        </Text>
+        <Text style={styles.title}>🎈 Moving Balloon Tap 🎈</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statBadge}>
+            <Text style={styles.statLabel}>Round</Text>
+            <Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text>
+          </View>
+          <View style={[styles.statBadge, styles.hitBadge]}>
+            <Text style={styles.statLabel}>🎯 Hits</Text>
+            <Text style={styles.statValue}>{hits}</Text>
+          </View>
+        </View>
         <Text style={styles.helper}>
-          Watch the slow balloon and tap it before it reaches the other side.
+          Watch the slow balloon and tap it before it reaches the other side! ✨
         </Text>
       </View>
 
       <View style={styles.playArea}>
+        <LinearGradient
+          colors={['#F0FDF4', '#DCFCE7', '#BBF7D0']}
+          style={StyleSheet.absoluteFillObject}
+        />
         <Animated.View style={[styles.balloonWrapper, balloonStyle]}>
           <Pressable
             onPress={handleHit}
             style={styles.balloonHitArea}
           >
-            <View style={styles.balloon}>
-              <Text style={{ fontSize: 46 }}>🎈</Text>
-            </View>
+            <LinearGradient
+              colors={['#F97316', '#EA580C', '#DC2626']}
+              style={styles.balloon}
+            >
+              <Text style={{ fontSize: 52 }}>🎈</Text>
+              <View style={styles.balloonGlow} />
+            </LinearGradient>
           </Pressable>
         </Animated.View>
       </View>
 
       <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: hand–eye coordination • tracking + tapping • timing control
-        </Text>
-        <Text style={styles.footerSub}>
-          Let the child visually follow the moving balloon and tap when ready.
-        </Text>
+        <LinearGradient
+          colors={['#FFFFFF', '#FEF3C7']}
+          style={styles.footerGradient}
+        >
+          <Text style={styles.footerMain}>
+            Skills: hand–eye coordination • tracking + tapping • timing control
+          </Text>
+          <Text style={styles.footerSub}>
+            Let the child visually follow the moving balloon and tap when ready.
+          </Text>
+        </LinearGradient>
       </View>
     </SafeAreaView>
   );
@@ -331,10 +364,17 @@ const styles = StyleSheet.create({
     top: 50,
     left: 16,
     zIndex: 10,
-    backgroundColor: '#0F172A',
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  backChipGradient: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
   },
   backChipText: {
     color: '#fff',
@@ -347,10 +387,44 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#78350F',
+    marginBottom: 12,
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  statBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  hitBadge: {
+    backgroundColor: '#FEF3C7',
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '900',
     color: '#0F172A',
-    marginBottom: 6,
   },
   subtitle: {
     fontSize: 16,
@@ -358,14 +432,20 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   helper: {
-    fontSize: 14,
-    color: '#475569',
+    fontSize: 15,
+    color: '#92400E',
     textAlign: 'center',
     paddingHorizontal: 18,
+    fontWeight: '600',
   },
   playArea: {
     flex: 1,
     justifyContent: 'center',
+    borderRadius: 24,
+    overflow: 'hidden',
+    marginHorizontal: 8,
+    borderWidth: 3,
+    borderColor: '#A7F3D0',
   },
   balloonWrapper: {
     position: 'absolute',
@@ -374,36 +454,55 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   balloonHitArea: {
-    padding: 10,
+    padding: 12,
   },
   balloon: {
     width: BALLOON_SIZE,
     height: BALLOON_SIZE,
     borderRadius: BALLOON_SIZE / 2,
-    backgroundColor: '#F97316',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#F97316',
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    shadowOpacity: 0.5,
+    shadowRadius: 25,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 12,
+  },
+  balloonGlow: {
+    position: 'absolute',
+    width: '40%',
+    height: '40%',
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    top: '20%',
+    left: '30%',
   },
   footerBox: {
-    paddingVertical: 14,
     marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  footerGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
   },
   footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#78350F',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   footerSub: {
     fontSize: 13,
-    color: '#64748B',
+    color: '#92400E',
     textAlign: 'center',
+    fontWeight: '500',
   },
   resultCard: {
     width: '100%',

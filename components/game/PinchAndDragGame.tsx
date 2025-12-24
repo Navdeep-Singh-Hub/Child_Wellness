@@ -1,6 +1,7 @@
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -15,6 +16,7 @@ import {
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+    Easing,
     runOnJS,
     useAnimatedStyle,
     useSharedValue,
@@ -93,6 +95,9 @@ const PinchAndDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const feedbackOpacity = useSharedValue(0);
   const startX = useSharedValue(50);
   const startY = useSharedValue(50);
+  const goalPulse = useSharedValue(1);
+  const trailOpacity = useSharedValue(0);
+  const progressWidth = useSharedValue(0);
 
   const roundActiveRef = useRef(false);
   const roundRef = useRef(1);
@@ -281,7 +286,10 @@ const PinchAndDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           const newY = (e.focalY / e.height) * 100;
           objectX.value = Math.max(5, Math.min(95, newX));
           objectY.value = Math.max(5, Math.min(95, newY));
+          trailOpacity.value = 0.6;
         }
+      } else {
+        trailOpacity.value = 0;
       }
     })
     .onEnd(() => {
@@ -313,6 +321,30 @@ const PinchAndDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     startRound();
   }, []);
 
+  // Goal pulsing animation
+  useEffect(() => {
+    if (roundActive) {
+      goalPulse.value = withSequence(
+        withTiming(1.1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+      );
+      const interval = setInterval(() => {
+        if (roundActiveRef.current) {
+          goalPulse.value = withSequence(
+            withTiming(1.1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+            withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+          );
+        }
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [roundActive, goalPulse]);
+
+  // Progress animation
+  useEffect(() => {
+    progressWidth.value = withTiming((score / TOTAL_ROUNDS) * 100, { duration: 300 });
+  }, [score, progressWidth]);
+
   // Animated styles
   const objectAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -338,7 +370,35 @@ const PinchAndDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       transform: [
         { translateX: -GOAL_SIZE / 2 },
         { translateY: -GOAL_SIZE / 2 },
+        { scale: goalPulse.value },
       ],
+    };
+  });
+
+  const trailStyle = useAnimatedStyle(() => {
+    const distance = Math.sqrt(
+      Math.pow(objectX.value - startX.value, 2) + Math.pow(objectY.value - startY.value, 2)
+    );
+    const angle = Math.atan2(
+      objectY.value - startY.value,
+      objectX.value - startX.value
+    ) * (180 / Math.PI);
+    return {
+      opacity: trailOpacity.value,
+      width: distance,
+      left: `${startX.value}%`,
+      top: `${startY.value}%`,
+      transform: [
+        { translateX: -OBJECT_SIZE / 2 },
+        { translateY: -OBJECT_SIZE / 2 },
+        { rotate: `${angle}deg` },
+      ],
+    };
+  });
+
+  const progressStyle = useAnimatedStyle(() => {
+    return {
+      width: `${progressWidth.value}%`,
     };
   });
 
@@ -385,15 +445,29 @@ const PinchAndDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={['#CFFAFE', '#A5F3FC', '#67E8F9', '#22D3EE']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
       <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+        <LinearGradient
+          colors={['#1E293B', '#0F172A']}
+          style={styles.backChipGradient}
+        >
+          <Text style={styles.backChipText}>← Back</Text>
+        </LinearGradient>
       </TouchableOpacity>
 
       <View style={styles.headerBlock}>
-        <Text style={styles.title}>Pinch and Drag</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • Score: {score}
-        </Text>
+        <Text style={styles.title}>🎯 Pinch and Drag 🎯</Text>
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <Animated.View style={[styles.progressFill, progressStyle]} />
+          </View>
+          <Text style={styles.progressText}>{score}/{TOTAL_ROUNDS}</Text>
+        </View>
         <Text style={styles.helper}>
           Pinch the object and drag it to the goal!
         </Text>
@@ -402,9 +476,24 @@ const PinchAndDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       {/* Play area */}
       <GestureDetector gesture={pinchGesture}>
         <View style={styles.playArea}>
+          <LinearGradient
+            colors={['#ECFEFF', '#CFFAFE', '#A5F3FC']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          
+          {/* Trail line */}
+          <Animated.View style={[styles.trail, trailStyle]} />
+
           {/* Goal zone */}
           <Animated.View style={[styles.goal, goalAnimatedStyle]}>
-            <Text style={styles.goalEmoji}>🎯</Text>
+            <LinearGradient
+              colors={['#22C55E', '#16A34A', '#15803D']}
+              style={styles.goalGradient}
+            >
+              <Text style={styles.goalEmoji}>🎯</Text>
+            </LinearGradient>
           </Animated.View>
 
           {/* Object */}
@@ -414,18 +503,27 @@ const PinchAndDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               objectAnimatedStyle,
             ]}
           >
-            <Text style={styles.objectEmoji}>🎈</Text>
+            <LinearGradient
+              colors={['#3B82F6', '#2563EB', '#1D4ED8']}
+              style={styles.objectGradient}
+            >
+              <Text style={styles.objectEmoji}>🎈</Text>
+            </LinearGradient>
           </Animated.View>
 
           {/* Feedback */}
           {showFeedback && lastResult && (
             <Animated.View style={[styles.feedbackContainer, feedbackStyle]}>
-              <Text style={[
-                styles.feedbackText,
-                lastResult === 'hit' ? styles.feedbackSuccess : styles.feedbackError,
-              ]}>
-                {lastResult === 'hit' ? 'Perfect!' : 'Keep pinching!'}
-              </Text>
+              <LinearGradient
+                colors={lastResult === 'hit' 
+                  ? ['#22C55E', '#16A34A'] 
+                  : ['#EF4444', '#DC2626']}
+                style={styles.feedbackGradient}
+              >
+                <Text style={styles.feedbackText}>
+                  {lastResult === 'hit' ? '✨ Perfect! ✨' : '👆 Keep pinching!'}
+                </Text>
+              </LinearGradient>
             </Animated.View>
           )}
 
@@ -446,20 +544,21 @@ const PinchAndDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F4F8',
   },
   backChip: {
     alignSelf: 'flex-start',
     margin: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
     borderRadius: 20,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  backChipGradient: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
   },
   backChipText: {
     fontSize: 14,
@@ -471,49 +570,105 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginBottom: 8,
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#1E40AF',
+    marginBottom: 16,
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  subtitle: {
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  progressBar: {
+    width: 200,
+    height: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#22C55E',
+    borderRadius: 6,
+  },
+  progressText: {
     fontSize: 16,
-    color: '#64748B',
-    marginBottom: 8,
+    fontWeight: '800',
+    color: '#1E40AF',
   },
   helper: {
-    fontSize: 14,
-    color: '#94A3B8',
+    fontSize: 15,
+    color: '#1E40AF',
     textAlign: 'center',
+    fontWeight: '600',
   },
   playArea: {
     flex: 1,
     position: 'relative',
     margin: 20,
+    borderRadius: 24,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: '#A7F3D0',
+  },
+  trail: {
+    position: 'absolute',
+    height: 4,
+    backgroundColor: '#3B82F6',
+    borderRadius: 2,
+    zIndex: 1,
+    opacity: 0.6,
   },
   object: {
     position: 'absolute',
-    backgroundColor: '#3B82F6',
+    borderRadius: 1000,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  objectGradient: {
+    width: '100%',
+    height: '100%',
     borderRadius: 1000,
     borderWidth: 3,
     borderColor: '#2563EB',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
   },
   objectEmoji: {
     fontSize: 40,
   },
   goal: {
     position: 'absolute',
-    backgroundColor: 'rgba(34, 197, 94, 0.3)',
     borderRadius: 1000,
-    borderWidth: 4,
-    borderColor: '#22C55E',
-    borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 5,
+    shadowColor: '#22C55E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  goalGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 1000,
+    borderWidth: 4,
+    borderColor: '#16A34A',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   goalEmoji: {
     fontSize: 50,
@@ -523,16 +678,24 @@ const styles = StyleSheet.create({
     top: '50%',
     left: '50%',
     transform: [{ translateX: -100 }, { translateY: -20 }],
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
     zIndex: 20,
   },
+  feedbackGradient: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
   feedbackText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '900',
     textAlign: 'center',
+    color: '#FFFFFF',
   },
   feedbackSuccess: {
     color: '#22C55E',

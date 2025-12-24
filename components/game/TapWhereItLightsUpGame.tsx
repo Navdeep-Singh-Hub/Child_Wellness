@@ -1,3 +1,18 @@
+/**
+ * OT Level 11 - Game 4: Tap Where It Lights Up
+ * 
+ * Core Goal: Visual Memory & Motor Response Accuracy
+ * - 3 large shapes appear
+ * - One lights up briefly
+ * - Shapes go neutral
+ * - Child taps the one that lit up
+ * 
+ * Skills trained:
+ * - visual memory
+ * - motor response accuracy
+ * - short-term VMI memory
+ */
+
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,7 +22,8 @@ import Animated, { FadeIn, runOnJS, useAnimatedStyle, useSharedValue, withSequen
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SparkleBurst } from './FX';
 
-const COLORS = ['#22C55E', '#3B82F6', '#F59E0B', '#F472B6', '#8B5CF6', '#06B6D4'];
+const SHAPES = ['circle', 'square', 'triangle'];
+const COLORS = ['#22C55E', '#3B82F6', '#F59E0B'];
 const POP_URI = 'https://actions.google.com/sounds/v1/cartoon/pop.ogg';
 const STAR_ICON = require('../../assets/icons/star.png');
 
@@ -43,71 +59,97 @@ const usePopSound = () => {
   return play;
 };
 
-interface BigTapTargetProps {
+interface TapWhereItLightsUpGameProps {
   onBack: () => void;
 }
 
-export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
+export const TapWhereItLightsUpGame: React.FC<TapWhereItLightsUpGameProps> = ({ onBack }) => {
   const [score, setScore] = useState(0);
-  const [targetsLeft, setTargetsLeft] = useState(12);
+  const [targetsLeft, setTargetsLeft] = useState(10);
   const [done, setDone] = useState(false);
-  const [color, setColor] = useState(COLORS[0]);
+  const [lightedIndex, setLightedIndex] = useState<number | null>(null);
+  const [canTap, setCanTap] = useState(false);
   const [sparkleKey, setSparkleKey] = useState(0);
-  // soft pop reinforcement
   const playPop = usePopSound();
 
-  const sizePct = 26; // 26% of screen (within 20–30% target)
-  const radiusPct = sizePct / 2;
+  const glowValues = [
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+  ];
 
-  const targetX = useSharedValue(50);
-  const targetY = useSharedValue(50);
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
-
-  const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
-
-  const spawnTarget = () => {
-    const margin = radiusPct + 5; // avoid edges
-    const x = margin + Math.random() * (100 - margin * 2);
-    const y = margin + Math.random() * (100 - margin * 2);
-    targetX.value = withTiming(x, { duration: 200 });
-    targetY.value = withTiming(y, { duration: 200 });
-    scale.value = withTiming(1, { duration: 180 });
-    opacity.value = withTiming(1, { duration: 180 });
-    setColor(randomColor());
+  const startRound = () => {
+    setCanTap(false);
+    setLightedIndex(null);
+    
+    // Reset all glows
+    glowValues.forEach(g => g.value = 0);
+    
+    // Randomly select which shape lights up
+    const index = Math.floor(Math.random() * 3);
+    setLightedIndex(index);
+    
+    // Light up the selected shape
+    glowValues[index].value = withSequence(
+      withTiming(1, { duration: 300 }),
+      withTiming(1, { duration: 800 }),
+      withTiming(0, { duration: 300 }, () => {
+        runOnJS(setCanTap)(true);
+      })
+    );
   };
 
-  const handleTap = () => {
-    Haptics.selectionAsync().catch(() => {});
-    playPop();
-    scale.value = withSequence(withTiming(1.2, { duration: 80 }), withTiming(0, { duration: 120 }));
-    opacity.value = withTiming(0, { duration: 140 });
-    setSparkleKey(Date.now());
-    setScore((s) => s + 1);
-    setTargetsLeft((t) => {
-      const next = t - 1;
-      if (next <= 0) {
-        runOnJS(setDone)(true);
-      } else {
-        runOnJS(spawnTarget)();
-      }
-      return next;
-    });
+  const handleTap = (index: number) => {
+    if (!canTap || done) return;
+    
+    const isCorrect = index === lightedIndex;
+    
+    if (isCorrect) {
+      Haptics.selectionAsync().catch(() => {});
+      playPop();
+      setSparkleKey(Date.now());
+      setScore((s) => s + 1);
+      setCanTap(false);
+      setTargetsLeft((t) => {
+        const next = t - 1;
+        if (next <= 0) {
+          runOnJS(setDone)(true);
+        } else {
+          setTimeout(() => {
+            runOnJS(startRound)();
+          }, 800);
+        }
+        return next;
+      });
+    } else {
+      // Gentle feedback for wrong tap
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+    }
   };
 
   useEffect(() => {
-    spawnTarget();
+    startRound();
   }, []);
 
-  const circleStyle = useAnimatedStyle(() => ({
-    width: `${sizePct}%`,
-    height: `${sizePct}%`,
-    borderRadius: 999,
-    left: `${targetX.value}%`,
-    top: `${targetY.value}%`,
-    transform: [{ translateX: -(sizePct / 2) + '%' as any }, { translateY: -(sizePct / 2) + '%' as any }, { scale: scale.value }],
-    opacity: opacity.value,
-  }));
+  const getGlowStyle = (index: number) => {
+    return useAnimatedStyle(() => {
+      const glow = glowValues[index].value;
+      return {
+        transform: [{ scale: 1 + glow * 0.4 }], // 40% bigger - very visible!
+      };
+    });
+  };
+
+  // Bright overlay styles for each shape
+  const overlayStyles = glowValues.map((glowValue, index) =>
+    useAnimatedStyle(() => {
+      const glow = glowValue.value;
+      return {
+        opacity: glow * 0.8, // Very visible overlay
+        backgroundColor: COLORS[index],
+      };
+    })
+  );
 
   if (done) {
     return (
@@ -131,18 +173,20 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
           >
             🎉✨🌟
           </Animated.Text>
-          <Text style={styles.title}>Amazing Tapping! 🎯</Text>
-          <Text style={styles.subtitle}>You popped {score} beautiful bubbles! 🫧</Text>
+          <Text style={styles.title}>Great Memory! 🧠</Text>
+          <Text style={styles.subtitle}>You remembered {score} shapes! ⭐</Text>
           <View style={styles.statsBox}>
-            <Text style={styles.statsText}>Perfect Score: {score}/12 ⭐</Text>
+            <Text style={styles.statsText}>Perfect Score: {score}/10 ⭐</Text>
+            <Text style={styles.badgeText}>🏅 Eye–Hand Explorer Badge</Text>
           </View>
           <TouchableOpacity 
             style={styles.primaryButton} 
             onPress={() => {
               setScore(0);
-              setTargetsLeft(12);
+              setTargetsLeft(10);
               setDone(false);
-              spawnTarget();
+              setCanTap(false);
+              startRound();
             }}
             activeOpacity={0.8}
           >
@@ -210,26 +254,61 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
           style={StyleSheet.absoluteFillObject}
         />
         <View style={styles.instructionWrap}>
-          <Text style={styles.instructionTitle}>✨ Tap the Big Bubble ✨</Text>
-          <Text style={styles.instructionSubtitle}>Burst it to earn a star! 🌟</Text>
+          <Text style={styles.instructionTitle}>💡 Tap Where It Lights Up 💡</Text>
+          <Text style={styles.instructionSubtitle}>
+            {canTap ? 'Which one lit up? Tap it! ✨' : 'Watch which one lights up...'}
+          </Text>
         </View>
-        <Animated.View style={[styles.circle, circleStyle]}>
-          <TouchableOpacity style={styles.hitArea} activeOpacity={0.7} onPress={handleTap}>
-            <LinearGradient
-              colors={[color, `${color}CC`, '#fff']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.circleFill}
-            >
-              <View style={styles.circleInnerGlow} />
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-        <SparkleBurst key={sparkleKey} visible color={color} count={15} size={8} />
+        <View style={styles.shapesRow}>
+          {SHAPES.map((shape, index) => {
+            const glowStyle = getGlowStyle(index);
+            const overlayStyle = overlayStyles[index];
+            return (
+              <Animated.View key={index} style={glowStyle}>
+                <TouchableOpacity
+                  style={styles.shapeTouchArea}
+                  activeOpacity={0.7}
+                  onPress={() => handleTap(index)}
+                  disabled={!canTap}
+                >
+                  <View style={styles.shapeContainer}>
+                    <LinearGradient
+                      colors={[COLORS[index], `${COLORS[index]}CC`, '#fff']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[
+                        styles.shape,
+                        shape === 'circle' && styles.circle,
+                        shape === 'square' && styles.square,
+                        shape === 'triangle' && styles.triangle,
+                      ]}
+                    >
+                      <View style={styles.shapeInnerGlow} />
+                    </LinearGradient>
+                    {/* Bright colored overlay when glowing */}
+                    {shape !== 'triangle' && (
+                      <Animated.View
+                        style={[
+                          styles.shapeOverlay,
+                          shape === 'circle' && styles.circleOverlay,
+                          shape === 'square' && styles.squareOverlay,
+                          overlayStyle,
+                        ]}
+                      />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          })}
+        </View>
+        <SparkleBurst key={sparkleKey} visible color={lightedIndex !== null ? COLORS[lightedIndex] : '#22C55E'} count={15} size={8} />
       </View>
     </SafeAreaView>
   );
 };
+
+const SHAPE_SIZE = 100;
 
 const styles = StyleSheet.create({
   container: {
@@ -320,9 +399,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  circle: {
-    position: 'absolute',
-  },
   instructionWrap: {
     alignItems: 'center',
     marginBottom: 40,
@@ -344,22 +420,65 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '600',
   },
-  hitArea: {
-    flex: 1,
-    borderRadius: 999,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
+  shapesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 20,
   },
-  circleFill: {
-    flex: 1,
+  shapeTouchArea: {
+    padding: 8,
+  },
+  shapeContainer: {
+    position: 'relative',
+    width: SHAPE_SIZE,
+    height: SHAPE_SIZE,
+  },
+  shapeOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: SHAPE_SIZE,
+    height: SHAPE_SIZE,
+    pointerEvents: 'none',
+  },
+  circleOverlay: {
+    borderRadius: SHAPE_SIZE / 2,
+  },
+  squareOverlay: {
+    borderRadius: 12,
+  },
+  shape: {
+    width: SHAPE_SIZE,
+    height: SHAPE_SIZE,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
   },
-  circleInnerGlow: {
+  circle: {
+    borderRadius: SHAPE_SIZE / 2,
+  },
+  square: {
+    borderRadius: 12,
+  },
+  triangle: {
+    width: 0,
+    height: 0,
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
+    borderLeftWidth: SHAPE_SIZE / 2,
+    borderRightWidth: SHAPE_SIZE / 2,
+    borderBottomWidth: SHAPE_SIZE,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#22C55E',
+  },
+  shapeInnerGlow: {
     width: '60%',
     height: '60%',
     borderRadius: 999,
@@ -397,7 +516,7 @@ const styles = StyleSheet.create({
   },
   statsBox: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingVertical: 12,
+    paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 16,
     marginBottom: 24,
@@ -406,11 +525,18 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
+    alignItems: 'center',
   },
   statsText: {
     fontSize: 18,
     fontWeight: '800',
     color: '#78350F',
+    marginBottom: 8,
+  },
+  badgeText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#10B981',
   },
   primaryButton: {
     borderRadius: 16,
@@ -450,7 +576,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-
 
 

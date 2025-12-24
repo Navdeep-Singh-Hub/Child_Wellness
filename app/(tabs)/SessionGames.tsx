@@ -24,11 +24,32 @@ import PuzzlePieceDragGame from '@/components/game/PuzzlePieceDragGame';
 import RaceTheDotGame from '@/components/game/RaceTheDotGame';
 import ShrinkingCircleTapGame from '@/components/game/ShrinkingCircleTapGame';
 import ShrinkingObjectMovementGame from '@/components/game/ShrinkingObjectMovementGame';
-import ShrinkingTargetGame from '@/components/game/ShrinkingTargetGame';
+// import ShrinkingTargetGame from '@/components/game/ShrinkingTargetGame';
+import AntTrailFollowGame from '@/components/game/AntTrailFollowGame';
+import BallRollPathGame from '@/components/game/BallRollPathGame';
+import ConnectInOrderGlowGame from '@/components/game/ConnectInOrderGlowGame';
+import CurvyRoadDriveGame from '@/components/game/CurvyRoadDriveGame';
+import DontTouchGrassGame from '@/components/game/DontTouchGrassGame';
+import DotToDotAnimalGame from '@/components/game/DotToDotAnimalGame';
+import { FollowAndTouchGame } from '@/components/game/FollowAndTouchGame';
+import HiddenShapeRevealGame from '@/components/game/HiddenShapeRevealGame';
+import HouseDrawingGame from '@/components/game/HouseDrawingGame';
+import LightningBoltGame from '@/components/game/LightningBoltGame';
+import { MatchAndTouchGame } from '@/components/game/MatchAndTouchGame';
+import MazeWalkGame from '@/components/game/MazeWalkGame';
+import MoonPathGame from '@/components/game/MoonPathGame';
+import MountainClimbGame from '@/components/game/MountainClimbGame';
+// import RainbowTraceGame from '@/components/game/RainbowTraceGame'; // File is empty
+import RiverBoatGuideGame from '@/components/game/RiverBoatGuideGame';
+import RobotWireFixGame from '@/components/game/RobotWireFixGame';
+import SawPathGame from '@/components/game/SawPathGame';
 import ShrinkStopTapGame from '@/components/game/ShrinkStopTapGame';
 import SlowThenFastGame from '@/components/game/SlowThenFastGame';
 import SmallCircleTapGame from '@/components/game/SmallCircleTapGame';
+import SmileMakerGame from '@/components/game/SmileMakerGame';
+import SnakeSlideGame from '@/components/game/SnakeSlideGame';
 import SquishTheJellyGame from '@/components/game/SquishTheJellyGame';
+import StarBuilderGame from '@/components/game/StarBuilderGame';
 import TapAndHoldGame from '@/components/game/TapAndHoldGame'; // Game 4: Tap and Hold
 import TapColoursInOrderGame from '@/components/game/TapColoursInOrderGame';
 import TapFastGame from '@/components/game/TapFastGame';
@@ -44,17 +65,21 @@ import TapTheNumbersGame from '@/components/game/TapTheNumbersGame';
 import TapTheShapeIShowYouGame from '@/components/game/TapTheShapeIShowYouGame';
 import TapTheSmallOneGame from '@/components/game/TapTheSmallOneGame';
 import TapWhenStarIsSmallestGame from '@/components/game/TapWhenStarIsSmallestGame';
+import { TapWhereItLightsUpGame } from '@/components/game/TapWhereItLightsUpGame';
 import TapWithSoundGame from '@/components/game/TapWithSoundGame';
 import TinyDotTapGame from '@/components/game/TinyDotTapGame';
+import { TouchTheDotGame } from '@/components/game/TouchTheDotGame';
 import TrackThenTapSmallObjectGame from '@/components/game/TrackThenTapSmallObjectGame';
 import TwoFingerSimultaneousTapGame from '@/components/game/TwoFingerSimultaneousTapGame';
+import { WhereIsItGame } from '@/components/game/WhereIsItGame';
+import ZigZagRaceGame from '@/components/game/ZigZagRaceGame';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type GameKey = 'menu' | 'follow-ball' | 'big-tap' | 'tap-red-circle' | 'game-3' | 'game-4' | 'game-5' | 'small-circle-tap' | 'tap-only-small' | 'shrinking-target' | 'track-then-tap' | 'multiple-small-targets' | 'tap-slowly' | 'tap-fast' | 'slow-then-fast' | 'tap-with-sound' | 'race-the-dot' | 'hold-the-button' | 'grow-the-balloon' | 'launch-rocket' | 'squish-the-jelly' | 'hold-the-light' | 'drag-ball-to-goal' | 'follow-the-line' | 'drag-animal-home' | 'drag-slowly' | 'puzzle-piece-drag' | 'tap-the-numbers' | 'tap-lights-in-order' | 'follow-the-arrows' | 'tap-colours-in-order' | 'tap-the-big-one' | 'tap-the-small-one' | 'tap-the-shape-i-show-you' | 'find-the-odd-one-out' | 'match-shape-to-outline' | 'tiny-dot-tap' | 'tap-the-center-of-the-target' | 'moving-small-target' | 'tap-only-the-smallest-shape' | 'tap-the-hidden-small-object' | 'shrinking-circle-tap' | 'tap-when-star-is-smallest' | 'shrink-stop-tap' | 'multiple-shrinking-targets' | 'shrinking-object-movement' | 'pinch-to-pop' | 'pinch-and-drag' | 'two-finger-simultaneous-tap' | 'pinch-to-resize' | 'pinch-to-open-treasure-box';
+type GameKey = 'menu' | 'follow-ball' | 'big-tap' | 'tap-red-circle' | 'game-3' | 'game-4' | 'game-5' | 'small-circle-tap' | 'tap-only-small' | 'shrinking-target' | 'track-then-tap' | 'multiple-small-targets' | 'tap-slowly' | 'tap-fast' | 'slow-then-fast' | 'tap-with-sound' | 'race-the-dot' | 'hold-the-button' | 'grow-the-balloon' | 'launch-rocket' | 'squish-the-jelly' | 'hold-the-light' | 'drag-ball-to-goal' | 'follow-the-line' | 'drag-animal-home' | 'drag-slowly' | 'puzzle-piece-drag' | 'tap-the-numbers' | 'tap-lights-in-order' | 'follow-the-arrows' | 'tap-colours-in-order' | 'tap-the-big-one' | 'tap-the-small-one' | 'tap-the-shape-i-show-you' | 'find-the-odd-one-out' | 'match-shape-to-outline' | 'tiny-dot-tap' | 'tap-the-center-of-the-target' | 'moving-small-target' | 'tap-only-the-smallest-shape' | 'tap-the-hidden-small-object' | 'shrinking-circle-tap' | 'tap-when-star-is-smallest' | 'shrink-stop-tap' | 'multiple-shrinking-targets' | 'shrinking-object-movement' | 'pinch-to-pop' | 'pinch-and-drag' | 'two-finger-simultaneous-tap' | 'pinch-to-resize' | 'pinch-to-open-treasure-box' | 'touch-the-dot' | 'where-is-it' | 'follow-and-touch' | 'tap-where-it-lights-up' | 'match-and-touch' | 'rainbow-trace' | 'snake-slide' | 'moon-path' | 'smile-maker' | 'curvy-road-drive' | 'mountain-climb' | 'lightning-bolt' | 'saw-path' | 'robot-wire-fix' | 'zig-zag-race' | 'maze-walk' | 'river-boat-guide' | 'ant-trail-follow' | 'ball-roll-path' | 'dont-touch-grass' | 'dot-to-dot-animal' | 'star-builder' | 'house-drawing' | 'hidden-shape-reveal' | 'connect-in-order-glow' | 'puzzle-drop-shapes' | 'shadow-match' | 'cookie-cutter-match' | 'parking-shapes' | 'fast-match' | 'big-circle-trace' | 'big-square-walk' | 'triangle-mountain-trace' | 'paint-the-shape' | 'glow-border-trace' | 'tiny-circle-coins' | 'mini-square-locks' | 'dot-border-shapes' | 'careful-trace-challenge' | 'shrink-mode-trace' | 'copy-the-line-pattern' | 'block-pattern-copy' | 'color-pattern-match' | 'stick-design-copy' | 'look-hide-draw' | 'mirror-line-draw' | 'butterfly-wings' | 'face-symmetry-draw' | 'half-shape-complete' | 'mirror-maze';
 
 type GameInfo = {
   id: string;
@@ -276,6 +301,155 @@ export default function SessionGamesScreen() {
   // Level 1 Session 10 Game 5: Pinch to Open Treasure Box - available for OT Level 1 Session 10
   const isPinchToOpenTreasureBoxAvailable =
     therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 10;
+
+  // OT Level 11 (Section 2: Visual-Motor Integration) - mapped to therapy level 2
+  // Level 11 Session 1 Game 1: Touch the Dot
+  const isTouchTheDotAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
+
+  // Level 11 Session 1 Game 2: Where Is It?
+  const isWhereIsItAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
+
+  // Level 11 Session 1 Game 3: Follow and Touch
+  const isFollowAndTouchAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
+
+  // Level 11 Session 1 Game 4: Tap Where It Lights Up
+  const isTapWhereItLightsUpAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
+
+  // Level 11 Session 1 Game 5: Match & Touch
+  const isMatchAndTouchAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
+
+  // Level 2 Session 2: Trace Curved Line games
+  const isRainbowTraceAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 2;
+
+  const isSnakeSlideAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 2;
+
+  const isMoonPathAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 2;
+
+  const isSmileMakerAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 2;
+
+  const isCurvyRoadDriveAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 2;
+
+  // Level 2 Session 3: Trace Zig-Zag games
+  const isMountainClimbAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 3;
+
+  const isLightningBoltAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 3;
+
+  const isSawPathAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 3;
+
+  const isRobotWireFixAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 3;
+
+  const isZigZagRaceAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 3;
+
+  // Level 2 Session 4: Follow Path (Drag) games
+  const isMazeWalkAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 4;
+
+  const isRiverBoatGuideAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 4;
+
+  const isAntTrailFollowAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 4;
+
+  const isBallRollPathAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 4;
+
+  const isDontTouchGrassAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 4;
+
+  // Level 2 Session 5: Connect Dots games
+  const isDotToDotAnimalAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 5;
+
+  const isStarBuilderAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 5;
+
+  const isHouseDrawingAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 5;
+
+  const isHiddenShapeRevealAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 5;
+
+  const isConnectInOrderGlowAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 5;
+
+  // Level 2 Session 6: Match Shape Outline games
+  const isPuzzleDropShapesAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 6;
+
+  const isShadowMatchAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 6;
+
+  const isCookieCutterMatchAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 6;
+
+  const isParkingShapesAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 6;
+
+  const isFastMatchAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 6;
+
+  // Level 2 Session 7: Trace Large Shapes games
+  const isBigCircleTraceAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 7;
+  const isBigSquareWalkAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 7;
+  const isTriangleMountainTraceAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 7;
+  const isPaintTheShapeAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 7;
+  const isGlowBorderTraceAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 7;
+
+  // Level 2 Session 8: Trace Small Shapes games
+  const isTinyCircleCoinsAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 8;
+  const isMiniSquareLocksAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 8;
+  const isDotBorderShapesAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 8;
+  const isCarefulTraceChallengeAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 8;
+  const isShrinkModeTraceAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 8;
+
+  // Level 2 Session 9: Copy Simple Patterns games
+  const isCopyTheLinePatternAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 9;
+  const isBlockPatternCopyAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 9;
+  const isColorPatternMatchAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 9;
+  const isStickDesignCopyAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 9;
+  const isLookHideDrawAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 9;
+
+  // Level 2 Session 10: Mirror Drawing Basics games
+  const isMirrorLineDrawAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 10;
+  const isButterflyWingsAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 10;
+  const isFaceSymmetryDrawAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 10;
+  const isHalfShapeCompleteAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 10;
+  const isMirrorMazeAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 10;
 
   const GAMES: GameInfo[] = [
     {
@@ -679,6 +853,416 @@ export default function SessionGamesScreen() {
       color: '#92400E',
       available: isPinchToOpenTreasureBoxAvailable,
     },
+    // OT Level 11 (Section 2: Visual-Motor Integration) Games
+    {
+      id: 'touch-the-dot',
+      title: 'Touch the Dot',
+      emoji: '🔵',
+      description: 'A large dot appears at random positions. Tap it to earn a star! Build eye-hand coordination.',
+      color: '#22C55E',
+      available: isTouchTheDotAvailable,
+    },
+    {
+      id: 'where-is-it',
+      title: 'Where Is It?',
+      emoji: '🔍',
+      description: 'Find and tap the star hidden among the background pattern. Build visual scanning and attention.',
+      color: '#F59E0B',
+      available: isWhereIsItAvailable,
+    },
+    {
+      id: 'follow-and-touch',
+      title: 'Follow and Touch',
+      emoji: '👀',
+      description: 'Watch the object move slowly, then tap it when it stops. Build visual tracking and motor timing.',
+      color: '#3B82F6',
+      available: isFollowAndTouchAvailable,
+    },
+    {
+      id: 'tap-where-it-lights-up',
+      title: 'Tap Where It Lights Up',
+      emoji: '💡',
+      description: 'Watch which shape lights up, then tap it after they all go neutral. Build visual memory.',
+      color: '#8B5CF6',
+      available: isTapWhereItLightsUpAvailable,
+    },
+    {
+      id: 'match-and-touch',
+      title: 'Match & Touch',
+      emoji: '🎯',
+      description: 'See the shape at the top, then find and tap the matching one below. Build shape recognition.',
+      color: '#F472B6',
+      available: isMatchAndTouchAvailable,
+    },
+    // Level 2 Session 2: Trace Curved Line games
+    {
+      id: 'rainbow-trace',
+      title: 'Rainbow Trace',
+      emoji: '🌈',
+      description: 'Follow the arc to complete the rainbow. Build smooth curved tracking skills!',
+      color: '#FF6B6B',
+      available: isRainbowTraceAvailable,
+    },
+    {
+      id: 'snake-slide',
+      title: 'Snake Slide',
+      emoji: '🐍',
+      description: 'Follow the smooth curved motion path. Keep your wrist movement smooth!',
+      color: '#10B981',
+      available: isSnakeSlideAvailable,
+    },
+    {
+      id: 'moon-path',
+      title: 'Moon Path',
+      emoji: '🌙',
+      description: 'Trace the semi-circle moon path. Practice smooth curved motion!',
+      color: '#FBBF24',
+      available: isMoonPathAvailable,
+    },
+    {
+      id: 'smile-maker',
+      title: 'Smile Maker',
+      emoji: '😊',
+      description: 'Trace the curve to form a smile. Build smooth wrist movement!',
+      color: '#F59E0B',
+      available: isSmileMakerAvailable,
+    },
+    {
+      id: 'curvy-road-drive',
+      title: 'Curvy Road Drive',
+      emoji: '🚗',
+      description: 'Drive along the curvy road! The car slows if you cross the line.',
+      color: '#3B82F6',
+      available: isCurvyRoadDriveAvailable,
+    },
+    // Level 2 Session 3: Trace Zig-Zag games
+    {
+      id: 'mountain-climb',
+      title: 'Mountain Climb',
+      emoji: '⛰️',
+      description: 'Follow the zig-zag path up the mountain. Change direction smoothly!',
+      color: '#F59E0B',
+      available: isMountainClimbAvailable,
+    },
+    {
+      id: 'lightning-bolt',
+      title: 'Lightning Bolt',
+      emoji: '⚡',
+      description: 'Trace the lightning bolt with sharp angles. Follow the zig-zag!',
+      color: '#FBBF24',
+      available: isLightningBoltAvailable,
+    },
+    {
+      id: 'saw-path',
+      title: 'Saw Path',
+      emoji: '🪚',
+      description: 'Follow the up-down saw path. Controlled motion left to right!',
+      color: '#10B981',
+      available: isSawPathAvailable,
+    },
+    {
+      id: 'robot-wire-fix',
+      title: 'Robot Wire Fix',
+      emoji: '🤖',
+      description: 'Follow the zig-zag wire to fix the robot! Trace carefully.',
+      color: '#8B5CF6',
+      available: isRobotWireFixAvailable,
+    },
+    {
+      id: 'zig-zag-race',
+      title: 'Zig-Zag Race',
+      emoji: '🏁',
+      description: 'Race along the zig-zag path! Timed but slow-paced.',
+      color: '#EF4444',
+      available: isZigZagRaceAvailable,
+    },
+    // Level 2 Session 4: Follow Path (Drag) games
+    {
+      id: 'maze-walk',
+      title: 'Maze Walk',
+      emoji: '🧩',
+      description: 'Follow the clear path through the maze. Stay on track!',
+      color: '#10B981',
+      available: isMazeWalkAvailable,
+    },
+    {
+      id: 'river-boat-guide',
+      title: 'River Boat Guide',
+      emoji: '🛶',
+      description: 'Keep the boat in the river! Follow the curvy path carefully.',
+      color: '#3B82F6',
+      available: isRiverBoatGuideAvailable,
+    },
+    {
+      id: 'ant-trail-follow',
+      title: 'Ant Trail Follow',
+      emoji: '🐜',
+      description: 'Follow the dotted trail! Stay on the path made of dots.',
+      color: '#8B5CF6',
+      available: isAntTrailFollowAvailable,
+    },
+    {
+      id: 'ball-roll-path',
+      title: 'Ball Roll Path',
+      emoji: '⚽',
+      description: 'Roll the ball along the path! Drag to control the ball.',
+      color: '#F59E0B',
+      available: isBallRollPathAvailable,
+    },
+    {
+      id: 'dont-touch-grass',
+      title: 'Don\'t Touch the Grass',
+      emoji: '🚶',
+      description: 'Stay on the path! Don\'t touch the grass on either side.',
+      color: '#10B981',
+      available: isDontTouchGrassAvailable,
+    },
+    // Level 2 Session 5: Connect Dots games
+    {
+      id: 'dot-to-dot-animal',
+      title: 'Dot-to-Dot Animal',
+      emoji: '🐾',
+      description: 'Connect the dots in order (1, 2, 3...) to reveal the animal!',
+      color: '#3B82F6',
+      available: isDotToDotAnimalAvailable,
+    },
+    {
+      id: 'star-builder',
+      title: 'Star Builder',
+      emoji: '⭐',
+      description: 'Connect the dots in order to build a star!',
+      color: '#FBBF24',
+      available: isStarBuilderAvailable,
+    },
+    {
+      id: 'house-drawing',
+      title: 'House Drawing',
+      emoji: '🏠',
+      description: 'Connect the dots in order to draw a house!',
+      color: '#8B5CF6',
+      available: isHouseDrawingAvailable,
+    },
+    {
+      id: 'hidden-shape-reveal',
+      title: 'Hidden Shape Reveal',
+      emoji: '✨',
+      description: 'Connect the dots to reveal the hidden shape!',
+      color: '#EC4899',
+      available: isHiddenShapeRevealAvailable,
+    },
+    {
+      id: 'connect-in-order-glow',
+      title: 'Connect in Order Glow',
+      emoji: '💡',
+      description: 'Watch the dots light up! Tap them in sequence.',
+      color: '#10B981',
+      available: isConnectInOrderGlowAvailable,
+    },
+    // Level 2 Session 6: Match Shape Outline games
+    {
+      id: 'puzzle-drop-shapes',
+      title: 'Puzzle Drop – Shapes',
+      emoji: '🧩',
+      description: 'Drag shape into outline',
+      color: '#8B5CF6',
+      available: isPuzzleDropShapesAvailable,
+    },
+    {
+      id: 'shadow-match',
+      title: 'Shadow Match',
+      emoji: '🎭',
+      description: 'Match exact outline',
+      color: '#3B82F6',
+      available: isShadowMatchAvailable,
+    },
+    {
+      id: 'cookie-cutter-match',
+      title: 'Cookie Cutter Match',
+      emoji: '🍪',
+      description: 'Shape fits only if aligned',
+      color: '#F59E0B',
+      available: isCookieCutterMatchAvailable,
+    },
+    {
+      id: 'parking-shapes',
+      title: 'Parking Shapes',
+      emoji: '🅿️',
+      description: 'Correct orientation needed',
+      color: '#10B981',
+      available: isParkingShapesAvailable,
+    },
+    {
+      id: 'fast-match',
+      title: 'Fast Match',
+      emoji: '⚡',
+      description: 'Builds speed gently (No Rotate)',
+      color: '#EF4444',
+      available: isFastMatchAvailable,
+    },
+    // Level 2 Session 7: Trace Large Shapes games
+    {
+      id: 'big-circle-trace',
+      title: 'Big Circle Trace',
+      emoji: '⭕',
+      description: 'Trace the big circle with your whole arm!',
+      color: '#3B82F6',
+      available: isBigCircleTraceAvailable,
+    },
+    {
+      id: 'big-square-walk',
+      title: 'Big Square Walk',
+      emoji: '⬜',
+      description: 'Walk around the big square with your whole arm!',
+      color: '#10B981',
+      available: isBigSquareWalkAvailable,
+    },
+    {
+      id: 'triangle-mountain-trace',
+      title: 'Triangle Mountain Trace',
+      emoji: '⛰️',
+      description: 'Trace the triangle mountain with your whole arm!',
+      color: '#F59E0B',
+      available: isTriangleMountainTraceAvailable,
+    },
+    {
+      id: 'paint-the-shape',
+      title: 'Paint the Shape',
+      emoji: '🎨',
+      description: 'Trace to fill the shape with color!',
+      color: '#EC4899',
+      available: isPaintTheShapeAvailable,
+    },
+    {
+      id: 'glow-border-trace',
+      title: 'Glow Border Trace',
+      emoji: '✨',
+      description: 'Trace the thick glowing border!',
+      color: '#A855F7',
+      available: isGlowBorderTraceAvailable,
+    },
+    // Level 2 Session 8: Trace Small Shapes games
+    {
+      id: 'tiny-circle-coins',
+      title: 'Tiny Circle Coins',
+      emoji: '🪙',
+      description: 'Trace the tiny circle coin with precision!',
+      color: '#F59E0B',
+      available: isTinyCircleCoinsAvailable,
+    },
+    {
+      id: 'mini-square-locks',
+      title: 'Mini Square Locks',
+      emoji: '🔒',
+      description: 'Trace the mini square lock with precision!',
+      color: '#6366F1',
+      available: isMiniSquareLocksAvailable,
+    },
+    {
+      id: 'dot-border-shapes',
+      title: 'Dot Border Shapes',
+      emoji: '⚫',
+      description: 'Trace the dotted border shape with precision!',
+      color: '#8B5CF6',
+      available: isDotBorderShapesAvailable,
+    },
+    {
+      id: 'careful-trace-challenge',
+      title: 'Careful Trace Challenge',
+      emoji: '🎯',
+      description: 'Trace slowly and carefully with precision!',
+      color: '#10B981',
+      available: isCarefulTraceChallengeAvailable,
+    },
+    {
+      id: 'shrink-mode-trace',
+      title: 'Shrink Mode Trace',
+      emoji: '🔽',
+      description: 'Trace the circle as it shrinks smaller each round!',
+      color: '#EF4444',
+      available: isShrinkModeTraceAvailable,
+    },
+    // Level 2 Session 9: Copy Simple Patterns games
+    {
+      id: 'copy-the-line-pattern',
+      title: 'Copy the Line Pattern',
+      emoji: '📋',
+      description: 'Copy the pattern by tapping vertical (|) or horizontal (—) lines!',
+      color: '#8B5CF6',
+      available: isCopyTheLinePatternAvailable,
+    },
+    {
+      id: 'block-pattern-copy',
+      title: 'Block Pattern Copy',
+      emoji: '⬜',
+      description: 'Copy the pattern by tapping square (□) or circle (○) blocks!',
+      color: '#6366F1',
+      available: isBlockPatternCopyAvailable,
+    },
+    {
+      id: 'color-pattern-match',
+      title: 'Color Pattern Match',
+      emoji: '🎨',
+      description: 'Copy the color pattern by tapping colors in order!',
+      color: '#EF4444',
+      available: isColorPatternMatchAvailable,
+    },
+    {
+      id: 'stick-design-copy',
+      title: 'Stick Design Copy',
+      emoji: '✏️',
+      description: 'Copy the pre-writing stroke design!',
+      color: '#F59E0B',
+      available: isStickDesignCopyAvailable,
+    },
+    {
+      id: 'look-hide-draw',
+      title: 'Look–Hide–Draw',
+      emoji: '👁️',
+      description: 'Pattern disappears briefly - remember and draw it!',
+      color: '#EC4899',
+      available: isLookHideDrawAvailable,
+    },
+    // Level 2 Session 10: Mirror Drawing Basics games
+    {
+      id: 'mirror-line-draw',
+      title: 'Mirror Line Draw',
+      emoji: '🪞',
+      description: 'Draw on the left side, and it will mirror on the right!',
+      color: '#8B5CF6',
+      available: isMirrorLineDrawAvailable,
+    },
+    {
+      id: 'butterfly-wings',
+      title: 'Butterfly Wings',
+      emoji: '🦋',
+      description: 'Draw one wing on the left, and it will mirror on the right!',
+      color: '#F59E0B',
+      available: isButterflyWingsAvailable,
+    },
+    {
+      id: 'face-symmetry-draw',
+      title: 'Face Symmetry Draw',
+      emoji: '😊',
+      description: 'Draw facial features that mirror symmetrically!',
+      color: '#FCD34D',
+      available: isFaceSymmetryDrawAvailable,
+    },
+    {
+      id: 'half-shape-complete',
+      title: 'Half Shape Complete',
+      emoji: '✨',
+      description: 'Draw the missing half of the shape on the right!',
+      color: '#10B981',
+      available: isHalfShapeCompleteAvailable,
+    },
+    {
+      id: 'mirror-maze',
+      title: 'Mirror Maze',
+      emoji: '🔄',
+      description: 'Move both objects together - drag on the left, right mirrors!',
+      color: '#22C55E',
+      available: isMirrorMazeAvailable,
+    },
   ];
 
   // ---------- Game render switches ----------
@@ -724,9 +1308,9 @@ export default function SessionGamesScreen() {
     return <TapOnlySmallTargetGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'shrinking-target') {
-    return <ShrinkingTargetGame onBack={() => setCurrentGame('menu')} />;
-  }
+  // if (currentGame === 'shrinking-target') {
+  //   return <ShrinkingTargetGame onBack={() => setCurrentGame('menu')} />;
+  // }
 
   if (currentGame === 'track-then-tap') {
     return <TrackThenTapSmallObjectGame onBack={() => setCurrentGame('menu')} />;
@@ -812,84 +1396,294 @@ export default function SessionGamesScreen() {
     return <TapColoursInOrderGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  // if (currentGame === 'tap-the-big-one') {
-  //   return <TapTheBigOneGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'tap-the-big-one') {
+    return <TapTheBigOneGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-the-small-one') {
+    return <TapTheSmallOneGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-the-shape-i-show-you') {
+    return <TapTheShapeIShowYouGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'find-the-odd-one-out') {
+    return <FindTheOddOneOutGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'match-shape-to-outline') {
+    return <MatchShapeToOutlineGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tiny-dot-tap') {
+    return <TinyDotTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-the-center-of-the-target') {
+    return <TapTheCenterOfTheTargetGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'moving-small-target') {
+    return <MovingSmallTargetGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-only-the-smallest-shape') {
+    return <TapOnlyTheSmallestShapeGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-the-hidden-small-object') {
+    return <TapTheHiddenSmallObjectGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'shrinking-circle-tap') {
+    return <ShrinkingCircleTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-when-star-is-smallest') {
+    return <TapWhenStarIsSmallestGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'shrink-stop-tap') {
+    return <ShrinkStopTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'multiple-shrinking-targets') {
+    return <MultipleShrinkingTargetsGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'shrinking-object-movement') {
+    return <ShrinkingObjectMovementGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'pinch-to-pop') {
+    return <PinchToPopGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'pinch-and-drag') {
+    return <PinchAndDragGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'two-finger-simultaneous-tap') {
+    return <TwoFingerSimultaneousTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'pinch-to-resize') {
+    return <PinchToResizeGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'pinch-to-open-treasure-box') {
+    return <PinchToOpenTreasureBoxGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // OT Level 11 (Section 2: Visual-Motor Integration) Games
+  if (currentGame === 'touch-the-dot') {
+    return <TouchTheDotGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'where-is-it') {
+    return <WhereIsItGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'follow-and-touch') {
+    return <FollowAndTouchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-where-it-lights-up') {
+    return <TapWhereItLightsUpGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'match-and-touch') {
+    return <MatchAndTouchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 2 Session 2: Trace Curved Line games
+  // if (currentGame === 'rainbow-trace') {
+  //   return <RainbowTraceGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'tap-the-small-one') {
-  //   return <TapTheSmallOneGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'snake-slide') {
+    return <SnakeSlideGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'moon-path') {
+    return <MoonPathGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'smile-maker') {
+    return <SmileMakerGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'curvy-road-drive') {
+    return <CurvyRoadDriveGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 2 Session 3: Trace Zig-Zag games
+  if (currentGame === 'mountain-climb') {
+    return <MountainClimbGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'lightning-bolt') {
+    return <LightningBoltGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'saw-path') {
+    return <SawPathGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'robot-wire-fix') {
+    return <RobotWireFixGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'zig-zag-race') {
+    return <ZigZagRaceGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 2 Session 4: Follow Path (Drag) games
+  if (currentGame === 'maze-walk') {
+    return <MazeWalkGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'river-boat-guide') {
+    return <RiverBoatGuideGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'ant-trail-follow') {
+    return <AntTrailFollowGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'ball-roll-path') {
+    return <BallRollPathGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'dont-touch-grass') {
+    return <DontTouchGrassGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 2 Session 5: Connect Dots games
+  if (currentGame === 'dot-to-dot-animal') {
+    return <DotToDotAnimalGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'star-builder') {
+    return <StarBuilderGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'house-drawing') {
+    return <HouseDrawingGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'hidden-shape-reveal') {
+    return <HiddenShapeRevealGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'connect-in-order-glow') {
+    return <ConnectInOrderGlowGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // // Level 2 Session 6: Match Shape Outline games
+  // if (currentGame === 'puzzle-drop-shapes') {
+  //   return <PuzzleDropShapesGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'tap-the-shape-i-show-you') {
-  //   return <TapTheShapeIShowYouGame onBack={() => setCurrentGame('menu')} />;
+  // if (currentGame === 'shadow-match') {
+  //   return <ShadowMatchGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'find-the-odd-one-out') {
-  //   return <FindTheOddOneOutGame onBack={() => setCurrentGame('menu')} />;
+  // if (currentGame === 'cookie-cutter-match') {
+  //   return <CookieCutterMatchGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'match-shape-to-outline') {
-  //   return <MatchShapeToOutlineGame onBack={() => setCurrentGame('menu')} />;
+  // if (currentGame === 'parking-shapes') {
+  //   return <ParkingShapesGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'tiny-dot-tap') {
-  //   return <TinyDotTapGame onBack={() => setCurrentGame('menu')} />;
+  // if (currentGame === 'fast-match') {
+  //   return <FastMatchGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'tap-the-center-of-the-target') {
-  //   return <TapTheCenterOfTheTargetGame onBack={() => setCurrentGame('menu')} />;
+  // // Level 2 Session 7: Trace Large Shapes games
+  // if (currentGame === 'big-circle-trace') {
+  //   return <BigCircleTraceGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'moving-small-target') {
-  //   return <MovingSmallTargetGame onBack={() => setCurrentGame('menu')} />;
+  // if (currentGame === 'big-square-walk') {
+  //   return <BigSquareWalkGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'tap-only-the-smallest-shape') {
-  //   return <TapOnlyTheSmallestShapeGame onBack={() => setCurrentGame('menu')} />;
+  // if (currentGame === 'triangle-mountain-trace') {
+  //   return <TriangleMountainTraceGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'tap-the-hidden-small-object') {
-  //   return <TapTheHiddenSmallObjectGame onBack={() => setCurrentGame('menu')} />;
+  // if (currentGame === 'paint-the-shape') {
+  //   return <PaintTheShapeGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'shrinking-circle-tap') {
-  //   return <ShrinkingCircleTapGame onBack={() => setCurrentGame('menu')} />;
+  // if (currentGame === 'glow-border-trace') {
+  //   return <GlowBorderTraceGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'tap-when-star-is-smallest') {
-  //   return <TapWhenStarIsSmallestGame onBack={() => setCurrentGame('menu')} />;
+  // // Level 2 Session 8: Trace Small Shapes games
+  // if (currentGame === 'tiny-circle-coins') {
+  //   return <TinyCircleCoinsGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'shrink-stop-tap') {
-  //   return <ShrinkStopTapGame onBack={() => setCurrentGame('menu')} />;
+  // if (currentGame === 'mini-square-locks') {
+  //   return <MiniSquareLocksGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'multiple-shrinking-targets') {
-  //   return <MultipleShrinkingTargetsGame onBack={() => setCurrentGame('menu')} />;
+  // if (currentGame === 'dot-border-shapes') {
+  //   return <DotBorderShapesGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'shrinking-object-movement') {
-  //   return <ShrinkingObjectMovementGame onBack={() => setCurrentGame('menu')} />;
+  // if (currentGame === 'careful-trace-challenge') {
+  //   return <CarefulTraceChallengeGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'pinch-to-pop') {
-  //   return <PinchToPopGame onBack={() => setCurrentGame('menu')} />;
+  // if (currentGame === 'shrink-mode-trace') {
+  //   return <ShrinkModeTraceGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'pinch-and-drag') {
-  //   return <PinchAndDragGame onBack={() => setCurrentGame('menu')} />;
+  // // Level 2 Session 9: Copy Simple Patterns games
+  // if (currentGame === 'copy-the-line-pattern') {
+  //   return <CopyTheLinePatternGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'two-finger-simultaneous-tap') {
-  //   return <TwoFingerSimultaneousTapGame onBack={() => setCurrentGame('menu')} />;
+  // if (currentGame === 'block-pattern-copy') {
+  //   return <BlockPatternCopyGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'pinch-to-resize') {
-  //   return <PinchToResizeGame onBack={() => setCurrentGame('menu')} />;
+  // if (currentGame === 'color-pattern-match') {
+  //   return <ColorPatternMatchGame onBack={() => setCurrentGame('menu')} />;
   // }
 
-  // if (currentGame === 'pinch-to-open-treasure-box') {
-  //   return <PinchToOpenTreasureBoxGame onBack={() => setCurrentGame('menu')} />;
+  // if (currentGame === 'stick-design-copy') {
+  //   return <StickDesignCopyGame onBack={() => setCurrentGame('menu')} />;
+  // }
+
+  // if (currentGame === 'look-hide-draw') {
+  //   return <LookHideDrawGame onBack={() => setCurrentGame('menu')} />;
+  // }
+
+  // // Level 2 Session 10: Mirror Drawing Basics games
+  // if (currentGame === 'mirror-line-draw') {
+  //   return <MirrorLineDrawGame onBack={() => setCurrentGame('menu')} />;
+  // }
+
+  // if (currentGame === 'butterfly-wings') {
+  //   return <ButterflyWingsGame onBack={() => setCurrentGame('menu')} />;
+  // }
+
+  // if (currentGame === 'face-symmetry-draw') {
+  //   return <FaceSymmetryDrawGame onBack={() => setCurrentGame('menu')} />;
+  // }
+
+  // if (currentGame === 'half-shape-complete') {
+  //   return <HalfShapeCompleteGame onBack={() => setCurrentGame('menu')} />;
+  // }
+
+  // if (currentGame === 'mirror-maze') {
+  //   return <MirrorMazeGame onBack={() => setCurrentGame('menu')} />;
   // }
 
   // ---------- Menu UI ----------
@@ -965,26 +1759,86 @@ export default function SessionGamesScreen() {
                   if (game.id === 'tap-lights-in-order') setCurrentGame('tap-lights-in-order');
                   if (game.id === 'follow-the-arrows') setCurrentGame('follow-the-arrows');
                   if (game.id === 'tap-colours-in-order') setCurrentGame('tap-colours-in-order');
-                  // if (game.id === 'tap-the-big-one') setCurrentGame('tap-the-big-one');
-                  // if (game.id === 'tap-the-small-one') setCurrentGame('tap-the-small-one');
-                  // if (game.id === 'tap-the-shape-i-show-you') setCurrentGame('tap-the-shape-i-show-you');
-                  // if (game.id === 'find-the-odd-one-out') setCurrentGame('find-the-odd-one-out');
-                  // if (game.id === 'match-shape-to-outline') setCurrentGame('match-shape-to-outline');
-                  // if (game.id === 'tiny-dot-tap') setCurrentGame('tiny-dot-tap');
-                  // if (game.id === 'tap-the-center-of-the-target') setCurrentGame('tap-the-center-of-the-target');
-                  // if (game.id === 'moving-small-target') setCurrentGame('moving-small-target');
-                  // if (game.id === 'tap-only-the-smallest-shape') setCurrentGame('tap-only-the-smallest-shape');
-                  // if (game.id === 'tap-the-hidden-small-object') setCurrentGame('tap-the-hidden-small-object');
-                  // if (game.id === 'shrinking-circle-tap') setCurrentGame('shrinking-circle-tap');
-                  // if (game.id === 'tap-when-star-is-smallest') setCurrentGame('tap-when-star-is-smallest');
-                  // if (game.id === 'shrink-stop-tap') setCurrentGame('shrink-stop-tap');
-                  // if (game.id === 'multiple-shrinking-targets') setCurrentGame('multiple-shrinking-targets');
-                  // if (game.id === 'shrinking-object-movement') setCurrentGame('shrinking-object-movement');
-                  // if (game.id === 'pinch-to-pop') setCurrentGame('pinch-to-pop');
-                  // if (game.id === 'pinch-and-drag') setCurrentGame('pinch-and-drag');
-                  // if (game.id === 'two-finger-simultaneous-tap') setCurrentGame('two-finger-simultaneous-tap');
-                  // if (game.id === 'pinch-to-resize') setCurrentGame('pinch-to-resize');
-                  // if (game.id === 'pinch-to-open-treasure-box') setCurrentGame('pinch-to-open-treasure-box');
+                  if (game.id === 'tap-the-big-one') setCurrentGame('tap-the-big-one');
+                  if (game.id === 'tap-the-small-one') setCurrentGame('tap-the-small-one');
+                  if (game.id === 'tap-the-shape-i-show-you') setCurrentGame('tap-the-shape-i-show-you');
+                  if (game.id === 'find-the-odd-one-out') setCurrentGame('find-the-odd-one-out');
+                  if (game.id === 'match-shape-to-outline') setCurrentGame('match-shape-to-outline');
+                  if (game.id === 'tiny-dot-tap') setCurrentGame('tiny-dot-tap');
+                  if (game.id === 'tap-the-center-of-the-target') setCurrentGame('tap-the-center-of-the-target');
+                  if (game.id === 'moving-small-target') setCurrentGame('moving-small-target');
+                  if (game.id === 'tap-only-the-smallest-shape') setCurrentGame('tap-only-the-smallest-shape');
+                  if (game.id === 'tap-the-hidden-small-object') setCurrentGame('tap-the-hidden-small-object');
+                  if (game.id === 'shrinking-circle-tap') setCurrentGame('shrinking-circle-tap');
+                  if (game.id === 'tap-when-star-is-smallest') setCurrentGame('tap-when-star-is-smallest');
+                  if (game.id === 'shrink-stop-tap') setCurrentGame('shrink-stop-tap');
+                  if (game.id === 'multiple-shrinking-targets') setCurrentGame('multiple-shrinking-targets');
+                  if (game.id === 'shrinking-object-movement') setCurrentGame('shrinking-object-movement');
+                  if (game.id === 'pinch-to-pop') setCurrentGame('pinch-to-pop');
+                  if (game.id === 'pinch-and-drag') setCurrentGame('pinch-and-drag');
+                  if (game.id === 'two-finger-simultaneous-tap') setCurrentGame('two-finger-simultaneous-tap');
+                  if (game.id === 'pinch-to-resize') setCurrentGame('pinch-to-resize');
+                  if (game.id === 'pinch-to-open-treasure-box') setCurrentGame('pinch-to-open-treasure-box');
+                  // OT Level 11 games
+                  if (game.id === 'touch-the-dot') setCurrentGame('touch-the-dot');
+                  if (game.id === 'where-is-it') setCurrentGame('where-is-it');
+                  if (game.id === 'follow-and-touch') setCurrentGame('follow-and-touch');
+                  if (game.id === 'tap-where-it-lights-up') setCurrentGame('tap-where-it-lights-up');
+                  if (game.id === 'match-and-touch') setCurrentGame('match-and-touch');
+                  // Level 2 Session 2 games
+                  if (game.id === 'rainbow-trace') setCurrentGame('rainbow-trace');
+                  if (game.id === 'snake-slide') setCurrentGame('snake-slide');
+                  if (game.id === 'moon-path') setCurrentGame('moon-path');
+                  if (game.id === 'smile-maker') setCurrentGame('smile-maker');
+                  if (game.id === 'curvy-road-drive') setCurrentGame('curvy-road-drive');
+                  // Level 2 Session 3 games
+                  if (game.id === 'mountain-climb') setCurrentGame('mountain-climb');
+                  if (game.id === 'lightning-bolt') setCurrentGame('lightning-bolt');
+                  if (game.id === 'saw-path') setCurrentGame('saw-path');
+                  if (game.id === 'robot-wire-fix') setCurrentGame('robot-wire-fix');
+                  if (game.id === 'zig-zag-race') setCurrentGame('zig-zag-race');
+                  // Level 2 Session 4 games
+                  if (game.id === 'maze-walk') setCurrentGame('maze-walk');
+                  if (game.id === 'river-boat-guide') setCurrentGame('river-boat-guide');
+                  if (game.id === 'ant-trail-follow') setCurrentGame('ant-trail-follow');
+                  if (game.id === 'ball-roll-path') setCurrentGame('ball-roll-path');
+                  if (game.id === 'dont-touch-grass') setCurrentGame('dont-touch-grass');
+                  // Level 2 Session 5 games
+                  if (game.id === 'dot-to-dot-animal') setCurrentGame('dot-to-dot-animal');
+                  if (game.id === 'star-builder') setCurrentGame('star-builder');
+                  if (game.id === 'house-drawing') setCurrentGame('house-drawing');
+                  if (game.id === 'hidden-shape-reveal') setCurrentGame('hidden-shape-reveal');
+                  if (game.id === 'connect-in-order-glow') setCurrentGame('connect-in-order-glow');
+                  // Level 2 Session 6 games
+                  // if (game.id === 'puzzle-drop-shapes') setCurrentGame('puzzle-drop-shapes');
+                  // if (game.id === 'shadow-match') setCurrentGame('shadow-match');
+                  // if (game.id === 'cookie-cutter-match') setCurrentGame('cookie-cutter-match');
+                  // if (game.id === 'parking-shapes') setCurrentGame('parking-shapes');
+                  // if (game.id === 'fast-match') setCurrentGame('fast-match');
+                  // // Level 2 Session 7 games
+                  // if (game.id === 'big-circle-trace') setCurrentGame('big-circle-trace');
+                  // if (game.id === 'big-square-walk') setCurrentGame('big-square-walk');
+                  // if (game.id === 'triangle-mountain-trace') setCurrentGame('triangle-mountain-trace');
+                  // if (game.id === 'paint-the-shape') setCurrentGame('paint-the-shape');
+                  // if (game.id === 'glow-border-trace') setCurrentGame('glow-border-trace');
+                  // // Level 2 Session 8 games
+                  // if (game.id === 'tiny-circle-coins') setCurrentGame('tiny-circle-coins');
+                  // if (game.id === 'mini-square-locks') setCurrentGame('mini-square-locks');
+                  // if (game.id === 'dot-border-shapes') setCurrentGame('dot-border-shapes');
+                  // if (game.id === 'careful-trace-challenge') setCurrentGame('careful-trace-challenge');
+                  // if (game.id === 'shrink-mode-trace') setCurrentGame('shrink-mode-trace');
+                  // // Level 2 Session 9 games
+                  // if (game.id === 'copy-the-line-pattern') setCurrentGame('copy-the-line-pattern');
+                  // if (game.id === 'block-pattern-copy') setCurrentGame('block-pattern-copy');
+                  // if (game.id === 'color-pattern-match') setCurrentGame('color-pattern-match');
+                  // if (game.id === 'stick-design-copy') setCurrentGame('stick-design-copy');
+                  // if (game.id === 'look-hide-draw') setCurrentGame('look-hide-draw');
+                  // // Level 2 Session 10 games
+                  // if (game.id === 'mirror-line-draw') setCurrentGame('mirror-line-draw');
+                  // if (game.id === 'butterfly-wings') setCurrentGame('butterfly-wings');
+                  // if (game.id === 'face-symmetry-draw') setCurrentGame('face-symmetry-draw');
+                  // if (game.id === 'half-shape-complete') setCurrentGame('half-shape-complete');
+                  // if (game.id === 'mirror-maze') setCurrentGame('mirror-maze');
                 }}
               activeOpacity={0.8}
             >
@@ -1073,29 +1927,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 20,
+    padding: 20,
     borderWidth: 2,
     shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+    marginBottom: 4,
   },
   gameCardDisabled: {
     opacity: 0.6,
     borderColor: '#E5E7EB',
   },
   gameIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+    width: 64,
+    height: 64,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   gameEmoji: {
-    fontSize: 28,
+    fontSize: 32,
   },
   gameContent: {
     flex: 1,
@@ -1118,11 +1978,16 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
   },
   playBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
   },
   lockBadge: {
     width: 40,
