@@ -19,13 +19,13 @@ import Animated, {
     withTiming
 } from 'react-native-reanimated';
 
-import { BigTapTarget } from '@/components/game/BigTapTarget';
+import { BigTapTarget } from '@/components/game/occupational/level1/session1/BigTapTarget';
 import { ResultToast, SparkleBurst, Stepper } from '@/components/game/FX';
-import BalloonPopGame from '@/components/game/MovingTargetTapGame';
-import MultiTapFunGame from '@/components/game/MultiTapFunGame';
+import BalloonPopGame from '@/components/game/occupational/level1/session1/MovingTargetTapGame';
+import MultiTapFunGame from '@/components/game/occupational/level1/session1/MultiTapFunGame';
 import ResultCard from '@/components/game/ResultCard';
-import TapAndHoldGame from '@/components/game/TapAndHoldGame';
-import TapRedCircleGame from '@/components/game/TapRedCircleGame';
+import TapAndHoldGame from '@/components/game/occupational/level1/session1/TapAndHoldGame';
+import TapRedCircleGame from '@/components/game/occupational/level1/session1/TapRedCircleGame';
 import { CATEGORIES, type Tile, tileImages } from '@/constants/aac';
 import { icons } from '@/constants/icons';
 import { images } from '@/constants/images';

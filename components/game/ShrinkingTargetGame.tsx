@@ -23,8 +23,8 @@ import Animated, {
     withSequence,
     withTiming,
 } from 'react-native-reanimated';
-import { SparkleBurst } from './FX';
-import ResultCard from './ResultCard';
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 
 const POP_SOUND = 'https://actions.google.com/sounds/v1/cartoon/pop.ogg';
 const TOTAL_TARGETS = 12; // Total targets to tap

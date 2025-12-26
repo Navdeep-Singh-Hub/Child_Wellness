@@ -1,137 +1,223 @@
-import { BigTapTarget } from '@/components/game/BigTapTarget';
-import DragAnimalHomeGame from '@/components/game/DragAnimalHomeGame';
-import DragBallToGoalGame from '@/components/game/DragBallToGoalGame';
-import DragSlowlyGame from '@/components/game/DragSlowlyGame';
-import FindTheOddOneOutGame from '@/components/game/FindTheOddOneOutGame';
-import FollowTheArrowsGame from '@/components/game/FollowTheArrowsGame';
-import { FollowTheBall } from '@/components/game/FollowTheBall';
-import FollowTheLineGame from '@/components/game/FollowTheLineGame';
-import { FollowWhereILookGame } from '@/components/game/FollowWhereILookGame';
-import GrowTheBalloonGame from '@/components/game/GrowTheBalloonGame';
-import HoldTheButtonGame from '@/components/game/HoldTheButtonGame';
-import HoldTheLightGame from '@/components/game/HoldTheLightGame';
-import LaunchRocketGame from '@/components/game/LaunchRocketGame';
-import MatchShapeToOutlineGame from '@/components/game/MatchShapeToOutlineGame';
-import MovingSmallTargetGame from '@/components/game/MovingSmallTargetGame';
-import BalloonPopGame from '@/components/game/MovingTargetTapGame'; // Game 3: Balloon Pop
-import MultipleShrinkingTargetsGame from '@/components/game/MultipleShrinkingTargetsGame';
-import MultipleSmallTargetsGame from '@/components/game/MultipleSmallTargetsGame';
-import MultiTapFunGame from '@/components/game/MultiTapFunGame'; // Game 5: Multi-Tap Fun
-import PinchAndDragGame from '@/components/game/PinchAndDragGame';
-import PinchToOpenTreasureBoxGame from '@/components/game/PinchToOpenTreasureBoxGame';
-import PinchToPopGame from '@/components/game/PinchToPopGame';
-import PinchToResizeGame from '@/components/game/PinchToResizeGame';
-import PuzzlePieceDragGame from '@/components/game/PuzzlePieceDragGame';
-import RaceTheDotGame from '@/components/game/RaceTheDotGame';
-import ShrinkingCircleTapGame from '@/components/game/ShrinkingCircleTapGame';
-import ShrinkingObjectMovementGame from '@/components/game/ShrinkingObjectMovementGame';
-// import ShrinkingTargetGame from '@/components/game/ShrinkingTargetGame';
-import AntTrailFollowGame from '@/components/game/AntTrailFollowGame';
-import BallRollPathGame from '@/components/game/BallRollPathGame';
-import ConnectInOrderGlowGame from '@/components/game/ConnectInOrderGlowGame';
-import CurvyRoadDriveGame from '@/components/game/CurvyRoadDriveGame';
-import DontTouchGrassGame from '@/components/game/DontTouchGrassGame';
-import DotToDotAnimalGame from '@/components/game/DotToDotAnimalGame';
-import { FollowAndTouchGame } from '@/components/game/FollowAndTouchGame';
-import HiddenShapeRevealGame from '@/components/game/HiddenShapeRevealGame';
-import HouseDrawingGame from '@/components/game/HouseDrawingGame';
-import LightningBoltGame from '@/components/game/LightningBoltGame';
-import { MatchAndTouchGame } from '@/components/game/MatchAndTouchGame';
-import MazeWalkGame from '@/components/game/MazeWalkGame';
-import MoonPathGame from '@/components/game/MoonPathGame';
-import MountainClimbGame from '@/components/game/MountainClimbGame';
-// import RainbowTraceGame from '@/components/game/RainbowTraceGame'; // File is empty
-import { BallRollCurvedTrackGame } from '@/components/game/BallRollCurvedTrackGame';
-import { CatchTheBouncingStar } from '@/components/game/CatchTheBouncingStar';
-import { DriveCarCurvyRoadGame } from '@/components/game/DriveCarCurvyRoadGame';
-import { EyesOnlyGame } from '@/components/game/EyesOnlyGame';
-import { EyesThenObjectGame } from '@/components/game/EyesThenObjectGame';
-import { FindSoundSourceGame } from '@/components/game/FindSoundSourceGame';
-import { FindTheSoundSourceGame } from '@/components/game/FindTheSoundSourceGame';
-import { FollowGazeToAnimationGame } from '@/components/game/FollowGazeToAnimationGame';
-import { FollowMyEyesGame } from '@/components/game/FollowMyEyesGame';
-import { FollowMyPointGame } from '@/components/game/FollowMyPointGame';
-import { FollowSlowMovementGame } from '@/components/game/FollowSlowMovementGame';
-import { FollowTheArrowGame } from '@/components/game/FollowTheArrowGame';
-import { FoodVsToyGame } from '@/components/game/FoodVsToyGame';
-import { GrowingFlowerGame } from '@/components/game/GrowingFlowerGame';
-import { JawAwarenessCrocodileGame } from '@/components/game/JawAwarenessCrocodileGame';
-import { JawPushChallengeGame } from '@/components/game/JawPushChallengeGame';
-import { JawRhythmTapGame } from '@/components/game/JawRhythmTapGame';
-import { JawStrengthBuilderGame } from '@/components/game/JawStrengthBuilderGame';
-import { JawSwingAdventureGame } from '@/components/game/JawSwingAdventureGame';
-import { LoudVsSoftGame } from '@/components/game/LoudVsSoftGame';
-import { MovingArmPointingGame } from '@/components/game/MovingArmPointingGame';
-import { MovingTargetWithExtraObjectsGame } from '@/components/game/MovingTargetWithExtraObjectsGame';
-import { MultiPointFollowGame } from '@/components/game/MultiPointFollowGame';
-import { PaintCurvedSnakeGame } from '@/components/game/PaintCurvedSnakeGame';
-import { PassTheBallGame } from '@/components/game/PassTheBallGame';
-import { PointToObjectAppearsGame } from '@/components/game/PointToObjectAppearsGame';
-import { RainbowCurveTraceGame } from '@/components/game/RainbowCurveTraceGame';
-import RiverBoatGuideGame from '@/components/game/RiverBoatGuideGame';
-import RobotWireFixGame from '@/components/game/RobotWireFixGame';
-import SawPathGame from '@/components/game/SawPathGame';
-import { SequenceWithDistractionGame } from '@/components/game/SequenceWithDistractionGame';
-import { ShapesAppearOneByOneGame } from '@/components/game/ShapesAppearOneByOneGame';
-import { ShowMeTheToyGame } from '@/components/game/ShowMeTheToyGame';
-import ShrinkStopTapGame from '@/components/game/ShrinkStopTapGame';
-import { SlowTaskWithPopUpDistractionGame } from '@/components/game/SlowTaskWithPopUpDistractionGame';
-import SlowThenFastGame from '@/components/game/SlowThenFastGame';
-import { SlowToFastGame } from '@/components/game/SlowToFastGame';
-import SmallCircleTapGame from '@/components/game/SmallCircleTapGame';
-import SmileMakerGame from '@/components/game/SmileMakerGame';
-import SnakeSlideGame from '@/components/game/SnakeSlideGame';
-import { SoundDistractionChallengeGame } from '@/components/game/SoundDistractionChallengeGame';
-import { SoundToChoiceGame } from '@/components/game/SoundToChoiceGame';
-import { SoundToTapGame } from '@/components/game/SoundToTapGame';
-import SquishTheJellyGame from '@/components/game/SquishTheJellyGame';
-import StarBuilderGame from '@/components/game/StarBuilderGame';
-import { StopWhenSoundStopsGame } from '@/components/game/StopWhenSoundStopsGame';
-import TapAndHoldGame from '@/components/game/TapAndHoldGame'; // Game 4: Tap and Hold
-import TapColoursInOrderGame from '@/components/game/TapColoursInOrderGame';
-import TapFastGame from '@/components/game/TapFastGame';
-import { TapForChoiceGame } from '@/components/game/TapForChoiceGame';
-import { TapForMagicGame } from '@/components/game/TapForMagicGame';
-import TapLightsInOrderGame from '@/components/game/TapLightsInOrderGame';
-import { TapOnlyOnYourTurnGame } from '@/components/game/TapOnlyOnYourTurnGame';
-import TapOnlySmallTargetGame from '@/components/game/TapOnlySmallTargetGame'; // Level 2 Game 1: Small Circle Tap
-import TapOnlyTheSmallestShapeGame from '@/components/game/TapOnlyTheSmallestShapeGame';
-import TapRedCircleGame from '@/components/game/TapRedCircleGame';
-import TapSlowlyGame from '@/components/game/TapSlowlyGame';
-import TapTheBigOneGame from '@/components/game/TapTheBigOneGame';
-import TapTheCenterOfTheTargetGame from '@/components/game/TapTheCenterOfTheTargetGame';
-import { TapTheCircleGame } from '@/components/game/TapTheCircleGame';
-import TapTheHiddenSmallObjectGame from '@/components/game/TapTheHiddenSmallObjectGame';
-import TapTheNumbersGame from '@/components/game/TapTheNumbersGame';
-import { TapThePointedObjectGame } from '@/components/game/TapThePointedObjectGame';
-import TapTheShapeIShowYouGame from '@/components/game/TapTheShapeIShowYouGame';
-import TapTheSmallOneGame from '@/components/game/TapTheSmallOneGame';
-import { TapTheTargetIgnoreDistractionGame } from '@/components/game/TapTheTargetIgnoreDistractionGame';
-import { TapToAnimateGame } from '@/components/game/TapToAnimateGame';
-import { TapToMakeSoundGame } from '@/components/game/TapToMakeSoundGame';
-import { TapToRevealGame } from '@/components/game/TapToRevealGame';
-import { TapWhatIShowYouGame } from '@/components/game/TapWhatIShowYouGame';
-import { TapWhatYouLikeGame } from '@/components/game/TapWhatYouLikeGame';
-import TapWhenStarIsSmallestGame from '@/components/game/TapWhenStarIsSmallestGame';
-import { TapWhereItLightsUpGame } from '@/components/game/TapWhereItLightsUpGame';
-import TapWithSoundGame from '@/components/game/TapWithSoundGame';
-import { TimerBarTapGame } from '@/components/game/TimerBarTapGame';
-import TinyDotTapGame from '@/components/game/TinyDotTapGame';
-import { TouchTheBallGame } from '@/components/game/TouchTheBallGame';
-import { TouchTheDotGame } from '@/components/game/TouchTheDotGame';
-import { TraceSmilingMouthGame } from '@/components/game/TraceSmilingMouthGame';
-import { TrackAndFreezeGame } from '@/components/game/TrackAndFreezeGame';
-import TrackThenTapSmallObjectGame from '@/components/game/TrackThenTapSmallObjectGame';
-import { TurnTimerGame } from '@/components/game/TurnTimerGame';
-import TwoFingerSimultaneousTapGame from '@/components/game/TwoFingerSimultaneousTapGame';
-import { WaitForTheSignalGame } from '@/components/game/WaitForTheSignalGame';
-import { WatchAndWaitGame } from '@/components/game/WatchAndWaitGame';
-import { WhereIsItGame } from '@/components/game/WhereIsItGame';
-import { WhichOneMovedGame } from '@/components/game/WhichOneMovedGame';
-import { WhichSideGame } from '@/components/game/WhichSideGame';
-import { WhichSoundGame } from '@/components/game/WhichSoundGame';
-import { YourTurnToCompleteGame } from '@/components/game/YourTurnToCompleteGame';
-import ZigZagRaceGame from '@/components/game/ZigZagRaceGame';
+// Speech Therapy Level 1 Session 1
+import { CatchTheBouncingStar } from '@/components/game/speech/level1/session1/CatchTheBouncingStar';
+import { FollowTheBall } from '@/components/game/speech/level1/session1/FollowTheBall';
+import { FollowWhereILookGame } from '@/components/game/speech/level1/session1/FollowWhereILookGame';
+import { SlowToFastGame } from '@/components/game/speech/level1/session1/SlowToFastGame';
+import { TrackAndFreezeGame } from '@/components/game/speech/level1/session1/TrackAndFreezeGame';
+
+// Speech Therapy Level 1 Session 2
+import { TapForChoiceGame } from '@/components/game/speech/level1/session2/TapForChoiceGame';
+import { TapForMagicGame } from '@/components/game/speech/level1/session2/TapForMagicGame';
+import { TapToAnimateGame } from '@/components/game/speech/level1/session2/TapToAnimateGame';
+import { TapToMakeSoundGame } from '@/components/game/speech/level1/session2/TapToMakeSoundGame';
+import { TapToRevealGame } from '@/components/game/speech/level1/session2/TapToRevealGame';
+
+// Speech Therapy Level 1 Session 3
+import { FindSoundSourceGame } from '@/components/game/speech/level1/session3/FindSoundSourceGame';
+import { LoudVsSoftGame } from '@/components/game/speech/level1/session3/LoudVsSoftGame';
+import { SoundToTapGame } from '@/components/game/speech/level1/session3/SoundToTapGame';
+import { StopWhenSoundStopsGame } from '@/components/game/speech/level1/session3/StopWhenSoundStopsGame';
+import { WhichSoundGame } from '@/components/game/speech/level1/session3/WhichSoundGame';
+
+// Speech Therapy Level 1 Session 4
+import { EyesOnlyGame } from '@/components/game/speech/level1/session4/EyesOnlyGame';
+import { EyesThenObjectGame } from '@/components/game/speech/level1/session4/EyesThenObjectGame';
+import { FollowGazeToAnimationGame } from '@/components/game/speech/level1/session4/FollowGazeToAnimationGame';
+import { FollowMyEyesGame } from '@/components/game/speech/level1/session4/FollowMyEyesGame';
+import { WhichSideGame } from '@/components/game/speech/level1/session4/WhichSideGame';
+
+// Speech Therapy Level 1 Session 5
+import { FollowMyPointGame } from '@/components/game/speech/level1/session5/FollowMyPointGame';
+import { MovingArmPointingGame } from '@/components/game/speech/level1/session5/MovingArmPointingGame';
+import { MultiPointFollowGame } from '@/components/game/speech/level1/session5/MultiPointFollowGame';
+import { PointToObjectAppearsGame } from '@/components/game/speech/level1/session5/PointToObjectAppearsGame';
+import { TapThePointedObjectGame } from '@/components/game/speech/level1/session5/TapThePointedObjectGame';
+
+// Speech Therapy Level 1 Session 6
+import { FoodVsToyGame } from '@/components/game/speech/level1/session6/FoodVsToyGame';
+import { ShowMeTheToyGame } from '@/components/game/speech/level1/session6/ShowMeTheToyGame';
+import { SoundToChoiceGame } from '@/components/game/speech/level1/session6/SoundToChoiceGame';
+import { TapWhatYouLikeGame } from '@/components/game/speech/level1/session6/TapWhatYouLikeGame';
+import { WhichOneMovedGame } from '@/components/game/speech/level1/session6/WhichOneMovedGame';
+
+// Speech Therapy Level 1 Session 7
+import { PassTheBallGame } from '@/components/game/speech/level1/session7/PassTheBallGame';
+import { TapOnlyOnYourTurnGame } from '@/components/game/speech/level1/session7/TapOnlyOnYourTurnGame';
+import { TurnTimerGame } from '@/components/game/speech/level1/session7/TurnTimerGame';
+import { WaitForTheSignalGame } from '@/components/game/speech/level1/session7/WaitForTheSignalGame';
+import { YourTurnToCompleteGame } from '@/components/game/speech/level1/session7/YourTurnToCompleteGame';
+
+// Speech Therapy Level 1 Session 8
+import { FollowSlowMovementGame } from '@/components/game/speech/level1/session8/FollowSlowMovementGame';
+import { GrowingFlowerGame } from '@/components/game/speech/level1/session8/GrowingFlowerGame';
+import { ShapesAppearOneByOneGame } from '@/components/game/speech/level1/session8/ShapesAppearOneByOneGame';
+import { TimerBarTapGame } from '@/components/game/speech/level1/session8/TimerBarTapGame';
+import { WatchAndWaitGame } from '@/components/game/speech/level1/session8/WatchAndWaitGame';
+
+// Speech Therapy Level 1 Session 9
+import { FindTheSoundSourceGame } from '@/components/game/speech/level1/session9/FindTheSoundSourceGame';
+import { FollowTheArrowGame } from '@/components/game/speech/level1/session9/FollowTheArrowGame';
+import { TapTheCircleGame } from '@/components/game/speech/level1/session9/TapTheCircleGame';
+import { TapWhatIShowYouGame } from '@/components/game/speech/level1/session9/TapWhatIShowYouGame';
+import { TouchTheBallGame } from '@/components/game/speech/level1/session9/TouchTheBallGame';
+
+// Speech Therapy Level 1 Session 10
+import { MovingTargetWithExtraObjectsGame } from '@/components/game/speech/level1/session10/MovingTargetWithExtraObjectsGame';
+import { SequenceWithDistractionGame } from '@/components/game/speech/level1/session10/SequenceWithDistractionGame';
+import { SlowTaskWithPopUpDistractionGame } from '@/components/game/speech/level1/session10/SlowTaskWithPopUpDistractionGame';
+import { SoundDistractionChallengeGame } from '@/components/game/speech/level1/session10/SoundDistractionChallengeGame';
+import { TapTheTargetIgnoreDistractionGame } from '@/components/game/speech/level1/session10/TapTheTargetIgnoreDistractionGame';
+
+// Speech Therapy Level 2 Session 1
+import { JawAwarenessCrocodileGame } from '@/components/game/speech/level2/session1/JawAwarenessCrocodileGame';
+import { JawPushChallengeGame } from '@/components/game/speech/level2/session1/JawPushChallengeGame';
+import { JawRhythmTapGame } from '@/components/game/speech/level2/session1/JawRhythmTapGame';
+import { JawStrengthBuilderGame } from '@/components/game/speech/level2/session1/JawStrengthBuilderGame';
+import { JawSwingAdventureGame } from '@/components/game/speech/level2/session1/JawSwingAdventureGame';
+
+// Speech Therapy Level 2 Session 2 (shared with OT)
+import { BallRollCurvedTrackGame } from '@/components/game/speech/level2/session2/BallRollCurvedTrackGame';
+import { DriveCarCurvyRoadGame } from '@/components/game/speech/level2/session2/DriveCarCurvyRoadGame';
+import { PaintCurvedSnakeGame } from '@/components/game/speech/level2/session2/PaintCurvedSnakeGame';
+import { RainbowCurveTraceGame } from '@/components/game/speech/level2/session2/RainbowCurveTraceGame';
+import { TraceSmilingMouthGame } from '@/components/game/speech/level2/session2/TraceSmilingMouthGame';
+
+// Occupational Therapy Level 1 Session 1
+import { BigTapTarget } from '@/components/game/occupational/level1/session1/BigTapTarget';
+import BalloonPopGame from '@/components/game/occupational/level1/session1/MovingTargetTapGame'; // Game 3: Balloon Pop
+import MultiTapFunGame from '@/components/game/occupational/level1/session1/MultiTapFunGame'; // Game 5: Multi-Tap Fun
+import TapAndHoldGame from '@/components/game/occupational/level1/session1/TapAndHoldGame'; // Game 4: Tap and Hold
+import TapRedCircleGame from '@/components/game/occupational/level1/session1/TapRedCircleGame';
+
+// Occupational Therapy Level 1 Session 2
+import MultipleSmallTargetsGame from '@/components/game/occupational/level1/session2/MultipleSmallTargetsGame';
+import SmallCircleTapGame from '@/components/game/occupational/level1/session2/SmallCircleTapGame';
+import TapOnlySmallTargetGame from '@/components/game/occupational/level1/session2/TapOnlySmallTargetGame'; // Level 2 Game 1: Small Circle Tap
+import TrackThenTapSmallObjectGame from '@/components/game/occupational/level1/session2/TrackThenTapSmallObjectGame';
+
+// Occupational Therapy Level 1 Session 3
+import RaceTheDotGame from '@/components/game/occupational/level1/session3/RaceTheDotGame';
+import SlowThenFastGame from '@/components/game/occupational/level1/session3/SlowThenFastGame';
+import TapFastGame from '@/components/game/occupational/level1/session3/TapFastGame';
+import TapSlowlyGame from '@/components/game/occupational/level1/session3/TapSlowlyGame';
+import TapWithSoundGame from '@/components/game/occupational/level1/session3/TapWithSoundGame';
+
+// Occupational Therapy Level 1 Session 4
+import GrowTheBalloonGame from '@/components/game/occupational/level1/session4/GrowTheBalloonGame';
+import HoldTheButtonGame from '@/components/game/occupational/level1/session4/HoldTheButtonGame';
+import HoldTheLightGame from '@/components/game/occupational/level1/session4/HoldTheLightGame';
+import LaunchRocketGame from '@/components/game/occupational/level1/session4/LaunchRocketGame';
+import SquishTheJellyGame from '@/components/game/occupational/level1/session4/SquishTheJellyGame';
+
+// Occupational Therapy Level 1 Session 5
+import DragAnimalHomeGame from '@/components/game/occupational/level1/session5/DragAnimalHomeGame';
+import DragBallToGoalGame from '@/components/game/occupational/level1/session5/DragBallToGoalGame';
+import DragSlowlyGame from '@/components/game/occupational/level1/session5/DragSlowlyGame';
+import FollowTheLineGame from '@/components/game/occupational/level1/session5/FollowTheLineGame';
+import PuzzlePieceDragGame from '@/components/game/occupational/level1/session5/PuzzlePieceDragGame';
+
+// Occupational Therapy Level 1 Session 6
+import FollowTheArrowsGame from '@/components/game/occupational/level1/session6/FollowTheArrowsGame';
+import TapColoursInOrderGame from '@/components/game/occupational/level1/session6/TapColoursInOrderGame';
+import TapLightsInOrderGame from '@/components/game/occupational/level1/session6/TapLightsInOrderGame';
+import TapTheNumbersGame from '@/components/game/occupational/level1/session6/TapTheNumbersGame';
+
+// Occupational Therapy Level 1 Session 7
+import FindTheOddOneOutGame from '@/components/game/occupational/level1/session7/FindTheOddOneOutGame';
+import MatchShapeToOutlineGame from '@/components/game/occupational/level1/session7/MatchShapeToOutlineGame';
+import TapTheBigOneGame from '@/components/game/occupational/level1/session7/TapTheBigOneGame';
+import TapTheShapeIShowYouGame from '@/components/game/occupational/level1/session7/TapTheShapeIShowYouGame';
+import TapTheSmallOneGame from '@/components/game/occupational/level1/session7/TapTheSmallOneGame';
+
+// Occupational Therapy Level 1 Session 8
+import MovingSmallTargetGame from '@/components/game/occupational/level1/session8/MovingSmallTargetGame';
+import TapOnlyTheSmallestShapeGame from '@/components/game/occupational/level1/session8/TapOnlyTheSmallestShapeGame';
+import TapTheCenterOfTheTargetGame from '@/components/game/occupational/level1/session8/TapTheCenterOfTheTargetGame';
+import TapTheHiddenSmallObjectGame from '@/components/game/occupational/level1/session8/TapTheHiddenSmallObjectGame';
+import TinyDotTapGame from '@/components/game/occupational/level1/session8/TinyDotTapGame';
+
+// Occupational Therapy Level 1 Session 9
+import MultipleShrinkingTargetsGame from '@/components/game/occupational/level1/session9/MultipleShrinkingTargetsGame';
+import ShrinkingCircleTapGame from '@/components/game/occupational/level1/session9/ShrinkingCircleTapGame';
+import ShrinkingObjectMovementGame from '@/components/game/occupational/level1/session9/ShrinkingObjectMovementGame';
+import ShrinkStopTapGame from '@/components/game/occupational/level1/session9/ShrinkStopTapGame';
+import TapWhenStarIsSmallestGame from '@/components/game/occupational/level1/session9/TapWhenStarIsSmallestGame';
+
+// Occupational Therapy Level 1 Session 10
+import PinchAndDragGame from '@/components/game/occupational/level1/session10/PinchAndDragGame';
+import PinchToOpenTreasureBoxGame from '@/components/game/occupational/level1/session10/PinchToOpenTreasureBoxGame';
+import PinchToPopGame from '@/components/game/occupational/level1/session10/PinchToPopGame';
+import PinchToResizeGame from '@/components/game/occupational/level1/session10/PinchToResizeGame';
+import TwoFingerSimultaneousTapGame from '@/components/game/occupational/level1/session10/TwoFingerSimultaneousTapGame';
+
+// Occupational Therapy Level 2 Session 1
+import { FollowAndTouchGame } from '@/components/game/occupational/level2/session1/FollowAndTouchGame';
+import { MatchAndTouchGame } from '@/components/game/occupational/level2/session1/MatchAndTouchGame';
+import { TapWhereItLightsUpGame } from '@/components/game/occupational/level2/session1/TapWhereItLightsUpGame';
+import { TouchTheDotGame } from '@/components/game/occupational/level2/session1/TouchTheDotGame';
+import { WhereIsItGame } from '@/components/game/occupational/level2/session1/WhereIsItGame';
+
+// Occupational Therapy Level 2 Session 2 (shared with Speech)
+import CurvyRoadDriveGame from '@/components/game/occupational/level2/session2/CurvyRoadDriveGame';
+import MoonPathGame from '@/components/game/occupational/level2/session2/MoonPathGame';
+import SmileMakerGame from '@/components/game/occupational/level2/session2/SmileMakerGame';
+import SnakeSlideGame from '@/components/game/occupational/level2/session2/SnakeSlideGame';
+
+// Occupational Therapy Level 2 Session 3
+import LightningBoltGame from '@/components/game/occupational/level2/session3/LightningBoltGame';
+import MountainClimbGame from '@/components/game/occupational/level2/session3/MountainClimbGame';
+import RobotWireFixGame from '@/components/game/occupational/level2/session3/RobotWireFixGame';
+import SawPathGame from '@/components/game/occupational/level2/session3/SawPathGame';
+import ZigZagRaceGame from '@/components/game/occupational/level2/session3/ZigZagRaceGame';
+
+// Occupational Therapy Level 2 Session 4
+import AntTrailFollowGame from '@/components/game/occupational/level2/session4/AntTrailFollowGame';
+import BallRollPathGame from '@/components/game/occupational/level2/session4/BallRollPathGame';
+import DontTouchGrassGame from '@/components/game/occupational/level2/session4/DontTouchGrassGame';
+import MazeWalkGame from '@/components/game/occupational/level2/session4/MazeWalkGame';
+import RiverBoatGuideGame from '@/components/game/occupational/level2/session4/RiverBoatGuideGame';
+
+// Occupational Therapy Level 2 Session 5
+import ConnectInOrderGlowGame from '@/components/game/occupational/level2/session5/ConnectInOrderGlowGame';
+import DotToDotAnimalGame from '@/components/game/occupational/level2/session5/DotToDotAnimalGame';
+import HiddenShapeRevealGame from '@/components/game/occupational/level2/session5/HiddenShapeRevealGame';
+import HouseDrawingGame from '@/components/game/occupational/level2/session5/HouseDrawingGame';
+import StarBuilderGame from '@/components/game/occupational/level2/session5/StarBuilderGame';
+
+// Occupational Therapy Level 2 Session 6: Match Shape Outline games
+import CookieCutterMatchGame from '@/components/game/occupational/level2/session6/CookieCutterMatchGame';
+import FastMatchGame from '@/components/game/occupational/level2/session6/FastMatchGame';
+import ParkingShapesGame from '@/components/game/occupational/level2/session6/ParkingShapesGame';
+import PuzzleDropShapesGame from '@/components/game/occupational/level2/session6/PuzzleDropShapesGame';
+import ShadowMatchGame from '@/components/game/occupational/level2/session6/ShadowMatchGame';
+
+// Occupational Therapy Level 2 Session 7: Trace Large Shapes games
+import BigCircleTraceGame from '@/components/game/occupational/level2/session7/BigCircleTraceGame';
+import BigSquareWalkGame from '@/components/game/occupational/level2/session7/BigSquareWalkGame';
+import GlowBorderTraceGame from '@/components/game/occupational/level2/session7/GlowBorderTraceGame';
+import PaintTheShapeGame from '@/components/game/occupational/level2/session7/PaintTheShapeGame';
+import TriangleMountainTraceGame from '@/components/game/occupational/level2/session7/TriangleMountainTraceGame';
+
+// Occupational Therapy Level 2 Session 8: Trace Small Shapes games
+import CarefulTraceChallengeGame from '@/components/game/occupational/level2/session8/CarefulTraceChallengeGame';
+import DotBorderShapesGame from '@/components/game/occupational/level2/session8/DotBorderShapesGame';
+import MiniSquareLocksGame from '@/components/game/occupational/level2/session8/MiniSquareLocksGame';
+import ShrinkModeTraceGame from '@/components/game/occupational/level2/session8/ShrinkModeTraceGame';
+import TinyCircleCoinsGame from '@/components/game/occupational/level2/session8/TinyCircleCoinsGame';
+
+// Occupational Therapy Level 2 Session 9: Copy Simple Patterns games
+import BlockPatternCopyGame from '@/components/game/occupational/level2/session9/BlockPatternCopyGame';
+import ColorPatternMatchGame from '@/components/game/occupational/level2/session9/ColorPatternMatchGame';
+import CopyTheLinePatternGame from '@/components/game/occupational/level2/session9/CopyTheLinePatternGame';
+import LookHideDrawGame from '@/components/game/occupational/level2/session9/LookHideDrawGame';
+import StickDesignCopyGame from '@/components/game/occupational/level2/session9/StickDesignCopyGame';
+
+// Occupational Therapy Level 2 Session 10: Mirror Drawing Basics games
+import ButterflyWingsGame from '@/components/game/occupational/level2/session10/ButterflyWingsGame';
+import FaceSymmetryDrawGame from '@/components/game/occupational/level2/session10/FaceSymmetryDrawGame';
+import HalfShapeCompleteGame from '@/components/game/occupational/level2/session10/HalfShapeCompleteGame';
+import MirrorLineDrawGame from '@/components/game/occupational/level2/session10/MirrorLineDrawGame';
+import MirrorMazeGame from '@/components/game/occupational/level2/session10/MirrorMazeGame';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
@@ -1534,210 +1620,210 @@ export default function SessionGamesScreen() {
       available: isConnectInOrderGlowAvailable,
     },
     // Level 2 Session 6: Match Shape Outline games
-    // {
-    //   id: 'puzzle-drop-shapes',
-    //   title: 'Puzzle Drop – Shapes',
-    //   emoji: '🧩',
-    //   description: 'Drag shape into outline',
-    //   color: '#8B5CF6',
-    //   available: isPuzzleDropShapesAvailable,
-    // },
-    // {
-    //   id: 'shadow-match',
-    //   title: 'Shadow Match',
-    //   emoji: '🎭',
-    //   description: 'Match exact outline',
-    //   color: '#3B82F6',
-    //   available: isShadowMatchAvailable,
-    // },
-    // {
-    //   id: 'cookie-cutter-match',
-    //   title: 'Cookie Cutter Match',
-    //   emoji: '🍪',
-    //   description: 'Shape fits only if aligned',
-    //   color: '#F59E0B',
-    //   available: isCookieCutterMatchAvailable,
-    // },
-    // {
-    //   id: 'parking-shapes',
-    //   title: 'Parking Shapes',
-    //   emoji: '🅿️',
-    //   description: 'Correct orientation needed',
-    //   color: '#10B981',
-    //   available: isParkingShapesAvailable,
-    // },
-    // {
-    //   id: 'fast-match',
-    //   title: 'Fast Match',
-    //   emoji: '⚡',
-    //   description: 'Builds speed gently (No Rotate)',
-    //   color: '#EF4444',
-    //   available: isFastMatchAvailable,
-    // },
-    // // Level 2 Session 7: Trace Large Shapes games
-    // {
-    //   id: 'big-circle-trace',
-    //   title: 'Big Circle Trace',
-    //   emoji: '⭕',
-    //   description: 'Trace the big circle with your whole arm!',
-    //   color: '#3B82F6',
-    //   available: isBigCircleTraceAvailable,
-    // },
-    // {
-    //   id: 'big-square-walk',
-    //   title: 'Big Square Walk',
-    //   emoji: '⬜',
-    //   description: 'Walk around the big square with your whole arm!',
-    //   color: '#10B981',
-    //   available: isBigSquareWalkAvailable,
-    // },
-    // {
-    //   id: 'triangle-mountain-trace',
-    //   title: 'Triangle Mountain Trace',
-    //   emoji: '⛰️',
-    //   description: 'Trace the triangle mountain with your whole arm!',
-    //   color: '#F59E0B',
-    //   available: isTriangleMountainTraceAvailable,
-    // },
-    // {
-    //   id: 'paint-the-shape',
-    //   title: 'Paint the Shape',
-    //   emoji: '🎨',
-    //   description: 'Trace to fill the shape with color!',
-    //   color: '#EC4899',
-    //   available: isPaintTheShapeAvailable,
-    // },
-    // {
-    //   id: 'glow-border-trace',
-    //   title: 'Glow Border Trace',
-    //   emoji: '✨',
-    //   description: 'Trace the thick glowing border!',
-    //   color: '#A855F7',
-    //   available: isGlowBorderTraceAvailable,
-    // },
-    // // Level 2 Session 8: Trace Small Shapes games
-    // {
-    //   id: 'tiny-circle-coins',
-    //   title: 'Tiny Circle Coins',
-    //   emoji: '🪙',
-    //   description: 'Trace the tiny circle coin with precision!',
-    //   color: '#F59E0B',
-    //   available: isTinyCircleCoinsAvailable,
-    // },
-    // {
-    //   id: 'mini-square-locks',
-    //   title: 'Mini Square Locks',
-    //   emoji: '🔒',
-    //   description: 'Trace the mini square lock with precision!',
-    //   color: '#6366F1',
-    //   available: isMiniSquareLocksAvailable,
-    // },
-    // {
-    //   id: 'dot-border-shapes',
-    //   title: 'Dot Border Shapes',
-    //   emoji: '⚫',
-    //   description: 'Trace the dotted border shape with precision!',
-    //   color: '#8B5CF6',
-    //   available: isDotBorderShapesAvailable,
-    // },
-    // {
-    //   id: 'careful-trace-challenge',
-    //   title: 'Careful Trace Challenge',
-    //   emoji: '🎯',
-    //   description: 'Trace slowly and carefully with precision!',
-    //   color: '#10B981',
-    //   available: isCarefulTraceChallengeAvailable,
-    // },
-    // {
-    //   id: 'shrink-mode-trace',
-    //   title: 'Shrink Mode Trace',
-    //   emoji: '🔽',
-    //   description: 'Trace the circle as it shrinks smaller each round!',
-    //   color: '#EF4444',
-    //   available: isShrinkModeTraceAvailable,
-    // },
-    // // Level 2 Session 9: Copy Simple Patterns games
-    // {
-    //   id: 'copy-the-line-pattern',
-    //   title: 'Copy the Line Pattern',
-    //   emoji: '📋',
-    //   description: 'Copy the pattern by tapping vertical (|) or horizontal (—) lines!',
-    //   color: '#8B5CF6',
-    //   available: isCopyTheLinePatternAvailable,
-    // },
-    // {
-    //   id: 'block-pattern-copy',
-    //   title: 'Block Pattern Copy',
-    //   emoji: '⬜',
-    //   description: 'Copy the pattern by tapping square (□) or circle (○) blocks!',
-    //   color: '#6366F1',
-    //   available: isBlockPatternCopyAvailable,
-    // },
-    // {
-    //   id: 'color-pattern-match',
-    //   title: 'Color Pattern Match',
-    //   emoji: '🎨',
-    //   description: 'Copy the color pattern by tapping colors in order!',
-    //   color: '#EF4444',
-    //   available: isColorPatternMatchAvailable,
-    // },
-    // {
-    //   id: 'stick-design-copy',
-    //   title: 'Stick Design Copy',
-    //   emoji: '✏️',
-    //   description: 'Copy the pre-writing stroke design!',
-    //   color: '#F59E0B',
-    //   available: isStickDesignCopyAvailable,
-    // },
-    // {
-    //   id: 'look-hide-draw',
-    //   title: 'Look–Hide–Draw',
-    //   emoji: '👁️',
-    //   description: 'Pattern disappears briefly - remember and draw it!',
-    //   color: '#EC4899',
-    //   available: isLookHideDrawAvailable,
-    // },
-    // // Level 2 Session 10: Mirror Drawing Basics games
-    // {
-    //   id: 'mirror-line-draw',
-    //   title: 'Mirror Line Draw',
-    //   emoji: '🪞',
-    //   description: 'Draw on the left side, and it will mirror on the right!',
-    //   color: '#8B5CF6',
-    //   available: isMirrorLineDrawAvailable,
-    // },
-    // {
-    //   id: 'butterfly-wings',
-    //   title: 'Butterfly Wings',
-    //   emoji: '🦋',
-    //   description: 'Draw one wing on the left, and it will mirror on the right!',
-    //   color: '#F59E0B',
-    //   available: isButterflyWingsAvailable,
-    // },
-    // {
-    //   id: 'face-symmetry-draw',
-    //   title: 'Face Symmetry Draw',
-    //   emoji: '😊',
-    //   description: 'Draw facial features that mirror symmetrically!',
-    //   color: '#FCD34D',
-    //   available: isFaceSymmetryDrawAvailable,
-    // },
-    // {
-    //   id: 'half-shape-complete',
-    //   title: 'Half Shape Complete',
-    //   emoji: '✨',
-    //   description: 'Draw the missing half of the shape on the right!',
-    //   color: '#10B981',
-    //   available: isHalfShapeCompleteAvailable,
-    // },
-    // {
-    //   id: 'mirror-maze',
-    //   title: 'Mirror Maze',
-    //   emoji: '🔄',
-    //   description: 'Move both objects together - drag on the left, right mirrors!',
-    //   color: '#22C55E',
-    //   available: isMirrorMazeAvailable,
-    // },
+    {
+      id: 'puzzle-drop-shapes',
+      title: 'Puzzle Drop – Shapes',
+      emoji: '🧩',
+      description: 'Drag shape into outline',
+      color: '#8B5CF6',
+      available: isPuzzleDropShapesAvailable,
+    },
+    {
+      id: 'shadow-match',
+      title: 'Shadow Match',
+      emoji: '🎭',
+      description: 'Match exact outline',
+      color: '#3B82F6',
+      available: isShadowMatchAvailable,
+    },
+    {
+      id: 'cookie-cutter-match',
+      title: 'Cookie Cutter Match',
+      emoji: '🍪',
+      description: 'Shape fits only if aligned',
+      color: '#F59E0B',
+      available: isCookieCutterMatchAvailable,
+    },
+    {
+      id: 'parking-shapes',
+      title: 'Parking Shapes',
+      emoji: '🅿️',
+      description: 'Correct orientation needed',
+      color: '#10B981',
+      available: isParkingShapesAvailable,
+    },
+    {
+      id: 'fast-match',
+      title: 'Fast Match',
+      emoji: '⚡',
+      description: 'Builds speed gently (No Rotate)',
+      color: '#EF4444',
+      available: isFastMatchAvailable,
+    },
+    // Level 2 Session 7: Trace Large Shapes games
+    {
+      id: 'big-circle-trace',
+      title: 'Big Circle Trace',
+      emoji: '⭕',
+      description: 'Trace the big circle with your whole arm!',
+      color: '#3B82F6',
+      available: isBigCircleTraceAvailable,
+    },
+    {
+      id: 'big-square-walk',
+      title: 'Big Square Walk',
+      emoji: '⬜',
+      description: 'Walk around the big square with your whole arm!',
+      color: '#10B981',
+      available: isBigSquareWalkAvailable,
+    },
+    {
+      id: 'triangle-mountain-trace',
+      title: 'Triangle Mountain Trace',
+      emoji: '⛰️',
+      description: 'Trace the triangle mountain with your whole arm!',
+      color: '#F59E0B',
+      available: isTriangleMountainTraceAvailable,
+    },
+    {
+      id: 'paint-the-shape',
+      title: 'Paint the Shape',
+      emoji: '🎨',
+      description: 'Trace to fill the shape with color!',
+      color: '#EC4899',
+      available: isPaintTheShapeAvailable,
+    },
+    {
+      id: 'glow-border-trace',
+      title: 'Glow Border Trace',
+      emoji: '✨',
+      description: 'Trace the thick glowing border!',
+      color: '#A855F7',
+      available: isGlowBorderTraceAvailable,
+    },
+    // Level 2 Session 8: Trace Small Shapes games
+    {
+      id: 'tiny-circle-coins',
+      title: 'Tiny Circle Coins',
+      emoji: '🪙',
+      description: 'Trace the tiny circle coin with precision!',
+      color: '#F59E0B',
+      available: isTinyCircleCoinsAvailable,
+    },
+    {
+      id: 'mini-square-locks',
+      title: 'Mini Square Locks',
+      emoji: '🔒',
+      description: 'Trace the mini square lock with precision!',
+      color: '#6366F1',
+      available: isMiniSquareLocksAvailable,
+    },
+    {
+      id: 'dot-border-shapes',
+      title: 'Dot Border Shapes',
+      emoji: '⚫',
+      description: 'Trace the dotted border shape with precision!',
+      color: '#8B5CF6',
+      available: isDotBorderShapesAvailable,
+    },
+    {
+      id: 'careful-trace-challenge',
+      title: 'Careful Trace Challenge',
+      emoji: '🎯',
+      description: 'Trace slowly and carefully with precision!',
+      color: '#10B981',
+      available: isCarefulTraceChallengeAvailable,
+    },
+    {
+      id: 'shrink-mode-trace',
+      title: 'Shrink Mode Trace',
+      emoji: '🔽',
+      description: 'Trace the circle as it shrinks smaller each round!',
+      color: '#EF4444',
+      available: isShrinkModeTraceAvailable,
+    },
+    // Level 2 Session 9: Copy Simple Patterns games
+    {
+      id: 'copy-the-line-pattern',
+      title: 'Copy the Line Pattern',
+      emoji: '📋',
+      description: 'Copy the pattern by tapping vertical (|) or horizontal (—) lines!',
+      color: '#8B5CF6',
+      available: isCopyTheLinePatternAvailable,
+    },
+    {
+      id: 'block-pattern-copy',
+      title: 'Block Pattern Copy',
+      emoji: '⬜',
+      description: 'Copy the pattern by tapping square (□) or circle (○) blocks!',
+      color: '#6366F1',
+      available: isBlockPatternCopyAvailable,
+    },
+    {
+      id: 'color-pattern-match',
+      title: 'Color Pattern Match',
+      emoji: '🎨',
+      description: 'Copy the color pattern by tapping colors in order!',
+      color: '#EF4444',
+      available: isColorPatternMatchAvailable,
+    },
+    {
+      id: 'stick-design-copy',
+      title: 'Stick Design Copy',
+      emoji: '✏️',
+      description: 'Copy the pre-writing stroke design!',
+      color: '#F59E0B',
+      available: isStickDesignCopyAvailable,
+    },
+    {
+      id: 'look-hide-draw',
+      title: 'Look–Hide–Draw',
+      emoji: '👁️',
+      description: 'Pattern disappears briefly - remember and draw it!',
+      color: '#EC4899',
+      available: isLookHideDrawAvailable,
+    },
+    // Level 2 Session 10: Mirror Drawing Basics games
+    {
+      id: 'mirror-line-draw',
+      title: 'Mirror Line Draw',
+      emoji: '🪞',
+      description: 'Draw on the left side, and it will mirror on the right!',
+      color: '#8B5CF6',
+      available: isMirrorLineDrawAvailable,
+    },
+    {
+      id: 'butterfly-wings',
+      title: 'Butterfly Wings',
+      emoji: '🦋',
+      description: 'Draw one wing on the left, and it will mirror on the right!',
+      color: '#F59E0B',
+      available: isButterflyWingsAvailable,
+    },
+    {
+      id: 'face-symmetry-draw',
+      title: 'Face Symmetry Draw',
+      emoji: '😊',
+      description: 'Draw facial features that mirror symmetrically!',
+      color: '#FCD34D',
+      available: isFaceSymmetryDrawAvailable,
+    },
+    {
+      id: 'half-shape-complete',
+      title: 'Half Shape Complete',
+      emoji: '✨',
+      description: 'Draw the missing half of the shape on the right!',
+      color: '#10B981',
+      available: isHalfShapeCompleteAvailable,
+    },
+    {
+      id: 'mirror-maze',
+      title: 'Mirror Maze',
+      emoji: '🔄',
+      description: 'Move both objects together - drag on the left, right mirrors!',
+      color: '#22C55E',
+      available: isMirrorMazeAvailable,
+    },
     // Speech Therapy Level 1 Session 3 games
     {
       id: 'sound-to-tap',
@@ -2501,110 +2587,110 @@ export default function SessionGamesScreen() {
     return <ConnectInOrderGlowGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  // // Level 2 Session 6: Match Shape Outline games
-  // if (currentGame === 'puzzle-drop-shapes') {
-  //   return <PuzzleDropShapesGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  // Level 2 Session 6: Match Shape Outline games
+  if (currentGame === 'puzzle-drop-shapes') {
+    return <PuzzleDropShapesGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'shadow-match') {
-  //   return <ShadowMatchGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'shadow-match') {
+    return <ShadowMatchGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'cookie-cutter-match') {
-  //   return <CookieCutterMatchGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'cookie-cutter-match') {
+    return <CookieCutterMatchGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'parking-shapes') {
-  //   return <ParkingShapesGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'parking-shapes') {
+    return <ParkingShapesGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'fast-match') {
-  //   return <FastMatchGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'fast-match') {
+    return <FastMatchGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // // Level 2 Session 7: Trace Large Shapes games
-  // if (currentGame === 'big-circle-trace') {
-  //   return <BigCircleTraceGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  // Level 2 Session 7: Trace Large Shapes games
+  if (currentGame === 'big-circle-trace') {
+    return <BigCircleTraceGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'big-square-walk') {
-  //   return <BigSquareWalkGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'big-square-walk') {
+    return <BigSquareWalkGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'triangle-mountain-trace') {
-  //   return <TriangleMountainTraceGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'triangle-mountain-trace') {
+    return <TriangleMountainTraceGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'paint-the-shape') {
-  //   return <PaintTheShapeGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'paint-the-shape') {
+    return <PaintTheShapeGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'glow-border-trace') {
-  //   return <GlowBorderTraceGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'glow-border-trace') {
+    return <GlowBorderTraceGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // // Level 2 Session 8: Trace Small Shapes games
-  // if (currentGame === 'tiny-circle-coins') {
-  //   return <TinyCircleCoinsGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  // Level 2 Session 8: Trace Small Shapes games
+  if (currentGame === 'tiny-circle-coins') {
+    return <TinyCircleCoinsGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'mini-square-locks') {
-  //   return <MiniSquareLocksGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'mini-square-locks') {
+    return <MiniSquareLocksGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'dot-border-shapes') {
-  //   return <DotBorderShapesGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'dot-border-shapes') {
+    return <DotBorderShapesGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'careful-trace-challenge') {
-  //   return <CarefulTraceChallengeGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'careful-trace-challenge') {
+    return <CarefulTraceChallengeGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'shrink-mode-trace') {
-  //   return <ShrinkModeTraceGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'shrink-mode-trace') {
+    return <ShrinkModeTraceGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // // Level 2 Session 9: Copy Simple Patterns games
-  // if (currentGame === 'copy-the-line-pattern') {
-  //   return <CopyTheLinePatternGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  // Level 2 Session 9: Copy Simple Patterns games
+  if (currentGame === 'copy-the-line-pattern') {
+    return <CopyTheLinePatternGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'block-pattern-copy') {
-  //   return <BlockPatternCopyGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'block-pattern-copy') {
+    return <BlockPatternCopyGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'color-pattern-match') {
-  //   return <ColorPatternMatchGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'color-pattern-match') {
+    return <ColorPatternMatchGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'stick-design-copy') {
-  //   return <StickDesignCopyGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'stick-design-copy') {
+    return <StickDesignCopyGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'look-hide-draw') {
-  //   return <LookHideDrawGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'look-hide-draw') {
+    return <LookHideDrawGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // // Level 2 Session 10: Mirror Drawing Basics games
-  // if (currentGame === 'mirror-line-draw') {
-  //   return <MirrorLineDrawGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  // Level 2 Session 10: Mirror Drawing Basics games
+  if (currentGame === 'mirror-line-draw') {
+    return <MirrorLineDrawGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'butterfly-wings') {
-  //   return <ButterflyWingsGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'butterfly-wings') {
+    return <ButterflyWingsGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'face-symmetry-draw') {
-  //   return <FaceSymmetryDrawGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'face-symmetry-draw') {
+    return <FaceSymmetryDrawGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'half-shape-complete') {
-  //   return <HalfShapeCompleteGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'half-shape-complete') {
+    return <HalfShapeCompleteGame onBack={() => setCurrentGame('menu')} />;
+  }
 
-  // if (currentGame === 'mirror-maze') {
-  //   return <MirrorMazeGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'mirror-maze') {
+    return <MirrorMazeGame onBack={() => setCurrentGame('menu')} />;
+  }
 
   // Speech Therapy Level 1 Session 3 games
   if (currentGame === 'sound-to-tap') {
@@ -2953,35 +3039,35 @@ export default function SessionGamesScreen() {
                   if (game.id === 'hidden-shape-reveal') setCurrentGame('hidden-shape-reveal');
                   if (game.id === 'connect-in-order-glow') setCurrentGame('connect-in-order-glow');
                   // Level 2 Session 6 games
-                  // if (game.id === 'puzzle-drop-shapes') setCurrentGame('puzzle-drop-shapes');
-                  // if (game.id === 'shadow-match') setCurrentGame('shadow-match');
-                  // if (game.id === 'cookie-cutter-match') setCurrentGame('cookie-cutter-match');
-                  // if (game.id === 'parking-shapes') setCurrentGame('parking-shapes');
-                  // if (game.id === 'fast-match') setCurrentGame('fast-match');
-                  // // Level 2 Session 7 games
-                  // if (game.id === 'big-circle-trace') setCurrentGame('big-circle-trace');
-                  // if (game.id === 'big-square-walk') setCurrentGame('big-square-walk');
-                  // if (game.id === 'triangle-mountain-trace') setCurrentGame('triangle-mountain-trace');
-                  // if (game.id === 'paint-the-shape') setCurrentGame('paint-the-shape');
-                  // if (game.id === 'glow-border-trace') setCurrentGame('glow-border-trace');
-                  // // Level 2 Session 8 games
-                  // if (game.id === 'tiny-circle-coins') setCurrentGame('tiny-circle-coins');
-                  // if (game.id === 'mini-square-locks') setCurrentGame('mini-square-locks');
-                  // if (game.id === 'dot-border-shapes') setCurrentGame('dot-border-shapes');
-                  // if (game.id === 'careful-trace-challenge') setCurrentGame('careful-trace-challenge');
-                  // if (game.id === 'shrink-mode-trace') setCurrentGame('shrink-mode-trace');
-                  // // Level 2 Session 9 games
-                  // if (game.id === 'copy-the-line-pattern') setCurrentGame('copy-the-line-pattern');
-                  // if (game.id === 'block-pattern-copy') setCurrentGame('block-pattern-copy');
-                  // if (game.id === 'color-pattern-match') setCurrentGame('color-pattern-match');
-                  // if (game.id === 'stick-design-copy') setCurrentGame('stick-design-copy');
-                  // if (game.id === 'look-hide-draw') setCurrentGame('look-hide-draw');
-                  // // Level 2 Session 10 games
-                  // if (game.id === 'mirror-line-draw') setCurrentGame('mirror-line-draw');
-                  // if (game.id === 'butterfly-wings') setCurrentGame('butterfly-wings');
-                  // if (game.id === 'face-symmetry-draw') setCurrentGame('face-symmetry-draw');
-                  // if (game.id === 'half-shape-complete') setCurrentGame('half-shape-complete');
-                  // if (game.id === 'mirror-maze') setCurrentGame('mirror-maze');
+                  if (game.id === 'puzzle-drop-shapes') setCurrentGame('puzzle-drop-shapes');
+                  if (game.id === 'shadow-match') setCurrentGame('shadow-match');
+                  if (game.id === 'cookie-cutter-match') setCurrentGame('cookie-cutter-match');
+                  if (game.id === 'parking-shapes') setCurrentGame('parking-shapes');
+                  if (game.id === 'fast-match') setCurrentGame('fast-match');
+                  // Level 2 Session 7 games
+                  if (game.id === 'big-circle-trace') setCurrentGame('big-circle-trace');
+                  if (game.id === 'big-square-walk') setCurrentGame('big-square-walk');
+                  if (game.id === 'triangle-mountain-trace') setCurrentGame('triangle-mountain-trace');
+                  if (game.id === 'paint-the-shape') setCurrentGame('paint-the-shape');
+                  if (game.id === 'glow-border-trace') setCurrentGame('glow-border-trace');
+                  // Level 2 Session 8 games
+                  if (game.id === 'tiny-circle-coins') setCurrentGame('tiny-circle-coins');
+                  if (game.id === 'mini-square-locks') setCurrentGame('mini-square-locks');
+                  if (game.id === 'dot-border-shapes') setCurrentGame('dot-border-shapes');
+                  if (game.id === 'careful-trace-challenge') setCurrentGame('careful-trace-challenge');
+                  if (game.id === 'shrink-mode-trace') setCurrentGame('shrink-mode-trace');
+                  // Level 2 Session 9 games
+                  if (game.id === 'copy-the-line-pattern') setCurrentGame('copy-the-line-pattern');
+                  if (game.id === 'block-pattern-copy') setCurrentGame('block-pattern-copy');
+                  if (game.id === 'color-pattern-match') setCurrentGame('color-pattern-match');
+                  if (game.id === 'stick-design-copy') setCurrentGame('stick-design-copy');
+                  if (game.id === 'look-hide-draw') setCurrentGame('look-hide-draw');
+                  // Level 2 Session 10 games
+                  if (game.id === 'mirror-line-draw') setCurrentGame('mirror-line-draw');
+                  if (game.id === 'butterfly-wings') setCurrentGame('butterfly-wings');
+                  if (game.id === 'face-symmetry-draw') setCurrentGame('face-symmetry-draw');
+                  if (game.id === 'half-shape-complete') setCurrentGame('half-shape-complete');
+                  if (game.id === 'mirror-maze') setCurrentGame('mirror-maze');
                   if (game.id === 'follow-my-point') setCurrentGame('follow-my-point');
                   if (game.id === 'point-to-object-appears') setCurrentGame('point-to-object-appears');
                   if (game.id === 'tap-the-pointed-object') setCurrentGame('tap-the-pointed-object');

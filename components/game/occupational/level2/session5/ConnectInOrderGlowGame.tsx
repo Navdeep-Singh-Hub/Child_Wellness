@@ -1,0 +1,589 @@
+import { logGameAndAward, recordGame } from '@/utils/api';
+import { Audio as ExpoAudio } from 'expo-av';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import * as Speech from 'expo-speech';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSequence,
+    withTiming,
+} from 'react-native-reanimated';
+import Svg, { Circle, Line, Text as SvgText } from 'react-native-svg';
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
+
+const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
+const WARNING_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
+const TOTAL_ROUNDS = 6;
+const DOT_RADIUS = 14;
+
+const useSoundEffect = (uri: string) => {
+  const soundRef = useRef<ExpoAudio.Sound | null>(null);
+
+  const ensureSound = useCallback(async () => {
+    if (soundRef.current) return;
+    try {
+      const { sound } = await ExpoAudio.Sound.createAsync(
+        { uri },
+        { volume: 0.6, shouldPlay: false },
+      );
+      soundRef.current = sound;
+    } catch {
+      console.warn('Failed to load sound:', uri);
+    }
+  }, [uri]);
+
+  useEffect(() => {
+    return () => {
+      soundRef.current?.unloadAsync().catch(() => {});
+    };
+  }, []);
+
+  const play = useCallback(async () => {
+    try {
+      if (Platform.OS === 'web') return;
+      await ensureSound();
+      if (soundRef.current) await soundRef.current.replayAsync();
+    } catch {}
+  }, [ensureSound]);
+
+  return play;
+};
+
+interface Dot {
+  x: number;
+  y: number;
+  number: number;
+  connected: boolean;
+  glow: Animated.SharedValue<number>;
+}
+
+const DotGlowEffect: React.FC<{
+  dot: Dot;
+  onPress: () => void;
+}> = ({ dot, onPress }) => {
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: dot.glow.value * 0.6,
+  }));
+
+  return (
+    <>
+      {!dot.connected && (
+        <Animated.View
+          style={[
+            {
+              position: 'absolute',
+              left: `${dot.x}%`,
+              top: `${dot.y}%`,
+              transform: [{ translateX: -DOT_RADIUS * 1.5 }, { translateY: -DOT_RADIUS * 1.5 }],
+              width: DOT_RADIUS * 3,
+              height: DOT_RADIUS * 3,
+              borderRadius: DOT_RADIUS * 1.5,
+              backgroundColor: '#10B981',
+            },
+            glowStyle,
+          ]}
+          pointerEvents="none"
+        />
+      )}
+      <TouchableOpacity
+        onPress={onPress}
+        style={{
+          position: 'absolute',
+          left: `${dot.x}%`,
+          top: `${dot.y}%`,
+          transform: [{ translateX: -DOT_RADIUS }, { translateY: -DOT_RADIUS }],
+          width: DOT_RADIUS * 2,
+          height: DOT_RADIUS * 2,
+          borderRadius: DOT_RADIUS,
+          zIndex: 5,
+        }}
+        activeOpacity={0.7}
+      />
+    </>
+  );
+};
+
+const ConnectInOrderGlowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+  const router = useRouter();
+  const playSuccess = useSoundEffect(SUCCESS_SOUND);
+  const playWarning = useSoundEffect(WARNING_SOUND);
+
+  const [round, setRound] = useState(1);
+  const [score, setScore] = useState(0);
+  const [done, setDone] = useState(false);
+  const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [roundActive, setRoundActive] = useState(true);
+  const [currentDotIndex, setCurrentDotIndex] = useState(0);
+  const [connections, setConnections] = useState<Array<{ from: number; to: number }>>([]);
+  const [dots, setDots] = useState<Dot[]>([]);
+
+  const sparkleX = useSharedValue(0);
+  const sparkleY = useSharedValue(0);
+
+  const glowValuesRef = useRef<Array<Animated.SharedValue<number>>>([]);
+  
+  // Initialize glow values at component level
+  const glow1 = useSharedValue(0);
+  const glow2 = useSharedValue(0);
+  const glow3 = useSharedValue(0);
+  const glow4 = useSharedValue(0);
+  const glow5 = useSharedValue(0);
+  const glow6 = useSharedValue(0);
+  
+  if (glowValuesRef.current.length === 0) {
+    glowValuesRef.current = [glow1, glow2, glow3, glow4, glow5, glow6];
+  }
+
+  const generateDots = useCallback(() => {
+    // Random shape with 4-6 dots
+    const numDots = 4 + Math.floor(Math.random() * 3);
+    const newDots: Dot[] = [];
+    
+    for (let i = 0; i < numDots; i++) {
+      const angle = (i * 2 * Math.PI) / numDots;
+      const radius = 25 + Math.random() * 10;
+      
+      // Reset glow value
+      if (glowValuesRef.current[i]) {
+        glowValuesRef.current[i].value = 0;
+      }
+      
+      newDots.push({
+        x: 50 + radius * Math.cos(angle),
+        y: 50 + radius * Math.sin(angle),
+        number: i + 1,
+        connected: false,
+        glow: glowValuesRef.current[i],
+      });
+    }
+    
+    // Start glowing animation for dot 1
+    if (newDots.length > 0 && glowValuesRef.current[0]) {
+      glowValuesRef.current[0].value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 600 }),
+          withTiming(0.3, { duration: 600 })
+        ),
+        -1,
+        false
+      );
+    }
+    
+    setDots(newDots);
+    setCurrentDotIndex(0);
+    setConnections([]);
+  }, []);
+
+  const endGame = useCallback(
+    async (finalScore: number) => {
+      const total = TOTAL_ROUNDS;
+      const xp = finalScore * 20;
+      const accuracy = (finalScore / total) * 100;
+
+      setFinalStats({ correct: finalScore, total, xp });
+      setDone(true);
+      setRoundActive(false);
+
+      try {
+        await recordGame(xp);
+        const result = await logGameAndAward({
+          type: 'connectInOrderGlow',
+          correct: finalScore,
+          total,
+          accuracy,
+          xpAwarded: xp,
+          skillTags: ['planning', 'number-sequence', 'glow-sequence'],
+        });
+        setLogTimestamp(result?.last?.at ?? null);
+        router.setParams({ refreshStats: Date.now().toString() });
+      } catch (e) {
+        console.error('Failed to log connect in order glow game:', e);
+      }
+
+      Speech.speak('Perfect sequence!', { rate: 0.78 });
+    },
+    [router],
+  );
+
+  const handleDotPress = useCallback((dotNumber: number, dotX: number, dotY: number) => {
+    if (!roundActive || done) return;
+
+    if (currentDotIndex === 0 && dotNumber === 1) {
+      const dot = dots.find(d => d.number === 1);
+      if (dot) {
+        dot.glow.value = 1; // Stop glowing
+        setDots(prev => {
+          const dot2 = prev.find(d => d.number === 2);
+          if (dot2 && glowValuesRef.current[1]) {
+            glowValuesRef.current[1].value = withRepeat(
+              withSequence(
+                withTiming(1, { duration: 600 }),
+                withTiming(0.3, { duration: 600 })
+              ),
+              -1,
+              false
+            );
+          }
+          return prev.map(d => d.number === 1 ? { ...d, connected: true } : d);
+        });
+        setCurrentDotIndex(1);
+        try {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        } catch {}
+      }
+    } else if (currentDotIndex > 0 && dotNumber === currentDotIndex + 1) {
+      const prevDot = dots.find(d => d.number === currentDotIndex);
+      const currentDot = dots.find(d => d.number === dotNumber);
+      
+      if (prevDot && currentDot) {
+        currentDot.glow.value = 1; // Stop glowing
+        setConnections(prev => [...prev, { from: currentDotIndex, to: dotNumber }]);
+        setDots(prev => {
+          const nextDot = prev.find(d => d.number === dotNumber + 1);
+          if (nextDot && dotNumber < prev.length && glowValuesRef.current[dotNumber]) {
+            glowValuesRef.current[dotNumber].value = withRepeat(
+              withSequence(
+                withTiming(1, { duration: 600 }),
+                withTiming(0.3, { duration: 600 })
+              ),
+              -1,
+              false
+            );
+          }
+          return prev.map(d => d.number === dotNumber ? { ...d, connected: true } : d);
+        });
+        
+        if (dotNumber === dots.length) {
+          sparkleX.value = dotX;
+          sparkleY.value = dotY;
+          
+          setScore(s => {
+            const newScore = s + 1;
+            if (newScore >= TOTAL_ROUNDS) {
+              setTimeout(() => {
+                endGame(newScore);
+              }, 1000);
+            } else {
+              setTimeout(() => {
+                setRound(r => r + 1);
+                generateDots();
+                setRoundActive(true);
+              }, 1500);
+            }
+            return newScore;
+          });
+
+          try {
+            playSuccess();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } catch {}
+        } else {
+          setCurrentDotIndex(dotNumber);
+          try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          } catch {}
+        }
+      }
+    } else {
+      try {
+        playWarning();
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Speech.speak(`Tap dot ${currentDotIndex === 0 ? 1 : currentDotIndex + 1}!`, { rate: 0.78 });
+      } catch {}
+    }
+  }, [currentDotIndex, dots, roundActive, done, endGame, playSuccess, playWarning]);
+
+  useEffect(() => {
+    try {
+      Speech.speak('Tap the glowing dot in order!', { rate: 0.78 });
+    } catch {}
+    generateDots();
+  }, [round, generateDots]);
+
+  const handleBack = useCallback(() => {
+    onBack?.();
+  }, [onBack]);
+
+  const sparkleStyle = useAnimatedStyle(() => ({
+    left: `${sparkleX.value}%`,
+    top: `${sparkleY.value}%`,
+  }));
+
+  if (done && finalStats) {
+    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+    return (
+      <SafeAreaView style={styles.container}>
+        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
+          <Text style={styles.backChipText}>← Back</Text>
+        </TouchableOpacity>
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 24,
+          }}
+        >
+          <View style={styles.resultCard}>
+            <Text style={{ fontSize: 64, marginBottom: 16 }}>💡</Text>
+            <Text style={styles.resultTitle}>Sequence Complete!</Text>
+            <Text style={styles.resultSubtitle}>
+              You completed {finalStats.correct} sequences out of {finalStats.total}!
+            </Text>
+            <ResultCard
+              correct={finalStats.correct}
+              total={finalStats.total}
+              xpAwarded={finalStats.xp}
+              accuracy={accuracyPct}
+              logTimestamp={logTimestamp}
+              onPlayAgain={() => {
+                setRound(1);
+                setScore(0);
+                setDone(false);
+                setFinalStats(null);
+                setLogTimestamp(null);
+                setRoundActive(true);
+                generateDots();
+              }}
+            />
+            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
+        <Text style={styles.backChipText}>← Back</Text>
+      </TouchableOpacity>
+
+      <View style={styles.headerBlock}>
+        <Text style={styles.title}>Connect in Order Glow</Text>
+        <Text style={styles.subtitle}>
+          Round {round}/{TOTAL_ROUNDS} • 💡 Score: {score}
+        </Text>
+        <Text style={styles.helper}>
+          Watch the dots light up! Tap them in sequence.
+        </Text>
+      </View>
+
+      <View style={styles.playArea}>
+        <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.svg}>
+          {connections.map((conn, idx) => {
+            const fromDot = dots.find(d => d.number === conn.from);
+            const toDot = dots.find(d => d.number === conn.to);
+            if (!fromDot || !toDot) return null;
+            return (
+              <Line
+                key={idx}
+                x1={fromDot.x}
+                y1={fromDot.y}
+                x2={toDot.x}
+                y2={toDot.y}
+                stroke="#10B981"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            );
+          })}
+
+          {dots.map((dot) => (
+            <React.Fragment key={dot.number}>
+              <Circle
+                cx={dot.x}
+                cy={dot.y}
+                r={DOT_RADIUS}
+                fill={dot.connected ? '#10B981' : '#E5E7EB'}
+                stroke={dot.connected ? '#059669' : '#9CA3AF'}
+                strokeWidth="2"
+              />
+              <SvgText
+                x={dot.x}
+                y={dot.y + 4}
+                textAnchor="middle"
+                fontSize="11"
+                fill={dot.connected ? '#fff' : '#374151'}
+                fontWeight="bold"
+              >
+                {dot.number}
+              </SvgText>
+            </React.Fragment>
+          ))}
+        </Svg>
+
+        {/* Glow effects and touchable overlays */}
+        {dots.map((dot) => (
+          <DotGlowEffect
+            key={`glow-${dot.number}`}
+            dot={dot}
+            onPress={() => handleDotPress(dot.number, dot.x, dot.y)}
+          />
+        ))}
+
+        {score > 0 && (
+          <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
+            <SparkleBurst />
+          </Animated.View>
+        )}
+
+        {currentDotIndex === 0 && (
+          <View style={styles.instructionBox}>
+            <Text style={styles.instructionText}>Tap the glowing dot! ✨</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.footerBox}>
+        <Text style={styles.footerMain}>
+          Skills: planning • number sequence • glow sequence
+        </Text>
+        <Text style={styles.footerSub}>
+          Watch dots light up and tap them in order!
+        </Text>
+      </View>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 16,
+    paddingTop: 48,
+  },
+  backChip: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    zIndex: 10,
+    backgroundColor: '#0F172A',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  backChipText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  headerBlock: {
+    marginTop: 72,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#0F172A',
+    marginBottom: 6,
+  },
+  helper: {
+    fontSize: 14,
+    color: '#475569',
+    textAlign: 'center',
+    paddingHorizontal: 18,
+  },
+  playArea: {
+    flex: 1,
+    position: 'relative',
+    marginBottom: 16,
+  },
+  svg: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  sparkleContainer: {
+    position: 'absolute',
+    transform: [{ translateX: -20 }, { translateY: -20 }],
+    zIndex: 4,
+  },
+  instructionBox: {
+    position: 'absolute',
+    bottom: '20%',
+    left: '50%',
+    transform: [{ translateX: -100 }],
+    backgroundColor: 'rgba(16, 185, 129, 0.9)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  instructionText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  footerBox: {
+    paddingVertical: 14,
+    marginBottom: 20,
+  },
+  footerMain: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  footerSub: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+  },
+  resultCard: {
+    width: '100%',
+    maxWidth: 420,
+    borderRadius: 24,
+    backgroundColor: '#fff',
+    padding: 24,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  resultTitle: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#0F172A',
+    marginBottom: 8,
+  },
+  resultSubtitle: {
+    fontSize: 16,
+    color: '#475569',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  savedText: {
+    color: '#22C55E',
+    fontWeight: '600',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+});
+
+export default ConnectInOrderGlowGame;
+
