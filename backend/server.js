@@ -25,6 +25,7 @@ app.options('*', (req, res) => {
   const origin = req.headers.origin;
   const allowedOrigins = [
     'https://child-wellness.vercel.app',
+    'https://games-zeta-one.vercel.app',
     'https://autismplay.in',
     'https://www.autismplay.in',
     'http://localhost:19006',
@@ -47,6 +48,7 @@ app.options('*', (req, res) => {
 app.use(cors({
   origin: [
     'https://child-wellness.vercel.app',
+    'https://games-zeta-one.vercel.app',
     'https://autismplay.in',
     'https://www.autismplay.in',
     'http://localhost:19006',
