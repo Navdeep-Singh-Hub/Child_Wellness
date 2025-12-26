@@ -4,8 +4,8 @@ import React, { useEffect } from 'react';
 import { Platform, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedProps, useSharedValue, withTiming } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
-import { SparkleBurst } from './FX';
-import ReflectionPrompt from './ReflectionPrompt';
+import { SparkleBurst } from '@/components/game/FX';
+import ReflectionPrompt from '@/components/game/ReflectionPrompt';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 let NativeLottie: any = null;
@@ -13,8 +13,8 @@ if (Platform.OS !== 'web') {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   NativeLottie = require('lottie-react-native').default;
 }
-const celebratoryCat = require('../../assets/animation/black rainbow cat.json');
-const chillCat = require('../../assets/animation/cat Mark loading.json');
+const celebratoryCat = require('@/assets/animation/black rainbow cat.json');
+const chillCat = require('@/assets/animation/cat Mark loading.json');
 
 export default function ResultCard({
   correct,
