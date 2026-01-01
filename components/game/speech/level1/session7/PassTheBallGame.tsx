@@ -1,20 +1,21 @@
+import ResultCard from '@/components/game/ResultCard';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
+    Animated,
+    Easing,
+    Pressable,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    useWindowDimensions,
+    View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
@@ -291,9 +292,14 @@ export const PassTheBallGame: React.FC<Props> = ({
     // Initialize ball position - adjust for ball center
     const startX = SCREEN_WIDTH * 0.85 - BALL_SIZE / 2;
     ballX.setValue(startX);
+    try {
+      speak('Pass the ball back and forth!');
+    } catch {}
     startRound();
     return () => {
       clearScheduledSpeech();
+      stopAllSpeech();
+      cleanupSounds();
     };
   }, []);
 
@@ -305,7 +311,12 @@ export const PassTheBallGame: React.FC<Props> = ({
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
         logTimestamp={logTimestamp}
-        onHome={onBack}
+        onHome={() => {
+          clearScheduledSpeech();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
         onPlayAgain={() => {
           setGameFinished(false);
           setFinalStats(null);
@@ -333,7 +344,13 @@ export const PassTheBallGame: React.FC<Props> = ({
         style={styles.gradient}
       >
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>

@@ -1,3 +1,4 @@
+import ResultCard from '@/components/game/ResultCard';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import type { MouthLandmarks } from '@/hooks/useJawDetectionWeb';
 import { logGameAndAward } from '@/utils/api';
@@ -17,7 +18,6 @@ import {
     useWindowDimensions,
     View
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
 
 // Conditional import for VisionCamera
 let Camera: any = null;
@@ -1020,7 +1020,13 @@ export const JawAwarenessCrocodileGame: React.FC<Props> = ({
       >
         {/* Header Overlay */}
         <View style={[styles.header, { zIndex: 20 }]}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>

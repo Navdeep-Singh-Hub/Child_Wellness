@@ -1,3 +1,5 @@
+import { ResultToast, SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward } from '@/utils/api';
 import { generateArcPath, isPointOnPath, Point } from '@/utils/pathUtils';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,20 +8,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
-  PanResponder,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
+    Animated,
+    Easing,
+    PanResponder,
+    Pressable,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    useWindowDimensions,
+    View
 } from 'react-native';
-import Svg, { Path, Circle } from 'react-native-svg';
-import ResultCard from '@/components/game/ResultCard';
-import { SparkleBurst, ResultToast } from '@/components/game/FX';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 type Props = {
   onBack: () => void;
@@ -370,7 +369,13 @@ export const TraceSmilingMouthGame: React.FC<Props> = ({
         style={styles.gradient}
       >
         <View style={[styles.header, isMobile && styles.headerMobile]}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>

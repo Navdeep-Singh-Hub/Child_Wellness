@@ -1,6 +1,7 @@
 // Shared sound player utility for Session 3 games
-import { Platform } from 'react-native';
 import { Audio as ExpoAudio } from 'expo-av';
+import * as Speech from 'expo-speech';
+import { Platform } from 'react-native';
 import { getSoundAsset, SOUND_MAP } from './soundAssets';
 
 // Sound cache
@@ -66,6 +67,27 @@ export const cleanupSounds = () => {
     }
   });
   soundRefs.clear();
+};
+
+// Aggressively stop all TTS speech
+export const stopAllSpeech = () => {
+  try {
+    // Call stop multiple times to ensure it stops
+    Speech.stop();
+    Speech.stop();
+    Speech.stop();
+    // Also try to stop after a small delay in case speech is queued
+    setTimeout(() => {
+      try {
+        Speech.stop();
+        Speech.stop();
+      } catch (e) {
+        // Ignore errors
+      }
+    }, 10);
+  } catch (e) {
+    // Ignore errors
+  }
 };
 
 

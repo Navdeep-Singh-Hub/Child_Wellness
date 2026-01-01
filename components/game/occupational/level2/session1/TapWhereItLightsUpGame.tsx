@@ -13,6 +13,8 @@
  * - short-term VMI memory
  */
 
+import { SparkleBurst } from '@/components/game/FX';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,7 +23,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn, runOnJS, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SparkleBurst } from '@/components/game/FX';
 
 const SHAPES = ['circle', 'square', 'triangle'];
 const COLORS = ['#22C55E', '#3B82F6', '#F59E0B'];
@@ -133,6 +134,10 @@ export const TapWhereItLightsUpGame: React.FC<TapWhereItLightsUpGameProps> = ({ 
       Speech.speak('Watch which one lights up, then tap it!', { rate: 0.78 });
     } catch {}
     startRound();
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
   }, []);
 
   const getGlowStyle = (index: number) => {
@@ -162,7 +167,14 @@ export const TapWhereItLightsUpGame: React.FC<TapWhereItLightsUpGameProps> = ({ 
           colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
           style={StyleSheet.absoluteFillObject}
         />
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => {
+            stopAllSpeech();
+            cleanupSounds();
+            onBack();
+          }}
+          style={styles.backButton}
+        >
           <LinearGradient
             colors={['#1E293B', '#0F172A']}
             style={styles.backButtonGradient}
@@ -203,7 +215,11 @@ export const TapWhereItLightsUpGame: React.FC<TapWhereItLightsUpGameProps> = ({ 
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.secondaryButton} 
-            onPress={onBack}
+            onPress={() => {
+              stopAllSpeech();
+              cleanupSounds();
+              onBack();
+            }}
             activeOpacity={0.8}
           >
             <Text style={styles.secondaryButtonText}>← Back to Sessions</Text>
@@ -219,7 +235,7 @@ export const TapWhereItLightsUpGame: React.FC<TapWhereItLightsUpGameProps> = ({ 
         colors={['#F0F9FF', '#E0F2FE', '#DBEAFE']}
         style={StyleSheet.absoluteFillObject}
       />
-      <TouchableOpacity onPress={onBack} style={styles.backButton}>
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack(); }} style={styles.backButton}>
         <LinearGradient
           colors={['#1E293B', '#0F172A']}
           style={styles.backButtonGradient}

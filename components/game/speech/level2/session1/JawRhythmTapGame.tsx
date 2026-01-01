@@ -1,3 +1,4 @@
+import ResultCard from '@/components/game/ResultCard';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import type { MouthLandmarks } from '@/hooks/useJawDetectionWeb';
 import { logGameAndAward } from '@/utils/api';
@@ -7,17 +8,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
+    Animated,
+    Easing,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    useWindowDimensions,
+    View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
 
 // Conditional import for VisionCamera
 let Camera: any = null;
@@ -1106,7 +1106,13 @@ export const JawRhythmTapGame: React.FC<Props> = ({
 
         {/* Header Overlay */}
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>

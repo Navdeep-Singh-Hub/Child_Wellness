@@ -1,21 +1,21 @@
+import ResultCard from '@/components/game/ResultCard';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
+    Animated,
+    Easing,
+    Pressable,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    useWindowDimensions,
+    View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import { logGameAndAward } from '@/utils/api';
-import { playSound } from '@/utils/soundPlayer';
 
 type Props = {
   onBack: () => void;
@@ -461,9 +461,14 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
   }, [rounds, requiredRounds, gameFinished, finishGame]);
 
   useEffect(() => {
+    try {
+      speak('Listen and find where the sound is coming from!');
+    } catch {}
     startRound();
     return () => {
       clearScheduledSpeech();
+      stopAllSpeech();
+      cleanupSounds();
       if (tapTimeoutRef.current) {
         clearTimeout(tapTimeoutRef.current);
       }
@@ -478,7 +483,12 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
         logTimestamp={logTimestamp}
-        onHome={onBack}
+        onHome={() => {
+          clearScheduledSpeech();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
         onPlayAgain={() => {
           setGameFinished(false);
           setFinalStats(null);
@@ -501,7 +511,13 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
         style={styles.gradient}
       >
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>

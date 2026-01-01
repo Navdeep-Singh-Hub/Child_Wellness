@@ -1,4 +1,7 @@
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,8 +27,6 @@ import Animated, {
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
-import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
@@ -415,7 +416,21 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
     };
   });
 
+  useEffect(() => {
+    if (!done) {
+      try {
+        Speech.speak('Tap both targets at the same time with two fingers!', { rate: 0.78 });
+      } catch {}
+    }
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
+  }, []);
+
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     if (onBack) {
       onBack();
     } else {

@@ -1,11 +1,17 @@
+import { CameraConsent } from '@/components/game/CameraConsent';
+import { EyeTrackingCamera } from '@/components/game/EyeTrackingCamera';
+import { ResultToast, SparkleBurst } from '@/components/game/FX';
+import { GazeVisualization } from '@/components/game/GazeVisualization';
+import ResultCard from '@/components/game/ResultCard';
 import { advanceTherapyProgress, logGameAndAward } from '@/utils/api';
 import { BallPosition, EyeTrackingResult, isEyeTrackingAvailable } from '@/utils/eyeTracking';
+import { stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useEffect, useRef, useState } from 'react';
-import { Dimensions, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Animated, {
     Easing,
     runOnJS,
@@ -17,11 +23,6 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CameraConsent } from '@/components/game/CameraConsent';
-import { EyeTrackingCamera } from '@/components/game/EyeTrackingCamera';
-import { ResultToast, SparkleBurst } from '@/components/game/FX';
-import { GazeVisualization } from '@/components/game/GazeVisualization';
-import ResultCard from '@/components/game/ResultCard';
 
 // Will use useWindowDimensions hook inside component for responsive sizing
 
@@ -570,6 +571,7 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
     ballScale.value = 1;
     setIsPaused(true);
     clearScheduledSpeech();
+    stopAllSpeech();
     onBack();
   };
 

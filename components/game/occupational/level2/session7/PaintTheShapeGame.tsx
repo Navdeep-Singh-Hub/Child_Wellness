@@ -1,4 +1,7 @@
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -20,8 +23,6 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
-import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const WARNING_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
@@ -386,6 +387,11 @@ const PaintTheShapeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     progress.value = 0;
     lastProgress.current = 0;
     updatePaths();
+    
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
   }, [round, generateShape, updatePaths]);
 
   useEffect(() => {
@@ -394,6 +400,8 @@ const PaintTheShapeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, [updatePaths]);
 
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 

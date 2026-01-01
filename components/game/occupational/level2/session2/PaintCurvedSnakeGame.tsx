@@ -1,3 +1,5 @@
+import { ResultToast, SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward } from '@/utils/api';
 import { isPointOnPath, Point } from '@/utils/pathUtils';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,8 +19,6 @@ import {
     View
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { ResultToast, SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 type Props = {
   onBack: () => void;
@@ -366,7 +366,13 @@ export const PaintCurvedSnakeGame: React.FC<Props> = ({
         style={styles.gradient}
       >
         <View style={[styles.header, isMobile && styles.headerMobile]}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>
