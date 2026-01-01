@@ -1,4 +1,7 @@
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,8 +26,6 @@ import Animated, {
     withSequence,
     withTiming,
 } from 'react-native-reanimated';
-import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 const POP_SOUND = 'https://actions.google.com/sounds/v1/cartoon/pop.ogg';
 const TARGETS_TO_POP = 15; // Total targets to pop
@@ -175,6 +176,8 @@ const SmallCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, [done, score, finalStats, endGame]);
 
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 

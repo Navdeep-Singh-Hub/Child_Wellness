@@ -12,6 +12,8 @@
  * - eye–hand alignment
  */
 
+import { SparkleBurst } from '@/components/game/FX';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,7 +22,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn, runOnJS, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SparkleBurst } from '@/components/game/FX';
 
 const POP_URI = 'https://actions.google.com/sounds/v1/cartoon/pop.ogg';
 const STAR_ICON = require('@/assets/icons/star.png');
@@ -112,6 +113,10 @@ export const WhereIsItGame: React.FC<WhereIsItGameProps> = ({ onBack }) => {
       Speech.speak('Find and tap the star!', { rate: 0.78 });
     } catch {}
     spawnTarget();
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
   }, []);
 
   const circleStyle = useAnimatedStyle(() => ({
@@ -135,7 +140,17 @@ export const WhereIsItGame: React.FC<WhereIsItGameProps> = ({ onBack }) => {
           colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
           style={StyleSheet.absoluteFillObject}
         />
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => {
+            try {
+              Speech.stop();
+            } catch (e) {
+              // Ignore errors
+            }
+            onBack();
+          }}
+          style={styles.backButton}
+        >
           <LinearGradient
             colors={['#1E293B', '#0F172A']}
             style={styles.backButtonGradient}
@@ -175,7 +190,11 @@ export const WhereIsItGame: React.FC<WhereIsItGameProps> = ({ onBack }) => {
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.secondaryButton} 
-            onPress={onBack}
+            onPress={() => {
+              stopAllSpeech();
+              cleanupSounds();
+              onBack();
+            }}
             activeOpacity={0.8}
           >
             <Text style={styles.secondaryButtonText}>← Back to Sessions</Text>
@@ -191,7 +210,14 @@ export const WhereIsItGame: React.FC<WhereIsItGameProps> = ({ onBack }) => {
         colors={['#F0F9FF', '#E0F2FE', '#DBEAFE']}
         style={StyleSheet.absoluteFillObject}
       />
-      <TouchableOpacity onPress={onBack} style={styles.backButton}>
+      <TouchableOpacity 
+        onPress={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }} 
+        style={styles.backButton}
+      >
         <LinearGradient
           colors={['#1E293B', '#0F172A']}
           style={styles.backButtonGradient}

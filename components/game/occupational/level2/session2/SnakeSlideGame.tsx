@@ -1,4 +1,7 @@
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -20,8 +23,6 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
-import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const WARNING_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
@@ -286,6 +287,11 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     objectY.value = startY.value;
     progress.value = 0;
     updatePaths();
+    
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
   }, [round, updatePaths]);
 
   useEffect(() => {
@@ -294,6 +300,8 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, [updatePaths]);
 
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 

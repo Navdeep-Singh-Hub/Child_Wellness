@@ -1,3 +1,4 @@
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -307,7 +308,15 @@ export const TapForChoiceGame: React.FC<Props> = ({
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              stopAllSpeech();
+              cleanupSounds();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={24} color="#1E40AF" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>

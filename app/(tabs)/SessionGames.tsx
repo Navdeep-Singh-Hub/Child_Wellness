@@ -75,12 +75,27 @@ import { JawRhythmTapGame } from '@/components/game/speech/level2/session1/JawRh
 import { JawStrengthBuilderGame } from '@/components/game/speech/level2/session1/JawStrengthBuilderGame';
 import { JawSwingAdventureGame } from '@/components/game/speech/level2/session1/JawSwingAdventureGame';
 
-// Speech Therapy Level 2 Session 2 (shared with OT)
-import { BallRollCurvedTrackGame } from '@/components/game/speech/level2/session2/BallRollCurvedTrackGame';
-import { DriveCarCurvyRoadGame } from '@/components/game/speech/level2/session2/DriveCarCurvyRoadGame';
-import { PaintCurvedSnakeGame } from '@/components/game/speech/level2/session2/PaintCurvedSnakeGame';
-import { RainbowCurveTraceGame } from '@/components/game/speech/level2/session2/RainbowCurveTraceGame';
-import { TraceSmilingMouthGame } from '@/components/game/speech/level2/session2/TraceSmilingMouthGame';
+// Occupational Therapy Level 2 Session 1: Trace Straight Line
+import LightTheLaserGame from '@/components/game/LightTheLaserGame';
+import RainDropSlideGame from '@/components/game/RainDropSlideGame';
+import RoadRollerGame from '@/components/game/RoadRollerGame';
+import StartStopLineGame from '@/components/game/StartStopLineGame';
+import TrainTrackLineGame from '@/components/game/TrainTrackLineGame';
+
+// Occupational Therapy Level 3 Session 1: Tap with Rhythm
+import BeatMatchTapGame from '@/components/game/occupational/level3/session1/BeatMatchTapGame';
+import CopyMyRhythmGame from '@/components/game/occupational/level3/session1/CopyMyRhythmGame';
+import InstrumentChoiceGame from '@/components/game/occupational/level3/session1/InstrumentChoiceGame';
+import LoudSoftRhythmGame from '@/components/game/occupational/level3/session1/LoudSoftRhythmGame';
+import StopGoDrumGame from '@/components/game/occupational/level3/session1/StopGoDrumGame';
+
+// Occupational Therapy Level 3 Session 2: Big vs Small Movements
+import BigPathTraceGame from '@/components/game/occupational/level3/session2/BigPathTraceGame';
+import BigSwipeSmallSwipeGame from '@/components/game/occupational/level3/session2/BigSwipeSmallSwipeGame';
+import BigTapSmallTapGame from '@/components/game/occupational/level3/session2/BigTapSmallTapGame';
+import BigThrowSmallThrowGame from '@/components/game/occupational/level3/session2/BigThrowSmallThrowGame';
+import StretchPinchGame from '@/components/game/occupational/level3/session2/StretchPinchGame';
+
 
 // Occupational Therapy Level 1 Session 1
 import { BigTapTarget } from '@/components/game/occupational/level1/session1/BigTapTarget';
@@ -150,12 +165,6 @@ import PinchToPopGame from '@/components/game/occupational/level1/session10/Pinc
 import PinchToResizeGame from '@/components/game/occupational/level1/session10/PinchToResizeGame';
 import TwoFingerSimultaneousTapGame from '@/components/game/occupational/level1/session10/TwoFingerSimultaneousTapGame';
 
-// Occupational Therapy Level 2 Session 1
-import { FollowAndTouchGame } from '@/components/game/occupational/level2/session1/FollowAndTouchGame';
-import { MatchAndTouchGame } from '@/components/game/occupational/level2/session1/MatchAndTouchGame';
-import { TapWhereItLightsUpGame } from '@/components/game/occupational/level2/session1/TapWhereItLightsUpGame';
-import { TouchTheDotGame } from '@/components/game/occupational/level2/session1/TouchTheDotGame';
-import { WhereIsItGame } from '@/components/game/occupational/level2/session1/WhereIsItGame';
 
 // Occupational Therapy Level 2 Session 2 (shared with Speech)
 import CurvyRoadDriveGame from '@/components/game/occupational/level2/session2/CurvyRoadDriveGame';
@@ -283,11 +292,21 @@ type GameKey =
   | 'jaw-push-challenge'
   | 'jaw-rhythm-tap'
   | 'jaw-strength-builder'
-  | 'rainbow-curve-trace'
-  | 'drive-car-curvy-road'
-  | 'trace-smiling-mouth'
-  | 'ball-roll-curved-track'
-  | 'paint-curved-snake'
+  | 'train-track-line'
+  | 'light-the-laser'
+  | 'road-roller'
+  | 'rain-drop-slide'
+  | 'start-stop-line'
+  | 'beat-match-tap'
+  | 'copy-my-rhythm'
+  | 'stop-go-drum'
+  | 'loud-soft-rhythm'
+  | 'instrument-choice'
+  | 'big-swipe-small-swipe'
+  | 'big-tap-small-tap'
+  | 'stretch-pinch'
+  | 'big-path-trace'
+  | 'big-throw-small-throw'
 
   // OT + shared keys
   | 'big-tap'
@@ -339,11 +358,6 @@ type GameKey =
   | 'two-finger-simultaneous-tap'
   | 'pinch-to-resize'
   | 'pinch-to-open-treasure-box'
-  | 'touch-the-dot'
-  | 'where-is-it'
-  | 'follow-and-touch'
-  | 'tap-where-it-lights-up'
-  | 'match-and-touch'
   | 'rainbow-trace'
   | 'snake-slide'
   | 'moon-path'
@@ -640,26 +654,6 @@ export default function SessionGamesScreen() {
   const isPinchToOpenTreasureBoxAvailable =
     therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 10;
 
-  // OT Level 11 (Section 2: Visual-Motor Integration) - mapped to therapy level 2
-  // Level 11 Session 1 Game 1: Touch the Dot
-  const isTouchTheDotAvailable =
-    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
-
-  // Level 11 Session 1 Game 2: Where Is It?
-  const isWhereIsItAvailable =
-    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
-
-  // Level 11 Session 1 Game 3: Follow and Touch
-  const isFollowAndTouchAvailable =
-    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
-
-  // Level 11 Session 1 Game 4: Tap Where It Lights Up
-  const isTapWhereItLightsUpAvailable =
-    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
-
-  // Level 11 Session 1 Game 5: Match & Touch
-  const isMatchAndTouchAvailable =
-    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
 
   // Level 2 Session 2: Trace Curved Line games
   const isRainbowTraceAvailable =
@@ -928,17 +922,41 @@ export default function SessionGamesScreen() {
   const isJawStrengthBuilderAvailable =
     therapyId === 'speech' && levelNumber === 2 && sessionNumber === 1;
 
-  // Level 2 Session 2 games (Occupational Therapy - Curve Tracing)
-  const isRainbowCurveTraceAvailable =
-    (therapyId === 'occupational' || therapyId === 'speech') && levelNumber === 2 && sessionNumber === 2;
-  const isDriveCarCurvyRoadAvailable =
-    (therapyId === 'occupational' || therapyId === 'speech') && levelNumber === 2 && sessionNumber === 2;
-  const isTraceSmilingMouthAvailable =
-    (therapyId === 'occupational' || therapyId === 'speech') && levelNumber === 2 && sessionNumber === 2;
-  const isBallRollCurvedTrackAvailable =
-    (therapyId === 'occupational' || therapyId === 'speech') && levelNumber === 2 && sessionNumber === 2;
-  const isPaintCurvedSnakeAvailable =
-    (therapyId === 'occupational' || therapyId === 'speech') && levelNumber === 2 && sessionNumber === 2;
+  // Level 2 Session 1 games - Occupational Therapy (Trace Straight Line)
+  const isTrainTrackLineAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
+  const isLightTheLaserAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
+  const isRoadRollerAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
+  const isRainDropSlideAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
+  const isStartStopLineAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
+
+  // Level 3 Session 1 games - Occupational Therapy (Tap with Rhythm)
+  const isBeatMatchTapAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 1;
+  const isCopyMyRhythmAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 1;
+  const isStopGoDrumAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 1;
+  const isLoudSoftRhythmAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 1;
+  const isInstrumentChoiceAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 1;
+
+  // Level 3 Session 2 games - Occupational Therapy (Big vs Small Movements)
+  const isBigSwipeSmallSwipeAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 2;
+  const isBigTapSmallTapAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 2;
+  const isStretchPinchAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 2;
+  const isBigPathTraceAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 2;
+  const isBigThrowSmallThrowAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 2;
 
   const GAMES: GameInfo[] = [
     {
@@ -1413,47 +1431,6 @@ export default function SessionGamesScreen() {
       description: 'Pinch both locks at the same time to open the treasure! Build bimanual coordination.',
       color: '#92400E',
       available: isPinchToOpenTreasureBoxAvailable,
-    },
-    // OT Level 11 (Section 2: Visual-Motor Integration) Games
-    {
-      id: 'touch-the-dot',
-      title: 'Touch the Dot',
-      emoji: '🔵',
-      description: 'A large dot appears at random positions. Tap it to earn a star! Build eye-hand coordination.',
-      color: '#22C55E',
-      available: isTouchTheDotAvailable,
-    },
-    {
-      id: 'where-is-it',
-      title: 'Where Is It?',
-      emoji: '🔍',
-      description: 'Find and tap the star hidden among the background pattern. Build visual scanning and attention.',
-      color: '#F59E0B',
-      available: isWhereIsItAvailable,
-    },
-    {
-      id: 'follow-and-touch',
-      title: 'Follow and Touch',
-      emoji: '👀',
-      description: 'Watch the object move slowly, then tap it when it stops. Build visual tracking and motor timing.',
-      color: '#3B82F6',
-      available: isFollowAndTouchAvailable,
-    },
-    {
-      id: 'tap-where-it-lights-up',
-      title: 'Tap Where It Lights Up',
-      emoji: '💡',
-      description: 'Watch which shape lights up, then tap it after they all go neutral. Build visual memory.',
-      color: '#8B5CF6',
-      available: isTapWhereItLightsUpAvailable,
-    },
-    {
-      id: 'match-and-touch',
-      title: 'Match & Touch',
-      emoji: '🎯',
-      description: 'See the shape at the top, then find and tap the matching one below. Build shape recognition.',
-      color: '#F472B6',
-      available: isMatchAndTouchAvailable,
     },
     // Level 2 Session 2: Trace Curved Line games
     {
@@ -2192,46 +2169,127 @@ export default function SessionGamesScreen() {
       color: '#F59E0B',
       available: isJawStrengthBuilderAvailable,
     },
-    // Level 2 Session 2 games (Occupational Therapy - Curve Tracing)
     {
-      id: 'rainbow-curve-trace',
-      title: 'Rainbow Curve Trace',
-      emoji: '🌈',
-      description: 'Trace a big, smooth curve with a glowing finger! Build wrist rotation and prepare for letters.',
-      color: '#8B5CF6',
-      available: isRainbowCurveTraceAvailable,
-    },
-    {
-      id: 'drive-car-curvy-road',
-      title: 'Drive the Car on Curvy Road',
-      emoji: '🚗',
-      description: 'Follow a curved road using drag with a small car! Build continuous motion control and visual tracking.',
-      color: '#22C55E',
-      available: isDriveCarCurvyRoadAvailable,
-    },
-    {
-      id: 'trace-smiling-mouth',
-      title: 'Trace the Smiling Mouth',
-      emoji: '😊',
-      description: 'Trace a big smile to make the face happy! Build emotion-based engagement and natural curved shape recognition.',
-      color: '#FCD34D',
-      available: isTraceSmilingMouthAvailable,
-    },
-    {
-      id: 'ball-roll-curved-track',
-      title: 'Ball Roll on Curved Track',
-      emoji: '⚽',
-      description: 'Drag to roll a ball along a curved rail to reach a star! Build bilateral coordination prep and smooth directional movement.',
+      id: 'train-track-line',
+      title: 'Train Track Line',
+      emoji: '🚂',
+      description: 'Drag train from start to station along the track (horizontal / vertical). Build directionality and hand stability.',
       color: '#3B82F6',
-      available: isBallRollCurvedTrackAvailable,
+      available: isTrainTrackLineAvailable,
     },
     {
-      id: 'paint-curved-snake',
-      title: 'Paint the Curved Snake',
-      emoji: '🐍',
-      description: 'Trace to color a snake body outline with a curved body! Build motivation and encourage full-path completion.',
+      id: 'light-the-laser',
+      title: 'Light the Laser',
+      emoji: '🔴',
+      description: 'Finger lights a straight laser beam. Trace along the line to activate the laser!',
+      color: '#EF4444',
+      available: isLightTheLaserAvailable,
+    },
+    {
+      id: 'road-roller',
+      title: 'Road Roller',
+      emoji: '🚧',
+      description: 'Roll over straight road. Drag the roller along the road to complete the path!',
+      color: '#F59E0B',
+      available: isRoadRollerAvailable,
+    },
+    {
+      id: 'rain-drop-slide',
+      title: 'Rain Drop Slide',
+      emoji: '💧',
+      description: 'Drop slides down straight line. Guide the rain drop along the line!',
+      color: '#3B82F6',
+      available: isRainDropSlideAvailable,
+    },
+    {
+      id: 'start-stop-line',
+      title: 'Start–Stop Line',
+      emoji: '🟢',
+      description: 'Green dot → red dot only. Drag from the green dot to the red dot along the line!',
+      color: '#22C55E',
+      available: isStartStopLineAvailable,
+    },
+    // Occupational Therapy Level 3 Session 1: Tap with Rhythm
+    {
+      id: 'beat-match-tap',
+      title: 'Beat Match Tap',
+      emoji: '🥁',
+      description: 'Tap when drum plays! Start with 1 beat per second, then get faster. Build rhythm and timing skills.',
+      color: '#8B5CF6',
+      available: isBeatMatchTapAvailable,
+    },
+    {
+      id: 'copy-my-rhythm',
+      title: 'Copy My Rhythm',
+      emoji: '🎵',
+      description: 'Listen to 3-5 beats pattern, then tap the same pattern! Build auditory memory and rhythm copying.',
+      color: '#3B82F6',
+      available: isCopyMyRhythmAvailable,
+    },
+    {
+      id: 'stop-go-drum',
+      title: 'Stop/Go Drum',
+      emoji: '🛑',
+      description: 'Tap only while drum is playing; freeze when silent! Build impulse control and auditory attention.',
+      color: '#EF4444',
+      available: isStopGoDrumAvailable,
+    },
+    {
+      id: 'loud-soft-rhythm',
+      title: 'Loud/Soft Rhythm',
+      emoji: '🔊',
+      description: 'Big button for loud beats, small button for soft beats! Build volume discrimination and motor control.',
+      color: '#F59E0B',
+      available: isLoudSoftRhythmAvailable,
+    },
+    {
+      id: 'instrument-choice',
+      title: 'Instrument Choice',
+      emoji: '🎶',
+      description: 'Choose which instrument played (drum/bell/clap) then tap! Build sound identification and choice-making.',
       color: '#10B981',
-      available: isPaintCurvedSnakeAvailable,
+      available: isInstrumentChoiceAvailable,
+    },
+    // Occupational Therapy Level 3 Session 2: Big vs Small Movements
+    {
+      id: 'big-swipe-small-swipe',
+      title: 'Big Swipe vs Small Swipe',
+      emoji: '👆',
+      description: 'Long swipe fills big bar, short swipe fills small bar! Build range of motion and movement control.',
+      color: '#8B5CF6',
+      available: isBigSwipeSmallSwipeAvailable,
+    },
+    {
+      id: 'big-tap-small-tap',
+      title: 'Big Tap vs Small Tap',
+      emoji: '👋',
+      description: 'Tap big circle when "BIG" appears, tiny circle when "SMALL"! Build size discrimination and motor precision.',
+      color: '#3B82F6',
+      available: isBigTapSmallTapAvailable,
+    },
+    {
+      id: 'stretch-pinch',
+      title: 'Stretch vs Pinch',
+      emoji: '🤏',
+      description: '"Make it BIG" (zoom out), "Make it SMALL" (pinch)! Build two-finger coordination and size control.',
+      color: '#F59E0B',
+      available: isStretchPinchAvailable,
+    },
+    {
+      id: 'big-path-trace',
+      title: 'Big Path Trace',
+      emoji: '🛤️',
+      description: 'Trace wide road vs thin road! Difficulty changes with path width. Build precision and adaptability.',
+      color: '#EF4444',
+      available: isBigPathTraceAvailable,
+    },
+    {
+      id: 'big-throw-small-throw',
+      title: 'Big Throw vs Small Throw',
+      emoji: '⚾',
+      description: 'Drag to "throw" object far vs near! Long drag = far, short drag = near. Build movement range awareness.',
+      color: '#10B981',
+      available: isBigThrowSmallThrowAvailable,
     },
   ];
 
@@ -2482,26 +2540,6 @@ export default function SessionGamesScreen() {
     return <PinchToOpenTreasureBoxGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  // OT Level 11 (Section 2: Visual-Motor Integration) Games
-  if (currentGame === 'touch-the-dot') {
-    return <TouchTheDotGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'where-is-it') {
-    return <WhereIsItGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'follow-and-touch') {
-    return <FollowAndTouchGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'tap-where-it-lights-up') {
-    return <TapWhereItLightsUpGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'match-and-touch') {
-    return <MatchAndTouchGame onBack={() => setCurrentGame('menu')} />;
-  }
 
   // Level 2 Session 2: Trace Curved Line games
   // if (currentGame === 'rainbow-trace') {
@@ -2876,24 +2914,67 @@ export default function SessionGamesScreen() {
     return <JawStrengthBuilderGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'rainbow-curve-trace') {
-    return <RainbowCurveTraceGame onBack={() => setCurrentGame('menu')} />;
+  // Level 2 Session 1 games (Occupational Therapy - Trace Straight Line)
+  if (currentGame === 'train-track-line') {
+    return <TrainTrackLineGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'drive-car-curvy-road') {
-    return <DriveCarCurvyRoadGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'light-the-laser') {
+    return <LightTheLaserGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'trace-smiling-mouth') {
-    return <TraceSmilingMouthGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'road-roller') {
+    return <RoadRollerGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'ball-roll-curved-track') {
-    return <BallRollCurvedTrackGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'rain-drop-slide') {
+    return <RainDropSlideGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'paint-curved-snake') {
-    return <PaintCurvedSnakeGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'start-stop-line') {
+    return <StartStopLineGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 1 games - Tap with Rhythm
+  if (currentGame === 'beat-match-tap') {
+    return <BeatMatchTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'copy-my-rhythm') {
+    return <CopyMyRhythmGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'stop-go-drum') {
+    return <StopGoDrumGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'loud-soft-rhythm') {
+    return <LoudSoftRhythmGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'instrument-choice') {
+    return <InstrumentChoiceGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 2 games - Big vs Small Movements
+  if (currentGame === 'big-swipe-small-swipe') {
+    return <BigSwipeSmallSwipeGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'big-tap-small-tap') {
+    return <BigTapSmallTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'stretch-pinch') {
+    return <StretchPinchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'big-path-trace') {
+    return <BigPathTraceGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'big-throw-small-throw') {
+    return <BigThrowSmallThrowGame onBack={() => setCurrentGame('menu')} />;
   }
 
   // ---------- Menu UI ----------
@@ -3008,12 +3089,6 @@ export default function SessionGamesScreen() {
                   if (game.id === 'two-finger-simultaneous-tap') setCurrentGame('two-finger-simultaneous-tap');
                   if (game.id === 'pinch-to-resize') setCurrentGame('pinch-to-resize');
                   if (game.id === 'pinch-to-open-treasure-box') setCurrentGame('pinch-to-open-treasure-box');
-                  // OT Level 11 games
-                  if (game.id === 'touch-the-dot') setCurrentGame('touch-the-dot');
-                  if (game.id === 'where-is-it') setCurrentGame('where-is-it');
-                  if (game.id === 'follow-and-touch') setCurrentGame('follow-and-touch');
-                  if (game.id === 'tap-where-it-lights-up') setCurrentGame('tap-where-it-lights-up');
-                  if (game.id === 'match-and-touch') setCurrentGame('match-and-touch');
                   // Level 2 Session 2 games
                   if (game.id === 'rainbow-trace') setCurrentGame('rainbow-trace');
                   if (game.id === 'snake-slide') setCurrentGame('snake-slide');
@@ -3103,11 +3178,24 @@ export default function SessionGamesScreen() {
                   if (game.id === 'jaw-push-challenge') setCurrentGame('jaw-push-challenge');
                   if (game.id === 'jaw-rhythm-tap') setCurrentGame('jaw-rhythm-tap');
                   if (game.id === 'jaw-strength-builder') setCurrentGame('jaw-strength-builder');
-                  if (game.id === 'rainbow-curve-trace') setCurrentGame('rainbow-curve-trace');
-                  if (game.id === 'drive-car-curvy-road') setCurrentGame('drive-car-curvy-road');
-                  if (game.id === 'trace-smiling-mouth') setCurrentGame('trace-smiling-mouth');
-                  if (game.id === 'ball-roll-curved-track') setCurrentGame('ball-roll-curved-track');
-                  if (game.id === 'paint-curved-snake') setCurrentGame('paint-curved-snake');
+                  // Level 2 Session 1 games (Occupational Therapy - Trace Straight Line)
+                  if (game.id === 'train-track-line') setCurrentGame('train-track-line');
+                  if (game.id === 'light-the-laser') setCurrentGame('light-the-laser');
+                  if (game.id === 'road-roller') setCurrentGame('road-roller');
+                  if (game.id === 'rain-drop-slide') setCurrentGame('rain-drop-slide');
+                  if (game.id === 'start-stop-line') setCurrentGame('start-stop-line');
+                  // Level 3 Session 1 games
+                  if (game.id === 'beat-match-tap') setCurrentGame('beat-match-tap');
+                  if (game.id === 'copy-my-rhythm') setCurrentGame('copy-my-rhythm');
+                  if (game.id === 'stop-go-drum') setCurrentGame('stop-go-drum');
+                  if (game.id === 'loud-soft-rhythm') setCurrentGame('loud-soft-rhythm');
+                  if (game.id === 'instrument-choice') setCurrentGame('instrument-choice');
+                  // Level 3 Session 2 games
+                  if (game.id === 'big-swipe-small-swipe') setCurrentGame('big-swipe-small-swipe');
+                  if (game.id === 'big-tap-small-tap') setCurrentGame('big-tap-small-tap');
+                  if (game.id === 'stretch-pinch') setCurrentGame('stretch-pinch');
+                  if (game.id === 'big-path-trace') setCurrentGame('big-path-trace');
+                  if (game.id === 'big-throw-small-throw') setCurrentGame('big-throw-small-throw');
                 }}
               activeOpacity={0.8}
             >

@@ -1,4 +1,7 @@
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,8 +21,6 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 const POP_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const BALLOONS_PER_ROUND = 5;
@@ -243,9 +244,16 @@ const MultiTapFunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       Speech.speak('Tap all the balloons! Tap each balloon one by one.', { rate: 0.78 });
     } catch {}
     spawnBalloons();
+    return () => {
+      // Cleanup: Stop speech when component unmounts
+      stopAllSpeech();
+      cleanupSounds();
+    };
   }, []);
 
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 

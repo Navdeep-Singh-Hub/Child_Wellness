@@ -1,4 +1,7 @@
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -23,8 +26,6 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -325,6 +326,11 @@ const GlowBorderTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     try {
       Speech.speak('Trace the thick glowing border!', { rate: 0.78 });
     } catch {}
+    
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
   }, [round, updatePaths]);
 
   useEffect(() => {
@@ -333,6 +339,8 @@ const GlowBorderTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, [updatePaths]);
 
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 

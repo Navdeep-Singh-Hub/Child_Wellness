@@ -1,21 +1,24 @@
+import Paywall from '@/components/Paywall';
 import {
-  advanceTherapyProgress,
-  fetchTherapyProgress,
-  initTherapyProgress,
-  type TherapyProgress,
+    advanceTherapyProgress,
+    fetchTherapyProgress,
+    getSubscriptionStatus,
+    initTherapyProgress,
+    type SubscriptionStatus,
+    type TherapyProgress,
 } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 const THERAPIES = [
@@ -30,12 +33,17 @@ const THERAPIES = [
 type ViewMode = 'therapies' | 'levels' | 'sessions';
 
 export default function TherapyProgressScreen() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [therapies, setTherapies] = useState<TherapyProgress[]>([]);
   const [mode, setMode] = useState<ViewMode>('therapies');
   const [selectedTherapy, setSelectedTherapy] = useState<string | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
+  
+  // Subscription access control
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+  const [checkingAccess, setCheckingAccess] = useState(true);
 
   const fetchData = async (autoInit = true) => {
     setLoading(true);
@@ -56,12 +64,60 @@ export default function TherapyProgressScreen() {
     }
   };
 
+  // Check subscription access on mount
   useEffect(() => {
-    fetchData();
+    checkSubscriptionAccess();
   }, []);
+
+  // Re-check access when returning from Paywall
+  useEffect(() => {
+    const unsubscribe = router.addListener?.('focus', () => {
+      checkSubscriptionAccess();
+    });
+    return unsubscribe;
+  }, [router]);
+
+  const checkSubscriptionAccess = async () => {
+    try {
+      setCheckingAccess(true);
+      const status = await getSubscriptionStatus();
+      console.log('[THERAPY PROGRESS] Subscription status:', status);
+      setSubscriptionStatus(status);
+      
+      // If user has access (trial or active subscription), load therapy data
+      if (status.hasAccess) {
+        console.log('[THERAPY PROGRESS] User has access - loading therapy data');
+        await fetchData();
+      } else {
+        console.log('[THERAPY PROGRESS] User does NOT have access - will show Paywall');
+      }
+    } catch (error: any) {
+      console.error('Failed to check subscription access:', error);
+      // On error, still try to load data (graceful degradation)
+      await fetchData();
+    } finally {
+      setCheckingAccess(false);
+    }
+  };
 
   const progressMap = useMemo(() => new Map(therapies.map((t) => [t.therapy, t])), [therapies]);
   const hasData = therapies && therapies.length > 0;
+
+  // Show Paywall if user doesn't have access
+  if (checkingAccess) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8B5CF6" />
+          <Text style={styles.loadingText}>Checking access...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!subscriptionStatus?.hasAccess) {
+    return <Paywall onSuccess={checkSubscriptionAccess} />;
+  }
 
   const handleSelectTherapy = (therapyId: string) => {
     setSelectedTherapy(therapyId);
@@ -368,6 +424,16 @@ function SessionsGrid({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#6B7280',
+  },
   content: { padding: 16, paddingBottom: 32 },
   initButton: {
     marginTop: 12,

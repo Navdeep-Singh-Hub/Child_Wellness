@@ -1,3 +1,6 @@
+import ResultCard from '@/components/game/ResultCard';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,8 +18,6 @@ import {
     useWindowDimensions,
     View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
@@ -301,7 +302,8 @@ export const EyesThenObjectGame: React.FC<Props> = ({
               }}
               onHome={() => {
                 clearScheduledSpeech();
-                Speech.stop();
+                stopAllSpeech();
+                cleanupSounds();
                 onBack();
               }}
             />

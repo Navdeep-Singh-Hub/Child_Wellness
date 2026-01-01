@@ -1,25 +1,26 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import {
-  Animated,
-  Easing,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import ResultCard from '@/components/game/ResultCard';
+import { logGameAndAward } from '@/utils/api';
+import { getSoundAsset } from '@/utils/soundAssets';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
-import * as Speech from 'expo-speech';
 import { LinearGradient } from 'expo-linear-gradient';
-import ResultCard from '@/components/game/ResultCard';
-import { logGameAndAward } from '@/utils/api';
-import { getSoundAsset, SOUND_MAP } from '@/utils/soundAssets';
+import * as Speech from 'expo-speech';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    Animated,
+    Easing,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    useWindowDimensions,
+    View,
+} from 'react-native';
 
 type Props = {
   onBack: () => void;
@@ -502,7 +503,8 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
               if (stopTimer.current) clearTimeout(stopTimer.current);
               if (soundTimer.current) clearTimeout(soundTimer.current);
               clearScheduledSpeech();
-              Speech.stop();
+              stopAllSpeech();
+              cleanupSounds();
               onBack();
             }}
             style={styles.backButton}

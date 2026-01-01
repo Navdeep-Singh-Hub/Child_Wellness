@@ -12,6 +12,8 @@
  * - hand control
  */
 
+import { SparkleBurst } from '@/components/game/FX';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,7 +22,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn, runOnJS, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SparkleBurst } from '@/components/game/FX';
 
 const COLORS = ['#22C55E', '#3B82F6', '#F59E0B', '#F472B6', '#8B5CF6', '#06B6D4'];
 const POP_URI = 'https://actions.google.com/sounds/v1/cartoon/pop.ogg';
@@ -131,6 +132,10 @@ export const FollowAndTouchGame: React.FC<FollowAndTouchGameProps> = ({ onBack }
       Speech.speak('Watch it move, then tap it when it stops!', { rate: 0.78 });
     } catch {}
     moveAndStop();
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
   }, []);
 
   const circleStyle = useAnimatedStyle(() => ({
@@ -154,7 +159,14 @@ export const FollowAndTouchGame: React.FC<FollowAndTouchGameProps> = ({ onBack }
           colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
           style={StyleSheet.absoluteFillObject}
         />
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => {
+            stopAllSpeech();
+            cleanupSounds();
+            onBack();
+          }}
+          style={styles.backButton}
+        >
           <LinearGradient
             colors={['#1E293B', '#0F172A']}
             style={styles.backButtonGradient}
@@ -196,7 +208,11 @@ export const FollowAndTouchGame: React.FC<FollowAndTouchGameProps> = ({ onBack }
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.secondaryButton} 
-            onPress={onBack}
+            onPress={() => {
+              stopAllSpeech();
+              cleanupSounds();
+              onBack();
+            }}
             activeOpacity={0.8}
           >
             <Text style={styles.secondaryButtonText}>← Back to Sessions</Text>
@@ -212,7 +228,7 @@ export const FollowAndTouchGame: React.FC<FollowAndTouchGameProps> = ({ onBack }
         colors={['#F0F9FF', '#E0F2FE', '#DBEAFE']}
         style={StyleSheet.absoluteFillObject}
       />
-      <TouchableOpacity onPress={onBack} style={styles.backButton}>
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack(); }} style={styles.backButton}>
         <LinearGradient
           colors={['#1E293B', '#0F172A']}
           style={styles.backButtonGradient}

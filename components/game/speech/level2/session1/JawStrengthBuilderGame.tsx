@@ -1,3 +1,4 @@
+import ResultCard from '@/components/game/ResultCard';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import { logGameAndAward } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,17 +7,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
+    Animated,
+    Easing,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    useWindowDimensions,
+    View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
 
 // Conditional import for VisionCamera
 let Camera: any = null;
@@ -1191,7 +1191,13 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
       >
         {/* Header Overlay */}
         <View style={[styles.header, { zIndex: 20 }]}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>

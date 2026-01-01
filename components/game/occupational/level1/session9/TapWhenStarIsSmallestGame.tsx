@@ -1,4 +1,7 @@
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -22,8 +25,6 @@ import Animated, {
     withSequence,
     withTiming,
 } from 'react-native-reanimated';
-import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
@@ -97,6 +98,7 @@ const TapWhenStarIsSmallestGame: React.FC<{ onBack?: () => void }> = ({ onBack }
   const starX = useSharedValue(50);
   const starY = useSharedValue(50);
   const isSmallestRef = useRef(false);
+  const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
 
   // Keep refs in sync
   useEffect(() => {
@@ -178,15 +180,17 @@ const TapWhenStarIsSmallestGame: React.FC<{ onBack?: () => void }> = ({ onBack }
       Speech.speak('Wait until it\'s smallest!', { rate: 0.78 });
     } catch {}
 
-    setTimeout(() => {
+    const timeout1 = setTimeout(() => {
       setShowFeedback(false);
       feedbackOpacity.value = 0;
-      setTimeout(() => {
+      const timeout2 = setTimeout(() => {
         if (startRoundRef.current) {
           startRoundRef.current();
         }
       }, 500);
+      timeoutRefs.current.push(timeout2);
     }, 1500);
+    timeoutRefs.current.push(timeout1);
   }, [done, starScale, feedbackOpacity, playError]);
 
   // Start a new round
@@ -235,12 +239,13 @@ const TapWhenStarIsSmallestGame: React.FC<{ onBack?: () => void }> = ({ onBack }
           })();
           
           // Hold at smallest for 1 second, then disappear
-          setTimeout(() => {
+          const stopTimeout = setTimeout(() => {
             if (roundActiveRef.current && !isSmallestRef.current) {
               // Still not tapped - too late
               runOnJS(handleMiss)();
             }
           }, 1000);
+          timeoutRefs.current.push(stopTimeout);
         }
       }
     );
@@ -296,18 +301,21 @@ const TapWhenStarIsSmallestGame: React.FC<{ onBack?: () => void }> = ({ onBack }
       } catch {}
 
       if (roundRef.current >= TOTAL_ROUNDS) {
-        setTimeout(() => {
+        const timeout1 = setTimeout(() => {
           endGame();
         }, 1500);
+        timeoutRefs.current.push(timeout1);
       } else {
-        setTimeout(() => {
+        const timeout1 = setTimeout(() => {
           setShowFeedback(false);
           feedbackOpacity.value = 0;
           setRound((r) => r + 1);
-          setTimeout(() => {
+          const timeout2 = setTimeout(() => {
             startRound();
           }, 500);
+          timeoutRefs.current.push(timeout2);
         }, 1500);
+        timeoutRefs.current.push(timeout1);
       }
     } else {
       // Tapped too early - not at smallest yet
@@ -319,6 +327,13 @@ const TapWhenStarIsSmallestGame: React.FC<{ onBack?: () => void }> = ({ onBack }
   useEffect(() => {
     startRound();
     return () => {
+      // Clear all timeouts
+      timeoutRefs.current.forEach(timeout => clearTimeout(timeout));
+      timeoutRefs.current = [];
+      // Stop TTS and sounds
+      stopAllSpeech();
+      cleanupSounds();
+      // Stop animations
       if (animationRef.current) {
         animationRef.current.stop();
       }
@@ -352,7 +367,32 @@ const TapWhenStarIsSmallestGame: React.FC<{ onBack?: () => void }> = ({ onBack }
     };
   });
 
+  useEffect(() => {
+    if (!done) {
+      try {
+        Speech.speak('Tap when the star is smallest!', { rate: 0.78 });
+      } catch {}
+    }
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
+  }, []);
+
   const handleBack = useCallback(() => {
+    // Clear all timeouts
+    timeoutRefs.current.forEach(timeout => clearTimeout(timeout));
+    timeoutRefs.current = [];
+    // Stop animations
+    if (animationRef.current) {
+      animationRef.current.stop();
+    }
+    // Stop round activity
+    roundActiveRef.current = false;
+    setRoundActive(false);
+    // Stop TTS and sounds
+    stopAllSpeech();
+    cleanupSounds();
     if (onBack) {
       onBack();
     } else {

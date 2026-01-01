@@ -1,23 +1,23 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import {
-  Animated,
-  Easing,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  useWindowDimensions,
-  View,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import * as Speech from 'expo-speech';
-import { LinearGradient } from 'expo-linear-gradient';
 import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward } from '@/utils/api';
-import { playSound } from '@/utils/soundPlayer';
+import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Speech from 'expo-speech';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    Animated,
+    Easing,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    useWindowDimensions,
+    View,
+} from 'react-native';
 
 type Props = {
   onBack: () => void;
@@ -318,7 +318,8 @@ export const LoudVsSoftGame: React.FC<Props> = ({
               }}
               onHome={() => {
                 clearScheduledSpeech();
-                Speech.stop();
+                stopAllSpeech();
+                cleanupSounds();
                 onBack();
               }}
             />
@@ -338,7 +339,8 @@ export const LoudVsSoftGame: React.FC<Props> = ({
           <Pressable
             onPress={() => {
               clearScheduledSpeech();
-              Speech.stop();
+              stopAllSpeech();
+              cleanupSounds();
               onBack();
             }}
             style={styles.backButton}

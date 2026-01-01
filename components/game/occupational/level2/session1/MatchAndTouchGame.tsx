@@ -12,6 +12,8 @@
  * - hand accuracy
  */
 
+import { SparkleBurst } from '@/components/game/FX';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,7 +22,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn, runOnJS } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SparkleBurst } from '@/components/game/FX';
 
 const SHAPES = ['circle', 'square', 'triangle', 'star', 'heart'];
 const COLORS = ['#22C55E', '#3B82F6', '#F59E0B', '#F472B6', '#8B5CF6'];
@@ -191,6 +192,10 @@ export const MatchAndTouchGame: React.FC<MatchAndTouchGameProps> = ({ onBack }) 
 
   useEffect(() => {
     startRound();
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
   }, []);
 
   if (done) {
@@ -200,7 +205,14 @@ export const MatchAndTouchGame: React.FC<MatchAndTouchGameProps> = ({ onBack }) 
           colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
           style={StyleSheet.absoluteFillObject}
         />
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => {
+            stopAllSpeech();
+            cleanupSounds();
+            onBack();
+          }}
+          style={styles.backButton}
+        >
           <LinearGradient
             colors={['#1E293B', '#0F172A']}
             style={styles.backButtonGradient}
@@ -240,7 +252,11 @@ export const MatchAndTouchGame: React.FC<MatchAndTouchGameProps> = ({ onBack }) 
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.secondaryButton} 
-            onPress={onBack}
+            onPress={() => {
+              stopAllSpeech();
+              cleanupSounds();
+              onBack();
+            }}
             activeOpacity={0.8}
           >
             <Text style={styles.secondaryButtonText}>← Back to Sessions</Text>
@@ -256,7 +272,7 @@ export const MatchAndTouchGame: React.FC<MatchAndTouchGameProps> = ({ onBack }) 
         colors={['#F0F9FF', '#E0F2FE', '#DBEAFE']}
         style={StyleSheet.absoluteFillObject}
       />
-      <TouchableOpacity onPress={onBack} style={styles.backButton}>
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack(); }} style={styles.backButton}>
         <LinearGradient
           colors={['#1E293B', '#0F172A']}
           style={styles.backButtonGradient}
