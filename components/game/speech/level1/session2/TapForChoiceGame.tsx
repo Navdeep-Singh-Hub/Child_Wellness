@@ -13,6 +13,7 @@ import {
     Text,
     View,
 } from 'react-native';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 
 type Props = {
   onBack: () => void;
@@ -90,6 +91,7 @@ export const TapForChoiceGame: React.FC<Props> = ({
   const [currentPairIndex, setCurrentPairIndex] = useState(0);
   const [selectedItem, setSelectedItem] = useState<'left' | 'right' | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
 
   // Animations for left item
   const leftScale = useRef(new Animated.Value(1)).current;
@@ -275,11 +277,12 @@ export const TapForChoiceGame: React.FC<Props> = ({
       animateSparkles(sparkles).start();
     }
 
-    // Speak feedback
-    speak(`You chose the ${item.name}!`);
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
 
     // Update choices and move to next pair
     setTimeout(() => {
+      setShowRoundSuccess(false);
       const nextChoices = choices + 1;
       setChoices(nextChoices);
       setSelectedItem(null);
@@ -288,13 +291,10 @@ export const TapForChoiceGame: React.FC<Props> = ({
         // Move to next pair
         const nextIndex = (currentPairIndex + 1) % CHOICE_PAIRS.length;
         setCurrentPairIndex(nextIndex);
-        setTimeout(() => {
-          speak('Tap what you like!');
-        }, 500);
       }
 
       setIsAnimating(false);
-    }, 1200);
+    }, 2500);
   }, [isAnimating, currentPair, choices, requiredChoices, currentPairIndex]);
 
   const progressDots = Array.from({ length: requiredChoices }, (_, i) => i < choices);
@@ -470,6 +470,12 @@ export const TapForChoiceGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

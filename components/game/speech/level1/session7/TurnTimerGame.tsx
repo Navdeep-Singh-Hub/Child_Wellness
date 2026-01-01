@@ -302,7 +302,11 @@ export const TurnTimerGame: React.FC<Props> = ({
   }, [correctTaps, earlyTaps, lateTaps, requiredRounds, onComplete]);
 
   useEffect(() => {
-    startRound();
+    // Give clear instructions before starting
+    speak('Wait for the timer to fill up completely! Then tap the button quickly! Don\'t tap too early or too late!');
+    setTimeout(() => {
+      startRound();
+    }, 4000);
     return () => {
       clearScheduledSpeech();
       if (timerRef.current) {

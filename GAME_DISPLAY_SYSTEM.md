@@ -166,3 +166,4 @@ To add a new game to the system:
 - Game components are self-contained and handle their own logic
 - Progress tracking is handled separately via API calls
 
+

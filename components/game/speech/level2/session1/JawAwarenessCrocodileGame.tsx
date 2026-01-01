@@ -18,6 +18,7 @@ import {
     View
 } from 'react-native';
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 
 // Conditional import for VisionCamera
 let Camera: any = null;
@@ -551,7 +552,7 @@ export const JawAwarenessCrocodileGame: React.FC<Props> = ({
           ]),
         ]).start();
 
-        speak('Great job!');
+        // Don't speak - we'll show animation when cycle completes
       }
 
       setModelState('closed');
@@ -656,9 +657,12 @@ export const JawAwarenessCrocodileGame: React.FC<Props> = ({
           }),
         ]).start();
 
+        // Show success animation before starting next cycle
+        setShowRoundSuccess(true);
         setTimeout(() => {
+          setShowRoundSuccess(false);
           startCycle();
-        }, 500);
+        }, 2500);
       }, CYCLE_DURATION_MS)) as unknown as NodeJS.Timeout;
     }, CYCLE_DURATION_MS)) as unknown as NodeJS.Timeout;
   }, [requiredRounds, finishGame, progressBarWidth]);
@@ -1242,6 +1246,12 @@ export const JawAwarenessCrocodileGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

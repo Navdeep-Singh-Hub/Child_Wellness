@@ -13,6 +13,7 @@ import {
     Text,
     View,
 } from 'react-native';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 
 type Props = {
   onBack: () => void;
@@ -73,16 +74,28 @@ const ANIMALS = [
   },
 ];
 
+// Define 6 rounds with specific animal and animation
+const ROUNDS = [
+  { animalIndex: 0, animation: 'jump' as AnimationType },   // Round 1: Dog jump
+  { animalIndex: 0, animation: 'dance' as AnimationType },  // Round 2: Dog dance
+  { animalIndex: 0, animation: 'laugh' as AnimationType }, // Round 3: Dog laugh
+  { animalIndex: 1, animation: 'jump' as AnimationType },  // Round 4: Cat jump
+  { animalIndex: 1, animation: 'dance' as AnimationType }, // Round 5: Cat dance
+  { animalIndex: 2, animation: 'jump' as AnimationType },  // Round 6: Bird jump
+];
+
+const TOTAL_ROUNDS = 6;
+
 export const TapToAnimateGame: React.FC<Props> = ({
   onBack,
   onComplete,
   requiredTaps = 5,
 }) => {
-  const [hits, setHits] = useState(0);
-  const [currentAnimal, setCurrentAnimal] = useState(0);
+  const [currentRound, setCurrentRound] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [currentAnimation, setCurrentAnimation] = useState<AnimationType>('jump');
+  const [roundComplete, setRoundComplete] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
 
   const animalScale = useRef(new Animated.Value(1)).current;
   const animalY = useRef(new Animated.Value(0)).current;
@@ -92,14 +105,26 @@ export const TapToAnimateGame: React.FC<Props> = ({
   const sparkleScale = useRef(new Animated.Value(0)).current;
   const sparkleRotation = useRef(new Animated.Value(0)).current;
 
+  const currentRoundData = ROUNDS[currentRound];
+  const currentAnimal = ANIMALS[currentRoundData.animalIndex];
+  const currentAnimation = currentRoundData.animation;
+
   useEffect(() => {
     startGlowAnimation();
-    const animal = ANIMALS[currentAnimal];
-    speak(`Tap the ${animal.name} to make him ${getAnimationVerb(animal.animations[0])}!`);
+    // Reset animation values for new round
+    animalScale.setValue(1);
+    animalY.setValue(0);
+    animalRotation.setValue(0);
+    animalBounce.setValue(1);
+    setIsAnimating(false);
+    setRoundComplete(false);
+    
+    const verb = getAnimationVerb(currentAnimation);
+    speak(`Tap to make the ${currentAnimal.name} ${verb}!`);
     return () => {
       clearScheduledSpeech();
     };
-  }, []);
+  }, [currentRound]);
 
   const startGlowAnimation = () => {
     Animated.loop(
@@ -133,7 +158,6 @@ export const TapToAnimateGame: React.FC<Props> = ({
     if (isAnimating) return;
     
     setIsAnimating(true);
-    setCurrentAnimation(animType);
     
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -308,45 +332,38 @@ export const TapToAnimateGame: React.FC<Props> = ({
   }, [isAnimating]);
 
   const handleAnimalTap = () => {
-    if (isAnimating) return;
-
-    const animal = ANIMALS[currentAnimal];
-    // Cycle through animations
-    const animIndex = animal.animations.indexOf(currentAnimation);
-    const nextAnim = animal.animations[(animIndex + 1) % animal.animations.length];
+    if (isAnimating || roundComplete) return;
     
-    animateAnimal(nextAnim);
-
-    const nextHits = hits + 1;
-    setHits(nextHits);
+    animateAnimal(currentAnimation);
     setShowSuccess(true);
-    
-    speak('Yay! Look how he moves!');
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
 
     setTimeout(() => {
       setShowSuccess(false);
-    }, 1500);
+      setShowRoundSuccess(false);
+    }, 2500);
 
-    // Change animal after every 2 taps (builds preference)
-    if (nextHits > 0 && nextHits % 2 === 0) {
-      setTimeout(() => {
-        const nextAnimal = (currentAnimal + 1) % ANIMALS.length;
-        setCurrentAnimal(nextAnimal);
-        const newAnimal = ANIMALS[nextAnimal];
-        speak(`Tap the ${newAnimal.name} to make him ${getAnimationVerb(newAnimal.animations[0])}!`);
-      }, 2000);
-    }
-
-    if (nextHits >= requiredTaps) {
-      setTimeout(() => {
-        onComplete?.();
-        setTimeout(() => onBack(), 2000);
-      }, 2000);
-    }
+    // Mark round as complete after animation finishes (animation takes ~800ms)
+    setTimeout(() => {
+      setRoundComplete(true);
+      
+      // Move to next round or complete game
+      if (currentRound < TOTAL_ROUNDS - 1) {
+        setTimeout(() => {
+          setCurrentRound(currentRound + 1);
+        }, 2500);
+      } else {
+        // All rounds complete
+        setTimeout(() => {
+          onComplete?.();
+          setTimeout(() => onBack(), 2500);
+        }, 2500);
+      }
+    }, 2500);
   };
 
-  const progressDots = Array.from({ length: requiredTaps }, (_, i) => i < hits);
-  const animal = ANIMALS[currentAnimal];
+  const progressDots = Array.from({ length: TOTAL_ROUNDS }, (_, i) => i < currentRound || (i === currentRound && roundComplete));
 
   return (
     <SafeAreaView style={styles.container}>
@@ -362,7 +379,7 @@ export const TapToAnimateGame: React.FC<Props> = ({
           <View style={styles.headerText}>
             <Text style={styles.title}>Tap to Animate</Text>
             <Text style={styles.subtitle}>
-              Tap the {animal.name} to make him {getAnimationVerb(currentAnimation)}! {animal.emoji}
+              Round {currentRound + 1} of {TOTAL_ROUNDS}: Tap to make the {currentAnimal.name} {getAnimationVerb(currentAnimation)}! {currentAnimal.emoji}
             </Text>
           </View>
         </View>
@@ -388,11 +405,11 @@ export const TapToAnimateGame: React.FC<Props> = ({
           >
             <Pressable onPress={handleAnimalTap} hitSlop={40} style={styles.animalPressable}>
               <LinearGradient
-                colors={animal.color}
+                colors={currentAnimal.color}
                 style={[
                   styles.animalCircle,
                   {
-                    shadowColor: animal.glow,
+                    shadowColor: currentAnimal.glow,
                     shadowOpacity: animalGlow.interpolate({
                       inputRange: [0.5, 1],
                       outputRange: [0.4, 0.8],
@@ -405,7 +422,7 @@ export const TapToAnimateGame: React.FC<Props> = ({
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
-                <Text style={styles.animalEmoji}>{animal.emoji}</Text>
+                <Text style={styles.animalEmoji}>{currentAnimal.emoji}</Text>
                 {isAnimating && (
                   <View style={styles.animationLabel}>
                     <Text style={styles.animationText}>
@@ -449,9 +466,16 @@ export const TapToAnimateGame: React.FC<Props> = ({
           )}
 
           {/* Instruction */}
-          {hits === 0 && !isAnimating && (
+          {!roundComplete && !isAnimating && (
             <View style={styles.instructionBadge}>
-              <Text style={styles.instructionText}>👆 Tap the {animal.name}!</Text>
+              <Text style={styles.instructionText}>👆 Tap to make the {currentAnimal.name} {getAnimationVerb(currentAnimation)}!</Text>
+            </View>
+          )}
+
+          {/* Round Complete Message */}
+          {roundComplete && currentRound < TOTAL_ROUNDS - 1 && (
+            <View style={styles.successBadge}>
+              <Text style={styles.successText}>Great! Round {currentRound + 1} complete! 🎉</Text>
             </View>
           )}
         </View>
@@ -469,10 +493,18 @@ export const TapToAnimateGame: React.FC<Props> = ({
             ))}
           </View>
           <Text style={styles.progressText}>
-            {hits >= requiredTaps ? '🎊 Amazing! You did it! 🎊' : `Taps: ${hits} / ${requiredTaps}`}
+            {currentRound >= TOTAL_ROUNDS - 1 && roundComplete 
+              ? '🎊 Amazing! You completed all rounds! 🎊' 
+              : `Round ${currentRound + 1} of ${TOTAL_ROUNDS}`}
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

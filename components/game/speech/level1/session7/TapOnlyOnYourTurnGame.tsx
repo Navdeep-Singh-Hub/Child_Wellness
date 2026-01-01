@@ -409,7 +409,11 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
   }, [rounds, requiredRounds, gameFinished, finishGame]);
 
   useEffect(() => {
-    startRound();
+    // Give clear instructions before starting
+    speak('Tap only when you see GO! Wait when you see STOP! Don\'t tap during STOP signal!');
+    setTimeout(() => {
+      startRound();
+    }, 4000);
     return () => {
       clearScheduledSpeech();
       if (roundTimeoutRef.current) {

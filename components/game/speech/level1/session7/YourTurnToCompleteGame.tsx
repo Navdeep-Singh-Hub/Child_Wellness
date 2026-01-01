@@ -83,6 +83,45 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
   const pieceOpacity = useRef(new Animated.Value(0)).current;
   const handLeftScale = useRef(new Animated.Value(1)).current;
   const handRightScale = useRef(new Animated.Value(1)).current;
+  const startRoundRef = useRef<() => void>();
+
+  const handleSystemTurn = useCallback((pieceIndex: number) => {
+    const piece = PUZZLE_PIECES[pieceIndex];
+    setPlacedPieces(prev => [...prev, { ...piece, side: 'right' }]);
+    setPiecesPlaced(prev => prev + 1);
+
+    // Animate hand
+    Animated.sequence([
+      Animated.timing(handRightScale, {
+        toValue: 1.2,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(handRightScale, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Hide piece
+    Animated.parallel([
+      Animated.timing(pieceScale, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(pieceOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setTimeout(() => {
+        startRoundRef.current?.();
+      }, 500);
+    });
+  }, []);
 
   const startRound = useCallback(() => {
     if (piecesPlaced >= requiredPieces) {
@@ -131,50 +170,10 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
     } else {
       // System's turn - auto-complete after delay
       setTimeout(() => {
-        handleSystemTurn();
+        handleSystemTurn(pieceIndex);
       }, PIECE_DELAY_MS);
     }
-  }, [piecesPlaced, requiredPieces]);
-
-  const handleSystemTurn = useCallback(() => {
-    if (!currentPiece || piecePosition !== 'right') return;
-
-    const piece = PUZZLE_PIECES[currentPiece];
-    setPlacedPieces(prev => [...prev, { ...piece, side: 'right' }]);
-    setPiecesPlaced(prev => prev + 1);
-
-    // Animate hand
-    Animated.sequence([
-      Animated.timing(handRightScale, {
-        toValue: 1.2,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(handRightScale, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Hide piece
-    Animated.parallel([
-      Animated.timing(pieceScale, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(pieceOpacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setTimeout(() => {
-        startRound();
-      }, 500);
-    });
-  }, [currentPiece, piecePosition, startRound]);
+  }, [piecesPlaced, requiredPieces, handleSystemTurn]);
 
   const handlePieceTap = useCallback(() => {
     console.log('Piece tapped!', { canTap, currentPiece, piecePosition });
@@ -260,12 +259,21 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
     }
   }, [piecesPlaced, requiredPieces, onComplete]);
 
+  // Update ref when startRound changes
   useEffect(() => {
-    startRound();
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useEffect(() => {
+    // Give clear instructions before starting
+    speak('Take turns placing puzzle pieces! I will place one, then it\'s your turn. Tap the piece when it\'s your turn!');
+    setTimeout(() => {
+      startRound();
+    }, 3000);
     return () => {
       clearScheduledSpeech();
     };
-  }, []);
+  }, [startRound]);
 
   if (gameFinished && finalStats) {
     return (

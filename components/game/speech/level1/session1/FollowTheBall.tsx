@@ -22,6 +22,7 @@ import { EyeTrackingCamera } from '@/components/game/EyeTrackingCamera';
 import { ResultToast, SparkleBurst } from '@/components/game/FX';
 import { GazeVisualization } from '@/components/game/GazeVisualization';
 import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 
 // Will use useWindowDimensions hook inside component for responsive sizing
 
@@ -142,6 +143,7 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
   const [isPaused, setIsPaused] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
   const [hapticsOn, setHapticsOn] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   const ballAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: ballScale.value }],
@@ -443,8 +445,18 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
       gazeSamples: gazeHistory.length,
     };
 
+    console.log('🎮 FollowTheBall: finishGame called', { stats });
+    
+    // Set all states first to trigger congratulations screen
     setFinalStats(stats);
     setGameFinished(true);
+    setShowCongratulations(true);
+    
+    console.log('🎮 FollowTheBall: States set', { 
+      gameFinished: true, 
+      showCongratulations: true, 
+      hasFinalStats: !!stats 
+    });
 
     // TTS: Celebrate completion
     if (successfulRounds >= TOTAL_ROUNDS * 0.8) {
@@ -573,8 +585,33 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
     onBack();
   };
 
+  // Debug logging
+  useEffect(() => {
+    console.log('🎮 FollowTheBall: Render state', {
+      showCongratulations,
+      gameFinished,
+      hasFinalStats: !!finalStats,
+      round,
+    });
+  }, [showCongratulations, gameFinished, finalStats, round]);
+
+  // Show congratulations screen first
+  if (showCongratulations && gameFinished && finalStats) {
+    console.log('🎮 FollowTheBall: Rendering CongratulationsScreen');
+    return (
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
+        onContinue={() => {
+          setShowCongratulations(false);
+        }}
+        onHome={onBack}
+      />
+    );
+  }
+
   // Game finished screen
-  if (gameFinished && finalStats) {
+  if (gameFinished && finalStats && !showCongratulations) {
     const accuracyPct = Math.round((finalStats.successfulRounds / finalStats.totalRounds) * 100);
     return (
       <SafeAreaView style={styles.container}>
@@ -664,6 +701,7 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
               setAttentionScore(50);
               setGameFinished(false);
               setFinalStats(null);
+              setShowCongratulations(false);
               roundResultsRef.current = [];
               startRound();
             }}

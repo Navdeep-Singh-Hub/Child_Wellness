@@ -17,6 +17,7 @@ import {
   View,
 } from 'react-native';
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 
 // Conditional import for VisionCamera
 let Camera: any = null;
@@ -794,10 +795,11 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
                 // Check if round complete
                 if (starsCaughtRef.current >= (roundConfig.targetCount || 5) && !roundCompleteRef.current) {
                   roundCompleteRef.current = true;
-                  speak('Great job! All stars caught!');
+                  setShowRoundSuccess(true);
                   setTimeout(() => {
+                    setShowRoundSuccess(false);
                     startRound();
-                  }, 2000);
+                  }, 2500);
                 }
               }
               
@@ -995,10 +997,11 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
           // Check if round complete
           if (chewingCyclesRef.current >= (roundConfig.targetCount || 10) && !roundCompleteRef.current) {
             roundCompleteRef.current = true;
-            speak('Excellent chewing! All done!');
+            setShowRoundSuccess(true);
             setTimeout(() => {
+              setShowRoundSuccess(false);
               startRound();
-            }, 2000);
+            }, 2500);
           }
         }
       }
@@ -1063,10 +1066,11 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
       
       if (mimicCompletedRef.current >= (roundConfig.targetCount || 4) && !roundCompleteRef.current) {
         roundCompleteRef.current = true;
-        speak('Perfect mimic! Great job!');
+        setShowRoundSuccess(true);
         setTimeout(() => {
+          setShowRoundSuccess(false);
           startRound();
-        }, 2000);
+        }, 2500);
       }
     }
   }, [isOpen, currentRoundType, canPlay, currentRound, startRound]);
@@ -1101,10 +1105,11 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
         
         if (starCollectionRef.current >= (roundConfig.targetCount || 6) && !roundCompleteRef.current) {
           roundCompleteRef.current = true;
-          speak('All stars collected! Amazing!');
+          setShowRoundSuccess(true);
           setTimeout(() => {
+            setShowRoundSuccess(false);
             startRound();
-          }, 2000);
+          }, 2500);
         }
       } else {
         starHoldStartRef.current = null;
@@ -1134,10 +1139,11 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
         
         if (finalChallengeProgressRef.current >= (roundConfig.targetCount || 10) && !roundCompleteRef.current) {
           roundCompleteRef.current = true;
-          speak('Incredible! You completed the final challenge!');
+          setShowRoundSuccess(true);
           setTimeout(() => {
+            setShowRoundSuccess(false);
             finishGame();
-          }, 2000);
+          }, 2500);
         }
       }
     }
@@ -1504,6 +1510,12 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

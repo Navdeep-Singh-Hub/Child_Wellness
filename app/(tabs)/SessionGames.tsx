@@ -82,6 +82,13 @@ import { PaintCurvedSnakeGame } from '@/components/game/speech/level2/session2/P
 import { RainbowCurveTraceGame } from '@/components/game/speech/level2/session2/RainbowCurveTraceGame';
 import { TraceSmilingMouthGame } from '@/components/game/speech/level2/session2/TraceSmilingMouthGame';
 
+// Speech Therapy Level 2 Session 3 (Airflow Games)
+import { BlowTheBubbleGame } from '@/components/game/speech/level2/session3/BlowTheBubbleGame';
+import { MoveTheFeatherGame } from '@/components/game/speech/level2/session3/MoveTheFeatherGame';
+import { WindmillSpinGame } from '@/components/game/speech/level2/session3/WindmillSpinGame';
+import { BlowOutTheCandleGame } from '@/components/game/speech/level2/session3/BlowOutTheCandleGame';
+import { BalloonInflateGame } from '@/components/game/speech/level2/session3/BalloonInflateGame';
+
 // Occupational Therapy Level 1 Session 1
 import { BigTapTarget } from '@/components/game/occupational/level1/session1/BigTapTarget';
 import BalloonPopGame from '@/components/game/occupational/level1/session1/MovingTargetTapGame'; // Game 3: Balloon Pop
@@ -288,6 +295,11 @@ type GameKey =
   | 'trace-smiling-mouth'
   | 'ball-roll-curved-track'
   | 'paint-curved-snake'
+  | 'blow-the-bubble'
+  | 'move-the-feather'
+  | 'windmill-spin'
+  | 'blow-out-candle'
+  | 'balloon-inflate'
 
   // OT + shared keys
   | 'big-tap'
@@ -940,6 +952,18 @@ export default function SessionGamesScreen() {
   const isPaintCurvedSnakeAvailable =
     (therapyId === 'occupational' || therapyId === 'speech') && levelNumber === 2 && sessionNumber === 2;
 
+  // Level 2 Session 3 games - Speech Therapy (Airflow Games)
+  const isBlowTheBubbleAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 3;
+  const isMoveTheFeatherAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 3;
+  const isWindmillSpinAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 3;
+  const isBlowOutTheCandleAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 3;
+  const isBalloonInflateAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 3;
+
   const GAMES: GameInfo[] = [
     {
       id: 'follow-ball',
@@ -1496,7 +1520,48 @@ export default function SessionGamesScreen() {
       color: '#3B82F6',
       available: isCurvyRoadDriveAvailable,
     },
-    // Level 2 Session 3: Trace Zig-Zag games
+    // Level 2 Session 3: Speech Therapy Airflow Games
+    {
+      id: 'blow-the-bubble',
+      title: 'Blow the Bubble',
+      emoji: '🫧',
+      description: 'Blow to make the bubble grow! Keep blowing until it pops!',
+      color: '#87CEEB',
+      available: isBlowTheBubbleAvailable,
+    },
+    {
+      id: 'move-the-feather',
+      title: 'Move the Feather',
+      emoji: '🪶',
+      description: 'Blow to push the feather across the screen to the finish line!',
+      color: '#E0F2F1',
+      available: isMoveTheFeatherAvailable,
+    },
+    {
+      id: 'windmill-spin',
+      title: 'Windmill Spin',
+      emoji: '🎡',
+      description: 'Blow to spin the colorful pinwheel! Complete 5 full rotations!',
+      color: '#FFD700',
+      available: isWindmillSpinAvailable,
+    },
+    {
+      id: 'blow-out-candle',
+      title: 'Blow Out the Candle',
+      emoji: '🕯️',
+      description: 'Blow strongly to extinguish the candle! The flame flickers as you blow.',
+      color: '#FF4500',
+      available: isBlowOutTheCandleAvailable,
+    },
+    {
+      id: 'balloon-inflate',
+      title: 'Balloon Inflate',
+      emoji: '🎈',
+      description: 'Blow to inflate the balloon! Each blow adds more air!',
+      color: '#FFB6C1',
+      available: isBalloonInflateAvailable,
+    },
+    // Level 2 Session 3: Trace Zig-Zag games (OT)
     {
       id: 'mountain-climb',
       title: 'Mountain Climb',
@@ -2524,7 +2589,28 @@ export default function SessionGamesScreen() {
     return <CurvyRoadDriveGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  // Level 2 Session 3: Trace Zig-Zag games
+  // Level 2 Session 3: Speech Therapy Airflow Games
+  if (currentGame === 'blow-the-bubble') {
+    return <BlowTheBubbleGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'move-the-feather') {
+    return <MoveTheFeatherGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'windmill-spin') {
+    return <WindmillSpinGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'blow-out-candle') {
+    return <BlowOutTheCandleGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'balloon-inflate') {
+    return <BalloonInflateGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 2 Session 3: Trace Zig-Zag games (OT)
   if (currentGame === 'mountain-climb') {
     return <MountainClimbGame onBack={() => setCurrentGame('menu')} />;
   }
@@ -3020,7 +3106,13 @@ export default function SessionGamesScreen() {
                   if (game.id === 'moon-path') setCurrentGame('moon-path');
                   if (game.id === 'smile-maker') setCurrentGame('smile-maker');
                   if (game.id === 'curvy-road-drive') setCurrentGame('curvy-road-drive');
-                  // Level 2 Session 3 games
+                  // Level 2 Session 3 games - Speech Therapy Airflow
+                  if (game.id === 'blow-the-bubble') setCurrentGame('blow-the-bubble');
+                  if (game.id === 'move-the-feather') setCurrentGame('move-the-feather');
+                  if (game.id === 'windmill-spin') setCurrentGame('windmill-spin');
+                  if (game.id === 'blow-out-candle') setCurrentGame('blow-out-candle');
+                  if (game.id === 'balloon-inflate') setCurrentGame('balloon-inflate');
+                  // Level 2 Session 3 games - OT Zig-Zag
                   if (game.id === 'mountain-climb') setCurrentGame('mountain-climb');
                   if (game.id === 'lightning-bolt') setCurrentGame('lightning-bolt');
                   if (game.id === 'saw-path') setCurrentGame('saw-path');
@@ -3109,8 +3201,8 @@ export default function SessionGamesScreen() {
                   if (game.id === 'ball-roll-curved-track') setCurrentGame('ball-roll-curved-track');
                   if (game.id === 'paint-curved-snake') setCurrentGame('paint-curved-snake');
                 }}
-              activeOpacity={0.8}
-            >
+                activeOpacity={0.8}
+              >
               <View style={[styles.gameIcon, { backgroundColor: `${game.color}20` }]}>
                 <Text style={styles.gameEmoji}>{game.emoji}</Text>
               </View>
@@ -3122,14 +3214,14 @@ export default function SessionGamesScreen() {
                   {game.description}
                 </Text>
               </View>
-                <View
-                  style={[
-                    styles.playBadge,
-                    { backgroundColor: `${game.color}20` },
-                  ]}
-                >
-                  <Ionicons name="play" size={20} color={game.color} />
-                </View>
+              <View
+                style={[
+                  styles.playBadge,
+                  { backgroundColor: `${game.color}20` },
+                ]}
+              >
+                <Ionicons name="play" size={20} color={game.color} />
+              </View>
             </TouchableOpacity>
           )))}
         </View>

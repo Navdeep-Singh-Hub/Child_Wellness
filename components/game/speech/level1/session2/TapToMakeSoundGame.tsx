@@ -15,6 +15,7 @@ import {
     Text,
     View,
 } from 'react-native';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 
 type Props = {
   onBack: () => void;
@@ -62,14 +63,27 @@ const useSoundEffect = (uri: string | number) => {
     
     if (Platform.OS === 'web') {
       // Use HTML5 Audio API for web
+      // For local assets (require()), we need to get the actual URL
       try {
-        const audioUrl = typeof uri === 'string' ? uri : '';
-        const audio = new Audio(audioUrl);
-        audio.volume = 0.9;
-        audio.preload = 'auto';
-        webAudioRef.current = audio;
-        setIsLoaded(true);
-        console.log('Web sound loaded successfully:', uri);
+        let audioUrl = '';
+        if (typeof uri === 'string') {
+          audioUrl = uri;
+        } else if (typeof uri === 'number') {
+          // For require() on web, Metro bundler should provide a URL
+          // Try to resolve it - this may need adjustment based on your setup
+          // For now, we'll skip web loading of local files and use TTS fallback
+          console.log('Local sound file on web - will use TTS fallback');
+          return;
+        }
+        
+        if (audioUrl) {
+          const audio = new Audio(audioUrl);
+          audio.volume = 0.9;
+          audio.preload = 'auto';
+          webAudioRef.current = audio;
+          setIsLoaded(true);
+          console.log('Web sound loaded successfully:', uri);
+        }
       } catch (e) {
         console.warn('Failed to load web sound:', uri, e);
       }
@@ -118,8 +132,20 @@ const useSoundEffect = (uri: string | number) => {
       if (Platform.OS === 'web') {
         // Play using HTML5 Audio API
         try {
+          let audioUrl = '';
+          if (typeof uri === 'string') {
+            audioUrl = uri;
+          } else if (typeof uri === 'number') {
+            // Local file on web - skip and return false to use TTS fallback
+            console.log('Local sound file on web - using TTS fallback');
+            return false;
+          }
+          
+          if (!audioUrl) {
+            return false;
+          }
+          
           // Always create a new Audio instance for web to avoid autoplay issues
-          const audioUrl = typeof uri === 'string' ? uri : '';
           const audio = new Audio(audioUrl);
           audio.volume = 0.9;
           
@@ -183,10 +209,7 @@ const useSoundEffect = (uri: string | number) => {
 };
 
 // Sound configuration
-// NOTE: Online sound URLs often have CORS/format issues on web browsers
-// For best results, download sounds and use local files (see SOUND_SETUP_INSTRUCTIONS.md)
-// Free sound sources: Pixabay, Mixkit, Zapsplat, freesound.org
-// To use local sounds: require('@/assets/sounds/drum.mp3')
+// Using local sound files from assets
 const INSTRUMENTS = [
   {
     type: 'drum' as InstrumentType,
@@ -194,8 +217,7 @@ const INSTRUMENTS = [
     name: 'drum',
     color: ['#EF4444', '#DC2626'],
     glow: '#FCA5A5',
-    // Empty string = use TTS only. To add sounds, use local files or working CDN URLs
-    soundUrl: '', // Example: require('@/assets/sounds/drum.mp3')
+    soundUrl: require('@/assets/sounds/session3/drum.mp3'),
     soundWord: 'Boom!',
   },
   {
@@ -204,7 +226,7 @@ const INSTRUMENTS = [
     name: 'bell',
     color: ['#FBBF24', '#F59E0B'],
     glow: '#FDE68A',
-    soundUrl: '', // Example: require('@/assets/sounds/bell.mp3')
+    soundUrl: require('@/assets/sounds/session3/bell.mp3.mp3'),
     soundWord: 'Ding!',
   },
   {
@@ -213,7 +235,8 @@ const INSTRUMENTS = [
     name: 'horn',
     color: ['#3B82F6', '#2563EB'],
     glow: '#93C5FD',
-    soundUrl: '', // Example: require('@/assets/sounds/horn.mp3')
+    // Using beep sound as horn sound if available, otherwise keep empty for TTS fallback
+    soundUrl: require('@/assets/sounds/session3/beep.mp3.mp3'),
     soundWord: 'Toot!',
   },
 ];
@@ -227,6 +250,7 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
   const [currentInstrument, setCurrentInstrument] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showSoundWord, setShowSoundWord] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
 
   const instrumentScale = useRef(new Animated.Value(1)).current;
   const instrumentRotation = useRef(new Animated.Value(0)).current;
@@ -297,9 +321,12 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
       }
     }
 
-    // Always speak the sound word as feedback
-    // This ensures the child hears something even if sound file fails
-    speak(instrument.soundWord);
+    // Only use TTS as fallback if sound file failed to play
+    // The actual sound should play via playDrum/playBell/playHorn above
+    if (!soundPlayed) {
+      // Fallback to TTS only if sound file didn't play
+      speak(instrument.soundWord);
+    }
 
     // Visual feedback
     setShowSoundWord(true);
@@ -365,11 +392,14 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
 
     const nextHits = hits + 1;
     setHits(nextHits);
+    // Show success animation
+    setShowRoundSuccess(true);
 
     setTimeout(() => {
+      setShowRoundSuccess(false);
       setShowSoundWord(false);
       setIsPlaying(false);
-    }, 1500);
+    }, 2500);
 
     // Rotate to next instrument after 2 taps
     if (nextHits > 0 && nextHits % 2 === 0) {
@@ -509,6 +539,12 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

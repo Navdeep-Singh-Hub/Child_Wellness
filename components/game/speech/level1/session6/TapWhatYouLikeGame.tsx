@@ -16,6 +16,7 @@ import {
   View,
 } from 'react-native';
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 
 type Props = {
@@ -95,6 +96,7 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
   const [selectedItem, setSelectedItem] = useState<'left' | 'right' | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalChoices: number;
     choicesMade: number;
@@ -355,11 +357,12 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
       animateSparkles(sparkles).start();
     }
 
-    // Speak feedback
-    speak(`You picked the ${item.name}!`);
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
 
     // Update choices and move to next pair
     setTimeout(() => {
+      setShowRoundSuccess(false);
       const nextChoices = choices + 1;
       setChoices(nextChoices);
       setSelectedItem(null);
@@ -371,12 +374,12 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
         const nextIndex = (currentPairIndex + 1) % CHOICE_PAIRS.length;
         setCurrentPairIndex(nextIndex);
         setTimeout(() => {
-          speak('Choose the one you like!');
+          setIsAnimating(false);
         }, 500);
+      } else {
+        setIsAnimating(false);
       }
-
-      setIsAnimating(false);
-    }, 1500);
+    }, 2500);
   }, [isAnimating, currentPair, choices, requiredChoices, currentPairIndex]);
 
   if (gameFinished && finalStats) {
@@ -609,6 +612,12 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

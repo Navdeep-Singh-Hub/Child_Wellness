@@ -134,10 +134,10 @@ async function initializeHandLandmarker(): Promise<boolean> {
         delegate: 'GPU',
       },
       runningMode: 'VIDEO',
-      numHands: 1, // Track one hand for simplicity
-      minHandDetectionConfidence: 0.3, // Lower threshold for easier detection
-      minHandPresenceConfidence: 0.3, // Lower threshold for easier detection
-      minTrackingConfidence: 0.3, // Lower threshold for easier detection
+      numHands: 2, // Track up to 2 hands (more flexible)
+      minHandDetectionConfidence: 0.1, // Very low threshold for easier detection
+      minHandPresenceConfidence: 0.1, // Very low threshold for easier detection
+      minTrackingConfidence: 0.1, // Very low threshold for easier detection
     });
 
     isInitialized = true;
@@ -195,17 +195,96 @@ async function processFrame(
       width = videoElement.videoWidth;
       height = videoElement.videoHeight;
       
+      // Validate video dimensions before proceeding
+      if (!width || !height || width === 0 || height === 0) {
+        if (Math.random() < 0.1) { // Log occasionally
+          console.warn('⚠️ Video has invalid dimensions, waiting for video to load...', {
+            videoWidth: videoElement.videoWidth,
+            videoHeight: videoElement.videoHeight,
+            readyState: videoElement.readyState,
+            clientWidth: videoElement.clientWidth,
+            clientHeight: videoElement.clientHeight
+          });
+        }
+        return null;
+      }
+      
+      // Ensure video is actually playing and has frames
+      if (videoElement.paused || videoElement.ended) {
+        if (Math.random() < 0.1) { // Log occasionally
+          console.warn('⚠️ Video is paused or ended, attempting to play...', {
+            paused: videoElement.paused,
+            ended: videoElement.ended,
+            readyState: videoElement.readyState
+          });
+        }
+        videoElement.play().catch(err => console.warn('Failed to play:', err));
+        return null;
+      }
+      
       // Create canvas to extract frame
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
       if (!ctx) return null;
       ctx.drawImage(videoElement, 0, 0, width, height);
       imageData = ctx.getImageData(0, 0, width, height);
+      
+      // Validate that we got actual image data (not just black frames)
+      if (imageData && imageData.data) {
+        // Check if frame has any non-zero pixels (basic validation - skip alpha channel)
+        let hasContent = false;
+        let pixelCount = 0;
+        let nonBlackPixels = 0;
+        for (let i = 0; i < imageData.data.length; i += 4) {
+          pixelCount++;
+          const r = imageData.data[i];
+          const g = imageData.data[i + 1];
+          const b = imageData.data[i + 2];
+          // Check if pixel is not black (allow some threshold for noise)
+          if (r > 10 || g > 10 || b > 10) {
+            hasContent = true;
+            nonBlackPixels++;
+          }
+        }
+        
+        // Log frame statistics occasionally to verify camera is working
+        if (Math.random() < 0.1) { // Log ~10% of frames
+          const contentPercent = (nonBlackPixels / pixelCount) * 100;
+          console.log('📸 Frame content check:', {
+            totalPixels: pixelCount,
+            nonBlackPixels,
+            contentPercent: contentPercent.toFixed(2) + '%',
+            hasContent,
+            videoWidth: videoElement.videoWidth,
+            videoHeight: videoElement.videoHeight,
+            readyState: videoElement.readyState
+          });
+        }
+        
+        if (!hasContent) {
+          if (Math.random() < 0.2) { // Log more frequently if black
+            console.warn('⚠️ Frame appears to be empty/black - camera may not be working');
+          }
+          // Don't return null here - let MediaPipe try anyway, it might still work
+        }
+      }
     } else {
       width = videoElement.width;
       height = videoElement.height;
+      
+      // Validate canvas dimensions before proceeding
+      if (!width || !height || width === 0 || height === 0) {
+        if (Math.random() < 0.1) { // Log occasionally
+          console.warn('⚠️ Canvas has invalid dimensions:', {
+            width: videoElement.width,
+            height: videoElement.height
+          });
+        }
+        return null;
+      }
+      
       const ctx = videoElement.getContext('2d');
       if (!ctx) return null;
       imageData = ctx.getImageData(0, 0, width, height);
@@ -236,6 +315,51 @@ async function processFrame(
       // MediaPipe HandLandmarker.detectForVideo accepts ImageData directly (same as FaceLandmarker)
       console.log('🔍 Calling detectForVideo with ImageData, timestamp:', timestamp, 'dimensions:', width, 'x', height);
       result = handLandmarker.detectForVideo(imageData, timestamp);
+      
+      // Debug: Log full result structure to understand what MediaPipe returns
+      // Always log when we have a result to debug the structure
+      if (result) {
+        const resultKeys = Object.keys(result);
+        console.log('📊 Full detection result structure:', {
+          hasResult: !!result,
+          resultKeys: resultKeys,
+          hasLandmarks: !!(result && result.landmarks),
+          landmarksType: result?.landmarks ? typeof result.landmarks : 'none',
+          landmarksIsArray: Array.isArray(result?.landmarks),
+          landmarksLength: result?.landmarks?.length || 0,
+          landmarksContent: result?.landmarks?.[0] ? 'has content' : 'empty',
+        });
+        
+        // Log each property in detail
+        resultKeys.forEach(key => {
+          const value = (result as any)[key];
+          console.log(`  🔑 ${key}:`, {
+            type: typeof value,
+            isArray: Array.isArray(value),
+            length: Array.isArray(value) ? value.length : 'N/A',
+            hasContent: Array.isArray(value) && value.length > 0 ? 'yes' : 'no',
+            firstItem: Array.isArray(value) && value.length > 0 ? value[0] : 'N/A'
+          });
+        });
+        
+        // Also check for alternative property names
+        if (result.landmarks && result.landmarks.length === 0) {
+          console.log('🔍 Checking for alternative landmark properties...');
+          const altNames = ['landmarkLists', 'handLandmarks', 'hands', 'detections', 'handedness'];
+          altNames.forEach(name => {
+            if ((result as any)[name]) {
+              const val = (result as any)[name];
+              console.log(`  ✅ Found ${name}:`, {
+                type: typeof val,
+                isArray: Array.isArray(val),
+                length: Array.isArray(val) ? val.length : 'N/A',
+                content: Array.isArray(val) && val.length > 0 ? val[0] : val
+              });
+            }
+          });
+        }
+      }
+      
       console.log('📊 Detection result:', {
         hasResult: !!result,
         hasLandmarks: !!(result && result.landmarks),
@@ -256,23 +380,62 @@ async function processFrame(
       return null;
     }
     
-    if (!result.landmarks) {
-      console.warn('⚠️ Result has no landmarks property:', Object.keys(result));
+    // MediaPipe HandLandmarker returns result.landmarks as an array of hands
+    // Each hand has an array of 21 landmarks
+    let landmarks = result.landmarks;
+    
+    // Check for alternative property names (some MediaPipe versions use different names)
+    if (!landmarks || (Array.isArray(landmarks) && landmarks.length === 0)) {
+      // Try alternative property names
+      if ((result as any).landmarkLists) {
+        landmarks = (result as any).landmarkLists;
+        console.log('📋 Using landmarkLists property');
+      }
+      if ((!landmarks || landmarks.length === 0) && (result as any).handLandmarks) {
+        landmarks = (result as any).handLandmarks;
+        console.log('📋 Using handLandmarks property');
+      }
+    }
+    
+    if (!landmarks) {
+      console.warn('⚠️ Result has no landmarks property:', {
+        resultKeys: Object.keys(result),
+        resultType: typeof result,
+        resultString: JSON.stringify(result).substring(0, 500)
+      });
       return null;
     }
     
-    if (result.landmarks.length === 0) {
-      console.warn('⚠️ No landmarks detected in result');
+    if (!Array.isArray(landmarks)) {
+      console.warn('⚠️ Landmarks is not an array:', {
+        type: typeof landmarks,
+        value: landmarks,
+        resultKeys: Object.keys(result)
+      });
       return null;
     }
     
-    console.log('✅ Landmarks detected! Count:', result.landmarks.length);
+    if (landmarks.length === 0) {
+      // This is expected when no hand is detected - MediaPipe returns empty array
+      // Log more frequently to help debug
+      if (Math.random() < 0.2) { // Log ~20% of the time
+        console.log('⏳ No hands detected in frame (MediaPipe returned empty landmarks array)');
+        console.log('💡 Tips: Ensure hand is visible, good lighting, clear background');
+      }
+      return null;
+    }
+    
+    console.log('✅ Landmarks detected! Count:', landmarks.length);
 
-    const landmarks = result.landmarks[0];
+    const handLandmarks = landmarks[0];
+    if (!handLandmarks || !Array.isArray(handLandmarks)) {
+      console.warn('⚠️ Invalid landmarks structure:', handLandmarks);
+      return null;
+    }
     
     // Log all 21 landmarks with their indices
     console.log('👋 All 21 Hand Landmarks:');
-    landmarks.forEach((landmark: any, index: number) => {
+    handLandmarks.forEach((landmark: any, index: number) => {
       console.log(`  Landmark ${index}:`, {
         x: landmark.x,
         y: landmark.y,
@@ -282,7 +445,7 @@ async function processFrame(
     });
     
     // Also log as a complete array for easy access
-    const allLandmarksArray = landmarks.map((lm: any, idx: number) => ({
+    const allLandmarksArray = handLandmarks.map((lm: any, idx: number) => ({
       index: idx,
       name: getLandmarkName(idx),
       x: lm.x,
@@ -300,11 +463,11 @@ async function processFrame(
     // - Landmark 20: Pinky finger tip
     
     // Extract finger tip positions (normalized coordinates 0-1)
-    const indexFingerTip = landmarks[8] ? { x: landmarks[8].x, y: landmarks[8].y } : null;
-    const middleFingerTip = landmarks[12] ? { x: landmarks[12].x, y: landmarks[12].y } : null;
-    const ringFingerTip = landmarks[16] ? { x: landmarks[16].x, y: landmarks[16].y } : null;
-    const pinkyFingerTip = landmarks[20] ? { x: landmarks[20].x, y: landmarks[20].y } : null;
-    const thumbTip = landmarks[4] ? { x: landmarks[4].x, y: landmarks[4].y } : null;
+    const indexFingerTip = handLandmarks[8] ? { x: handLandmarks[8].x, y: handLandmarks[8].y } : null;
+    const middleFingerTip = handLandmarks[12] ? { x: handLandmarks[12].x, y: handLandmarks[12].y } : null;
+    const ringFingerTip = handLandmarks[16] ? { x: handLandmarks[16].x, y: handLandmarks[16].y } : null;
+    const pinkyFingerTip = handLandmarks[20] ? { x: handLandmarks[20].x, y: handLandmarks[20].y } : null;
+    const thumbTip = handLandmarks[4] ? { x: handLandmarks[4].x, y: handLandmarks[4].y } : null;
 
     console.log('🖐️ Finger tip positions:', {
       indexFingerTip,
@@ -341,7 +504,7 @@ async function processFrame(
     emaY.current = smoothedY;
 
     // Map all 21 landmarks with x, y, z coordinates
-    const allLandmarksMapped = landmarks.map((lm: any, idx: number) => ({
+    const allLandmarksMapped = handLandmarks.map((lm: any, idx: number) => ({
       index: idx,
       name: getLandmarkName(idx),
       x: lm.x,
@@ -442,18 +605,23 @@ export function useHandDetectionWeb(
         setError(undefined); // Clear any previous errors
         console.log('✅ Camera access granted, stream:', stream);
 
-        // Create video element for processing (hidden)
+        // Create video element for processing
+        // Note: Some browsers/MediaPipe may require video to be visible (even if tiny)
         const video = document.createElement('video');
         video.srcObject = stream;
         video.autoplay = true;
         video.playsInline = true;
         video.muted = true; // Mute to avoid feedback
-        video.style.display = 'none';
-        video.style.position = 'absolute';
-        video.style.opacity = '0';
-        video.style.width = '1px';
-        video.style.height = '1px';
+        // Make video visible but very small (some browsers require visibility for MediaPipe)
+        video.style.position = 'fixed';
+        video.style.top = '0';
+        video.style.left = '0';
+        video.style.width = '160px'; // Small but visible
+        video.style.height = '120px';
+        video.style.opacity = '0.01'; // Nearly invisible but technically visible
         video.style.pointerEvents = 'none';
+        video.style.zIndex = '-1';
+        video.setAttribute('playsinline', 'true');
         document.body.appendChild(video);
         
         // Set videoRef immediately so frame processing can find it
@@ -461,7 +629,11 @@ export function useHandDetectionWeb(
         console.log('📹 Video element created and assigned to videoRef');
 
         video.addEventListener('loadedmetadata', () => {
-          console.log('📹 Video metadata loaded, starting playback...');
+          console.log('📹 Video metadata loaded:', {
+            videoWidth: video.videoWidth,
+            videoHeight: video.videoHeight,
+            readyState: video.readyState
+          });
           video.play().catch(err => {
             console.warn('Failed to play processing video:', err);
           });
@@ -469,7 +641,58 @@ export function useHandDetectionWeb(
 
         // Also wait for video to start playing
         video.addEventListener('playing', () => {
-          console.log('✅ Processing video is playing, ready for hand detection');
+          console.log('✅ Processing video is playing, ready for hand detection', {
+            videoWidth: video.videoWidth,
+            videoHeight: video.videoHeight,
+            readyState: video.readyState,
+            paused: video.paused,
+            ended: video.ended
+          });
+          
+          // Test: Draw a frame to canvas to verify video has content
+          setTimeout(() => {
+            const testCanvas = document.createElement('canvas');
+            testCanvas.width = video.videoWidth;
+            testCanvas.height = video.videoHeight;
+            const testCtx = testCanvas.getContext('2d');
+            if (testCtx) {
+              testCtx.drawImage(video, 0, 0);
+              const testImageData = testCtx.getImageData(0, 0, testCanvas.width, testCanvas.height);
+              let hasContent = false;
+              for (let i = 0; i < testImageData.data.length; i += 4) {
+                if (testImageData.data[i] > 10 || testImageData.data[i + 1] > 10 || testImageData.data[i + 2] > 10) {
+                  hasContent = true;
+                  break;
+                }
+              }
+              console.log('📹 Video content test:', {
+                hasContent,
+                videoWidth: video.videoWidth,
+                videoHeight: video.videoHeight,
+                streamActive: stream.active,
+                streamTracks: stream.getTracks().length
+              });
+            }
+          }, 1000);
+        });
+
+        // Add error handler
+        video.addEventListener('error', (e) => {
+          console.error('❌ Processing video error:', e);
+        });
+        
+        // Monitor video stream
+        stream.getTracks().forEach(track => {
+          console.log('📹 Video track:', {
+            kind: track.kind,
+            enabled: track.enabled,
+            readyState: track.readyState,
+            settings: track.getSettings()
+          });
+          
+          track.addEventListener('ended', () => {
+            console.warn('⚠️ Video track ended');
+          });
         });
 
         // Check if preview video already exists to avoid duplicates
@@ -487,7 +710,7 @@ export function useHandDetectionWeb(
         previewVideo.muted = true;
         previewVideo.style.width = '100%';
         previewVideo.style.height = '100%';
-        previewVideo.style.objectFit = 'cover';
+        previewVideo.style.objectFit = 'contain';
 
         // Find or create preview container
         let container = document.getElementById(previewContainerId) as HTMLElement;

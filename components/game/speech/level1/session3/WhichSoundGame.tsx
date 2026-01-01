@@ -18,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
 import { LinearGradient } from 'expo-linear-gradient';
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { playSound } from '@/utils/soundPlayer';
 
@@ -63,10 +64,11 @@ export const WhichSoundGame: React.FC<Props> = ({
   const [trials, setTrials] = useState(0);
   const [correct, setCorrect] = useState(0);
   const [currentCorrect, setCurrentCorrect] = useState(0);
-  const [phase, setPhase] = useState<'waiting' | 'sound' | 'choice' | 'feedback'>('waiting');
+  const [phase, setPhase] = useState<'sound' | 'choice' | 'feedback'>('sound');
   const [canTap, setCanTap] = useState(false);
   const [feedbackResult, setFeedbackResult] = useState<{ emoji: string; text: string } | null>(null);
   const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalTrials: number;
     correctTrials: number;
@@ -82,10 +84,7 @@ export const WhichSoundGame: React.FC<Props> = ({
   const feedbackOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    speak('Listen… which one made the sound?');
-    setTimeout(() => {
-      startTrial();
-    }, 2000);
+    startTrial();
     return () => {
       clearScheduledSpeech();
     };
@@ -131,7 +130,7 @@ export const WhichSoundGame: React.FC<Props> = ({
   }, [correct, requiredTrials, gameFinished, onComplete]);
 
   const startTrial = useCallback(() => {
-    setPhase('waiting');
+    setPhase('sound');
     setCanTap(false);
     setFeedbackResult(null);
     leftScale.setValue(1);
@@ -143,9 +142,11 @@ export const WhichSoundGame: React.FC<Props> = ({
     const correctIndex = Math.floor(Math.random() * INSTRUMENTS.length);
     setCurrentCorrect(correctIndex);
 
-    // Wait, then play sound
+    // Speak instruction
+    speak('Listen carefully, which one made the sound?');
+
+    // Play sound after a short delay
     setTimeout(() => {
-      setPhase('sound');
       const sound = INSTRUMENTS[correctIndex];
       
       // Play actual sound
@@ -213,7 +214,8 @@ export const WhichSoundGame: React.FC<Props> = ({
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {}
-      speak('Great job!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
     } else {
       speak('Try again!');
       try {
@@ -258,16 +260,16 @@ export const WhichSoundGame: React.FC<Props> = ({
 
     // Move to next trial
     setTimeout(() => {
+      setShowRoundSuccess(false);
       const nextTrials = trials + 1;
       setTrials(nextTrials);
 
       if (nextTrials < requiredTrials) {
         setTimeout(() => {
-          speak('Listen… which one made the sound?');
           startTrial();
-        }, 2000);
+        }, 500);
       }
-    }, 2000);
+    }, 2500);
   }, [canTap, phase, currentCorrect, trials, requiredTrials, startTrial]);
 
   const progressDots = Array.from({ length: requiredTrials }, (_, i) => i < trials);
@@ -305,7 +307,7 @@ export const WhichSoundGame: React.FC<Props> = ({
                 setCorrect(0);
                 setGameFinished(false);
                 setFinalStats(null);
-                setPhase('waiting');
+                setPhase('sound');
                 setCanTap(false);
                 startTrial();
                 speak('Listen… which one made the sound?');
@@ -348,12 +350,6 @@ export const WhichSoundGame: React.FC<Props> = ({
         </View>
 
         <View style={styles.gameArea}>
-          {phase === 'waiting' && (
-            <View style={styles.waitingContainer}>
-              <Text style={styles.waitingText}>👂 Listen carefully...</Text>
-            </View>
-          )}
-
           {phase === 'sound' && (
             <View style={styles.soundContainer}>
               <Text style={styles.soundEmoji}>👂</Text>
@@ -435,6 +431,12 @@ export const WhichSoundGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };
@@ -499,16 +501,20 @@ const styles = StyleSheet.create({
   },
   soundContainer: {
     alignItems: 'center',
+    justifyContent: 'center',
   },
   soundEmoji: {
-    fontSize: 120,
-    marginBottom: 20,
+    fontSize: 140,
+    marginBottom: 30,
   },
   soundText: {
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 42,
+    fontWeight: '900',
     color: '#1E293B',
-    letterSpacing: 4,
+    letterSpacing: 6,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   choiceContainer: {
     flexDirection: 'row',
