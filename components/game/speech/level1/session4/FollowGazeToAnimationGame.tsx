@@ -16,6 +16,7 @@ import {
     View,
 } from 'react-native';
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 
 type Props = {
@@ -58,6 +59,7 @@ export const FollowGazeToAnimationGame: React.FC<Props> = ({
   const [round, setRound] = useState(0);
   const [isLooking, setIsLooking] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalTaps: number;
     correctTaps: number;
@@ -238,16 +240,20 @@ export const FollowGazeToAnimationGame: React.FC<Props> = ({
       }),
     ]).start();
 
-    speak('Great job!');
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
 
-    const nextHits = hits + 1;
-    setHits(nextHits);
+    setTimeout(() => {
+      setShowRoundSuccess(false);
+      const nextHits = hits + 1;
+      setHits(nextHits);
 
-    if (nextHits < (requiredTaps || 5)) {
-      setTimeout(() => {
-        startRound();
-      }, 1500);
-    }
+      if (nextHits < (requiredTaps || 5)) {
+        setTimeout(() => {
+          startRound();
+        }, 500);
+      }
+    }, 2500);
   };
 
   if (gameFinished && finalStats) {
@@ -451,6 +457,12 @@ export const FollowGazeToAnimationGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

@@ -18,6 +18,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 
 // Conditional import for VisionCamera
 let Camera: any = null;
@@ -659,9 +660,10 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
         ? matchFrames / totalFrames
         : 0;
       
+      // Show success animation instead of TTS
       if (matchRate >= 0.6) {
         setCorrectMatches(prev => prev + 1);
-        speak('Great job!');
+        setShowRoundSuccess(true);
         
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -681,8 +683,9 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
 
       // Start next round
       setTimeout(() => {
+        setShowRoundSuccess(false);
         startRound();
-      }, 1000);
+      }, 2500);
     }, ROUND_DURATION_MS)) as unknown as NodeJS.Timeout;
   }, [requiredRounds, finishGame, progressBarWidth, SCREEN_WIDTH]);
 
@@ -1001,6 +1004,12 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
             </View>
           </View>
         </View>
+
+        {/* Round Success Animation */}
+        <RoundSuccessAnimation
+          visible={showRoundSuccess}
+          stars={3}
+        />
       </SafeAreaView>
     );
 };

@@ -16,8 +16,10 @@ import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
 import { LinearGradient } from 'expo-linear-gradient';
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { playSound } from '@/utils/soundPlayer';
+import { SparkleBurst } from '@/components/game/FX';
 
 type Props = {
   onBack: () => void;
@@ -51,6 +53,9 @@ const SOUND_SOURCES = [
   { emoji: '🐶', name: 'dog', sound: 'bark', color: ['#F59E0B', '#D97706'], soundKey: 'dog-bark' as const },
   { emoji: '🚗', name: 'car', sound: 'beep', color: ['#3B82F6', '#2563EB'], soundKey: 'car-beep' as const },
   { emoji: '💧', name: 'water', sound: 'splash', color: ['#06B6D4', '#0891B2'], soundKey: 'water-splash' as const },
+  { emoji: '🔔', name: 'bell', sound: 'ding', color: ['#FBBF24', '#F59E0B'], soundKey: 'bell' as const },
+  { emoji: '🥁', name: 'drum', sound: 'boom', color: ['#EF4444', '#DC2626'], soundKey: 'drum' as const },
+  { emoji: '👏', name: 'clap', sound: 'clap', color: ['#8B5CF6', '#7C3AED'], soundKey: 'clap' as const },
 ];
 
 export const FindSoundSourceGame: React.FC<Props> = ({
@@ -62,10 +67,13 @@ export const FindSoundSourceGame: React.FC<Props> = ({
   const [trials, setTrials] = useState(0);
   const [correct, setCorrect] = useState(0);
   const [currentCorrect, setCurrentCorrect] = useState(0);
-  const [phase, setPhase] = useState<'waiting' | 'sound' | 'choice' | 'feedback'>('waiting');
+  const [currentOptions, setCurrentOptions] = useState<number[]>([]);
+  const [phase, setPhase] = useState<'sound' | 'choice' | 'feedback'>('sound');
   const [canTap, setCanTap] = useState(false);
-  const [feedbackResult, setFeedbackResult] = useState<{ emoji: string; text: string } | null>(null);
+  const [feedbackResult, setFeedbackResult] = useState<{ emoji: string; text: string; isCorrect: boolean } | null>(null);
   const [gameFinished, setGameFinished] = useState(false);
+  const [showSparkles, setShowSparkles] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalTrials: number;
     correctTrials: number;
@@ -75,14 +83,16 @@ export const FindSoundSourceGame: React.FC<Props> = ({
 
   const itemScales = useRef(SOUND_SOURCES.map(() => new Animated.Value(1))).current;
   const itemGlows = useRef(SOUND_SOURCES.map(() => new Animated.Value(0.5))).current;
+  const itemRotations = useRef(SOUND_SOURCES.map(() => new Animated.Value(0))).current;
   const feedbackScale = useRef(new Animated.Value(0)).current;
   const feedbackOpacity = useRef(new Animated.Value(0)).current;
+  const feedbackRotation = useRef(new Animated.Value(0)).current;
+  const soundEmojiScale = useRef(new Animated.Value(1)).current;
+  const soundEmojiRotation = useRef(new Animated.Value(0)).current;
+  const backgroundPulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    speak('Listen to the sound! Find what made the sound!');
-    setTimeout(() => {
-      startTrial();
-    }, 3000); // Give more time for TTS to complete
+    startTrial();
     return () => {
       clearScheduledSpeech();
     };
@@ -128,23 +138,60 @@ export const FindSoundSourceGame: React.FC<Props> = ({
   }, [correct, requiredTrials, gameFinished, onComplete]);
 
   const startTrial = useCallback(() => {
-    setPhase('waiting');
+    setPhase('sound');
     setCanTap(false);
     setFeedbackResult(null);
+    setShowSparkles(false);
     itemScales.forEach(scale => scale.setValue(1));
+    itemRotations.forEach(rot => rot.setValue(0));
     feedbackScale.setValue(0);
     feedbackOpacity.setValue(0);
+    feedbackRotation.setValue(0);
+    soundEmojiScale.setValue(1);
+    soundEmojiRotation.setValue(0);
+    backgroundPulse.setValue(1);
 
     // Random correct answer
     const correctIndex = Math.floor(Math.random() * SOUND_SOURCES.length);
     setCurrentCorrect(correctIndex);
 
-    // Wait, then play sound (give TTS time to finish)
+    // Select 2 options: one correct + one random wrong
+    const wrongOptions = SOUND_SOURCES.filter((_, idx) => idx !== correctIndex);
+    const randomWrong = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
+    const wrongIndex = SOUND_SOURCES.findIndex(s => s.soundKey === randomWrong.soundKey);
+    const options = [correctIndex, wrongIndex].sort(() => Math.random() - 0.5); // Shuffle
+    setCurrentOptions(options);
+
+    // Speak instruction
+    speak('Listen carefully, which one made the sound?');
+
+    // Animate sound emoji
+    Animated.sequence([
+      Animated.parallel([
+        Animated.spring(soundEmojiScale, {
+          toValue: 1.3,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+        Animated.timing(soundEmojiRotation, {
+          toValue: 360,
+          duration: 1000,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.spring(soundEmojiScale, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Play sound after a short delay
     setTimeout(() => {
-      setPhase('sound');
       const source = SOUND_SOURCES[correctIndex];
-      
-      // Play actual sound
       playSound(source.soundKey, 1.0, 1.0);
       
       // Show choices after sound
@@ -152,8 +199,8 @@ export const FindSoundSourceGame: React.FC<Props> = ({
         setPhase('choice');
         setCanTap(true);
         startGlowAnimation();
-      }, 1500);
-    }, 2000); // Increased delay to let TTS complete
+      }, 2000);
+    }, 2000);
   }, []);
 
   const startGlowAnimation = () => {
@@ -186,67 +233,233 @@ export const FindSoundSourceGame: React.FC<Props> = ({
     const isCorrect = index === currentCorrect;
     
     // Store the result for feedback display
-    const feedbackEmoji = isCorrect ? '✅' : '❌';
-    const feedbackText = isCorrect ? 'Great job!' : 'Try again!';
-    setFeedbackResult({ emoji: feedbackEmoji, text: feedbackText });
+    const feedbackEmoji = isCorrect ? '🎉' : '😔';
+    const feedbackText = isCorrect ? 'Amazing! You got it!' : 'Oops! Try again!';
+    setFeedbackResult({ emoji: feedbackEmoji, text: feedbackText, isCorrect });
     
     if (isCorrect) {
       setCorrect(prev => prev + 1);
+      setShowSparkles(true);
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {}
       speak(`Yes! It's the ${SOUND_SOURCES[index].name}!`);
+      
+      // Amazing correct answer animation
+      Animated.parallel([
+        Animated.sequence([
+          Animated.spring(feedbackScale, {
+            toValue: 1.5,
+            tension: 30,
+            friction: 5,
+            useNativeDriver: true,
+          }),
+          Animated.spring(feedbackScale, {
+            toValue: 1,
+            tension: 50,
+            friction: 7,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.timing(feedbackOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(feedbackRotation, {
+              toValue: 10,
+              duration: 200,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+            Animated.timing(feedbackRotation, {
+              toValue: -10,
+              duration: 200,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+            Animated.timing(feedbackRotation, {
+              toValue: 0,
+              duration: 200,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+          ]),
+          { iterations: 3 }
+        ),
+      ]).start();
+
+      // Animate correct item with celebration
+      Animated.parallel([
+        Animated.sequence([
+          Animated.spring(itemScales[index], {
+            toValue: 1.5,
+            tension: 30,
+            friction: 5,
+            useNativeDriver: true,
+          }),
+          Animated.spring(itemScales[index], {
+            toValue: 1.2,
+            tension: 50,
+            friction: 7,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(itemRotations[index], {
+              toValue: 15,
+              duration: 150,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+            Animated.timing(itemRotations[index], {
+              toValue: -15,
+              duration: 150,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+            Animated.timing(itemRotations[index], {
+              toValue: 0,
+              duration: 150,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+          ]),
+          { iterations: 2 }
+        ),
+      ]).start();
+
+      // Pulse background
+      Animated.sequence([
+        Animated.timing(backgroundPulse, {
+          toValue: 1.1,
+          duration: 300,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: false,
+        }),
+        Animated.timing(backgroundPulse, {
+          toValue: 1,
+          duration: 300,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: false,
+        }),
+      ]).start();
+
     } else {
       speak('Try again!');
       try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       } catch {}
+      
+      // Wrong answer animation - shake effect
+      Animated.parallel([
+        Animated.sequence([
+          Animated.spring(feedbackScale, {
+            toValue: 1.2,
+            tension: 50,
+            friction: 7,
+            useNativeDriver: true,
+          }),
+          Animated.spring(feedbackScale, {
+            toValue: 1,
+            tension: 50,
+            friction: 7,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.timing(feedbackOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.timing(feedbackRotation, {
+            toValue: -10,
+            duration: 100,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(feedbackRotation, {
+            toValue: 10,
+            duration: 100,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(feedbackRotation, {
+            toValue: -10,
+            duration: 100,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(feedbackRotation, {
+            toValue: 0,
+            duration: 100,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
+
+      // Animate wrong item - shake
+      Animated.sequence([
+        Animated.timing(itemScales[index], {
+          toValue: 0.9,
+          duration: 100,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(itemRotations[index], {
+          toValue: -10,
+          duration: 50,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(itemRotations[index], {
+          toValue: 10,
+          duration: 50,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(itemRotations[index], {
+          toValue: -10,
+          duration: 50,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.parallel([
+          Animated.spring(itemScales[index], {
+            toValue: 1,
+            tension: 50,
+            friction: 7,
+            useNativeDriver: true,
+          }),
+          Animated.timing(itemRotations[index], {
+            toValue: 0,
+            duration: 100,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
     }
-
-    // Animate feedback
-    Animated.parallel([
-      Animated.spring(feedbackScale, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-      Animated.timing(feedbackOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Animate tapped item
-    Animated.sequence([
-      Animated.spring(itemScales[index], {
-        toValue: 1.3,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-      Animated.spring(itemScales[index], {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-    ]).start();
 
     // Move to next trial
     setTimeout(() => {
+      setShowRoundSuccess(false);
+      setShowSparkles(false);
       const nextTrials = trials + 1;
       setTrials(nextTrials);
 
       if (nextTrials < requiredTrials) {
         setTimeout(() => {
-          speak('Listen to the sound! Find what made the sound!');
           startTrial();
-        }, 2000);
+        }, 500);
       }
-    }, 2000);
-  }, [canTap, phase, currentCorrect, trials, requiredTrials, startTrial]);
+    }, 2500);
+  }, [canTap, phase, currentCorrect, currentOptions, trials, requiredTrials, startTrial]);
 
   const progressDots = Array.from({ length: requiredTrials }, (_, i) => i < trials);
 
@@ -283,7 +496,7 @@ export const FindSoundSourceGame: React.FC<Props> = ({
                 setCorrect(0);
                 setGameFinished(false);
                 setFinalStats(null);
-                setPhase('waiting');
+                setPhase('sound');
                 setCanTap(false);
                 startTrial();
                 speak('Listen to the sound! Find what made the sound!');
@@ -325,56 +538,82 @@ export const FindSoundSourceGame: React.FC<Props> = ({
           <View style={styles.headerRight} />
         </View>
 
-        <View style={styles.gameArea}>
-          {phase === 'waiting' && (
-            <View style={styles.waitingContainer}>
-              <Text style={styles.waitingText}>👂 Listen carefully...</Text>
-            </View>
-          )}
-
+        <Animated.View 
+          style={[
+            styles.gameArea,
+            {
+              transform: [{ scale: backgroundPulse }],
+            },
+          ]}
+        >
           {phase === 'sound' && (
             <View style={styles.soundContainer}>
-              <Text style={styles.soundEmoji}>👂</Text>
+              <Animated.View
+                style={{
+                  transform: [
+                    { scale: soundEmojiScale },
+                    {
+                      rotate: soundEmojiRotation.interpolate({
+                        inputRange: [0, 360],
+                        outputRange: ['0deg', '360deg'],
+                      }),
+                    },
+                  ],
+                }}
+              >
+                <Text style={styles.soundEmoji}>👂</Text>
+              </Animated.View>
               <Text style={styles.soundText}>Listen...</Text>
             </View>
           )}
 
           {phase === 'choice' && (
             <View style={styles.choiceContainer}>
-              {SOUND_SOURCES.map((source, index) => (
-                <Pressable
-                  key={index}
-                  onPress={() => handleTap(index)}
-                  style={styles.itemPressable}
-                  hitSlop={20}
-                >
-                  <Animated.View
-                    style={[
-                      styles.item,
-                      {
-                        transform: [{ scale: itemScales[index] }],
-                        shadowColor: source.color[0],
-                        shadowOpacity: itemGlows[index].interpolate({
-                          inputRange: [0.5, 1],
-                          outputRange: [0.3, 0.7],
-                        }),
-                        shadowRadius: 30,
-                        shadowOffset: { width: 0, height: 0 },
-                        elevation: 15,
-                      },
-                    ]}
+              {currentOptions.map((sourceIndex) => {
+                const source = SOUND_SOURCES[sourceIndex];
+                return (
+                  <Pressable
+                    key={sourceIndex}
+                    onPress={() => handleTap(sourceIndex)}
+                    style={styles.itemPressable}
+                    hitSlop={20}
                   >
-                    <LinearGradient
-                      colors={source.color}
-                      style={styles.itemGradient}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
+                    <Animated.View
+                      style={[
+                        styles.item,
+                        {
+                          transform: [
+                            { scale: itemScales[sourceIndex] },
+                            {
+                              rotate: itemRotations[sourceIndex].interpolate({
+                                inputRange: [-15, 15],
+                                outputRange: ['-15deg', '15deg'],
+                              }),
+                            },
+                          ],
+                          shadowColor: source.color[0],
+                          shadowOpacity: itemGlows[sourceIndex].interpolate({
+                            inputRange: [0.5, 1],
+                            outputRange: [0.4, 0.9],
+                          }),
+                          shadowRadius: 40,
+                          shadowOffset: { width: 0, height: 0 },
+                          elevation: 20,
+                        },
+                      ]}
                     >
-                      <Text style={styles.itemEmoji}>{source.emoji}</Text>
-                    </LinearGradient>
-                  </Animated.View>
-                </Pressable>
-              ))}
+                      <LinearGradient
+                        colors={source.color}
+                        style={styles.itemGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                      >
+                        <Text style={styles.itemEmoji}>{source.emoji}</Text>
+                      </LinearGradient>
+                    </Animated.View>
+                  </Pressable>
+                );
+              })}
             </View>
           )}
 
@@ -383,16 +622,38 @@ export const FindSoundSourceGame: React.FC<Props> = ({
               style={[
                 styles.feedbackContainer,
                 {
-                  transform: [{ scale: feedbackScale }],
+                  transform: [
+                    { scale: feedbackScale },
+                    {
+                      rotate: feedbackRotation.interpolate({
+                        inputRange: [-10, 10],
+                        outputRange: ['-10deg', '10deg'],
+                      }),
+                    },
+                  ],
                   opacity: feedbackOpacity,
                 },
               ]}
             >
-              <Text style={styles.feedbackEmoji}>{feedbackResult.emoji}</Text>
-              <Text style={styles.feedbackText}>{feedbackResult.text}</Text>
+              <LinearGradient
+                colors={feedbackResult.isCorrect 
+                  ? ['#22C55E', '#16A34A', '#15803D'] 
+                  : ['#EF4444', '#DC2626', '#B91C1C']}
+                style={styles.feedbackGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.feedbackEmoji}>{feedbackResult.emoji}</Text>
+                <Text style={styles.feedbackText}>{feedbackResult.text}</Text>
+              </LinearGradient>
             </Animated.View>
           )}
-        </View>
+
+          {/* Sparkle effect for correct answers */}
+          {showSparkles && feedbackResult?.isCorrect && (
+            <SparkleBurst visible={true} color="#22C55E" count={20} size={8} />
+          )}
+        </Animated.View>
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
@@ -413,6 +674,12 @@ export const FindSoundSourceGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };
@@ -467,44 +734,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
   },
-  waitingContainer: {
-    alignItems: 'center',
-  },
-  waitingText: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#64748B',
-  },
   soundContainer: {
     alignItems: 'center',
+    justifyContent: 'center',
   },
   soundEmoji: {
-    fontSize: 120,
-    marginBottom: 20,
+    fontSize: 140,
+    marginBottom: 30,
   },
   soundText: {
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 42,
+    fontWeight: '900',
     color: '#1E293B',
-    letterSpacing: 4,
+    letterSpacing: 6,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   choiceContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
+    alignItems: 'center',
     width: '100%',
     paddingHorizontal: 20,
-    flexWrap: 'wrap',
-    gap: 20,
+    gap: 40,
   },
   itemPressable: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   item: {
-    width: ITEM_SIZE,
-    height: ITEM_SIZE,
-    borderRadius: ITEM_SIZE / 2,
+    width: ITEM_SIZE + 20,
+    height: ITEM_SIZE + 20,
+    borderRadius: (ITEM_SIZE + 20) / 2,
     overflow: 'hidden',
+    borderWidth: 5,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
   },
   itemGradient: {
     width: '100%',
@@ -513,21 +778,39 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   itemEmoji: {
-    fontSize: 70,
+    fontSize: 80,
   },
   feedbackContainer: {
     alignItems: 'center',
     position: 'absolute',
-    top: '40%',
+    top: '35%',
+    zIndex: 1000,
+  },
+  feedbackGradient: {
+    paddingHorizontal: 40,
+    paddingVertical: 30,
+    borderRadius: 30,
+    alignItems: 'center',
+    borderWidth: 4,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 20,
   },
   feedbackEmoji: {
-    fontSize: 100,
-    marginBottom: 20,
+    fontSize: 120,
+    marginBottom: 15,
   },
   feedbackText: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#22C55E',
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   footer: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',

@@ -291,7 +291,11 @@ export const PassTheBallGame: React.FC<Props> = ({
     // Initialize ball position - adjust for ball center
     const startX = SCREEN_WIDTH * 0.85 - BALL_SIZE / 2;
     ballX.setValue(startX);
-    startRound();
+    // Give clear instructions before starting
+    speak('Let\'s play pass the ball! When the ball comes to you, tap it to pass it back. Wait when it\'s not your turn!');
+    setTimeout(() => {
+      startRound();
+    }, 4000);
     return () => {
       clearScheduledSpeech();
     };

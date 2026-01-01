@@ -479,7 +479,11 @@ export const WaitForTheSignalGame: React.FC<Props> = ({
   }, [rounds, requiredRounds, gameFinished, finishGame]);
 
   useEffect(() => {
-    startRound();
+    // Give clear instructions before starting
+    speak('Watch the spinner! Tap when it turns green! Wait when it turns red! Don\'t tap during red!');
+    setTimeout(() => {
+      startRound();
+    }, 4000);
     return () => {
       clearScheduledSpeech();
       if (spinTimeoutRef.current) {

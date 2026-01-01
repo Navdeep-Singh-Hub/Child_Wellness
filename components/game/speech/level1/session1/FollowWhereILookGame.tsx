@@ -3,6 +3,8 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import {
     Animated,
     Dimensions,
@@ -58,6 +60,9 @@ export const FollowWhereILookGame: React.FC<Props> = ({
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [round, setRound] = useState(0);
   const [isLooking, setIsLooking] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
+  const [gameFinished, setGameFinished] = useState(false);
 
   const avatarScale = useRef(new Animated.Value(1)).current;
   const avatarEyeX = useRef(new Animated.Value(0)).current;
@@ -84,6 +89,22 @@ export const FollowWhereILookGame: React.FC<Props> = ({
       clearScheduledSpeech();
     };
   }, []);
+
+  // Show congratulations when game finishes
+  useEffect(() => {
+    console.log('🎮 FollowWhereILookGame: gameFinished effect triggered', { 
+      gameFinished, 
+      showCongratulations,
+      hits,
+      requiredTaps 
+    });
+    if (gameFinished && !showCongratulations) {
+      console.log('🎮 FollowWhereILookGame: ✅ Setting showCongratulations to true');
+      setShowCongratulations(true);
+    } else if (gameFinished && showCongratulations) {
+      console.log('🎮 FollowWhereILookGame: ✅ Already showing congratulations');
+    }
+  }, [gameFinished, showCongratulations, hits, requiredTaps]);
 
   const startRound = useCallback(() => {
     setRound((prev) => prev + 1);
@@ -226,29 +247,80 @@ export const FollowWhereILookGame: React.FC<Props> = ({
       avatarScale.setValue(1);
     });
 
-    speak('Great job!');
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
 
     const nextHits = hits + 1;
+    console.log('🎮 FollowWhereILookGame: handleObjectTap called', { 
+      currentHits: hits, 
+      nextHits, 
+      requiredTaps,
+      willComplete: nextHits >= requiredTaps 
+    });
     setHits(nextHits);
 
     if (nextHits >= requiredTaps) {
+      console.log('🎮 FollowWhereILookGame: ✅ GAME COMPLETE!', { nextHits, requiredTaps });
+      // Stop all animations and set states
+      setShowFeedback(false);
       setTimeout(() => {
-        onComplete?.();
-        setTimeout(() => onBack(), 1500);
-      }, 1500);
+        setShowRoundSuccess(false);
+      }, 2500);
+      console.log('🎮 FollowWhereILookGame: About to set gameFinished to true');
+      setGameFinished(true);
+      console.log('🎮 FollowWhereILookGame: ✅ Set gameFinished to true');
+      // Force immediate state update
+      setTimeout(() => {
+        console.log('🎮 FollowWhereILookGame: Checking state after timeout', {
+          gameFinished: true, // This will be the new value
+        });
+      }, 0);
       return;
     }
 
     setTimeout(() => {
+      setShowRoundSuccess(false);
       setShowFeedback(false);
       startRound();
-    }, 1500);
+    }, 2500);
   };
 
   const progressDots = Array.from({ length: requiredTaps }, (_, i) => i < hits);
   const currentObj = objects[currentObject];
   const objectX = currentDirection === 'left' ? SCREEN_WIDTH * 0.2 : SCREEN_WIDTH * 0.8;
   const objectY = SCREEN_HEIGHT * 0.5;
+
+  // Debug logging - log on every render
+  console.log('🎮 FollowWhereILookGame: 🔄 RENDER', {
+    showCongratulations,
+    gameFinished,
+    hits,
+    requiredTaps,
+    shouldShowCongrats: showCongratulations && gameFinished,
+  });
+
+  // Show congratulations screen when game finishes
+  if (showCongratulations && gameFinished) {
+    console.log('🎮 FollowWhereILookGame: 🎉 RENDERING CongratulationsScreen NOW!');
+    return (
+      <CongratulationsScreen
+        message="Great Job!"
+        showButtons={true}
+        onContinue={() => {
+          setShowCongratulations(false);
+          setTimeout(() => {
+            onComplete?.();
+            setTimeout(() => onBack(), 500);
+          }, 500);
+        }}
+        onHome={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          onBack();
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -405,6 +477,12 @@ export const FollowWhereILookGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

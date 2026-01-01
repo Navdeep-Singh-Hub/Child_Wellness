@@ -15,6 +15,8 @@ import {
     View,
 } from 'react-native';
 import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 
 type Props = {
@@ -63,6 +65,8 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [showCongratulations, setShowCongratulations] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
 
   const starX = useRef(new Animated.Value(0)).current;
   const starY = useRef(new Animated.Value(0)).current;
@@ -177,17 +181,35 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
   }, [hits, requiredTaps, gameFinished]);
 
   const finishGame = useCallback(async () => {
-    if (gameFinished) return;
+    if (gameFinished) {
+      console.log('🎮 CatchTheBouncingStar: finishGame called but gameFinished already true');
+      return;
+    }
+    
+    console.log('🎮 CatchTheBouncingStar: finishGame called', { hits, requiredTaps });
     
     const stats = {
       totalTaps: requiredTaps,
       successfulTaps: hits,
       accuracy: Math.round((hits / requiredTaps) * 100),
     };
+    
+    console.log('🎮 CatchTheBouncingStar: Setting states', { stats });
+    
+    // Set all states first
     setFinalStats(stats);
     setGameFinished(true);
+    setShowCongratulations(true);
+    
+    console.log('🎮 CatchTheBouncingStar: States set', { 
+      gameFinished: true, 
+      showCongratulations: true, 
+      hasFinalStats: !!stats 
+    });
+    
     speak('Amazing! You caught all the stars!');
 
+    // Log game in background (don't wait for it)
     try {
       const xpAwarded = hits * 10;
       const result = await logGameAndAward({
@@ -203,11 +225,11 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
         },
       });
       setLogTimestamp(result?.last?.at ?? null);
-      onComplete?.();
     } catch (e) {
       console.error('Failed to save game:', e);
     }
-  }, [hits, requiredTaps, gameFinished, onComplete]);
+    // Don't call onComplete here - let congratulations screen handle it
+  }, [hits, requiredTaps, gameFinished]);
 
   const handleStarTap = useCallback(() => {
     if (gameFinished) return;
@@ -217,7 +239,8 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
     setRound((prev) => prev + 1);
     setShowFeedback(true);
     setFeedbackMessage('🌟 Great catch!');
-    speak('Great catch!');
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
 
     // Pop animation
     Animated.sequence([
@@ -251,18 +274,55 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
       ]),
     ]).start(() => {
       if (hits + 1 < requiredTaps) {
-        // Reset and continue
-        starScale.setValue(1);
-        starGlow.setValue(0.5);
+        // Reset and continue after animation
         setTimeout(() => {
+          setShowRoundSuccess(false);
           setShowFeedback(false);
+          starScale.setValue(1);
+          starGlow.setValue(0.5);
           startBounce();
-        }, 500);
+        }, 2500);
+      } else {
+        // Last tap - hide animation before finishing game
+        setTimeout(() => {
+          setShowRoundSuccess(false);
+        }, 2500);
       }
     });
   }, [gameFinished, hits, requiredTaps, startBounce]);
 
-  if (gameFinished && finalStats) {
+  // Debug logging
+  useEffect(() => {
+    console.log('🎮 CatchTheBouncingStar: Render state', {
+      showCongratulations,
+      gameFinished,
+      hasFinalStats: !!finalStats,
+      hits,
+      requiredTaps,
+    });
+  }, [showCongratulations, gameFinished, finalStats, hits, requiredTaps]);
+
+  // Show congratulations screen first
+  if (showCongratulations && gameFinished && finalStats) {
+    console.log('🎮 CatchTheBouncingStar: Rendering CongratulationsScreen');
+    return (
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
+        onContinue={() => {
+          setShowCongratulations(false);
+        }}
+        onHome={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          onBack();
+        }}
+      />
+    );
+  }
+
+  // Then show result card
+  if (gameFinished && finalStats && !showCongratulations) {
     const accuracyPct = finalStats.accuracy;
     return (
       <SafeAreaView style={styles.container}>
@@ -299,6 +359,7 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
               setGameFinished(false);
               setFinalStats(null);
               setShowFeedback(false);
+              setShowCongratulations(false);
               starScale.setValue(1);
               starGlow.setValue(0.5);
               startBounce();
@@ -412,6 +473,12 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

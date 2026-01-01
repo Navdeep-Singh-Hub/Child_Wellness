@@ -16,6 +16,7 @@ import {
   View,
 } from 'react-native';
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 
 type Props = {
@@ -70,6 +71,7 @@ export const MovingArmPointingGame: React.FC<Props> = ({
   const [isPointing, setIsPointing] = useState(false);
   const [armRaised, setArmRaised] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalTaps: number;
     correctTaps: number;
@@ -269,16 +271,20 @@ export const MovingArmPointingGame: React.FC<Props> = ({
       avatarScale.setValue(1);
     });
 
-    speak('Great job!');
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
 
-    const nextHits = hits + 1;
-    setHits(nextHits);
+    setTimeout(() => {
+      setShowRoundSuccess(false);
+      const nextHits = hits + 1;
+      setHits(nextHits);
 
-    if (nextHits < requiredTaps) {
-      setTimeout(() => {
-        startRound();
-      }, 1500);
-    }
+      if (nextHits < requiredTaps) {
+        setTimeout(() => {
+          startRound();
+        }, 500);
+      }
+    }, 2500);
   };
 
   if (gameFinished && finalStats) {
@@ -510,6 +516,12 @@ export const MovingArmPointingGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

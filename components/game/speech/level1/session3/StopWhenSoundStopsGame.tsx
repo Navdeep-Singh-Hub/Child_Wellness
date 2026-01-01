@@ -18,6 +18,7 @@ import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
 import { LinearGradient } from 'expo-linear-gradient';
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { getSoundAsset, SOUND_MAP } from '@/utils/soundAssets';
 
@@ -59,6 +60,7 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
   const [correct, setCorrect] = useState(0);
   const [gameState, setGameState] = useState<'moving' | 'stopped' | 'feedback'>('moving');
   const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalTrials: number;
     correctTrials: number;
@@ -386,7 +388,8 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {}
-    speak('Great job!');
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
 
     // Success animation
     Animated.sequence([
@@ -405,15 +408,15 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
     ]).start();
 
     setTimeout(() => {
+      setShowRoundSuccess(false);
       const nextTrials = trials + 1;
       setTrials(nextTrials);
       if (nextTrials < requiredTrials) {
         setTimeout(() => {
-          speak('Watch the ball! When the sound stops, tap it!');
           startTrial();
-        }, 2000);
+        }, 500);
       }
-    }, 2000);
+    }, 2500);
   };
 
   const handleTimeout = () => {
@@ -588,6 +591,12 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

@@ -1,6 +1,12 @@
 import { useAuth } from '@/app/providers/AuthProvider';
 import { images } from '@/constants/images';
 import { getMyProfile } from '@/utils/api';
+import {
+  clearProfileCache,
+  getCachedProfileStatus,
+  isProfileComplete,
+  setCachedProfileStatus,
+} from '@/utils/profileCache';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect } from 'expo-router';
@@ -62,15 +68,41 @@ export default function RootIndex() {
     ]).start();
   }, []);
 
+  // Clear cache when user logs out
+  useEffect(() => {
+    if (!session) {
+      clearProfileCache();
+      setRedirectPath(null);
+      setCheckingProfile(false);
+    }
+  }, [session]);
+
   useEffect(() => {
     if (session?.profile) {
       setCheckingProfile(true);
       (async () => {
         try {
-          // Single call: server ensures user inside /me/profile
-          const hasMinPhone = (p: any) => String(p?.phoneNumber || '').replace(/\D/g, '').length >= 10;
+          // First, check cache for instant response
+          const cached = await getCachedProfileStatus();
+          if (cached?.isComplete) {
+            // Use cached result immediately - no API call needed!
+            setRedirectPath('/(tabs)');
+            setCheckingProfile(false);
+            return;
+          }
+
+          // Cache miss or expired - make API call
           const profile = await getMyProfile();
-          if (profile.firstName && profile.dob && hasMinPhone(profile)) {
+          const complete = isProfileComplete(profile);
+          
+          // Cache the result for next time
+          await setCachedProfileStatus(complete, {
+            firstName: profile.firstName,
+            dob: profile.dob || undefined,
+            phoneNumber: profile.phoneNumber,
+          });
+
+          if (complete) {
             // Profile complete, go to tabs
             setRedirectPath('/(tabs)');
           } else {

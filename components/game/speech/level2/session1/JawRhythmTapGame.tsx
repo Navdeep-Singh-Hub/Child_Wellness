@@ -18,6 +18,7 @@ import {
   View,
 } from 'react-native';
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 
 // Conditional import for VisionCamera
 let Camera: any = null;
@@ -210,6 +211,7 @@ export const JawRhythmTapGame: React.FC<Props> = ({
   const [score, setScore] = useState(0);
   const [patternActive, setPatternActive] = useState(false);
   const [nextBeatIndex, setNextBeatIndex] = useState(0); // State for render
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const lastBeatChangeTimeRef = useRef<number>(0);
   const MIN_EMOJI_DISPLAY_TIME = 400; // Minimum time to show each emoji (ms)
   
@@ -797,31 +799,25 @@ export const JawRhythmTapGame: React.FC<Props> = ({
         useNativeDriver: false,
       }).start();
       
-      // Give feedback on pattern completion
+      // Show success animation instead of TTS
       const hitBeats = beatProcessedRef.current.size;
       const totalPatternBeats = pattern.length;
-      if (hitBeats === totalPatternBeats) {
-        speak('Perfect pattern!');
+      if (hitBeats === totalPatternBeats || hitBeats >= totalPatternBeats * 0.7) {
+        setShowRoundSuccess(true);
         try {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {}
-      } else if (hitBeats >= totalPatternBeats * 0.7) {
-        speak('Good job!');
-        try {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch {}
-      } else if (hitBeats < totalPatternBeats * 0.5) {
-        speak('Keep trying!');
       }
       
       // Start next pattern or finish
       setTimeout(() => {
+        setShowRoundSuccess(false);
         if (nextPattern < requiredRounds) {
           startPattern();
         } else {
           finishGame();
         }
-      }, 1500);
+      }, 2500);
     }, patternDuration) as unknown as NodeJS.Timeout;
   }, [currentPattern, requiredRounds, generatePattern, progressBarWidth, finishGame]);
 
@@ -1270,6 +1266,12 @@ export const JawRhythmTapGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };
