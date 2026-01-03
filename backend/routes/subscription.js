@@ -241,6 +241,23 @@ router.post('/create-subscription', async (req, res) => {
       });
     }
     
+    // Check if Razorpay keys are configured
+    const hasRazorpayKeys = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET;
+    
+    if (!hasRazorpayKeys) {
+      console.log('[CREATE SUBSCRIPTION] Razorpay keys not configured - returning mock response for localhost development');
+      // For localhost development without Razorpay keys, return mock data
+      return res.json({
+        ok: true,
+        subscriptionId: 'mock_subscription_' + Date.now(),
+        planId: 'mock_plan_id',
+        customerId: 'mock_customer_id',
+        amount: MONTHLY_PLAN_AMOUNT / 100,
+        currency: 'INR',
+        mock: true, // Flag to indicate this is a mock response
+      });
+    }
+    
     // Create Razorpay plan if it doesn't exist (idempotent)
     let planId = process.env.RAZORPAY_PLAN_ID;
     

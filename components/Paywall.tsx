@@ -1,11 +1,11 @@
-// import { cancelSubscription, createSubscription, getSubscriptionStatus, verifyPayment, type SubscriptionStatus } from '@/utils/api';
-import { getSubscriptionStatus, type SubscriptionStatus } from '@/utils/api';
+import { cancelSubscription, createSubscription, getSubscriptionStatus, verifyPayment, type SubscriptionStatus } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Platform,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -44,112 +44,136 @@ export default function Paywall({ onSuccess }: { onSuccess?: () => void }) {
   };
 
   const handleSubscribe = async () => {
-    // Razorpay checkout process commented out
-    Alert.alert('Info', 'Subscription feature is currently disabled.');
-    setLoading(false);
+    setLoading(true);
     
-    // // Step 1: Create subscription on backend
-    // const subscriptionData = await createSubscription();
-    // console.log('Subscription created:', subscriptionData);
+    try {
+      // Step 1: Create subscription on backend
+      const subscriptionData = await createSubscription();
+      console.log('Subscription created:', subscriptionData);
 
-    // // Check if user has free access (shouldn't create subscription)
-    // if ((subscriptionData as any).hasFreeAccess) {
-    //   Alert.alert('Info', 'You have free access. No subscription needed.');
-    //   setLoading(false);
-    //   loadStatus();
-    //   onSuccess?.();
-    //   return;
-    // }
+      // Check if user has free access (shouldn't create subscription)
+      if ((subscriptionData as any).hasFreeAccess) {
+        Alert.alert('Info', 'You have free access. No subscription needed.');
+        setLoading(false);
+        loadStatus();
+        onSuccess?.();
+        return;
+      }
 
-    // // Step 2: Open Razorpay checkout
-    // // For React Native, we'll use Razorpay's React Native SDK or web checkout
-    // // This is a simplified version - in production, use @razorpay/react-native
-    // 
-    // if (Platform.OS === 'web') {
-    //   // Web: Use Razorpay Checkout
-    //   await openRazorpayWebCheckout(subscriptionData);
-    // } else {
-    //   // Mobile: Use Razorpay React Native SDK
-    //   await openRazorpayMobileCheckout(subscriptionData);
-    // }
+      // Check if this is a mock response (localhost development without Razorpay keys)
+      if ((subscriptionData as any).mock) {
+        Alert.alert(
+          'Development Mode',
+          'Razorpay keys are not configured. This is a mock subscription for localhost development. In production, configure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your backend .env file.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setLoading(false);
+                // In development, we can still refresh status
+                loadStatus();
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      // Step 2: Open Razorpay checkout
+      if (Platform.OS === 'web') {
+        // Web: Use Razorpay Checkout
+        await openRazorpayWebCheckout(subscriptionData);
+      } else {
+        // Mobile: Show message for now
+        Alert.alert(
+          'Mobile Checkout',
+          'Mobile checkout requires @razorpay/react-native package. Please use web version for subscription.',
+          [{ text: 'OK', onPress: () => setLoading(false) }]
+        );
+      }
+    } catch (error: any) {
+      console.error('Subscription error:', error);
+      Alert.alert('Error', error.message || 'Failed to create subscription. Please try again.');
+      setLoading(false);
+    }
   };
 
-  // /**
-  //  * Open Razorpay checkout for web
-  //  */
-  // const openRazorpayWebCheckout = async (subscriptionData: any) => {
-  //   // For web, we'll use Razorpay's checkout.js
-  //   if (typeof window === 'undefined') {
-  //     Alert.alert('Error', 'Web checkout is only available on web platform.');
-  //     setLoading(false);
-  //     return;
-  //   }
+  /**
+   * Open Razorpay checkout for web
+   */
+  const openRazorpayWebCheckout = async (subscriptionData: any) => {
+    // For web, we'll use Razorpay's checkout.js
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      Alert.alert('Error', 'Web checkout is only available on web platform.');
+      setLoading(false);
+      return;
+    }
 
-  //   // Check if Razorpay is already loaded
-  //   if ((window as any).Razorpay) {
-  //     openCheckout();
-  //   } else {
-  //     // Load Razorpay script
-  //     const script = document.createElement('script');
-  //     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-  //     script.onload = openCheckout;
-  //     script.onerror = () => {
-  //       Alert.alert('Error', 'Failed to load Razorpay checkout. Please try again.');
-  //       setLoading(false);
-  //     };
-  //     document.body.appendChild(script);
-  //   }
+    function openCheckout() {
+      const options = {
+        key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || '', // Your Razorpay key
+        subscription_id: subscriptionData.subscriptionId,
+        name: 'Therapy Progress',
+        description: 'Monthly subscription for Therapy Progress access',
+        image: '', // Optional: your logo URL
+        prefill: {
+          email: '', // Get from user profile
+          contact: '', // Get from user profile
+        },
+        theme: {
+          color: '#8B5CF6',
+        },
+        handler: async function (response: any) {
+          // Payment successful
+          try {
+            await verifyPayment({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_subscription_id: response.razorpay_subscription_id,
+              razorpay_signature: response.razorpay_signature,
+            });
 
-  //   function openCheckout() {
-  //     const options = {
-  //       key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || '', // Your Razorpay key
-  //       subscription_id: subscriptionData.subscriptionId,
-  //       name: 'Therapy Progress',
-  //       description: 'Monthly subscription for Therapy Progress access',
-  //       image: '', // Optional: your logo URL
-  //       prefill: {
-  //         email: '', // Get from user profile
-  //         contact: '', // Get from user profile
-  //       },
-  //       theme: {
-  //         color: '#8B5CF6',
-  //       },
-  //       handler: async function (response: any) {
-  //         // Payment successful
-  //         try {
-  //           await verifyPayment({
-  //             razorpay_payment_id: response.razorpay_payment_id,
-  //             razorpay_subscription_id: response.razorpay_subscription_id,
-  //             razorpay_signature: response.razorpay_signature,
-  //           });
+            Alert.alert('Success', 'Subscription activated successfully!', [
+              {
+                text: 'OK',
+                onPress: () => {
+                  loadStatus();
+                  onSuccess?.();
+                },
+              },
+            ]);
+          } catch (err: any) {
+            console.error('Payment verification error:', err);
+            Alert.alert('Error', 'Payment verification failed. Please contact support.');
+          } finally {
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+          },
+        },
+      };
 
-  //           Alert.alert('Success', 'Subscription activated successfully!', [
-  //             {
-  //               text: 'OK',
-  //               onPress: () => {
-  //                 loadStatus();
-  //                 onSuccess?.();
-  //               },
-  //             },
-  //           ]);
-  //         } catch (err: any) {
-  //           console.error('Payment verification error:', err);
-  //           Alert.alert('Error', 'Payment verification failed. Please contact support.');
-  //         } finally {
-  //           setLoading(false);
-  //         }
-  //       },
-  //       modal: {
-  //         ondismiss: () => {
-  //           setLoading(false);
-  //         },
-  //       },
-  //     };
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+    }
 
-  //     const razorpay = new (window as any).Razorpay(options);
-  //     razorpay.open();
-  //   }
-  // };
+    // Check if Razorpay is already loaded
+    if ((window as any).Razorpay) {
+      openCheckout();
+    } else {
+      // Load Razorpay script
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = openCheckout;
+      script.onerror = () => {
+        Alert.alert('Error', 'Failed to load Razorpay checkout. Please try again.');
+        setLoading(false);
+      };
+      document.body.appendChild(script);
+    }
+  };
 
   // /**
   //  * Open Razorpay checkout for mobile
@@ -319,29 +343,26 @@ export default function Paywall({ onSuccess }: { onSuccess?: () => void }) {
               <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={async () => {
-                  // Razorpay cancel subscription commented out
-                  Alert.alert('Info', 'Cancel subscription feature is currently disabled.');
-                  
-                  // Alert.alert(
-                  //   'Cancel Subscription',
-                  //   'Are you sure you want to cancel your subscription? You will lose access after the current billing period.',
-                  //   [
-                  //     { text: 'No', style: 'cancel' },
-                  //     {
-                  //       text: 'Yes, Cancel',
-                  //       style: 'destructive',
-                  //       onPress: async () => {
-                  //         try {
-                  //           await cancelSubscription();
-                  //           Alert.alert('Success', 'Subscription cancelled successfully.');
-                  //           loadStatus();
-                  //         } catch (error: any) {
-                  //           Alert.alert('Error', error.message || 'Failed to cancel subscription.');
-                  //         }
-                  //       },
-                  //     },
-                  //   ]
-                  // );
+                  Alert.alert(
+                    'Cancel Subscription',
+                    'Are you sure you want to cancel your subscription? You will lose access after the current billing period.',
+                    [
+                      { text: 'No', style: 'cancel' },
+                      {
+                        text: 'Yes, Cancel',
+                        style: 'destructive',
+                        onPress: async () => {
+                          try {
+                            await cancelSubscription();
+                            Alert.alert('Success', 'Subscription cancelled successfully.');
+                            loadStatus();
+                          } catch (error: any) {
+                            Alert.alert('Error', error.message || 'Failed to cancel subscription.');
+                          }
+                        },
+                      },
+                    ]
+                  );
                 }}
               >
                 <Text style={styles.cancelButtonText}>Cancel Subscription</Text>
