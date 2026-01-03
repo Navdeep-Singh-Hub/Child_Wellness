@@ -28,7 +28,7 @@ const DEFAULT_TTS_RATE = 0.75;
 const GROWTH_DURATION_MS = 5500; // 5.5 seconds to fully bloom (slightly longer for better patience practice)
 const BLOOM_DURATION_MS = 4500; // How long bloomed flower is available (increased for better response time)
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -107,6 +107,23 @@ export const GrowingFlowerGame: React.FC<Props> = ({
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pulseAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const rotationAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  
+  // Track animated values to avoid _value access
+  const flowerScaleCurrentRef = useRef(0);
+  const petalScaleCurrentRef = useRef(0);
+  
+  useEffect(() => {
+    const flowerListener = flowerScale.addListener(({ value }) => {
+      flowerScaleCurrentRef.current = value;
+    });
+    const petalListener = petalScale.addListener(({ value }) => {
+      petalScaleCurrentRef.current = value;
+    });
+    return () => {
+      flowerScale.removeListener(flowerListener);
+      petalScale.removeListener(petalListener);
+    };
+  }, [flowerScale, petalScale]);
 
   const finishGame = useCallback(async () => {
     // Clear all timeouts and animations
@@ -320,14 +337,14 @@ export const GrowingFlowerGame: React.FC<Props> = ({
     const INITIAL_DELAY_MS = 400;
     const TOTAL_GROWTH_TIME = INITIAL_DELAY_MS + GROWTH_DURATION_MS;
     const startTime = Date.now();
-    progressIntervalRef.current = setInterval(() => {
+    progressIntervalRef.current = (setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(Math.max(0, (elapsed - INITIAL_DELAY_MS) / GROWTH_DURATION_MS), 1);
       setGrowthProgress(progress);
-    }, 100);
+    }, 100)) as unknown as NodeJS.Timeout;
 
     // After growth completes, flower is bloomed (account for initial 400ms appearance delay)
-    growthTimeoutRef.current = setTimeout(() => {
+    growthTimeoutRef.current = (setTimeout(() => {
       // Stop rotation
       if (rotationAnimationRef.current) {
         rotationAnimationRef.current.stop();
@@ -411,7 +428,7 @@ export const GrowingFlowerGame: React.FC<Props> = ({
       speak('Tap the flower!');
 
       // Flower expires after duration - use functional state update to avoid stale closure
-      bloomTimeoutRef.current = setTimeout(() => {
+      bloomTimeoutRef.current = (setTimeout(() => {
         setCanTap(currentCanTap => {
           setIsProcessing(currentIsProcessing => {
             if (currentCanTap && !currentIsProcessing) {
@@ -454,10 +471,10 @@ export const GrowingFlowerGame: React.FC<Props> = ({
         });
         
         bloomTimeoutRef.current = null;
-      }, BLOOM_DURATION_MS);
+      }, BLOOM_DURATION_MS)) as unknown as NodeJS.Timeout;
       
       growthTimeoutRef.current = null;
-    }, GROWTH_DURATION_MS);
+    }, GROWTH_DURATION_MS)) as unknown as NodeJS.Timeout;
   }, [rounds, requiredRounds, advanceToNextRound]);
 
   const handleFlowerTap = useCallback(() => {
@@ -595,12 +612,12 @@ export const GrowingFlowerGame: React.FC<Props> = ({
         ]),
         Animated.parallel([
           Animated.timing(flowerScale, {
-            toValue: isBloomed ? 1 : flowerScale._value,
+            toValue: isBloomed ? 1 : flowerScaleCurrentRef.current,
             duration: 150,
             useNativeDriver: true,
           }),
           Animated.timing(petalScale, {
-            toValue: isBloomed ? 1 : petalScale._value,
+            toValue: isBloomed ? 1 : petalScaleCurrentRef.current,
             duration: 150,
             useNativeDriver: true,
           }),
@@ -834,7 +851,7 @@ export const GrowingFlowerGame: React.FC<Props> = ({
                 ]}
               >
                 <LinearGradient
-                  colors={flower.center}
+                  colors={flower.center as [string, string, ...string[]]}
                   style={styles.centerGradient}
                 >
                   <Text style={styles.centerEmoji}>🌻</Text>
@@ -864,7 +881,7 @@ export const GrowingFlowerGame: React.FC<Props> = ({
                     ]}
                   >
                     <LinearGradient
-                      colors={flower.petal}
+                      colors={flower.petal as [string, string, ...string[]]}
                       style={styles.petalGradient}
                     />
                   </Animated.View>

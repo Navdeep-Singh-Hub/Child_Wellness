@@ -28,7 +28,7 @@ export const BigTapVsSmallTapGame: React.FC<{ onBack?: () => void }> = ({ onBack
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // Track all speech timers
-  const speechTimersRef = useRef<Array<NodeJS.Timeout>>([]);
+  const speechTimersRef = useRef<NodeJS.Timeout[]>([]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -135,7 +135,7 @@ export const BigTapVsSmallTapGame: React.FC<{ onBack?: () => void }> = ({ onBack
 
     try {
       const result = await logGameAndAward({
-        type: 'big-tap-vs-small-tap',
+        type: 'tap', // Using 'tap' as closest match
         correct,
         total,
         accuracy,
@@ -232,7 +232,7 @@ export const BigTapVsSmallTapGame: React.FC<{ onBack?: () => void }> = ({ onBack
         onPress={() => {
           try {
             Speech.stop();
-          } catch (e) {
+          } catch {
             // Ignore errors
           }
           if (onBack) onBack();
@@ -252,8 +252,8 @@ export const BigTapVsSmallTapGame: React.FC<{ onBack?: () => void }> = ({ onBack
           <Text style={styles.emoji}>👆</Text>
           <Text style={styles.title}>Big Tap vs Small Tap</Text>
           <Text style={styles.instructions}>
-            When you see "BIG", tap the big circle!{'\n'}
-            When you see "SMALL", tap the tiny circle!
+            When you see BIG, tap the big circle!{'\n'}
+            When you see SMALL, tap the tiny circle!
           </Text>
           <TouchableOpacity style={styles.startButton} onPress={startGame}>
             <LinearGradient

@@ -7,14 +7,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 type Props = {
@@ -30,7 +30,7 @@ const GROWTH_DURATION_MS = 6000;
 const DISTRACTION_INTERVAL_MS = 2000;
 const TAP_TIMEOUT_MS = 5000;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -109,6 +109,18 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
   const warningScale = useRef(new Animated.Value(1)).current;
   const warningOpacity = useRef(new Animated.Value(0)).current;
   const progressBarWidth = useRef(new Animated.Value(0)).current;
+  
+  // Track warningOpacity value to avoid _value access
+  const warningOpacityCurrentRef = useRef(0);
+  
+  useEffect(() => {
+    const listener = warningOpacity.addListener(({ value }) => {
+      warningOpacityCurrentRef.current = value;
+    });
+    return () => {
+      warningOpacity.removeListener(listener);
+    };
+  }, [warningOpacity]);
   
   // Timeouts and intervals
   const growthTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -259,7 +271,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
     distractionAnimationRef.current.start();
 
     // Hide after duration
-    distractionTimeoutRef.current = setTimeout(() => {
+    distractionTimeoutRef.current = (setTimeout(() => {
       Animated.parallel([
         Animated.timing(distractionOpacity, {
           toValue: 0,
@@ -276,7 +288,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
         distractionBounce.setValue(1);
       });
       distractionTimeoutRef.current = null;
-    }, 1800);
+    }, 1800)) as unknown as NodeJS.Timeout;
   }, [SCREEN_WIDTH, SCREEN_HEIGHT]);
 
   const startRound = useCallback(() => {
@@ -410,19 +422,19 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
     const INITIAL_DELAY_MS = 400;
     const TOTAL_GROWTH_TIME = INITIAL_DELAY_MS + GROWTH_DURATION_MS;
     const startTime = Date.now();
-    progressIntervalRef.current = setInterval(() => {
+    progressIntervalRef.current = (setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(Math.max(0, (elapsed - INITIAL_DELAY_MS) / GROWTH_DURATION_MS), 1);
       setGrowthProgress(progress);
-    }, 100);
+    }, 100)) as unknown as NodeJS.Timeout;
 
     // Show distractions at intervals (more frequent)
-    distractionIntervalRef.current = setInterval(() => {
+    distractionIntervalRef.current = (setInterval(() => {
       showDistractionPopUp();
-    }, DISTRACTION_INTERVAL_MS);
+    }, DISTRACTION_INTERVAL_MS)) as unknown as NodeJS.Timeout;
 
     // After growth completes
-    growthTimeoutRef.current = setTimeout(() => {
+    growthTimeoutRef.current = (setTimeout(() => {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
@@ -459,7 +471,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
       speak('Tap the flower!');
 
       // Timeout for missed tap
-      tapTimeoutRef.current = setTimeout(() => {
+      tapTimeoutRef.current = (setTimeout(() => {
         setMissedTaps(prev => prev + 1);
         speak('Try again!');
         
@@ -486,10 +498,10 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
         }, 400);
         
         tapTimeoutRef.current = null;
-      }, TAP_TIMEOUT_MS);
+      }, TAP_TIMEOUT_MS)) as unknown as NodeJS.Timeout;
       
       growthTimeoutRef.current = null;
-    }, TOTAL_GROWTH_TIME);
+    }, TOTAL_GROWTH_TIME)) as unknown as NodeJS.Timeout;
   }, [rounds, requiredRounds, SCREEN_WIDTH, showDistractionPopUp, advanceToNextRound]);
 
   const handleFlowerTap = useCallback(() => {
@@ -809,7 +821,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
 
         <View style={styles.playArea}>
           {/* Warning Message */}
-          {warningOpacity._value > 0 && (
+          {warningOpacityCurrentRef.current > 0 && (
             <Animated.View
               style={[
                 styles.warningBanner,
@@ -852,7 +864,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
                 ]}
               >
                 <LinearGradient
-                  colors={currentDistraction.color}
+                  colors={currentDistraction.color as [string, string, ...string[]]}
                   style={styles.distractionGradient}
                 >
                   <Text style={styles.distractionEmoji}>{currentDistraction.emoji}</Text>
@@ -897,7 +909,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
                 ]}
               >
                 <LinearGradient
-                  colors={flower.center}
+                  colors={flower.center as [string, string, ...string[]]}
                   style={styles.centerGradient}
                 >
                   <Text style={styles.centerEmoji}>🌻</Text>
@@ -926,7 +938,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
                     ]}
                   >
                     <LinearGradient
-                      colors={flower.petal}
+                      colors={flower.petal as [string, string, ...string[]]}
                       style={styles.petalGradient}
                     />
                   </Animated.View>

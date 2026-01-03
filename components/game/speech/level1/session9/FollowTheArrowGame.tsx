@@ -29,7 +29,7 @@ const DEFAULT_TTS_RATE = 0.75;
 const ARROW_ANIMATION_DURATION_MS = 800;
 const INSTRUCTION_DELAY_MS = 1000;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -300,7 +300,7 @@ export const FollowTheArrowGame: React.FC<Props> = ({
         setCanTap(true);
 
         // Timeout for missed tap
-        tapTimeoutRef.current = setTimeout(() => {
+        tapTimeoutRef.current = (setTimeout(() => {
           if (canTap && !isProcessing) {
             setIncorrectTaps(prev => prev + 1);
             speak('Try again!');
@@ -339,7 +339,7 @@ export const FollowTheArrowGame: React.FC<Props> = ({
           }, 400);
           
           tapTimeoutRef.current = null;
-        }, 8000);
+        }, 8000)) as unknown as NodeJS.Timeout;
       }, INSTRUCTION_DELAY_MS);
     }, 800);
   }, [rounds, requiredRounds, canTap, isProcessing, advanceToNextRound]);
@@ -620,7 +620,7 @@ export const FollowTheArrowGame: React.FC<Props> = ({
               ]}
             >
               <LinearGradient
-                colors={leftObject.color}
+                colors={leftObject.color as [string, string, ...string[]]}
                 style={styles.objectGradient}
               >
                 <Text style={styles.objectEmoji}>{leftObject.emoji}</Text>
@@ -650,7 +650,7 @@ export const FollowTheArrowGame: React.FC<Props> = ({
               ]}
             >
               <LinearGradient
-                colors={rightObject.color}
+                colors={rightObject.color as [string, string, ...string[]]}
                 style={styles.objectGradient}
               >
                 <Text style={styles.objectEmoji}>{rightObject.emoji}</Text>

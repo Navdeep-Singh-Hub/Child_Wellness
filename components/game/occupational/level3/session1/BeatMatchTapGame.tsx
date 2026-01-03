@@ -7,7 +7,6 @@ import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
     SafeAreaView,
     StyleSheet,
     Text,
@@ -31,10 +30,9 @@ const BeatMatchTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [lastTapTime, setLastTapTime] = useState<number | null>(null);
   const [expectedTapTime, setExpectedTapTime] = useState<number | null>(null);
+  const [showSparkle, setShowSparkle] = useState(false);
 
   const beatIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const sparkleX = useRef(new Animated.Value(0)).current;
-  const sparkleY = useRef(new Animated.Value(0)).current;
 
   // Calculate BPM for current round (increases from INITIAL_BPM to FINAL_BPM)
   const currentBPM = INITIAL_BPM + ((FINAL_BPM - INITIAL_BPM) * (round - 1)) / (TOTAL_ROUNDS - 1);
@@ -77,7 +75,7 @@ const BeatMatchTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     // Play first beat immediately
     playBeat();
     // Then play at intervals
-    beatIntervalRef.current = setInterval(playBeat, beatInterval);
+    beatIntervalRef.current = (setInterval(playBeat, beatInterval)) as unknown as NodeJS.Timeout;
   }, [round, beatInterval, isPlaying]);
 
   // Start new round
@@ -104,8 +102,8 @@ const BeatMatchTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         // Good tap!
         setScore((s) => s + 1);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        sparkleX.setValue(50);
-        sparkleY.setValue(50);
+        setShowSparkle(true);
+        setTimeout(() => setShowSparkle(false), 1000);
       } else {
         // Too early or too late
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
@@ -128,30 +126,14 @@ const BeatMatchTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
 
     try {
-      const timestamp = new Date().toISOString();
-      setLogTimestamp(timestamp);
       await logGameAndAward({
-        gameId: 'beat-match-tap',
-        therapyId: 'occupational',
-        levelNumber: 3,
-        sessionNumber: 1,
-        score,
-        totalRounds: total,
-        accuracy,
-        xp,
-        timestamp,
+        type: 'tap', // Using 'tap' as closest match for rhythm game
+        correct: score,
+        total: total,
+        accuracy: accuracy,
+        xpAwarded: xp,
       });
-      await recordGame({
-        gameId: 'beat-match-tap',
-        therapyId: 'occupational',
-        levelNumber: 3,
-        sessionNumber: 1,
-        score,
-        totalRounds: total,
-        accuracy,
-        xp,
-        timestamp,
-      });
+      await recordGame(xp);
     } catch (error) {
       console.error('Failed to log game:', error);
     }
@@ -178,9 +160,9 @@ const BeatMatchTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <ResultCard
           correct={finalStats.correct}
           total={finalStats.total}
-          xp={finalStats.xp}
-          onBack={onBack}
-          onRetry={() => {
+          xpAwarded={finalStats.xp}
+          onHome={onBack}
+          onPlayAgain={() => {
             setRound(1);
             setScore(0);
             setDone(false);
@@ -240,7 +222,7 @@ const BeatMatchTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </View>
           )}
 
-          <SparkleBurst x={sparkleX} y={sparkleY} />
+          <SparkleBurst visible={showSparkle} />
         </View>
       </View>
     </SafeAreaView>

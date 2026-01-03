@@ -30,7 +30,7 @@ const DEFAULT_TTS_RATE = 0.75;
 const FILL_DURATION_MS = 6000; // 6 seconds to fill (randomized between 5-7)
 const TAP_DURATION_MS = 3000; // How long button is tappable after fill
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -233,14 +233,14 @@ export const TimerBarTapGame: React.FC<Props> = ({
 
     // Update progress
     const startTime = Date.now();
-    progressIntervalRef.current = setInterval(() => {
+    progressIntervalRef.current = (setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
       setFillProgress(progress);
-    }, 50);
+    }, 50)) as unknown as NodeJS.Timeout;
 
     // After fill completes, button becomes tappable
-    fillTimeoutRef.current = setTimeout(() => {
+    fillTimeoutRef.current = (setTimeout(() => {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
@@ -272,7 +272,7 @@ export const TimerBarTapGame: React.FC<Props> = ({
       speak('Tap now!');
 
       // Button expires after duration
-      tapTimeoutRef.current = setTimeout(() => {
+      tapTimeoutRef.current = (setTimeout(() => {
         if (canTap && !isProcessing) {
           setMissedTaps(prev => prev + 1);
           speak('Time\'s up!');
@@ -299,10 +299,10 @@ export const TimerBarTapGame: React.FC<Props> = ({
         });
         
         tapTimeoutRef.current = null;
-      }, TAP_DURATION_MS);
+      }, TAP_DURATION_MS)) as unknown as NodeJS.Timeout;
       
       fillTimeoutRef.current = null;
-    }, duration);
+    }, duration)) as unknown as NodeJS.Timeout;
   }, [rounds, requiredRounds, canTap, isProcessing, advanceToNextRound]);
 
   const handleButtonTap = useCallback(() => {
@@ -591,7 +591,7 @@ export const TimerBarTapGame: React.FC<Props> = ({
               ]}
             >
               <LinearGradient
-                colors={button.color}
+                colors={button.color as [string, string, ...string[]]}
                 style={styles.buttonGradient}
               >
                 <Text style={styles.buttonEmoji}>{button.emoji}</Text>

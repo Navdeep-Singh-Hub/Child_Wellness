@@ -7,14 +7,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 type Props = {
@@ -28,7 +28,7 @@ const DEFAULT_TTS_RATE = 0.75;
 const GLOW_DURATION_MS = 1000;
 const INSTRUCTION_DELAY_MS = 800;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -74,7 +74,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   
   // Game state
-  const [objects, setObjects] = useState<Array<{ id: number; emoji: string; color: string[]; name: string; displayName: string }>>([]);
+  const [objects, setObjects] = useState<{ id: number; emoji: string; color: string[]; name: string; displayName: string }[]>([]);
   const [targetObject, setTargetObject] = useState<string | null>(null);
   const [canTap, setCanTap] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -290,10 +290,10 @@ export const TouchTheBallGame: React.FC<Props> = ({
             ]),
           ]).start();
 
-          glowTimeoutRef.current = setTimeout(() => {
+          glowTimeoutRef.current = (setTimeout(() => {
             setGlowingObjectId(null);
             glowTimeoutRef.current = null;
-          }, GLOW_DURATION_MS);
+          }, GLOW_DURATION_MS)) as unknown as NodeJS.Timeout;
         }
       }, INSTRUCTION_DELAY_MS);
 
@@ -301,7 +301,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
       setCanTap(true);
 
       // Timeout for missed tap
-      tapTimeoutRef.current = setTimeout(() => {
+      tapTimeoutRef.current = (setTimeout(() => {
         if (canTap && !isProcessing) {
           setIncorrectTaps(prev => prev + 1);
           speak('Try again!');
@@ -345,7 +345,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
         }, 400);
         
         tapTimeoutRef.current = null;
-      }, 8000);
+      }, 8000)) as unknown as NodeJS.Timeout;
     }, 1000);
   }, [rounds, requiredRounds, canTap, isProcessing, objectScales, objectOpacities, glowScales, glowOpacities, advanceToNextRound]);
 
@@ -624,7 +624,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
                     />
                   )}
                   <LinearGradient
-                    colors={obj.color}
+                    colors={obj.color as any as [string, string, ...string[]]}
                     style={styles.objectGradient}
                   >
                     <Text style={styles.objectEmoji}>{obj.emoji}</Text>

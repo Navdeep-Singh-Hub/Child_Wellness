@@ -7,14 +7,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 type Props = {
@@ -28,7 +28,7 @@ const DEFAULT_TTS_RATE = 0.75;
 const APPEAR_INTERVAL_MS = 2000; // 2 seconds between shapes
 const TAP_DURATION_MS = 4000; // How long shapes are tappable after all appear
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -74,7 +74,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   
   // Game state
-  const [shapes, setShapes] = useState<Array<{ id: number; emoji: string; color: string[]; tapped: boolean; x: number; y: number }>>([]);
+  const [shapes, setShapes] = useState<{ id: number; emoji: string; color: string[]; tapped: boolean; x: number; y: number }[]>([]);
   const [visibleCount, setVisibleCount] = useState(0);
   const [canTap, setCanTap] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -87,7 +87,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
   const shapeOpacities = useRef<Map<number, Animated.Value>>(new Map()).current;
   
   // Timeouts
-  const appearanceTimeoutsRef = useRef<Array<NodeJS.Timeout>>([]);
+  const appearanceTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const finishGame = useCallback(async () => {
@@ -171,7 +171,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
       { x: SCREEN_WIDTH * 0.75 - SHAPE_SIZE / 2, y: SCREEN_HEIGHT * 0.4 - SHAPE_SIZE / 2 },
     ];
     
-    const selectedShapes = [];
+    const selectedShapes: { id: number; emoji: string; color: string[]; tapped: boolean; x: number; y: number }[] = [];
     const availableShapes = [...SHAPES];
     for (let i = 0; i < 3; i++) {
       const randomIndex = Math.floor(Math.random() * availableShapes.length);
@@ -204,7 +204,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
 
     // Make shapes appear one by one
     selectedShapes.forEach((shape, index) => {
-      const timeout = setTimeout(() => {
+      const timeout = (setTimeout(() => {
         setVisibleCount(prev => prev + 1);
 
         // Animate appearance
@@ -230,7 +230,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
             speak('Tap all three shapes!');
             
             // Shapes expire after duration
-            tapTimeoutRef.current = setTimeout(() => {
+            tapTimeoutRef.current = (setTimeout(() => {
               if (canTap && !isProcessing) {
                 setIncorrectTaps(prev => prev + 1);
                 speak('Time\'s up!');
@@ -261,10 +261,10 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
               }, 400);
               
               tapTimeoutRef.current = null;
-            }, TAP_DURATION_MS);
+            }, TAP_DURATION_MS)) as unknown as NodeJS.Timeout;
           }, 500);
         }
-      }, index * APPEAR_INTERVAL_MS);
+      }, index * APPEAR_INTERVAL_MS)) as unknown as NodeJS.Timeout;
       
       appearanceTimeoutsRef.current.push(timeout);
     });
@@ -495,7 +495,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
                   ]}
                 >
                   <LinearGradient
-                    colors={shape.color}
+                    colors={shape.color as [string, string, ...string[]]}
                     style={styles.shapeGradient}
                   >
                     <Text style={styles.shapeEmoji}>{shape.emoji}</Text>
@@ -533,7 +533,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
             <Text style={styles.skillText}>Multi-step Attention</Text>
           </View>
           <View style={styles.skillItem}>
-            <Ionicons name="brain" size={20} color="#0F172A" />
+            <Ionicons name="bulb" size={20} color="#0F172A" />
             <Text style={styles.skillText}>Memory & Focus</Text>
           </View>
           <View style={styles.skillItem}>

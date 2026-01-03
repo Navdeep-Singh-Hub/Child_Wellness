@@ -51,6 +51,11 @@ export interface JawDetectionResult {
   frameProcessor: any;
   hasCamera: boolean;
   error?: string;
+  previewContainerId?: string; // ID for preview container on web
+  landmarks?: any; // Landmarks for visualization (web only)
+  lateralPosition?: 'left' | 'center' | 'right'; // Lateral jaw position (web only)
+  lateralAmount?: number; // -1 (left) to 1 (right), 0 = center (web only)
+  protrusion?: number; // 0 (retracted) to 1 (protruded) (web only)
 }
 
 // Constants for jaw detection

@@ -146,7 +146,7 @@ export const BigThrowVsSmallThrowGame: React.FC<{ onBack?: () => void }> = ({ on
 
     try {
       const result = await logGameAndAward({
-        type: 'big-throw-vs-small-throw',
+        type: 'tap', // Using 'tap' as closest match
         correct,
         total,
         accuracy,

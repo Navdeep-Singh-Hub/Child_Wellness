@@ -29,7 +29,7 @@ const DEFAULT_TTS_RATE = 0.75;
 const DISTRACTION_DURATION_MS = 3000;
 const TAP_TIMEOUT_MS = 6000;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -108,6 +108,18 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
   const warningOpacity = useRef(new Animated.Value(0)).current;
   const particleOpacity = useRef(new Animated.Value(0)).current;
   
+  // Track warningOpacity value to avoid _value access
+  const warningOpacityCurrentRef = useRef(0);
+  
+  useEffect(() => {
+    const listener = warningOpacity.addListener(({ value }) => {
+      warningOpacityCurrentRef.current = value;
+    });
+    return () => {
+      warningOpacity.removeListener(listener);
+    };
+  }, [warningOpacity]);
+  
   // Timeouts and animations
   const distractionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -124,9 +136,11 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
       clearTimeout(tapTimeoutRef.current);
       tapTimeoutRef.current = null;
     }
-    if (distractionAnimationRef.current) {
-      distractionAnimationRef.current.stop();
-      distractionAnimationRef.current = null;
+    if ((distractionAnimationRef as any).current) {
+      const { animation, listenerId } = (distractionAnimationRef as any).current;
+      animation.stop();
+      orbitAngle.removeListener(listenerId);
+      (distractionAnimationRef as any).current = null;
     }
     if (pulseAnimationRef.current) {
       pulseAnimationRef.current.stop();
@@ -399,7 +413,7 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
       distractionRotationAnimationRef.current.start();
 
       // Hide distraction after duration
-      distractionTimeoutRef.current = setTimeout(() => {
+      distractionTimeoutRef.current = (setTimeout(() => {
         // Stop orbit animation and remove listener
         if ((distractionAnimationRef as any).current) {
           const { animation, listenerId } = (distractionAnimationRef as any).current;
@@ -423,11 +437,11 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
           setShowDistraction(false);
         });
         distractionTimeoutRef.current = null;
-      }, DISTRACTION_DURATION_MS);
+      }, DISTRACTION_DURATION_MS)) as unknown as NodeJS.Timeout;
     }, 1500);
 
     // Timeout for missed tap
-    tapTimeoutRef.current = setTimeout(() => {
+    tapTimeoutRef.current = (setTimeout(() => {
       setMissedTaps(prev => prev + 1);
       speak('Try again!');
       
@@ -454,7 +468,7 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
       }, 400);
       
       tapTimeoutRef.current = null;
-    }, TAP_TIMEOUT_MS);
+    }, TAP_TIMEOUT_MS)) as unknown as NodeJS.Timeout;
   }, [rounds, requiredRounds, SCREEN_WIDTH, SCREEN_HEIGHT, advanceToNextRound]);
 
   const handleTargetTap = useCallback(() => {
@@ -705,7 +719,7 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
 
         <View style={styles.playArea}>
           {/* Warning Message */}
-          {warningOpacity._value > 0 && (
+          {warningOpacityCurrentRef.current > 0 && (
             <Animated.View
               style={[
                 styles.warningBanner,
@@ -757,7 +771,7 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
                 ]}
               />
               <LinearGradient
-                colors={target.color}
+                colors={target.color as [string, string, ...string[]]}
                 style={styles.targetGradient}
               >
                 <Text style={styles.targetEmoji}>{target.emoji}</Text>
@@ -797,7 +811,7 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
                 ]}
               >
                 <LinearGradient
-                  colors={distraction.color}
+                  colors={distraction.color as [string, string, ...string[]]}
                   style={styles.distractionGradient}
                 >
                   <Text style={styles.distractionEmoji}>{distraction.emoji}</Text>
