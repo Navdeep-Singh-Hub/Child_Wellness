@@ -14,6 +14,7 @@ import {
     Text,
     View,
 } from 'react-native';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 
 type Props = {
   onBack: () => void;
@@ -75,6 +76,7 @@ export const TapForMagicGame: React.FC<Props> = ({
   const [hits, setHits] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [stars, setStars] = useState<Star[]>([]);
   const [currentColor, setCurrentColor] = useState(0);
   const starIdCounter = useRef(0);
@@ -258,14 +260,15 @@ export const TapForMagicGame: React.FC<Props> = ({
     const nextHits = hits + 1;
     setHits(nextHits);
     setShowSuccess(true);
-    
-    speak('Wow! You did it!');
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
 
     setTimeout(() => {
+      setShowRoundSuccess(false);
       setShowSuccess(false);
       setIsAnimating(false);
       buttonRotation.setValue(0);
-    }, 1500);
+    }, 2500);
 
     if (nextHits >= requiredTaps) {
       setTimeout(() => {
@@ -412,6 +415,12 @@ export const TapForMagicGame: React.FC<Props> = ({
           </Text>
         </View>
       </Animated.View>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

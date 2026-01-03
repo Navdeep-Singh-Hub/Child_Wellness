@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -63,10 +64,11 @@ export const LoudVsSoftGame: React.FC<Props> = ({
   const [correct, setCorrect] = useState(0);
   const [currentVolume, setCurrentVolume] = useState<'loud' | 'soft'>('loud');
   const [currentInstrument, setCurrentInstrument] = useState(0);
-  const [phase, setPhase] = useState<'waiting' | 'sound' | 'choice' | 'feedback'>('waiting');
+  const [phase, setPhase] = useState<'sound' | 'choice' | 'feedback'>('sound');
   const [canTap, setCanTap] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
   const [currentTrialResult, setCurrentTrialResult] = useState<'correct' | 'incorrect' | null>(null);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalTrials: number;
     correctTrials: number;
@@ -82,10 +84,7 @@ export const LoudVsSoftGame: React.FC<Props> = ({
   const feedbackOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    speak('Listen! Loud sound? Tap big! Soft sound? Tap small!');
-    setTimeout(() => {
       startTrial();
-    }, 3000);
     return () => {
       clearScheduledSpeech();
     };
@@ -131,7 +130,7 @@ export const LoudVsSoftGame: React.FC<Props> = ({
   }, [correct, requiredTrials, gameFinished, onComplete]);
 
   const startTrial = useCallback(() => {
-    setPhase('waiting');
+    setPhase('sound');
     setCanTap(false);
     setCurrentTrialResult(null); // Reset trial result
     bigScale.setValue(1);
@@ -145,9 +144,11 @@ export const LoudVsSoftGame: React.FC<Props> = ({
     setCurrentVolume(volume);
     setCurrentInstrument(instrumentIndex);
 
-    // Wait, then play sound
+    // Speak instruction
+    speak('Listen carefully! Loud sound? Tap big! Soft sound? Tap small!');
+
+    // Play sound after a short delay
     setTimeout(() => {
-      setPhase('sound');
       const instrument = INSTRUMENTS[instrumentIndex];
       
       // Play actual sound with adjusted volume and pitch
@@ -221,7 +222,8 @@ export const LoudVsSoftGame: React.FC<Props> = ({
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {}
-      speak('Great job!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
     } else {
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -263,16 +265,16 @@ export const LoudVsSoftGame: React.FC<Props> = ({
 
     // Move to next trial
     setTimeout(() => {
+      setShowRoundSuccess(false);
       const nextTrials = trials + 1;
       setTrials(nextTrials);
 
       if (nextTrials < requiredTrials) {
         setTimeout(() => {
-          speak('Listen! Loud sound? Tap big! Soft sound? Tap small!');
           startTrial();
-        }, 2000);
+        }, 500);
       }
-    }, 2000);
+    }, 2500);
   }, [canTap, phase, currentVolume, trials, requiredTrials, startTrial]);
 
   const progressDots = Array.from({ length: requiredTrials }, (_, i) => i < trials);
@@ -311,7 +313,7 @@ export const LoudVsSoftGame: React.FC<Props> = ({
                 setCorrect(0);
                 setGameFinished(false);
                 setFinalStats(null);
-                setPhase('waiting');
+                setPhase('sound');
                 setCanTap(false);
                 startTrial();
                 speak('Listen! Loud sound? Tap big! Soft sound? Tap small!');
@@ -356,15 +358,10 @@ export const LoudVsSoftGame: React.FC<Props> = ({
         </View>
 
         <View style={styles.gameArea}>
-          {phase === 'waiting' && (
-            <View style={styles.waitingContainer}>
-              <Text style={styles.waitingText}>👂 Listen carefully...</Text>
-            </View>
-          )}
-
           {phase === 'sound' && (
-            <View style={styles.waitingContainer}>
-              <Text style={styles.waitingText}>👂 Listen...</Text>
+            <View style={styles.soundContainer}>
+              <Text style={styles.soundEmoji}>👂</Text>
+              <Text style={styles.soundText}>Listen...</Text>
             </View>
           )}
 
@@ -480,6 +477,12 @@ export const LoudVsSoftGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };
@@ -544,16 +547,20 @@ const styles = StyleSheet.create({
   },
   soundContainer: {
     alignItems: 'center',
+    justifyContent: 'center',
   },
   soundEmoji: {
-    fontSize: 120,
-    marginBottom: 20,
+    fontSize: 140,
+    marginBottom: 30,
   },
   soundText: {
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 42,
+    fontWeight: '900',
     color: '#1E293B',
-    letterSpacing: 4,
+    letterSpacing: 6,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   choiceContainer: {
     flexDirection: 'row',

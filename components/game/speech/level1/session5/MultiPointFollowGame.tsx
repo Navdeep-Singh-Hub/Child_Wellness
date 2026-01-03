@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,16 +8,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 type Props = {
@@ -31,7 +32,7 @@ const DEFAULT_TTS_RATE = 0.75;
 
 type PointDirection = 'left' | 'right';
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -72,6 +73,7 @@ export const MultiPointFollowGame: React.FC<Props> = ({
   const [leftObjectVisible, setLeftObjectVisible] = useState(false);
   const [rightObjectVisible, setRightObjectVisible] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalTaps: number;
     correctTaps: number;
@@ -142,105 +144,6 @@ export const MultiPointFollowGame: React.FC<Props> = ({
     }
   }, [hits, requiredTaps, gameFinished, onComplete]);
 
-  const startRound = useCallback(() => {
-    setRound((prev) => prev + 1);
-    setCurrentStep(0);
-    setIsPointing(false);
-    setLeftObjectVisible(false);
-    setRightObjectVisible(false);
-    
-    leftObjectScale.setValue(1);
-    leftObjectOpacity.setValue(0);
-    leftObjectBounce.setValue(1);
-    rightObjectScale.setValue(1);
-    rightObjectOpacity.setValue(0);
-    rightObjectBounce.setValue(1);
-    pointingLineOpacity.setValue(0);
-    armRotation.setValue(0);
-    armOpacity.setValue(0);
-
-    // Create sequence: left -> right (2 taps per round)
-    const sequence: PointDirection[] = ['left', 'right'];
-    setCurrentSequence(sequence);
-
-    const leftIndex = Math.floor(Math.random() * objects.length);
-    const rightIndex = Math.floor(Math.random() * objects.length);
-    setLeftObjectIndex(leftIndex);
-    setRightObjectIndex(rightIndex);
-
-    // Show both objects first
-    setTimeout(() => {
-      showBothObjects();
-    }, 500);
-
-    // Start pointing sequence
-    setTimeout(() => {
-      executeSequence(sequence, 0);
-    }, 1500);
-  }, [executeSequence]);
-
-  const showBothObjects = () => {
-    setLeftObjectVisible(true);
-    setRightObjectVisible(true);
-    
-    Animated.parallel([
-      Animated.spring(leftObjectScale, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-      Animated.timing(leftObjectOpacity, {
-        toValue: 1,
-        duration: 400,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      }),
-      Animated.spring(rightObjectScale, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-      Animated.timing(rightObjectOpacity, {
-        toValue: 1,
-        duration: 400,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  const executeSequence = useCallback((sequence: PointDirection[], stepIndex: number) => {
-    if (stepIndex >= sequence.length) {
-      // Sequence complete, wait a bit then start next round
-      setTimeout(() => {
-        setHits((prevHits) => {
-          const nextHits = prevHits + sequence.length;
-          if (nextHits < requiredTaps) {
-            setTimeout(() => {
-              startRound();
-            }, 1500);
-          }
-          return nextHits;
-        });
-      }, 1000);
-      return;
-    }
-
-    const direction = sequence[stepIndex];
-    setCurrentStep(stepIndex);
-    pointAtDirection(direction);
-
-    // After pointing, wait for tap or timeout
-    setTimeout(() => {
-      if (stepIndex < sequence.length - 1) {
-        // Move to next step immediately
-        executeSequence(sequence, stepIndex + 1);
-      }
-    }, 2000);
-  }, [requiredTaps, pointAtDirection]);
-
   const pointAtDirection = useCallback((direction: PointDirection) => {
     setIsPointing(true);
     
@@ -296,6 +199,112 @@ export const MultiPointFollowGame: React.FC<Props> = ({
       ])
     ).start();
   }, []);
+
+  const startRoundRef = useRef<(() => void) | undefined>(undefined);
+  
+  const executeSequence = useCallback((sequence: PointDirection[], stepIndex: number) => {
+    if (stepIndex >= sequence.length) {
+      // Sequence complete, wait a bit then start next round
+      setTimeout(() => {
+        setHits((prevHits) => {
+          const nextHits = prevHits + sequence.length;
+          if (nextHits < requiredTaps) {
+            setTimeout(() => {
+              startRoundRef.current?.();
+            }, 1500);
+          }
+          return nextHits;
+        });
+      }, 1000);
+      return;
+    }
+
+    const direction = sequence[stepIndex];
+    setCurrentStep(stepIndex);
+    pointAtDirection(direction);
+
+    // After pointing, wait for tap or timeout
+    setTimeout(() => {
+      if (stepIndex < sequence.length - 1) {
+        // Move to next step immediately
+        executeSequence(sequence, stepIndex + 1);
+      }
+    }, 2000);
+  }, [requiredTaps, pointAtDirection]);
+
+  const showBothObjects = () => {
+    setLeftObjectVisible(true);
+    setRightObjectVisible(true);
+    
+    Animated.parallel([
+      Animated.spring(leftObjectScale, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+      Animated.timing(leftObjectOpacity, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.spring(rightObjectScale, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+      Animated.timing(rightObjectOpacity, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const startRound = useCallback(() => {
+    setRound((prev) => prev + 1);
+    setCurrentStep(0);
+    setIsPointing(false);
+    setLeftObjectVisible(false);
+    setRightObjectVisible(false);
+    
+    leftObjectScale.setValue(1);
+    leftObjectOpacity.setValue(0);
+    leftObjectBounce.setValue(1);
+    rightObjectScale.setValue(1);
+    rightObjectOpacity.setValue(0);
+    rightObjectBounce.setValue(1);
+    pointingLineOpacity.setValue(0);
+    armRotation.setValue(0);
+    armOpacity.setValue(0);
+
+    // Create sequence: left -> right (2 taps per round)
+    const sequence: PointDirection[] = ['left', 'right'];
+    setCurrentSequence(sequence);
+
+    const leftIndex = Math.floor(Math.random() * objects.length);
+    const rightIndex = Math.floor(Math.random() * objects.length);
+    setLeftObjectIndex(leftIndex);
+    setRightObjectIndex(rightIndex);
+
+    // Show both objects first
+    setTimeout(() => {
+      showBothObjects();
+    }, 500);
+
+    // Start pointing sequence
+    setTimeout(() => {
+      executeSequence(sequence, 0);
+    }, 1500);
+  }, [executeSequence]);
+
+  // Update ref when startRound changes
+  useEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
 
   const handleObjectTap = (direction: PointDirection) => {
     if (!isPointing) return;
@@ -358,49 +367,51 @@ export const MultiPointFollowGame: React.FC<Props> = ({
       opacityAnim.setValue(1);
     });
 
-    speak('Good!');
+    // Show success animation instead of TTS (only on sequence completion)
+    // Check if this was the last step
+    if (currentStep === currentSequence.length - 1) {
+      // Complete sequence - show animation
+      setShowRoundSuccess(true);
+      
+      Animated.parallel([
+        Animated.timing(armOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pointingLineOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(leftObjectOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(rightObjectOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
 
-      // Check if this was the last step
-      if (currentStep === currentSequence.length - 1) {
-        // Complete sequence
-        Animated.parallel([
-          Animated.timing(armOpacity, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pointingLineOpacity, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(leftObjectOpacity, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(rightObjectOpacity, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start();
-
-        setTimeout(() => {
-          setHits((prevHits) => {
-            const nextHits = prevHits + currentSequence.length;
-            setIsPointing(false);
-            setLeftObjectVisible(false);
-            setRightObjectVisible(false);
-            
-            if (nextHits < requiredTaps) {
-              setTimeout(() => {
-                startRound();
-              }, 1500);
-            }
-            return nextHits;
-          });
-        }, 500);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+        setHits((prevHits) => {
+          const nextHits = prevHits + currentSequence.length;
+          setIsPointing(false);
+          setLeftObjectVisible(false);
+          setRightObjectVisible(false);
+          
+          if (nextHits < requiredTaps) {
+            setTimeout(() => {
+              startRoundRef.current?.();
+            }, 500);
+          }
+          return nextHits;
+        });
+      }, 2500);
       } else {
         // More steps to go - continue sequence
         setTimeout(() => {
@@ -677,6 +688,12 @@ export const MultiPointFollowGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

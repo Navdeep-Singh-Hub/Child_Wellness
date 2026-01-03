@@ -7,13 +7,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View
+  Animated,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View
 } from 'react-native';
 
 type Props = {
@@ -27,7 +27,7 @@ const HAND_SIZE = 100;
 const DEFAULT_TTS_RATE = 0.75;
 const PIECE_DELAY_MS = 1500;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -74,7 +74,7 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
   const [currentPiece, setCurrentPiece] = useState<number | null>(null);
   const [piecePosition, setPiecePosition] = useState<'left' | 'right' | null>(null);
   const [canTap, setCanTap] = useState(false);
-  const [placedPieces, setPlacedPieces] = useState<Array<{ emoji: string; color: string[]; side: 'left' | 'right' }>>([]);
+  const [placedPieces, setPlacedPieces] = useState<{ emoji: string; color: string[]; side: 'left' | 'right' }[]>([]);
   
   // Animations
   const pieceX = useRef(new Animated.Value(0)).current;
@@ -83,6 +83,45 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
   const pieceOpacity = useRef(new Animated.Value(0)).current;
   const handLeftScale = useRef(new Animated.Value(1)).current;
   const handRightScale = useRef(new Animated.Value(1)).current;
+  const startRoundRef = useRef<(() => void) | undefined>(undefined);
+
+  const handleSystemTurn = useCallback((pieceIndex: number) => {
+    const piece = PUZZLE_PIECES[pieceIndex];
+    setPlacedPieces(prev => [...prev, { ...piece, side: 'right' }]);
+    setPiecesPlaced(prev => prev + 1);
+
+    // Animate hand
+    Animated.sequence([
+      Animated.timing(handRightScale, {
+        toValue: 1.2,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(handRightScale, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Hide piece
+    Animated.parallel([
+      Animated.timing(pieceScale, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(pieceOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setTimeout(() => {
+        startRoundRef.current?.();
+      }, 500);
+    });
+  }, []);
 
   const startRound = useCallback(() => {
     if (piecesPlaced >= requiredPieces) {
@@ -131,50 +170,10 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
     } else {
       // System's turn - auto-complete after delay
       setTimeout(() => {
-        handleSystemTurn();
+        handleSystemTurn(pieceIndex);
       }, PIECE_DELAY_MS);
     }
-  }, [piecesPlaced, requiredPieces]);
-
-  const handleSystemTurn = useCallback(() => {
-    if (!currentPiece || piecePosition !== 'right') return;
-
-    const piece = PUZZLE_PIECES[currentPiece];
-    setPlacedPieces(prev => [...prev, { ...piece, side: 'right' }]);
-    setPiecesPlaced(prev => prev + 1);
-
-    // Animate hand
-    Animated.sequence([
-      Animated.timing(handRightScale, {
-        toValue: 1.2,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(handRightScale, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Hide piece
-    Animated.parallel([
-      Animated.timing(pieceScale, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(pieceOpacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setTimeout(() => {
-        startRound();
-      }, 500);
-    });
-  }, [currentPiece, piecePosition, startRound]);
+  }, [piecesPlaced, requiredPieces, handleSystemTurn]);
 
   const handlePieceTap = useCallback(() => {
     console.log('Piece tapped!', { canTap, currentPiece, piecePosition });
@@ -260,17 +259,23 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
     }
   }, [piecesPlaced, requiredPieces, onComplete]);
 
+  // Update ref when startRound changes
   useEffect(() => {
-    try {
-      speak('Take turns placing puzzle pieces!');
-    } catch {}
-    startRound();
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useEffect(() => {
+    // Give clear instructions before starting
+    speak('Take turns placing puzzle pieces! I will place one, then it\'s your turn. Tap the piece when it\'s your turn!');
+    setTimeout(() => {
+      startRound();
+    }, 3000);
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
       cleanupSounds();
     };
-  }, []);
+  }, [startRound]);
 
   if (gameFinished && finalStats) {
     return (
@@ -384,7 +389,7 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
                   ]}
                 >
                   <LinearGradient
-                    colors={piece.color}
+                    colors={piece.color as [string, string, ...string[]]}
                     style={styles.pieceGradient}
                   >
                     <Text style={styles.pieceEmoji}>{piece.emoji}</Text>
@@ -408,7 +413,7 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
                 ]}
               >
                 <LinearGradient
-                  colors={p.color}
+                  colors={p.color as [string, string, ...string[]]}
                   style={styles.placedPieceGradient}
                 >
                   <Text style={styles.placedPieceEmoji}>{p.emoji}</Text>

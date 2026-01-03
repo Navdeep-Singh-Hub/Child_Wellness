@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import type { MouthLandmarks } from '@/hooks/useJawDetectionWeb';
 import { logGameAndAward } from '@/utils/api';
@@ -8,15 +9,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 // Conditional import for VisionCamera
@@ -50,7 +51,7 @@ const getResponsiveSize = (baseSize: number, isTablet: boolean, isMobile: boolea
   return baseSize;
 };
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -210,6 +211,7 @@ export const JawRhythmTapGame: React.FC<Props> = ({
   const [score, setScore] = useState(0);
   const [patternActive, setPatternActive] = useState(false);
   const [nextBeatIndex, setNextBeatIndex] = useState(0); // State for render
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const lastBeatChangeTimeRef = useRef<number>(0);
   const MIN_EMOJI_DISPLAY_TIME = 400; // Minimum time to show each emoji (ms)
   
@@ -242,7 +244,7 @@ export const JawRhythmTapGame: React.FC<Props> = ({
   
   // Refs
   const gameStartedRef = useRef(false);
-  const beatTimersRef = useRef<Array<NodeJS.Timeout>>([]);
+  const beatTimersRef = useRef<NodeJS.Timeout[]>([]);
   const patternTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const rhythmAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const previewRef = useRef<View>(null);
@@ -797,31 +799,25 @@ export const JawRhythmTapGame: React.FC<Props> = ({
         useNativeDriver: false,
       }).start();
       
-      // Give feedback on pattern completion
+      // Show success animation instead of TTS
       const hitBeats = beatProcessedRef.current.size;
       const totalPatternBeats = pattern.length;
-      if (hitBeats === totalPatternBeats) {
-        speak('Perfect pattern!');
+      if (hitBeats === totalPatternBeats || hitBeats >= totalPatternBeats * 0.7) {
+        setShowRoundSuccess(true);
         try {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch {}
-      } else if (hitBeats >= totalPatternBeats * 0.7) {
-        speak('Good job!');
-        try {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch {}
-      } else if (hitBeats < totalPatternBeats * 0.5) {
-        speak('Keep trying!');
       }
       
       // Start next pattern or finish
       setTimeout(() => {
+        setShowRoundSuccess(false);
         if (nextPattern < requiredRounds) {
           startPattern();
         } else {
           finishGame();
         }
-      }, 1500);
+      }, 2500);
     }, patternDuration) as unknown as NodeJS.Timeout;
   }, [currentPattern, requiredRounds, generatePattern, progressBarWidth, finishGame]);
 
@@ -1276,6 +1272,12 @@ export const JawRhythmTapGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import {
     Animated,
     Dimensions,
@@ -59,6 +61,9 @@ export const SlowToFastGame: React.FC<Props> = ({
   const [missFeedback, setMissFeedback] = useState(false);
   const [showReinforcement, setShowReinforcement] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
+  const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
 
   const position = useRef(new Animated.ValueXY({ x: SCREEN_WIDTH / 2, y: SCREEN_HEIGHT / 2 }))
     .current;
@@ -89,6 +94,22 @@ export const SlowToFastGame: React.FC<Props> = ({
       clearScheduledSpeech();
     };
   }, [randomPointOnScreen]);
+
+  // Show congratulations when game finishes
+  useEffect(() => {
+    console.log('🎮 SlowToFastGame: gameFinished effect triggered', { 
+      gameFinished, 
+      showCongratulations,
+      hits,
+      requiredTaps 
+    });
+    if (gameFinished && !showCongratulations) {
+      console.log('🎮 SlowToFastGame: ✅ Setting showCongratulations to true');
+      setShowCongratulations(true);
+    } else if (gameFinished && showCongratulations) {
+      console.log('🎮 SlowToFastGame: ✅ Already showing congratulations');
+    }
+  }, [gameFinished, showCongratulations, hits, requiredTaps]);
 
   // Update speed when level changes
   useEffect(() => {
@@ -161,11 +182,14 @@ export const SlowToFastGame: React.FC<Props> = ({
       const nextHits = hits + 1;
       setHits(nextHits);
 
-      // Show reinforcement after every 3 taps
+      // Show success animation after every 3 taps
       if (nextHits > 0 && nextHits % 3 === 0) {
         setShowReinforcement(true);
-        speak('Super eyes!');
-        setTimeout(() => setShowReinforcement(false), 2000);
+        setShowRoundSuccess(true);
+        setTimeout(() => {
+          setShowRoundSuccess(false);
+          setShowReinforcement(false);
+        }, 2500);
 
         // Speed up after 3 taps (if not at max speed)
         if (speedLevel < SPEED_LEVELS.length - 1) {
@@ -175,8 +199,13 @@ export const SlowToFastGame: React.FC<Props> = ({
       }
 
       if (nextHits >= requiredTaps) {
-        onComplete?.();
-        setTimeout(() => onBack(), 500);
+        console.log('🎮 SlowToFastGame: ✅ GAME COMPLETE!', { nextHits, requiredTaps });
+        // Stop animations and set states
+        setIsMoving(false);
+        motionLoop.current?.stop();
+        console.log('🎮 SlowToFastGame: About to set gameFinished to true');
+        setGameFinished(true);
+        console.log('🎮 SlowToFastGame: ✅ Set gameFinished to true');
         return;
       }
 
@@ -202,6 +231,38 @@ export const SlowToFastGame: React.FC<Props> = ({
   const progressDots = Array.from({ length: Math.ceil(requiredTaps / 3) }, (_, i) => 
     Math.floor(hits / 3) > i
   );
+
+  // Debug logging - log on every render
+  console.log('🎮 SlowToFastGame: 🔄 RENDER', {
+    showCongratulations,
+    gameFinished,
+    hits,
+    requiredTaps,
+    shouldShowCongrats: showCongratulations && gameFinished,
+  });
+
+  // Show congratulations screen when game finishes
+  if (showCongratulations && gameFinished) {
+    console.log('🎮 SlowToFastGame: 🎉 RENDERING CongratulationsScreen NOW!');
+    return (
+      <CongratulationsScreen
+        message="Super Eyes!"
+        showButtons={true}
+        onContinue={() => {
+          setShowCongratulations(false);
+          setTimeout(() => {
+            onComplete?.();
+            setTimeout(() => onBack(), 500);
+          }, 500);
+        }}
+        onHome={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          onBack();
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -272,6 +333,12 @@ export const SlowToFastGame: React.FC<Props> = ({
           Speed Level: {speedLevel + 1} / {SPEED_LEVELS.length} • Taps: {hits} / {requiredTaps}
         </Text>
       </View>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

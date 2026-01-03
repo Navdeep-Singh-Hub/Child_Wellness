@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import type { MouthLandmarks } from '@/hooks/useJawDetectionWeb';
 import { logGameAndAward } from '@/utils/api';
@@ -8,15 +9,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 // Conditional import for VisionCamera
@@ -56,7 +57,7 @@ const getMaxParticles = (isTablet: boolean, isMobile: boolean) => {
   return 50;
 };
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -217,6 +218,7 @@ export const JawPushChallengeGame: React.FC<Props> = ({
   const [score, setScore] = useState(0);
   const [lastProtrusionFeedback, setLastProtrusionFeedback] = useState(0); // Track last feedback time
   const [isPushing, setIsPushing] = useState(false); // Track if actively pushing
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Scoring
   const [correctMatches, setCorrectMatches] = useState(0);
@@ -967,9 +969,10 @@ export const JawPushChallengeGame: React.FC<Props> = ({
         ? matchFrames / totalFrames
         : 0;
       
+      // Show success animation instead of TTS
       if (matchRate >= 0.6) {
         setCorrectMatches(prev => prev + 1);
-        speak('Excellent!');
+        setShowRoundSuccess(true);
         
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -989,8 +992,9 @@ export const JawPushChallengeGame: React.FC<Props> = ({
 
       // Start next round
       setTimeout(() => {
+        setShowRoundSuccess(false);
         startRound();
-      }, 1000);
+      }, 2500);
     }, ROUND_DURATION_MS)) as unknown as NodeJS.Timeout;
   }, [requiredRounds, finishGame, progressBarWidth, SCREEN_WIDTH, cleanupObjects]);
 
@@ -1379,6 +1383,12 @@ export const JawPushChallengeGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

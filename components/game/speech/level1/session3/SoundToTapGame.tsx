@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -66,6 +67,7 @@ export const SoundToTapGame: React.FC<Props> = ({
   const [phase, setPhase] = useState<'waiting' | 'sound' | 'circle' | 'success'>('waiting');
   const [canTap, setCanTap] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalTrials: number;
     successfulTrials: number;
@@ -79,10 +81,7 @@ export const SoundToTapGame: React.FC<Props> = ({
   const backgroundPulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    speak('Listen… ding! Tap when you hear the sound!');
-    setTimeout(() => {
-      startTrial();
-    }, 2000);
+    startTrial();
     return () => {
       clearScheduledSpeech();
     };
@@ -134,7 +133,7 @@ export const SoundToTapGame: React.FC<Props> = ({
   }, [trials, requiredTrials, gameFinished, finishGame]);
 
   const startTrial = useCallback(() => {
-    setPhase('waiting');
+    setPhase('sound');
     setCanTap(false);
     circleScale.setValue(0);
     circleOpacity.setValue(0);
@@ -144,10 +143,11 @@ export const SoundToTapGame: React.FC<Props> = ({
     setPlayingSound(currentSound);
     const sound = SOUNDS[currentSound];
 
-    // Wait 1 second, then play sound
+    // Speak instruction
+    speak('Listen carefully! Tap when you hear the sound!');
+
+    // Play sound after a short delay
     setTimeout(() => {
-      setPhase('sound');
-      
       // Play actual sound
       playSound(sound.soundKey, 1.0, 1.0);
       
@@ -254,10 +254,12 @@ export const SoundToTapGame: React.FC<Props> = ({
       ]),
     ]).start();
 
-    speak('Great job!');
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
 
     // Move to next trial
     setTimeout(() => {
+      setShowRoundSuccess(false);
       const nextTrials = trials + 1;
       setTrials(nextTrials);
 
@@ -265,11 +267,10 @@ export const SoundToTapGame: React.FC<Props> = ({
         const nextSound = (currentSound + 1) % SOUNDS.length;
         setCurrentSound(nextSound);
         setTimeout(() => {
-          speak('Tap when you hear the sound!');
           startTrial();
-        }, 1000);
+        }, 500);
       }
-    }, 1500);
+    }, 2500);
   }, [canTap, phase, trials, currentSound, requiredTrials, startTrial]);
 
   const progressDots = Array.from({ length: requiredTrials }, (_, i) => i < trials);
@@ -319,7 +320,7 @@ export const SoundToTapGame: React.FC<Props> = ({
                 setPlayingSound(0);
                 setGameFinished(false);
                 setFinalStats(null);
-                setPhase('waiting');
+                setPhase('sound');
                 setCanTap(false);
                 startTrial();
                 speak('Listen… ding! Tap when you hear the sound!');
@@ -375,16 +376,10 @@ export const SoundToTapGame: React.FC<Props> = ({
 
           {/* Game Area - Neutral Screen */}
           <View style={styles.gameArea}>
-            {phase === 'waiting' && (
-              <View style={styles.waitingContainer}>
-                <Text style={styles.waitingText}>👂 Listen carefully...</Text>
-              </View>
-            )}
-
             {phase === 'sound' && (
               <View style={styles.soundContainer}>
-                <Text style={styles.soundEmoji}>{sound.emoji}</Text>
-                <Text style={styles.soundText}>{sound.word.toUpperCase()}!</Text>
+                <Text style={styles.soundEmoji}>👂</Text>
+                <Text style={styles.soundText}>Listen...</Text>
               </View>
             )}
 
@@ -455,6 +450,12 @@ export const SoundToTapGame: React.FC<Props> = ({
           </View>
         </LinearGradient>
       </Animated.View>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };
@@ -522,16 +523,20 @@ const styles = StyleSheet.create({
   },
   soundContainer: {
     alignItems: 'center',
+    justifyContent: 'center',
   },
   soundEmoji: {
-    fontSize: 120,
-    marginBottom: 20,
+    fontSize: 140,
+    marginBottom: 30,
   },
   soundText: {
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 42,
+    fontWeight: '900',
     color: '#1E293B',
-    letterSpacing: 4,
+    letterSpacing: 6,
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   circleContainer: {
     alignItems: 'center',

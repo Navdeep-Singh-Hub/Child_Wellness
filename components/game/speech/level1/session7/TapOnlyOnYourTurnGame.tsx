@@ -7,14 +7,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 type Props = {
@@ -29,7 +29,7 @@ const GO_DURATION_MS = 2500; // How long GO signal shows (increased for better r
 const STOP_DURATION_MS = 3000; // How long STOP signal shows (increased for better waiting practice)
 const TRANSITION_DELAY_MS = 600; // Delay between rounds
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -229,7 +229,7 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
 
     // Auto-advance after duration
     const duration = isGo ? GO_DURATION_MS : STOP_DURATION_MS;
-    roundTimeoutRef.current = setTimeout(() => {
+    roundTimeoutRef.current = (setTimeout(() => {
       if (isGo && canTap && !isProcessing) {
         // GO signal expired without tap - missed opportunity
         setMissedOpportunities(prev => prev + 1);
@@ -267,7 +267,7 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
       });
       
       roundTimeoutRef.current = null;
-    }, duration);
+    }, duration)) as unknown as NodeJS.Timeout;
   }, [rounds, requiredRounds, canTap, isProcessing, advanceToNextRound]);
 
   const handleSignalTap = useCallback(() => {
@@ -410,10 +410,11 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
   }, [rounds, requiredRounds, gameFinished, finishGame]);
 
   useEffect(() => {
-    try {
-      speak('Tap only when it\'s your turn!');
-    } catch {}
-    startRound();
+    // Give clear instructions before starting
+    speak('Tap only when you see GO! Wait when you see STOP! Don\'t tap during STOP signal!');
+    setTimeout(() => {
+      startRound();
+    }, 4000);
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();

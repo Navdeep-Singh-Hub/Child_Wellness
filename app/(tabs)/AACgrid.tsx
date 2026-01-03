@@ -98,6 +98,7 @@ function GridMenu({ inline = false }: { inline?: boolean }) {
     { title: 'Grids', route: '/(tabs)/AACgrid', icon: 'grid-outline' },
     { title: 'Profile', route: '/(tabs)/Profile', icon: 'person-outline' },
     { title: 'Contact Us', route: '/(tabs)/Contact', icon: 'mail-outline' },
+    { title: 'About Us', route: '/(tabs)/About', icon: 'information-circle-outline' },
     { title: 'Add Tile', route: '/(tabs)/AACgrid?addTile=true', icon: 'add-circle-outline', isAction: true },
   ];
 

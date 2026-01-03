@@ -1,6 +1,7 @@
 // app/(auth)/complete-profile.tsx
 import { images } from '@/constants/images';
 import { getMyProfile, updateMyProfile } from '@/utils/api';
+import { clearProfileCache, setCachedProfileStatus } from '@/utils/profileCache';
 // import { useAuth } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -384,6 +385,13 @@ export default function CompleteProfile() {
       
       const result = await updateMyProfile(payload);
       console.log('Profile saved successfully:', result);
+      
+      // Update cache immediately - profile is now complete
+      await setCachedProfileStatus(true, {
+        firstName: payload.firstName,
+        dob: payload.dob,
+        phoneNumber: payload.phoneNumber,
+      });
       
       console.log('Attempting navigation to /(tabs)...');
       router.replace('/(tabs)');

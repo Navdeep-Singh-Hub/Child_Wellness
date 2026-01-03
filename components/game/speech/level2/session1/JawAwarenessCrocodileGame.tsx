@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import type { MouthLandmarks } from '@/hooks/useJawDetectionWeb';
 import { logGameAndAward } from '@/utils/api';
@@ -8,15 +9,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View
+  Animated,
+  Easing,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View
 } from 'react-native';
 
 // Conditional import for VisionCamera
@@ -48,7 +49,7 @@ const getResponsiveSize = (baseSize: number, isTablet: boolean, isMobile: boolea
   return baseSize;
 };
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -164,6 +165,7 @@ export const JawAwarenessCrocodileGame: React.FC<Props> = ({
   const isMobile = SCREEN_WIDTH < 600;
   
   const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalRounds: number;
     correctMatches: number;
@@ -433,7 +435,7 @@ export const JawAwarenessCrocodileGame: React.FC<Props> = ({
     
     // Small delay to ensure speech system is ready and state is set
     setTimeout(() => {
-      speak('Open your mouth!', DEFAULT_TTS_RATE, false); // Don't clear again, we already did
+      speak('Open your mouth!', DEFAULT_TTS_RATE);
     }, 200);
 
     // Animate emoji mouth opening
@@ -551,7 +553,7 @@ export const JawAwarenessCrocodileGame: React.FC<Props> = ({
           ]),
         ]).start();
 
-        speak('Great job!');
+        // Don't speak - we'll show animation when cycle completes
       }
 
       setModelState('closed');
@@ -656,9 +658,12 @@ export const JawAwarenessCrocodileGame: React.FC<Props> = ({
           }),
         ]).start();
 
+        // Show success animation before starting next cycle
+        setShowRoundSuccess(true);
         setTimeout(() => {
+          setShowRoundSuccess(false);
           startCycle();
-        }, 500);
+        }, 2500);
       }, CYCLE_DURATION_MS)) as unknown as NodeJS.Timeout;
     }, CYCLE_DURATION_MS)) as unknown as NodeJS.Timeout;
   }, [requiredRounds, finishGame, progressBarWidth]);
@@ -1248,6 +1253,12 @@ export const JawAwarenessCrocodileGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

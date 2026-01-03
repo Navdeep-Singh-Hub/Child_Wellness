@@ -3,6 +3,8 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import {
     Animated,
     Dimensions,
@@ -56,6 +58,9 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [round, setRound] = useState(0);
+  const [showCongratulations, setShowCongratulations] = useState(false);
+  const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
 
   const carX = useRef(new Animated.Value(SCREEN_WIDTH / 2)).current;
   const carY = useRef(new Animated.Value(SCREEN_HEIGHT / 2)).current;
@@ -84,6 +89,22 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
       clearScheduledSpeech();
     };
   }, []);
+
+  // Show congratulations when game finishes
+  useEffect(() => {
+    console.log('🎮 TrackAndFreezeGame: gameFinished effect triggered', { 
+      gameFinished, 
+      showCongratulations,
+      hits,
+      requiredTaps 
+    });
+    if (gameFinished && !showCongratulations) {
+      console.log('🎮 TrackAndFreezeGame: ✅ Setting showCongratulations to true');
+      setShowCongratulations(true);
+    } else if (gameFinished && showCongratulations) {
+      console.log('🎮 TrackAndFreezeGame: ✅ Already showing congratulations');
+    }
+  }, [gameFinished, showCongratulations, hits, requiredTaps]);
 
   const startRound = useCallback(() => {
     setRound((prev) => prev + 1);
@@ -256,14 +277,28 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
       carRotation.setValue(carRotation.__getValue() % 360);
     });
 
-    speak('Great job!');
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
 
     const nextHits = hits + 1;
+    console.log('🎮 TrackAndFreezeGame: handleCorrectTap called', { 
+      currentHits: hits, 
+      nextHits, 
+      requiredTaps,
+      willComplete: nextHits >= requiredTaps 
+    });
     if (nextHits >= requiredTaps) {
+      console.log('🎮 TrackAndFreezeGame: ✅ GAME COMPLETE!', { nextHits, requiredTaps });
+      // Stop animations and set states
+      if (stopTimer.current) clearTimeout(stopTimer.current);
+      movementAnim.current?.stop();
+      setShowFeedback(false);
       setTimeout(() => {
-        onComplete?.();
-        setTimeout(() => onBack(), 1500);
-      }, 1500);
+        setShowRoundSuccess(false);
+      }, 2500);
+      console.log('🎮 TrackAndFreezeGame: About to set gameFinished to true');
+      setGameFinished(true);
+      console.log('🎮 TrackAndFreezeGame: ✅ Set gameFinished to true');
       return;
     }
 
@@ -271,9 +306,10 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
     setCurrentCarColor((prev) => (prev + 1) % carColors.length);
 
     setTimeout(() => {
+      setShowRoundSuccess(false);
       setShowFeedback(false);
       startRound();
-    }, 1500);
+    }, 2500);
   };
 
   const handleTimeout = () => {
@@ -290,6 +326,38 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
 
   const currentCar = carColors[currentCarColor];
   const progressDots = Array.from({ length: requiredTaps }, (_, i) => i < hits);
+
+  // Debug logging - log on every render
+  console.log('🎮 TrackAndFreezeGame: 🔄 RENDER', {
+    showCongratulations,
+    gameFinished,
+    hits,
+    requiredTaps,
+    shouldShowCongrats: showCongratulations && gameFinished,
+  });
+
+  // Show congratulations screen when game finishes
+  if (showCongratulations && gameFinished) {
+    console.log('🎮 TrackAndFreezeGame: 🎉 RENDERING CongratulationsScreen NOW!');
+    return (
+      <CongratulationsScreen
+        message="Excellent Control!"
+        showButtons={true}
+        onContinue={() => {
+          setShowCongratulations(false);
+          setTimeout(() => {
+            onComplete?.();
+            setTimeout(() => onBack(), 500);
+          }, 500);
+        }}
+        onHome={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          onBack();
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -424,6 +492,12 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

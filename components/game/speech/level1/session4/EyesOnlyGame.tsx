@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,7 +32,7 @@ const DEFAULT_TTS_RATE = 0.75;
 
 type LookDirection = 'left' | 'right';
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -68,6 +69,7 @@ export const EyesOnlyGame: React.FC<Props> = ({
   const [round, setRound] = useState(0);
   const [isLooking, setIsLooking] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalTaps: number;
     correctTaps: number;
@@ -114,7 +116,7 @@ export const EyesOnlyGame: React.FC<Props> = ({
     try {
       const xpAwarded = hits * 10;
       const result = await logGameAndAward({
-        type: 'eyes-only',
+        type: 'follow-my-point',
         correct: hits,
         total: requiredTaps || 5,
         accuracy: stats.accuracy,
@@ -213,9 +215,10 @@ export const EyesOnlyGame: React.FC<Props> = ({
     
     if (isCorrect) {
       try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Success);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {}
-      speak('Great job!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
       
       Animated.sequence([
         Animated.spring(tappedScale, {
@@ -232,17 +235,20 @@ export const EyesOnlyGame: React.FC<Props> = ({
         }),
       ]).start();
 
-      const nextHits = hits + 1;
-      setHits(nextHits);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+        const nextHits = hits + 1;
+        setHits(nextHits);
 
-      if (nextHits < (requiredTaps || 5)) {
-        setTimeout(() => {
-          startRound();
-        }, 2000);
-      }
+        if (nextHits < (requiredTaps || 5)) {
+          setTimeout(() => {
+            startRound();
+          }, 500);
+        }
+      }, 2500);
     } else {
       try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Warning);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       } catch {}
       speak('Try again!');
       
@@ -484,6 +490,12 @@ export const EyesOnlyGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

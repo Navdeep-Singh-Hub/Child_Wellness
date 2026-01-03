@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import type { MouthLandmarks } from '@/hooks/useJawDetectionWeb';
 import { logGameAndAward } from '@/utils/api';
@@ -7,15 +8,15 @@ import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View
+  Animated,
+  Easing,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View
 } from 'react-native';
 
 // Conditional import for VisionCamera
@@ -47,7 +48,7 @@ const getResponsiveSize = (baseSize: number, isTablet: boolean, isMobile: boolea
   return baseSize;
 };
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -172,6 +173,7 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
     xpAwarded: number;
   } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Game state
   const [canPlay, setCanPlay] = useState(false);
@@ -201,7 +203,8 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
   const canPlayRef = useRef<boolean>(false);
   const currentLateralPositionRef = useRef<'left' | 'center' | 'right'>('center');
   const characterPositionRef = useRef(new Animated.Value(SCREEN_WIDTH / 2)).current;
-  const itemsRef = useRef<Array<{ id: number; x: number; direction: TargetDirection; collected: boolean }>>([]);
+  const characterPositionCurrentRef = useRef<number>(SCREEN_WIDTH / 2);
+  const itemsRef = useRef<{ id: number; x: number; direction: TargetDirection; collected: boolean }[]>([]);
   const gameStartedRef = useRef(false);
   
   // Animations
@@ -229,6 +232,16 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
       currentLateralPositionRef.current = lateralPosition;
     }
   }, [lateralPosition]);
+
+  // Track character position with listener
+  useEffect(() => {
+    const listener = characterPositionRef.addListener(({ value }) => {
+      characterPositionCurrentRef.current = value;
+    });
+    return () => {
+      characterPositionRef.removeListener(listener);
+    };
+  }, [characterPositionRef]);
 
   // Update character position based on jaw lateral position
   useEffect(() => {
@@ -484,7 +497,7 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
     if (!canPlay || !lateralPosition) return;
     
     const checkCollection = () => {
-      const characterX = characterPositionRef._value;
+      const characterX = characterPositionCurrentRef.current;
       itemsRef.current.forEach((item, index) => {
         if (!item.collected && Math.abs(item.x - characterX) < COLLECTION_THRESHOLD * SCREEN_WIDTH) {
           // Check if direction matches
@@ -658,9 +671,10 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
         ? matchFrames / totalFrames
         : 0;
       
+      // Show success animation instead of TTS
       if (matchRate >= 0.6) {
         setCorrectMatches(prev => prev + 1);
-        speak('Great job!');
+        setShowRoundSuccess(true);
         
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -680,8 +694,9 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
 
       // Start next round
       setTimeout(() => {
+        setShowRoundSuccess(false);
         startRound();
-      }, 1000);
+      }, 2500);
     }, ROUND_DURATION_MS)) as unknown as NodeJS.Timeout;
   }, [requiredRounds, finishGame, progressBarWidth, SCREEN_WIDTH]);
 
@@ -1006,6 +1021,12 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
             </View>
           </View>
         </View>
+
+        {/* Round Success Animation */}
+        <RoundSuccessAnimation
+          visible={showRoundSuccess}
+          stars={3}
+        />
       </SafeAreaView>
     );
 };
@@ -1023,7 +1044,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 8,
     paddingBottom: 12,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     zIndex: 20,
@@ -1107,6 +1127,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     padding: 8,
     alignItems: 'center',
+  },
+  positionIndicatorOverlay: {
+    position: 'absolute',
+    top: Platform.OS === 'web' ? 20 : 80,
+    right: 20,
+    zIndex: 15,
+    alignItems: 'flex-end',
   },
   positionIndicator: {
     paddingHorizontal: 8,

@@ -7,14 +7,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 type Props = {
@@ -27,7 +27,7 @@ const BALL_SIZE = 100;
 const DEFAULT_TTS_RATE = 0.75;
 const TURN_DELAY_MS = 1500;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -65,7 +65,7 @@ export const PassTheBallGame: React.FC<Props> = ({
   // Game state
   const [isYourTurn, setIsYourTurn] = useState(false);
   const [isWaiting, setIsWaiting] = useState(false);
-  const [ballSide, setBallSide] = useState<'system' | 'child'>('system');
+  const [ballSide, setBallSide] = useState<'system' | 'child' | 'moving'>('system');
   const [canTap, setCanTap] = useState(false);
   
   // Animations
@@ -292,10 +292,11 @@ export const PassTheBallGame: React.FC<Props> = ({
     // Initialize ball position - adjust for ball center
     const startX = SCREEN_WIDTH * 0.85 - BALL_SIZE / 2;
     ballX.setValue(startX);
-    try {
-      speak('Pass the ball back and forth!');
-    } catch {}
-    startRound();
+    // Give clear instructions before starting
+    speak('Let\'s play pass the ball! When the ball comes to you, tap it to pass it back. Wait when it\'s not your turn!');
+    setTimeout(() => {
+      startRound();
+    }, 4000);
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -356,7 +357,7 @@ export const PassTheBallGame: React.FC<Props> = ({
           </Pressable>
           <View style={styles.headerText}>
             <Text style={styles.title}>Pass the Ball</Text>
-            <Text style={styles.subtitle}>Take turns! Tap when it's your turn.</Text>
+            <Text style={styles.subtitle}>Take turns! Tap when its your turn.</Text>
           </View>
         </View>
 

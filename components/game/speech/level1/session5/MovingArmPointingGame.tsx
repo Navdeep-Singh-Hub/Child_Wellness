@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,7 +32,7 @@ const DEFAULT_TTS_RATE = 0.75;
 
 type PointDirection = 'left' | 'right';
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -71,6 +72,7 @@ export const MovingArmPointingGame: React.FC<Props> = ({
   const [isPointing, setIsPointing] = useState(false);
   const [armRaised, setArmRaised] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalTaps: number;
     correctTaps: number;
@@ -270,16 +272,20 @@ export const MovingArmPointingGame: React.FC<Props> = ({
       avatarScale.setValue(1);
     });
 
-    speak('Great job!');
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
 
-    const nextHits = hits + 1;
-    setHits(nextHits);
+    setTimeout(() => {
+      setShowRoundSuccess(false);
+      const nextHits = hits + 1;
+      setHits(nextHits);
 
-    if (nextHits < requiredTaps) {
-      setTimeout(() => {
-        startRound();
-      }, 1500);
-    }
+      if (nextHits < requiredTaps) {
+        setTimeout(() => {
+          startRound();
+        }, 500);
+      }
+    }, 2500);
   };
 
   if (gameFinished && finalStats) {
@@ -512,6 +518,12 @@ export const MovingArmPointingGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

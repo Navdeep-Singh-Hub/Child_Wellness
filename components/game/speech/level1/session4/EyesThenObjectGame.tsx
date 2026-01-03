@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,16 +8,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 type Props = {
@@ -31,7 +32,7 @@ const DEFAULT_TTS_RATE = 0.75;
 
 type LookDirection = 'left' | 'right';
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -69,6 +70,7 @@ export const EyesThenObjectGame: React.FC<Props> = ({
   const [round, setRound] = useState(0);
   const [isLooking, setIsLooking] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalTaps: number;
     correctTaps: number;
@@ -115,7 +117,7 @@ export const EyesThenObjectGame: React.FC<Props> = ({
     try {
       const xpAwarded = hits * 10;
       const result = await logGameAndAward({
-        type: 'eyes-then-object',
+        type: 'follow-my-point',
         correct: hits,
         total: requiredTaps || 5,
         accuracy: stats.accuracy,
@@ -250,16 +252,20 @@ export const EyesThenObjectGame: React.FC<Props> = ({
       }),
     ]).start();
 
-    speak('Great job!');
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
 
-    const nextHits = hits + 1;
-    setHits(nextHits);
+    setTimeout(() => {
+      setShowRoundSuccess(false);
+      const nextHits = hits + 1;
+      setHits(nextHits);
 
-    if (nextHits < (requiredTaps || 5)) {
-      setTimeout(() => {
-        startRound();
-      }, 1500);
-    }
+      if (nextHits < (requiredTaps || 5)) {
+        setTimeout(() => {
+          startRound();
+        }, 500);
+      }
+    }, 2500);
   };
 
   if (gameFinished && finalStats) {
@@ -471,6 +477,12 @@ export const EyesThenObjectGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };
