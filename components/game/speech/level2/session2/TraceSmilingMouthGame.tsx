@@ -1,50 +1,64 @@
-import { ResultToast, SparkleBurst } from '@/components/game/FX';
+/**
+ * Trace Smiling Mouth Game
+ * A hand-tracking game where kids trace smile curves with their index finger
+ * Features: 5 difficulty levels, timer, coverage tracking, scoring, and beautiful UI
+ */
+
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
+import { useHandDetectionWeb } from '@/hooks/useHandDetectionWeb';
 import { logGameAndAward } from '@/utils/api';
-import { generateArcPath, isPointOnPath, Point } from '@/utils/pathUtils';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    PanResponder,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View
+  Animated,
+  Easing,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 type Props = {
   onBack: () => void;
   onComplete?: () => void;
-  requiredRounds?: number;
 };
 
-const DEFAULT_TTS_RATE = 0.75;
-const TOTAL_ROUNDS = 5;
+interface Point {
+  x: number;
+  y: number;
+}
 
-// Difficulty: Level 1 = smooth curve, Level 2 = deeper curve
-const MOUTH_CURVES = [
-  { depth: 0.15, tolerance: 50 }, // Level 1: Gentle smile
-  { depth: 0.25, tolerance: 45 }, // Level 2: Deeper smile
-  { depth: 0.35, tolerance: 40 }, // Level 3: Even deeper
-  { depth: 0.45, tolerance: 35 }, // Level 4
-  { depth: 0.55, tolerance: 30 }, // Level 5: Deepest smile
+interface RoundResult {
+  round: number;
+  coverage: number;
+  stars: number;
+  offPathPenalty: number;
+  timeRemaining: number;
+}
+
+const TOTAL_ROUNDS = 5;
+const ROUND_TIME_MS = 20000; // 20 seconds per round
+const COVERAGE_TARGET = 0.70; // 70% coverage needed
+const PATH_TOLERANCE = 50; // pixels
+const DEFAULT_TTS_RATE = 0.75;
+
+// Smile curve configurations for each round
+const SMILE_CONFIGS = [
+  { depth: 0.15, tolerance: 50, width: 0.4 }, // Round 1: Gentle smile
+  { depth: 0.25, tolerance: 45, width: 0.45 }, // Round 2: Medium smile
+  { depth: 0.35, tolerance: 40, width: 0.5 }, // Round 3: Deeper smile
+  { depth: 0.45, tolerance: 35, width: 0.55 }, // Round 4: Very deep smile
+  { depth: 0.55, tolerance: 30, width: 0.6 }, // Round 5: Deepest smile
 ];
 
-const getResponsiveSize = (baseSize: number, isTablet: boolean, isMobile: boolean) => {
-  if (isTablet) return baseSize * 1.3;
-  if (isMobile) return baseSize * 0.9;
-  return baseSize;
-};
-
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -63,547 +77,1143 @@ function speak(text: string, rate = DEFAULT_TTS_RATE) {
   }
 }
 
-export const TraceSmilingMouthGame: React.FC<Props> = ({
-  onBack,
-  onComplete,
-  requiredRounds = TOTAL_ROUNDS,
-}) => {
-  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
-  const isTablet = SCREEN_WIDTH >= 768;
-  const isMobile = SCREEN_WIDTH < 600;
+// Enhanced Kalman-like smoother for finger tracking
+class KalmanSmoother {
+  private x = 0;
+  private y = 0;
+  private vx = 0; // velocity x
+  private vy = 0; // velocity y
+  private initialized = false;
+  private readonly alpha = 0.85; // Smoothing factor
 
-  const [gameFinished, setGameFinished] = useState(false);
+  update(nx: number, ny: number): Point {
+    if (!this.initialized) {
+      this.x = nx;
+      this.y = ny;
+      this.initialized = true;
+      return { x: this.x, y: this.y };
+    }
+
+    // Predict position based on velocity
+    const predictedX = this.x + this.vx;
+    const predictedY = this.y + this.vy;
+
+    // Update with measurement (exponential smoothing with velocity)
+    const dx = nx - predictedX;
+    const dy = ny - predictedY;
+
+    this.x = predictedX + this.alpha * dx;
+    this.y = predictedY + this.alpha * dy;
+
+    // Update velocity (exponential moving average)
+    this.vx = this.vx * 0.7 + (this.x - (this.x - dx)) * 0.3;
+    this.vy = this.vy * 0.7 + (this.y - (this.y - dy)) * 0.3;
+
+    return { x: this.x, y: this.y };
+  }
+
+  reset() {
+    this.initialized = false;
+    this.x = 0;
+    this.y = 0;
+    this.vx = 0;
+    this.vy = 0;
+  }
+}
+
+// Generate smile path (arc-based curve) for each round
+function generateSmilePath(width: number, height: number, round: number): Point[] {
+  const config = SMILE_CONFIGS[round - 1] || SMILE_CONFIGS[0];
+  const centerX = width / 2;
+  const centerY = height * 0.5; // Center of screen (50%)
+  const smileWidth = width * config.width;
+  const radius = smileWidth / 2;
+  const depth = radius * config.depth;
+  
+  const startAngle = Math.PI * 0.2; // Start angle (left side)
+  const endAngle = Math.PI * 0.8; // End angle (right side)
+  const numPoints = 100 + (round * 20); // More points for higher rounds
+
+  const points: Point[] = [];
+  for (let i = 0; i <= numPoints; i++) {
+    const t = i / numPoints;
+    const angle = startAngle + (endAngle - startAngle) * t;
+    const x = centerX + radius * Math.cos(angle);
+    // For a smile (U-shaped), center point (at angle π/2) should be at centerY
+    // Endpoints should be higher (smaller y values in screen coordinates)
+    // sin(π/2) = 1, so we use: y = centerY - depth * (1 - sin(angle))
+    // This makes center at centerY, endpoints at centerY - depth (higher on screen)
+    const y = centerY - depth * (1 - Math.sin(angle));
+    points.push({ x, y });
+  }
+
+  return points;
+}
+
+// Calculate distance from point to nearest path segment
+function distanceToPath(point: Point, path: Point[]): number {
+  let minDist = Infinity;
+  for (let i = 0; i < path.length - 1; i++) {
+    const p1 = path[i];
+    const p2 = path[i + 1];
+    const dist = pointToLineDistance(point, p1, p2);
+    minDist = Math.min(minDist, dist);
+  }
+  return minDist;
+}
+
+// Calculate distance from point to line segment
+function pointToLineDistance(point: Point, lineStart: Point, lineEnd: Point): number {
+  const A = point.x - lineStart.x;
+  const B = point.y - lineStart.y;
+  const C = lineEnd.x - lineStart.x;
+  const D = lineEnd.y - lineStart.y;
+
+  const dot = A * C + B * D;
+  const lenSq = C * C + D * D;
+  let param = -1;
+  if (lenSq !== 0) param = dot / lenSq;
+
+  let xx: number, yy: number;
+
+  if (param < 0) {
+    xx = lineStart.x;
+    yy = lineStart.y;
+  } else if (param > 1) {
+    xx = lineEnd.x;
+    yy = lineEnd.y;
+  } else {
+    xx = lineStart.x + param * C;
+    yy = lineStart.y + param * D;
+  }
+
+  const dx = point.x - xx;
+  const dy = point.y - yy;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// Convert normalized coordinates to screen coordinates
+function convertToScreenCoords(
+  normalized: { x: number; y: number },
+  videoRect: DOMRect,
+  gameRect: DOMRect
+): Point | null {
+  if (Platform.OS !== 'web' || typeof document === 'undefined') {
+    return null;
+  }
+
+  try {
+    let x = videoRect.left + normalized.x * videoRect.width;
+    let y = videoRect.top + normalized.y * videoRect.height;
+
+    // Check if video is mirrored
+    const video = document.querySelector('video[data-hand-preview-video]') as HTMLVideoElement;
+    if (video) {
+      const style = window.getComputedStyle(video);
+      if (style.transform.includes('scaleX(-1)') || style.transform.includes('matrix(-1')) {
+        x = videoRect.left + (1 - normalized.x) * videoRect.width;
+      }
+    }
+
+    const result = {
+      x: x - gameRect.left,
+      y: y - gameRect.top,
+    };
+
+    if (isNaN(result.x) || isNaN(result.y) || !isFinite(result.x) || !isFinite(result.y)) {
+      return null;
+    }
+
+    return result;
+  } catch (error) {
+    return null;
+  }
+}
+
+// Simple Web Audio sound effects
+class SoundEffects {
+  private audioContext: AudioContext | null = null;
+
+  init() {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.AudioContext) {
+      try {
+        this.audioContext = new AudioContext();
+      } catch (e) {
+        console.warn('AudioContext not available:', e);
+      }
+    }
+  }
+
+  playTone(frequency: number, duration: number, type: 'sine' | 'square' | 'triangle' = 'sine') {
+    if (!this.audioContext) return;
+
+    const oscillator = this.audioContext.createOscillator();
+    const gainNode = this.audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+
+    oscillator.frequency.value = frequency;
+    oscillator.type = type;
+
+    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+
+    oscillator.start(this.audioContext.currentTime);
+    oscillator.stop(this.audioContext.currentTime + duration);
+  }
+
+  playStartChime() {
+    this.playTone(523.25, 0.2); // C5
+    setTimeout(() => this.playTone(659.25, 0.2), 100); // E5
+    setTimeout(() => this.playTone(783.99, 0.3), 200); // G5
+  }
+
+  playSuccess() {
+    this.playTone(523.25, 0.15); // C5
+    setTimeout(() => this.playTone(659.25, 0.15), 80); // E5
+    setTimeout(() => this.playTone(783.99, 0.15), 160); // G5
+    setTimeout(() => this.playTone(1046.50, 0.3), 240); // C6
+  }
+
+  playCountdown() {
+    this.playTone(440, 0.1, 'square'); // A4
+  }
+}
+
+export function TraceSmilingMouthGame({ onBack, onComplete }: Props) {
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const handDetection = useHandDetectionWeb(true);
+
+  // Game state
+  const [gameState, setGameState] = useState<'calibration' | 'countdown' | 'playing' | 'roundComplete' | 'gameComplete'>('calibration');
+  const [gameRect, setGameRect] = useState({ width: 0, height: 0 });
+  const [currentRound, setCurrentRound] = useState(1);
+  const [smilePath, setSmilePath] = useState<Point[]>([]);
+  const [indexFingerPos, setIndexFingerPos] = useState<Point | null>(null);
+  const [coverage, setCoverage] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState(ROUND_TIME_MS);
+  const [countdown, setCountdown] = useState(0);
+  const [roundResults, setRoundResults] = useState<RoundResult[]>([]);
+  const [totalStars, setTotalStars] = useState(0);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalRounds: number;
-    successfulTraces: number;
-    averageAccuracy: number;
-    xpAwarded: number;
+    averageCoverage: number;
+    totalStars: number;
+    accuracy: number;
   } | null>(null);
-
-  const [currentRound, setCurrentRound] = useState(0);
-  const [isTracing, setIsTracing] = useState(false);
-  const [traceProgress, setTraceProgress] = useState(0);
-  const [mouthPath, setMouthPath] = useState<Point[]>([]);
-  const [glowPosition, setGlowPosition] = useState<Point | null>(null);
+  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [offPathPenalty, setOffPathPenalty] = useState(0);
   const [isOnPath, setIsOnPath] = useState(true);
-  const [roundComplete, setRoundComplete] = useState(false);
-  const [showFeedback, setShowFeedback] = useState<'success' | null>(null);
-  const [sparkleVisible, setSparkleVisible] = useState(false);
   const [happinessLevel, setHappinessLevel] = useState(0); // 0-1, affects face emoji
 
-  const [successfulTraces, setSuccessfulTraces] = useState(0);
-  const [totalAccuracy, setTotalAccuracy] = useState(0);
+  // Refs
+  const smoother = useRef(new KalmanSmoother());
+  const coveredSegments = useRef<Set<number>>(new Set());
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const soundEffects = useRef(new SoundEffects());
+  const confettiAnimation = useRef(new Animated.Value(0)).current;
+  const lastProgressAnnouncement = useRef(0);
+  const finishGameRef = useRef<(() => void) | undefined>(undefined);
+  const [hasWarned10, setHasWarned10] = useState(false);
+  const [hasWarned5, setHasWarned5] = useState(false);
+  const [lastHandWarning, setLastHandWarning] = useState(0);
 
-  const glowScale = useRef(new Animated.Value(1)).current;
-  const glowOpacity = useRef(new Animated.Value(0)).current;
-  const faceScale = useRef(new Animated.Value(1)).current;
-  const progressBarWidth = useRef(new Animated.Value(0)).current;
-
-  const generateMouthPath = useCallback((roundIndex: number): Point[] => {
-    const config = MOUTH_CURVES[Math.min(roundIndex, MOUTH_CURVES.length - 1)];
-    const centerX = SCREEN_WIDTH / 2;
-    const centerY = SCREEN_HEIGHT * 0.5;
-    const width = SCREEN_WIDTH * 0.4;
-    const depth = width * config.depth;
-
-    // Generate smile curve (arc)
-    const startAngle = Math.PI * 0.2;
-    const endAngle = Math.PI * 0.8;
-    const radius = width / 2;
-    
-    return generateArcPath(
-      { x: centerX, y: centerY + depth },
-      radius,
-      startAngle,
-      endAngle,
-      80
-    );
-  }, [SCREEN_WIDTH, SCREEN_HEIGHT]);
-
-  const pathToSvgString = useCallback((path: Point[]): string => {
-    if (path.length === 0) return '';
-    let d = `M ${path[0].x} ${path[0].y}`;
-    for (let i = 1; i < path.length; i++) {
-      d += ` L ${path[i].x} ${path[i].y}`;
-    }
-    return d;
+  // Initialize sound effects
+  useEffect(() => {
+    soundEffects.current.init();
   }, []);
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt) => {
-        if (roundComplete) return;
-        const { locationX, locationY } = evt.nativeEvent;
-        handleTraceStart({ x: locationX, y: locationY });
-      },
-      onPanResponderMove: (evt) => {
-        if (roundComplete || !isTracing) return;
-        const { locationX, locationY } = evt.nativeEvent;
-        handleTraceMove({ x: locationX, y: locationY });
-      },
-      onPanResponderRelease: () => {
-        handleTraceEnd();
-      },
-    })
-  ).current;
+  // Generate smile path when game area is ready or round changes
+  useEffect(() => {
+    if (gameRect.width > 0 && gameRect.height > 0 && currentRound <= TOTAL_ROUNDS) {
+      const path = generateSmilePath(gameRect.width, gameRect.height, currentRound);
+      setSmilePath(path);
+      smoother.current.reset();
+      setCoverage(0);
+      setOffPathPenalty(0);
+      coveredSegments.current.clear();
+      lastProgressAnnouncement.current = 0;
+      setHappinessLevel(0);
+    }
+  }, [gameRect.width, gameRect.height, currentRound]);
 
-  const handleTraceStart = (point: Point) => {
-    setIsTracing(true);
-    setGlowPosition(point);
-    glowOpacity.setValue(1);
-    Animated.spring(glowScale, {
-      toValue: 1.2,
-      tension: 50,
-      friction: 7,
-      useNativeDriver: true,
-    }).start();
-  };
+  // Update coverage when finger moves
+  const updateCoverage = useCallback((point: Point) => {
+    if (!smilePath.length) return;
 
-  const handleTraceMove = (point: Point) => {
-    if (!mouthPath.length) return;
-    setGlowPosition(point);
+    const config = SMILE_CONFIGS[currentRound - 1] || SMILE_CONFIGS[0];
+    const tolerance = config.tolerance;
+
+    // Check which path segments are near the finger
+    let newSegmentsCovered = 0;
+
+    for (let i = 0; i < smilePath.length; i++) {
+      if (coveredSegments.current.has(i)) continue; // Already covered
+      
+      const pathPoint = smilePath[i];
+      const dist = Math.hypot(point.x - pathPoint.x, point.y - pathPoint.y);
+      
+      if (dist < tolerance) {
+        coveredSegments.current.add(i);
+        newSegmentsCovered++;
+      }
+    }
+
+    // Update coverage based on segments covered
+    const newCoverage = smilePath.length > 0 
+      ? coveredSegments.current.size / smilePath.length 
+      : 0;
     
-    const config = MOUTH_CURVES[Math.min(currentRound, MOUTH_CURVES.length - 1)];
-    const onPath = isPointOnPath(point, mouthPath, config.tolerance);
+    if (newCoverage > coverage) {
+      setCoverage(newCoverage);
+      setHappinessLevel(newCoverage); // Update happiness level
+    }
+
+    // Check if on path
+    const distToPath = distanceToPath(point, smilePath);
+    const onPath = distToPath < tolerance;
     setIsOnPath(onPath);
 
-    if (onPath) {
-      let minDist = Infinity;
-      let closestIndex = 0;
-      for (let i = 0; i < mouthPath.length; i++) {
-        const dx = point.x - mouthPath[i].x;
-        const dy = point.y - mouthPath[i].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < minDist) {
-          minDist = dist;
-          closestIndex = i;
+    // Calculate off-path penalty
+    if (distToPath > tolerance * 2) {
+      setOffPathPenalty(prev => prev + 1);
+    }
+  }, [smilePath, coverage, currentRound]);
+
+  // Start calibration
+  const startCalibration = useCallback(() => {
+    setGameState('calibration');
+    if (currentRound === 1) {
+      speak(
+        'Welcome to Trace the Smile! Use your index finger to trace the smile curve. ' +
+        'The face will become happier as you trace. Cover at least 70 percent to complete each round. ' +
+        'Show your index finger in the center box to start!'
+      );
+    } else {
+      speak(`Round ${currentRound}! Show your index finger in the center box when you're ready!`);
+    }
+  }, [currentRound]);
+
+  // Start countdown
+  const startCountdown = useCallback(() => {
+    setGameState('countdown');
+    setCountdown(3);
+    soundEffects.current.playCountdown();
+
+    // Round-specific instructions
+    let instruction = '';
+    switch (currentRound) {
+      case 1:
+        instruction = 'Round 1! Trace the gentle smile curve. Follow the path carefully.';
+        break;
+      case 2:
+        instruction = 'Round 2! This smile is a bit deeper. Stay on the path.';
+        break;
+      case 3:
+        instruction = 'Round 3! Deeper smile ahead. Trace smoothly along the curve.';
+        break;
+      case 4:
+        instruction = 'Round 4! Very deep smile coming up. Follow the curve carefully.';
+        break;
+      case 5:
+        instruction = 'Round 5! Final round - deepest smile. Take your time and trace carefully!';
+        break;
+    }
+    speak(instruction + ' Get ready!');
+
+    const countdownInterval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          setGameState('playing');
+          setTimeRemaining(ROUND_TIME_MS);
+          soundEffects.current.playStartChime();
+          speak('Go! Trace the smile now! You have 20 seconds!');
+          return 0;
+        }
+        soundEffects.current.playCountdown();
+        speak(prev.toString());
+        return prev - 1;
+      });
+    }, 1000);
+
+    countdownRef.current = countdownInterval as ReturnType<typeof setInterval>;
+  }, [currentRound]);
+
+  // Start round
+  useEffect(() => {
+    if (gameState === 'calibration' && handDetection.landmarks?.indexFingerTip) {
+      // Check if finger is in calibration box (center area)
+      const video = Platform.OS === 'web' && typeof document !== 'undefined'
+        ? document.querySelector('video[data-hand-preview-video]') as HTMLVideoElement
+        : null;
+      const gameArea = Platform.OS === 'web' && typeof document !== 'undefined'
+        ? (document.querySelector('[data-game-area]') as HTMLElement || document.querySelector('svg') as SVGSVGElement)
+        : null;
+
+      if (video && gameArea) {
+        const videoRect = video.getBoundingClientRect();
+        const gRect = (gameArea as HTMLElement | SVGSVGElement).getBoundingClientRect();
+        const screenCoords = convertToScreenCoords(handDetection.landmarks.indexFingerTip, videoRect, gRect);
+
+        if (screenCoords) {
+          const centerX = gameRect.width / 2;
+          const centerY = gameRect.height / 2;
+          const boxSize = 100;
+
+          if (
+            Math.abs(screenCoords.x - centerX) < boxSize &&
+            Math.abs(screenCoords.y - centerY) < boxSize
+          ) {
+            setTimeout(() => {
+              startCountdown();
+            }, 500);
+          }
         }
       }
-      const progress = closestIndex / mouthPath.length;
-      setTraceProgress(progress);
-      setHappinessLevel(progress);
-
-      Animated.timing(progressBarWidth, {
-        toValue: progress * 100,
-        duration: 50,
-        easing: Easing.linear,
-        useNativeDriver: false,
-      }).start();
-
-      // Face becomes happier as progress increases
-      Animated.spring(faceScale, {
-        toValue: 1 + progress * 0.1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }).start();
-
-      if (progress >= 0.95 && !roundComplete) {
-        handleRoundComplete();
-      }
     }
-  };
+  }, [gameState, handDetection.landmarks, gameRect, startCountdown]);
 
-  const handleTraceEnd = () => {
-    setIsTracing(false);
-    Animated.parallel([
-      Animated.timing(glowOpacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.spring(glowScale, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  const handleRoundComplete = () => {
-    setRoundComplete(true);
-    setIsTracing(false);
-    setSuccessfulTraces(prev => prev + 1);
-    setTotalAccuracy(prev => prev + traceProgress * 100);
-    setHappinessLevel(1);
-
-    setSparkleVisible(true);
-    setShowFeedback('success');
-    speak('You made the face happy!');
-    
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
-
-    Animated.sequence([
-      Animated.spring(faceScale, {
-        toValue: 1.2,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-      Animated.spring(faceScale, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    setTimeout(() => {
-      setSparkleVisible(false);
-      setShowFeedback(null);
-    }, 1500);
-
-    setTimeout(() => {
-      if (currentRound < requiredRounds - 1) {
-        startNextRound();
-      } else {
-        finishGame();
-      }
-    }, 2000);
-  };
-
-  const startNextRound = () => {
-    setCurrentRound(prev => prev + 1);
-    setTraceProgress(0);
-    setRoundComplete(false);
-    setHappinessLevel(0);
-    setGlowPosition(null);
-    progressBarWidth.setValue(0);
-    faceScale.setValue(1);
-    
-    const newPath = generateMouthPath(currentRound + 1);
-    setMouthPath(newPath);
-  };
-
-  const startRound = useCallback(() => {
-    const path = generateMouthPath(currentRound);
-    setMouthPath(path);
-    setRoundComplete(false);
-    setTraceProgress(0);
-    setHappinessLevel(0);
-    progressBarWidth.setValue(0);
-    faceScale.setValue(1);
-    
-    speak('Trace the smile to make the face happy!');
-  }, [currentRound, generateMouthPath]);
-
-  const finishGame = useCallback(async () => {
-    const avgAccuracy = totalAccuracy / requiredRounds;
-    const xp = successfulTraces * 50;
-
-    setFinalStats({
-      totalRounds: requiredRounds,
-      successfulTraces,
-      averageAccuracy: avgAccuracy,
-      xpAwarded: xp,
-    });
-
-    clearScheduledSpeech();
-
-    try {
-      await logGameAndAward({
-        type: 'trace-smiling-mouth',
-        correct: successfulTraces,
-        total: requiredRounds,
-        accuracy: avgAccuracy,
-        xpAwarded: xp,
-        mode: 'therapy',
-        skillTags: ['emotion-engagement', 'curve-recognition', 'fine-motor-control', 'occupational-therapy'],
-        incorrectAttempts: requiredRounds - successfulTraces,
-        meta: {
-          averageAccuracy: avgAccuracy,
-        },
-      });
-      setGameFinished(true);
-      onComplete?.();
-    } catch (e) {
-      console.warn('Failed to save game log:', e instanceof Error ? e.message : 'Unknown error');
-      setGameFinished(true);
+  // Timer countdown with voice warnings
+  useEffect(() => {
+    if (gameState === 'playing') {
+      setHasWarned10(false);
+      setHasWarned5(false);
     }
-  }, [successfulTraces, requiredRounds, totalAccuracy, onComplete]);
+  }, [gameState]);
 
   useEffect(() => {
-    startRound();
-  }, []);
+    if (gameState === 'playing' && timeRemaining > 0) {
+      timerRef.current = setInterval(() => {
+        setTimeRemaining(prev => {
+          // Voice warnings
+          if (prev <= 11000 && prev > 10000 && !hasWarned10) {
+            setHasWarned10(true);
+            speak('10 seconds remaining! Keep tracing!');
+          }
+          if (prev <= 6000 && prev > 5000 && !hasWarned5) {
+            setHasWarned5(true);
+            speak('5 seconds left! Trace faster!');
+          }
+          
+          if (prev <= 1000) {
+            // Time's up - end round
+            speak('Time\'s up!');
+            setTimeout(() => {
+              endRound();
+            }, 500);
+            return 0;
+          }
+          return prev - 1000;
+        });
+      }, 1000);
 
-  if (gameFinished && finalStats) {
+      return () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+      };
+    }
+  }, [gameState, timeRemaining, hasWarned10, hasWarned5]);
+
+  // End round
+  const endRound = useCallback(() => {
+    // Use functional state updates to get current values
+    setGameState(prevState => {
+      if (prevState !== 'playing') return prevState;
+      
+      setGameState('roundComplete');
+
+      // Calculate stars (1-3)
+      let stars = 0;
+      if (coverage >= COVERAGE_TARGET) {
+        if (coverage >= 0.9 && offPathPenalty < 10) {
+          stars = 3;
+        } else if (coverage >= 0.8) {
+          stars = 2;
+        } else {
+          stars = 1;
+        }
+      }
+
+      const result: RoundResult = {
+        round: currentRound,
+        coverage,
+        stars,
+        offPathPenalty,
+        timeRemaining,
+      };
+
+      setRoundResults(prev => [...prev, result]);
+      setTotalStars(prev => prev + stars);
+
+      soundEffects.current.playSuccess();
+      
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+
+      // Use functional update to get the actual current round value
+      setCurrentRound(prevRound => {
+        const nextRound = prevRound + 1;
+        
+        if (prevRound < TOTAL_ROUNDS) {
+          setTimeout(() => {
+            setShowRoundSuccess(false);
+            speak(`Get ready for round ${nextRound}!`);
+            setTimeout(() => {
+              setCurrentRound(nextRound);
+              setGameState('calibration');
+              startCalibration();
+            }, 2000);
+          }, 2500);
+        } else {
+          // All rounds complete
+          setTimeout(() => {
+            setShowRoundSuccess(false);
+            finishGameRef.current?.();
+          }, 2500);
+        }
+        
+        return prevRound; // Don't change it here, we'll set it in setTimeout
+      });
+
+      return 'roundComplete';
+    });
+  }, [coverage, offPathPenalty, timeRemaining, currentRound, startCalibration]);
+
+  // Finish game
+  const finishGame = useCallback(async () => {
+    setGameState('gameComplete');
+
+    const averageCoverage = roundResults.reduce((sum, r) => sum + r.coverage, 0) / roundResults.length;
+    const accuracy = Math.round(averageCoverage * 100);
+
+    const stats = {
+      totalRounds: TOTAL_ROUNDS,
+      averageCoverage,
+      totalStars,
+      accuracy,
+    };
+
+    setFinalStats(stats);
+
+    // Confetti animation
+    Animated.sequence([
+      Animated.timing(confettiAnimation, {
+        toValue: 1,
+        duration: 1000,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.delay(2000),
+      Animated.timing(confettiAnimation, {
+        toValue: 0,
+        duration: 500,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    soundEffects.current.playSuccess();
+    speak(`Amazing! You completed all ${TOTAL_ROUNDS} rounds with ${totalStars} total stars!`);
+
+    try {
+      const xpAwarded = totalStars * 50;
+      const result = await logGameAndAward({
+        type: 'trace-smiling-mouth',
+        correct: totalStars,
+        total: TOTAL_ROUNDS * 3, // Max possible stars
+        accuracy,
+        xpAwarded,
+        skillTags: ['hand-tracking', 'fine-motor', 'visual-motor', 'attention', 'emotion-engagement'],
+        meta: {
+          totalRounds: TOTAL_ROUNDS,
+          averageCoverage,
+          totalStars,
+          roundResults,
+        },
+      });
+      setLogTimestamp(result?.last?.at ?? null);
+      onComplete?.();
+    } catch (e) {
+      console.error('Failed to save game:', e);
+    }
+  }, [roundResults, totalStars, onComplete, confettiAnimation]);
+
+  // Update ref when finishGame changes
+  useEffect(() => {
+    finishGameRef.current = finishGame;
+  }, [finishGame]);
+
+  // Track hand detection and provide feedback
+  useEffect(() => {
+    if (gameState === 'playing' && !handDetection.landmarks?.indexFingerTip) {
+      const now = Date.now();
+      if (now - lastHandWarning > 3000) {
+        setLastHandWarning(now);
+        speak('Show your index finger to trace the smile!');
+      }
+    }
+  }, [gameState, handDetection.landmarks, lastHandWarning]);
+
+  // Track index finger and update position
+  useEffect(() => {
+    if (
+      gameState !== 'playing' ||
+      !handDetection.landmarks?.indexFingerTip ||
+      !smilePath.length
+    ) {
+      setIndexFingerPos(null);
+      return;
+    }
+
+    if (Platform.OS !== 'web' || typeof document === 'undefined') {
+      return;
+    }
+
+    const updatePosition = () => {
+      const video = document.querySelector('video[data-hand-preview-video]') as HTMLVideoElement;
+      const gameArea = document.querySelector('[data-game-area]') as HTMLElement ||
+        document.querySelector('svg') as SVGSVGElement;
+
+      if (!video || !gameArea) {
+        return;
+      }
+
+      const videoRect = video.getBoundingClientRect();
+      const gameRect = (gameArea as HTMLElement | SVGSVGElement).getBoundingClientRect();
+
+      const screenCoords = convertToScreenCoords(
+        handDetection.landmarks!.indexFingerTip!,
+        videoRect,
+        gameRect
+      );
+
+      if (!screenCoords) {
+        setIndexFingerPos(null);
+        return;
+      }
+
+      // Smooth the position
+      const smoothed = smoother.current.update(screenCoords.x, screenCoords.y);
+      setIndexFingerPos(smoothed);
+
+      // Update coverage
+      updateCoverage(smoothed);
+
+      // Check if coverage target reached
+      if (coverage >= COVERAGE_TARGET && timeRemaining > 0) {
+        speak('Great job! You reached the target!');
+        setTimeout(() => {
+          endRound();
+        }, 1000);
+      }
+      
+      // Progress encouragement (only once per milestone)
+      const coveragePercent = Math.round(coverage * 100);
+      const now = Date.now();
+      if ((coveragePercent === 50 || coveragePercent === 60) && now - lastProgressAnnouncement.current > 3000) {
+        lastProgressAnnouncement.current = now;
+        speak(`You're at ${coveragePercent} percent! Keep going!`);
+      }
+    };
+
+    updatePosition();
+    const interval = setInterval(updatePosition, 33); // ~30 FPS
+    return () => clearInterval(interval);
+  }, [gameState, handDetection.landmarks, smilePath, coverage, timeRemaining, updateCoverage, endRound]);
+
+  // Initialize on mount
+  useEffect(() => {
+    startCalibration();
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current as any);
+      clearScheduledSpeech();
+    };
+  }, [startCalibration]);
+
+  // Create SVG path string
+  const pathString = smilePath.length > 0
+    ? `M ${smilePath[0].x} ${smilePath[0].y} ` +
+    smilePath.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ')
+    : '';
+
+  // Face emoji based on happiness level
+  const faceEmoji = happinessLevel > 0.8 ? '😄' : happinessLevel > 0.5 ? '😊' : '😐';
+
+  if (gameState === 'gameComplete' && finalStats) {
     return (
-      <ResultCard
-        correct={finalStats.successfulTraces}
-        total={finalStats.totalRounds}
-        accuracy={finalStats.averageAccuracy}
-        xpAwarded={finalStats.xpAwarded}
-        logTimestamp={null}
-        onHome={onBack}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setCurrentRound(0);
-          setSuccessfulTraces(0);
-          setTotalAccuracy(0);
-          setTraceProgress(0);
-          setRoundComplete(false);
-          setHappinessLevel(0);
-          progressBarWidth.setValue(0);
-          startRound();
-        }}
-      />
+      <SafeAreaView style={styles.container}>
+        <LinearGradient
+          colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <ResultCard
+          correct={totalStars}
+          total={TOTAL_ROUNDS * 3}
+          accuracy={finalStats.accuracy}
+          xpAwarded={totalStars * 50}
+          logTimestamp={logTimestamp}
+          onHome={onBack}
+          onPlayAgain={() => {
+            setGameState('calibration');
+            setCurrentRound(1);
+            setRoundResults([]);
+            setTotalStars(0);
+            setFinalStats(null);
+            setCoverage(0);
+            setTimeRemaining(ROUND_TIME_MS);
+            setHappinessLevel(0);
+            startCalibration();
+          }}
+        />
+      </SafeAreaView>
     );
   }
 
-  const config = MOUTH_CURVES[Math.min(currentRound, MOUTH_CURVES.length - 1)];
-  const pathString = pathToSvgString(mouthPath);
-  const faceSize = getResponsiveSize(200, isTablet, isMobile);
-  const glowSize = getResponsiveSize(40, isTablet, isMobile);
-  const faceEmoji = happinessLevel > 0.8 ? '😄' : happinessLevel > 0.5 ? '😊' : '😐';
-
   return (
     <SafeAreaView style={styles.container}>
+      {/* Bright gradient background */}
       <LinearGradient
         colors={['#FEF3C7', '#FDE68A', '#FCD34D', '#FBBF24']}
-        style={styles.gradient}
-      >
-        <View style={[styles.header, isMobile && styles.headerMobile]}>
-          <Pressable
-            onPress={() => {
-              clearScheduledSpeech();
-              onBack();
-            }}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={22} color="#0F172A" />
-            <Text style={styles.backText}>Back</Text>
-          </Pressable>
-          <View style={styles.headerText}>
-            <Text style={[styles.title, isMobile && styles.titleMobile]}>Trace the Smile</Text>
-            <Text style={[styles.subtitle, isMobile && styles.subtitleMobile]}>
-              Round {currentRound + 1} / {requiredRounds}
-            </Text>
-          </View>
+        style={StyleSheet.absoluteFillObject}
+      />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <Pressable onPress={onBack} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+        </Pressable>
+        <View style={styles.headerCenter}>
+          <Text style={styles.title}>Trace the Smile</Text>
+          {gameState !== 'gameComplete' && (
+            <Text style={styles.roundText}>Round {currentRound}/{TOTAL_ROUNDS}</Text>
+          )}
         </View>
+        <View style={styles.headerRight}>
+          {gameState === 'playing' && (
+            <View style={styles.timerContainer}>
+              <Ionicons name="time-outline" size={20} color="#0F172A" />
+              <Text style={styles.timerText}>{Math.ceil(timeRemaining / 1000)}s</Text>
+            </View>
+          )}
+          {roundResults.length > 0 && (
+            <View style={styles.starsContainer}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Ionicons
+                  key={i}
+                  name={i < roundResults[roundResults.length - 1].stars ? "star" : "star-outline"}
+                  size={20}
+                  color="#FCD34D"
+                />
+              ))}
+            </View>
+          )}
+        </View>
+      </View>
 
-        <View style={styles.gameArea} {...panResponder.panHandlers}>
-          <Svg style={StyleSheet.absoluteFill} width={SCREEN_WIDTH} height={SCREEN_HEIGHT}>
+      {/* Main Game Area */}
+      <View style={styles.gameContainer}>
+        {/* Camera Preview */}
+        <View
+          nativeID={handDetection.previewContainerId}
+          style={styles.cameraPreview}
+          {...(Platform.OS === 'web' && {
+            'data-native-id': handDetection.previewContainerId,
+            'data-hand-preview-container': 'true',
+          })}
+        />
 
-            {/* Mouth path - only traceable part */}
-            <Path
-              d={pathString}
-              stroke="#EF4444"
-              strokeWidth={30}
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-
-            {/* Glow effect */}
-            {glowPosition && (
+        {/* Game Overlay */}
+        <View
+          style={styles.gameOverlay}
+          onLayout={(e) => {
+            const { width, height } = e.nativeEvent.layout;
+            setGameRect({ width, height });
+          }}
+          {...(Platform.OS === 'web' && { 'data-game-area': 'true' })}
+        >
+          <Svg
+            style={StyleSheet.absoluteFill}
+            width={gameRect.width}
+            height={gameRect.height}
+          >
+            {/* Smile Path */}
+            {pathString && (
               <>
-                <Circle
-                  cx={glowPosition.x}
-                  cy={glowPosition.y}
-                  r={glowSize}
-                  fill={isOnPath ? '#22C55E' : '#EF4444'}
+                {/* Path shadow */}
+                <Path
+                  d={pathString}
+                  stroke="#DC2626"
+                  strokeWidth={35}
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                   opacity={0.3}
                 />
+                {/* Main smile path */}
+                <Path
+                  d={pathString}
+                  stroke="#EF4444"
+                  strokeWidth={30}
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </>
+            )}
+
+            {/* Coverage Indicator */}
+            {coverage > 0 && pathString && (
+              <Path
+                d={pathString}
+                stroke="#22C55E"
+                strokeWidth={35}
+                fill="none"
+                strokeLinecap="round"
+                strokeDasharray={`${coverage * 1000} 1000`}
+                opacity={0.6}
+              />
+            )}
+
+            {/* Calibration Box */}
+            {gameState === 'calibration' && (
+              <Circle
+                cx={gameRect.width / 2}
+                cy={gameRect.height / 2}
+                r={50}
+                fill="none"
+                stroke="#3B82F6"
+                strokeWidth={4}
+                strokeDasharray="10,5"
+                opacity={0.8}
+              />
+            )}
+
+            {/* Countdown */}
+            {gameState === 'countdown' && countdown > 0 && (
+              <Circle
+                cx={gameRect.width / 2}
+                cy={gameRect.height / 2}
+                r={80}
+                fill="rgba(59, 130, 246, 0.2)"
+                stroke="#3B82F6"
+                strokeWidth={6}
+              />
+            )}
+
+            {/* Index Finger Cursor - Glowing Dot */}
+            {indexFingerPos && gameState === 'playing' && (
+              <>
+                {/* Outer glow */}
                 <Circle
-                  cx={glowPosition.x}
-                  cy={glowPosition.y}
-                  r={glowSize / 2}
-                  fill={isOnPath ? '#22C55E' : '#EF4444'}
-                  opacity={1}
+                  cx={indexFingerPos.x}
+                  cy={indexFingerPos.y}
+                  r={25}
+                  fill={isOnPath ? "#22C55E" : "#EF4444"}
+                  opacity={0.3}
+                />
+                {/* Inner dot */}
+                <Circle
+                  cx={indexFingerPos.x}
+                  cy={indexFingerPos.y}
+                  r={15}
+                  fill={isOnPath ? "#22C55E" : "#EF4444"}
+                  stroke="#FFFFFF"
+                  strokeWidth={3}
                 />
               </>
             )}
           </Svg>
 
-          <View style={[styles.progressContainer, isMobile && styles.progressContainerMobile]}>
-            <View style={styles.progressBarBackground}>
-              <Animated.View
-                style={[
-                  styles.progressBarFill,
-                  {
-                    width: progressBarWidth.interpolate({
-                      inputRange: [0, 100],
-                      outputRange: ['0%', '100%'],
-                    }),
-                  },
-                ]}
-              />
-            </View>
-            <Text style={[styles.progressText, isMobile && styles.progressTextMobile]}>
-              {Math.round(traceProgress * 100)}% Happy
-            </Text>
-          </View>
-
-          {!isTracing && !roundComplete && (
-            <View style={styles.instructionContainer}>
-              <Text style={[styles.instructionText, isMobile && styles.instructionTextMobile]}>
-                👆 Trace the smile to make the face happy!
-              </Text>
-            </View>
-          )}
-
-          <ResultToast
-            text="You made the face happy!"
-            type="ok"
-            show={showFeedback === 'success'}
-          />
-
-          <SparkleBurst visible={sparkleVisible} color="#FCD34D" count={15} size={8} />
-
-          {/* Face - rendered outside SVG */}
+          {/* Face Emoji */}
           <Animated.View
             style={[
               styles.faceContainer,
               {
-                left: SCREEN_WIDTH / 2 - faceSize / 2,
-                top: SCREEN_HEIGHT * 0.35 - faceSize / 2,
-                width: faceSize,
-                height: faceSize,
-                transform: [{ scale: faceScale }],
+                left: gameRect.width / 2 - 100,
+                top: gameRect.height * 0.3 - 100, // Positioned above the centered smile path
+                transform: [
+                  {
+                    scale: 1 + happinessLevel * 0.2, // Face grows as it becomes happier
+                  },
+                ],
               },
             ]}
           >
-            <Text style={{ fontSize: faceSize * 0.8, textAlign: 'center' }}>{faceEmoji}</Text>
+            <Text style={styles.faceEmoji}>{faceEmoji}</Text>
           </Animated.View>
-        </View>
 
-        <View style={[styles.statsContainer, isMobile && styles.statsContainerMobile]}>
-          <Text style={[styles.statsText, isMobile && styles.statsTextMobile]}>
-            Successful: {successfulTraces} / {currentRound + 1}
-          </Text>
+          {/* Countdown Text */}
+          {gameState === 'countdown' && countdown > 0 && (
+            <View style={styles.countdownContainer}>
+              <Text style={styles.countdownText}>{countdown}</Text>
+            </View>
+          )}
+
+          {/* Calibration Instruction */}
+          {gameState === 'calibration' && (
+            <View style={styles.calibrationContainer}>
+              <Text style={styles.calibrationText}>
+                👆 Show your index finger in the center box
+              </Text>
+            </View>
+          )}
         </View>
-      </LinearGradient>
+      </View>
+
+      {/* Bottom Info Bar */}
+      <View style={styles.infoBar}>
+        {gameState === 'playing' && (
+          <>
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Coverage</Text>
+              <Text style={styles.infoValue}>{Math.round(coverage * 100)}%</Text>
+            </View>
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Target</Text>
+              <Text style={styles.infoValue}>{Math.round(COVERAGE_TARGET * 100)}%</Text>
+            </View>
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Status</Text>
+              <Text style={[styles.infoValue, isOnPath ? styles.onPathText : styles.offPathText]}>
+                {isOnPath ? '✅ On Path' : '⚠️ Off Path'}
+              </Text>
+            </View>
+            {offPathPenalty > 0 && (
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Off Path</Text>
+                <Text style={[styles.infoValue, styles.penaltyText]}>{offPathPenalty}</Text>
+              </View>
+            )}
+          </>
+        )}
+        {gameState === 'roundComplete' && !showRoundSuccess && roundResults.length > 0 && (
+          <View style={styles.roundResultContainer}>
+            <Text style={styles.roundResultText}>
+              Round {roundResults[roundResults.length - 1].round} Complete!
+            </Text>
+            <Text style={styles.roundResultStars}>
+              {Array.from({ length: roundResults[roundResults.length - 1].stars }).map(() => '⭐').join('')}
+            </Text>
+            <Text style={styles.roundResultCoverage}>
+              Coverage: {Math.round(roundResults[roundResults.length - 1].coverage * 100)}%
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Error Message */}
+      {handDetection.error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{handDetection.error}</Text>
+        </View>
+      )}
+
+      {/* No Hand Detected Message */}
+      {gameState === 'playing' && !handDetection.landmarks?.indexFingerTip && (
+        <View style={styles.noHandContainer}>
+          <Text style={styles.noHandText}>👋 Show your hand!</Text>
+        </View>
+      )}
+
+      {/* Round Success Animation - Outside all containers to overlay properly */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={roundResults[roundResults.length - 1]?.stars}
+      />
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  gradient: { flex: 1 },
+  container: {
+    flex: 1,
+    backgroundColor: '#FEF3C7',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-    backgroundColor: 'rgba(254, 243, 199, 0.95)',
-  },
-  headerMobile: {
-    paddingHorizontal: 12,
-    paddingTop: 6,
-    paddingBottom: 10,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderBottomWidth: 2,
+    borderBottomColor: '#FCD34D',
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: 8,
-    marginRight: 12,
   },
-  backText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-    marginLeft: 4,
+  headerCenter: {
+    alignItems: 'center',
+    flex: 1,
   },
-  headerText: { flex: 1 },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#0F172A',
   },
-  titleMobile: { fontSize: 20 },
-  subtitle: {
+  roundText: {
     fontSize: 14,
-    color: '#475569',
+    color: '#64748B',
     marginTop: 2,
   },
-  subtitleMobile: { fontSize: 12 },
-  gameArea: {
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  timerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#FEF3C7',
+    borderRadius: 20,
+  },
+  timerText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  gameContainer: {
     flex: 1,
     position: 'relative',
   },
+  cameraPreview: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000',
+  },
+  gameOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+  },
   faceContainer: {
     position: 'absolute',
+    width: 200,
+    height: 200,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
   },
-  progressContainer: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    right: 20,
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  progressContainerMobile: {
-    top: 10,
-    left: 10,
-    right: 10,
-  },
-  progressBarBackground: {
-    width: '100%',
-    height: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 6,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#22C55E',
-    borderRadius: 6,
-  },
-  progressText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0F172A',
-  },
-  progressTextMobile: { fontSize: 12 },
-  instructionContainer: {
-    position: 'absolute',
-    bottom: 100,
-    left: 20,
-    right: 20,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    padding: 16,
-    borderRadius: 16,
-    zIndex: 10,
-  },
-  instructionText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#0F172A',
+  faceEmoji: {
+    fontSize: 160,
     textAlign: 'center',
   },
-  instructionTextMobile: { fontSize: 16 },
-  statsContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    alignItems: 'center',
-  },
-  statsContainerMobile: {
-    paddingHorizontal: 12,
-    paddingBottom: 16,
-  },
-  statsText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-  },
-  statsTextMobile: { fontSize: 14 },
-  faceContainer: {
-    position: 'absolute',
-    alignItems: 'center',
+  countdownContainer: {
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
-    zIndex: 10,
+    alignItems: 'center',
+  },
+  countdownText: {
+    fontSize: 120,
+    fontWeight: '900',
+    color: '#3B82F6',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 8,
+  },
+  calibrationContainer: {
+    position: 'absolute',
+    top: '45%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  calibrationText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#3B82F6',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
+    textAlign: 'center',
+  },
+  infoBar: {
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderTopWidth: 2,
+    borderTopColor: '#FCD34D',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    flexWrap: 'wrap',
+  },
+  infoItem: {
+    alignItems: 'center',
+    marginBottom: 8,
+    minWidth: 80,
+  },
+  infoLabel: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  infoValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginTop: 4,
+  },
+  onPathText: {
+    color: '#22C55E',
+  },
+  offPathText: {
+    color: '#EF4444',
+  },
+  penaltyText: {
+    color: '#EF4444',
+  },
+  roundResultContainer: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  roundResultText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 8,
+  },
+  roundResultStars: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+  roundResultCoverage: {
+    fontSize: 14,
+    color: '#64748B',
+  },
+  errorContainer: {
+    padding: 16,
+    backgroundColor: '#FFEBEE',
+    borderTopWidth: 1,
+    borderTopColor: '#FFCDD2',
+  },
+  errorText: {
+    color: '#C62828',
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  noHandContainer: {
+    position: 'absolute',
+    bottom: 100,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  noHandText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#F59E0B',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
   },
 });
-

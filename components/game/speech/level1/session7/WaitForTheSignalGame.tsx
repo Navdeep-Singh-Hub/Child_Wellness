@@ -7,14 +7,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 type Props = {
@@ -31,7 +31,7 @@ const GREEN_DURATION_MS = 3000; // How long green signal shows (increased for be
 const RED_DURATION_MS = 2500; // How long red signal shows (increased for better waiting practice)
 const TRANSITION_DELAY_MS = 600; // Delay between rounds
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -241,7 +241,7 @@ export const WaitForTheSignalGame: React.FC<Props> = ({
     speak('Wait for the signal...');
 
     // After spinning, show color (randomly green or red)
-    spinTimeoutRef.current = setTimeout(() => {
+    spinTimeoutRef.current = (setTimeout(() => {
       const isGreen = Math.random() > 0.35; // 65% chance green (more opportunities)
       const color = isGreen ? 'green' : 'red';
       setSpinnerColor(color);
@@ -288,7 +288,7 @@ export const WaitForTheSignalGame: React.FC<Props> = ({
 
       // Auto-advance after duration
       const duration = isGreen ? GREEN_DURATION_MS : RED_DURATION_MS;
-      signalTimeoutRef.current = setTimeout(() => {
+      signalTimeoutRef.current = (setTimeout(() => {
         if (isGreen && canTap && !isProcessing) {
           // Green signal expired without tap - missed opportunity
           setMissedOpportunities(prev => prev + 1);
@@ -326,10 +326,10 @@ export const WaitForTheSignalGame: React.FC<Props> = ({
         });
         
         signalTimeoutRef.current = null;
-      }, duration);
+      }, duration)) as unknown as NodeJS.Timeout;
       
       spinTimeoutRef.current = null;
-    }, SPIN_DURATION_MS);
+    }, SPIN_DURATION_MS)) as unknown as NodeJS.Timeout;
   }, [rounds, requiredRounds, canTap, isProcessing, advanceToNextRound]);
 
   const handleObjectTap = useCallback(() => {
@@ -480,10 +480,11 @@ export const WaitForTheSignalGame: React.FC<Props> = ({
   }, [rounds, requiredRounds, gameFinished, finishGame]);
 
   useEffect(() => {
-    try {
-      speak('Wait for the green signal to tap!');
-    } catch {}
-    startRound();
+    // Give clear instructions before starting
+    speak('Watch the spinner! Tap when it turns green! Wait when it turns red! Don\'t tap during red!');
+    setTimeout(() => {
+      startRound();
+    }, 4000);
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -597,7 +598,7 @@ export const WaitForTheSignalGame: React.FC<Props> = ({
               ]}
             >
               <LinearGradient
-                colors={object.color}
+                colors={object.color as [string, string, ...string[]]}
                 style={styles.objectGradient}
               >
                 <Text style={styles.objectEmoji}>{object.emoji}</Text>

@@ -14,6 +14,7 @@ import {
     Text,
     View,
 } from 'react-native';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 
 type Props = {
   onBack: () => void;
@@ -217,7 +218,8 @@ export const TapToRevealGame: React.FC<Props> = ({
         ])
       ).start();
 
-      speak(`Oh! It's a ${object.name}!`);
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
       setShowSuccess(true);
     }, 400);
 
@@ -225,6 +227,7 @@ export const TapToRevealGame: React.FC<Props> = ({
     setReveals(nextReveals);
 
     setTimeout(() => {
+      setShowRoundSuccess(false);
       setShowSuccess(false);
       setIsRevealing(false);
     }, 2500);
@@ -414,6 +417,12 @@ export const TapToRevealGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

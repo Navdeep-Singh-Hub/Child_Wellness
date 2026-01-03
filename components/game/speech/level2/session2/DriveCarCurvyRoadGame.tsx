@@ -1,42 +1,55 @@
-import { ResultToast, SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
-import { logGameAndAward } from '@/utils/api';
-import { isPointOnPath, Point, snapToPath } from '@/utils/pathUtils';
+/**
+ * Drive Car on Curvy Road Game
+ * A hand-tracking game where kids drive a car along a curvy road using their index finger
+ * Features: 5 difficulty levels, timer, road tracking, scoring, and beautiful UI
+ */
+
+import { useHandDetectionWeb } from '@/hooks/useHandDetectionWeb';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    PanResponder,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View
+  Animated,
+  Easing,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
 } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle, Path, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
+import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
   onComplete?: () => void;
-  requiredRounds?: number;
 };
 
-const DEFAULT_TTS_RATE = 0.75;
+interface Point {
+  x: number;
+  y: number;
+}
+
+interface RoundResult {
+  round: number;
+  coverage: number;
+  stars: number;
+  offRoadPenalty: number;
+  timeRemaining: number;
+}
+
 const TOTAL_ROUNDS = 5;
-const MAX_SPEED = 3; // Pixels per frame (auto-limited)
-const ROAD_WIDTH = 60;
-
-// Responsive sizing
-const getResponsiveSize = (baseSize: number, isTablet: boolean, isMobile: boolean) => {
-  if (isTablet) return baseSize * 1.3;
-  if (isMobile) return baseSize * 0.9;
-  return baseSize;
-};
+const ROUND_TIME_MS = 20000; // 20 seconds per round
+const COVERAGE_TARGET = 0.70; // 70% coverage needed
+const ROAD_TOLERANCE = 60; // pixels
+const ROAD_WIDTH = 80; // Road width
+const CAR_SIZE = 60; // Car size
+const DEFAULT_TTS_RATE = 0.75;
 
 let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
 
@@ -57,591 +70,1221 @@ function speak(text: string, rate = DEFAULT_TTS_RATE) {
   }
 }
 
-export const DriveCarCurvyRoadGame: React.FC<Props> = ({
-  onBack,
-  onComplete,
-  requiredRounds = TOTAL_ROUNDS,
-}) => {
-  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
-  const isTablet = SCREEN_WIDTH >= 768;
-  const isMobile = SCREEN_WIDTH < 600;
+// Enhanced Kalman-like smoother for finger tracking
+class KalmanSmoother {
+  private x = 0;
+  private y = 0;
+  private vx = 0; // velocity x
+  private vy = 0; // velocity y
+  private initialized = false;
+  private readonly alpha = 0.85; // Smoothing factor
 
-  const [gameFinished, setGameFinished] = useState(false);
-  const [finalStats, setFinalStats] = useState<{
-    totalRounds: number;
-    successfulRounds: number;
-    averageAccuracy: number;
-    totalTime: number;
-    xpAwarded: number;
-  } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  update(nx: number, ny: number): Point {
+    if (!this.initialized) {
+      this.x = nx;
+      this.y = ny;
+      this.initialized = true;
+      return { x: this.x, y: this.y };
+    }
+
+    // Predict position based on velocity
+    const predictedX = this.x + this.vx;
+    const predictedY = this.y + this.vy;
+
+    // Update with measurement (exponential smoothing with velocity)
+    const dx = nx - predictedX;
+    const dy = ny - predictedY;
+
+    this.x = predictedX + this.alpha * dx;
+    this.y = predictedY + this.alpha * dy;
+
+    // Update velocity (exponential moving average)
+    this.vx = this.vx * 0.7 + (this.x - (this.x - dx)) * 0.3;
+    this.vy = this.vy * 0.7 + (this.y - (this.y - dy)) * 0.3;
+
+    return { x: this.x, y: this.y };
+  }
+
+  reset() {
+    this.initialized = false;
+    this.x = 0;
+    this.y = 0;
+    this.vx = 0;
+    this.vy = 0;
+  }
+}
+
+// Generate different curvy road paths based on round difficulty
+function generateRoadPath(width: number, height: number, round: number): Point[] {
+  const points: Point[] = [];
+  const startX = width * 0.1;
+  const endX = width * 0.9;
+  const numPoints = 150 + (round * 20); // More points for higher rounds
+
+  switch (round) {
+    case 1: {
+      // Round 1: Gentle curve
+      const centerY = height * 0.5;
+      const amplitude = height * 0.15;
+      for (let i = 0; i <= numPoints; i++) {
+        const t = i / numPoints;
+        const x = startX + (endX - startX) * t;
+        const y = centerY + amplitude * Math.sin(t * Math.PI);
+        points.push({ x, y });
+      }
+      break;
+    }
+    case 2: {
+      // Round 2: Longer curve with more variation
+      const centerY = height * 0.5;
+      const amplitude = height * 0.2;
+      for (let i = 0; i <= numPoints; i++) {
+        const t = i / numPoints;
+        const x = startX + (endX - startX) * t;
+        const y = centerY + amplitude * Math.sin(t * Math.PI * 1.5);
+        points.push({ x, y });
+      }
+      break;
+    }
+    case 3: {
+      // Round 3: Zig-zag road
+      const centerY = height * 0.5;
+      const amplitude = height * 0.18;
+      for (let i = 0; i <= numPoints; i++) {
+        const t = i / numPoints;
+        const x = startX + (endX - startX) * t;
+        const y = centerY + amplitude * Math.sin(t * Math.PI * 3);
+        points.push({ x, y });
+      }
+      break;
+    }
+    case 4: {
+      // Round 4: Spiral-like curves
+      const centerY = height * 0.5;
+      const amplitude = height * 0.22;
+      for (let i = 0; i <= numPoints; i++) {
+        const t = i / numPoints;
+        const x = startX + (endX - startX) * t;
+        const y = centerY + amplitude * Math.sin(t * Math.PI * 2) * (1 - t * 0.2);
+        points.push({ x, y });
+      }
+      break;
+    }
+    case 5: {
+      // Round 5: Narrow winding road
+      const centerY = height * 0.5;
+      const amplitude = height * 0.25;
+      for (let i = 0; i <= numPoints; i++) {
+        const t = i / numPoints;
+        const x = startX + (endX - startX) * t;
+        const y = centerY + amplitude * Math.sin(t * Math.PI * 4) * (0.6 + t * 0.4);
+        points.push({ x, y });
+      }
+      break;
+    }
+  }
+
+  return points;
+}
+
+// Calculate distance from point to nearest road segment
+function distanceToRoad(point: Point, road: Point[]): number {
+  let minDist = Infinity;
+  for (let i = 0; i < road.length - 1; i++) {
+    const p1 = road[i];
+    const p2 = road[i + 1];
+    const dist = pointToLineDistance(point, p1, p2);
+    minDist = Math.min(minDist, dist);
+  }
+  return minDist;
+}
+
+// Calculate distance from point to line segment
+function pointToLineDistance(point: Point, lineStart: Point, lineEnd: Point): number {
+  const A = point.x - lineStart.x;
+  const B = point.y - lineStart.y;
+  const C = lineEnd.x - lineStart.x;
+  const D = lineEnd.y - lineStart.y;
+
+  const dot = A * C + B * D;
+  const lenSq = C * C + D * D;
+  let param = -1;
+  if (lenSq !== 0) param = dot / lenSq;
+
+  let xx: number, yy: number;
+
+  if (param < 0) {
+    xx = lineStart.x;
+    yy = lineStart.y;
+  } else if (param > 1) {
+    xx = lineEnd.x;
+    yy = lineEnd.y;
+  } else {
+    xx = lineStart.x + param * C;
+    yy = lineStart.y + param * D;
+  }
+
+  const dx = point.x - xx;
+  const dy = point.y - yy;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// Convert normalized coordinates to screen coordinates
+function convertToScreenCoords(
+  normalized: { x: number; y: number },
+  videoRect: DOMRect,
+  gameRect: DOMRect
+): Point | null {
+  if (Platform.OS !== 'web' || typeof document === 'undefined') {
+    return null;
+  }
+
+  try {
+    let x = videoRect.left + normalized.x * videoRect.width;
+    let y = videoRect.top + normalized.y * videoRect.height;
+
+    // Check if video is mirrored
+    const video = document.querySelector('video[data-hand-preview-video]') as HTMLVideoElement;
+    if (video) {
+      const style = window.getComputedStyle(video);
+      if (style.transform.includes('scaleX(-1)') || style.transform.includes('matrix(-1')) {
+        x = videoRect.left + (1 - normalized.x) * videoRect.width;
+      }
+    }
+
+    const result = {
+      x: x - gameRect.left,
+      y: y - gameRect.top,
+    };
+
+    if (isNaN(result.x) || isNaN(result.y) || !isFinite(result.x) || !isFinite(result.y)) {
+      return null;
+    }
+
+    return result;
+  } catch (error) {
+    return null;
+  }
+}
+
+// Simple Web Audio sound effects
+class SoundEffects {
+  private audioContext: AudioContext | null = null;
+
+  init() {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.AudioContext) {
+      try {
+        this.audioContext = new AudioContext();
+      } catch (e) {
+        console.warn('AudioContext not available:', e);
+      }
+    }
+  }
+
+  playTone(frequency: number, duration: number, type: 'sine' | 'square' | 'triangle' = 'sine') {
+    if (!this.audioContext) return;
+
+    const oscillator = this.audioContext.createOscillator();
+    const gainNode = this.audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+
+    oscillator.frequency.value = frequency;
+    oscillator.type = type;
+
+    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+
+    oscillator.start(this.audioContext.currentTime);
+    oscillator.stop(this.audioContext.currentTime + duration);
+  }
+
+  playStartChime() {
+    this.playTone(523.25, 0.2); // C5
+    setTimeout(() => this.playTone(659.25, 0.2), 100); // E5
+    setTimeout(() => this.playTone(783.99, 0.3), 200); // G5
+  }
+
+  playSuccess() {
+    this.playTone(523.25, 0.15); // C5
+    setTimeout(() => this.playTone(659.25, 0.15), 80); // E5
+    setTimeout(() => this.playTone(783.99, 0.15), 160); // G5
+    setTimeout(() => this.playTone(1046.50, 0.3), 240); // C6
+  }
+
+  playCountdown() {
+    this.playTone(440, 0.1, 'square'); // A4
+  }
+
+  playEngine() {
+    this.playTone(200, 0.05, 'square'); // Low engine sound
+  }
+}
+
+export function DriveCarCurvyRoadGame({ onBack, onComplete }: Props) {
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const handDetection = useHandDetectionWeb(true);
 
   // Game state
-  const [currentRound, setCurrentRound] = useState(0);
-  const [carPosition, setCarPosition] = useState<Point>({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [isOnRoad, setIsOnRoad] = useState(true);
+  const [gameState, setGameState] = useState<'calibration' | 'countdown' | 'playing' | 'roundComplete' | 'gameComplete'>('calibration');
+  const [gameRect, setGameRect] = useState({ width: 0, height: 0 });
+  const [currentRound, setCurrentRound] = useState(1);
   const [roadPath, setRoadPath] = useState<Point[]>([]);
-  const [roundComplete, setRoundComplete] = useState(false);
-  const [showFeedback, setShowFeedback] = useState<'success' | null>(null);
-  const [sparkleVisible, setSparkleVisible] = useState(false);
-  const [roadHighlight, setRoadHighlight] = useState(false);
+  const [carPosition, setCarPosition] = useState<Point | null>(null);
+  const [coverage, setCoverage] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState(ROUND_TIME_MS);
+  const [countdown, setCountdown] = useState(0);
+  const [roundResults, setRoundResults] = useState<RoundResult[]>([]);
+  const [totalStars, setTotalStars] = useState(0);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
+  const [finalStats, setFinalStats] = useState<{
+    totalRounds: number;
+    averageCoverage: number;
+    totalStars: number;
+    accuracy: number;
+  } | null>(null);
+  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [offRoadPenalty, setOffRoadPenalty] = useState(0);
+  const [isOnRoad, setIsOnRoad] = useState(true);
+  const [carRotation, setCarRotation] = useState(0);
 
-  // Scoring
-  const [successfulRounds, setSuccessfulRounds] = useState(0);
-  const [totalAccuracy, setTotalAccuracy] = useState(0);
-  const [timeOnRoad, setTimeOnRoad] = useState(0);
-  const [roundStartTime, setRoundStartTime] = useState(0);
+  // Refs
+  const smoother = useRef(new KalmanSmoother());
+  const coveredSegments = useRef<Set<number>>(new Set());
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const soundEffects = useRef(new SoundEffects());
+  const confettiAnimation = useRef(new Animated.Value(0)).current;
+  const lastProgressAnnouncement = useRef(0);
+  const finishGameRef = useRef<(() => void) | undefined>(undefined);
+  const [hasWarned10, setHasWarned10] = useState(false);
+  const [hasWarned5, setHasWarned5] = useState(false);
+  const [lastHandWarning, setLastHandWarning] = useState(0);
 
-  // Animations
-  const carRotation = useRef(new Animated.Value(0)).current;
-  const carScale = useRef(new Animated.Value(1)).current;
-  const progressBarWidth = useRef(new Animated.Value(0)).current;
-
-  const lastCarPosition = useRef<Point>({ x: 0, y: 0 });
-  const animationFrameRef = useRef<number | null>(null);
-
-  // Generate curvy road path
-  const generateRoadPath = useCallback((roundIndex: number): Point[] => {
-    const startX = SCREEN_WIDTH * 0.1;
-    const endX = SCREEN_WIDTH * 0.9;
-    const centerY = SCREEN_HEIGHT * 0.5;
-    const curveHeight = SCREEN_HEIGHT * 0.3 * (1 + roundIndex * 0.2); // More curves in later rounds
-
-    const start: Point = { x: startX, y: centerY };
-    const end: Point = { x: endX, y: centerY };
-    const control1: Point = { x: SCREEN_WIDTH * 0.3, y: centerY - curveHeight };
-    const control2: Point = { x: SCREEN_WIDTH * 0.7, y: centerY + curveHeight };
-
-    // Generate smooth curve using bezier
-    const path: Point[] = [];
-    for (let i = 0; i <= 100; i++) {
-      const t = i / 100;
-      const x =
-        (1 - t) * (1 - t) * (1 - t) * start.x +
-        3 * (1 - t) * (1 - t) * t * control1.x +
-        3 * (1 - t) * t * t * control2.x +
-        t * t * t * end.x;
-      const y =
-        (1 - t) * (1 - t) * (1 - t) * start.y +
-        3 * (1 - t) * (1 - t) * t * control1.y +
-        3 * (1 - t) * t * t * control2.y +
-        t * t * t * end.y;
-      path.push({ x, y });
-    }
-    return path;
-  }, [SCREEN_WIDTH, SCREEN_HEIGHT]);
-
-  // Convert path to SVG string
-  const pathToSvgString = useCallback((path: Point[]): string => {
-    if (path.length === 0) return '';
-    let d = `M ${path[0].x} ${path[0].y}`;
-    for (let i = 1; i < path.length; i++) {
-      d += ` L ${path[i].x} ${path[i].y}`;
-    }
-    return d;
+  // Initialize sound effects
+  useEffect(() => {
+    soundEffects.current.init();
   }, []);
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt) => {
-        if (roundComplete) return;
-        const { locationX, locationY } = evt.nativeEvent;
-        setIsDragging(true);
-        updateCarPosition({ x: locationX, y: locationY });
-      },
-      onPanResponderMove: (evt) => {
-        if (roundComplete || !isDragging) return;
-        const { locationX, locationY } = evt.nativeEvent;
-        updateCarPosition({ x: locationX, y: locationY });
-      },
-      onPanResponderRelease: () => {
-        setIsDragging(false);
-      },
-    })
-  ).current;
+  // Generate road path when game area is ready or round changes
+  useEffect(() => {
+    if (gameRect.width > 0 && gameRect.height > 0 && currentRound <= TOTAL_ROUNDS) {
+      const path = generateRoadPath(gameRect.width, gameRect.height, currentRound);
+      setRoadPath(path);
+      smoother.current.reset();
+      setCoverage(0);
+      setOffRoadPenalty(0);
+      coveredSegments.current.clear();
+      lastProgressAnnouncement.current = 0;
+      
+      // Set car to start position
+      if (path.length > 0) {
+        setCarPosition(path[0]);
+      }
+    }
+  }, [gameRect.width, gameRect.height, currentRound]);
 
-  const updateCarPosition = (targetPoint: Point) => {
-    // Snap car to nearest point on road (with speed limiting)
-    const snapped = snapToPath(targetPoint, roadPath, 100);
-    
-    // Calculate distance from last position
-    const dx = snapped.x - lastCarPosition.current.x;
-    const dy = snapped.y - lastCarPosition.current.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Limit speed
-    if (distance > MAX_SPEED) {
-      const angle = Math.atan2(dy, dx);
-      snapped.x = lastCarPosition.current.x + Math.cos(angle) * MAX_SPEED;
-      snapped.y = lastCarPosition.current.y + Math.sin(angle) * MAX_SPEED;
+  // Update coverage when car moves
+  const updateCoverage = useCallback((point: Point) => {
+    if (!roadPath.length) return;
+
+    // Check which road segments are near the car
+    const tolerance = ROAD_TOLERANCE;
+    let newSegmentsCovered = 0;
+
+    for (let i = 0; i < roadPath.length; i++) {
+      if (coveredSegments.current.has(i)) continue; // Already covered
+      
+      const roadPoint = roadPath[i];
+      const dist = Math.hypot(point.x - roadPoint.x, point.y - roadPoint.y);
+      
+      if (dist < tolerance) {
+        coveredSegments.current.add(i);
+        newSegmentsCovered++;
+      }
     }
 
-    setCarPosition(snapped);
-    lastCarPosition.current = snapped;
+    // Update coverage based on segments covered
+    const newCoverage = roadPath.length > 0 
+      ? coveredSegments.current.size / roadPath.length 
+      : 0;
+    
+    if (newCoverage > coverage) {
+      setCoverage(newCoverage);
+    }
 
     // Check if on road
-    const onRoad = isPointOnPath(snapped, roadPath, ROAD_WIDTH / 2);
+    const distToRoad = distanceToRoad(point, roadPath);
+    const onRoad = distToRoad < ROAD_TOLERANCE;
     setIsOnRoad(onRoad);
-    setRoadHighlight(onRoad);
 
-    if (onRoad) {
-      setTimeOnRoad(prev => prev + 1);
-      
-      // Calculate progress
+    // Calculate off-road penalty
+    if (distToRoad > ROAD_TOLERANCE * 2) {
+      setOffRoadPenalty(prev => prev + 1);
+    }
+
+    // Calculate car rotation based on road direction
+    if (roadPath.length > 0 && onRoad) {
       let minDist = Infinity;
       let closestIndex = 0;
       for (let i = 0; i < roadPath.length; i++) {
-        const dist = Math.sqrt(
-          Math.pow(snapped.x - roadPath[i].x, 2) + Math.pow(snapped.y - roadPath[i].y, 2)
-        );
+        const dist = Math.hypot(point.x - roadPath[i].x, point.y - roadPath[i].y);
         if (dist < minDist) {
           minDist = dist;
           closestIndex = i;
         }
       }
-      const progress = closestIndex / roadPath.length;
-      
-      Animated.timing(progressBarWidth, {
-        toValue: progress * 100,
-        duration: 50,
-        easing: Easing.linear,
-        useNativeDriver: false,
-      }).start();
 
-      // Check completion
-      if (progress >= 0.95 && !roundComplete) {
-        handleRoundComplete();
-      }
-
-      // Calculate car rotation based on direction
-      if (closestIndex > 0) {
+      if (closestIndex > 0 && closestIndex < roadPath.length - 1) {
         const prevPoint = roadPath[closestIndex - 1];
-        const currentPoint = roadPath[closestIndex];
-        const angle = Math.atan2(currentPoint.y - prevPoint.y, currentPoint.x - prevPoint.x);
-        Animated.timing(carRotation, {
-          toValue: angle * (180 / Math.PI),
-          duration: 100,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }).start();
+        const nextPoint = roadPath[closestIndex + 1];
+        const angle = Math.atan2(nextPoint.y - prevPoint.y, nextPoint.x - prevPoint.x);
+        setCarRotation(angle * (180 / Math.PI));
       }
+    }
+  }, [roadPath, coverage]);
+
+  // Start calibration
+  const startCalibration = useCallback(() => {
+    setGameState('calibration');
+    if (currentRound === 1) {
+      speak(
+        'Welcome to Drive the Car! Use your index finger to drive the car along the curvy road. ' +
+        'Stay on the road and cover at least 70 percent to complete each round. ' +
+        'Show your index finger in the center box to start!'
+      );
     } else {
-      // Off road - pause car (no fail, just gentle feedback)
-      Animated.spring(carScale, {
-        toValue: 0.9,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }).start(() => {
-        Animated.spring(carScale, {
-          toValue: 1,
-          tension: 50,
-          friction: 7,
-          useNativeDriver: true,
-        }).start();
-      });
-
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch {}
+      speak(`Round ${currentRound}! Show your index finger in the center box when you're ready!`);
     }
-  };
+  }, [currentRound]);
 
-  const handleRoundComplete = () => {
-    setRoundComplete(true);
-    setIsDragging(false);
-    setSuccessfulRounds(prev => prev + 1);
-    
-    const accuracy = (timeOnRoad / (Date.now() - roundStartTime)) * 100;
-    setTotalAccuracy(prev => prev + accuracy);
+  // Start countdown
+  const startCountdown = useCallback(() => {
+    setGameState('countdown');
+    setCountdown(3);
+    soundEffects.current.playCountdown();
 
-    setSparkleVisible(true);
-    setShowFeedback('success');
-    speak('Great driving!');
-    
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
+    // Round-specific instructions
+    let instruction = '';
+    switch (currentRound) {
+      case 1:
+        instruction = 'Round 1! Drive along the gentle curve. Follow the road carefully.';
+        break;
+      case 2:
+        instruction = 'Round 2! This road has more curves. Stay on the path.';
+        break;
+      case 3:
+        instruction = 'Round 3! Zig-zag road ahead. Drive smoothly through all the turns.';
+        break;
+      case 4:
+        instruction = 'Round 4! Spiral curves coming up. Follow the winding road.';
+        break;
+      case 5:
+        instruction = 'Round 5! Final round - narrow winding road. Take your time and drive carefully!';
+        break;
+    }
+    speak(instruction + ' Get ready!');
 
+    const countdownInterval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          setGameState('playing');
+          setTimeRemaining(ROUND_TIME_MS);
+          soundEffects.current.playStartChime();
+          speak('Go! Drive the car now! You have 20 seconds!');
+          return 0;
+        }
+        soundEffects.current.playCountdown();
+        speak(prev.toString());
+        return prev - 1;
+      });
+    }, 1000);
+
+    countdownRef.current = countdownInterval as ReturnType<typeof setInterval>;
+  }, [currentRound]);
+
+  // Start round
+  useEffect(() => {
+    if (gameState === 'calibration' && handDetection.landmarks?.indexFingerTip) {
+      // Check if finger is in calibration box (center area)
+      const video = Platform.OS === 'web' && typeof document !== 'undefined'
+        ? document.querySelector('video[data-hand-preview-video]') as HTMLVideoElement
+        : null;
+      const gameArea = Platform.OS === 'web' && typeof document !== 'undefined'
+        ? (document.querySelector('[data-game-area]') as HTMLElement || document.querySelector('svg') as SVGSVGElement)
+        : null;
+
+      if (video && gameArea) {
+        const videoRect = video.getBoundingClientRect();
+        const gRect = (gameArea as HTMLElement | SVGSVGElement).getBoundingClientRect();
+        const screenCoords = convertToScreenCoords(handDetection.landmarks.indexFingerTip, videoRect, gRect);
+
+        if (screenCoords) {
+          const centerX = gameRect.width / 2;
+          const centerY = gameRect.height / 2;
+          const boxSize = 100;
+
+          if (
+            Math.abs(screenCoords.x - centerX) < boxSize &&
+            Math.abs(screenCoords.y - centerY) < boxSize
+          ) {
     setTimeout(() => {
-      setSparkleVisible(false);
-      setShowFeedback(null);
-    }, 1500);
-
-    setTimeout(() => {
-      if (currentRound < requiredRounds - 1) {
-        startNextRound();
-      } else {
-        finishGame();
+              startCountdown();
+            }, 500);
+          }
+        }
       }
-    }, 2000);
-  };
-
-  const startNextRound = () => {
-    setCurrentRound(prev => prev + 1);
-    setRoundComplete(false);
-    setTimeOnRoad(0);
-    progressBarWidth.setValue(0);
-    carRotation.setValue(0);
-    
-    const newPath = generateRoadPath(currentRound + 1);
-    setRoadPath(newPath);
-    setCarPosition(newPath[0]);
-    lastCarPosition.current = newPath[0];
-    setRoundStartTime(Date.now());
-  };
-
-  const startRound = useCallback(() => {
-    const path = generateRoadPath(currentRound);
-    setRoadPath(path);
-    setCarPosition(path[0]);
-    lastCarPosition.current = path[0];
-    setRoundStartTime(Date.now());
-    setRoundComplete(false);
-    setTimeOnRoad(0);
-    progressBarWidth.setValue(0);
-    carRotation.setValue(0);
-    
-    speak('Drive the car along the curvy road!');
-  }, [currentRound, generateRoadPath]);
-
-  const finishGame = useCallback(async () => {
-    const totalTime = Date.now() - roundStartTime;
-    const avgAccuracy = totalAccuracy / requiredRounds;
-    const xp = successfulRounds * 50;
-
-    setFinalStats({
-      totalRounds: requiredRounds,
-      successfulRounds,
-      averageAccuracy: avgAccuracy,
-      totalTime,
-      xpAwarded: xp,
-    });
-
-    clearScheduledSpeech();
-
-    try {
-      await logGameAndAward({
-        type: 'drive-car-curvy-road',
-        correct: successfulRounds,
-        total: requiredRounds,
-        accuracy: avgAccuracy,
-        xpAwarded: xp,
-        mode: 'therapy',
-        skillTags: ['continuous-motion', 'visual-tracking', 'curve-tracing', 'occupational-therapy'],
-        incorrectAttempts: requiredRounds - successfulRounds,
-        meta: {
-          totalTime,
-          averageAccuracy: avgAccuracy,
-        },
-      });
-      setGameFinished(true);
-      onComplete?.();
-    } catch (e) {
-      console.warn('Failed to save game log:', e instanceof Error ? e.message : 'Unknown error');
-      setGameFinished(true);
     }
-  }, [successfulRounds, requiredRounds, totalAccuracy, roundStartTime, onComplete]);
+  }, [gameState, handDetection.landmarks, gameRect, startCountdown]);
+
+  // Timer countdown with voice warnings
+  useEffect(() => {
+    if (gameState === 'playing') {
+      setHasWarned10(false);
+      setHasWarned5(false);
+    }
+  }, [gameState]);
 
   useEffect(() => {
-    startRound();
-  }, []);
+    if (gameState === 'playing' && timeRemaining > 0) {
+      timerRef.current = setInterval(() => {
+        setTimeRemaining(prev => {
+          // Voice warnings
+          if (prev <= 11000 && prev > 10000 && !hasWarned10) {
+            setHasWarned10(true);
+            speak('10 seconds remaining! Keep driving!');
+          }
+          if (prev <= 6000 && prev > 5000 && !hasWarned5) {
+            setHasWarned5(true);
+            speak('5 seconds left! Drive faster!');
+          }
+          
+          if (prev <= 1000) {
+            // Time's up - end round
+            speak('Time\'s up!');
+    setTimeout(() => {
+              endRound();
+            }, 500);
+            return 0;
+          }
+          return prev - 1000;
+        });
+      }, 1000);
 
-  if (gameFinished && finalStats) {
+      return () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+      };
+    }
+  }, [gameState, timeRemaining, hasWarned10, hasWarned5]);
+
+  // End round
+  const endRound = useCallback(() => {
+    // Use functional state updates to get current values
+    setGameState(prevState => {
+      if (prevState !== 'playing') return prevState;
+      
+      setGameState('roundComplete');
+
+      // Calculate stars (1-3)
+      let stars = 0;
+      if (coverage >= COVERAGE_TARGET) {
+        if (coverage >= 0.9 && offRoadPenalty < 10) {
+          stars = 3;
+        } else if (coverage >= 0.8) {
+          stars = 2;
+        } else {
+          stars = 1;
+        }
+      }
+
+      const result: RoundResult = {
+        round: currentRound,
+        coverage,
+        stars,
+        offRoadPenalty,
+        timeRemaining,
+      };
+
+      setRoundResults(prev => [...prev, result]);
+      setTotalStars(prev => prev + stars);
+
+      soundEffects.current.playSuccess();
+      
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+
+      // Use functional update to get the actual current round value
+      setCurrentRound(prevRound => {
+        const nextRound = prevRound + 1;
+        
+        if (prevRound < TOTAL_ROUNDS) {
+          setTimeout(() => {
+            setShowRoundSuccess(false);
+            speak(`Get ready for round ${nextRound}!`);
+            setTimeout(() => {
+              setCurrentRound(nextRound);
+              setGameState('calibration');
+              startCalibration();
+            }, 2000);
+          }, 2500);
+        } else {
+          // All rounds complete
+          setTimeout(() => {
+            setShowRoundSuccess(false);
+            finishGameRef.current?.();
+          }, 2500);
+        }
+        
+        return prevRound; // Don't change it here, we'll set it in setTimeout
+      });
+
+      return 'roundComplete';
+    });
+  }, [coverage, offRoadPenalty, timeRemaining, currentRound, startCalibration]);
+
+  // Finish game
+  const finishGame = useCallback(async () => {
+    setGameState('gameComplete');
+
+    const averageCoverage = roundResults.reduce((sum, r) => sum + r.coverage, 0) / roundResults.length;
+    const accuracy = Math.round(averageCoverage * 100);
+
+    const stats = {
+      totalRounds: TOTAL_ROUNDS,
+      averageCoverage,
+      totalStars,
+      accuracy,
+    };
+
+    setFinalStats(stats);
+
+    // Confetti animation
+    Animated.sequence([
+      Animated.timing(confettiAnimation, {
+        toValue: 1,
+        duration: 1000,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.delay(2000),
+      Animated.timing(confettiAnimation, {
+        toValue: 0,
+        duration: 500,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    soundEffects.current.playSuccess();
+    speak(`Amazing! You completed all ${TOTAL_ROUNDS} rounds with ${totalStars} total stars!`);
+
+    try {
+      const xpAwarded = totalStars * 50;
+      const result = await logGameAndAward({
+        type: 'drive-car-curvy-road',
+        correct: totalStars,
+        total: TOTAL_ROUNDS * 3, // Max possible stars
+        accuracy,
+        xpAwarded,
+        skillTags: ['hand-tracking', 'fine-motor', 'visual-motor', 'attention', 'driving'],
+        meta: {
+          totalRounds: TOTAL_ROUNDS,
+          averageCoverage,
+          totalStars,
+          roundResults,
+        },
+      });
+      setLogTimestamp(result?.last?.at ?? null);
+      onComplete?.();
+    } catch (e) {
+      console.error('Failed to save game:', e);
+    }
+  }, [roundResults, totalStars, onComplete, confettiAnimation]);
+
+  // Update ref when finishGame changes
+  useEffect(() => {
+    finishGameRef.current = finishGame;
+  }, [finishGame]);
+
+  // Track hand detection and provide feedback
+  useEffect(() => {
+    if (gameState === 'playing' && !handDetection.landmarks?.indexFingerTip) {
+      const now = Date.now();
+      if (now - lastHandWarning > 3000) {
+        setLastHandWarning(now);
+        speak('Show your index finger to drive the car!');
+      }
+    }
+  }, [gameState, handDetection.landmarks, lastHandWarning]);
+
+  // Track index finger and update car position
+  useEffect(() => {
+    if (
+      gameState !== 'playing' ||
+      !handDetection.landmarks?.indexFingerTip ||
+      !roadPath.length
+    ) {
+      setCarPosition(null);
+      return;
+    }
+
+    if (Platform.OS !== 'web' || typeof document === 'undefined') {
+      return;
+    }
+
+    const updatePosition = () => {
+      const video = document.querySelector('video[data-hand-preview-video]') as HTMLVideoElement;
+      const gameArea = document.querySelector('[data-game-area]') as HTMLElement ||
+        document.querySelector('svg') as SVGSVGElement;
+
+      if (!video || !gameArea) {
+        return;
+      }
+
+      const videoRect = video.getBoundingClientRect();
+      const gameRect = (gameArea as HTMLElement | SVGSVGElement).getBoundingClientRect();
+
+      const screenCoords = convertToScreenCoords(
+        handDetection.landmarks!.indexFingerTip!,
+        videoRect,
+        gameRect
+      );
+
+      if (!screenCoords) {
+        setCarPosition(null);
+        return;
+      }
+
+      // Smooth the position
+      const smoothed = smoother.current.update(screenCoords.x, screenCoords.y);
+      setCarPosition(smoothed);
+
+      // Update coverage
+      updateCoverage(smoothed);
+
+      // Check if coverage target reached
+      if (coverage >= COVERAGE_TARGET && timeRemaining > 0) {
+        speak('Great job! You reached the target!');
+        setTimeout(() => {
+          endRound();
+        }, 1000);
+      }
+      
+      // Progress encouragement (only once per milestone)
+      const coveragePercent = Math.round(coverage * 100);
+      const now = Date.now();
+      if ((coveragePercent === 50 || coveragePercent === 60) && now - lastProgressAnnouncement.current > 3000) {
+        lastProgressAnnouncement.current = now;
+        speak(`You're at ${coveragePercent} percent! Keep going!`);
+      }
+    };
+
+    updatePosition();
+    const interval = setInterval(updatePosition, 33); // ~30 FPS
+    return () => clearInterval(interval);
+  }, [gameState, handDetection.landmarks, roadPath, coverage, timeRemaining, updateCoverage, endRound]);
+
+  // Initialize on mount
+  useEffect(() => {
+    startCalibration();
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current as any);
+      clearScheduledSpeech();
+    };
+  }, [startCalibration]);
+
+  // Create SVG path string
+  const pathString = roadPath.length > 0
+    ? `M ${roadPath[0].x} ${roadPath[0].y} ` +
+    roadPath.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ')
+    : '';
+
+  if (gameState === 'gameComplete' && finalStats) {
     return (
+      <SafeAreaView style={styles.container}>
+        <LinearGradient
+          colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
+          style={StyleSheet.absoluteFillObject}
+        />
       <ResultCard
-        correct={finalStats.successfulRounds}
-        total={finalStats.totalRounds}
-        accuracy={finalStats.averageAccuracy}
-        xpAwarded={finalStats.xpAwarded}
+          correct={totalStars}
+          total={TOTAL_ROUNDS * 3}
+          accuracy={finalStats.accuracy}
+          xpAwarded={totalStars * 50}
         logTimestamp={logTimestamp}
         onHome={onBack}
         onPlayAgain={() => {
-          setGameFinished(false);
+            setGameState('calibration');
+            setCurrentRound(1);
+            setRoundResults([]);
+            setTotalStars(0);
           setFinalStats(null);
-          setCurrentRound(0);
-          setSuccessfulRounds(0);
-          setTotalAccuracy(0);
-          setTimeOnRoad(0);
-          progressBarWidth.setValue(0);
-          startRound();
-        }}
-      />
+            setCoverage(0);
+            setTimeRemaining(ROUND_TIME_MS);
+            startCalibration();
+          }}
+        />
+      </SafeAreaView>
     );
   }
 
-  const roadString = pathToSvgString(roadPath);
-  const carSize = getResponsiveSize(50, isTablet, isMobile);
-
   return (
     <SafeAreaView style={styles.container}>
+      {/* Sky gradient background */}
       <LinearGradient
-        colors={['#F0FDF4', '#DCFCE7', '#BBF7D0', '#86EFAC']}
-        style={styles.gradient}
-      >
+        colors={['#87CEEB', '#E0F6FF', '#FFFFFF']}
+        style={StyleSheet.absoluteFillObject}
+      />
+
         {/* Header */}
-        <View style={[styles.header, isMobile && styles.headerMobile]}>
-          <Pressable
-            onPress={() => {
-              clearScheduledSpeech();
-              onBack();
-            }}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={22} color="#0F172A" />
-            <Text style={styles.backText}>Back</Text>
+      <View style={styles.header}>
+          <Pressable onPress={onBack} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#0F172A" />
           </Pressable>
-          <View style={styles.headerText}>
-            <Text style={[styles.title, isMobile && styles.titleMobile]}>Drive the Car</Text>
-            <Text style={[styles.subtitle, isMobile && styles.subtitleMobile]}>
-              Round {currentRound + 1} / {requiredRounds}
-            </Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.title}>Drive the Car</Text>
+          {gameState !== 'gameComplete' && (
+            <Text style={styles.roundText}>Round {currentRound}/{TOTAL_ROUNDS}</Text>
+          )}
+        </View>
+        <View style={styles.headerRight}>
+          {gameState === 'playing' && (
+            <View style={styles.timerContainer}>
+              <Ionicons name="time-outline" size={20} color="#0F172A" />
+              <Text style={styles.timerText}>{Math.ceil(timeRemaining / 1000)}s</Text>
+            </View>
+          )}
+          {roundResults.length > 0 && (
+            <View style={styles.starsContainer}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Ionicons
+                  key={i}
+                  name={i < roundResults[roundResults.length - 1].stars ? "star" : "star-outline"}
+                  size={20}
+                  color="#FCD34D"
+                />
+              ))}
+            </View>
+          )}
           </View>
         </View>
 
-        {/* Game Area */}
-        <View style={styles.gameArea} {...panResponder.panHandlers}>
-          <Svg style={StyleSheet.absoluteFill} width={SCREEN_WIDTH} height={SCREEN_HEIGHT}>
-            {/* Road highlight when on path */}
-            {roadHighlight && (
+      {/* Main Game Area */}
+      <View style={styles.gameContainer}>
+        {/* Camera Preview */}
+        <View
+          nativeID={handDetection.previewContainerId}
+          style={styles.cameraPreview}
+          {...(Platform.OS === 'web' && {
+            'data-native-id': handDetection.previewContainerId,
+            'data-hand-preview-container': 'true',
+          })}
+        />
+
+        {/* Game Overlay */}
+        <View
+          style={styles.gameOverlay}
+          onLayout={(e) => {
+            const { width, height } = e.nativeEvent.layout;
+            setGameRect({ width, height });
+          }}
+          {...(Platform.OS === 'web' && { 'data-game-area': 'true' })}
+        >
+          <Svg
+            style={StyleSheet.absoluteFill}
+            width={gameRect.width}
+            height={gameRect.height}
+          >
+            {/* Road Path */}
+            {pathString && (
+              <>
+                {/* Road shadow */}
               <Path
-                d={roadString}
-                stroke="#22C55E"
-                strokeWidth={ROAD_WIDTH + 10}
-                strokeOpacity={0.3}
+                  d={pathString}
+                  stroke="#1F2937"
+                  strokeWidth={ROAD_WIDTH + 4}
                 fill="none"
                 strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity={0.3}
               />
-            )}
-
-            {/* Main road path */}
+                {/* Main road */}
             <Path
-              d={roadString}
+                  d={pathString}
               stroke="#374151"
               strokeWidth={ROAD_WIDTH}
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-
             {/* Road center line */}
             <Path
-              d={roadString}
+                  d={pathString}
               stroke="#FCD34D"
-              strokeWidth={3}
-              strokeDasharray="10, 5"
+                  strokeWidth={4}
+                  strokeDasharray="15, 10"
               fill="none"
             />
+                {/* Road edges */}
+                <Path
+                  d={pathString}
+                  stroke="#FFFFFF"
+                  strokeWidth={2}
+                  fill="none"
+                  strokeLinecap="round"
+                />
+              </>
+            )}
 
+            {/* Coverage Indicator */}
+            {coverage > 0 && pathString && (
+              <Path
+                d={pathString}
+                stroke="#22C55E"
+                strokeWidth={ROAD_WIDTH + 5}
+                fill="none"
+                strokeLinecap="round"
+                strokeDasharray={`${coverage * 1000} 1000`}
+                opacity={0.5}
+              />
+            )}
+
+            {/* Calibration Box */}
+            {gameState === 'calibration' && (
+              <Circle
+                cx={gameRect.width / 2}
+                cy={gameRect.height / 2}
+                r={50}
+                fill="none"
+                stroke="#3B82F6"
+                strokeWidth={4}
+                strokeDasharray="10,5"
+                opacity={0.8}
+              />
+            )}
+
+            {/* Countdown */}
+            {gameState === 'countdown' && countdown > 0 && (
+              <Circle
+                cx={gameRect.width / 2}
+                cy={gameRect.height / 2}
+                r={80}
+                fill="rgba(59, 130, 246, 0.2)"
+                stroke="#3B82F6"
+                strokeWidth={6}
+              />
+            )}
+
+            {/* Index Finger Cursor - Glowing Dot */}
+            {carPosition && gameState === 'playing' && (
+              <>
+                {/* Outer glow */}
+                <Circle
+                  cx={carPosition.x}
+                  cy={carPosition.y}
+                  r={25}
+                  fill="#60A5FA"
+                  opacity={0.3}
+                />
+                {/* Inner dot */}
+                <Circle
+                  cx={carPosition.x}
+                  cy={carPosition.y}
+                  r={15}
+                  fill="#3B82F6"
+                  stroke="#FFFFFF"
+                  strokeWidth={3}
+                />
+              </>
+            )}
           </Svg>
 
-          {/* Progress Bar */}
-          <View style={[styles.progressContainer, isMobile && styles.progressContainerMobile]}>
-            <View style={styles.progressBarBackground}>
-              <Animated.View
-                style={[
-                  styles.progressBarFill,
-                  {
-                    width: progressBarWidth.interpolate({
-                      inputRange: [0, 100],
-                      outputRange: ['0%', '100%'],
-                    }),
-                  },
-                ]}
-              />
-            </View>
-            <Text style={[styles.progressText, isMobile && styles.progressTextMobile]}>
-              {isOnRoad ? '✅ On Road' : '⚠️ Off Road'}
-            </Text>
-          </View>
-
-          {/* Instructions */}
-          {!isDragging && !roundComplete && (
-            <View style={styles.instructionContainer}>
-              <Text style={[styles.instructionText, isMobile && styles.instructionTextMobile]}>
-                👆 Drag the car along the road!
-              </Text>
-            </View>
-          )}
-
-          {/* Feedback */}
-          <ResultToast
-            text="Great driving!"
-            type="ok"
-            show={showFeedback === 'success'}
-          />
-
-          {/* Sparkle Effect */}
-          <SparkleBurst visible={sparkleVisible} color="#22C55E" count={15} size={8} />
-
-          {/* Car - rendered outside SVG */}
-          <Animated.View
+          {/* Car */}
+          {carPosition && gameState === 'playing' && (
+            <View
             style={[
               styles.carContainer,
               {
-                left: carPosition.x - carSize / 2,
-                top: carPosition.y - carSize / 2,
-                width: carSize,
-                height: carSize,
-                transform: [
-                  { rotate: carRotation.interpolate({
-                    inputRange: [0, 360],
-                    outputRange: ['0deg', '360deg'],
-                  }) },
-                  { scale: carScale },
-                ],
+                  left: carPosition.x - CAR_SIZE / 2,
+                  top: carPosition.y - CAR_SIZE / 2,
+                  transform: [{ rotate: `${carRotation}deg` }],
               },
             ]}
           >
-            <Text style={{ fontSize: carSize, textAlign: 'center' }}>🚗</Text>
-          </Animated.View>
+              <Text style={[styles.carEmoji, { color: isOnRoad ? '#22C55E' : '#EF4444' }]}>🚗</Text>
         </View>
+          )}
 
-        {/* Stats */}
-        <View style={[styles.statsContainer, isMobile && styles.statsContainerMobile]}>
-          <Text style={[styles.statsText, isMobile && styles.statsTextMobile]}>
-            Successful: {successfulRounds} / {currentRound + 1}
+          {/* Countdown Text */}
+          {gameState === 'countdown' && countdown > 0 && (
+            <View style={styles.countdownContainer}>
+              <Text style={styles.countdownText}>{countdown}</Text>
+            </View>
+          )}
+
+          {/* Calibration Instruction */}
+          {gameState === 'calibration' && (
+            <View style={styles.calibrationContainer}>
+              <Text style={styles.calibrationText}>
+                👆 Show your index finger in the center box
           </Text>
         </View>
-      </LinearGradient>
+          )}
+        </View>
+      </View>
+
+      {/* Bottom Info Bar */}
+      <View style={styles.infoBar}>
+        {gameState === 'playing' && (
+          <>
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Coverage</Text>
+              <Text style={styles.infoValue}>{Math.round(coverage * 100)}%</Text>
+            </View>
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Target</Text>
+              <Text style={styles.infoValue}>{Math.round(COVERAGE_TARGET * 100)}%</Text>
+            </View>
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Status</Text>
+              <Text style={[styles.infoValue, isOnRoad ? styles.onRoadText : styles.offRoadText]}>
+                {isOnRoad ? '✅ On Road' : '⚠️ Off Road'}
+              </Text>
+            </View>
+            {offRoadPenalty > 0 && (
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Off Road</Text>
+                <Text style={[styles.infoValue, styles.penaltyText]}>{offRoadPenalty}</Text>
+              </View>
+            )}
+          </>
+        )}
+        {gameState === 'roundComplete' && !showRoundSuccess && roundResults.length > 0 && (
+          <View style={styles.roundResultContainer}>
+            <Text style={styles.roundResultText}>
+              Round {roundResults[roundResults.length - 1].round} Complete!
+            </Text>
+            <Text style={styles.roundResultStars}>
+              {Array.from({ length: roundResults[roundResults.length - 1].stars }).map(() => '⭐').join('')}
+            </Text>
+            <Text style={styles.roundResultCoverage}>
+              Coverage: {Math.round(roundResults[roundResults.length - 1].coverage * 100)}%
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Error Message */}
+      {handDetection.error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{handDetection.error}</Text>
+        </View>
+      )}
+
+      {/* No Hand Detected Message */}
+      {gameState === 'playing' && !handDetection.landmarks?.indexFingerTip && (
+        <View style={styles.noHandContainer}>
+          <Text style={styles.noHandText}>👋 Show your hand!</Text>
+        </View>
+      )}
+
+      {/* Round Success Animation - Outside all containers to overlay properly */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={roundResults[roundResults.length - 1]?.stars}
+      />
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  gradient: {
-    flex: 1,
+    backgroundColor: '#87CEEB',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-    backgroundColor: 'rgba(240, 253, 244, 0.95)',
-  },
-  headerMobile: {
-    paddingHorizontal: 12,
-    paddingTop: 6,
-    paddingBottom: 10,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderBottomWidth: 2,
+    borderBottomColor: '#E0E7FF',
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: 8,
-    marginRight: 12,
   },
-  backText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-    marginLeft: 4,
-  },
-  headerText: {
+  headerCenter: {
+    alignItems: 'center',
     flex: 1,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#0F172A',
   },
-  titleMobile: {
-    fontSize: 20,
-  },
-  subtitle: {
+  roundText: {
     fontSize: 14,
-    color: '#475569',
+    color: '#64748B',
     marginTop: 2,
   },
-  subtitleMobile: {
-    fontSize: 12,
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  gameArea: {
+  timerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#FEF3C7',
+    borderRadius: 20,
+  },
+  timerText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  gameContainer: {
     flex: 1,
     position: 'relative',
   },
-  progressContainer: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    right: 20,
+  cameraPreview: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000',
+  },
+  gameOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+  },
+  countdownContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
   },
-  progressContainerMobile: {
-    top: 10,
-    left: 10,
-    right: 10,
+  countdownText: {
+    fontSize: 120,
+    fontWeight: '900',
+    color: '#3B82F6',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 8,
   },
-  progressBarBackground: {
-    width: '100%',
-    height: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 6,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#22C55E',
-    borderRadius: 6,
-  },
-  progressText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0F172A',
-  },
-  progressTextMobile: {
-    fontSize: 12,
-  },
-  instructionContainer: {
+  calibrationContainer: {
     position: 'absolute',
-    bottom: 100,
-    left: 20,
-    right: 20,
+    top: '45%',
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    padding: 16,
-    borderRadius: 16,
-    zIndex: 10,
   },
-  instructionText: {
+  calibrationText: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#0F172A',
-    textAlign: 'center',
-  },
-  instructionTextMobile: {
-    fontSize: 16,
-  },
-  statsContainer: {
+    fontWeight: '700',
+    color: '#3B82F6',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     paddingHorizontal: 20,
-    paddingBottom: 20,
-    alignItems: 'center',
-  },
-  statsContainerMobile: {
-    paddingHorizontal: 12,
-    paddingBottom: 16,
-  },
-  statsText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-  },
-  statsTextMobile: {
-    fontSize: 14,
+    paddingVertical: 12,
+    borderRadius: 20,
+    textAlign: 'center',
   },
   carContainer: {
     position: 'absolute',
+    width: CAR_SIZE,
+    height: CAR_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 20,
+    zIndex: 100,
+  },
+  carEmoji: {
+    fontSize: CAR_SIZE,
+  },
+  infoBar: {
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderTopWidth: 2,
+    borderTopColor: '#E0E7FF',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    flexWrap: 'wrap',
+  },
+  infoItem: {
+    alignItems: 'center',
+    marginBottom: 8,
+    minWidth: 80,
+  },
+  infoLabel: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  infoValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginTop: 4,
+  },
+  onRoadText: {
+    color: '#22C55E',
+  },
+  offRoadText: {
+    color: '#EF4444',
+  },
+  penaltyText: {
+    color: '#EF4444',
+  },
+  roundResultContainer: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  roundResultText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 8,
+  },
+  roundResultStars: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+  roundResultCoverage: {
+    fontSize: 14,
+    color: '#64748B',
+  },
+  errorContainer: {
+    padding: 16,
+    backgroundColor: '#FFEBEE',
+    borderTopWidth: 1,
+    borderTopColor: '#FFCDD2',
+  },
+  errorText: {
+    color: '#C62828',
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  noHandContainer: {
+    position: 'absolute',
+    bottom: 100,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  noHandText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#F59E0B',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
   },
 });
-

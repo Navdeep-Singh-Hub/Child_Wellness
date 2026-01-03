@@ -1,10 +1,14 @@
-import { SparkleBurst } from '@/components/game/FX';
+/**
+ * Rainbow Path Trace Game
+ * A hand-tracking game where kids trace rainbow paths with their index finger
+ * Features: 5 difficulty levels, timer, coverage tracking, scoring, and beautiful UI
+ */
+
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import ResultCard from '@/components/game/ResultCard';
 import { useHandDetectionWeb } from '@/hooks/useHandDetectionWeb';
 import { logGameAndAward } from '@/utils/api';
-import { generateArcPath, getPathProgress, isPointOnPath, Point } from '@/utils/pathUtils';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -16,36 +20,35 @@ import {
     SafeAreaView,
     StyleSheet,
     Text,
-    useWindowDimensions,
     View,
+    useWindowDimensions,
 } from 'react-native';
-import Svg, { Circle, Defs, Line, Path, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
+import Svg, { Circle, Defs, Path, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 
 type Props = {
   onBack: () => void;
   onComplete?: () => void;
-  requiredRounds?: number;
 };
 
-const DEFAULT_TTS_RATE = 0.75;
+interface Point {
+  x: number;
+  y: number;
+}
+
+interface RoundResult {
+  round: number;
+  coverage: number;
+  stars: number;
+  offPathPenalty: number;
+  timeRemaining: number;
+}
+
 const TOTAL_ROUNDS = 5;
-const COMPLETION_THRESHOLD = 0.9; // 90% completion required
-
-// Difficulty progression: path thickness and curve length
-const DIFFICULTY_CONFIG = [
-  { pathThickness: 50, tolerance: 60, curveLength: 0.5 }, // Round 1: Very thick, short curve
-  { pathThickness: 40, tolerance: 50, curveLength: 0.6 }, // Round 2: Thick, medium curve
-  { pathThickness: 30, tolerance: 40, curveLength: 0.7 }, // Round 3: Medium, longer curve
-  { pathThickness: 25, tolerance: 35, curveLength: 0.8 }, // Round 4: Thinner, longer curve
-  { pathThickness: 20, tolerance: 30, curveLength: 0.9 }, // Round 5: Thin, longest curve
-];
-
-// Responsive sizing
-const getResponsiveSize = (baseSize: number, isTablet: boolean, isMobile: boolean) => {
-  if (isTablet) return baseSize * 1.3;
-  if (isMobile) return baseSize * 0.9;
-  return baseSize;
-};
+const ROUND_TIME_MS = 20000; // 20 seconds per round
+const COVERAGE_TARGET = 0.70; // 70% coverage needed
+const PATH_TOLERANCE = 50; // pixels
+const BRUSH_SIZE = 40; // Size of the brush stroke
+const DEFAULT_TTS_RATE = 0.75;
 
 let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
 
@@ -66,925 +69,1143 @@ function speak(text: string, rate = DEFAULT_TTS_RATE) {
   }
 }
 
-export const RainbowCurveTraceGame: React.FC<Props> = ({
-  onBack,
-  onComplete,
-  requiredRounds = TOTAL_ROUNDS,
-}) => {
-  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
-  const isTablet = SCREEN_WIDTH >= 768;
-  const isMobile = SCREEN_WIDTH < 600;
+// Enhanced Kalman-like smoother for finger tracking
+class KalmanSmoother {
+  private x = 0;
+  private y = 0;
+  private vx = 0; // velocity x
+  private vy = 0; // velocity y
+  private initialized = false;
+  private readonly processNoise = 0.01;
+  private readonly measurementNoise = 0.1;
+  private readonly alpha = 0.85; // Smoothing factor
 
-  // Simple state management
-  const [gameFinished, setGameFinished] = useState(false);
+  update(nx: number, ny: number): Point {
+    if (!this.initialized) {
+      this.x = nx;
+      this.y = ny;
+      this.initialized = true;
+      return { x: this.x, y: this.y };
+    }
+
+    // Predict position based on velocity
+    const predictedX = this.x + this.vx;
+    const predictedY = this.y + this.vy;
+
+    // Update with measurement (exponential smoothing with velocity)
+    const dx = nx - predictedX;
+    const dy = ny - predictedY;
+
+    this.x = predictedX + this.alpha * dx;
+    this.y = predictedY + this.alpha * dy;
+
+    // Update velocity (exponential moving average)
+    this.vx = this.vx * 0.7 + (this.x - (this.x - dx)) * 0.3;
+    this.vy = this.vy * 0.7 + (this.y - (this.y - dy)) * 0.3;
+
+    return { x: this.x, y: this.y };
+  }
+
+  reset() {
+    this.initialized = false;
+    this.x = 0;
+    this.y = 0;
+    this.vx = 0;
+    this.vy = 0;
+  }
+}
+
+// Generate different rainbow paths based on round difficulty
+function generateRainbowPath(width: number, height: number, round: number): Point[] {
+  const points: Point[] = [];
+  const startX = width * 0.85;
+  const endX = width * 0.15;
+  const numPoints = 150 + (round * 20); // More points for higher rounds
+
+  switch (round) {
+    case 1: {
+      // Round 1: Short wide curve
+      const centerY = height * 0.4;
+      const amplitude = height * 0.1;
+      for (let i = 0; i <= numPoints; i++) {
+        const t = i / numPoints;
+        const x = startX + (endX - startX) * t;
+        const y = centerY + amplitude * Math.sin(t * Math.PI);
+        points.push({ x, y });
+      }
+      break;
+    }
+    case 2: {
+      // Round 2: Longer curve
+      const centerY = height * 0.5;
+      const amplitude = height * 0.15;
+      for (let i = 0; i <= numPoints; i++) {
+        const t = i / numPoints;
+        const x = startX + (endX - startX) * t;
+        const y = centerY + amplitude * Math.sin(t * Math.PI * 1.5);
+        points.push({ x, y });
+      }
+      break;
+    }
+    case 3: {
+      // Round 3: Zig-zag rainbow
+      const centerY = height * 0.5;
+      const amplitude = height * 0.12;
+      for (let i = 0; i <= numPoints; i++) {
+        const t = i / numPoints;
+        const x = startX + (endX - startX) * t;
+        const y = centerY + amplitude * Math.sin(t * Math.PI * 3);
+        points.push({ x, y });
+      }
+      break;
+    }
+    case 4: {
+      // Round 4: Spiral-ish curve
+      const centerY = height * 0.5;
+      const amplitude = height * 0.18;
+      for (let i = 0; i <= numPoints; i++) {
+        const t = i / numPoints;
+        const x = startX + (endX - startX) * t;
+        const y = centerY + amplitude * Math.sin(t * Math.PI * 2) * (1 - t * 0.3);
+        points.push({ x, y });
+      }
+      break;
+    }
+    case 5: {
+      // Round 5: Narrow winding path
+      const centerY = height * 0.5;
+      const amplitude = height * 0.2;
+      for (let i = 0; i <= numPoints; i++) {
+        const t = i / numPoints;
+        const x = startX + (endX - startX) * t;
+        const y = centerY + amplitude * Math.sin(t * Math.PI * 4) * (0.5 + t * 0.5);
+        points.push({ x, y });
+      }
+      break;
+    }
+  }
+
+  return points;
+}
+
+// Calculate distance from point to nearest path segment
+function distanceToPath(point: Point, path: Point[]): number {
+  let minDist = Infinity;
+  for (let i = 0; i < path.length - 1; i++) {
+    const p1 = path[i];
+    const p2 = path[i + 1];
+    const dist = pointToLineDistance(point, p1, p2);
+    minDist = Math.min(minDist, dist);
+  }
+  return minDist;
+}
+
+// Calculate distance from point to line segment
+function pointToLineDistance(point: Point, lineStart: Point, lineEnd: Point): number {
+  const A = point.x - lineStart.x;
+  const B = point.y - lineStart.y;
+  const C = lineEnd.x - lineStart.x;
+  const D = lineEnd.y - lineStart.y;
+
+  const dot = A * C + B * D;
+  const lenSq = C * C + D * D;
+  let param = -1;
+  if (lenSq !== 0) param = dot / lenSq;
+
+  let xx: number, yy: number;
+
+  if (param < 0) {
+    xx = lineStart.x;
+    yy = lineStart.y;
+  } else if (param > 1) {
+    xx = lineEnd.x;
+    yy = lineEnd.y;
+        } else {
+    xx = lineStart.x + param * C;
+    yy = lineStart.y + param * D;
+  }
+
+  const dx = point.x - xx;
+  const dy = point.y - yy;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// Convert normalized coordinates to screen coordinates
+function convertToScreenCoords(
+  normalized: { x: number; y: number },
+  videoRect: DOMRect,
+  gameRect: DOMRect
+): Point | null {
+  if (Platform.OS !== 'web' || typeof document === 'undefined') {
+    return null;
+  }
+
+  try {
+    let x = videoRect.left + normalized.x * videoRect.width;
+    let y = videoRect.top + normalized.y * videoRect.height;
+
+    // Check if video is mirrored
+    const video = document.querySelector('video[data-hand-preview-video]') as HTMLVideoElement;
+    if (video) {
+      const style = window.getComputedStyle(video);
+      if (style.transform.includes('scaleX(-1)') || style.transform.includes('matrix(-1')) {
+        x = videoRect.left + (1 - normalized.x) * videoRect.width;
+      }
+    }
+
+    const result = {
+      x: x - gameRect.left,
+      y: y - gameRect.top,
+    };
+
+    if (isNaN(result.x) || isNaN(result.y) || !isFinite(result.x) || !isFinite(result.y)) {
+      return null;
+    }
+
+    return result;
+  } catch (error) {
+    return null;
+  }
+}
+
+// Simple Web Audio sound effects
+class SoundEffects {
+  private audioContext: AudioContext | null = null;
+
+  init() {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.AudioContext) {
+      try {
+        this.audioContext = new AudioContext();
+      } catch (e) {
+        console.warn('AudioContext not available:', e);
+      }
+    }
+  }
+
+  playTone(frequency: number, duration: number, type: 'sine' | 'square' | 'triangle' = 'sine') {
+    if (!this.audioContext) return;
+
+    const oscillator = this.audioContext.createOscillator();
+    const gainNode = this.audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+
+    oscillator.frequency.value = frequency;
+    oscillator.type = type;
+
+    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+
+    oscillator.start(this.audioContext.currentTime);
+    oscillator.stop(this.audioContext.currentTime + duration);
+  }
+
+  playStartChime() {
+    this.playTone(523.25, 0.2); // C5
+    setTimeout(() => this.playTone(659.25, 0.2), 100); // E5
+    setTimeout(() => this.playTone(783.99, 0.3), 200); // G5
+  }
+
+  playSuccess() {
+    this.playTone(523.25, 0.15); // C5
+    setTimeout(() => this.playTone(659.25, 0.15), 80); // E5
+    setTimeout(() => this.playTone(783.99, 0.15), 160); // G5
+    setTimeout(() => this.playTone(1046.50, 0.3), 240); // C6
+  }
+
+  playCountdown() {
+    this.playTone(440, 0.1, 'square'); // A4
+  }
+}
+
+export function RainbowCurveTraceGame({ onBack, onComplete }: Props) {
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const handDetection = useHandDetectionWeb(true);
+
+  // Game state
+  const [gameState, setGameState] = useState<'calibration' | 'countdown' | 'playing' | 'roundComplete' | 'gameComplete'>('calibration');
+  const [gameRect, setGameRect] = useState({ width: 0, height: 0 });
+  const [currentRound, setCurrentRound] = useState(1);
+  const [rainbowPath, setRainbowPath] = useState<Point[]>([]);
+  const [indexFingerPos, setIndexFingerPos] = useState<Point | null>(null);
+  const [coverage, setCoverage] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState(ROUND_TIME_MS);
+  const [countdown, setCountdown] = useState(0);
+  const [roundResults, setRoundResults] = useState<RoundResult[]>([]);
+  const [totalStars, setTotalStars] = useState(0);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalRounds: number;
-    successfulTraces: number;
-    averageAccuracy: number;
-    totalTime: number;
-    xpAwarded: number;
+    averageCoverage: number;
+    totalStars: number;
+    accuracy: number;
   } | null>(null);
+  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [offPathPenalty, setOffPathPenalty] = useState(0);
 
-  const [currentRound, setCurrentRound] = useState(0);
-  const [isTracing, setIsTracing] = useState(false);
-  const [progress, setProgress] = useState(0); // 0-1 progress along curve
-  const [maxProgress, setMaxProgress] = useState(0); // Forward-only tracking
-  const [isOnPath, setIsOnPath] = useState(true);
-  const [roundComplete, setRoundComplete] = useState(false);
-  const [currentPath, setCurrentPath] = useState<Point[]>([]);
-  const [glowPosition, setGlowPosition] = useState<Point | null>(null);
-  const [showSparkles, setShowSparkles] = useState(false);
-  const [pathHighlight, setPathHighlight] = useState(false);
-  const [canPlay, setCanPlay] = useState(true);
+  // Refs
+  const smoother = useRef(new KalmanSmoother());
+  const coverageCanvas = useRef<HTMLCanvasElement | null>(null);
+  const pathCanvas = useRef<HTMLCanvasElement | null>(null);
+  const coveredPixels = useRef<Set<string>>(new Set());
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const soundEffects = useRef(new SoundEffects());
+  const confettiAnimation = useRef(new Animated.Value(0)).current;
+  const lastProgressAnnouncement = useRef(0);
+  const finishGameRef = useRef<(() => void) | undefined>(undefined);
 
-  // Hand detection hook
-  const handDetection = useHandDetectionWeb(canPlay && !gameFinished);
-  const previewRef = useRef<View>(null);
-
-  // Scoring
-  const [successfulTraces, setSuccessfulTraces] = useState(0);
-  const [totalAccuracy, setTotalAccuracy] = useState(0);
-  const [gameStartTime, setGameStartTime] = useState(0);
-  const [timeOnPath, setTimeOnPath] = useState(0);
-
-  // Animations
-  const progressBarWidth = useRef(new Animated.Value(0)).current;
-  const glowScale = useRef(new Animated.Value(1)).current;
-  const sparkleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Cleanup on unmount
+  // Initialize sound effects
   useEffect(() => {
-    return () => {
-      clearScheduledSpeech();
-      if (sparkleTimerRef.current) {
-        clearInterval(sparkleTimerRef.current);
-      }
-    };
+    soundEffects.current.init();
   }, []);
 
-  // Generate single smooth rainbow arc
-  const generateRainbowArc = useCallback((roundIndex: number): Point[] => {
-    const config = DIFFICULTY_CONFIG[Math.min(roundIndex, DIFFICULTY_CONFIG.length - 1)];
-    const centerX = SCREEN_WIDTH / 2;
-    const centerY = SCREEN_HEIGHT * 0.5;
-    
-    // Calculate radius based on curve length
-    const baseRadius = Math.min(SCREEN_WIDTH, SCREEN_HEIGHT) * 0.25;
-    const radius = baseRadius * config.curveLength;
-    
-    // Create smooth arc from left to right (like a rainbow)
-    const startAngle = Math.PI * 0.2; // Start angle
-    const endAngle = Math.PI * 0.8;   // End angle
-    
-    return generateArcPath(
-      { x: centerX, y: centerY },
-      radius,
-      startAngle,
-      endAngle,
-      100 // Smooth curve with 100 points
-    );
-  }, [SCREEN_WIDTH, SCREEN_HEIGHT]);
+  // Track which path segments have been covered
+  const coveredSegments = useRef<Set<number>>(new Set());
 
-  // Convert path to SVG string
-  const pathToSvgString = useCallback((path: Point[]): string => {
-    if (path.length === 0) return '';
-    let d = `M ${path[0].x} ${path[0].y}`;
-    for (let i = 1; i < path.length; i++) {
-      d += ` L ${path[i].x} ${path[i].y}`;
+  // Generate rainbow path when game area is ready or round changes
+  useEffect(() => {
+    if (gameRect.width > 0 && gameRect.height > 0 && currentRound <= TOTAL_ROUNDS) {
+      const path = generateRainbowPath(gameRect.width, gameRect.height, currentRound);
+      setRainbowPath(path);
+      smoother.current.reset();
+      setCoverage(0);
+      setOffPathPenalty(0);
+      coveredPixels.current.clear();
+      coveredSegments.current.clear();
+      lastProgressAnnouncement.current = 0;
+      initializeCoverageTracking(path);
     }
-    return d;
-  }, []);
+  }, [gameRect.width, gameRect.height, currentRound]);
 
-  // Convert hand landmark (normalized 0-1) to screen coordinates
-  const convertHandToScreenCoords = useCallback((handPos: { x: number; y: number } | null): Point | null => {
-    if (!handPos) return null;
-    // MediaPipe returns normalized coordinates (0-1), convert to screen pixels
-    return {
-      x: handPos.x * SCREEN_WIDTH,
-      y: handPos.y * SCREEN_HEIGHT,
-    };
-  }, [SCREEN_WIDTH, SCREEN_HEIGHT]);
+  // Initialize coverage tracking canvases
+  const initializeCoverageTracking = useCallback((path: Point[]) => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
 
-  // Convert normalized landmark to screen coordinates
-  // MediaPipe landmarks are normalized (0-1) relative to video feed dimensions
-  // We need to account for video display scaling (objectFit: cover)
-  const convertLandmarkToScreen = useCallback((landmark: { x: number; y: number }): Point => {
-    // Get the video element to check its actual dimensions
-    if (Platform.OS === 'web' && typeof document !== 'undefined') {
-      const video = document.querySelector('video[data-hand-preview-video]') as HTMLVideoElement;
-      if (video && video.videoWidth && video.videoHeight && video.offsetWidth && video.offsetHeight) {
-        const videoWidth = video.videoWidth;  // Native video width
-        const videoHeight = video.videoHeight; // Native video height
-        const displayWidth = video.offsetWidth;  // Displayed width
-        const displayHeight = video.offsetHeight; // Displayed height
-        
-        const videoAspect = videoWidth / videoHeight;
-        const displayAspect = displayWidth / displayHeight;
-        
-        let scaledWidth = displayWidth;
-        let scaledHeight = displayHeight;
-        let offsetX = 0;
-        let offsetY = 0;
-        
-        // Calculate how video is scaled (objectFit: cover)
-        if (videoAspect > displayAspect) {
-          // Video is wider - scale to fit height, crop sides
-          scaledHeight = displayHeight;
-          scaledWidth = displayHeight * videoAspect;
-          offsetX = (displayWidth - scaledWidth) / 2;
-        } else {
-          // Video is taller - scale to fit width, crop top/bottom
-          scaledWidth = displayWidth;
-          scaledHeight = displayWidth / videoAspect;
-          offsetY = (displayHeight - scaledHeight) / 2;
-        }
-        
-        // Get video container position
-        const container = video.parentElement;
-        const containerRect = container?.getBoundingClientRect();
-        const containerX = containerRect?.left || 0;
-        const containerY = containerRect?.top || 0;
-        
-        // Convert normalized video coordinates (0-1) to screen coordinates
-        // MediaPipe coordinates are relative to videoWidth x videoHeight
-        const x = landmark.x * scaledWidth + offsetX + containerX;
-        const y = landmark.y * scaledHeight + offsetY + containerY;
-        
-        return { x, y };
+    // Create offscreen canvases for coverage tracking
+    if (!pathCanvas.current) {
+      pathCanvas.current = document.createElement('canvas');
+      pathCanvas.current.width = 200;
+      pathCanvas.current.height = 200;
+    }
+    if (!coverageCanvas.current) {
+      coverageCanvas.current = document.createElement('canvas');
+      coverageCanvas.current.width = 200;
+      coverageCanvas.current.height = 200;
+    }
+
+    const pathCtx = pathCanvas.current.getContext('2d');
+    const coverageCtx = coverageCanvas.current.getContext('2d');
+
+    if (!pathCtx || !coverageCtx) return;
+
+    // Clear canvases
+    pathCtx.clearRect(0, 0, pathCanvas.current.width, pathCanvas.current.height);
+    coverageCtx.clearRect(0, 0, coverageCanvas.current.width, coverageCanvas.current.height);
+
+    // Draw path on path canvas (scaled down)
+    const scaleX = pathCanvas.current.width / gameRect.width;
+    const scaleY = pathCanvas.current.height / gameRect.height;
+
+    pathCtx.strokeStyle = '#FF0000';
+    pathCtx.lineWidth = BRUSH_SIZE * Math.min(scaleX, scaleY);
+    pathCtx.lineCap = 'round';
+    pathCtx.lineJoin = 'round';
+
+    if (path.length > 0) {
+      pathCtx.beginPath();
+      pathCtx.moveTo(path[0].x * scaleX, path[0].y * scaleY);
+      for (let i = 1; i < path.length; i++) {
+        pathCtx.lineTo(path[i].x * scaleX, path[i].y * scaleY);
       }
+      pathCtx.stroke();
     }
-    
-    // Fallback: direct conversion (assumes video fills screen exactly)
-    return {
-      x: landmark.x * SCREEN_WIDTH,
-      y: landmark.y * SCREEN_HEIGHT,
-    };
-  }, [SCREEN_WIDTH, SCREEN_HEIGHT]);
+  }, [gameRect.width, gameRect.height]);
 
-  // Hand skeleton connections (MediaPipe hand landmarks structure)
-  const handConnections = [
-    // Wrist to finger bases
-    [0, 1], [0, 5], [0, 9], [0, 13], [0, 17],
-    // Thumb
-    [1, 2], [2, 3], [3, 4],
-    // Index finger
-    [5, 6], [6, 7], [7, 8],
-    // Middle finger
-    [9, 10], [10, 11], [11, 12],
-    // Ring finger
-    [13, 14], [14, 15], [15, 16],
-    // Pinky
-    [17, 18], [18, 19], [19, 20],
-  ];
+  // Update coverage when finger moves - simplified approach
+  const updateCoverage = useCallback((point: Point) => {
+    if (!rainbowPath.length) return;
 
-  const handleTraceStart = useCallback((point: Point) => {
-    setIsTracing(true);
-    setGlowPosition(point);
-    setMaxProgress(0);
-    setProgress(0);
-    setTimeOnPath(0);
-    
-    // Animate glow appearance
-    Animated.spring(glowScale, {
-      toValue: 1.2,
-      tension: 50,
-      friction: 7,
-      useNativeDriver: true,
-    }).start();
-  }, [glowScale]);
+    // Check which path segments are near the finger
+    const tolerance = PATH_TOLERANCE;
+    let newSegmentsCovered = 0;
 
-  const startNextRound = useCallback(() => {
-    setCurrentRound(prev => prev + 1);
-    setProgress(0);
-    setMaxProgress(0);
-    setRoundComplete(false);
-    setGlowPosition(null);
-    setTimeOnPath(0);
-    progressBarWidth.setValue(0);
-    
-    const nextRound = currentRound + 1;
-    const newPath = generateRainbowArc(nextRound);
-    setCurrentPath(newPath);
-    
-    speak(`Round ${nextRound + 1}! Point your finger at the rainbow!`);
-  }, [currentRound, generateRainbowArc]);
-
-  const finishGame = useCallback(async () => {
-    const totalTime = Date.now() - gameStartTime;
-    const avgAccuracy = totalAccuracy / requiredRounds;
-    const xp = successfulTraces * 50;
-
-    setFinalStats({
-      totalRounds: requiredRounds,
-      successfulTraces,
-      averageAccuracy: avgAccuracy,
-      totalTime,
-      xpAwarded: xp,
-    });
-
-    clearScheduledSpeech();
-
-    try {
-      await logGameAndAward({
-        type: 'rainbow-curve-trace',
-        correct: successfulTraces,
-        total: requiredRounds,
-        accuracy: avgAccuracy,
-        xpAwarded: xp,
-        mode: 'therapy',
-        skillTags: ['wrist-rotation', 'fine-motor-control', 'curve-tracing', 'occupational-therapy'],
-        incorrectAttempts: requiredRounds - successfulTraces,
-        meta: {
-          totalTime,
-          averageAccuracy: avgAccuracy,
-        },
-      });
-      setGameFinished(true);
-      onComplete?.();
-    } catch (e) {
-      console.warn('Failed to save game log:', e instanceof Error ? e.message : 'Unknown error');
-      setGameFinished(true);
-    }
-  }, [successfulTraces, requiredRounds, totalAccuracy, gameStartTime, onComplete]);
-
-  const handleRoundComplete = useCallback(() => {
-    setRoundComplete(true);
-    setIsTracing(false);
-    setShowSparkles(false);
-    
-    if (sparkleTimerRef.current) {
-      clearInterval(sparkleTimerRef.current);
-      sparkleTimerRef.current = null;
-    }
-
-    setSuccessfulTraces(prev => prev + 1);
-    
-    // Calculate accuracy
-    const roundTime = Date.now() - gameStartTime;
-    const accuracy = timeOnPath > 0 ? Math.min(100, (timeOnPath / (roundTime / 50)) * 100) : 0;
-    setTotalAccuracy(prev => prev + accuracy);
-
-    // Celebration: sparkles + "Good tracing!"
-    setShowSparkles(true);
-    speak('Good tracing!');
-    
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
-
-    setTimeout(() => {
-      setShowSparkles(false);
-    }, 2000);
-
-    // Move to next round
-    setTimeout(() => {
-      if (currentRound < requiredRounds - 1) {
-        startNextRound();
-      } else {
-        finishGame();
-      }
-    }, 2500);
-  }, [currentRound, requiredRounds, gameStartTime, timeOnPath, startNextRound, finishGame]);
-
-  const handleTraceMove = useCallback((point: Point) => {
-    if (!currentPath.length || roundComplete) return;
-
-    // Glow follows finger - always update position during drag
-    setGlowPosition(point);
-
-    const config = DIFFICULTY_CONFIG[Math.min(currentRound, DIFFICULTY_CONFIG.length - 1)];
-    const onPath = isPointOnPath(point, currentPath, config.tolerance);
-    setIsOnPath(onPath);
-
-    if (onPath) {
-      // Calculate progress using distance-based method
-      const newProgress = getPathProgress(point, currentPath, config.tolerance);
+    for (let i = 0; i < rainbowPath.length; i++) {
+      if (coveredSegments.current.has(i)) continue; // Already covered
       
-      // Forward-only progress (can't go backward)
-      setMaxProgress(prev => {
-        if (newProgress > prev) {
-          setProgress(newProgress);
-          setTimeOnPath(time => time + 1);
+      const pathPoint = rainbowPath[i];
+      const dist = Math.hypot(point.x - pathPoint.x, point.y - pathPoint.y);
+      
+      if (dist < tolerance) {
+        coveredSegments.current.add(i);
+        newSegmentsCovered++;
+      }
+    }
 
-          // Update progress bar
-          Animated.timing(progressBarWidth, {
-            toValue: newProgress * 100,
-            duration: 50,
-            easing: Easing.linear,
-            useNativeDriver: false,
-          }).start();
+    // Update coverage based on segments covered
+    const newCoverage = rainbowPath.length > 0 
+      ? coveredSegments.current.size / rainbowPath.length 
+      : 0;
+    
+    if (newCoverage > coverage) {
+      setCoverage(newCoverage);
+    }
 
-          // Continuous sparkles while tracing correctly
-          if (!sparkleTimerRef.current) {
-            setShowSparkles(true);
-            sparkleTimerRef.current = setInterval(() => {
-              setShowSparkles(true);
-              setTimeout(() => setShowSparkles(false), 300);
+    // Calculate off-path penalty
+    const distToPath = distanceToPath(point, rainbowPath);
+    if (distToPath > PATH_TOLERANCE * 2) {
+      setOffPathPenalty(prev => prev + 1);
+    }
+  }, [rainbowPath, coverage]);
+
+  // Start calibration
+  const startCalibration = useCallback(() => {
+    setGameState('calibration');
+    if (currentRound === 1) {
+      speak(
+        'Welcome to Rainbow Path Trace! Point your index finger at the rainbow path and trace it from right to left. ' +
+        'Cover at least 70 percent of the path to complete each round. ' +
+        'Show your index finger in the center box to start!'
+      );
+    } else {
+      speak(`Round ${currentRound}! Show your index finger in the center box when you're ready!`);
+    }
+  }, [currentRound]);
+
+  // Start countdown
+  const startCountdown = useCallback(() => {
+    setGameState('countdown');
+    setCountdown(3);
+    soundEffects.current.playCountdown();
+
+    // Round-specific instructions
+    let instruction = '';
+    switch (currentRound) {
+      case 1:
+        instruction = 'Round 1! This is a short wide curve. Trace it carefully from right to left.';
+        break;
+      case 2:
+        instruction = 'Round 2! This is a longer curve. Follow the rainbow path smoothly.';
+        break;
+      case 3:
+        instruction = 'Round 3! This is a zig-zag rainbow. Trace all the curves.';
+        break;
+      case 4:
+        instruction = 'Round 4! This is a spiral curve. Follow the winding path.';
+        break;
+      case 5:
+        instruction = 'Round 5! Final round - a narrow winding path. Take your time!';
+        break;
+    }
+    speak(instruction + ' Get ready!');
+
+    const countdownInterval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval);
+          setGameState('playing');
+          setTimeRemaining(ROUND_TIME_MS);
+          soundEffects.current.playStartChime();
+          speak('Go! Trace the rainbow now! You have 20 seconds!');
+          return 0;
+        }
+        soundEffects.current.playCountdown();
+        speak(prev.toString());
+        return prev - 1;
+      });
+    }, 1000);
+
+    countdownRef.current = countdownInterval as ReturnType<typeof setInterval>;
+  }, [currentRound]);
+
+  // Start round
+  useEffect(() => {
+    if (gameState === 'calibration' && handDetection.landmarks?.indexFingerTip) {
+      // Check if finger is in calibration box (center area)
+      const video = Platform.OS === 'web' && typeof document !== 'undefined'
+        ? document.querySelector('video[data-hand-preview-video]') as HTMLVideoElement
+        : null;
+      const gameArea = Platform.OS === 'web' && typeof document !== 'undefined'
+        ? (document.querySelector('[data-game-area]') as HTMLElement || document.querySelector('svg') as SVGSVGElement)
+        : null;
+
+      if (video && gameArea) {
+        const videoRect = video.getBoundingClientRect();
+        const gRect = (gameArea as HTMLElement | SVGSVGElement).getBoundingClientRect();
+        const screenCoords = convertToScreenCoords(handDetection.landmarks.indexFingerTip, videoRect, gRect);
+
+        if (screenCoords) {
+          const centerX = gameRect.width / 2;
+          const centerY = gameRect.height / 2;
+          const boxSize = 100;
+
+          if (
+            Math.abs(screenCoords.x - centerX) < boxSize &&
+            Math.abs(screenCoords.y - centerY) < boxSize
+          ) {
+            setTimeout(() => {
+              startCountdown();
             }, 500);
           }
-
-          // Check completion
-          if (newProgress >= COMPLETION_THRESHOLD && !roundComplete) {
-            handleRoundComplete();
-          }
-          return newProgress;
         }
-        return prev;
-      });
-    } else {
-      // Off-path: gentle vibration + path highlights
-      setShowSparkles(false);
-      if (sparkleTimerRef.current) {
-        clearInterval(sparkleTimerRef.current);
-        sparkleTimerRef.current = null;
+      }
+    }
+  }, [gameState, handDetection.landmarks, gameRect, startCountdown]);
+
+  // End round
+  const endRound = useCallback(() => {
+    // Use functional state updates to get current values
+    setGameState(prevState => {
+      if (prevState !== 'playing') return prevState;
+      
+      setGameState('roundComplete');
+
+      // Calculate stars (1-3)
+      let stars = 0;
+      if (coverage >= COVERAGE_TARGET) {
+        if (coverage >= 0.9 && offPathPenalty < 10) {
+          stars = 3;
+        } else if (coverage >= 0.8) {
+          stars = 2;
+        } else {
+          stars = 1;
+        }
       }
 
-      // Path highlights to guide back
-      setPathHighlight(true);
-      setTimeout(() => setPathHighlight(false), 400);
+      const result: RoundResult = {
+        round: currentRound,
+        coverage,
+        stars,
+        offPathPenalty,
+        timeRemaining,
+      };
 
-      // Gentle vibration
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch {}
-    }
-  }, [currentPath, currentRound, roundComplete, progressBarWidth, handleRoundComplete]);
+      setRoundResults(prev => [...prev, result]);
+      setTotalStars(prev => prev + stars);
 
-  const handleTraceEnd = useCallback(() => {
-    setIsTracing(false);
-    setShowSparkles(false);
-    
-    if (sparkleTimerRef.current) {
-      clearInterval(sparkleTimerRef.current);
-      sparkleTimerRef.current = null;
-    }
+      soundEffects.current.playSuccess();
+      
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
 
-    // Animate glow disappearance
-    Animated.spring(glowScale, {
+      // Use functional update to get the actual current round value
+      setCurrentRound(prevRound => {
+        const nextRound = prevRound + 1;
+        
+        if (prevRound < TOTAL_ROUNDS) {
+          setTimeout(() => {
+            setShowRoundSuccess(false);
+            speak(`Get ready for round ${nextRound}!`);
+            setTimeout(() => {
+              setCurrentRound(nextRound);
+              setGameState('calibration');
+              startCalibration();
+            }, 2000);
+          }, 2500);
+        } else {
+          // All rounds complete
+          setTimeout(() => {
+            setShowRoundSuccess(false);
+            finishGameRef.current?.();
+          }, 2500);
+        }
+        
+        return prevRound; // Don't change it here, we'll set it in setTimeout
+      });
+
+      return 'roundComplete';
+    });
+  }, [coverage, offPathPenalty, timeRemaining, currentRound, startCalibration]);
+
+  // Finish game
+  const finishGame = useCallback(async () => {
+    setGameState('gameComplete');
+
+    const averageCoverage = roundResults.reduce((sum, r) => sum + r.coverage, 0) / roundResults.length;
+    const accuracy = Math.round(averageCoverage * 100);
+
+    const stats = {
+      totalRounds: TOTAL_ROUNDS,
+      averageCoverage,
+      totalStars,
+      accuracy,
+    };
+
+    setFinalStats(stats);
+
+    // Confetti animation
+    Animated.sequence([
+      Animated.timing(confettiAnimation, {
       toValue: 1,
-      tension: 50,
-      friction: 7,
+        duration: 1000,
+        easing: Easing.out(Easing.quad),
       useNativeDriver: true,
-    }).start();
-  }, [glowScale]);
+      }),
+      Animated.delay(2000),
+      Animated.timing(confettiAnimation, {
+        toValue: 0,
+        duration: 500,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-  const startRound = useCallback(() => {
-    const path = generateRainbowArc(currentRound);
-    setCurrentPath(path);
-    setGameStartTime(Date.now());
-    setRoundComplete(false);
-    setProgress(0);
-    setMaxProgress(0);
-    setTimeOnPath(0);
-    progressBarWidth.setValue(0);
-    
-    speak('Point your finger at the rainbow!');
-  }, [currentRound, generateRainbowArc]);
+    soundEffects.current.playSuccess();
+    speak(`Amazing! You completed all ${TOTAL_ROUNDS} rounds with ${totalStars} total stars!`);
 
-  // Debug: Log landmarks when they change
-  useEffect(() => {
-    if (handDetection.landmarks?.allLandmarks) {
-      console.log('🎯 Landmarks detected:', {
-        count: handDetection.landmarks.allLandmarks.length,
-        isDetecting: handDetection.isDetecting,
-        hasIndexFinger: !!handDetection.landmarks.indexFingerTip,
-        firstLandmark: handDetection.landmarks.allLandmarks[0],
+    try {
+      const xpAwarded = totalStars * 50;
+      const result = await logGameAndAward({
+        type: 'rainbow-curve-trace',
+        correct: totalStars,
+        total: TOTAL_ROUNDS * 3, // Max possible stars
+        accuracy,
+        xpAwarded,
+        skillTags: ['hand-tracking', 'fine-motor', 'visual-motor', 'attention'],
+        meta: {
+          totalRounds: TOTAL_ROUNDS,
+          averageCoverage,
+          totalStars,
+          roundResults,
+        },
       });
-    } else {
-      console.log('⚠️ No landmarks available:', {
-        hasLandmarks: !!handDetection.landmarks,
-        isDetecting: handDetection.isDetecting,
-      });
+      setLogTimestamp(result?.last?.at ?? null);
+      onComplete?.();
+    } catch (e) {
+      console.error('Failed to save game:', e);
     }
-  }, [handDetection.landmarks, handDetection.isDetecting]);
+  }, [roundResults, totalStars, onComplete, confettiAnimation]);
 
-  // Watch hand position and update tracing
+  // Update ref when finishGame changes
   useEffect(() => {
-    if (roundComplete || !currentPath.length) {
-      return;
-    }
+    finishGameRef.current = finishGame;
+  }, [finishGame]);
 
-    if (!handDetection.handPosition) {
-      // Hand lost - stop tracing
-      if (isTracing) {
-        setIsTracing(false);
-        handleTraceEnd();
+  // Track hand detection and provide feedback
+  const [lastHandWarning, setLastHandWarning] = useState(0);
+  
+  useEffect(() => {
+    if (gameState === 'playing' && !handDetection.landmarks?.indexFingerTip) {
+      const now = Date.now();
+      if (now - lastHandWarning > 3000) {
+        setLastHandWarning(now);
+        speak('Show your index finger to trace the rainbow!');
       }
+    }
+  }, [gameState, handDetection.landmarks, lastHandWarning]);
+
+  // Track index finger and update coverage
+  useEffect(() => {
+    if (
+      gameState !== 'playing' ||
+      !handDetection.landmarks?.indexFingerTip ||
+      !rainbowPath.length
+    ) {
+      setIndexFingerPos(null);
       return;
     }
 
-    const screenPoint = convertHandToScreenCoords(handDetection.handPosition);
-    if (!screenPoint) return;
-
-    // Start tracing if hand detected
-    if (!isTracing) {
-      handleTraceStart(screenPoint);
-    } else {
-      handleTraceMove(screenPoint);
+    if (Platform.OS !== 'web' || typeof document === 'undefined') {
+      return;
     }
-  }, [handDetection.handPosition, handDetection.isDetecting, roundComplete, currentPath.length, isTracing, convertHandToScreenCoords, handleTraceStart, handleTraceMove, handleTraceEnd]);
 
+    const updatePosition = () => {
+      const video = document.querySelector('video[data-hand-preview-video]') as HTMLVideoElement;
+      const gameArea = document.querySelector('[data-game-area]') as HTMLElement ||
+        document.querySelector('svg') as SVGSVGElement;
+
+      if (!video || !gameArea) {
+      return;
+    }
+
+      const videoRect = video.getBoundingClientRect();
+      const gameRect = (gameArea as HTMLElement | SVGSVGElement).getBoundingClientRect();
+
+      const screenCoords = convertToScreenCoords(
+        handDetection.landmarks!.indexFingerTip!,
+        videoRect,
+        gameRect
+      );
+
+      if (!screenCoords) {
+        setIndexFingerPos(null);
+        return;
+      }
+
+      // Smooth the position
+      const smoothed = smoother.current.update(screenCoords.x, screenCoords.y);
+      setIndexFingerPos(smoothed);
+
+      // Update coverage
+      updateCoverage(smoothed);
+
+      // Check if coverage target reached
+      if (coverage >= COVERAGE_TARGET && timeRemaining > 0) {
+        speak('Great job! You reached the target!');
+        setTimeout(() => {
+          endRound();
+        }, 1000);
+      }
+      
+      // Progress encouragement (only once per milestone)
+      const coveragePercent = Math.round(coverage * 100);
+      const now = Date.now();
+      if ((coveragePercent === 50 || coveragePercent === 60) && now - lastProgressAnnouncement.current > 3000) {
+        lastProgressAnnouncement.current = now;
+        speak(`You're at ${coveragePercent} percent! Keep going!`);
+      }
+    };
+
+    updatePosition();
+    const interval = setInterval(updatePosition, 33); // ~30 FPS
+    return () => clearInterval(interval);
+  }, [gameState, handDetection.landmarks, rainbowPath, coverage, timeRemaining, updateCoverage, endRound]);
+
+  // Initialize on mount
   useEffect(() => {
-    startRound();
-  }, []);
+    startCalibration();
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current as any);
+      clearScheduledSpeech();
+    };
+  }, [startCalibration]);
 
-  if (gameFinished && finalStats) {
+  // Create SVG path string
+  const pathString = rainbowPath.length > 0
+    ? `M ${rainbowPath[0].x} ${rainbowPath[0].y} ` +
+    rainbowPath.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ')
+    : '';
+
+  // Rainbow colors
+  const rainbowColors = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF', '#4B0082', '#9400D3'];
+
+  if (gameState === 'gameComplete' && finalStats) {
     return (
+      <SafeAreaView style={styles.container}>
+        <LinearGradient
+          colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
+          style={StyleSheet.absoluteFillObject}
+        />
       <ResultCard
-        correct={finalStats.successfulTraces}
-        total={finalStats.totalRounds}
-        accuracy={finalStats.averageAccuracy}
-        xpAwarded={finalStats.xpAwarded}
-        logTimestamp={null}
+          correct={totalStars}
+          total={TOTAL_ROUNDS * 3}
+          accuracy={finalStats.accuracy}
+          xpAwarded={totalStars * 50}
+          logTimestamp={logTimestamp}
         onHome={onBack}
         onPlayAgain={() => {
-          setGameFinished(false);
+            setGameState('calibration');
+            setCurrentRound(1);
+            setRoundResults([]);
+            setTotalStars(0);
           setFinalStats(null);
-          setCurrentRound(0);
-          setSuccessfulTraces(0);
-          setTotalAccuracy(0);
-          setProgress(0);
-          setMaxProgress(0);
-          setRoundComplete(false);
-          progressBarWidth.setValue(0);
-          startRound();
-        }}
-      />
+            setCoverage(0);
+            setTimeRemaining(ROUND_TIME_MS);
+            startCalibration();
+          }}
+        />
+      </SafeAreaView>
     );
   }
 
-  const config = DIFFICULTY_CONFIG[Math.min(currentRound, DIFFICULTY_CONFIG.length - 1)];
-  const pathString = pathToSvgString(currentPath);
-  const glowSize = getResponsiveSize(45, isTablet, isMobile);
-  const startPoint = currentPath[0];
-  const endPoint = currentPath[currentPath.length - 1];
-
   return (
     <SafeAreaView style={styles.container}>
+      {/* Sky gradient background */}
       <LinearGradient
-        colors={['#E0F2FE', '#BAE6FD', '#7DD3FC', '#38BDF8']}
-        style={styles.gradient}
-      >
+        colors={['#87CEEB', '#E0F6FF', '#FFFFFF']}
+        style={StyleSheet.absoluteFillObject}
+      />
+
         {/* Header */}
-        <View style={[styles.header, isMobile && styles.headerMobile]}>
-          <Pressable
-            onPress={() => {
-              clearScheduledSpeech();
-              onBack();
-            }}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={22} color="#0F172A" />
-            <Text style={styles.backText}>Back</Text>
+      <View style={styles.header}>
+          <Pressable onPress={onBack} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#0F172A" />
           </Pressable>
-          <View style={styles.headerText}>
-            <Text style={[styles.title, isMobile && styles.titleMobile]}>Rainbow Curve Trace</Text>
-            <Text style={[styles.subtitle, isMobile && styles.subtitleMobile]}>
-              Round {currentRound + 1} / {requiredRounds}
-            </Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.title}>Rainbow Path Trace</Text>
+          {gameState !== 'gameComplete' && (
+            <Text style={styles.roundText}>Round {currentRound}/{TOTAL_ROUNDS}</Text>
+          )}
           </View>
+        <View style={styles.headerRight}>
+          {gameState === 'playing' && (
+            <View style={styles.timerContainer}>
+              <Ionicons name="time-outline" size={20} color="#0F172A" />
+              <Text style={styles.timerText}>{Math.ceil(timeRemaining / 1000)}s</Text>
         </View>
-
-        {/* Progress Bar */}
-        <View style={[styles.progressContainer, isMobile && styles.progressContainerMobile]}>
-          <View style={styles.progressBarBackground}>
-            <Animated.View
-              style={[
-                styles.progressBarFill,
-                {
-                  width: progressBarWidth.interpolate({
-                    inputRange: [0, 100],
-                    outputRange: ['0%', '100%'],
-                  }),
-                },
-              ]}
-            />
+          )}
+          {roundResults.length > 0 && (
+            <View style={styles.starsContainer}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Ionicons
+                  key={i}
+                  name={i < roundResults[roundResults.length - 1].stars ? "star" : "star-outline"}
+                  size={20}
+                  color="#FCD34D"
+                />
+              ))}
           </View>
-          <Text style={[styles.progressText, isMobile && styles.progressTextMobile]}>
-            {Math.round(progress * 100)}% Complete
-          </Text>
-        </View>
-
-        {/* Camera Preview Container - Always render so hook can find it */}
-        <View
-          ref={previewRef}
-          style={[
-            StyleSheet.absoluteFill,
-            styles.cameraContainer,
-          ]}
-          nativeID={handDetection.previewContainerId || 'hand-preview-container'}
-          {...(Platform.OS === 'web' && { 
-            'data-native-id': handDetection.previewContainerId || 'hand-preview-container',
-            'data-hand-preview-container': 'true',
-            // Also set the hardcoded ID the hook looks for
-            'data-native-id-backup': 'hand-preview-container'
-          })}
-          collapsable={false}
-        >
-          {Platform.OS === 'web' && (
-            <>
-              {(!handDetection.hasCamera || !handDetection.isDetecting) && (
-                <View style={styles.cameraLoading}>
-                  <Text style={styles.cameraLoadingText}>
-                    {!handDetection.hasCamera ? 'Requesting camera access...' : 'Show your hand to the camera'}
-                  </Text>
-                </View>
-              )}
-            </>
           )}
         </View>
+        </View>
 
-        {/* Error Message */}
-        {handDetection.error && (
-          <View style={[styles.errorBanner, isMobile && styles.errorBannerMobile]}>
-            <Ionicons name="alert-circle" size={24} color="#EF4444" />
-            <Text style={styles.errorText}>{handDetection.error}</Text>
-          </View>
-        )}
+      {/* Main Game Area */}
+      <View style={styles.gameContainer}>
+        {/* Camera Preview */}
+        <View
+          nativeID={handDetection.previewContainerId}
+          style={styles.cameraPreview}
+          {...(Platform.OS === 'web' && { 
+            'data-native-id': handDetection.previewContainerId,
+            'data-hand-preview-container': 'true',
+          })}
+        />
 
-        {/* Game Area */}
+        {/* Game Overlay */}
         <View 
-          style={styles.gameArea} 
-          collapsable={false}
+          style={styles.gameOverlay}
+          onLayout={(e) => {
+            const { width, height } = e.nativeEvent.layout;
+            setGameRect({ width, height });
+          }}
+          {...(Platform.OS === 'web' && { 'data-game-area': 'true' })}
         >
-          <Svg style={StyleSheet.absoluteFill} width={SCREEN_WIDTH} height={SCREEN_HEIGHT}>
+          <Svg
+            style={StyleSheet.absoluteFill}
+            width={gameRect.width}
+            height={gameRect.height}
+          >
             <Defs>
-              {/* Rainbow gradient */}
               <SvgLinearGradient id="rainbowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <Stop offset="0%" stopColor="#FF0000" />
-                <Stop offset="16.66%" stopColor="#FF7F00" />
-                <Stop offset="33.33%" stopColor="#FFFF00" />
-                <Stop offset="50%" stopColor="#00FF00" />
-                <Stop offset="66.66%" stopColor="#0000FF" />
-                <Stop offset="83.33%" stopColor="#4B0082" />
-                <Stop offset="100%" stopColor="#9400D3" />
+                {rainbowColors.map((color, i) => (
+                  <Stop
+                    key={i}
+                    offset={`${(i / (rainbowColors.length - 1)) * 100}%`}
+                    stopColor={color}
+                    stopOpacity="1"
+                  />
+                ))}
               </SvgLinearGradient>
             </Defs>
 
-            {/* Path highlight when off-path */}
-            {pathHighlight && (
+            {/* Rainbow Path */}
+            {pathString && (
               <Path
                 d={pathString}
-                stroke="#F59E0B"
-                strokeWidth={config.pathThickness + 15}
-                strokeOpacity={0.4}
+                stroke="url(#rainbowGradient)"
+                strokeWidth={BRUSH_SIZE}
                 fill="none"
                 strokeLinecap="round"
-              />
-            )}
-
-            {/* Main rainbow path - big smooth curve */}
-            <Path
-              d={pathString}
-              stroke="url(#rainbowGradient)"
-              strokeWidth={config.pathThickness}
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-
-            {/* Start marker (green circle) */}
-            {startPoint && !isTracing && (
-              <Circle
-                cx={startPoint.x}
-                cy={startPoint.y}
-                r={getResponsiveSize(18, isTablet, isMobile)}
-                fill="#22C55E"
+                strokeLinejoin="round"
                 opacity={0.9}
               />
             )}
 
-            {/* End marker (yellow circle/star) */}
-            {endPoint && (
+            {/* Coverage Indicator */}
+            {coverage > 0 && pathString && (
+            <Path
+              d={pathString}
+                stroke="#22C55E"
+                strokeWidth={BRUSH_SIZE + 5}
+              fill="none"
+              strokeLinecap="round"
+                strokeDasharray={`${coverage * 1000} 1000`}
+                opacity={0.6}
+            />
+            )}
+
+            {/* Calibration Box */}
+            {gameState === 'calibration' && (
               <Circle
-                cx={endPoint.x}
-                cy={endPoint.y}
-                r={getResponsiveSize(15, isTablet, isMobile)}
-                fill="#FCD34D"
-                stroke="#F59E0B"
-                strokeWidth={2}
-                opacity={progress >= COMPLETION_THRESHOLD ? 1 : 0.7}
+                cx={gameRect.width / 2}
+                cy={gameRect.height / 2}
+                r={50}
+                fill="none"
+                stroke="#3B82F6"
+                strokeWidth={4}
+                strokeDasharray="10,5"
+                opacity={0.8}
               />
             )}
 
-            {/* Hand skeleton overlay - draw landmarks and connections */}
-            {handDetection.landmarks?.allLandmarks && handDetection.landmarks.allLandmarks.length > 0 && (
-              <>
-                {/* Draw skeleton connections (white lines) */}
-                {handConnections.map(([fromIdx, toIdx], idx) => {
-                  const fromLandmark = handDetection.landmarks?.allLandmarks?.[fromIdx];
-                  const toLandmark = handDetection.landmarks?.allLandmarks?.[toIdx];
-                  if (!fromLandmark || !toLandmark) return null;
-                  
-                  const fromPoint = convertLandmarkToScreen({ x: fromLandmark.x, y: fromLandmark.y });
-                  const toPoint = convertLandmarkToScreen({ x: toLandmark.x, y: toLandmark.y });
-                  
-                  return (
-                    <Line
-                      key={`connection-${idx}`}
-                      x1={fromPoint.x}
-                      y1={fromPoint.y}
-                      x2={toPoint.x}
-                      y2={toPoint.y}
-                      stroke="#FFFFFF"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      opacity={0.8}
-                    />
-                  );
-                })}
-                
-                {/* Draw all 21 landmarks as red dots */}
-                {handDetection.landmarks.allLandmarks.map((landmark, idx) => {
-                  const point = convertLandmarkToScreen({ x: landmark.x, y: landmark.y });
-                  // Make landmarks more visible
-                  return (
-                    <Circle
-                      key={`landmark-${idx}`}
-                      cx={point.x}
-                      cy={point.y}
-                      r={6}
-                      fill="#FF0000"
-                      opacity={1}
-                      stroke="#FFFFFF"
-                      strokeWidth={1}
-                    />
-                  );
-                })}
-                
-                {/* Blue dot at index finger tip (drawing point) */}
-                {handDetection.landmarks.indexFingerTip && (
-                  <Circle
-                    cx={convertLandmarkToScreen(handDetection.landmarks.indexFingerTip).x}
-                    cy={convertLandmarkToScreen(handDetection.landmarks.indexFingerTip).y}
-                    r={8}
-                    fill="#3B82F6"
-                    opacity={1}
-                    stroke="#FFFFFF"
-                    strokeWidth={2}
-                  />
-                )}
-              </>
+            {/* Countdown */}
+            {gameState === 'countdown' && countdown > 0 && (
+              <Circle
+                cx={gameRect.width / 2}
+                cy={gameRect.height / 2}
+                r={80}
+                fill="rgba(59, 130, 246, 0.2)"
+                stroke="#3B82F6"
+                strokeWidth={6}
+              />
             )}
 
-            {/* Glow effect - follows finger */}
-            {glowPosition && (
+            {/* Index Finger Cursor - Glowing Dot */}
+            {indexFingerPos && gameState === 'playing' && (
               <>
-                <Circle
-                  cx={glowPosition.x}
-                  cy={glowPosition.y}
-                  r={glowSize}
-                  fill={isOnPath ? '#22C55E' : '#EF4444'}
-                  opacity={0.4}
+                {/* Outer glow */}
+                    <Circle
+                  cx={indexFingerPos.x}
+                  cy={indexFingerPos.y}
+                  r={25}
+                  fill="#60A5FA"
+                  opacity={0.3}
                 />
-                <Circle
-                  cx={glowPosition.x}
-                  cy={glowPosition.y}
-                  r={glowSize / 2}
-                  fill={isOnPath ? '#22C55E' : '#EF4444'}
-                  opacity={0.9}
-                />
+                {/* Inner dot */}
+                  <Circle
+                  cx={indexFingerPos.x}
+                  cy={indexFingerPos.y}
+                  r={15}
+                    fill="#3B82F6"
+                    stroke="#FFFFFF"
+                  strokeWidth={3}
+                  />
               </>
             )}
           </Svg>
 
-          {/* Instructions */}
-          {!isTracing && !roundComplete && (
-            <View style={styles.instructionContainer}>
-              <Text style={[styles.instructionText, isMobile && styles.instructionTextMobile]}>
-                {handDetection.isDetecting 
-                  ? '👆 Point your finger at the rainbow!' 
-                  : '👋 Show your hand to the camera'}
+          {/* Countdown Text */}
+          {gameState === 'countdown' && countdown > 0 && (
+            <View style={styles.countdownContainer}>
+              <Text style={styles.countdownText}>{countdown}</Text>
+            </View>
+          )}
+
+          {/* Calibration Instruction */}
+          {gameState === 'calibration' && (
+            <View style={styles.calibrationContainer}>
+              <Text style={styles.calibrationText}>
+                👆 Show your index finger in the center box
               </Text>
             </View>
           )}
+        </View>
+      </View>
 
-          {/* Mode indicator (like in the reference image) */}
-          {handDetection.isDetecting && (
-            <View style={styles.modeIndicator}>
-              <Text style={styles.modeText}>Mode: DRAW</Text>
-              <Text style={styles.modeSubtext}>Index: Draw | Point at rainbow to trace</Text>
+      {/* Bottom Info Bar */}
+      <View style={styles.infoBar}>
+        {gameState === 'playing' && (
+          <>
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Coverage</Text>
+              <Text style={styles.infoValue}>{Math.round(coverage * 100)}%</Text>
+            </View>
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Target</Text>
+              <Text style={styles.infoValue}>{Math.round(COVERAGE_TARGET * 100)}%</Text>
+            </View>
+            {offPathPenalty > 0 && (
+              <View style={styles.infoItem}>
+                <Text style={styles.infoLabel}>Off Path</Text>
+                <Text style={[styles.infoValue, styles.penaltyText]}>{offPathPenalty}</Text>
             </View>
           )}
+          </>
+        )}
+        
+        {gameState === 'roundComplete' && !showRoundSuccess && roundResults.length > 0 && (
+          <View style={styles.roundResultContainer}>
+            <Text style={styles.roundResultText}>
+              Round {roundResults[roundResults.length - 1].round} Complete!
+            </Text>
+            <Text style={styles.roundResultStars}>
+              {Array.from({ length: roundResults[roundResults.length - 1].stars }).map(() => '⭐').join('')}
+            </Text>
+            <Text style={styles.roundResultCoverage}>
+              Coverage: {Math.round(roundResults[roundResults.length - 1].coverage * 100)}%
+            </Text>
+          </View>
+        )}
+      </View>
 
-          {/* Sparkle effects */}
-          <SparkleBurst visible={showSparkles} color="#FCD34D" count={12} size={8} />
+      {/* Error Message */}
+      {handDetection.error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{handDetection.error}</Text>
         </View>
+      )}
 
-        {/* Stats */}
-        <View style={[styles.statsContainer, isMobile && styles.statsContainerMobile]}>
-          <Text style={[styles.statsText, isMobile && styles.statsTextMobile]}>
-            Successful: {successfulTraces} / {currentRound + 1}
-          </Text>
+      {/* No Hand Detected Message */}
+      {gameState === 'playing' && !handDetection.landmarks?.indexFingerTip && (
+        <View style={styles.noHandContainer}>
+          <Text style={styles.noHandText}>👋 Show your hand!</Text>
         </View>
-      </LinearGradient>
+      )}
+
+      {/* Round Success Animation - Outside all containers to overlay properly */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={roundResults[roundResults.length - 1]?.stars}
+      />
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  gradient: {
-    flex: 1,
+    backgroundColor: '#87CEEB',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-    backgroundColor: 'rgba(224, 242, 254, 0.95)',
-  },
-  headerMobile: {
-    paddingHorizontal: 12,
-    paddingTop: 6,
-    paddingBottom: 10,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderBottomWidth: 2,
+    borderBottomColor: '#E0E7FF',
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: 8,
-    marginRight: 12,
   },
-  backText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-    marginLeft: 4,
-  },
-  headerText: {
+  headerCenter: {
+    alignItems: 'center',
     flex: 1,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#0F172A',
   },
-  titleMobile: {
-    fontSize: 20,
-  },
-  subtitle: {
+  roundText: {
     fontSize: 14,
-    color: '#475569',
+    color: '#64748B',
     marginTop: 2,
   },
-  subtitleMobile: {
-    fontSize: 12,
-  },
-  progressContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-    alignItems: 'center',
-  },
-  progressContainerMobile: {
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 10,
-  },
-  progressBarBackground: {
-    width: '100%',
-    height: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 7,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#22C55E',
-    borderRadius: 7,
-  },
-  progressText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0F172A',
-  },
-  progressTextMobile: {
-    fontSize: 12,
-  },
-  cameraContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'transparent',
-    overflow: 'hidden',
-    zIndex: 1,
-    pointerEvents: 'none',
-  },
-  cameraLoading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  },
-  cameraLoadingText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-    paddingHorizontal: 20,
-  },
-  errorBanner: {
-    position: 'absolute',
-    top: 100,
-    left: 20,
-    right: 20,
+  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.95)',
-    padding: 12,
-    borderRadius: 12,
-    zIndex: 100,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+    gap: 12,
   },
-  errorBannerMobile: {
-    top: 80,
-    left: 12,
-    right: 12,
-    padding: 10,
-  },
-  errorText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 8,
-    flex: 1,
-  },
-  gameArea: {
-    flex: 1,
-    position: 'relative',
-    zIndex: 10,
-  },
-  instructionContainer: {
-    position: 'absolute',
-    bottom: 120,
-    left: 20,
-    right: 20,
+  timerContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    padding: 16,
-    borderRadius: 16,
-    zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  instructionText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#0F172A',
-    textAlign: 'center',
-  },
-  instructionTextMobile: {
-    fontSize: 16,
-  },
-  statsContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    alignItems: 'center',
-  },
-  statsContainerMobile: {
+    gap: 4,
     paddingHorizontal: 12,
-    paddingBottom: 16,
+    paddingVertical: 6,
+    backgroundColor: '#FEF3C7',
+    borderRadius: 20,
   },
-  statsText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-  },
-  statsTextMobile: {
-    fontSize: 14,
-  },
-  modeIndicator: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    zIndex: 20,
-  },
-  modeText: {
-    color: '#FFFFFF',
+  timerText: {
     fontSize: 16,
     fontWeight: '700',
+    color: '#0F172A',
+  },
+  starsContainer: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  gameContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  cameraPreview: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000',
+  },
+  gameOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+  },
+  countdownContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  countdownText: {
+    fontSize: 120,
+    fontWeight: '900',
+    color: '#3B82F6',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 8,
+  },
+  calibrationContainer: {
+    position: 'absolute',
+    top: '45%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  calibrationText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#3B82F6',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
+    textAlign: 'center',
+  },
+  infoBar: {
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderTopWidth: 2,
+    borderTopColor: '#E0E7FF',
+  },
+  infoItem: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  infoLabel: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  infoValue: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginTop: 4,
+  },
+  penaltyText: {
+    color: '#EF4444',
+  },
+  roundResultContainer: {
+    alignItems: 'center',
+  },
+  roundResultText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 8,
+  },
+  roundResultStars: {
+    fontSize: 24,
     marginBottom: 4,
   },
-  modeSubtext: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    opacity: 0.9,
+  roundResultCoverage: {
+    fontSize: 14,
+    color: '#64748B',
+  },
+  errorContainer: {
+    padding: 16,
+    backgroundColor: '#FFEBEE',
+    borderTopWidth: 1,
+    borderTopColor: '#FFCDD2',
+  },
+  errorText: {
+    color: '#C62828',
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  noHandContainer: {
+    position: 'absolute',
+    bottom: 100,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  noHandText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#F59E0B',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
   },
 });

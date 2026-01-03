@@ -7,14 +7,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 type Props = {
@@ -27,7 +27,7 @@ const TIMER_DURATION_MS = 3000; // 3 seconds
 const TAP_WINDOW_MS = 1000; // 1 second window after timer fills
 const DEFAULT_TTS_RATE = 0.75;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -107,7 +107,7 @@ export const TurnTimerGame: React.FC<Props> = ({
 
     // Update progress
     const startTime = Date.now();
-    timerRef.current = setInterval(() => {
+    timerRef.current = (setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / TIMER_DURATION_MS, 1);
       setTimerProgress(progress);
@@ -138,7 +138,7 @@ export const TurnTimerGame: React.FC<Props> = ({
         speak('Tap now!');
 
         // Close tap window after delay
-        tapWindowRef.current = setTimeout(() => {
+        tapWindowRef.current = (setTimeout(() => {
           setCanTap(false);
           setLateTaps(prev => prev + 1);
           Animated.parallel([
@@ -162,9 +162,9 @@ export const TurnTimerGame: React.FC<Props> = ({
               startRound();
             }, 1000);
           }, 1000);
-        }, TAP_WINDOW_MS);
+        }, TAP_WINDOW_MS)) as unknown as NodeJS.Timeout;
       }
-    }, 50);
+    }, 50)) as unknown as NodeJS.Timeout;
   }, [rounds, requiredRounds, SCREEN_WIDTH]);
 
   const handleTap = useCallback(() => {
@@ -302,10 +302,11 @@ export const TurnTimerGame: React.FC<Props> = ({
   }, [correctTaps, earlyTaps, lateTaps, requiredRounds, onComplete]);
 
   useEffect(() => {
-    try {
-      speak('Wait for the timer, then tap!');
-    } catch {}
-    startRound();
+    // Give clear instructions before starting
+    speak('Wait for the timer to fill up completely! Then tap the button quickly! Don\'t tap too early or too late!');
+    setTimeout(() => {
+      startRound();
+    }, 4000);
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();

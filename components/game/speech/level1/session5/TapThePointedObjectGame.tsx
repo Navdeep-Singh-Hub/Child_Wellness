@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,16 +8,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 type Props = {
@@ -29,7 +30,7 @@ const AVATAR_SIZE = 140;
 const OBJECT_SIZE = 100;
 const DEFAULT_TTS_RATE = 0.75;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -78,6 +79,7 @@ export const TapThePointedObjectGame: React.FC<Props> = ({
   const [round, setRound] = useState(0);
   const [isPointing, setIsPointing] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalTaps: number;
     correctTaps: number;
@@ -293,15 +295,20 @@ export const TapThePointedObjectGame: React.FC<Props> = ({
         avatarScale.setValue(1);
       });
 
-      speak('Great job!');
-      const nextHits = hits + 1;
-      setHits(nextHits);
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+      
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+        const nextHits = hits + 1;
+        setHits(nextHits);
 
-      if (nextHits < requiredTaps) {
-        setTimeout(() => {
-          startRound();
-        }, 1500);
-      }
+        if (nextHits < requiredTaps) {
+          setTimeout(() => {
+            startRound();
+          }, 500);
+        }
+      }, 2500);
     } else {
       // Wrong answer - shake animation
       Animated.sequence([
@@ -632,6 +639,12 @@ export const TapThePointedObjectGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

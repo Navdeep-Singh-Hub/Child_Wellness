@@ -16,6 +16,7 @@ import {
   View,
 } from 'react-native';
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 
 type Props = {
@@ -95,6 +96,7 @@ export const WhichOneMovedGame: React.FC<Props> = ({
   const [isWiggling, setIsWiggling] = useState(false);
   const [selectedSide, setSelectedSide] = useState<'left' | 'right' | null>(null);
   const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalTaps: number;
     correctTaps: number;
@@ -337,10 +339,8 @@ export const WhichOneMovedGame: React.FC<Props> = ({
         }),
       ]).start();
 
-      speak('Great job!');
-
-      const nextHits = hits + 1;
-      setHits(nextHits);
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
 
       // Fade out both images
       Animated.parallel([
@@ -356,11 +356,17 @@ export const WhichOneMovedGame: React.FC<Props> = ({
         }),
       ]).start();
 
-      if (nextHits < requiredTaps) {
-        setTimeout(() => {
-          startRound();
-        }, 1500);
-      }
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+        const nextHits = hits + 1;
+        setHits(nextHits);
+
+        if (nextHits < requiredTaps) {
+          setTimeout(() => {
+            startRound();
+          }, 500);
+        }
+      }, 2500);
     } else {
       // Wrong answer - shake animation
       Animated.sequence([
@@ -564,6 +570,12 @@ export const WhichOneMovedGame: React.FC<Props> = ({
           </Text>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };
