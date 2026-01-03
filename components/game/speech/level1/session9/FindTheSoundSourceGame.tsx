@@ -28,7 +28,7 @@ const DEFAULT_TTS_RATE = 0.75;
 const SOUND_DELAY_MS = 1000;
 const INSTRUCTION_DELAY_MS = 2000;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -302,7 +302,7 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
         setCanTap(true);
 
         // Timeout for missed tap
-        tapTimeoutRef.current = setTimeout(() => {
+        tapTimeoutRef.current = (setTimeout(() => {
           if (canTap && !isProcessing) {
             setIncorrectTaps(prev => prev + 1);
             speak('Try again!');
@@ -336,7 +336,7 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
           }, 400);
           
           tapTimeoutRef.current = null;
-        }, 8000);
+        }, 8000)) as unknown as NodeJS.Timeout;
       }, INSTRUCTION_DELAY_MS);
     }, SOUND_DELAY_MS);
   }, [rounds, requiredRounds, canTap, isProcessing, advanceToNextRound]);
@@ -590,7 +590,7 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
               ]}
             >
               <LinearGradient
-                colors={currentPair.left.color}
+                colors={currentPair.left.color as [string, string, ...string[]]}
                 style={styles.objectGradient}
               >
                 <Text style={styles.objectEmoji}>{currentPair.left.emoji}</Text>
@@ -620,7 +620,7 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
               ]}
             >
               <LinearGradient
-                colors={currentPair.right.color}
+                colors={currentPair.right.color as [string, string, ...string[]]}
                 style={styles.objectGradient}
               >
                 <Text style={styles.objectEmoji}>{currentPair.right.emoji}</Text>

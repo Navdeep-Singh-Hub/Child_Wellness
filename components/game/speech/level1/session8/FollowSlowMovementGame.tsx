@@ -7,14 +7,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 type Props = {
@@ -28,7 +28,7 @@ const DEFAULT_TTS_RATE = 0.75;
 const MOVEMENT_DURATION_MS = 6000; // 6 seconds slow movement
 const TAP_DURATION_MS = 3000; // How long object is tappable after stopping
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -266,7 +266,7 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
       const direction = directions[Math.floor(Math.random() * directions.length)];
       
       let startX: number, startY: number, endX: number, endY: number;
-      let keyframes: Array<{ x: number; y: number; progress: number }>;
+      let keyframes: { x: number; y: number; progress: number }[];
       
       // Define paths based on random direction
       switch (direction) {
@@ -382,7 +382,7 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
       Animated.sequence(animations).start();
 
       // After movement completes, object stops
-      movementTimeoutRef.current = setTimeout(() => {
+      movementTimeoutRef.current = (setTimeout(() => {
         setPhase('stopped');
         
         // Stop rotation
@@ -430,7 +430,7 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
         speak('Tap now!');
 
         // Object expires after duration
-        tapTimeoutRef.current = setTimeout(() => {
+        tapTimeoutRef.current = (setTimeout(() => {
           if (canTap && !isProcessing) {
             setMissedTaps(prev => prev + 1);
             speak('Time\'s up!');
@@ -462,10 +462,10 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
           });
           
           tapTimeoutRef.current = null;
-        }, TAP_DURATION_MS);
+        }, TAP_DURATION_MS)) as unknown as NodeJS.Timeout;
         
         movementTimeoutRef.current = null;
-      }, MOVEMENT_DURATION_MS);
+      }, MOVEMENT_DURATION_MS)) as unknown as NodeJS.Timeout;
     }, 500);
   }, [rounds, requiredRounds, canTap, isProcessing, SCREEN_WIDTH, SCREEN_HEIGHT, advanceToNextRound]);
 
@@ -711,7 +711,7 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
               ]}
             >
               <LinearGradient
-                colors={object.color}
+                colors={object.color as [string, string, ...string[]]}
                 style={styles.objectGradient}
               >
                 <Text style={styles.objectEmoji}>{object.emoji}</Text>

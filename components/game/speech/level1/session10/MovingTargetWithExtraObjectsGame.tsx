@@ -7,14 +7,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 type Props = {
@@ -30,7 +30,7 @@ const MOVEMENT_DURATION_MS = 7000;
 const TAP_TIMEOUT_MS = 12000;
 const MIN_DISTANCE_BETWEEN_OBJECTS = 180; // Minimum distance to avoid overlap
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -64,7 +64,7 @@ const DISTRACTIONS = [
   { emoji: '🟡', name: 'yellow', color: ['#EAB308', '#CA8A04'] },
 ];
 
-type MovementPath = Array<{ x: number; y: number }>;
+type MovementPath = { x: number; y: number }[];
 
 // Generate dynamic movement paths
 const generateMovementPath = (
@@ -144,7 +144,7 @@ const generateMovementPath = (
       // Random path with collision avoidance
       for (let i = 0; i < numPoints; i++) {
         let attempts = 0;
-        let x, y;
+        let x: number, y: number;
         do {
           x = minX + Math.random() * (maxX - minX);
           y = minY + Math.random() * (maxY - minY);
@@ -185,7 +185,7 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
   
   // Game state
   const [target, setTarget] = useState<typeof TARGETS[0] | null>(null);
-  const [distractions, setDistractions] = useState<Array<{ id: number; emoji: string; color: string[]; name: string }>>([]);
+  const [distractions, setDistractions] = useState<{ id: number; emoji: string; color: string[]; name: string }[]>([]);
   const [canTap, setCanTap] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [correctTaps, setCorrectTaps] = useState(0);
@@ -221,6 +221,18 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
   const warningScale = useRef(new Animated.Value(1)).current;
   const warningOpacity = useRef(new Animated.Value(0)).current;
   const particleOpacity = useRef(new Animated.Value(0)).current;
+  
+  // Track warningOpacity value to avoid _value access
+  const warningOpacityCurrentRef = useRef(0);
+  
+  useEffect(() => {
+    const listener = warningOpacity.addListener(({ value }) => {
+      warningOpacityCurrentRef.current = value;
+    });
+    return () => {
+      warningOpacity.removeListener(listener);
+    };
+  }, [warningOpacity]);
   
   // Timeouts and animations
   const movementTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -417,7 +429,7 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
     setDistractions(selectedDistractions);
 
     // Generate movement paths with different patterns
-    const pathTypes: Array<'smooth' | 'zigzag' | 'circular' | 'figure8' | 'wave' | 'random'> = 
+    const pathTypes: ('smooth' | 'zigzag' | 'circular' | 'figure8' | 'wave' | 'random')[] = 
       ['smooth', 'zigzag', 'circular', 'figure8', 'wave', 'random'];
     
     const targetPathType = pathTypes[Math.floor(Math.random() * pathTypes.length)];
@@ -618,7 +630,7 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
     ).start();
 
     // Timeout for missed tap
-    tapTimeoutRef.current = setTimeout(() => {
+    tapTimeoutRef.current = (setTimeout(() => {
       setMissedTaps(prev => prev + 1);
       speak('Try again!');
       
@@ -650,7 +662,7 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
       }, 400);
       
       tapTimeoutRef.current = null;
-    }, TAP_TIMEOUT_MS);
+    }, TAP_TIMEOUT_MS)) as unknown as NodeJS.Timeout;
   }, [rounds, requiredRounds, SCREEN_WIDTH, SCREEN_HEIGHT, advanceToNextRound, createMovementAnimation]);
 
   const handleTargetTap = useCallback(() => {
@@ -939,7 +951,7 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
 
         <View style={styles.playArea}>
           {/* Warning Message */}
-          {warningOpacity._value > 0 && (
+          {warningOpacityCurrentRef.current > 0 && (
             <Animated.View
               style={[
                 styles.warningBanner,
@@ -994,7 +1006,7 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
                 ]}
               />
               <LinearGradient
-                colors={target.color}
+                colors={target.color as [string, string, ...string[]]}
                 style={styles.targetGradient}
               >
                 <Text style={styles.targetEmoji}>{target.emoji}</Text>
@@ -1028,7 +1040,7 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
                 ]}
               >
                 <LinearGradient
-                  colors={distractions[0].color}
+                  colors={distractions[0].color as [string, string, ...string[]]}
                   style={styles.distractionGradient}
                 >
                   <Text style={styles.distractionEmoji}>{distractions[0].emoji}</Text>
@@ -1063,7 +1075,7 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
                 ]}
               >
                 <LinearGradient
-                  colors={distractions[1].color}
+                  colors={distractions[1].color as [string, string, ...string[]]}
                   style={styles.distractionGradient}
                 >
                   <Text style={styles.distractionEmoji}>{distractions[1].emoji}</Text>

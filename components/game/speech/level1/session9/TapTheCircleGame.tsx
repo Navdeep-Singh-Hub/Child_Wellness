@@ -7,14 +7,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 type Props = {
@@ -27,7 +27,7 @@ const SHAPE_SIZE = 120;
 const DEFAULT_TTS_RATE = 0.75;
 const INSTRUCTION_DELAY_MS = 1000;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -73,7 +73,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   
   // Game state
-  const [shapes, setShapes] = useState<Array<{ id: number; emoji: string; color: string[]; name: string; displayName: string }>>([]);
+  const [shapes, setShapes] = useState<{ id: number; emoji: string; color: string[]; name: string; displayName: string }[]>([]);
   const [targetShape, setTargetShape] = useState<string | null>(null);
   const [canTap, setCanTap] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -239,7 +239,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
       setCanTap(true);
 
       // Timeout for missed tap
-      tapTimeoutRef.current = setTimeout(() => {
+      tapTimeoutRef.current = (setTimeout(() => {
         if (canTap && !isProcessing) {
           setIncorrectTaps(prev => prev + 1);
           speak('Try again!');
@@ -283,7 +283,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
         }, 400);
         
         tapTimeoutRef.current = null;
-      }, 8000);
+      }, 8000)) as unknown as NodeJS.Timeout;
     }, INSTRUCTION_DELAY_MS);
   }, [rounds, requiredRounds, canTap, isProcessing, shapeScales, shapeOpacities, advanceToNextRound]);
 
@@ -537,7 +537,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
                   ]}
                 >
                   <LinearGradient
-                    colors={shape.color}
+                    colors={shape.color as [string, string, ...string[]]}
                     style={styles.shapeGradient}
                   >
                     <Text style={styles.shapeEmoji}>{shape.emoji}</Text>

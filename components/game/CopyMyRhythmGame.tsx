@@ -20,7 +20,7 @@ export const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
   const [round, setRound] = useState(1);
   const [phase, setPhase] = useState<GamePhase>('idle');
   const [pattern, setPattern] = useState<number[]>([]);
-  const [userPattern, setUserPattern] = useState<number[]>([]);
+  const [, setUserPattern] = useState<number[]>([]);
   const [correct, setCorrect] = useState(0);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; accuracy: number; xp: number } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
   const recordingStartRef = useRef<number>(0);
   
   // Track all speech timers
-  const speechTimersRef = useRef<Array<NodeJS.Timeout>>([]);
+  const speechTimersRef = useRef<NodeJS.Timeout[]>([]);
 
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -65,6 +65,56 @@ export const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
     return newPattern;
   }, []);
 
+  const triggerGlow = useCallback(() => {
+    glowAnim.setValue(0);
+    Animated.sequence([
+      Animated.timing(glowAnim, {
+        toValue: 1,
+        duration: 150,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(glowAnim, {
+        toValue: 0,
+        duration: 150,
+        easing: Easing.in(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [glowAnim]);
+
+  const finishGame = useCallback(async () => {
+    setPhase('finished');
+    if (beatTimeoutRef.current) {
+      clearTimeout(beatTimeoutRef.current);
+      beatTimeoutRef.current = null;
+    }
+
+    const total = TOTAL_ROUNDS;
+    const accuracy = Math.round((correct / total) * 100);
+    const xp = correct * 20;
+
+    setFinalStats({ correct, total, accuracy, xp });
+
+    try {
+      const result = await logGameAndAward({
+        type: 'tap', // Using 'tap' as closest match for rhythm game
+        correct,
+        total,
+        accuracy,
+        xpAwarded: xp,
+        skillTags: ['rhythm-memory', 'pattern-recognition', 'auditory-motor-coordination'],
+        meta: { rounds: round },
+      });
+      setLogTimestamp(result?.last?.at ?? null);
+      router.setParams({ refreshStats: Date.now().toString() });
+    } catch (e) {
+      console.error('Failed to save game:', e);
+    }
+
+    Speech.speak('Amazing! You copied all the rhythms!');
+  }, [correct, round, router]);
+
   const playPattern = useCallback((patternToPlay: number[]) => {
     setPhase('listening');
     patternIndexRef.current = 0;
@@ -83,40 +133,22 @@ export const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
       
       patternIndexRef.current += 1;
       if (patternIndexRef.current < patternToPlay.length) {
-        beatTimeoutRef.current = setTimeout(playNextBeat, BEAT_INTERVAL);
+        beatTimeoutRef.current = (setTimeout(playNextBeat, BEAT_INTERVAL)) as unknown as NodeJS.Timeout;
       } else {
-        const timer = setTimeout(() => {
+        const timer = (setTimeout(() => {
           setPhase('recording');
           Speech.speak('Now copy the rhythm!');
           userTapsRef.current = [];
           recordingStartRef.current = Date.now();
-        }, BEAT_INTERVAL);
+        }, BEAT_INTERVAL)) as unknown as NodeJS.Timeout;
         speechTimersRef.current.push(timer);
       }
     };
 
     // Start playing after a short delay
-    const timer = setTimeout(playNextBeat, 500);
+    const timer = (setTimeout(playNextBeat, 500)) as unknown as NodeJS.Timeout;
     speechTimersRef.current.push(timer);
-  }, []);
-
-  const triggerGlow = useCallback(() => {
-    glowAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(glowAnim, {
-        toValue: 1,
-        duration: 150,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      }),
-      Animated.timing(glowAnim, {
-        toValue: 0,
-        duration: 150,
-        easing: Easing.in(Easing.ease),
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [glowAnim]);
+  }, [triggerGlow]);
 
   const startRound = useCallback(() => {
     const newPattern = generatePattern();
@@ -170,38 +202,7 @@ export const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
         }
       }, 1500);
     }
-  }, [phase, pattern, round, startRound, triggerGlow]);
-
-  const finishGame = useCallback(async () => {
-    setPhase('finished');
-    if (beatTimeoutRef.current) {
-      clearTimeout(beatTimeoutRef.current);
-    }
-
-    const total = TOTAL_ROUNDS;
-    const accuracy = Math.round((correct / total) * 100);
-    const xp = correct * 20;
-
-    setFinalStats({ correct, total, accuracy, xp });
-
-    try {
-      const result = await logGameAndAward({
-        type: 'copy-rhythm',
-        correct,
-        total,
-        accuracy,
-        xpAwarded: xp,
-        skillTags: ['rhythm-memory', 'pattern-recognition', 'auditory-motor-coordination'],
-        meta: { rounds: round },
-      });
-      setLogTimestamp(result?.last?.at ?? null);
-      router.setParams({ refreshStats: Date.now().toString() });
-    } catch (e) {
-      console.error('Failed to save game:', e);
-    }
-
-    Speech.speak('Amazing! You copied all the rhythms!');
-  }, [correct, round, router]);
+  }, [phase, pattern, round, startRound, triggerGlow, finishGame]);
 
   const startGame = useCallback(() => {
     setRound(1);

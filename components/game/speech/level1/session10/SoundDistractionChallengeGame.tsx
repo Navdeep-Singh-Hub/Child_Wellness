@@ -29,7 +29,7 @@ const GLOW_DURATION_MS = 2000;
 const SOUND_INTERVAL_MS = 1500;
 const TAP_TIMEOUT_MS = 8000;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -100,6 +100,18 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
   const warningScale = useRef(new Animated.Value(1)).current;
   const warningOpacity = useRef(new Animated.Value(0)).current;
   const waitIndicatorOpacity = useRef(new Animated.Value(1)).current;
+  
+  // Track warningOpacity value to avoid _value access
+  const warningOpacityCurrentRef = useRef(0);
+  
+  useEffect(() => {
+    const listener = warningOpacity.addListener(({ value }) => {
+      warningOpacityCurrentRef.current = value;
+    });
+    return () => {
+      warningOpacity.removeListener(listener);
+    };
+  }, [warningOpacity]);
   
   // Timeouts
   const soundIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -260,7 +272,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
 
     // Play distraction sounds at intervals
     let soundCount = 0;
-    soundIntervalRef.current = setInterval(() => {
+    soundIntervalRef.current = (setInterval(() => {
       const randomSound = DISTRACTION_SOUNDS[Math.floor(Math.random() * DISTRACTION_SOUNDS.length)];
       
       // Multiple concentric sound waves for better visual effect
@@ -323,10 +335,10 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
           useNativeDriver: true,
         }).start();
       }
-    }, SOUND_INTERVAL_MS);
+    }, SOUND_INTERVAL_MS)) as unknown as NodeJS.Timeout;
 
     // Make target glow after delay
-    glowTimeoutRef.current = setTimeout(() => {
+    glowTimeoutRef.current = (setTimeout(() => {
       setIsGlowing(true);
       setCanTap(true);
       
@@ -366,7 +378,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
       speak('Tap now!');
 
       // Timeout for missed tap
-      tapTimeoutRef.current = setTimeout(() => {
+      tapTimeoutRef.current = (setTimeout(() => {
         setMissedTaps(prev => prev + 1);
         speak('Try again!');
         
@@ -393,8 +405,8 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
         }, 400);
         
         tapTimeoutRef.current = null;
-      }, TAP_TIMEOUT_MS);
-    }, 5000);
+      }, TAP_TIMEOUT_MS)) as unknown as NodeJS.Timeout;
+    }, 5000)) as unknown as NodeJS.Timeout;
   }, [rounds, requiredRounds, advanceToNextRound]);
 
   const handleTargetTap = useCallback(() => {
@@ -561,12 +573,6 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
       if (glowAnimationRef.current) {
         glowAnimationRef.current.stop();
       }
-      if (targetSoundRef.current) {
-        targetSoundRef.current.unloadAsync();
-      }
-      if (distractionSoundRef.current) {
-        distractionSoundRef.current.unloadAsync();
-      }
     };
   }, []);
 
@@ -682,7 +688,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
           </Animated.View>
 
           {/* Warning Message */}
-          {warningOpacity._value > 0 && (
+          {warningOpacityCurrentRef.current > 0 && (
             <Animated.View
               style={[
                 styles.warningBanner,
@@ -736,7 +742,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
                 />
               )}
               <LinearGradient
-                colors={target.color}
+                colors={target.color as [string, string, ...string[]]}
                 style={styles.targetGradient}
               >
                 <Text style={styles.targetEmoji}>{target.emoji}</Text>

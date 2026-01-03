@@ -7,12 +7,11 @@ import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
     SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 
 const TOTAL_ROUNDS = 6;
@@ -37,9 +36,8 @@ const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [pattern, setPattern] = useState<number[]>([]);
   const [userTaps, setUserTaps] = useState<number[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showSparkle, setShowSparkle] = useState(false);
 
-  const sparkleX = useRef(new Animated.Value(0)).current;
-  const sparkleY = useRef(new Animated.Value(0)).current;
   const beatTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get pattern for current round
@@ -62,7 +60,7 @@ const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       playSound('drum', 0.8, 1.0);
       const delay = currentPattern[beatIndex] * BEAT_INTERVAL;
-      beatTimeoutRef.current = setTimeout(playNextBeat, delay);
+      beatTimeoutRef.current = (setTimeout(playNextBeat, delay)) as unknown as NodeJS.Timeout;
       beatIndex++;
     };
 
@@ -110,8 +108,8 @@ const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         if (matches) {
           setScore((s) => s + 1);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-          sparkleX.setValue(50);
-          sparkleY.setValue(50);
+          setShowSparkle(true);
+          setTimeout(() => setShowSparkle(false), 1000);
         } else {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
         }
@@ -144,29 +142,14 @@ const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
 
     try {
-      const timestamp = new Date().toISOString();
       await logGameAndAward({
-        gameId: 'copy-my-rhythm',
-        therapyId: 'occupational',
-        levelNumber: 3,
-        sessionNumber: 1,
-        score,
-        totalRounds: total,
-        accuracy,
-        xp,
-        timestamp,
+        type: 'tap', // Using 'tap' as closest match for rhythm game
+        correct: score,
+        total: total,
+        accuracy: accuracy,
+        xpAwarded: xp,
       });
-      await recordGame({
-        gameId: 'copy-my-rhythm',
-        therapyId: 'occupational',
-        levelNumber: 3,
-        sessionNumber: 1,
-        score,
-        totalRounds: total,
-        accuracy,
-        xp,
-        timestamp,
-      });
+      await recordGame(xp);
     } catch (error) {
       console.error('Failed to log game:', error);
     }
@@ -194,9 +177,9 @@ const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <ResultCard
           correct={finalStats.correct}
           total={finalStats.total}
-          xp={finalStats.xp}
-          onBack={onBack}
-          onRetry={() => {
+          xpAwarded={finalStats.xp}
+          onHome={onBack}
+          onPlayAgain={() => {
             setRound(1);
             setScore(0);
             setDone(false);
@@ -251,7 +234,7 @@ const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </Text>
           </TouchableOpacity>
 
-          <SparkleBurst x={sparkleX} y={sparkleY} />
+          <SparkleBurst visible={showSparkle} />
         </View>
       </View>
     </SafeAreaView>
