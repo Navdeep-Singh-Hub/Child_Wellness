@@ -1,26 +1,24 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import {
-  Animated,
-  Easing,
-  Pressable,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  useWindowDimensions,
-  View,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Audio as ExpoAudio } from 'expo-av';
-import * as Haptics from 'expo-haptics';
-import * as Speech from 'expo-speech';
-import { LinearGradient } from 'expo-linear-gradient';
 import ResultCard from '@/components/game/ResultCard';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
-import { playSound } from '@/utils/soundPlayer';
+import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Speech from 'expo-speech';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    Animated,
+    Easing,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    useWindowDimensions,
+    View
+} from 'react-native';
 
 type Props = {
   onBack: () => void;
@@ -329,7 +327,8 @@ export const SoundToTapGame: React.FC<Props> = ({
               }}
               onHome={() => {
                 clearScheduledSpeech();
-                Speech.stop();
+                stopAllSpeech();
+                cleanupSounds();
                 onBack();
               }}
             />

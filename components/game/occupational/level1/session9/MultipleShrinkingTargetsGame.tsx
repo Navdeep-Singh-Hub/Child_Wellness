@@ -1,4 +1,7 @@
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -22,8 +25,6 @@ import Animated, {
     withSequence,
     withTiming,
 } from 'react-native-reanimated';
-import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
@@ -152,6 +153,7 @@ const MultipleShrinkingTargetsGame: React.FC<{ onBack?: () => void }> = ({ onBac
   const scoreRef = useRef(0);
   const correctTargetIdRef = useRef<string | null>(null);
   const feedbackOpacity = useSharedValue(0);
+  const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
 
   // Create shared values for targets at component level (reused across rounds)
   const target1Size = useSharedValue(INITIAL_SIZE);
@@ -234,15 +236,17 @@ const MultipleShrinkingTargetsGame: React.FC<{ onBack?: () => void }> = ({ onBac
       Speech.speak('Tap the one that stops glowing!', { rate: 0.78 });
     } catch {}
 
-    setTimeout(() => {
+    const timeout1 = setTimeout(() => {
       setShowFeedback(false);
       feedbackOpacity.value = 0;
-      setTimeout(() => {
+      const timeout2 = setTimeout(() => {
         if (startRoundRef.current) {
           startRoundRef.current();
         }
       }, 500);
+      timeoutRefs.current.push(timeout2);
     }, 1500);
+    timeoutRefs.current.push(timeout1);
   }, [done, feedbackOpacity, playError]);
 
   // Start a new round
@@ -339,11 +343,12 @@ const MultipleShrinkingTargetsGame: React.FC<{ onBack?: () => void }> = ({ onBac
           if (finished && target.isCorrect && roundActiveRef.current) {
             // Correct target finished shrinking - stop glowing after delay
             runOnJS(() => {
-              setTimeout(() => {
+              const glowTimeout = setTimeout(() => {
                 if (roundActiveRef.current && correctTargetIdRef.current === target.id) {
                   target.glow.value = withTiming(0, { duration: 300 });
                 }
               }, GLOW_STOP_DELAY);
+              timeoutRefs.current.push(glowTimeout);
             })();
           }
         }
@@ -401,18 +406,21 @@ const MultipleShrinkingTargetsGame: React.FC<{ onBack?: () => void }> = ({ onBac
       } catch {}
 
       if (roundRef.current >= TOTAL_ROUNDS) {
-        setTimeout(() => {
+        const timeout1 = setTimeout(() => {
           endGame();
         }, 1500);
+        timeoutRefs.current.push(timeout1);
       } else {
-        setTimeout(() => {
+        const timeout1 = setTimeout(() => {
           setShowFeedback(false);
           feedbackOpacity.value = 0;
           setRound((r) => r + 1);
-          setTimeout(() => {
+          const timeout2 = setTimeout(() => {
             startRound();
           }, 500);
+          timeoutRefs.current.push(timeout2);
         }, 1500);
+        timeoutRefs.current.push(timeout1);
       }
     } else {
       // Wrong target tapped
@@ -429,6 +437,13 @@ const MultipleShrinkingTargetsGame: React.FC<{ onBack?: () => void }> = ({ onBac
   useEffect(() => {
     startRound();
     return () => {
+      // Clear all timeouts
+      timeoutRefs.current.forEach(timeout => clearTimeout(timeout));
+      timeoutRefs.current = [];
+      // Stop TTS and sounds
+      stopAllSpeech();
+      cleanupSounds();
+      // Stop animations
       animationRefs.current.forEach(ref => ref?.stop());
     };
   }, []);
@@ -440,7 +455,30 @@ const MultipleShrinkingTargetsGame: React.FC<{ onBack?: () => void }> = ({ onBac
     };
   });
 
+  useEffect(() => {
+    if (!done) {
+      try {
+        Speech.speak('Tap the shrinking targets!', { rate: 0.78 });
+      } catch {}
+    }
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
+  }, []);
+
   const handleBack = useCallback(() => {
+    // Clear all timeouts
+    timeoutRefs.current.forEach(timeout => clearTimeout(timeout));
+    timeoutRefs.current = [];
+    // Stop animations
+    animationRefs.current.forEach(ref => ref?.stop());
+    // Stop round activity
+    roundActiveRef.current = false;
+    setRoundActive(false);
+    // Stop TTS and sounds
+    stopAllSpeech();
+    cleanupSounds();
     if (onBack) {
       onBack();
     } else {

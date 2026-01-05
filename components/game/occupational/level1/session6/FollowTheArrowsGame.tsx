@@ -1,4 +1,7 @@
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -21,8 +24,6 @@ import Animated, {
     withSequence,
     withTiming
 } from 'react-native-reanimated';
-import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
@@ -182,6 +183,11 @@ const FollowTheArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     };
 
     setTimeout(showNext, 500);
+    
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
   }, [round, generateSequence, done, upGlow, downGlow, leftGlow, rightGlow]);
 
   // Handle tap
@@ -264,6 +270,8 @@ const FollowTheArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, [roundActive, done, isShaking, showSequence, currentSequenceIndex, sequence, playSuccess, playError, upScale, downScale, leftScale, rightScale, upX, downX, leftX, rightX, endGame]);
 
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 

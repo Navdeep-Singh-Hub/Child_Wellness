@@ -1,4 +1,7 @@
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -19,8 +22,6 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
-import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -227,9 +228,16 @@ const HiddenShapeRevealGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
       Speech.speak('Connect the dots in order to reveal the hidden shape!', { rate: 0.78 });
     } catch {}
     generateDots();
+    
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
   }, [round, generateDots]);
 
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 

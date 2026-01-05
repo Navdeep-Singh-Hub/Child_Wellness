@@ -1,3 +1,4 @@
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -372,7 +373,16 @@ export const TapToAnimateGame: React.FC<Props> = ({
         style={styles.gradient}
       >
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton} hitSlop={10}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              stopAllSpeech();
+              cleanupSounds();
+              onBack();
+            }}
+            style={styles.backButton}
+            hitSlop={10}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>

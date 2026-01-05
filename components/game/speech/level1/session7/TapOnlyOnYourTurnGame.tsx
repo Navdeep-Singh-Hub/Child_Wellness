@@ -1,3 +1,6 @@
+import ResultCard from '@/components/game/ResultCard';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,8 +16,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
@@ -28,7 +29,7 @@ const GO_DURATION_MS = 2500; // How long GO signal shows (increased for better r
 const STOP_DURATION_MS = 3000; // How long STOP signal shows (increased for better waiting practice)
 const TRANSITION_DELAY_MS = 600; // Delay between rounds
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -228,7 +229,7 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
 
     // Auto-advance after duration
     const duration = isGo ? GO_DURATION_MS : STOP_DURATION_MS;
-    roundTimeoutRef.current = setTimeout(() => {
+    roundTimeoutRef.current = (setTimeout(() => {
       if (isGo && canTap && !isProcessing) {
         // GO signal expired without tap - missed opportunity
         setMissedOpportunities(prev => prev + 1);
@@ -266,7 +267,7 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
       });
       
       roundTimeoutRef.current = null;
-    }, duration);
+    }, duration)) as unknown as NodeJS.Timeout;
   }, [rounds, requiredRounds, canTap, isProcessing, advanceToNextRound]);
 
   const handleSignalTap = useCallback(() => {
@@ -416,6 +417,8 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
     }, 4000);
     return () => {
       clearScheduledSpeech();
+      stopAllSpeech();
+      cleanupSounds();
       if (roundTimeoutRef.current) {
         clearTimeout(roundTimeoutRef.current);
         roundTimeoutRef.current = null;
@@ -435,7 +438,12 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
         logTimestamp={logTimestamp}
-        onHome={onBack}
+        onHome={() => {
+          clearScheduledSpeech();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
         onPlayAgain={() => {
           setGameFinished(false);
           setFinalStats(null);
@@ -469,7 +477,13 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
         style={styles.gradient}
       >
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>

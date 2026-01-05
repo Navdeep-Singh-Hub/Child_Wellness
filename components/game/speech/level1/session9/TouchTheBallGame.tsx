@@ -1,3 +1,6 @@
+import ResultCard from '@/components/game/ResultCard';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,8 +16,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
@@ -27,7 +28,7 @@ const DEFAULT_TTS_RATE = 0.75;
 const GLOW_DURATION_MS = 1000;
 const INSTRUCTION_DELAY_MS = 800;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -73,7 +74,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   
   // Game state
-  const [objects, setObjects] = useState<Array<{ id: number; emoji: string; color: string[]; name: string; displayName: string }>>([]);
+  const [objects, setObjects] = useState<{ id: number; emoji: string; color: string[]; name: string; displayName: string }[]>([]);
   const [targetObject, setTargetObject] = useState<string | null>(null);
   const [canTap, setCanTap] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -289,10 +290,10 @@ export const TouchTheBallGame: React.FC<Props> = ({
             ]),
           ]).start();
 
-          glowTimeoutRef.current = setTimeout(() => {
+          glowTimeoutRef.current = (setTimeout(() => {
             setGlowingObjectId(null);
             glowTimeoutRef.current = null;
-          }, GLOW_DURATION_MS);
+          }, GLOW_DURATION_MS)) as unknown as NodeJS.Timeout;
         }
       }, INSTRUCTION_DELAY_MS);
 
@@ -300,7 +301,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
       setCanTap(true);
 
       // Timeout for missed tap
-      tapTimeoutRef.current = setTimeout(() => {
+      tapTimeoutRef.current = (setTimeout(() => {
         if (canTap && !isProcessing) {
           setIncorrectTaps(prev => prev + 1);
           speak('Try again!');
@@ -344,7 +345,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
         }, 400);
         
         tapTimeoutRef.current = null;
-      }, 8000);
+      }, 8000)) as unknown as NodeJS.Timeout;
     }, 1000);
   }, [rounds, requiredRounds, canTap, isProcessing, objectScales, objectOpacities, glowScales, glowOpacities, advanceToNextRound]);
 
@@ -471,9 +472,14 @@ export const TouchTheBallGame: React.FC<Props> = ({
   }, [rounds, requiredRounds, gameFinished, finishGame]);
 
   useEffect(() => {
+    try {
+      speak('Touch the ball when it appears!');
+    } catch {}
     startRound();
     return () => {
       clearScheduledSpeech();
+      stopAllSpeech();
+      cleanupSounds();
       if (glowTimeoutRef.current) {
         clearTimeout(glowTimeoutRef.current);
       }
@@ -491,7 +497,12 @@ export const TouchTheBallGame: React.FC<Props> = ({
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
         logTimestamp={logTimestamp}
-        onHome={onBack}
+        onHome={() => {
+          clearScheduledSpeech();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
         onPlayAgain={() => {
           setGameFinished(false);
           setFinalStats(null);
@@ -527,7 +538,13 @@ export const TouchTheBallGame: React.FC<Props> = ({
         style={styles.gradient}
       >
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>
@@ -607,7 +624,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
                     />
                   )}
                   <LinearGradient
-                    colors={obj.color}
+                    colors={obj.color as any as [string, string, ...string[]]}
                     style={styles.objectGradient}
                   >
                     <Text style={styles.objectEmoji}>{obj.emoji}</Text>

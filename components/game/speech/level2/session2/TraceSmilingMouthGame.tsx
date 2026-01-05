@@ -21,7 +21,7 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
+  useWindowDimensions
 } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -58,7 +58,7 @@ const SMILE_CONFIGS = [
   { depth: 0.55, tolerance: 30, width: 0.6 }, // Round 5: Deepest smile
 ];
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));

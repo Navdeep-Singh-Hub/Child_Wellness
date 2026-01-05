@@ -1,4 +1,7 @@
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,8 +26,6 @@ import Animated, {
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
-import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const TOTAL_ROUNDS = 8;
@@ -344,7 +345,21 @@ const PinchToResizeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     };
   });
 
+  useEffect(() => {
+    if (!done) {
+      try {
+        Speech.speak('Pinch to resize the shape!', { rate: 0.78 });
+      } catch {}
+    }
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
+  }, []);
+
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     if (onBack) {
       onBack();
     } else {

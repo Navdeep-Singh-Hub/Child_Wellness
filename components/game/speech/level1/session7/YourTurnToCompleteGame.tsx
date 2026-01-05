@@ -1,3 +1,6 @@
+import ResultCard from '@/components/game/ResultCard';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -5,16 +8,13 @@ import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
-  Easing,
   Pressable,
   SafeAreaView,
   StyleSheet,
   Text,
   useWindowDimensions,
-  View,
+  View
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
@@ -27,7 +27,7 @@ const HAND_SIZE = 100;
 const DEFAULT_TTS_RATE = 0.75;
 const PIECE_DELAY_MS = 1500;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -74,7 +74,7 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
   const [currentPiece, setCurrentPiece] = useState<number | null>(null);
   const [piecePosition, setPiecePosition] = useState<'left' | 'right' | null>(null);
   const [canTap, setCanTap] = useState(false);
-  const [placedPieces, setPlacedPieces] = useState<Array<{ emoji: string; color: string[]; side: 'left' | 'right' }>>([]);
+  const [placedPieces, setPlacedPieces] = useState<{ emoji: string; color: string[]; side: 'left' | 'right' }[]>([]);
   
   // Animations
   const pieceX = useRef(new Animated.Value(0)).current;
@@ -83,7 +83,7 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
   const pieceOpacity = useRef(new Animated.Value(0)).current;
   const handLeftScale = useRef(new Animated.Value(1)).current;
   const handRightScale = useRef(new Animated.Value(1)).current;
-  const startRoundRef = useRef<() => void>();
+  const startRoundRef = useRef<(() => void) | undefined>(undefined);
 
   const handleSystemTurn = useCallback((pieceIndex: number) => {
     const piece = PUZZLE_PIECES[pieceIndex];
@@ -272,6 +272,8 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
     }, 3000);
     return () => {
       clearScheduledSpeech();
+      stopAllSpeech();
+      cleanupSounds();
     };
   }, [startRound]);
 
@@ -283,7 +285,12 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
         logTimestamp={logTimestamp}
-        onHome={onBack}
+        onHome={() => {
+          clearScheduledSpeech();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
         onPlayAgain={() => {
           setGameFinished(false);
           setFinalStats(null);
@@ -305,7 +312,15 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
         style={styles.gradient}
       >
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              stopAllSpeech();
+              cleanupSounds();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>
@@ -374,7 +389,7 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
                   ]}
                 >
                   <LinearGradient
-                    colors={piece.color}
+                    colors={piece.color as [string, string, ...string[]]}
                     style={styles.pieceGradient}
                   >
                     <Text style={styles.pieceEmoji}>{piece.emoji}</Text>
@@ -398,7 +413,7 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
                 ]}
               >
                 <LinearGradient
-                  colors={p.color}
+                  colors={p.color as [string, string, ...string[]]}
                   style={styles.placedPieceGradient}
                 >
                   <Text style={styles.placedPieceEmoji}>{p.emoji}</Text>

@@ -1,3 +1,6 @@
+import ResultCard from '@/components/game/ResultCard';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,8 +16,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
@@ -26,7 +27,7 @@ const BALL_SIZE = 100;
 const DEFAULT_TTS_RATE = 0.75;
 const TURN_DELAY_MS = 1500;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -64,7 +65,7 @@ export const PassTheBallGame: React.FC<Props> = ({
   // Game state
   const [isYourTurn, setIsYourTurn] = useState(false);
   const [isWaiting, setIsWaiting] = useState(false);
-  const [ballSide, setBallSide] = useState<'system' | 'child'>('system');
+  const [ballSide, setBallSide] = useState<'system' | 'child' | 'moving'>('system');
   const [canTap, setCanTap] = useState(false);
   
   // Animations
@@ -298,6 +299,8 @@ export const PassTheBallGame: React.FC<Props> = ({
     }, 4000);
     return () => {
       clearScheduledSpeech();
+      stopAllSpeech();
+      cleanupSounds();
     };
   }, []);
 
@@ -309,7 +312,12 @@ export const PassTheBallGame: React.FC<Props> = ({
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
         logTimestamp={logTimestamp}
-        onHome={onBack}
+        onHome={() => {
+          clearScheduledSpeech();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
         onPlayAgain={() => {
           setGameFinished(false);
           setFinalStats(null);
@@ -337,13 +345,19 @@ export const PassTheBallGame: React.FC<Props> = ({
         style={styles.gradient}
       >
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>
           <View style={styles.headerText}>
             <Text style={styles.title}>Pass the Ball</Text>
-            <Text style={styles.subtitle}>Take turns! Tap when it's your turn.</Text>
+            <Text style={styles.subtitle}>Take turns! Tap when its your turn.</Text>
           </View>
         </View>
 

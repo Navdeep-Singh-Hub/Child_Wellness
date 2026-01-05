@@ -1,4 +1,7 @@
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -16,8 +19,6 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 // Using drum-like sounds (we'll use available sounds or generate tones)
 const SLOW_DRUM_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
@@ -257,6 +258,8 @@ const TapWithSoundGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   );
 
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 

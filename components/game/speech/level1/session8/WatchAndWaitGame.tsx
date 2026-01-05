@@ -1,20 +1,21 @@
+import ResultCard from '@/components/game/ResultCard';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
+    Animated,
+    Easing,
+    Pressable,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    useWindowDimensions,
+    View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
@@ -29,7 +30,7 @@ const MOVEMENT_DURATION_MS = 5500; // 5.5 seconds to reach target (slightly long
 const WAIT_DURATION_MS = 600; // Brief pause before ring appears
 const RING_DURATION_MS = 3500; // How long ring is available (increased for better response time)
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -325,11 +326,11 @@ export const WatchAndWaitGame: React.FC<Props> = ({
 
       // Update progress percentage
       const startTime = Date.now();
-      progressIntervalRef.current = setInterval(() => {
+      progressIntervalRef.current = (setInterval(() => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / MOVEMENT_DURATION_MS, 1);
         setMovementProgress(progress);
-      }, 100);
+      }, 100)) as unknown as NodeJS.Timeout;
       
       Animated.parallel([
         Animated.timing(objectX, {
@@ -347,7 +348,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
       ]).start();
 
       // After movement completes, show ring
-      movementTimeoutRef.current = setTimeout(() => {
+      movementTimeoutRef.current = (setTimeout(() => {
         // Stop rotation
         if (rotationAnimationRef.current) {
           rotationAnimationRef.current.stop();
@@ -430,7 +431,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
         speak('Tap now!');
 
         // Ring expires after duration - use ref to avoid stale closure
-        ringTimeoutRef.current = setTimeout(() => {
+        ringTimeoutRef.current = (setTimeout(() => {
           // Check current state, not closure state
           setCanTap(currentCanTap => {
             setIsProcessing(currentIsProcessing => {
@@ -479,10 +480,10 @@ export const WatchAndWaitGame: React.FC<Props> = ({
           });
           
           ringTimeoutRef.current = null;
-        }, RING_DURATION_MS);
+        }, RING_DURATION_MS)) as unknown as NodeJS.Timeout;
         
         movementTimeoutRef.current = null;
-      }, MOVEMENT_DURATION_MS + WAIT_DURATION_MS);
+      }, MOVEMENT_DURATION_MS + WAIT_DURATION_MS)) as unknown as NodeJS.Timeout;
     }, 600);
   }, [rounds, requiredRounds, SCREEN_WIDTH, SCREEN_HEIGHT, advanceToNextRound]);
 
@@ -658,9 +659,14 @@ export const WatchAndWaitGame: React.FC<Props> = ({
   }, [rounds, requiredRounds, gameFinished, finishGame]);
 
   useEffect(() => {
+    try {
+      speak('Watch and wait for the ring, then tap!');
+    } catch {}
     startRound();
     return () => {
       clearScheduledSpeech();
+      stopAllSpeech();
+      cleanupSounds();
       if (movementTimeoutRef.current) {
         clearTimeout(movementTimeoutRef.current);
       }
@@ -687,7 +693,12 @@ export const WatchAndWaitGame: React.FC<Props> = ({
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
         logTimestamp={logTimestamp}
-        onHome={onBack}
+        onHome={() => {
+          clearScheduledSpeech();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
         onPlayAgain={() => {
           setGameFinished(false);
           setFinalStats(null);
@@ -718,7 +729,13 @@ export const WatchAndWaitGame: React.FC<Props> = ({
         style={styles.gradient}
       >
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>
@@ -847,7 +864,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
                 ]}
               >
                 <LinearGradient
-                  colors={object.color}
+                  colors={object.color as [string, string, ...string[]]}
                   style={styles.objectGradient}
                 >
                   <Text style={styles.objectEmoji}>{object.emoji}</Text>

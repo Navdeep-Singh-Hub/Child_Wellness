@@ -1,8 +1,11 @@
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -17,7 +20,6 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const MISS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
@@ -115,6 +117,12 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     startRound();
     return () => {
       currentAnimRef.current?.stop();
+      // Cleanup: Stop speech when component unmounts
+      try {
+        Speech.stop();
+      } catch (e) {
+        // Ignore errors
+      }
     };
   }, [startRound]);
 
@@ -225,6 +233,8 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   };
 
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 

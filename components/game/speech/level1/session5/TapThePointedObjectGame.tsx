@@ -1,3 +1,7 @@
+import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,9 +19,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
-import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
@@ -29,7 +30,7 @@ const AVATAR_SIZE = 140;
 const OBJECT_SIZE = 100;
 const DEFAULT_TTS_RATE = 0.75;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -342,7 +343,8 @@ export const TapThePointedObjectGame: React.FC<Props> = ({
         <TouchableOpacity
           onPress={() => {
             clearScheduledSpeech();
-            Speech.stop();
+            stopAllSpeech();
+            cleanupSounds();
             onBack();
           }}
           style={styles.backButton}
@@ -375,7 +377,8 @@ export const TapThePointedObjectGame: React.FC<Props> = ({
               }}
               onHome={() => {
                 clearScheduledSpeech();
-                Speech.stop();
+                stopAllSpeech();
+                cleanupSounds();
                 onBack();
               }}
             />

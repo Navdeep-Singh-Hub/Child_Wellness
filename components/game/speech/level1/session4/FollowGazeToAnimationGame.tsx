@@ -1,23 +1,24 @@
+import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    useWindowDimensions,
-    View,
+  Animated,
+  Easing,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
-import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
@@ -29,7 +30,7 @@ const AVATAR_SIZE = 120;
 const BALLOON_SIZE = 100;
 const DEFAULT_TTS_RATE = 0.75;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -105,7 +106,7 @@ export const FollowGazeToAnimationGame: React.FC<Props> = ({
     try {
       const xpAwarded = hits * 10;
       const result = await logGameAndAward({
-        type: 'follow-gaze-animation',
+        type: 'follow-my-point',
         correct: hits,
         total: requiredTaps || 5,
         accuracy: stats.accuracy,
@@ -296,7 +297,8 @@ export const FollowGazeToAnimationGame: React.FC<Props> = ({
               }}
               onHome={() => {
                 clearScheduledSpeech();
-                Speech.stop();
+                stopAllSpeech();
+                cleanupSounds();
                 onBack();
               }}
             />

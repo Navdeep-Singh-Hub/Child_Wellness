@@ -1,4 +1,7 @@
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -19,8 +22,6 @@ import Animated, {
     useSharedValue,
 } from 'react-native-reanimated';
 import Svg, { Circle, Line } from 'react-native-svg';
-import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const WARNING_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
@@ -179,6 +180,11 @@ const FaceSymmetryDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
     try {
       Speech.speak('Tap to place left eye, right will mirror', { rate: 0.78 });
     } catch {}
+    
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
   }, [round]);
 
   useEffect(() => {
@@ -187,9 +193,22 @@ const FaceSymmetryDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
         Speech.speak('Tap to place mouth, centered', { rate: 0.78 });
       } catch {}
     }
+    
+    return () => {
+      stopAllSpeech();
+    };
   }, [targetFeature]);
 
+  useEffect(() => {
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
+  }, []);
+
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 

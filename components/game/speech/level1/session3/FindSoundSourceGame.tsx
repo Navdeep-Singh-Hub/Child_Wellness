@@ -1,4 +1,13 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Speech from 'expo-speech';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -11,15 +20,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import * as Speech from 'expo-speech';
-import { LinearGradient } from 'expo-linear-gradient';
-import ResultCard from '@/components/game/ResultCard';
-import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
-import { logGameAndAward } from '@/utils/api';
-import { playSound } from '@/utils/soundPlayer';
-import { SparkleBurst } from '@/components/game/FX';
 
 type Props = {
   onBack: () => void;
@@ -30,7 +30,7 @@ type Props = {
 const ITEM_SIZE = 140;
 const DEFAULT_TTS_RATE = 0.75;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -50,7 +50,7 @@ function speak(text: string, rate = DEFAULT_TTS_RATE) {
 }
 
 const SOUND_SOURCES = [
-  { emoji: '🐶', name: 'dog', sound: 'bark', color: ['#F59E0B', '#D97706'], soundKey: 'dog-bark' as const },
+  { emoji: '🐶', name: 'dog', sound: 'bark', color: ['#F59E0B', '#D97706'], soundKey: 'bark' as const },
   { emoji: '🚗', name: 'car', sound: 'beep', color: ['#3B82F6', '#2563EB'], soundKey: 'car-beep' as const },
   { emoji: '💧', name: 'water', sound: 'splash', color: ['#06B6D4', '#0891B2'], soundKey: 'water-splash' as const },
   { emoji: '🔔', name: 'bell', sound: 'ding', color: ['#FBBF24', '#F59E0B'], soundKey: 'bell' as const },
@@ -119,7 +119,7 @@ export const FindSoundSourceGame: React.FC<Props> = ({
     try {
       const xpAwarded = correct * 10;
       const result = await logGameAndAward({
-        type: 'find-sound-source',
+        type: 'find-the-sound-source',
         correct: correct,
         total: requiredTrials,
         accuracy: stats.accuracy,
@@ -523,7 +523,8 @@ export const FindSoundSourceGame: React.FC<Props> = ({
           <Pressable
             onPress={() => {
               clearScheduledSpeech();
-              Speech.stop();
+              stopAllSpeech();
+              cleanupSounds();
               onBack();
             }}
             style={styles.backButton}
@@ -603,7 +604,7 @@ export const FindSoundSourceGame: React.FC<Props> = ({
                       ]}
                     >
                       <LinearGradient
-                        colors={source.color}
+                        colors={source.color as [string, string, ...string[]]}
                         style={styles.itemGradient}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}

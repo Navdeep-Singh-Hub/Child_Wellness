@@ -1,3 +1,5 @@
+import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import type { MouthLandmarks } from '@/hooks/useJawDetectionWeb';
 import { logGameAndAward } from '@/utils/api';
@@ -17,8 +19,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 
 // Conditional import for VisionCamera
 let Camera: any = null;
@@ -51,7 +51,7 @@ const getResponsiveSize = (baseSize: number, isTablet: boolean, isMobile: boolea
   return baseSize;
 };
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -244,7 +244,7 @@ export const JawRhythmTapGame: React.FC<Props> = ({
   
   // Refs
   const gameStartedRef = useRef(false);
-  const beatTimersRef = useRef<Array<NodeJS.Timeout>>([]);
+  const beatTimersRef = useRef<NodeJS.Timeout[]>([]);
   const patternTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const rhythmAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const previewRef = useRef<View>(null);
@@ -1102,7 +1102,13 @@ export const JawRhythmTapGame: React.FC<Props> = ({
 
         {/* Header Overlay */}
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>

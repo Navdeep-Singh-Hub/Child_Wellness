@@ -1,3 +1,6 @@
+import ResultCard from '@/components/game/ResultCard';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,9 +16,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
-import ResultCard from '@/components/game/ResultCard';
-import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
@@ -27,7 +27,7 @@ const TIMER_DURATION_MS = 3000; // 3 seconds
 const TAP_WINDOW_MS = 1000; // 1 second window after timer fills
 const DEFAULT_TTS_RATE = 0.75;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -107,7 +107,7 @@ export const TurnTimerGame: React.FC<Props> = ({
 
     // Update progress
     const startTime = Date.now();
-    timerRef.current = setInterval(() => {
+    timerRef.current = (setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / TIMER_DURATION_MS, 1);
       setTimerProgress(progress);
@@ -138,7 +138,7 @@ export const TurnTimerGame: React.FC<Props> = ({
         speak('Tap now!');
 
         // Close tap window after delay
-        tapWindowRef.current = setTimeout(() => {
+        tapWindowRef.current = (setTimeout(() => {
           setCanTap(false);
           setLateTaps(prev => prev + 1);
           Animated.parallel([
@@ -162,9 +162,9 @@ export const TurnTimerGame: React.FC<Props> = ({
               startRound();
             }, 1000);
           }, 1000);
-        }, TAP_WINDOW_MS);
+        }, TAP_WINDOW_MS)) as unknown as NodeJS.Timeout;
       }
-    }, 50);
+    }, 50)) as unknown as NodeJS.Timeout;
   }, [rounds, requiredRounds, SCREEN_WIDTH]);
 
   const handleTap = useCallback(() => {
@@ -309,6 +309,8 @@ export const TurnTimerGame: React.FC<Props> = ({
     }, 4000);
     return () => {
       clearScheduledSpeech();
+      stopAllSpeech();
+      cleanupSounds();
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
@@ -326,7 +328,12 @@ export const TurnTimerGame: React.FC<Props> = ({
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
         logTimestamp={logTimestamp}
-        onHome={onBack}
+        onHome={() => {
+          clearScheduledSpeech();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
         onPlayAgain={() => {
           setGameFinished(false);
           setFinalStats(null);
@@ -355,7 +362,13 @@ export const TurnTimerGame: React.FC<Props> = ({
         style={styles.gradient}
       >
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>
