@@ -103,6 +103,7 @@ export default function ResultCard({
   total,
   onPlayAgain,
   onHome,
+  onContinue,
   xpAwarded,
   accuracy,
   logTimestamp,
@@ -111,6 +112,7 @@ export default function ResultCard({
   total: number;
   onPlayAgain?: () => void;
   onHome?: () => void;
+  onContinue?: () => void;
   xpAwarded?: number;
   accuracy?: number;
   logTimestamp?: string | null;
@@ -222,6 +224,22 @@ export default function ResultCard({
       )}
 
       <View style={{ alignItems: 'center', gap: 8, marginTop: 8, width: '100%' }}>
+        {onContinue && (
+          <TouchableOpacity
+            onPress={onContinue}
+            activeOpacity={0.9}
+            style={{
+              backgroundColor: '#22C55E',
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderRadius: 999,
+              alignSelf: 'stretch',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Continue</Text>
+          </TouchableOpacity>
+        )}
         {onPlayAgain && (
           <TouchableOpacity
             onPress={onPlayAgain}

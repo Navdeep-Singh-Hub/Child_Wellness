@@ -1,5 +1,5 @@
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
@@ -131,11 +131,10 @@ export const FindSoundSourceGame: React.FC<Props> = ({
         },
       });
       setLogTimestamp(result?.last?.at ?? null);
-      onComplete?.();
     } catch (e) {
       console.error('Failed to save game:', e);
     }
-  }, [correct, requiredTrials, gameFinished, onComplete]);
+  }, [correct, requiredTrials, gameFinished]);
 
   const startTrial = useCallback(() => {
     setPhase('sound');
@@ -466,50 +465,26 @@ export const FindSoundSourceGame: React.FC<Props> = ({
   if (gameFinished && finalStats) {
     const accuracyPct = finalStats.accuracy;
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity
-          onPress={() => {
-            clearScheduledSpeech();
-            Speech.stop();
-            onBack();
-          }}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={22} color="#0F172A" />
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-
-        <ScrollView contentContainerStyle={styles.completionScroll}>
-          <LinearGradient
-            colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <View style={styles.completionContent}>
-            <ResultCard
-              correct={finalStats.correctTrials}
-              total={finalStats.totalTrials}
-              xpAwarded={finalStats.correctTrials * 10}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setTrials(0);
-                setCorrect(0);
-                setGameFinished(false);
-                setFinalStats(null);
-                setPhase('sound');
-                setCanTap(false);
-                startTrial();
-                speak('Listen to the sound! Find what made the sound!');
-              }}
-              onHome={() => {
-                clearScheduledSpeech();
-                Speech.stop();
-                onBack();
-              }}
-            />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Great Listening!"
+        showButtons={true}
+        correct={finalStats.correctTrials}
+        total={finalStats.totalTrials}
+        accuracy={accuracyPct}
+        xpAwarded={finalStats.correctTrials * 10}
+        onContinue={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          onComplete?.();
+        }}
+        onHome={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
+      />
     );
   }
 

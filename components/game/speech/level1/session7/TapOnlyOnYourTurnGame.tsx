@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -74,6 +75,7 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
   const [correctTaps, setCorrectTaps] = useState(0);
   const [missedOpportunities, setMissedOpportunities] = useState(0);
   const [correctWaits, setCorrectWaits] = useState(0); // Track correct waits on STOP
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations
   const signalScale = useRef(new Animated.Value(0)).current;
@@ -98,6 +100,7 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + incorrectTaps + missedOpportunities;
@@ -250,7 +253,11 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
             useNativeDriver: true,
           }),
         ]).start();
-        speak('Good waiting!');
+        // Show success animation for correct wait
+        setShowRoundSuccess(true);
+        setTimeout(() => {
+          setShowRoundSuccess(false);
+        }, 2500);
       }
 
       // Hide signal
@@ -325,7 +332,11 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
         ]),
       ]).start();
 
-      speak('Great!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+      }, 2500);
 
       // Hide signal and advance
       Animated.timing(signalOpacity, {
@@ -438,6 +449,7 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
         logTimestamp={logTimestamp}
+        onContinue={onComplete}
         onHome={() => {
           clearScheduledSpeech();
           stopAllSpeech();
@@ -562,6 +574,12 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -85,6 +86,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
   const [correctTaps, setCorrectTaps] = useState(0);
   const [earlyTaps, setEarlyTaps] = useState(0);
   const [missedTaps, setMissedTaps] = useState(0);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations
   const objectX = useRef(new Animated.Value(0)).current;
@@ -134,6 +136,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + earlyTaps + missedTaps;
@@ -573,7 +576,11 @@ export const WatchAndWaitGame: React.FC<Props> = ({
         ]).start();
       }, 1500);
 
-      speak('Perfect!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+      }, 2500);
 
       // Hide and advance
       Animated.parallel([
@@ -930,6 +937,12 @@ export const WatchAndWaitGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

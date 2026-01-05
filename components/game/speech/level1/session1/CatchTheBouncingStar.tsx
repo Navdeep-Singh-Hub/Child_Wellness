@@ -302,15 +302,22 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
     });
   }, [showCongratulations, gameFinished, finalStats, hits, requiredTaps]);
 
-  // Show congratulations screen first
-  if (showCongratulations && gameFinished && finalStats) {
-    console.log('🎮 CatchTheBouncingStar: Rendering CongratulationsScreen');
+  // Show completion screen with stats (single screen, no ResultCard)
+  if (gameFinished && finalStats) {
+    const accuracyPct = finalStats.accuracy;
+    console.log('🎮 CatchTheBouncingStar: Rendering Completion Screen with stats');
     return (
       <CongratulationsScreen
         message="Amazing Work!"
         showButtons={true}
+        correct={finalStats.successfulTaps}
+        total={finalStats.totalTaps}
+        accuracy={accuracyPct}
+        xpAwarded={finalStats.successfulTaps * 10}
         onContinue={() => {
-          setShowCongratulations(false);
+          clearScheduledSpeech();
+          Speech.stop();
+          onComplete?.();
         }}
         onHome={() => {
           clearScheduledSpeech();
@@ -321,8 +328,8 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
     );
   }
 
-  // Then show result card
-  if (gameFinished && finalStats && !showCongratulations) {
+  // Legacy result card (should not be reached, but kept for safety)
+  if (false && gameFinished && finalStats && !showCongratulations) {
     const accuracyPct = finalStats.accuracy;
     return (
       <SafeAreaView style={styles.container}>
@@ -353,6 +360,7 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
             xpAwarded={finalStats.successfulTaps * 10}
             accuracy={accuracyPct}
             logTimestamp={logTimestamp}
+            onContinue={onComplete}
             onPlayAgain={() => {
               setHits(0);
               setRound(0);

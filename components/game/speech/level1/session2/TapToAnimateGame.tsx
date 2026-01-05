@@ -15,6 +15,7 @@ import {
     View,
 } from 'react-native';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 
 type Props = {
   onBack: () => void;
@@ -97,6 +98,7 @@ export const TapToAnimateGame: React.FC<Props> = ({
   const [showSuccess, setShowSuccess] = useState(false);
   const [roundComplete, setRoundComplete] = useState(false);
   const [showRoundSuccess, setShowRoundSuccess] = useState(false);
+  const [gameFinished, setGameFinished] = useState(false);
 
   const animalScale = useRef(new Animated.Value(1)).current;
   const animalY = useRef(new Animated.Value(0)).current;
@@ -356,15 +358,42 @@ export const TapToAnimateGame: React.FC<Props> = ({
         }, 2500);
       } else {
         // All rounds complete
-        setTimeout(() => {
-          onComplete?.();
-          setTimeout(() => onBack(), 2500);
-        }, 2500);
+        setGameFinished(true);
+        setShowRoundSuccess(false);
       }
     }, 2500);
   };
 
   const progressDots = Array.from({ length: TOTAL_ROUNDS }, (_, i) => i < currentRound || (i === currentRound && roundComplete));
+
+  // Show completion screen with stats when game finishes
+  if (gameFinished) {
+    const completedRounds = TOTAL_ROUNDS;
+    const accuracyPct = 100; // All rounds completed
+    const xpAwarded = completedRounds * 10;
+    return (
+      <CongratulationsScreen
+        message="Amazing Animations!"
+        showButtons={true}
+        correct={completedRounds}
+        total={TOTAL_ROUNDS}
+        accuracy={accuracyPct}
+        xpAwarded={xpAwarded}
+        onContinue={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          onComplete?.();
+        }}
+        onHome={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
