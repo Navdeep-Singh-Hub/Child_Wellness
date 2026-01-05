@@ -1,21 +1,21 @@
+import ResultCard from '@/components/game/ResultCard';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
+    Animated,
+    Easing,
+    Pressable,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    useWindowDimensions,
+    View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import { logGameAndAward } from '@/utils/api';
-import { playSound } from '@/utils/soundPlayer';
 
 type Props = {
   onBack: () => void;
@@ -28,7 +28,7 @@ const DEFAULT_TTS_RATE = 0.75;
 const SOUND_DELAY_MS = 1000;
 const INSTRUCTION_DELAY_MS = 2000;
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -302,7 +302,7 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
         setCanTap(true);
 
         // Timeout for missed tap
-        tapTimeoutRef.current = setTimeout(() => {
+        tapTimeoutRef.current = (setTimeout(() => {
           if (canTap && !isProcessing) {
             setIncorrectTaps(prev => prev + 1);
             speak('Try again!');
@@ -336,7 +336,7 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
           }, 400);
           
           tapTimeoutRef.current = null;
-        }, 8000);
+        }, 8000)) as unknown as NodeJS.Timeout;
       }, INSTRUCTION_DELAY_MS);
     }, SOUND_DELAY_MS);
   }, [rounds, requiredRounds, canTap, isProcessing, advanceToNextRound]);
@@ -461,9 +461,14 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
   }, [rounds, requiredRounds, gameFinished, finishGame]);
 
   useEffect(() => {
+    try {
+      speak('Listen and find where the sound is coming from!');
+    } catch {}
     startRound();
     return () => {
       clearScheduledSpeech();
+      stopAllSpeech();
+      cleanupSounds();
       if (tapTimeoutRef.current) {
         clearTimeout(tapTimeoutRef.current);
       }
@@ -478,7 +483,12 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
         logTimestamp={logTimestamp}
-        onHome={onBack}
+        onHome={() => {
+          clearScheduledSpeech();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
         onPlayAgain={() => {
           setGameFinished(false);
           setFinalStats(null);
@@ -501,7 +511,13 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
         style={styles.gradient}
       >
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>
@@ -574,7 +590,7 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
               ]}
             >
               <LinearGradient
-                colors={currentPair.left.color}
+                colors={currentPair.left.color as [string, string, ...string[]]}
                 style={styles.objectGradient}
               >
                 <Text style={styles.objectEmoji}>{currentPair.left.emoji}</Text>
@@ -604,7 +620,7 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
               ]}
             >
               <LinearGradient
-                colors={currentPair.right.color}
+                colors={currentPair.right.color as [string, string, ...string[]]}
                 style={styles.objectGradient}
               >
                 <Text style={styles.objectEmoji}>{currentPair.right.emoji}</Text>

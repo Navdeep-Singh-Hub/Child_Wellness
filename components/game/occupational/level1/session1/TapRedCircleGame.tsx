@@ -1,11 +1,13 @@
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Easing, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import ResultCard from '@/components/game/ResultCard';
 
 type ShapePosition = "left" | "right";
 
@@ -228,8 +230,18 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const rightShape = redPosition === "right" ? renderShape("red") : renderShape("blue");
 
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
+
+  // Cleanup: Stop all sounds and speech when component unmounts
+  useEffect(() => {
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
+  }, []);
 
   // Game finished screen
   if (done && finalStats) {

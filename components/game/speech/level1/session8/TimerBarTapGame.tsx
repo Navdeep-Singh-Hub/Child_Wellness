@@ -1,20 +1,21 @@
+import ResultCard from '@/components/game/ResultCard';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
+    Animated,
+    Easing,
+    Pressable,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    useWindowDimensions,
+    View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
@@ -29,7 +30,7 @@ const DEFAULT_TTS_RATE = 0.75;
 const FILL_DURATION_MS = 6000; // 6 seconds to fill (randomized between 5-7)
 const TAP_DURATION_MS = 3000; // How long button is tappable after fill
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -232,14 +233,14 @@ export const TimerBarTapGame: React.FC<Props> = ({
 
     // Update progress
     const startTime = Date.now();
-    progressIntervalRef.current = setInterval(() => {
+    progressIntervalRef.current = (setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
       setFillProgress(progress);
-    }, 50);
+    }, 50)) as unknown as NodeJS.Timeout;
 
     // After fill completes, button becomes tappable
-    fillTimeoutRef.current = setTimeout(() => {
+    fillTimeoutRef.current = (setTimeout(() => {
       if (progressIntervalRef.current) {
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
@@ -271,7 +272,7 @@ export const TimerBarTapGame: React.FC<Props> = ({
       speak('Tap now!');
 
       // Button expires after duration
-      tapTimeoutRef.current = setTimeout(() => {
+      tapTimeoutRef.current = (setTimeout(() => {
         if (canTap && !isProcessing) {
           setMissedTaps(prev => prev + 1);
           speak('Time\'s up!');
@@ -298,10 +299,10 @@ export const TimerBarTapGame: React.FC<Props> = ({
         });
         
         tapTimeoutRef.current = null;
-      }, TAP_DURATION_MS);
+      }, TAP_DURATION_MS)) as unknown as NodeJS.Timeout;
       
       fillTimeoutRef.current = null;
-    }, duration);
+    }, duration)) as unknown as NodeJS.Timeout;
   }, [rounds, requiredRounds, canTap, isProcessing, advanceToNextRound]);
 
   const handleButtonTap = useCallback(() => {
@@ -461,9 +462,14 @@ export const TimerBarTapGame: React.FC<Props> = ({
   }, [rounds, requiredRounds, gameFinished, finishGame]);
 
   useEffect(() => {
+    try {
+      speak('Wait for the timer bar to fill, then tap!');
+    } catch {}
     startRound();
     return () => {
       clearScheduledSpeech();
+      stopAllSpeech();
+      cleanupSounds();
       if (fillTimeoutRef.current) {
         clearTimeout(fillTimeoutRef.current);
       }
@@ -487,7 +493,12 @@ export const TimerBarTapGame: React.FC<Props> = ({
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
         logTimestamp={logTimestamp}
-        onHome={onBack}
+        onHome={() => {
+          clearScheduledSpeech();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
         onPlayAgain={() => {
           setGameFinished(false);
           setFinalStats(null);
@@ -512,7 +523,13 @@ export const TimerBarTapGame: React.FC<Props> = ({
         style={styles.gradient}
       >
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>
@@ -574,7 +591,7 @@ export const TimerBarTapGame: React.FC<Props> = ({
               ]}
             >
               <LinearGradient
-                colors={button.color}
+                colors={button.color as [string, string, ...string[]]}
                 style={styles.buttonGradient}
               >
                 <Text style={styles.buttonEmoji}>{button.emoji}</Text>

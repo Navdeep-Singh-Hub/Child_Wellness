@@ -12,7 +12,9 @@ import { Message } from './models/Message.js';
 import { Session } from './models/Session.js';
 import { User } from './models/User.js';
 import gameRoutes from './routes/gameRoutes.js';
+import razorpayWebhookRouter from './routes/razorpayWebhook.js';
 import { smartExplorerRouter } from './routes/smartExplorer.js';
+import subscriptionRouter from './routes/subscription.js';
 import { tapGame } from './routes/tapGame.js';
 import { therapyProgressRouter } from './routes/therapyProgress.js';
 
@@ -119,7 +121,10 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   res.json({ ok: true, url, path: rel });
 });
 
-// JSON middleware - MUST be after multer routes
+// Raw body parser for Razorpay webhooks (must be before express.json)
+app.use('/api/webhooks/razorpay', express.raw({ type: 'application/json' }));
+
+// JSON middleware - MUST be after multer routes and webhook routes
 app.use(express.json());
 
 
@@ -184,6 +189,12 @@ app.use('/api/tap', requireAuth, tapGame);
 app.use('/api/smart-explorer', requireAuth, smartExplorerRouter);
 app.use('/api/therapy', requireAuth, therapyProgressRouter);
 app.use('/api/games', requireAuth, gameRoutes);
+
+// Subscription and payment routes (require auth)
+app.use('/api/subscription', requireAuth, subscriptionRouter);
+
+// Razorpay webhook (NO auth required - uses signature verification)
+app.use('/api/webhooks', razorpayWebhookRouter);
 
 const SKILL_ALPHA = 0.3;
 const SKILL_LEVELS = [

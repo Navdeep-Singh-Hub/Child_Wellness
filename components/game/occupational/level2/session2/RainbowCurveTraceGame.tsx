@@ -1,3 +1,5 @@
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { useHandDetectionWeb } from '@/hooks/useHandDetectionWeb';
 import { logGameAndAward } from '@/utils/api';
 import { generateArcPath, getPathProgress, isPointOnPath, Point } from '@/utils/pathUtils';
@@ -18,8 +20,6 @@ import {
     View,
 } from 'react-native';
 import Svg, { Circle, Defs, Line, Path, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
-import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 type Props = {
   onBack: () => void;
@@ -527,7 +527,13 @@ export const RainbowCurveTraceGame: React.FC<Props> = ({
       >
         {/* Header */}
         <View style={[styles.header, isMobile && styles.headerMobile]}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>

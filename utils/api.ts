@@ -6,9 +6,25 @@ const FALLBACK_BASE = Platform.select({
   default: 'http://localhost:4000', // Default to localhost for web
 });
 
+// Detect if we're running on localhost (for web)
+const isLocalhost = Platform.OS === 'web' && 
+  (typeof window !== 'undefined' && 
+   (window.location.hostname === 'localhost' || 
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname === ''));
+
 // Normalize API_BASE_URL: remove trailing slash and /api if present
 // (since all endpoints already include /api/)
-let rawBase = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || FALLBACK_BASE!;
+// If running on localhost, force localhost URL regardless of env var
+let rawBase: string;
+if (isLocalhost) {
+  // Force localhost when running locally
+  rawBase = 'http://localhost:4000';
+  console.log('[API] Localhost detected, forcing localhost:4000');
+} else {
+  rawBase = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || FALLBACK_BASE!;
+}
+
 // Remove trailing slash
 rawBase = rawBase.replace(/\/+$/, '');
 // Remove trailing /api if present (to avoid double /api/api/)
@@ -17,9 +33,11 @@ rawBase = rawBase.replace(/\/api$/, '');
 export const API_BASE_URL = rawBase;
 
 // Debug log to verify API URL
-console.log('API_BASE_URL =', process.env.EXPO_PUBLIC_API_BASE_URL || FALLBACK_BASE);
-console.log('Platform.OS =', Platform.OS);
-console.log('FALLBACK_BASE =', FALLBACK_BASE);
+console.log('[API] API_BASE_URL =', API_BASE_URL);
+console.log('[API] Platform.OS =', Platform.OS);
+console.log('[API] isLocalhost =', isLocalhost);
+console.log('[API] EXPO_PUBLIC_API_BASE_URL =', process.env.EXPO_PUBLIC_API_BASE_URL);
+console.log('[API] FALLBACK_BASE =', FALLBACK_BASE);
 
 // For physical devices, set EXPO_PUBLIC_API_BASE_URL to your laptop's IP address:
 // EXPO_PUBLIC_API_BASE_URL=http://192.168.x.x:4000
@@ -61,6 +79,9 @@ export async function authHeaders(opts?: { multipart?: boolean }) {
   // Add Auth0 user info to headers for backend
   if (auth0UserInfo?.auth0Id) {
     headers['x-auth0-id'] = auth0UserInfo.auth0Id;
+  } else if (isLocalhost) {
+    // For localhost development, set fallback auth0Id if not available
+    headers['x-auth0-id'] = 'dev_local_tester';
   }
   if (auth0UserInfo?.email) {
     headers['x-auth0-email'] = auth0UserInfo.email;
@@ -493,11 +514,15 @@ export type SmartSceneDetail = {
 };
 
 async function apiGet(path: string) {
+  const headers = await authHeaders();
+  
+  // Ensure x-auth0-id header is set (fallback for localhost)
+  if (!headers['x-auth0-id'] && !auth0UserInfo?.auth0Id) {
+    headers['x-auth0-id'] = 'dev_local_tester'; // fallback for dev/testing
+  }
+  
   const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      ...(await authHeaders()),
-      'x-auth0-id': 'dev_local_tester', // fallback for dev/testing
-    },
+    headers,
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
@@ -508,6 +533,12 @@ async function apiGet(path: string) {
 
 async function apiPost(path: string, body?: any) {
   const headers = await authHeaders();
+  
+  // Ensure x-auth0-id header is set (fallback for localhost)
+  if (!headers['x-auth0-id'] && !auth0UserInfo?.auth0Id) {
+    headers['x-auth0-id'] = 'dev_local_tester'; // fallback for dev/testing
+  }
+  
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
     headers,
@@ -551,6 +582,59 @@ export async function submitSmartExplorerPrompt(
 
 export async function completeSmartExplorerSession(sessionId: string) {
   return apiPost(`/api/smart-explorer/sessions/${sessionId}/complete`);
+}
+
+// ========== Subscription & Payment APIs ==========
+
+export type SubscriptionStatus = {
+  ok: boolean;
+  hasAccess: boolean;
+  status: 'none' | 'trial' | 'active' | 'expired' | 'cancelled' | 'past_due';
+  isTrial: boolean;
+  isActive: boolean;
+  trialEndDate: string | null;
+  subscriptionEndDate: string | null;
+  nextBillingDate: string | null;
+  razorpaySubscriptionId: string | null;
+};
+
+/**
+ * Get current subscription status
+ */
+export async function getSubscriptionStatus(): Promise<SubscriptionStatus> {
+  return apiGet('/api/subscription/status');
+}
+
+/**
+ * Create Razorpay subscription
+ */
+export async function createSubscription(): Promise<{
+  ok: boolean;
+  subscriptionId: string;
+  planId: string;
+  customerId: string;
+  amount: number;
+  currency: string;
+}> {
+  return apiPost('/api/subscription/create-subscription');
+}
+
+/**
+ * Verify payment after Razorpay checkout
+ */
+export async function verifyPayment(paymentData: {
+  razorpay_payment_id: string;
+  razorpay_subscription_id: string;
+  razorpay_signature: string;
+}): Promise<{ ok: boolean; message: string; subscriptionStatus: string }> {
+  return apiPost('/api/subscription/verify-payment', paymentData);
+}
+
+/**
+ * Cancel subscription
+ */
+export async function cancelSubscription(reason?: string): Promise<{ ok: boolean; message: string }> {
+  return apiPost('/api/subscription/cancel', { reason });
 }
 
 

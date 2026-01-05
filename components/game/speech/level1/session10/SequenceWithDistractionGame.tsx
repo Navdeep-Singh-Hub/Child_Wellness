@@ -1,20 +1,21 @@
+import ResultCard from '@/components/game/ResultCard';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
+    Animated,
+    Easing,
+    Pressable,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    useWindowDimensions,
+    View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
@@ -30,7 +31,7 @@ const DISTRACTION_DURATION_MS = 2000;
 const TAP_TIMEOUT_MS = 12000;
 const DISTRACTION_INTERVAL_MS = 2500; // Show distraction every 2.5 seconds during tapping
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -126,8 +127,20 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
   const particleOpacity = useRef(new Animated.Value(0)).current;
   const progressBarWidth = useRef(new Animated.Value(0)).current;
   
+  // Track warningOpacity value to avoid _value access
+  const warningOpacityCurrentRef = useRef(0);
+  
+  useEffect(() => {
+    const listener = warningOpacity.addListener(({ value }) => {
+      warningOpacityCurrentRef.current = value;
+    });
+    return () => {
+      warningOpacity.removeListener(listener);
+    };
+  }, [warningOpacity]);
+  
   // Timeouts
-  const appearanceTimeoutsRef = useRef<Array<NodeJS.Timeout>>([]);
+  const appearanceTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const distractionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const distractionIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -208,7 +221,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
     // Avoid positions where shapes are
     const shapePositions = sequence.map(s => ({ x: s.x, y: s.y }));
     let attempts = 0;
-    let x, y;
+    let x: number, y: number;
     
     do {
       x = SCREEN_WIDTH * (0.1 + Math.random() * 0.8) - DISTRACTION_SIZE / 2;
@@ -272,7 +285,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
     distractionAnimationRef.current.start();
 
     // Hide after duration
-    distractionTimeoutRef.current = setTimeout(() => {
+    distractionTimeoutRef.current = (setTimeout(() => {
       if (distractionAnimationRef.current) {
         distractionAnimationRef.current.stop();
         distractionAnimationRef.current = null;
@@ -293,7 +306,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
         distractionBounce.setValue(1);
       });
       distractionTimeoutRef.current = null;
-    }, DISTRACTION_DURATION_MS);
+    }, DISTRACTION_DURATION_MS)) as unknown as NodeJS.Timeout;
   }, [canTap, getDistractionPosition]);
 
   const startDistractionInterval = useCallback(() => {
@@ -307,11 +320,11 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
     }, 1000);
     
     // Then show periodically
-    distractionIntervalRef.current = setInterval(() => {
+    distractionIntervalRef.current = (setInterval(() => {
       if (canTap && !showDistraction) {
         showDistractionPopUp();
       }
-    }, DISTRACTION_INTERVAL_MS) as any;
+    }, DISTRACTION_INTERVAL_MS)) as unknown as NodeJS.Timeout;
   }, [canTap, showDistraction, showDistractionPopUp]);
 
   const startRound = useCallback(() => {
@@ -406,7 +419,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
     const shapesInSequenceOrder = [...shapeData].sort((a, b) => a.sequenceOrder - b.sequenceOrder);
     
     shapesInSequenceOrder.forEach((shape, index) => {
-      const timeout = setTimeout(() => {
+      const timeout = (setTimeout(() => {
         setVisibleCount(prev => {
           const newCount = prev + 1;
           visibleCountRef.current = newCount;
@@ -446,7 +459,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
             startDistractionInterval();
             
             // Timeout for missed sequence
-            tapTimeoutRef.current = setTimeout(() => {
+            tapTimeoutRef.current = (setTimeout(() => {
               setWrongOrderTaps(prev => prev + 1);
               speak('Try again!');
               
@@ -475,10 +488,10 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
               }, 400);
               
               tapTimeoutRef.current = null;
-            }, TAP_TIMEOUT_MS);
+            }, TAP_TIMEOUT_MS)) as unknown as NodeJS.Timeout;
           }, 500);
         }
-      }, index * APPEAR_INTERVAL_MS);
+      }, index * APPEAR_INTERVAL_MS)) as unknown as NodeJS.Timeout;
       
       appearanceTimeoutsRef.current.push(timeout);
     });
@@ -782,9 +795,14 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
   }, [rounds, requiredRounds, gameFinished, finishGame]);
 
   useEffect(() => {
+    try {
+      speak('Tap the objects in the correct order, ignore the distraction!');
+    } catch {}
     startRound();
     return () => {
       clearScheduledSpeech();
+      stopAllSpeech();
+      cleanupSounds();
       appearanceTimeoutsRef.current.forEach(t => clearTimeout(t));
       if (distractionTimeoutRef.current) {
         clearTimeout(distractionTimeoutRef.current);
@@ -810,7 +828,12 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
         logTimestamp={logTimestamp}
-        onHome={onBack}
+        onHome={() => {
+          clearScheduledSpeech();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
         onPlayAgain={() => {
           setGameFinished(false);
           setFinalStats(null);
@@ -834,7 +857,13 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
         style={styles.gradient}
       >
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>
@@ -872,7 +901,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
           )}
 
           {/* Warning Message */}
-          {warningOpacity._value > 0 && (
+          {warningOpacityCurrentRef.current > 0 && (
             <Animated.View
               style={[
                 styles.warningBanner,
@@ -915,7 +944,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
                 ]}
               >
                 <LinearGradient
-                  colors={currentDistraction.color}
+                  colors={currentDistraction.color as [string, string, ...string[]]}
                   style={styles.distractionGradient}
                 >
                   <Text style={styles.distractionEmoji}>{currentDistraction.emoji}</Text>
@@ -989,7 +1018,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
                   ]}
                 >
                   <LinearGradient
-                    colors={shape.color}
+                    colors={shape.color as [string, string, ...string[]]}
                     style={[
                       styles.shapeGradient,
                       shape.tapped && styles.shapeTapped,

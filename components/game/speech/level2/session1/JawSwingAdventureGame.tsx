@@ -1,3 +1,5 @@
+import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import type { MouthLandmarks } from '@/hooks/useJawDetectionWeb';
 import { logGameAndAward } from '@/utils/api';
@@ -14,11 +16,8 @@ import {
   StyleSheet,
   Text,
   useWindowDimensions,
-  View,
-  TouchableOpacity,
+  View
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 
 // Conditional import for VisionCamera
 let Camera: any = null;
@@ -49,7 +48,7 @@ const getResponsiveSize = (baseSize: number, isTablet: boolean, isMobile: boolea
   return baseSize;
 };
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -174,6 +173,7 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
     xpAwarded: number;
   } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Game state
   const [canPlay, setCanPlay] = useState(false);
@@ -203,7 +203,8 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
   const canPlayRef = useRef<boolean>(false);
   const currentLateralPositionRef = useRef<'left' | 'center' | 'right'>('center');
   const characterPositionRef = useRef(new Animated.Value(SCREEN_WIDTH / 2)).current;
-  const itemsRef = useRef<Array<{ id: number; x: number; direction: TargetDirection; collected: boolean }>>([]);
+  const characterPositionCurrentRef = useRef<number>(SCREEN_WIDTH / 2);
+  const itemsRef = useRef<{ id: number; x: number; direction: TargetDirection; collected: boolean }[]>([]);
   const gameStartedRef = useRef(false);
   
   // Animations
@@ -231,6 +232,16 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
       currentLateralPositionRef.current = lateralPosition;
     }
   }, [lateralPosition]);
+
+  // Track character position with listener
+  useEffect(() => {
+    const listener = characterPositionRef.addListener(({ value }) => {
+      characterPositionCurrentRef.current = value;
+    });
+    return () => {
+      characterPositionRef.removeListener(listener);
+    };
+  }, [characterPositionRef]);
 
   // Update character position based on jaw lateral position
   useEffect(() => {
@@ -486,7 +497,7 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
     if (!canPlay || !lateralPosition) return;
     
     const checkCollection = () => {
-      const characterX = characterPositionRef._value;
+      const characterX = characterPositionCurrentRef.current;
       itemsRef.current.forEach((item, index) => {
         if (!item.collected && Math.abs(item.x - characterX) < COLLECTION_THRESHOLD * SCREEN_WIDTH) {
           // Check if direction matches
@@ -976,7 +987,13 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
 
           {/* Header Overlay */}
           <View style={styles.headerOverlay}>
-            <Pressable onPress={onBack} style={styles.backButton}>
+            <Pressable
+              onPress={() => {
+                clearScheduledSpeech();
+                onBack();
+              }}
+              style={styles.backButton}
+            >
               <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
               <Text style={styles.backTextOverlay}>Back</Text>
             </Pressable>
@@ -1027,7 +1044,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 8,
     paddingBottom: 12,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     zIndex: 20,
@@ -1111,6 +1127,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     padding: 8,
     alignItems: 'center',
+  },
+  positionIndicatorOverlay: {
+    position: 'absolute',
+    top: Platform.OS === 'web' ? 20 : 80,
+    right: 20,
+    zIndex: 15,
+    alignItems: 'flex-end',
   },
   positionIndicator: {
     paddingHorizontal: 8,

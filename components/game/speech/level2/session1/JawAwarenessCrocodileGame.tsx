@@ -1,3 +1,5 @@
+import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import type { MouthLandmarks } from '@/hooks/useJawDetectionWeb';
 import { logGameAndAward } from '@/utils/api';
@@ -7,18 +9,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    useWindowDimensions,
-    View
+  Animated,
+  Easing,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 
 // Conditional import for VisionCamera
 let Camera: any = null;
@@ -49,7 +49,7 @@ const getResponsiveSize = (baseSize: number, isTablet: boolean, isMobile: boolea
   return baseSize;
 };
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -165,6 +165,7 @@ export const JawAwarenessCrocodileGame: React.FC<Props> = ({
   const isMobile = SCREEN_WIDTH < 600;
   
   const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalRounds: number;
     correctMatches: number;
@@ -434,7 +435,7 @@ export const JawAwarenessCrocodileGame: React.FC<Props> = ({
     
     // Small delay to ensure speech system is ready and state is set
     setTimeout(() => {
-      speak('Open your mouth!', DEFAULT_TTS_RATE, false); // Don't clear again, we already did
+      speak('Open your mouth!', DEFAULT_TTS_RATE);
     }, 200);
 
     // Animate emoji mouth opening
@@ -1024,7 +1025,13 @@ export const JawAwarenessCrocodileGame: React.FC<Props> = ({
       >
         {/* Header Overlay */}
         <View style={[styles.header, { zIndex: 20 }]}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>

@@ -1,3 +1,5 @@
+import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import { logGameAndAward } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,8 +18,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 
 // Conditional import for VisionCamera
 let Camera: any = null;
@@ -48,7 +48,7 @@ const getResponsiveSize = (baseSize: number, isTablet: boolean, isMobile: boolea
   return baseSize;
 };
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -147,6 +147,7 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
   const isMobile = SCREEN_WIDTH < 600;
   
   const [gameFinished, setGameFinished] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalRounds: number;
     successfulHolds: number;
@@ -167,6 +168,7 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
   const [currentHoldTime, setCurrentHoldTime] = useState(0);
   const [score, setScore] = useState(0);
   const [roundProgress, setRoundProgress] = useState(0); // Progress for current round (0-1)
+  const [strengthMeterValue, setStrengthMeterValue] = useState(0);
   
   // Scoring
   const [successfulHolds, setSuccessfulHolds] = useState(0);
@@ -242,6 +244,16 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
   useEffect(() => {
     currentIsOpenRef.current = isOpen;
   }, [isOpen]);
+
+  // Track strength meter value with listener
+  useEffect(() => {
+    const listener = strengthMeter.addListener(({ value }) => {
+      setStrengthMeterValue(value);
+    });
+    return () => {
+      strengthMeter.removeListener(listener);
+    };
+  }, [strengthMeter]);
 
   // Check hold status
   useEffect(() => {
@@ -754,8 +766,8 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
         
         updatedStars.forEach(star => {
           if (!star.caught) {
-            const starY = star.y._value;
-            const starX = star.x._value;
+            const starY = (star.y as any)._value;
+            const starX = (star.x as any)._value;
             
             // Check if star is in catch zone
             if (starY >= catchZoneTop && 
@@ -883,9 +895,10 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
         bubblesBlownRef.current++;
         
         // Animate pop
+        const currentBubbleSize = (bubble.size as any)._value || 50;
         Animated.parallel([
           Animated.timing(bubble.size, {
-            toValue: bubble.size._value * 1.5,
+            toValue: currentBubbleSize * 1.5,
             duration: 200,
             easing: Easing.out(Easing.ease),
             useNativeDriver: false,
@@ -901,7 +914,7 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
         });
         
         // Score based on bubble size
-        const bubbleSize = Math.min(bubble.size._value, 150);
+        const bubbleSize = Math.min(currentBubbleSize, 150);
         const points = Math.round(bubbleSize / 5);
         setScore(prev => prev + points);
         
@@ -1197,7 +1210,13 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
       >
         {/* Header Overlay */}
         <View style={[styles.header, { zIndex: 20 }]}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>
@@ -1284,7 +1303,7 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
                 />
               </View>
               <Text style={[styles.meterValue, isMobile && styles.meterValueMobile]}>
-                {Math.round((strengthMeter._value || 0) * 100)}%
+                {Math.round(strengthMeterValue * 100)}%
               </Text>
             </View>
           )}
@@ -1329,7 +1348,7 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
                       },
                     ]}
                   >
-                    <Text style={[styles.starEmoji, { fontSize: star.size._value }]}>⭐</Text>
+                    <Text style={styles.starEmoji}>⭐</Text>
                   </Animated.View>
                 ))}
                 {/* Catch Zone Indicator */}
@@ -1363,7 +1382,7 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
                       {
                         width: bubble.size,
                         height: bubble.size,
-                        borderRadius: bubble.size._value / 2,
+                        borderRadius: 9999, // Circular - large value ensures circle
                         opacity: bubble.opacity,
                         borderWidth: 3,
                         borderColor: 'rgba(255, 255, 255, 0.6)',

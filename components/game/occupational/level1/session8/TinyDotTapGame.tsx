@@ -1,4 +1,6 @@
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -16,7 +18,6 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const TOTAL_ROUNDS = 15;
@@ -199,7 +200,21 @@ const TinyDotTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!done) {
+      try {
+        Speech.speak('Tap the tiny dot!', { rate: 0.78 });
+      } catch {}
+    }
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
+  }, []);
+
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 

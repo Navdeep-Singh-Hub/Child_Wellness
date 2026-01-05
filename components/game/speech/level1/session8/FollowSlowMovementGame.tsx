@@ -1,3 +1,6 @@
+import ResultCard from '@/components/game/ResultCard';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,8 +16,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
@@ -27,7 +28,7 @@ const DEFAULT_TTS_RATE = 0.75;
 const MOVEMENT_DURATION_MS = 6000; // 6 seconds slow movement
 const TAP_DURATION_MS = 3000; // How long object is tappable after stopping
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -265,7 +266,7 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
       const direction = directions[Math.floor(Math.random() * directions.length)];
       
       let startX: number, startY: number, endX: number, endY: number;
-      let keyframes: Array<{ x: number; y: number; progress: number }>;
+      let keyframes: { x: number; y: number; progress: number }[];
       
       // Define paths based on random direction
       switch (direction) {
@@ -381,7 +382,7 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
       Animated.sequence(animations).start();
 
       // After movement completes, object stops
-      movementTimeoutRef.current = setTimeout(() => {
+      movementTimeoutRef.current = (setTimeout(() => {
         setPhase('stopped');
         
         // Stop rotation
@@ -429,7 +430,7 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
         speak('Tap now!');
 
         // Object expires after duration
-        tapTimeoutRef.current = setTimeout(() => {
+        tapTimeoutRef.current = (setTimeout(() => {
           if (canTap && !isProcessing) {
             setMissedTaps(prev => prev + 1);
             speak('Time\'s up!');
@@ -461,10 +462,10 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
           });
           
           tapTimeoutRef.current = null;
-        }, TAP_DURATION_MS);
+        }, TAP_DURATION_MS)) as unknown as NodeJS.Timeout;
         
         movementTimeoutRef.current = null;
-      }, MOVEMENT_DURATION_MS);
+      }, MOVEMENT_DURATION_MS)) as unknown as NodeJS.Timeout;
     }, 500);
   }, [rounds, requiredRounds, canTap, isProcessing, SCREEN_WIDTH, SCREEN_HEIGHT, advanceToNextRound]);
 
@@ -585,9 +586,14 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
   }, [rounds, requiredRounds, gameFinished, finishGame]);
 
   useEffect(() => {
+    try {
+      speak('Follow the slow movement, then tap when it stops!');
+    } catch {}
     startRound();
     return () => {
       clearScheduledSpeech();
+      stopAllSpeech();
+      cleanupSounds();
       if (movementTimeoutRef.current) {
         clearTimeout(movementTimeoutRef.current);
       }
@@ -611,7 +617,12 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
         logTimestamp={logTimestamp}
-        onHome={onBack}
+        onHome={() => {
+          clearScheduledSpeech();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
         onPlayAgain={() => {
           setGameFinished(false);
           setFinalStats(null);
@@ -641,7 +652,13 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
         style={styles.gradient}
       >
         <View style={styles.header}>
-          <Pressable onPress={onBack} style={styles.backButton}>
+          <Pressable
+            onPress={() => {
+              clearScheduledSpeech();
+              onBack();
+            }}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={22} color="#0F172A" />
             <Text style={styles.backText}>Back</Text>
           </Pressable>
@@ -694,7 +711,7 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
               ]}
             >
               <LinearGradient
-                colors={object.color}
+                colors={object.color as [string, string, ...string[]]}
                 style={styles.objectGradient}
               >
                 <Text style={styles.objectEmoji}>{object.emoji}</Text>

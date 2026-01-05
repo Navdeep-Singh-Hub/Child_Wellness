@@ -1,3 +1,7 @@
+import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
+import { logGameAndAward } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,9 +19,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
-import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
-import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
@@ -31,7 +32,7 @@ const DEFAULT_TTS_RATE = 0.75;
 
 type PointDirection = 'left' | 'right';
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
@@ -199,7 +200,7 @@ export const MultiPointFollowGame: React.FC<Props> = ({
     ).start();
   }, []);
 
-  const startRoundRef = useRef<() => void>();
+  const startRoundRef = useRef<(() => void) | undefined>(undefined);
   
   const executeSequence = useCallback((sequence: PointDirection[], stepIndex: number) => {
     if (stepIndex >= sequence.length) {
@@ -460,7 +461,8 @@ export const MultiPointFollowGame: React.FC<Props> = ({
               }}
               onHome={() => {
                 clearScheduledSpeech();
-                Speech.stop();
+                stopAllSpeech();
+                cleanupSounds();
                 onBack();
               }}
             />

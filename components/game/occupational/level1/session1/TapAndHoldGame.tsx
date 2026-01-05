@@ -1,4 +1,6 @@
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,7 +19,6 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const HOLD_TARGET_MS = 2000; // 2 seconds
@@ -43,6 +44,12 @@ const useSoundEffect = (uri: string) => {
   useEffect(() => {
     return () => {
       soundRef.current?.unloadAsync().catch(() => {});
+      // Cleanup: Stop speech when component unmounts
+      try {
+        Speech.stop();
+      } catch (e) {
+        // Ignore errors
+      }
     };
   }, []);
 
@@ -277,6 +284,8 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const handleBack = useCallback(() => {
     if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
     if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 
