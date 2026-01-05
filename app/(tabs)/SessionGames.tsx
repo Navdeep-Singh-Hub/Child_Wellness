@@ -445,6 +445,82 @@ export default function SessionGamesScreen() {
   const levelNumber = params.level ? parseInt(params.level, 10) : 1;
   const sessionNumber = params.session ? parseInt(params.session, 10) : 1;
 
+  // Function to get the next game in sequence
+  const getNextGame = React.useCallback((currentGameId: GameKey): { gameId: GameKey | null; nextSession?: number; nextLevel?: number } | null => {
+    // Get all available games for current session (already filtered by availability flags)
+    const availableGames = GAMES.filter(game => game.available);
+    
+    // Find current game index in available games
+    const currentIndex = availableGames.findIndex(game => game.id === currentGameId);
+    if (currentIndex === -1) {
+      // Current game not found in available games, try to find next available game
+      if (availableGames.length > 0) {
+        return { gameId: availableGames[0].id as GameKey };
+      }
+      // No available games, check next session/level
+    } else {
+      // Check if there's a next game in the same session
+      if (currentIndex < availableGames.length - 1) {
+        return { gameId: availableGames[currentIndex + 1].id as GameKey };
+      }
+    }
+
+    // No more games in current session, check next session
+    if (sessionNumber < 10) {
+      return { gameId: null, nextSession: sessionNumber + 1 };
+    }
+
+    // No more sessions in current level, check next level
+    if (levelNumber < 10) {
+      return { gameId: null, nextLevel: levelNumber + 1, nextSession: 1 };
+    }
+
+    // No more games/sessions/levels
+    return null;
+  }, [therapyId, levelNumber, sessionNumber]);
+
+  // Handle continue to next game
+  const handleContinue = React.useCallback(() => {
+    if (currentGame === 'menu') return;
+    
+    const next = getNextGame(currentGame);
+    if (!next) {
+      // No more games, go back to menu
+      setCurrentGame('menu');
+      return;
+    }
+
+    if (next.nextLevel) {
+      // Navigate to next level, session 1
+      router.push({
+        pathname: '/(tabs)/SessionGames',
+        params: {
+          therapy: therapyId,
+          level: next.nextLevel.toString(),
+          session: '1',
+        },
+      });
+      setCurrentGame('menu');
+    } else if (next.nextSession) {
+      // Navigate to next session
+      router.push({
+        pathname: '/(tabs)/SessionGames',
+        params: {
+          therapy: therapyId,
+          level: levelNumber.toString(),
+          session: next.nextSession.toString(),
+        },
+      });
+      setCurrentGame('menu');
+    } else if (next.gameId) {
+      // Go to next game in same session
+      setCurrentGame(next.gameId);
+    } else {
+      // Fallback: go back to menu
+      setCurrentGame('menu');
+    }
+  }, [currentGame, getNextGame, router, therapyId, levelNumber]);
+
   const isFollowBallAvailable =
     therapyId === 'speech' && levelNumber === 1 && sessionNumber === 1;
 
@@ -2369,6 +2445,7 @@ export default function SessionGamesScreen() {
     return (
       <FollowTheBall
         onBack={() => setCurrentGame('menu')}
+        onComplete={handleContinue}
         therapyId={therapyId}
         levelNumber={levelNumber}
         sessionNumber={sessionNumber}
@@ -2378,694 +2455,694 @@ export default function SessionGamesScreen() {
   }
 
   if (currentGame === 'catch-star') {
-    return <CatchTheBouncingStar onBack={() => setCurrentGame('menu')} />;
+    return <CatchTheBouncingStar onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'slow-to-fast') {
-    return <SlowToFastGame onBack={() => setCurrentGame('menu')} />;
+    return <SlowToFastGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'track-freeze') {
-    return <TrackAndFreezeGame onBack={() => setCurrentGame('menu')} />;
+    return <TrackAndFreezeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'follow-look') {
-    return <FollowWhereILookGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowWhereILookGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-magic') {
-    return <TapForMagicGame onBack={() => setCurrentGame('menu')} />;
+    return <TapForMagicGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-animate') {
-    return <TapToAnimateGame onBack={() => setCurrentGame('menu')} />;
+    return <TapToAnimateGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-reveal') {
-    return <TapToRevealGame onBack={() => setCurrentGame('menu')} />;
+    return <TapToRevealGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-sound') {
-    return <TapToMakeSoundGame onBack={() => setCurrentGame('menu')} />;
+    return <TapToMakeSoundGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-choice') {
-    return <TapForChoiceGame onBack={() => setCurrentGame('menu')} />;
+    return <TapForChoiceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'big-tap') {
-    return <BigTapTarget onBack={() => setCurrentGame('menu')} />;
+    return <BigTapTarget onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-red-circle') {
     // 👇 NEW: launch our OT Game 2
-    return <TapRedCircleGame onBack={() => setCurrentGame('menu')} />;
+    return <TapRedCircleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'game-3') {
-    return <BalloonPopGame onBack={() => setCurrentGame('menu')} />;
+    return <BalloonPopGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'game-4') {
-    return <TapAndHoldGame onBack={() => setCurrentGame('menu')} />;
+    return <TapAndHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'game-5') {
-    return <MultiTapFunGame onBack={() => setCurrentGame('menu')} />;
+    return <MultiTapFunGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'small-circle-tap') {
-    return <SmallCircleTapGame onBack={() => setCurrentGame('menu')} />;
+    return <SmallCircleTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-only-small') {
-    return <TapOnlySmallTargetGame onBack={() => setCurrentGame('menu')} />;
+    return <TapOnlySmallTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // if (currentGame === 'shrinking-target') {
-  //   return <ShrinkingTargetGame onBack={() => setCurrentGame('menu')} />;
+  //   return <ShrinkingTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   // }
 
   if (currentGame === 'track-then-tap') {
-    return <TrackThenTapSmallObjectGame onBack={() => setCurrentGame('menu')} />;
+    return <TrackThenTapSmallObjectGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'multiple-small-targets') {
-    return <MultipleSmallTargetsGame onBack={() => setCurrentGame('menu')} />;
+    return <MultipleSmallTargetsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-slowly') {
-    return <TapSlowlyGame onBack={() => setCurrentGame('menu')} />;
+    return <TapSlowlyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-fast') {
-    return <TapFastGame onBack={() => setCurrentGame('menu')} />;
+    return <TapFastGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'slow-then-fast') {
-    return <SlowThenFastGame onBack={() => setCurrentGame('menu')} />;
+    return <SlowThenFastGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-with-sound') {
-    return <TapWithSoundGame onBack={() => setCurrentGame('menu')} />;
+    return <TapWithSoundGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'race-the-dot') {
-    return <RaceTheDotGame onBack={() => setCurrentGame('menu')} />;
+    return <RaceTheDotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'hold-the-button') {
-    return <HoldTheButtonGame onBack={() => setCurrentGame('menu')} />;
+    return <HoldTheButtonGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'grow-the-balloon') {
-    return <GrowTheBalloonGame onBack={() => setCurrentGame('menu')} />;
+    return <GrowTheBalloonGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'launch-rocket') {
-    return <LaunchRocketGame onBack={() => setCurrentGame('menu')} />;
+    return <LaunchRocketGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'squish-the-jelly') {
-    return <SquishTheJellyGame onBack={() => setCurrentGame('menu')} />;
+    return <SquishTheJellyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'hold-the-light') {
-    return <HoldTheLightGame onBack={() => setCurrentGame('menu')} />;
+    return <HoldTheLightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'drag-ball-to-goal') {
-    return <DragBallToGoalGame onBack={() => setCurrentGame('menu')} />;
+    return <DragBallToGoalGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'follow-the-line') {
-    return <FollowTheLineGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowTheLineGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'drag-animal-home') {
-    return <DragAnimalHomeGame onBack={() => setCurrentGame('menu')} />;
+    return <DragAnimalHomeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'drag-slowly') {
-    return <DragSlowlyGame onBack={() => setCurrentGame('menu')} />;
+    return <DragSlowlyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'puzzle-piece-drag') {
-    return <PuzzlePieceDragGame onBack={() => setCurrentGame('menu')} />;
+    return <PuzzlePieceDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-numbers') {
-    return <TapTheNumbersGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheNumbersGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-lights-in-order') {
-    return <TapLightsInOrderGame onBack={() => setCurrentGame('menu')} />;
+    return <TapLightsInOrderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'follow-the-arrows') {
-    return <FollowTheArrowsGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowTheArrowsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-colours-in-order') {
-    return <TapColoursInOrderGame onBack={() => setCurrentGame('menu')} />;
+    return <TapColoursInOrderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-big-one') {
-    return <TapTheBigOneGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheBigOneGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-small-one') {
-    return <TapTheSmallOneGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheSmallOneGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-shape-i-show-you') {
-    return <TapTheShapeIShowYouGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheShapeIShowYouGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'find-the-odd-one-out') {
-    return <FindTheOddOneOutGame onBack={() => setCurrentGame('menu')} />;
+    return <FindTheOddOneOutGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'match-shape-to-outline') {
-    return <MatchShapeToOutlineGame onBack={() => setCurrentGame('menu')} />;
+    return <MatchShapeToOutlineGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tiny-dot-tap') {
-    return <TinyDotTapGame onBack={() => setCurrentGame('menu')} />;
+    return <TinyDotTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-center-of-the-target') {
-    return <TapTheCenterOfTheTargetGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheCenterOfTheTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'moving-small-target') {
-    return <MovingSmallTargetGame onBack={() => setCurrentGame('menu')} />;
+    return <MovingSmallTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-only-the-smallest-shape') {
-    return <TapOnlyTheSmallestShapeGame onBack={() => setCurrentGame('menu')} />;
+    return <TapOnlyTheSmallestShapeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-hidden-small-object') {
-    return <TapTheHiddenSmallObjectGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheHiddenSmallObjectGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shrinking-circle-tap') {
-    return <ShrinkingCircleTapGame onBack={() => setCurrentGame('menu')} />;
+    return <ShrinkingCircleTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-when-star-is-smallest') {
-    return <TapWhenStarIsSmallestGame onBack={() => setCurrentGame('menu')} />;
+    return <TapWhenStarIsSmallestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shrink-stop-tap') {
-    return <ShrinkStopTapGame onBack={() => setCurrentGame('menu')} />;
+    return <ShrinkStopTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'multiple-shrinking-targets') {
-    return <MultipleShrinkingTargetsGame onBack={() => setCurrentGame('menu')} />;
+    return <MultipleShrinkingTargetsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shrinking-object-movement') {
-    return <ShrinkingObjectMovementGame onBack={() => setCurrentGame('menu')} />;
+    return <ShrinkingObjectMovementGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'pinch-to-pop') {
-    return <PinchToPopGame onBack={() => setCurrentGame('menu')} />;
+    return <PinchToPopGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'pinch-and-drag') {
-    return <PinchAndDragGame onBack={() => setCurrentGame('menu')} />;
+    return <PinchAndDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'two-finger-simultaneous-tap') {
-    return <TwoFingerSimultaneousTapGame onBack={() => setCurrentGame('menu')} />;
+    return <TwoFingerSimultaneousTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'pinch-to-resize') {
-    return <PinchToResizeGame onBack={() => setCurrentGame('menu')} />;
+    return <PinchToResizeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'pinch-to-open-treasure-box') {
-    return <PinchToOpenTreasureBoxGame onBack={() => setCurrentGame('menu')} />;
+    return <PinchToOpenTreasureBoxGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
 
   // Level 2 Session 2: Trace Curved Line games
   // if (currentGame === 'rainbow-trace') {
-  //   return <RainbowTraceGame onBack={() => setCurrentGame('menu')} />;
+  //   return <RainbowTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   // }
 
   if (currentGame === 'snake-slide') {
-    return <SnakeSlideGame onBack={() => setCurrentGame('menu')} />;
+    return <SnakeSlideGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'moon-path') {
-    return <MoonPathGame onBack={() => setCurrentGame('menu')} />;
+    return <MoonPathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'smile-maker') {
-    return <SmileMakerGame onBack={() => setCurrentGame('menu')} />;
+    return <SmileMakerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'curvy-road-drive') {
-    return <CurvyRoadDriveGame onBack={() => setCurrentGame('menu')} />;
+    return <CurvyRoadDriveGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 3: Speech Therapy Airflow Games
   if (currentGame === 'blow-the-bubble') {
-    return <BlowTheBubbleGame onBack={() => setCurrentGame('menu')} />;
+    return <BlowTheBubbleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'move-the-feather') {
-    return <MoveTheFeatherGame onBack={() => setCurrentGame('menu')} />;
+    return <MoveTheFeatherGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'windmill-spin') {
-    return <WindmillSpinGame onBack={() => setCurrentGame('menu')} />;
+    return <WindmillSpinGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'blow-out-candle') {
-    return <BlowOutTheCandleGame onBack={() => setCurrentGame('menu')} />;
+    return <BlowOutTheCandleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'balloon-inflate') {
-    return <BalloonInflateGame onBack={() => setCurrentGame('menu')} />;
+    return <BalloonInflateGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 3: Trace Zig-Zag games (OT)
   if (currentGame === 'mountain-climb') {
-    return <MountainClimbGame onBack={() => setCurrentGame('menu')} />;
+    return <MountainClimbGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'lightning-bolt') {
-    return <LightningBoltGame onBack={() => setCurrentGame('menu')} />;
+    return <LightningBoltGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'saw-path') {
-    return <SawPathGame onBack={() => setCurrentGame('menu')} />;
+    return <SawPathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'robot-wire-fix') {
-    return <RobotWireFixGame onBack={() => setCurrentGame('menu')} />;
+    return <RobotWireFixGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'zig-zag-race') {
-    return <ZigZagRaceGame onBack={() => setCurrentGame('menu')} />;
+    return <ZigZagRaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 4: Follow Path (Drag) games
   if (currentGame === 'maze-walk') {
-    return <MazeWalkGame onBack={() => setCurrentGame('menu')} />;
+    return <MazeWalkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'river-boat-guide') {
-    return <RiverBoatGuideGame onBack={() => setCurrentGame('menu')} />;
+    return <RiverBoatGuideGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'ant-trail-follow') {
-    return <AntTrailFollowGame onBack={() => setCurrentGame('menu')} />;
+    return <AntTrailFollowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'ball-roll-path') {
-    return <BallRollPathGame onBack={() => setCurrentGame('menu')} />;
+    return <BallRollPathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'dont-touch-grass') {
-    return <DontTouchGrassGame onBack={() => setCurrentGame('menu')} />;
+    return <DontTouchGrassGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 5: Connect Dots games
   if (currentGame === 'dot-to-dot-animal') {
-    return <DotToDotAnimalGame onBack={() => setCurrentGame('menu')} />;
+    return <DotToDotAnimalGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'star-builder') {
-    return <StarBuilderGame onBack={() => setCurrentGame('menu')} />;
+    return <StarBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'house-drawing') {
-    return <HouseDrawingGame onBack={() => setCurrentGame('menu')} />;
+    return <HouseDrawingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'hidden-shape-reveal') {
-    return <HiddenShapeRevealGame onBack={() => setCurrentGame('menu')} />;
+    return <HiddenShapeRevealGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'connect-in-order-glow') {
-    return <ConnectInOrderGlowGame onBack={() => setCurrentGame('menu')} />;
+    return <ConnectInOrderGlowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 6: Match Shape Outline games
   if (currentGame === 'puzzle-drop-shapes') {
-    return <PuzzleDropShapesGame onBack={() => setCurrentGame('menu')} />;
+    return <PuzzleDropShapesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shadow-match') {
-    return <ShadowMatchGame onBack={() => setCurrentGame('menu')} />;
+    return <ShadowMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'cookie-cutter-match') {
-    return <CookieCutterMatchGame onBack={() => setCurrentGame('menu')} />;
+    return <CookieCutterMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'parking-shapes') {
-    return <ParkingShapesGame onBack={() => setCurrentGame('menu')} />;
+    return <ParkingShapesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'fast-match') {
-    return <FastMatchGame onBack={() => setCurrentGame('menu')} />;
+    return <FastMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 7: Trace Large Shapes games
   if (currentGame === 'big-circle-trace') {
-    return <BigCircleTraceGame onBack={() => setCurrentGame('menu')} />;
+    return <BigCircleTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'big-square-walk') {
-    return <BigSquareWalkGame onBack={() => setCurrentGame('menu')} />;
+    return <BigSquareWalkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'triangle-mountain-trace') {
-    return <TriangleMountainTraceGame onBack={() => setCurrentGame('menu')} />;
+    return <TriangleMountainTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'paint-the-shape') {
-    return <PaintTheShapeGame onBack={() => setCurrentGame('menu')} />;
+    return <PaintTheShapeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'glow-border-trace') {
-    return <GlowBorderTraceGame onBack={() => setCurrentGame('menu')} />;
+    return <GlowBorderTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 8: Trace Small Shapes games
   if (currentGame === 'tiny-circle-coins') {
-    return <TinyCircleCoinsGame onBack={() => setCurrentGame('menu')} />;
+    return <TinyCircleCoinsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'mini-square-locks') {
-    return <MiniSquareLocksGame onBack={() => setCurrentGame('menu')} />;
+    return <MiniSquareLocksGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'dot-border-shapes') {
-    return <DotBorderShapesGame onBack={() => setCurrentGame('menu')} />;
+    return <DotBorderShapesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'careful-trace-challenge') {
-    return <CarefulTraceChallengeGame onBack={() => setCurrentGame('menu')} />;
+    return <CarefulTraceChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shrink-mode-trace') {
-    return <ShrinkModeTraceGame onBack={() => setCurrentGame('menu')} />;
+    return <ShrinkModeTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 9: Copy Simple Patterns games
   if (currentGame === 'copy-the-line-pattern') {
-    return <CopyTheLinePatternGame onBack={() => setCurrentGame('menu')} />;
+    return <CopyTheLinePatternGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'block-pattern-copy') {
-    return <BlockPatternCopyGame onBack={() => setCurrentGame('menu')} />;
+    return <BlockPatternCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'color-pattern-match') {
-    return <ColorPatternMatchGame onBack={() => setCurrentGame('menu')} />;
+    return <ColorPatternMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'stick-design-copy') {
-    return <StickDesignCopyGame onBack={() => setCurrentGame('menu')} />;
+    return <StickDesignCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'look-hide-draw') {
-    return <LookHideDrawGame onBack={() => setCurrentGame('menu')} />;
+    return <LookHideDrawGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 10: Mirror Drawing Basics games
   if (currentGame === 'mirror-line-draw') {
-    return <MirrorLineDrawGame onBack={() => setCurrentGame('menu')} />;
+    return <MirrorLineDrawGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'butterfly-wings') {
-    return <ButterflyWingsGame onBack={() => setCurrentGame('menu')} />;
+    return <ButterflyWingsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'face-symmetry-draw') {
-    return <FaceSymmetryDrawGame onBack={() => setCurrentGame('menu')} />;
+    return <FaceSymmetryDrawGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'half-shape-complete') {
-    return <HalfShapeCompleteGame onBack={() => setCurrentGame('menu')} />;
+    return <HalfShapeCompleteGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'mirror-maze') {
-    return <MirrorMazeGame onBack={() => setCurrentGame('menu')} />;
+    return <MirrorMazeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Speech Therapy Level 1 Session 3 games
   if (currentGame === 'sound-to-tap') {
-    return <SoundToTapGame onBack={() => setCurrentGame('menu')} />;
+    return <SoundToTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'which-sound') {
-    return <WhichSoundGame onBack={() => setCurrentGame('menu')} />;
+    return <WhichSoundGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'find-sound-source') {
-    return <FindSoundSourceGame onBack={() => setCurrentGame('menu')} />;
+    return <FindSoundSourceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'stop-when-sound-stops') {
-    return <StopWhenSoundStopsGame onBack={() => setCurrentGame('menu')} />;
+    return <StopWhenSoundStopsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'loud-vs-soft') {
-    return <LoudVsSoftGame onBack={() => setCurrentGame('menu')} />;
+    return <LoudVsSoftGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Speech Therapy Level 1 Session 4 games
   if (currentGame === 'follow-my-eyes') {
-    return <FollowMyEyesGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowMyEyesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'eyes-then-object') {
-    return <EyesThenObjectGame onBack={() => setCurrentGame('menu')} />;
+    return <EyesThenObjectGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'which-side') {
-    return <WhichSideGame onBack={() => setCurrentGame('menu')} />;
+    return <WhichSideGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'follow-gaze-animation') {
-    return <FollowGazeToAnimationGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowGazeToAnimationGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'eyes-only') {
-    return <EyesOnlyGame onBack={() => setCurrentGame('menu')} />;
+    return <EyesOnlyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Speech Therapy Level 1 Session 5 games (Pointing Games)
   if (currentGame === 'follow-my-point') {
-    return <FollowMyPointGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowMyPointGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'point-to-object-appears') {
-    return <PointToObjectAppearsGame onBack={() => setCurrentGame('menu')} />;
+    return <PointToObjectAppearsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-pointed-object') {
-    return <TapThePointedObjectGame onBack={() => setCurrentGame('menu')} />;
+    return <TapThePointedObjectGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'moving-arm-pointing') {
-    return <MovingArmPointingGame onBack={() => setCurrentGame('menu')} />;
+    return <MovingArmPointingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'multi-point-follow') {
-    return <MultiPointFollowGame onBack={() => setCurrentGame('menu')} />;
+    return <MultiPointFollowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Speech Therapy Level 1 Session 6 games (Choice & Instruction Games)
   if (currentGame === 'tap-what-you-like') {
-    return <TapWhatYouLikeGame onBack={() => setCurrentGame('menu')} />;
+    return <TapWhatYouLikeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'which-one-moved') {
-    return <WhichOneMovedGame onBack={() => setCurrentGame('menu')} />;
+    return <WhichOneMovedGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'sound-to-choice') {
-    return <SoundToChoiceGame onBack={() => setCurrentGame('menu')} />;
+    return <SoundToChoiceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'show-me-the-toy') {
-    return <ShowMeTheToyGame onBack={() => setCurrentGame('menu')} />;
+    return <ShowMeTheToyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'food-vs-toy') {
-    return <FoodVsToyGame onBack={() => setCurrentGame('menu')} />;
+    return <FoodVsToyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'pass-the-ball') {
-    return <PassTheBallGame onBack={() => setCurrentGame('menu')} />;
+    return <PassTheBallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-only-on-your-turn') {
-    return <TapOnlyOnYourTurnGame onBack={() => setCurrentGame('menu')} />;
+    return <TapOnlyOnYourTurnGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'your-turn-to-complete') {
-    return <YourTurnToCompleteGame onBack={() => setCurrentGame('menu')} />;
+    return <YourTurnToCompleteGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'wait-for-the-signal') {
-    return <WaitForTheSignalGame onBack={() => setCurrentGame('menu')} />;
+    return <WaitForTheSignalGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'turn-timer') {
-    return <TurnTimerGame onBack={() => setCurrentGame('menu')} />;
+    return <TurnTimerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'watch-and-wait') {
-    return <WatchAndWaitGame onBack={() => setCurrentGame('menu')} />;
+    return <WatchAndWaitGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'growing-flower') {
-    return <GrowingFlowerGame onBack={() => setCurrentGame('menu')} />;
+    return <GrowingFlowerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'timer-bar-tap') {
-    return <TimerBarTapGame onBack={() => setCurrentGame('menu')} />;
+    return <TimerBarTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'follow-slow-movement') {
-    return <FollowSlowMovementGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowSlowMovementGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shapes-appear-one-by-one') {
-    return <ShapesAppearOneByOneGame onBack={() => setCurrentGame('menu')} />;
+    return <ShapesAppearOneByOneGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'touch-the-ball') {
-    return <TouchTheBallGame onBack={() => setCurrentGame('menu')} />;
+    return <TouchTheBallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-circle') {
-    return <TapTheCircleGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheCircleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'find-the-sound-source') {
-    return <FindTheSoundSourceGame onBack={() => setCurrentGame('menu')} />;
+    return <FindTheSoundSourceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-what-i-show-you') {
-    return <TapWhatIShowYouGame onBack={() => setCurrentGame('menu')} />;
+    return <TapWhatIShowYouGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'follow-the-arrow') {
-    return <FollowTheArrowGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowTheArrowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-target-ignore-distraction') {
-    return <TapTheTargetIgnoreDistractionGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheTargetIgnoreDistractionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'sound-distraction-challenge') {
-    return <SoundDistractionChallengeGame onBack={() => setCurrentGame('menu')} />;
+    return <SoundDistractionChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'slow-task-with-pop-up-distraction') {
-    return <SlowTaskWithPopUpDistractionGame onBack={() => setCurrentGame('menu')} />;
+    return <SlowTaskWithPopUpDistractionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'sequence-with-distraction') {
-    return <SequenceWithDistractionGame onBack={() => setCurrentGame('menu')} />;
+    return <SequenceWithDistractionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'moving-target-with-extra-objects') {
-    return <MovingTargetWithExtraObjectsGame onBack={() => setCurrentGame('menu')} />;
+    return <MovingTargetWithExtraObjectsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jaw-awareness-crocodile') {
-    return <JawAwarenessCrocodileGame onBack={() => setCurrentGame('menu')} />;
+    return <JawAwarenessCrocodileGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jaw-swing-adventure') {
-    return <JawSwingAdventureGame onBack={() => setCurrentGame('menu')} />;
+    return <JawSwingAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jaw-push-challenge') {
-    return <JawPushChallengeGame onBack={() => setCurrentGame('menu')} />;
+    return <JawPushChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jaw-rhythm-tap') {
-    return <JawRhythmTapGame onBack={() => setCurrentGame('menu')} />;
+    return <JawRhythmTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jaw-strength-builder') {
-    return <JawStrengthBuilderGame onBack={() => setCurrentGame('menu')} />;
+    return <JawStrengthBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 1 games (Occupational Therapy - Trace Straight Line)
   if (currentGame === 'train-track-line') {
-    return <TrainTrackLineGame onBack={() => setCurrentGame('menu')} />;
+    return <TrainTrackLineGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'light-the-laser') {
-    return <LightTheLaserGame onBack={() => setCurrentGame('menu')} />;
+    return <LightTheLaserGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'road-roller') {
-    return <RoadRollerGame onBack={() => setCurrentGame('menu')} />;
+    return <RoadRollerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'rain-drop-slide') {
-    return <RainDropSlideGame onBack={() => setCurrentGame('menu')} />;
+    return <RainDropSlideGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'start-stop-line') {
-    return <StartStopLineGame onBack={() => setCurrentGame('menu')} />;
+    return <StartStopLineGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 3 Session 1 games - Tap with Rhythm
   if (currentGame === 'beat-match-tap') {
-    return <BeatMatchTapGame onBack={() => setCurrentGame('menu')} />;
+    return <BeatMatchTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'copy-my-rhythm') {
-    return <CopyMyRhythmGame onBack={() => setCurrentGame('menu')} />;
+    return <CopyMyRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'stop-go-drum') {
-    return <StopGoDrumGame onBack={() => setCurrentGame('menu')} />;
+    return <StopGoDrumGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'loud-soft-rhythm') {
-    return <LoudSoftRhythmGame onBack={() => setCurrentGame('menu')} />;
+    return <LoudSoftRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'instrument-choice') {
-    return <InstrumentChoiceGame onBack={() => setCurrentGame('menu')} />;
+    return <InstrumentChoiceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 3 Session 2 games - Big vs Small Movements
   if (currentGame === 'big-swipe-small-swipe') {
-    return <BigSwipeSmallSwipeGame onBack={() => setCurrentGame('menu')} />;
+    return <BigSwipeSmallSwipeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'big-tap-small-tap') {
-    return <BigTapSmallTapGame onBack={() => setCurrentGame('menu')} />;
+    return <BigTapSmallTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'stretch-pinch') {
-    return <StretchPinchGame onBack={() => setCurrentGame('menu')} />;
+    return <StretchPinchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'big-path-trace') {
-    return <BigPathTraceGame onBack={() => setCurrentGame('menu')} />;
+    return <BigPathTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'big-throw-small-throw') {
-    return <BigThrowSmallThrowGame onBack={() => setCurrentGame('menu')} />;
+    return <BigThrowSmallThrowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // ---------- Menu UI ----------

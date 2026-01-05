@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -105,6 +106,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
   const [correctTaps, setCorrectTaps] = useState(0);
   const [wrongOrderTaps, setWrongOrderTaps] = useState(0);
   const [distractionTaps, setDistractionTaps] = useState(0);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [visibleCount, setVisibleCount] = useState(0);
   const [currentDistraction, setCurrentDistraction] = useState<typeof DISTRACTIONS[0] | null>(null);
   const [showDistraction, setShowDistraction] = useState(false);
@@ -170,6 +172,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
     glowAnimationRefs.clear();
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + wrongOrderTaps + distractionTaps;
@@ -606,7 +609,11 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
               }),
             ]).start();
 
-            speak('Perfect sequence!');
+            // Show success animation instead of TTS
+            setShowRoundSuccess(true);
+            setTimeout(() => {
+              setShowRoundSuccess(false);
+            }, 2500);
 
             // Hide and advance
             setTimeout(() => {
@@ -637,16 +644,20 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
                   advanceToNextRound(nextRound);
                   return nextRound;
                 });
-              }, 400);
-            }, 1500);
-            
-            return nextStep; // Update step
-          } else {
-            speak('Good!');
-            setIsProcessing(false);
-            
-            return nextStep; // Update to next step
-          }
+            }, 400);
+          }, 1500);
+          
+          return nextStep; // Update step
+        } else {
+          // Show success animation for partial success
+          setShowRoundSuccess(true);
+          setTimeout(() => {
+            setShowRoundSuccess(false);
+          }, 2500);
+          setIsProcessing(false);
+          
+          return nextStep; // Update to next step
+        }
         } else {
           // Wrong order
           setWrongOrderTaps(prev => prev + 1);
@@ -1113,6 +1124,12 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

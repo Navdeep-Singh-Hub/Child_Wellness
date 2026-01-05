@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -81,6 +82,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
   const [correctTaps, setCorrectTaps] = useState(0);
   const [incorrectTaps, setIncorrectTaps] = useState(0);
   const [tappedShapes, setTappedShapes] = useState<Set<number>>(new Set());
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations - one per shape
   const shapeScales = useRef<Map<number, Animated.Value>>(new Map()).current;
@@ -100,6 +102,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + incorrectTaps;
@@ -349,7 +352,11 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
           return currentShapes;
         });
 
-        speak('Perfect!');
+        // Show success animation instead of TTS
+        setShowRoundSuccess(true);
+        setTimeout(() => {
+          setShowRoundSuccess(false);
+        }, 2500);
 
         // Clear timeout
         if (tapTimeoutRef.current) {
@@ -386,7 +393,11 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
           }, 400);
         }, 1000);
       } else {
-        speak('Good!');
+        // Show success animation for partial success
+        setShowRoundSuccess(true);
+        setTimeout(() => {
+          setShowRoundSuccess(false);
+        }, 2500);
       }
       
       return newTappedShapes;
@@ -542,6 +553,12 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

@@ -15,6 +15,7 @@ import {
     View,
 } from 'react-native';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 
 type Props = {
   onBack: () => void;
@@ -67,6 +68,8 @@ export const TapToRevealGame: React.FC<Props> = ({
   const [isRevealing, setIsRevealing] = useState(false);
   const [isCovered, setIsCovered] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
+  const [gameFinished, setGameFinished] = useState(false);
 
   const cloudScale = useRef(new Animated.Value(1)).current;
   const cloudOpacity = useRef(new Animated.Value(1)).current;
@@ -233,10 +236,8 @@ export const TapToRevealGame: React.FC<Props> = ({
     }, 2500);
 
     if (nextReveals >= requiredReveals) {
-      setTimeout(() => {
-        onComplete?.();
-        setTimeout(() => onBack(), 2000);
-      }, 3000);
+      setGameFinished(true);
+      setShowRoundSuccess(false);
       return;
     }
 
@@ -244,7 +245,7 @@ export const TapToRevealGame: React.FC<Props> = ({
     setTimeout(() => {
       coverWithNewObject();
     }, 3000);
-  }, [isRevealing, currentObject, reveals, requiredReveals, onComplete, onBack]);
+  }, [isRevealing, currentObject, reveals, requiredReveals]);
 
   const coverWithNewObject = () => {
     // Reset cloud
@@ -277,6 +278,34 @@ export const TapToRevealGame: React.FC<Props> = ({
 
   const progressDots = Array.from({ length: requiredReveals }, (_, i) => i < reveals);
   const object = HIDDEN_OBJECTS[currentObject];
+
+  // Show completion screen with stats when game finishes
+  if (gameFinished) {
+    const accuracyPct = reveals >= requiredReveals ? 100 : Math.round((reveals / requiredReveals) * 100);
+    const xpAwarded = reveals * 10;
+    return (
+      <CongratulationsScreen
+        message="Great Reveals!"
+        showButtons={true}
+        correct={reveals}
+        total={requiredReveals}
+        accuracy={accuracyPct}
+        xpAwarded={xpAwarded}
+        onContinue={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          onComplete?.();
+        }}
+        onHome={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>

@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -80,6 +81,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
   const [correctTaps, setCorrectTaps] = useState(0);
   const [incorrectTaps, setIncorrectTaps] = useState(0);
   const [showInstruction, setShowInstruction] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations
   const shapeScales = useRef<Map<number, Animated.Value>>(new Map()).current;
@@ -99,6 +101,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + incorrectTaps;
@@ -336,7 +339,11 @@ export const TapTheCircleGame: React.FC<Props> = ({
         ]),
       ]).start();
 
-      speak('Perfect!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+      }, 2500);
 
       // Hide and advance
       setTimeout(() => {
@@ -587,6 +594,12 @@ export const TapTheCircleGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

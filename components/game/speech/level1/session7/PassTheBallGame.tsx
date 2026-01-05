@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -67,6 +68,7 @@ export const PassTheBallGame: React.FC<Props> = ({
   const [isWaiting, setIsWaiting] = useState(false);
   const [ballSide, setBallSide] = useState<'system' | 'child' | 'moving'>('system');
   const [canTap, setCanTap] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations
   const ballX = useRef(new Animated.Value(0)).current;
@@ -229,7 +231,11 @@ export const PassTheBallGame: React.FC<Props> = ({
       }),
     ]).start();
 
-    speak('Good!');
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
+    setTimeout(() => {
+      setShowRoundSuccess(false);
+    }, 2500);
 
     // Roll ball away to system side
     setTimeout(() => {
@@ -256,6 +262,7 @@ export const PassTheBallGame: React.FC<Props> = ({
 
   const finishGame = useCallback(async () => {
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const accuracy = 100;
@@ -312,6 +319,7 @@ export const PassTheBallGame: React.FC<Props> = ({
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
         logTimestamp={logTimestamp}
+        onContinue={onComplete}
         onHome={() => {
           clearScheduledSpeech();
           stopAllSpeech();
@@ -449,6 +457,12 @@ export const PassTheBallGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

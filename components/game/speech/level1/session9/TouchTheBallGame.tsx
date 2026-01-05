@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -82,6 +83,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
   const [incorrectTaps, setIncorrectTaps] = useState(0);
   const [showInstruction, setShowInstruction] = useState(false);
   const [glowingObjectId, setGlowingObjectId] = useState<number | null>(null);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations
   const objectScales = useRef<Map<number, Animated.Value>>(new Map()).current;
@@ -108,6 +110,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + incorrectTaps;
@@ -398,7 +401,11 @@ export const TouchTheBallGame: React.FC<Props> = ({
         ]),
       ]).start();
 
-      speak('Good job!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+      }, 2500);
 
       // Hide and advance
       setTimeout(() => {
@@ -674,6 +681,12 @@ export const TouchTheBallGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

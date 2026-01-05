@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -89,6 +90,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
   const [correctTaps, setCorrectTaps] = useState(0);
   const [distractionTaps, setDistractionTaps] = useState(0);
   const [missedTaps, setMissedTaps] = useState(0);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [currentDistraction, setCurrentDistraction] = useState<typeof DISTRACTIONS[0] | null>(null);
   const [showDistraction, setShowDistraction] = useState(false);
   
@@ -163,6 +165,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + distractionTaps + missedTaps;
@@ -557,7 +560,11 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
         ]),
       ]).start();
 
-      speak('Perfect patience!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+      }, 2500);
 
       // Hide and advance
       setTimeout(() => {
@@ -1005,6 +1012,12 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

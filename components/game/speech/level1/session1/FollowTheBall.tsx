@@ -3,7 +3,7 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { EyeTrackingCamera } from '@/components/game/EyeTrackingCamera';
 import { ResultToast, SparkleBurst } from '@/components/game/FX';
 import { GazeVisualization } from '@/components/game/GazeVisualization';
-import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { advanceTherapyProgress, logGameAndAward } from '@/utils/api';
 import { BallPosition, EyeTrackingResult, isEyeTrackingAvailable } from '@/utils/eyeTracking';
 import { stopAllSpeech } from '@/utils/soundPlayer';
@@ -12,7 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useEffect, useRef, useState } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
   runOnJS,
@@ -61,6 +61,7 @@ const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(ma
 
 interface FollowTheBallProps {
   onBack: () => void;
+  onComplete?: () => void;
   therapyId?: string;
   levelNumber?: number;
   sessionNumber?: number;
@@ -145,6 +146,7 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
   const [soundOn, setSoundOn] = useState(true);
   const [hapticsOn, setHapticsOn] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
 
   const ballAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: ballScale.value }],
@@ -326,6 +328,9 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
 
       setFeedbackToast('success');
       setShowFeedback(true);
+      
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
 
       handleRoundEnd({
         reactionTimeMs: rt,
@@ -403,6 +408,7 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
     // Show feedback briefly then start next round or finish game
     setTimeout(() => {
       setShowFeedback(false);
+      setShowRoundSuccess(false);
       if (round >= TOTAL_ROUNDS) {
         finishGame();
       } else {
@@ -412,7 +418,7 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
           return next;
         });
       }
-    }, result.timedOut ? 2000 : 1500);
+    }, result.timedOut ? 2000 : 2500);
   };
 
   const finishGame = async () => {
@@ -597,126 +603,28 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
     });
   }, [showCongratulations, gameFinished, finalStats, round]);
 
-  // Show congratulations screen first
-  if (showCongratulations && gameFinished && finalStats) {
-    console.log('🎮 FollowTheBall: Rendering CongratulationsScreen');
+  // Show completion screen with stats (single screen, no ResultCard)
+  if (gameFinished && finalStats) {
+    const accuracyPct = Math.round((finalStats.successfulRounds / finalStats.totalRounds) * 100);
+    console.log('🎮 FollowTheBall: Rendering Completion Screen with stats');
     return (
       <CongratulationsScreen
         message="Amazing Work!"
         showButtons={true}
+        correct={finalStats.successfulRounds}
+        total={finalStats.totalRounds}
+        accuracy={accuracyPct}
+        xpAwarded={finalStats.successfulRounds * 10 + Math.floor(finalStats.finalAttentionScore / 10)}
         onContinue={() => {
-          setShowCongratulations(false);
+          clearScheduledSpeech();
+          stopAllSpeech();
+          onComplete?.();
         }}
         onHome={onBack}
       />
     );
   }
 
-  // Game finished screen
-  if (gameFinished && finalStats && !showCongratulations) {
-    const accuracyPct = Math.round((finalStats.successfulRounds / finalStats.totalRounds) * 100);
-    return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity
-          onPress={handleBack}
-          style={styles.backButton}
-        >
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-
-        <ScrollView contentContainerStyle={styles.completionScroll}>
-          <LinearGradient
-            colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <View style={styles.completionContent}>
-            <View style={styles.completionEmojiContainer}>
-              <Text style={styles.completionEmoji}>🎯</Text>
-            </View>
-            <Text style={styles.completionTitle}>Game Complete!</Text>
-            <Text style={styles.completionSubtitle}>
-              You completed {finalStats.totalRounds} rounds!
-            </Text>
-
-            <View style={styles.statsContainer}>
-              <View style={styles.statCard}>
-                <View style={styles.statIconContainer}>
-                  <Text style={styles.statIcon}>{emoji}</Text>
-                </View>
-                <View style={styles.statContent}>
-                  <Text style={styles.statLabel}>Focus Power</Text>
-                  <Text style={[styles.statValue, { color: getAttentionColor(finalStats.finalAttentionScore) }]}>
-                    {label} ({Math.round(finalStats.finalAttentionScore)})
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.statCard}>
-                <View style={[styles.statIconContainer, { backgroundColor: '#22C55E20' }]}>
-                  <Text style={styles.statIcon}>✅</Text>
-                </View>
-                <View style={styles.statContent}>
-                  <Text style={styles.statLabel}>Successful Rounds</Text>
-                  <Text style={[styles.statValue, { color: '#22C55E' }]}>
-                    {finalStats.successfulRounds}/{finalStats.totalRounds}
-                  </Text>
-                </View>
-              </View>
-
-              {finalStats.avgReactionTime > 0 && (
-                <View style={styles.statCard}>
-                  <View style={[styles.statIconContainer, { backgroundColor: '#3B82F620' }]}>
-                    <Text style={styles.statIcon}>⚡</Text>
-                  </View>
-                  <View style={styles.statContent}>
-                    <Text style={styles.statLabel}>Avg Reaction Time</Text>
-                    <Text style={[styles.statValue, { color: '#3B82F6' }]}>
-                      {finalStats.avgReactionTime}ms
-                    </Text>
-                  </View>
-                </View>
-              )}
-              {eyeTrackingEnabled && finalStats.avgGazeScore !== undefined && finalStats.avgGazeScore > 0 && (
-                <View style={styles.statCard}>
-                  <View style={[styles.statIconContainer, { backgroundColor: '#9333EA20' }]}>
-                    <Text style={styles.statIcon}>👁️</Text>
-                  </View>
-                  <View style={styles.statContent}>
-                    <Text style={styles.statLabel}>Eye Tracking Score</Text>
-                    <Text style={[styles.statValue, { color: '#9333EA' }]}>
-                      {finalStats.avgGazeScore}/100 ({finalStats.gazeSamples || 0} samples)
-                    </Text>
-                  </View>
-                </View>
-              )}
-            </View>
-          </View>
-
-          <ResultCard
-            correct={finalStats.successfulRounds}
-            total={finalStats.totalRounds}
-            xpAwarded={finalStats.successfulRounds * 10 + Math.floor(finalStats.finalAttentionScore / 10)}
-            accuracy={accuracyPct}
-            logTimestamp={logTimestamp}
-            onPlayAgain={() => {
-              setRound(1);
-              setAttentionScore(50);
-              setGameFinished(false);
-              setFinalStats(null);
-              setShowCongratulations(false);
-              roundResultsRef.current = [];
-              startRound();
-            }}
-            onHome={onBack}
-          />
-
-          <Text style={styles.savedText}>
-            {practiceMode ? 'Practice mode - results not saved' : 'Saved! XP updated ✅'}
-          </Text>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
 
   // Show camera consent screen
   if (showCameraConsent) {
@@ -938,6 +846,12 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
           <SparkleBurst key={sparkleKey} visible color="#FCD34D" />
         )}
       </View>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

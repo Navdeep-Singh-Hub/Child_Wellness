@@ -1,4 +1,5 @@
 import ResultCard from '@/components/game/ResultCard';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -83,6 +84,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
   const [correctTaps, setCorrectTaps] = useState(0);
   const [earlyTaps, setEarlyTaps] = useState(0);
   const [missedTaps, setMissedTaps] = useState(0);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations
   const targetScale = useRef(new Animated.Value(0)).current;
@@ -138,6 +140,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + earlyTaps + missedTaps;
@@ -462,7 +465,11 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
         ]),
       ]).start();
 
-      speak('Great focus!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+      }, 2500);
 
       // Hide and advance
       setTimeout(() => {
@@ -790,6 +797,12 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };
