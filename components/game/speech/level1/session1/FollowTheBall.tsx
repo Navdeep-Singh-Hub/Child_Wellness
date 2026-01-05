@@ -70,6 +70,7 @@ interface FollowTheBallProps {
 
 export const FollowTheBall: React.FC<FollowTheBallProps> = ({
   onBack,
+  onComplete,
   therapyId,
   levelNumber,
   sessionNumber,
