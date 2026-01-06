@@ -98,6 +98,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
   // Timeouts
   const glowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
 
   const finishGame = useCallback(async () => {
     if (glowTimeoutRef.current) {
@@ -146,15 +147,6 @@ export const TouchTheBallGame: React.FC<Props> = ({
       console.error('Failed to save game:', e);
     }
   }, [correctTaps, incorrectTaps, requiredRounds, onComplete]);
-
-  const advanceToNextRound = useCallback((nextRound: number) => {
-    if (nextRound >= requiredRounds) {
-      return;
-    }
-    setTimeout(() => {
-      startRound();
-    }, 1000);
-  }, [requiredRounds]);
 
   const startRound = useCallback(() => {
     // Clear timeouts
@@ -350,7 +342,18 @@ export const TouchTheBallGame: React.FC<Props> = ({
         tapTimeoutRef.current = null;
       }, 8000)) as unknown as NodeJS.Timeout;
     }, 1000);
-  }, [rounds, requiredRounds, canTap, isProcessing, objectScales, objectOpacities, glowScales, glowOpacities, advanceToNextRound]);
+  }, [rounds, requiredRounds, canTap, isProcessing, objectScales, objectOpacities, glowScales, glowOpacities]);
+  
+  startRoundRef.current = startRound;
+
+  const advanceToNextRound = useCallback((nextRound: number) => {
+    if (nextRound >= requiredRounds) {
+      return;
+    }
+    setTimeout(() => {
+      startRoundRef.current?.();
+    }, 1000);
+  }, [requiredRounds]);
 
   const handleObjectTap = useCallback((objectName: string, objectId: number) => {
     if (isProcessing || !canTap) return;
@@ -470,7 +473,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
       speak('Try the other one!');
       setIsProcessing(false);
     }
-  }, [isProcessing, canTap, targetObject, objects, objectScales, objectOpacities, advanceToNextRound]);
+  }, [isProcessing, canTap, targetObject, objects, objectScales, objectOpacities]);
 
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
