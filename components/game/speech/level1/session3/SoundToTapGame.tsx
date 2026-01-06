@@ -87,12 +87,6 @@ export const SoundToTapGame: React.FC<Props> = ({
     };
   }, []);
 
-  useEffect(() => {
-    if (trials >= requiredTrials) {
-      finishGame();
-    }
-  }, [trials, requiredTrials, finishGame]);
-
   const finishGame = useCallback(async () => {
     if (gameFinished) return;
     
