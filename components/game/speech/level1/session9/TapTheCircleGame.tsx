@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -93,6 +93,8 @@ export const TapTheCircleGame: React.FC<Props> = ({
   
   // Timeouts
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
 
   const finishGame = useCallback(async () => {
     if (tapTimeoutRef.current) {
@@ -143,7 +145,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
       return;
     }
     setTimeout(() => {
-      startRound();
+      startRoundRef.current?.();
     }, 1000);
   }, [requiredRounds]);
 
@@ -280,7 +282,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);
@@ -288,7 +290,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
         tapTimeoutRef.current = null;
       }, 8000)) as unknown as NodeJS.Timeout;
     }, INSTRUCTION_DELAY_MS);
-  }, [rounds, requiredRounds, canTap, isProcessing, shapeScales, shapeOpacities, advanceToNextRound]);
+  }, [rounds, requiredRounds, canTap, isProcessing, shapeScales, shapeOpacities]);
 
   const handleShapeTap = useCallback((shapeName: string, shapeId: number) => {
     if (isProcessing || !canTap) return;
@@ -378,7 +380,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);
@@ -408,7 +410,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
       speak('Try again!');
       setIsProcessing(false);
     }
-  }, [isProcessing, canTap, targetShape, shapes, shapeScales, shapeOpacities, advanceToNextRound]);
+  }, [isProcessing, canTap, targetShape, shapes, shapeScales, shapeOpacities]);
 
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
@@ -416,11 +418,19 @@ export const TapTheCircleGame: React.FC<Props> = ({
     }
   }, [rounds, requiredRounds, gameFinished, finishGame]);
 
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
+
   useEffect(() => {
     try {
       speak('Tap the circle when it appears!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -429,6 +439,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
         clearTimeout(tapTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {

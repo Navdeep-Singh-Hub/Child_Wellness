@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
     Animated,
     Easing,
@@ -102,6 +102,8 @@ export const TimerBarTapGame: React.FC<Props> = ({
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pulseAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
 
   const finishGame = useCallback(async () => {
     // Clear all timeouts and animations
@@ -167,7 +169,7 @@ export const TimerBarTapGame: React.FC<Props> = ({
       return;
     }
     setTimeout(() => {
-      startRound();
+      startRoundRef.current?.();
     }, 800);
   }, [requiredRounds]);
 
@@ -296,7 +298,7 @@ export const TimerBarTapGame: React.FC<Props> = ({
         ]).start(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         });
@@ -306,7 +308,7 @@ export const TimerBarTapGame: React.FC<Props> = ({
       
       fillTimeoutRef.current = null;
     }, duration)) as unknown as NodeJS.Timeout;
-  }, [rounds, requiredRounds, canTap, isProcessing, advanceToNextRound]);
+  }, [rounds, requiredRounds, canTap, isProcessing]);
 
   const handleButtonTap = useCallback(() => {
     if (isProcessing) return;
@@ -400,7 +402,7 @@ export const TimerBarTapGame: React.FC<Props> = ({
       ]).start(() => {
         setRounds(prev => {
           const nextRound = prev + 1;
-          advanceToNextRound(nextRound);
+          advanceToNextRoundRef.current?.(nextRound);
           return nextRound;
         });
       });
@@ -460,7 +462,15 @@ export const TimerBarTapGame: React.FC<Props> = ({
       speak('Wait...');
       setIsProcessing(false);
     }
-  }, [isFilled, canTap, isProcessing, advanceToNextRound]);
+  }, [isFilled, canTap, isProcessing]);
+
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
 
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
@@ -472,7 +482,7 @@ export const TimerBarTapGame: React.FC<Props> = ({
     try {
       speak('Wait for the timer bar to fill, then tap!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -490,6 +500,7 @@ export const TimerBarTapGame: React.FC<Props> = ({
         pulseAnimationRef.current.stop();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {

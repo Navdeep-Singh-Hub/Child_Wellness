@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
     Animated,
     Easing,
@@ -109,6 +109,8 @@ export const GrowingFlowerGame: React.FC<Props> = ({
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const pulseAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const rotationAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
   
   // Track animated values to avoid _value access
   const flowerScaleCurrentRef = useRef(0);
@@ -195,7 +197,7 @@ export const GrowingFlowerGame: React.FC<Props> = ({
       return;
     }
     setTimeout(() => {
-      startRound();
+      startRoundRef.current?.();
     }, 900);
   }, [requiredRounds]);
 
@@ -468,7 +470,7 @@ export const GrowingFlowerGame: React.FC<Props> = ({
         ]).start(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         });
@@ -478,7 +480,7 @@ export const GrowingFlowerGame: React.FC<Props> = ({
       
       growthTimeoutRef.current = null;
     }, GROWTH_DURATION_MS)) as unknown as NodeJS.Timeout;
-  }, [rounds, requiredRounds, advanceToNextRound]);
+  }, [rounds, requiredRounds]);
 
   const handleFlowerTap = useCallback(() => {
     if (isProcessing) return;
@@ -590,7 +592,7 @@ export const GrowingFlowerGame: React.FC<Props> = ({
         ]).start(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         });
@@ -648,7 +650,15 @@ export const GrowingFlowerGame: React.FC<Props> = ({
       speak('Wait for it to bloom!');
       setIsProcessing(false);
     }
-  }, [isBloomed, canTap, isProcessing, advanceToNextRound]);
+  }, [isBloomed, canTap, isProcessing]);
+
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
 
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
@@ -660,7 +670,7 @@ export const GrowingFlowerGame: React.FC<Props> = ({
     try {
       speak('Watch the flower grow, then tap when it blooms!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -681,6 +691,7 @@ export const GrowingFlowerGame: React.FC<Props> = ({
         rotationAnimationRef.current.stop();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {

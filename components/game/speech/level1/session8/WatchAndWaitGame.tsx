@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
     Animated,
     Easing,
@@ -111,6 +111,8 @@ export const WatchAndWaitGame: React.FC<Props> = ({
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const rotationAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const pulseAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
 
   const finishGame = useCallback(async () => {
     // Clear all timeouts and animations
@@ -180,7 +182,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
       return;
     }
     setTimeout(() => {
-      startRound();
+      startRoundRef.current?.();
     }, 900);
   }, [requiredRounds]);
 
@@ -477,7 +479,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
           ]).start(() => {
             setRounds(prev => {
               const nextRound = prev + 1;
-              advanceToNextRound(nextRound);
+              advanceToNextRoundRef.current?.(nextRound);
               return nextRound;
             });
           });
@@ -488,7 +490,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
         movementTimeoutRef.current = null;
       }, MOVEMENT_DURATION_MS + WAIT_DURATION_MS)) as unknown as NodeJS.Timeout;
     }, 600);
-  }, [rounds, requiredRounds, SCREEN_WIDTH, SCREEN_HEIGHT, advanceToNextRound]);
+  }, [rounds, requiredRounds, SCREEN_WIDTH, SCREEN_HEIGHT]);
 
   const handleTap = useCallback(() => {
     if (isProcessing) return;
@@ -612,7 +614,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
       ]).start(() => {
         setRounds(prev => {
           const nextRound = prev + 1;
-          advanceToNextRound(nextRound);
+          advanceToNextRoundRef.current?.(nextRound);
           return nextRound;
         });
       });
@@ -657,7 +659,15 @@ export const WatchAndWaitGame: React.FC<Props> = ({
     } else {
       setIsProcessing(false);
     }
-  }, [phase, canTap, isProcessing, advanceToNextRound]);
+  }, [phase, canTap, isProcessing]);
+
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
 
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
@@ -669,7 +679,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
     try {
       speak('Watch and wait for the ring, then tap!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -690,6 +700,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
         pulseAnimationRef.current.stop();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {
