@@ -1,7 +1,7 @@
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
-import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
+import { cleanupSounds, playSound, preloadSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -81,6 +81,8 @@ export const SoundToTapGame: React.FC<Props> = ({
   const backgroundPulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    // Preload sounds on mount for instant playback (especially important for mobile browsers)
+    preloadSounds();
     startTrial();
     return () => {
       clearScheduledSpeech();
