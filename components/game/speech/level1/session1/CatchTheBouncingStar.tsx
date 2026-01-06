@@ -14,7 +14,6 @@ import {
     useWindowDimensions,
     View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
@@ -325,62 +324,6 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
           onBack();
         }}
       />
-    );
-  }
-
-  // Legacy result card (should not be reached, but kept for safety)
-  if (false && gameFinished && finalStats && !showCongratulations) {
-    const accuracyPct = finalStats.accuracy;
-    return (
-      <SafeAreaView style={styles.container}>
-        <LinearGradient
-          colors={['#1E1B4B', '#312E81', '#4338CA']}
-          style={styles.gradient}
-        >
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={() => {
-                clearScheduledSpeech();
-                Speech.stop();
-                onBack();
-              }}
-              style={styles.backButton}
-            >
-              <Ionicons name="arrow-back" size={24} color="#0F172A" />
-              <Text style={styles.backText}>Back</Text>
-            </TouchableOpacity>
-            <View style={styles.headerText}>
-              <Text style={styles.title}>Catch the Bouncing Star</Text>
-              <Text style={styles.subtitle}>Results</Text>
-            </View>
-          </View>
-          <ResultCard
-            correct={finalStats.successfulTaps}
-            total={finalStats.totalTaps}
-            xpAwarded={finalStats.successfulTaps * 10}
-            accuracy={accuracyPct}
-            logTimestamp={logTimestamp}
-            onContinue={onComplete}
-            onPlayAgain={() => {
-              setHits(0);
-              setRound(0);
-              setGameFinished(false);
-              setFinalStats(null);
-              setShowFeedback(false);
-              setShowCongratulations(false);
-              starScale.setValue(1);
-              starGlow.setValue(0.5);
-              startBounce();
-              speak('Catch the bouncing star! Tap it when you see it!');
-            }}
-            onHome={() => {
-              clearScheduledSpeech();
-              Speech.stop();
-              onBack();
-            }}
-          />
-        </LinearGradient>
-      </SafeAreaView>
     );
   }
 
