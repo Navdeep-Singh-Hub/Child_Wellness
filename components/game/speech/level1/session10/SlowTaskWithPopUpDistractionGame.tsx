@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -130,6 +130,8 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
   const distractionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
   const pulseAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const distractionAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
 
@@ -209,7 +211,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
       return;
     }
     setTimeout(() => {
-      startRound();
+      startRoundRef.current?.();
     }, 1200);
   }, [requiredRounds]);
 
@@ -495,7 +497,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);
@@ -505,7 +507,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
       
       growthTimeoutRef.current = null;
     }, TOTAL_GROWTH_TIME)) as unknown as NodeJS.Timeout;
-  }, [rounds, requiredRounds, SCREEN_WIDTH, showDistractionPopUp, advanceToNextRound]);
+  }, [rounds, requiredRounds, SCREEN_WIDTH, showDistractionPopUp]);
 
   const handleFlowerTap = useCallback(() => {
     if (isProcessing) return;
@@ -589,7 +591,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);
@@ -650,7 +652,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
 
       setIsProcessing(false);
     }
-  }, [isBloomed, canTap, isProcessing, flowerScale, advanceToNextRound]);
+  }, [isBloomed, canTap, isProcessing, flowerScale]);
 
   const handleDistractionTap = useCallback(() => {
     if (isProcessing || isBloomed) return;
@@ -725,6 +727,14 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
     }, 2000);
   }, [isProcessing, isBloomed, distractionScale]);
 
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
+
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
       finishGame();
@@ -735,7 +745,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
     try {
       speak('Complete the slow task, ignore the pop-up distractions!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -762,6 +772,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
         distractionAnimationRef.current.stop();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {

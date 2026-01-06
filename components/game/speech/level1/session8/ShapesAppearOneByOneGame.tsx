@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -91,6 +91,8 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
   // Timeouts
   const appearanceTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
 
   const finishGame = useCallback(async () => {
     // Clear all timeouts
@@ -144,7 +146,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
       return;
     }
     setTimeout(() => {
-      startRound();
+      startRoundRef.current?.();
     }, 800);
   }, [requiredRounds]);
 
@@ -258,7 +260,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
               setTimeout(() => {
                 setRounds(prev => {
                   const nextRound = prev + 1;
-                  advanceToNextRound(nextRound);
+                  advanceToNextRoundRef.current?.(nextRound);
                   return nextRound;
                 });
               }, 400);
@@ -271,7 +273,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
       
       appearanceTimeoutsRef.current.push(timeout);
     });
-  }, [rounds, requiredRounds, canTap, isProcessing, SCREEN_WIDTH, SCREEN_HEIGHT, advanceToNextRound, shapeScales, shapeOpacities]);
+  }, [rounds, requiredRounds, canTap, isProcessing, SCREEN_WIDTH, SCREEN_HEIGHT, shapeScales, shapeOpacities]);
 
   const handleShapeTap = useCallback((shapeId: number) => {
     if (isProcessing || !canTap) return;
@@ -387,7 +389,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
           setTimeout(() => {
             setRounds(prev => {
               const nextRound = prev + 1;
-              advanceToNextRound(nextRound);
+              advanceToNextRoundRef.current?.(nextRound);
               return nextRound;
             });
           }, 400);
@@ -402,7 +404,15 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
       
       return newTappedShapes;
     });
-  }, [isProcessing, canTap, tappedShapes, shapeScales, shapeOpacities, advanceToNextRound]);
+  }, [isProcessing, canTap, tappedShapes, shapeScales, shapeOpacities]);
+
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
 
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
@@ -414,7 +424,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
     try {
       speak('Watch shapes appear one by one, then tap them!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -424,6 +434,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
         clearTimeout(tapTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {

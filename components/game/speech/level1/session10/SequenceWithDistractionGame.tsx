@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
     Animated,
     Easing,
@@ -147,6 +147,8 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
   const distractionIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const distractionAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
   const glowAnimationRefs = useRef<Map<number, Animated.CompositeAnimation>>(new Map()).current;
 
   const finishGame = useCallback(async () => {
@@ -216,7 +218,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
       return;
     }
     setTimeout(() => {
-      startRound();
+      startRoundRef.current?.();
     }, 1200);
   }, [requiredRounds]);
 
@@ -485,7 +487,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
               setTimeout(() => {
                 setRounds(prev => {
                   const nextRound = prev + 1;
-                  advanceToNextRound(nextRound);
+                  advanceToNextRoundRef.current?.(nextRound);
                   return nextRound;
                 });
               }, 400);
@@ -498,7 +500,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
       
       appearanceTimeoutsRef.current.push(timeout);
     });
-  }, [rounds, requiredRounds, SCREEN_WIDTH, SCREEN_HEIGHT, shapeScales, shapeOpacities, shapeGlow, shapeGlowOpacity, showDistractionPopUp, advanceToNextRound, startDistractionInterval]);
+  }, [rounds, requiredRounds, SCREEN_WIDTH, SCREEN_HEIGHT, shapeScales, shapeOpacities, shapeGlow, shapeGlowOpacity, showDistractionPopUp, startDistractionInterval]);
 
   const handleShapeTap = useCallback((shapeId: number) => {
     if (isProcessing || !canTap) return;
@@ -641,7 +643,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
               setTimeout(() => {
                 setRounds(prev => {
                   const nextRound = prev + 1;
-                  advanceToNextRound(nextRound);
+                  advanceToNextRoundRef.current?.(nextRound);
                   return nextRound;
                 });
             }, 400);
@@ -719,7 +721,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
       
       return prevSequence; // Return unchanged, will be updated inside setCurrentStep
     });
-  }, [isProcessing, canTap, shapeScales, shapeOpacities, shapeGlow, shapeGlowOpacity, advanceToNextRound]);
+  }, [isProcessing, canTap, shapeScales, shapeOpacities, shapeGlow, shapeGlowOpacity]);
 
   const handleDistractionTap = useCallback(() => {
     if (isProcessing || !canTap) return;
@@ -799,6 +801,14 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
     }, 2000);
   }, [isProcessing, canTap, distractionScale]);
 
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
+
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
       finishGame();
@@ -809,7 +819,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
     try {
       speak('Tap the objects in the correct order, ignore the distraction!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -829,6 +839,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
       }
       glowAnimationRefs.forEach(anim => anim.stop());
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {

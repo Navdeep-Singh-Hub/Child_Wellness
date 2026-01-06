@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
     Animated,
     Easing,
@@ -120,6 +120,8 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
   const glowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const glowAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
 
   const finishGame = useCallback(async () => {
     if (soundIntervalRef.current) {
@@ -184,7 +186,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
       return;
     }
     setTimeout(() => {
-      startRound();
+      startRoundRef.current?.();
     }, 1200);
   }, [requiredRounds]);
 
@@ -402,7 +404,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);
@@ -410,7 +412,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
         tapTimeoutRef.current = null;
       }, TAP_TIMEOUT_MS)) as unknown as NodeJS.Timeout;
     }, 5000)) as unknown as NodeJS.Timeout;
-  }, [rounds, requiredRounds, advanceToNextRound]);
+  }, [rounds, requiredRounds]);
 
   const handleTargetTap = useCallback(() => {
     if (isProcessing) return;
@@ -489,7 +491,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);
@@ -551,7 +553,15 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
 
       setIsProcessing(false);
     }
-  }, [isProcessing, isGlowing, canTap, targetScale, advanceToNextRound]);
+  }, [isProcessing, isGlowing, canTap, targetScale]);
+
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
 
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
@@ -563,7 +573,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
     try {
       speak('Tap the target, ignore the distracting sounds!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -581,6 +591,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
         glowAnimationRef.current.stop();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {
