@@ -100,7 +100,8 @@ export const TapWhatIShowYouGame: React.FC<Props> = ({
   // Timeouts
   const glowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const startRoundRef = useRef<() => void>();
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
 
   const finishGame = useCallback(async () => {
     if (glowTimeoutRef.current) {
@@ -150,8 +151,6 @@ export const TapWhatIShowYouGame: React.FC<Props> = ({
     }
   }, [correctTaps, incorrectTaps, requiredRounds, onComplete]);
 
-  const startRoundRef = useRef<() => void>();
-  
   const startRound = useCallback(() => {
     // Clear timeouts
     if (glowTimeoutRef.current) {
@@ -333,7 +332,7 @@ export const TapWhatIShowYouGame: React.FC<Props> = ({
           setTimeout(() => {
             setRounds(prev => {
               const nextRound = prev + 1;
-              advanceToNextRound(nextRound);
+              advanceToNextRoundRef.current?.(nextRound);
               return nextRound;
             });
           }, 400);
@@ -356,6 +355,10 @@ export const TapWhatIShowYouGame: React.FC<Props> = ({
       startRoundRef.current?.();
     }, 1000);
   }, [requiredRounds]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
 
   const handleObjectTap = useCallback((objectId: number) => {
     if (isProcessing || !canTap) return;
@@ -445,7 +448,7 @@ export const TapWhatIShowYouGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);

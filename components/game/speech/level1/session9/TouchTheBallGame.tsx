@@ -99,6 +99,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
   const glowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
 
   const finishGame = useCallback(async () => {
     if (glowTimeoutRef.current) {
@@ -334,7 +335,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);
@@ -356,6 +357,10 @@ export const TouchTheBallGame: React.FC<Props> = ({
       startRoundRef.current?.();
     }, 1000);
   }, [requiredRounds]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
 
   const handleObjectTap = useCallback((objectName: string, objectId: number) => {
     if (isProcessing || !canTap) return;
@@ -445,7 +450,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);
