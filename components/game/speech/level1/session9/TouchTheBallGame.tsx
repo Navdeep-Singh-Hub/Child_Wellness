@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -343,8 +343,10 @@ export const TouchTheBallGame: React.FC<Props> = ({
       }, 8000)) as unknown as NodeJS.Timeout;
     }, 1000);
   }, [rounds, requiredRounds, canTap, isProcessing, objectScales, objectOpacities, glowScales, glowOpacities]);
-  
-  startRoundRef.current = startRound;
+
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
 
   const advanceToNextRound = useCallback((nextRound: number) => {
     if (nextRound >= requiredRounds) {
@@ -485,7 +487,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
     try {
       speak('Touch the ball when it appears!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -497,6 +499,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
         clearTimeout(tapTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {

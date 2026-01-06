@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -343,8 +343,10 @@ export const TapWhatIShowYouGame: React.FC<Props> = ({
       }, INSTRUCTION_DELAY_MS);
     }, 1000);
   }, [rounds, requiredRounds, canTap, isProcessing, objectScales, objectOpacities, glowScales, glowOpacities]);
-  
-  startRoundRef.current = startRound;
+
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
 
   const advanceToNextRound = useCallback((nextRound: number) => {
     if (nextRound >= requiredRounds) {
@@ -485,7 +487,7 @@ export const TapWhatIShowYouGame: React.FC<Props> = ({
     try {
       speak('Watch what I show you, then tap it!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -497,6 +499,7 @@ export const TapWhatIShowYouGame: React.FC<Props> = ({
         clearTimeout(tapTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {
