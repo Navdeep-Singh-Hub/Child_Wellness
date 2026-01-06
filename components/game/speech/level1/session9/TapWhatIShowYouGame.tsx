@@ -1,4 +1,4 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -496,27 +496,20 @@ export const TapWhatIShowYouGame: React.FC<Props> = ({
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.correctTaps}
         total={finalStats.totalRounds}
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={() => {
+        onContinue={() => {
           clearScheduledSpeech();
           stopAllSpeech();
           cleanupSounds();
-          onBack();
+          onComplete?.();
         }}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setRounds(0);
-          setCorrectTaps(0);
-          setIncorrectTaps(0);
-          setLogTimestamp(null);
-          startRound();
-        }}
+        onHome={onBack}
       />
     );
   }
