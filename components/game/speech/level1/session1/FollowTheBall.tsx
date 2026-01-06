@@ -532,18 +532,21 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
       const hasDeclined = localStorage.getItem('eyeTrackingDeclined') === 'true';
       if (!hasDeclined) {
         setShowCameraConsent(true);
+        // Don't start game yet - wait for consent
+        return;
       }
     }
+    // If no consent needed or already declined, start game
+    startRound(1);
   }, []);
 
+  // Cleanup effect
   useEffect(() => {
-    startRound(1);
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       if (roundTimeoutRef.current) clearTimeout(roundTimeoutRef.current);
       clearScheduledSpeech();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Map attention score to label + emoji
@@ -572,6 +575,8 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('eyeTrackingDeclined');
     }
+    // Start game after accepting consent
+    startRound(1);
   };
 
   const handleDeclineCamera = () => {
@@ -580,17 +585,33 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('eyeTrackingDeclined', 'true');
     }
+    // Start game after declining consent
+    startRound(1);
   };
 
   // Stop all timers/speech/animations before leaving
   const handleBack = () => {
+    // Stop all speech immediately and aggressively - call multiple times
+    try {
+      Speech.stop();
+      Speech.stop();
+      Speech.stop();
+    } catch {}
+    
+    // Clear all scheduled speech timers
+    clearScheduledSpeech();
+    
+    // Use the utility function that also stops speech multiple times
+    stopAllSpeech();
+    
+    // Stop all timers and animations
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     if (roundTimeoutRef.current) clearTimeout(roundTimeoutRef.current);
     glowOpacity.value = 0;
     ballScale.value = 1;
     setIsPaused(true);
-    clearScheduledSpeech();
-    stopAllSpeech();
+    
+    // Navigate back immediately after stopping everything
     onBack();
   };
 

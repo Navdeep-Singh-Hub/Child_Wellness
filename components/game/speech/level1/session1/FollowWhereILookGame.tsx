@@ -30,21 +30,70 @@ const DEFAULT_TTS_RATE = 0.75;
 type LookDirection = 'left' | 'right';
 
 let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let isSpeaking = false;
+let speechQueue: Array<{ text: string; rate: number }> = [];
+let currentSpeechTimer: ReturnType<typeof setTimeout> | null = null;
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
   scheduledSpeechTimers = [];
+  if (currentSpeechTimer) {
+    clearTimeout(currentSpeechTimer);
+    currentSpeechTimer = null;
+  }
   try {
     Speech.stop();
   } catch {}
+  isSpeaking = false;
+  speechQueue = [];
 }
 
 function speak(text: string, rate = DEFAULT_TTS_RATE) {
+  // Add to queue
+  speechQueue.push({ text, rate });
+  
+  // If not currently speaking, start processing queue
+  if (!isSpeaking) {
+    processSpeechQueue();
+  }
+}
+
+function processSpeechQueue() {
+  if (speechQueue.length === 0) {
+    isSpeaking = false;
+    return;
+  }
+  
+  const { text, rate } = speechQueue.shift()!;
+  isSpeaking = true;
+  
   try {
-    clearScheduledSpeech();
+    // Stop any current speech before starting new one
+    Speech.stop();
+    
+    // Estimate speech duration (rough calculation: ~150 words per minute at rate 1.0)
+    // Adjust for rate: faster rate = shorter duration
+    const words = text.split(/\s+/).length;
+    const baseDuration = (words / 150) * 60 * 1000; // in milliseconds at rate 1.0
+    const durationWithRate = baseDuration / rate;
+    
+    // Speak the text
     Speech.speak(text, { rate });
+    
+    // Schedule next speech after estimated duration + buffer
+    currentSpeechTimer = setTimeout(() => {
+      currentSpeechTimer = null;
+      isSpeaking = false;
+      // Process next in queue
+      processSpeechQueue();
+    }, durationWithRate + 300); // Add 300ms buffer for safety
   } catch (e) {
     console.warn('speak error', e);
+    isSpeaking = false;
+    // Process next in queue even on error
+    setTimeout(() => {
+      processSpeechQueue();
+    }, 100);
   }
 }
 
@@ -162,12 +211,18 @@ export const FollowWhereILookGame: React.FC<Props> = ({
       }),
     ]).start();
 
-    speak(direction === 'left' ? 'I\'m looking left!' : 'I\'m looking right!');
+    const directionText = direction === 'left' ? 'I\'m looking left!' : 'I\'m looking right!';
+    speak(directionText);
 
-    // Object appears after short delay
+    // Object appears after speech finishes (estimate: ~2 seconds for direction text at rate 0.75)
+    // Calculate delay based on speech duration
+    const words = directionText.split(/\s+/).length;
+    const speechDuration = (words / 150) * 60 * 1000 / DEFAULT_TTS_RATE; // Adjust for rate
+    const delay = Math.max(1500, speechDuration + 500); // At least 1.5s, or speech duration + 500ms buffer
+    
     setTimeout(() => {
       showObject(direction, objectIndex);
-    }, 800);
+    }, delay);
   };
 
   const showObject = (direction: LookDirection, objectIndex: number) => {

@@ -668,7 +668,7 @@ const styles = StyleSheet.create({
   },
   instructionBadge: {
     position: 'absolute',
-    bottom: 200,
+    top: '20%',
     alignSelf: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -676,6 +676,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16, 185, 129, 0.2)',
     borderWidth: 2,
     borderColor: '#10B981',
+    zIndex: 200,
+    elevation: 10,
   },
   instructionText: {
     color: '#059669',
