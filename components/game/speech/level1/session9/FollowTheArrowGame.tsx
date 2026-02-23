@@ -298,7 +298,7 @@ export const FollowTheArrowGame: React.FC<Props> = ({
         ]).start();
 
         // Play audio instruction
-        speak('Tap here');
+        speak('Tap where the arrow is pointing');
 
         // Allow tapping
         setCanTap(true);
@@ -556,7 +556,7 @@ export const FollowTheArrowGame: React.FC<Props> = ({
           <View style={styles.headerText}>
             <Text style={styles.title}>Follow the Arrow</Text>
             <Text style={styles.subtitle}>
-              {showInstruction ? 'Tap here!' : 'Watch the arrow...'}
+              {showInstruction ? 'Tap where the arrow is pointing!' : 'Watch the arrow...'}
             </Text>
           </View>
         </View>
@@ -603,7 +603,7 @@ export const FollowTheArrowGame: React.FC<Props> = ({
                 style={styles.instructionGradient}
               >
                 <Ionicons name="hand-right" size={28} color="#FFFFFF" />
-                <Text style={styles.instructionText}>Tap here</Text>
+                <Text style={styles.instructionText}>Tap where the arrow is pointing</Text>
               </LinearGradient>
             </Animated.View>
           )}

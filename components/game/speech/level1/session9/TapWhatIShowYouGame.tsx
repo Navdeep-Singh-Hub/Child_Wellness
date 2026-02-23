@@ -287,7 +287,7 @@ export const TapWhatIShowYouGame: React.FC<Props> = ({
         ]).start();
 
         // Play audio instruction
-        speak('Tap this');
+        speak('Tap the object that was glowing');
 
         // Allow tapping
         setCanTap(true);
@@ -581,7 +581,7 @@ export const TapWhatIShowYouGame: React.FC<Props> = ({
                 style={styles.instructionGradient}
               >
                 <Ionicons name="finger-print" size={28} color="#FFFFFF" />
-                <Text style={styles.instructionText}>Tap this</Text>
+                <Text style={styles.instructionText}>Tap the object that was glowing</Text>
               </LinearGradient>
             </Animated.View>
           )}

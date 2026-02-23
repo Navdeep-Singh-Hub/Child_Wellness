@@ -12,13 +12,12 @@ import {
   Easing,
   Pressable,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   useWindowDimensions,
   View,
 } from 'react-native';
+import Svg, { Line } from 'react-native-svg';
 
 type Props = {
   onBack: () => void;
@@ -82,7 +81,6 @@ export const WhichSideGame: React.FC<Props> = ({
   const leftGlow = useRef(new Animated.Value(0.5)).current;
   const rightGlow = useRef(new Animated.Value(0.5)).current;
   const gazeLineOpacity = useRef(new Animated.Value(0)).current;
-  const gazeLineScale = useRef(new Animated.Value(0)).current;
 
   const [leftObject, setLeftObject] = useState(0);
   const [rightObject, setRightObject] = useState(1);
@@ -142,7 +140,6 @@ export const WhichSideGame: React.FC<Props> = ({
     leftGlow.setValue(0.5);
     rightGlow.setValue(0.5);
     gazeLineOpacity.setValue(0);
-    gazeLineScale.setValue(0);
     avatarEyeX.setValue(0);
 
     const direction: LookDirection = Math.random() > 0.5 ? 'left' : 'right';
@@ -172,20 +169,12 @@ export const WhichSideGame: React.FC<Props> = ({
       useNativeDriver: false,
     }).start();
 
-    Animated.parallel([
-      Animated.timing(gazeLineOpacity, {
-        toValue: 0.6,
-        duration: 300,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: false,
-      }),
-      Animated.timing(gazeLineScale, {
-        toValue: 1,
-        duration: 400,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: false,
-      }),
-    ]).start();
+    Animated.timing(gazeLineOpacity, {
+      toValue: 0.7,
+      duration: 300,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start();
 
     Animated.loop(
       Animated.sequence([
@@ -398,29 +387,36 @@ export const WhichSideGame: React.FC<Props> = ({
             </Animated.View>
           </View>
 
-          {isLooking && (
-            <Animated.View
-              style={[
-                styles.gazeLine,
-                {
-                  left: SCREEN_WIDTH / 2,
-                  top: SCREEN_HEIGHT * 0.35,
-                  width: SCREEN_WIDTH * 0.3,
-                  transform: [
-                    { 
-                      translateX: currentDirection === 'left' 
-                        ? -SCREEN_WIDTH * 0.3 
-                        : SCREEN_WIDTH * 0.3 
-                    },
-                    { scaleX: gazeLineScale },
-                  ],
-                  opacity: gazeLineOpacity,
-                },
-              ]}
-            >
-              <View style={styles.gazeLineInner} />
-            </Animated.View>
-          )}
+          {isLooking && (() => {
+            const avatarCenterY = SCREEN_HEIGHT * 0.35;
+            const avatarLeftX = SCREEN_WIDTH / 2 - AVATAR_SIZE / 2;
+            const avatarRightX = SCREEN_WIDTH / 2 + AVATAR_SIZE / 2;
+            const x1 = currentDirection === 'left' ? avatarLeftX : avatarRightX;
+            const y1 = avatarCenterY;
+            const x2 = currentDirection === 'left' ? leftX : rightX;
+            const y2 = objectY;
+            return (
+              <Animated.View
+                style={[
+                  styles.gazeLineWrapper,
+                  { opacity: gazeLineOpacity },
+                ]}
+                pointerEvents="none"
+              >
+                <Svg width={SCREEN_WIDTH} height={SCREEN_HEIGHT} style={styles.gazeLineSvg}>
+                  <Line
+                    x1={x1}
+                    y1={y1}
+                    x2={x2}
+                    y2={y2}
+                    stroke="#3B82F6"
+                    strokeWidth={5}
+                    strokeLinecap="round"
+                  />
+                </Svg>
+              </Animated.View>
+            );
+          })()}
 
           <Pressable
             onPress={() => handleTap('left')}
@@ -627,18 +623,19 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     marginTop: 4,
   },
-  gazeLine: {
+  gazeLineWrapper: {
     position: 'absolute',
-    height: 4,
-    backgroundColor: '#3B82F6',
-    borderRadius: 2,
+    left: 0,
+    top: 0,
+    width: '100%',
+    height: '100%',
     zIndex: 50,
     elevation: 5,
   },
-  gazeLineInner: {
-    flex: 1,
-    backgroundColor: '#60A5FA',
-    borderRadius: 2,
+  gazeLineSvg: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
   },
   objectContainer: {
     position: 'absolute',

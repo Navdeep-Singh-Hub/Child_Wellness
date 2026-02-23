@@ -475,11 +475,11 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
           <Pressable
             onPress={async () => {
               await stopContinuousSound();
-              // Stop animations
               movementAnim.current?.stop();
               if (stopTimer.current) clearTimeout(stopTimer.current);
               if (soundTimer.current) clearTimeout(soundTimer.current);
               clearScheduledSpeech();
+              stopTTS();
               stopAllSpeech();
               cleanupSounds();
               onBack();

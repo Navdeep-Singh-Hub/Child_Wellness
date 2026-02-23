@@ -247,7 +247,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
       ]).start();
 
       // Play audio instruction
-      speak(`Touch the ${target.displayName}`);
+      speak('Touch the object');
 
       // Make target object glow
       setTimeout(() => {
@@ -489,7 +489,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
 
   useEffect(() => {
     try {
-      speak('Touch the ball when it appears!');
+      speak('Find the object when it appears!');
     } catch {}
     startRoundRef.current?.();
     return () => {
@@ -559,9 +559,9 @@ export const TouchTheBallGame: React.FC<Props> = ({
             <Text style={styles.backText}>Back</Text>
           </Pressable>
           <View style={styles.headerText}>
-            <Text style={styles.title}>Touch the Ball</Text>
+            <Text style={styles.title}>Touch the Object</Text>
             <Text style={styles.subtitle}>
-              {showInstruction ? `Touch the ${targetObject ? OBJECTS.find(o => o.name === targetObject)?.displayName : ''}` : 'Get ready...'}
+              {showInstruction ? 'Touch the object!' : 'Get ready...'}
             </Text>
           </View>
         </View>
@@ -584,7 +584,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
               >
                 <Ionicons name="megaphone" size={28} color="#FFFFFF" />
                 <Text style={styles.instructionText}>
-                  Touch the {OBJECTS.find(o => o.name === targetObject)?.displayName}
+                  Touch the object
                 </Text>
               </LinearGradient>
             </Animated.View>

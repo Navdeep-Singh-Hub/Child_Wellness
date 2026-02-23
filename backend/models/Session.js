@@ -27,7 +27,7 @@ const GameLogSchema = new Schema(
         'shapes-appear-one-by-one','touch-the-ball','tap-the-circle','find-the-sound-source',
         'tap-what-i-show-you','follow-the-arrow','tap-the-target-ignore-distraction',
         'sound-distraction-challenge','slow-task-with-pop-up-distraction','sequence-with-distraction',
-        'moving-target-with-extra-objects','jaw-awareness-crocodile',
+        'jaw-awareness-crocodile',
         'jaw-swing-adventure','jaw-push-challenge','jaw-rhythm-tap','jaw-strength-builder',
         'rainbow-curve-trace','drive-car-curvy-road','trace-smiling-mouth','ball-roll-curved-track','paint-curved-snake'
       ], 

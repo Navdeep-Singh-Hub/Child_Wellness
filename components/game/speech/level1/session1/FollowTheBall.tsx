@@ -7,7 +7,7 @@ import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { advanceTherapyProgress, logGameAndAward } from '@/utils/api';
 import { BallPosition, EyeTrackingResult, isEyeTrackingAvailable } from '@/utils/eyeTracking';
 import { stopAllSpeech } from '@/utils/soundPlayer';
-import { clearScheduledSpeech, DEFAULT_TTS_RATE } from '@/utils/tts';
+import { activateWebTTS, clearScheduledSpeech, DEFAULT_TTS_RATE, speak, stopTTS } from '@/utils/tts';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';

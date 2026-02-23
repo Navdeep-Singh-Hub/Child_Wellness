@@ -149,15 +149,10 @@ export const LoudVsSoftGame: React.FC<Props> = ({
     // Play sound after a short delay
     setTimeout(() => {
       const instrument = INSTRUMENTS[instrumentIndex];
-      
-      // Play actual sound with adjusted volume and pitch
-      // Loud: volume 1.0, rate 1.4-1.5 (much higher pitch - bright and sharp)
-      // Soft: volume 0.3, rate 0.5-0.6 (much lower pitch - deep and mellow)
-      // HUGE pitch difference to make it very obvious
-      const soundVolume = volume === 'loud' ? 1.0 : 0.3;
-      const soundRate = volume === 'loud' 
-        ? 1.4 + Math.random() * 0.1  // 1.4-1.5 (high pitch)
-        : 0.5 + Math.random() * 0.1;  // 0.5-0.6 (low pitch)
+      // Big volume contrast so loud vs soft is easy to hear:
+      // Loud = full volume, soft = clearly quiet (same pitch so only volume differs)
+      const soundVolume = volume === 'loud' ? 1.0 : 0.15;
+      const soundRate = 1.0;
       playSound(instrument.soundKey, soundVolume, soundRate);
       
       // Show choices after sound
@@ -315,6 +310,7 @@ export const LoudVsSoftGame: React.FC<Props> = ({
           <Pressable
             onPress={() => {
               clearScheduledSpeech();
+              stopTTS();
               stopAllSpeech();
               cleanupSounds();
               onBack();

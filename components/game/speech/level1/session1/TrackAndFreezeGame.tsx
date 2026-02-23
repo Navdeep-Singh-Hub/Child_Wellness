@@ -3,7 +3,7 @@ import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { speak as speakTTS, clearScheduledSpeech, DEFAULT_TTS_RATE } from '@/utils/tts';
+import { speak as speakTTS, clearScheduledSpeech, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -59,6 +59,8 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
   const pulseScale = useRef(new Animated.Value(1)).current;
   const movementAnim = useRef<Animated.CompositeAnimation | null>(null);
   const stopTimer = useRef<NodeJS.Timeout | null>(null);
+  const roundStartTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const earlyTapThisRoundRef = useRef(false);
 
   const carColors = [
     { gradient: ['#EF4444', '#DC2626'], glow: '#FCA5A5', emoji: '🚗' },
@@ -69,10 +71,16 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
   ];
   const [currentCarColor, setCurrentCarColor] = useState(0);
 
+  // On mount: speak instruction first, then start first round after TTS
   useEffect(() => {
-    startRound();
-    speak('Follow the car… it stopped! Tap now!');
+    const instruction = 'Watch the car move. When it stops, tap it!';
+    speak(instruction);
+    const t = setTimeout(() => {
+      startRound();
+    }, 3500);
     return () => {
+      clearTimeout(t);
+      if (roundStartTimerRef.current) clearTimeout(roundStartTimerRef.current);
       movementAnim.current?.stop();
       if (stopTimer.current) clearTimeout(stopTimer.current);
       clearScheduledSpeech();
@@ -99,7 +107,8 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
     setRound((prev) => prev + 1);
     setGameState('moving');
     setShowFeedback(false);
-    
+    earlyTapThisRoundRef.current = false;
+
     // Random starting position
     const startX = 80 + Math.random() * (SCREEN_WIDTH - 160);
     const startY = 150 + Math.random() * (SCREEN_HEIGHT - 400);
@@ -116,35 +125,47 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
     const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
     carRotation.setValue(angle);
 
-    // Move duration: 2-4 seconds
+    // Speak at start of every round, then start movement after a short delay
+    speak('Watch the car move.');
     const moveDuration = 2000 + Math.random() * 2000;
-
-    movementAnim.current = Animated.parallel([
-      Animated.timing(carX, {
-        toValue: endX,
-        duration: moveDuration,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: false,
-      }),
-      Animated.timing(carY, {
-        toValue: endY,
-        duration: moveDuration,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: false,
-      }),
-    ]);
-
-    movementAnim.current.start(() => {
-      // Car stops!
-      stopCar();
-    });
+    if (roundStartTimerRef.current) clearTimeout(roundStartTimerRef.current);
+    roundStartTimerRef.current = setTimeout(() => {
+      roundStartTimerRef.current = null;
+      movementAnim.current = Animated.parallel([
+        Animated.timing(carX, {
+          toValue: endX,
+          duration: moveDuration,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+        Animated.timing(carY, {
+          toValue: endY,
+          duration: moveDuration,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+      ]);
+      movementAnim.current.start(() => {
+        stopCar();
+      });
+    }, 2200);
   }, [carX, carY, carRotation]);
 
   const stopCar = () => {
-    setGameState('stopped');
     movementAnim.current?.stop();
-    
-    // Stop glow animation
+
+    // If user tapped early this round: just say "It stopped!" and start next round
+    if (earlyTapThisRoundRef.current) {
+      earlyTapThisRoundRef.current = false;
+      setShowFeedback(false);
+      speak('It stopped!');
+      setTimeout(() => {
+        startRound();
+      }, 2500);
+      return;
+    }
+
+    setGameState('stopped');
     stopGlow.setValue(0);
     Animated.loop(
       Animated.sequence([
@@ -163,7 +184,6 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
       ])
     ).start();
 
-    // Pulse animation to indicate it's ready to tap
     pulseScale.setValue(1);
     Animated.loop(
       Animated.sequence([
@@ -184,7 +204,6 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
 
     speak('It stopped! Tap now!');
 
-    // Auto-advance if not tapped within 3 seconds
     stopTimer.current = setTimeout(() => {
       handleTimeout();
     }, 3000);
@@ -204,8 +223,9 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
     setEarlyTaps((prev) => prev + 1);
     setShowFeedback(true);
     setFeedbackMessage('Wait! The car is moving! 🛑');
-    setGameState('feedback');
-    
+    earlyTapThisRoundRef.current = true;
+    // Car keeps moving; when it stops, stopCar() will say "It stopped!" and start next round
+
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     } catch {}
@@ -228,11 +248,6 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
         useNativeDriver: false,
       }),
     ]).start();
-
-    setTimeout(() => {
-      setShowFeedback(false);
-      setGameState('moving');
-    }, 1500);
   };
 
   const handleCorrectTap = () => {
@@ -362,6 +377,7 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
           <Pressable
             onPress={() => {
               clearScheduledSpeech();
+              stopTTS();
               onBack();
             }}
             style={styles.backButton}
