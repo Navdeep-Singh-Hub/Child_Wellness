@@ -361,7 +361,6 @@ import RaceTheDotGame from '@/components/game/occupational/level1/session3/RaceT
 import SlowThenFastGame from '@/components/game/occupational/level1/session3/SlowThenFastGame';
 import TapFastGame from '@/components/game/occupational/level1/session3/TapFastGame';
 import TapSlowlyGame from '@/components/game/occupational/level1/session3/TapSlowlyGame';
-import TapWithSoundGame from '@/components/game/occupational/level1/session3/TapWithSoundGame';
 
 // Occupational Therapy Level 1 Session 4
 import GrowTheBalloonGame from '@/components/game/occupational/level1/session4/GrowTheBalloonGame';
@@ -405,7 +404,6 @@ import ShrinkStopTapGame from '@/components/game/occupational/level1/session9/Sh
 import TapWhenStarIsSmallestGame from '@/components/game/occupational/level1/session9/TapWhenStarIsSmallestGame';
 
 // Occupational Therapy Level 1 Session 10
-import PinchAndDragGame from '@/components/game/occupational/level1/session10/PinchAndDragGame';
 import PinchToOpenTreasureBoxGame from '@/components/game/occupational/level1/session10/PinchToOpenTreasureBoxGame';
 import PinchToPopGame from '@/components/game/occupational/level1/session10/PinchToPopGame';
 import PinchToResizeGame from '@/components/game/occupational/level1/session10/PinchToResizeGame';
@@ -476,9 +474,10 @@ import MirrorLineDrawGame from '@/components/game/occupational/level2/session10/
 import MirrorMazeGame from '@/components/game/occupational/level2/session10/MirrorMazeGame';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { fetchTherapyProgress, getSubscriptionStatus, type SubscriptionStatus, type TherapyProgress } from '@/utils/api';
 
 type GameKey =
   | 'menu'
@@ -673,7 +672,6 @@ type GameKey =
   | 'tap-slowly'
   | 'tap-fast'
   | 'slow-then-fast'
-  | 'tap-with-sound'
   | 'race-the-dot'
   | 'hold-the-button'
   | 'grow-the-balloon'
@@ -705,7 +703,6 @@ type GameKey =
   | 'multiple-shrinking-targets'
   | 'shrinking-object-movement'
   | 'pinch-to-pop'
-  | 'pinch-and-drag'
   | 'two-finger-simultaneous-tap'
   | 'pinch-to-resize'
   | 'pinch-to-open-treasure-box'
@@ -814,10 +811,34 @@ export default function SessionGamesScreen() {
   }>();
 
   const [currentGame, setCurrentGame] = React.useState<GameKey>('menu');
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+  const [therapyProgress, setTherapyProgress] = useState<TherapyProgress | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const therapyId = params.therapy || 'speech';
   const levelNumber = params.level ? parseInt(params.level, 10) : 1;
   const sessionNumber = params.session ? parseInt(params.session, 10) : 1;
+
+  // Fetch subscription status and therapy progress
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [subStatus, progress] = await Promise.all([
+          getSubscriptionStatus(),
+          fetchTherapyProgress(),
+        ]);
+        setSubscriptionStatus(subStatus);
+        const therapy = progress.therapies.find(t => t.therapy === therapyId);
+        setTherapyProgress(therapy || null);
+      } catch (error) {
+        console.error('[SessionGames] Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [therapyId, levelNumber, sessionNumber]);
 
   // Handle social stories (daily-activities) differently - show videos instead of games
   if (therapyId === 'daily-activities') {
@@ -1005,11 +1026,7 @@ export default function SessionGamesScreen() {
   const isSlowThenFastAvailable =
     therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 3;
 
-  // Level 1 Session 3 Game 4: Tap With Sound - available for OT Level 1 Session 3 ONLY
-  const isTapWithSoundAvailable =
-    therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 3;
-
-  // Level 1 Session 3 Game 5: Race The Dot - available for OT Level 1 Session 3 ONLY
+  // Level 1 Session 3 Game 4: Race The Dot - available for OT Level 1 Session 3 ONLY
   const isRaceTheDotAvailable =
     therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 3;
 
@@ -1133,11 +1150,7 @@ export default function SessionGamesScreen() {
   const isPinchToPopAvailable =
     therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 10;
 
-  // Level 1 Session 10 Game 2: Pinch and Drag - available for OT Level 1 Session 10
-  const isPinchAndDragAvailable =
-    therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 10;
-
-  // Level 1 Session 10 Game 3: Two-Finger Simultaneous Tap - available for OT Level 1 Session 10
+  // Level 1 Session 10 Game 2: Two-Finger Simultaneous Tap - available for OT Level 1 Session 10
   const isTwoFingerSimultaneousTapAvailable =
     therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 10;
 
@@ -2047,14 +2060,6 @@ export default function SessionGamesScreen() {
       available: isSlowThenFastAvailable,
     },
     {
-      id: 'tap-with-sound',
-      title: 'Tap With Sound',
-      emoji: '🥁',
-      description: 'Listen to the drum beat and tap with it! Start slow, then tap fast. Build rhythm and motor synchronization.',
-      color: '#3B82F6',
-      available: isTapWithSoundAvailable,
-    },
-    {
       id: 'race-the-dot',
       title: 'Race The Dot',
       emoji: '🏁',
@@ -2301,14 +2306,6 @@ export default function SessionGamesScreen() {
       description: 'Use two fingers to pinch the balloon and pop it! Build pinch strength and two-finger coordination.',
       color: '#EF4444',
       available: isPinchToPopAvailable,
-    },
-    {
-      id: 'pinch-and-drag',
-      title: 'Pinch and Drag',
-      emoji: '🎯',
-      description: 'Pinch the object and drag it to the goal! Build pinch stability and drag coordination.',
-      color: '#3B82F6',
-      available: isPinchAndDragAvailable,
     },
     {
       id: 'two-finger-simultaneous-tap',
@@ -4573,6 +4570,51 @@ export default function SessionGamesScreen() {
     },
   ];
 
+  // FOR TESTING: Set to true to force progressive unlocking even for free access users
+  const FORCE_PROGRESSIVE_UNLOCK = true; // Changed to true for testing
+
+  // Check for free access
+  const isFreeAccess = FORCE_PROGRESSIVE_UNLOCK 
+    ? false 
+    : (subscriptionStatus 
+      ? (subscriptionStatus.isFreeAccess === true || subscriptionStatus.status === 'free')
+      : false);
+
+  // Get completed games for current session
+  const currentSessionProgress = therapyProgress?.levels
+    ?.find(l => l.levelNumber === levelNumber)
+    ?.sessions.find(s => s.sessionNumber === sessionNumber);
+  const completedGames = currentSessionProgress?.completedGames || [];
+
+  // Helper function to check if a game is unlocked
+  const isGameUnlocked = (gameId: string, gameIndex: number): boolean => {
+    // Free access users have everything unlocked
+    if (isFreeAccess) {
+      return true;
+    }
+    
+    // First game is always unlocked
+    if (gameIndex === 0) {
+      return true;
+    }
+    
+    // Get available games for current session
+    const availableGames = GAMES.filter(game => game.available);
+    
+    // A game is unlocked if the previous game is completed
+    const previousGame = availableGames[gameIndex - 1];
+    if (!previousGame) {
+      return false;
+    }
+    
+    // Check if previous game is in completedGames
+    const previousGameCompleted = completedGames.includes(previousGame.id);
+    
+    console.log(`[GAME UNLOCK] Game ${gameId} (index ${gameIndex}): Previous game ${previousGame.id} completed: ${previousGameCompleted}, unlocked: ${previousGameCompleted}`);
+    
+    return previousGameCompleted;
+  };
+
   // ---------- Game render switches ----------
 
   if (currentGame === 'follow-ball') {
@@ -4675,10 +4717,6 @@ export default function SessionGamesScreen() {
 
   if (currentGame === 'slow-then-fast') {
     return <SlowThenFastGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'tap-with-sound') {
-    return <TapWithSoundGame onBack={() => setCurrentGame('menu')} />;
   }
 
   if (currentGame === 'race-the-dot') {
@@ -4803,10 +4841,6 @@ export default function SessionGamesScreen() {
 
   if (currentGame === 'pinch-to-pop') {
     return <PinchToPopGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'pinch-and-drag') {
-    return <PinchAndDragGame onBack={() => setCurrentGame('menu')} />;
   }
 
   if (currentGame === 'two-finger-simultaneous-tap') {
@@ -6062,14 +6096,23 @@ export default function SessionGamesScreen() {
               </Text>
             </View>
           ) : (
-            GAMES.filter(game => game.available).map((game) => (
+            GAMES.filter(game => game.available).map((game, index) => {
+              const unlocked = isGameUnlocked(game.id, index);
+              const isLocked = !unlocked;
+              
+              return (
               <TouchableOpacity
                 key={game.id}
                 style={[
                   styles.gameCard,
-                  { borderColor: game.color },
+                  { borderColor: isLocked ? '#E5E7EB' : game.color },
+                  isLocked && styles.gameCardDisabled,
                 ]}
                 onPress={() => {
+                  if (isLocked) {
+                    Alert.alert('Locked', 'Complete the previous game to unlock this game.');
+                    return;
+                  }
                   if (game.id === 'follow-ball') setCurrentGame('follow-ball');
                   if (game.id === 'catch-star') setCurrentGame('catch-star');
                   if (game.id === 'slow-to-fast') setCurrentGame('slow-to-fast');
@@ -6102,7 +6145,6 @@ export default function SessionGamesScreen() {
                   if (game.id === 'tap-slowly') setCurrentGame('tap-slowly');
                   if (game.id === 'tap-fast') setCurrentGame('tap-fast');
                   if (game.id === 'slow-then-fast') setCurrentGame('slow-then-fast');
-                  if (game.id === 'tap-with-sound') setCurrentGame('tap-with-sound');
                   if (game.id === 'race-the-dot') setCurrentGame('race-the-dot');
                   if (game.id === 'hold-the-button') setCurrentGame('hold-the-button');
                   if (game.id === 'grow-the-balloon') setCurrentGame('grow-the-balloon');
@@ -6134,7 +6176,6 @@ export default function SessionGamesScreen() {
                   if (game.id === 'multiple-shrinking-targets') setCurrentGame('multiple-shrinking-targets');
                   if (game.id === 'shrinking-object-movement') setCurrentGame('shrinking-object-movement');
                   if (game.id === 'pinch-to-pop') setCurrentGame('pinch-to-pop');
-                  if (game.id === 'pinch-and-drag') setCurrentGame('pinch-and-drag');
                   if (game.id === 'two-finger-simultaneous-tap') setCurrentGame('two-finger-simultaneous-tap');
                   if (game.id === 'pinch-to-resize') setCurrentGame('pinch-to-resize');
                   if (game.id === 'pinch-to-open-treasure-box') setCurrentGame('pinch-to-open-treasure-box');
@@ -6432,23 +6473,30 @@ export default function SessionGamesScreen() {
                 <Text style={styles.gameEmoji}>{game.emoji}</Text>
               </View>
               <View style={styles.gameContent}>
-                <Text style={styles.gameTitle}>
+                <Text style={[styles.gameTitle, isLocked && styles.gameTitleDisabled]}>
                   {game.title}
                 </Text>
-                <Text style={styles.gameDescription}>
+                <Text style={[styles.gameDescription, isLocked && { color: '#9CA3AF' }]}>
                   {game.description}
                 </Text>
               </View>
-              <View
-                style={[
-                  styles.playBadge,
-                  { backgroundColor: `${game.color}20` },
-                ]}
-              >
-                <Ionicons name="play" size={20} color={game.color} />
-              </View>
+              {isLocked ? (
+                <View style={[styles.lockBadge, { backgroundColor: '#F1F5F9' }]}>
+                  <Ionicons name="lock-closed" size={18} color="#9CA3AF" />
+                </View>
+              ) : (
+                <View
+                  style={[
+                    styles.playBadge,
+                    { backgroundColor: `${game.color}20` },
+                  ]}
+                >
+                  <Ionicons name="play" size={20} color={game.color} />
+                </View>
+              )}
             </TouchableOpacity>
-          )))}
+            );
+            }))}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -6526,6 +6574,13 @@ const styles = StyleSheet.create({
   gameCardDisabled: {
     opacity: 0.6,
     borderColor: '#E5E7EB',
+  },
+  lockBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   gameIcon: {
     width: 64,
