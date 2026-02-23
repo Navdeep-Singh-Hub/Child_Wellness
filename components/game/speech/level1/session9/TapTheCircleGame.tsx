@@ -237,7 +237,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
       ]).start();
 
       // Play audio instruction
-      speak(`Tap the ${target.displayName}`);
+      speak('Tap the object');
 
       // Allow tapping
       setCanTap(true);
@@ -427,7 +427,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
 
   useEffect(() => {
     try {
-      speak('Tap the circle when it appears!');
+      speak('Tap the object when it appears!');
     } catch {}
     startRoundRef.current?.();
     return () => {
@@ -487,9 +487,9 @@ export const TapTheCircleGame: React.FC<Props> = ({
             <Text style={styles.backText}>Back</Text>
           </Pressable>
           <View style={styles.headerText}>
-            <Text style={styles.title}>Tap the Circle</Text>
+            <Text style={styles.title}>Tap the Object</Text>
             <Text style={styles.subtitle}>
-              {showInstruction ? `Tap the ${targetShape ? SHAPES.find(s => s.name === targetShape)?.displayName : ''}` : 'Get ready...'}
+              {showInstruction ? 'Tap the object!' : 'Get ready...'}
             </Text>
           </View>
         </View>
@@ -512,7 +512,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
               >
                 <Ionicons name="shapes" size={28} color="#FFFFFF" />
                 <Text style={styles.instructionText}>
-                  Tap the {SHAPES.find(s => s.name === targetShape)?.displayName}
+                  Tap the object
                 </Text>
               </LinearGradient>
             </Animated.View>

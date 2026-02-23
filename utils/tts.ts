@@ -263,3 +263,12 @@ export async function preInitializeTTS(): Promise<void> {
     await initializeTTS();
   }
 }
+
+/**
+ * Activate web TTS (e.g. on first user tap for autoplay policy), then run callback.
+ * Use this before playing the first speech so TTS is ready.
+ */
+export async function activateWebTTS(callback?: () => void): Promise<void> {
+  await preInitializeTTS();
+  callback?.();
+}

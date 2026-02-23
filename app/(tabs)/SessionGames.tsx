@@ -27,7 +27,6 @@ import { WhichSoundGame } from '@/components/game/speech/level1/session3/WhichSo
 
 // Speech Therapy Level 1 Session 4
 import { EyesOnlyGame } from '@/components/game/speech/level1/session4/EyesOnlyGame';
-import { EyesThenObjectGame } from '@/components/game/speech/level1/session4/EyesThenObjectGame';
 import { FollowGazeToAnimationGame } from '@/components/game/speech/level1/session4/FollowGazeToAnimationGame';
 import { FollowMyEyesGame } from '@/components/game/speech/level1/session4/FollowMyEyesGame';
 import { WhichSideGame } from '@/components/game/speech/level1/session4/WhichSideGame';
@@ -68,7 +67,6 @@ import { TapWhatIShowYouGame } from '@/components/game/speech/level1/session9/Ta
 import { TouchTheBallGame } from '@/components/game/speech/level1/session9/TouchTheBallGame';
 
 // Speech Therapy Level 1 Session 10
-import { MovingTargetWithExtraObjectsGame } from '@/components/game/speech/level1/session10/MovingTargetWithExtraObjectsGame';
 import { SequenceWithDistractionGame } from '@/components/game/speech/level1/session10/SequenceWithDistractionGame';
 import { SlowTaskWithPopUpDistractionGame } from '@/components/game/speech/level1/session10/SlowTaskWithPopUpDistractionGame';
 import { SoundDistractionChallengeGame } from '@/components/game/speech/level1/session10/SoundDistractionChallengeGame';
@@ -502,7 +500,6 @@ type GameKey =
   | 'stop-when-sound-stops'
   | 'loud-vs-soft'
   | 'follow-my-eyes'
-  | 'eyes-then-object'
   | 'which-side'
   | 'follow-gaze-animation'
   | 'eyes-only'
@@ -535,7 +532,6 @@ type GameKey =
   | 'sound-distraction-challenge'
   | 'slow-task-with-pop-up-distraction'
   | 'sequence-with-distraction'
-  | 'moving-target-with-extra-objects'
   | 'jaw-awareness-crocodile'
   | 'jaw-swing-adventure'
   | 'jaw-push-challenge'
@@ -1301,9 +1297,6 @@ export default function SessionGamesScreen() {
   const isFollowMyEyesAvailable =
     therapyId === 'speech' && levelNumber === 1 && sessionNumber === 4;
 
-  const isEyesThenObjectAvailable =
-    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 4;
-
   const isWhichSideAvailable =
     therapyId === 'speech' && levelNumber === 1 && sessionNumber === 4;
 
@@ -1404,9 +1397,6 @@ export default function SessionGamesScreen() {
     therapyId === 'speech' && levelNumber === 1 && sessionNumber === 10;
 
   const isSequenceWithDistractionAvailable =
-    therapyId === 'speech' && levelNumber === 1 && sessionNumber === 10;
-
-  const isMovingTargetWithExtraObjectsAvailable =
     therapyId === 'speech' && levelNumber === 1 && sessionNumber === 10;
 
   // Level 2 Session 1 games - Speech Therapy (Jaw Awareness Games)
@@ -3133,14 +3123,6 @@ export default function SessionGamesScreen() {
       available: isFollowMyEyesAvailable,
     },
     {
-      id: 'eyes-then-object',
-      title: 'Eyes Then Object',
-      emoji: '👀',
-      description: 'Watch my eyes, wait for the pause, then tap the toy! Build gaze interpretation and processing time.',
-      color: '#3B82F6',
-      available: isEyesThenObjectAvailable,
-    },
-    {
       id: 'which-side',
       title: 'Which Side?',
       emoji: '🤔',
@@ -3331,7 +3313,7 @@ export default function SessionGamesScreen() {
     // Level 1 Session 9 games - Speech Therapy (Instruction Following Games)
     {
       id: 'touch-the-ball',
-      title: 'Touch the Ball',
+      title: 'Touch the Object',
       emoji: '⚽',
       description: 'Listen to the instruction and touch the correct object! Build receptive command understanding.',
       color: '#3B82F6',
@@ -3339,7 +3321,7 @@ export default function SessionGamesScreen() {
     },
     {
       id: 'tap-the-circle',
-      title: 'Tap the Circle',
+      title: 'Tap the Object',
       emoji: '⭕',
       description: 'Follow the shape instruction! Tap the correct shape. Build shape recognition and discrimination.',
       color: '#8B5CF6',
@@ -3401,14 +3383,6 @@ export default function SessionGamesScreen() {
       description: 'Tap shapes in order while ignoring distractions! Build multi-step focus.',
       color: '#8B5CF6',
       available: isSequenceWithDistractionAvailable,
-    },
-    {
-      id: 'moving-target-with-extra-objects',
-      title: 'Moving Target + Extra Objects',
-      emoji: '⚽',
-      description: 'Tap the moving target only! Ignore other moving objects. Build visual filtering.',
-      color: '#F59E0B',
-      available: isMovingTargetWithExtraObjectsAvailable,
     },
     {
       id: 'jaw-awareness-crocodile',
@@ -5251,10 +5225,6 @@ export default function SessionGamesScreen() {
     return <FollowMyEyesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  if (currentGame === 'eyes-then-object') {
-    return <EyesThenObjectGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
   if (currentGame === 'which-side') {
     return <WhichSideGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
@@ -5383,10 +5353,6 @@ export default function SessionGamesScreen() {
 
   if (currentGame === 'sequence-with-distraction') {
     return <SequenceWithDistractionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
-  if (currentGame === 'moving-target-with-extra-objects') {
-    return <MovingTargetWithExtraObjectsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jaw-awareness-crocodile') {
@@ -6120,7 +6086,6 @@ export default function SessionGamesScreen() {
                   if (game.id === 'stop-when-sound-stops') setCurrentGame('stop-when-sound-stops');
                   if (game.id === 'loud-vs-soft') setCurrentGame('loud-vs-soft');
                   if (game.id === 'follow-my-eyes') setCurrentGame('follow-my-eyes');
-                  if (game.id === 'eyes-then-object') setCurrentGame('eyes-then-object');
                   if (game.id === 'which-side') setCurrentGame('which-side');
                   if (game.id === 'follow-gaze-animation') setCurrentGame('follow-gaze-animation');
                   if (game.id === 'eyes-only') setCurrentGame('eyes-only');
@@ -6304,7 +6269,6 @@ export default function SessionGamesScreen() {
                   if (game.id === 'sound-distraction-challenge') setCurrentGame('sound-distraction-challenge');
                   if (game.id === 'slow-task-with-pop-up-distraction') setCurrentGame('slow-task-with-pop-up-distraction');
                   if (game.id === 'sequence-with-distraction') setCurrentGame('sequence-with-distraction');
-                  if (game.id === 'moving-target-with-extra-objects') setCurrentGame('moving-target-with-extra-objects');
                   if (game.id === 'jaw-awareness-crocodile') setCurrentGame('jaw-awareness-crocodile');
                   if (game.id === 'jaw-swing-adventure') setCurrentGame('jaw-swing-adventure');
                   if (game.id === 'jaw-push-challenge') setCurrentGame('jaw-push-challenge');

@@ -299,7 +299,7 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
         ]).start();
 
         // Play audio instruction
-        speak(`Show me the ${targetObj.name}`);
+        speak('Find the sound source');
 
         // Allow tapping
         setPhase('choice');
@@ -477,9 +477,7 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
   }, [advanceToNextRound]);
 
   useEffect(() => {
-    try {
-      speak('Listen and find where the sound is coming from!');
-    } catch {}
+    // First round: only play the round sound (no extra instruction TTS)
     startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
@@ -572,7 +570,7 @@ export const FindTheSoundSourceGame: React.FC<Props> = ({
               >
                 <Ionicons name="ear" size={28} color="#FFFFFF" />
                 <Text style={styles.instructionText}>
-                  Show me the {currentPair[targetObject].name}
+                  Find the sound source
                 </Text>
               </LinearGradient>
             </Animated.View>

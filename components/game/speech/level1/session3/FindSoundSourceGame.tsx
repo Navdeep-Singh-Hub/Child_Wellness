@@ -498,6 +498,7 @@ export const FindSoundSourceGame: React.FC<Props> = ({
           <Pressable
             onPress={() => {
               clearScheduledSpeech();
+              stopTTS();
               stopAllSpeech();
               cleanupSounds();
               onBack();

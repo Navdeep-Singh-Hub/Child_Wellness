@@ -307,6 +307,7 @@ export const WhichSoundGame: React.FC<Props> = ({
           <Pressable
             onPress={() => {
               clearScheduledSpeech();
+              stopTTS();
               stopAllSpeech();
               cleanupSounds();
               onBack();
