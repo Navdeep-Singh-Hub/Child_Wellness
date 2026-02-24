@@ -62,7 +62,7 @@ const useSoundEffect = (uri: string) => {
   return play;
 };
 
-const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const TapSlowlyGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const playSuccess = useSoundEffect(SUCCESS_SOUND);
   const playError = useSoundEffect(ERROR_SOUND);
@@ -282,10 +282,9 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         message="Excellent Rhythm Control!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();

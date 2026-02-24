@@ -475,7 +475,15 @@ import MirrorMazeGame from '@/components/game/occupational/level2/session10/Mirr
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { GAME_MENU_STAGGER_MS, PRESS_SCALE_AMOUNT, SPRING_CONFIG } from '@/constants/therapyProgressAnimations';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchTherapyProgress, getSubscriptionStatus, type SubscriptionStatus, type TherapyProgress } from '@/utils/api';
 
@@ -801,6 +809,91 @@ type GameInfo = {
   color: string;
   available: boolean;
 };
+
+type GameItem = {
+  id: string;
+  title: string;
+  emoji: string;
+  description: string;
+  color: string;
+  available: boolean;
+};
+
+type GameMenuCardStyles = {
+  gameCard: object;
+  gameCardDisabled: object;
+  gameNumberCircle: object;
+  gameNumberText: object;
+  gameTitle: object;
+  gameTitleDisabled: object;
+  gameIcon: object;
+  gameEmoji: object;
+  gameContent: object;
+  gameDescription: object;
+  lockBadge: object;
+  playBadge: object;
+};
+
+function GameMenuCard({
+  game,
+  index,
+  unlocked,
+  isLocked,
+  gameNumber,
+  onPress,
+  cardStyles,
+}: {
+  game: GameItem;
+  index: number;
+  unlocked: boolean;
+  isLocked: boolean;
+  gameNumber: number;
+  onPress: () => void;
+  cardStyles: GameMenuCardStyles;
+}) {
+  const press = useSharedValue(0);
+  const pressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 - press.value * PRESS_SCALE_AMOUNT }],
+  }));
+  const s = cardStyles;
+  return (
+    <Animated.View entering={FadeInUp.delay(index * GAME_MENU_STAGGER_MS).springify().damping(SPRING_CONFIG.damping)}>
+      <TouchableOpacity
+        activeOpacity={1}
+        onPressIn={() => { if (unlocked) press.value = withSpring(1, SPRING_CONFIG); }}
+        onPressOut={() => { press.value = withSpring(0, SPRING_CONFIG); }}
+        onPress={onPress}
+        style={[
+          s.gameCard,
+          { borderColor: isLocked ? '#E5E7EB' : game.color },
+          isLocked && s.gameCardDisabled,
+        ]}
+      >
+        <Animated.View style={pressStyle}>
+          <View style={[s.gameNumberCircle, !isLocked && { backgroundColor: `${game.color}25` }]}>
+            <Text style={[s.gameNumberText, isLocked && s.gameTitleDisabled]}>{gameNumber}</Text>
+          </View>
+          <View style={[s.gameIcon, { backgroundColor: isLocked ? '#F1F5F9' : `${game.color}20` }]}>
+            <Text style={s.gameEmoji}>{game.emoji}</Text>
+          </View>
+          <View style={s.gameContent}>
+            <Text style={[s.gameTitle, isLocked && s.gameTitleDisabled]}>{game.title}</Text>
+            <Text style={[s.gameDescription, isLocked && { color: '#9CA3AF' }]}>{game.description}</Text>
+          </View>
+          {isLocked ? (
+            <View style={[s.lockBadge, { backgroundColor: '#F1F5F9' }]}>
+              <Ionicons name="lock-closed" size={18} color="#9CA3AF" />
+            </View>
+          ) : (
+            <View style={[s.playBadge, { backgroundColor: `${game.color}20` }]}>
+              <Ionicons name="play" size={20} color={game.color} />
+            </View>
+          )}
+        </Animated.View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
 
 export default function SessionGamesScreen() {
   const router = useRouter();
@@ -4631,19 +4724,19 @@ export default function SessionGamesScreen() {
   }
 
   if (currentGame === 'catch-star') {
-    return <CatchTheBouncingStar onBack={() => setCurrentGame('menu')} />;
+    return <CatchTheBouncingStar onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'slow-to-fast') {
-    return <SlowToFastGame onBack={() => setCurrentGame('menu')} />;
+    return <SlowToFastGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'track-freeze') {
-    return <TrackAndFreezeGame onBack={() => setCurrentGame('menu')} />;
+    return <TrackAndFreezeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'follow-look') {
-    return <FollowWhereILookGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowWhereILookGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-magic') {
@@ -4667,234 +4760,234 @@ export default function SessionGamesScreen() {
   }
 
   if (currentGame === 'big-tap') {
-    return <BigTapTarget onBack={() => setCurrentGame('menu')} />;
+    return <BigTapTarget onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-red-circle') {
     // 👇 NEW: launch our OT Game 2
-    return <TapRedCircleGame onBack={() => setCurrentGame('menu')} />;
+    return <TapRedCircleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'game-3') {
-    return <BalloonPopGame onBack={() => setCurrentGame('menu')} />;
+    return <BalloonPopGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'game-4') {
-    return <TapAndHoldGame onBack={() => setCurrentGame('menu')} />;
+    return <TapAndHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'game-5') {
-    return <MultiTapFunGame onBack={() => setCurrentGame('menu')} />;
+    return <MultiTapFunGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'small-circle-tap') {
-    return <SmallCircleTapGame onBack={() => setCurrentGame('menu')} />;
+    return <SmallCircleTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-only-small') {
-    return <TapOnlySmallTargetGame onBack={() => setCurrentGame('menu')} />;
+    return <TapOnlySmallTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shrinking-target') {
-    return <ShrinkingTargetGame onBack={() => setCurrentGame('menu')} />;
+    return <ShrinkingTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'track-then-tap') {
-    return <TrackThenTapSmallObjectGame onBack={() => setCurrentGame('menu')} />;
+    return <TrackThenTapSmallObjectGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'multiple-small-targets') {
-    return <MultipleSmallTargetsGame onBack={() => setCurrentGame('menu')} />;
+    return <MultipleSmallTargetsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-slowly') {
-    return <TapSlowlyGame onBack={() => setCurrentGame('menu')} />;
+    return <TapSlowlyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-fast') {
-    return <TapFastGame onBack={() => setCurrentGame('menu')} />;
+    return <TapFastGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'slow-then-fast') {
-    return <SlowThenFastGame onBack={() => setCurrentGame('menu')} />;
+    return <SlowThenFastGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'race-the-dot') {
-    return <RaceTheDotGame onBack={() => setCurrentGame('menu')} />;
+    return <RaceTheDotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'hold-the-button') {
-    return <HoldTheButtonGame onBack={() => setCurrentGame('menu')} />;
+    return <HoldTheButtonGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'grow-the-balloon') {
-    return <GrowTheBalloonGame onBack={() => setCurrentGame('menu')} />;
+    return <GrowTheBalloonGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'launch-rocket') {
-    return <LaunchRocketGame onBack={() => setCurrentGame('menu')} />;
+    return <LaunchRocketGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'squish-the-jelly') {
-    return <SquishTheJellyGame onBack={() => setCurrentGame('menu')} />;
+    return <SquishTheJellyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'hold-the-light') {
-    return <HoldTheLightGame onBack={() => setCurrentGame('menu')} />;
+    return <HoldTheLightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'drag-ball-to-goal') {
-    return <DragBallToGoalGame onBack={() => setCurrentGame('menu')} />;
+    return <DragBallToGoalGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'follow-the-line') {
-    return <FollowTheLineGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowTheLineGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'drag-animal-home') {
-    return <DragAnimalHomeGame onBack={() => setCurrentGame('menu')} />;
+    return <DragAnimalHomeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'drag-slowly') {
-    return <DragSlowlyGame onBack={() => setCurrentGame('menu')} />;
+    return <DragSlowlyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'puzzle-piece-drag') {
-    return <PuzzlePieceDragGame onBack={() => setCurrentGame('menu')} />;
+    return <PuzzlePieceDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-numbers') {
-    return <TapTheNumbersGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheNumbersGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-lights-in-order') {
-    return <TapLightsInOrderGame onBack={() => setCurrentGame('menu')} />;
+    return <TapLightsInOrderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'follow-the-arrows') {
-    return <FollowTheArrowsGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowTheArrowsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-colours-in-order') {
-    return <TapColoursInOrderGame onBack={() => setCurrentGame('menu')} />;
+    return <TapColoursInOrderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-big-one') {
-    return <TapTheBigOneGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheBigOneGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-small-one') {
-    return <TapTheSmallOneGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheSmallOneGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-shape-i-show-you') {
-    return <TapTheShapeIShowYouGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheShapeIShowYouGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'find-the-odd-one-out') {
-    return <FindTheOddOneOutGame onBack={() => setCurrentGame('menu')} />;
+    return <FindTheOddOneOutGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'match-shape-to-outline') {
-    return <MatchShapeToOutlineGame onBack={() => setCurrentGame('menu')} />;
+    return <MatchShapeToOutlineGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tiny-dot-tap') {
-    return <TinyDotTapGame onBack={() => setCurrentGame('menu')} />;
+    return <TinyDotTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-center-of-the-target') {
-    return <TapTheCenterOfTheTargetGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheCenterOfTheTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'moving-small-target') {
-    return <MovingSmallTargetGame onBack={() => setCurrentGame('menu')} />;
+    return <MovingSmallTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-only-the-smallest-shape') {
-    return <TapOnlyTheSmallestShapeGame onBack={() => setCurrentGame('menu')} />;
+    return <TapOnlyTheSmallestShapeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-hidden-small-object') {
-    return <TapTheHiddenSmallObjectGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheHiddenSmallObjectGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shrinking-circle-tap') {
-    return <ShrinkingCircleTapGame onBack={() => setCurrentGame('menu')} />;
+    return <ShrinkingCircleTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-when-star-is-smallest') {
-    return <TapWhenStarIsSmallestGame onBack={() => setCurrentGame('menu')} />;
+    return <TapWhenStarIsSmallestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shrink-stop-tap') {
-    return <ShrinkStopTapGame onBack={() => setCurrentGame('menu')} />;
+    return <ShrinkStopTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'multiple-shrinking-targets') {
-    return <MultipleShrinkingTargetsGame onBack={() => setCurrentGame('menu')} />;
+    return <MultipleShrinkingTargetsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shrinking-object-movement') {
-    return <ShrinkingObjectMovementGame onBack={() => setCurrentGame('menu')} />;
+    return <ShrinkingObjectMovementGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'pinch-to-pop') {
-    return <PinchToPopGame onBack={() => setCurrentGame('menu')} />;
+    return <PinchToPopGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'two-finger-simultaneous-tap') {
-    return <TwoFingerSimultaneousTapGame onBack={() => setCurrentGame('menu')} />;
+    return <TwoFingerSimultaneousTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'pinch-to-resize') {
-    return <PinchToResizeGame onBack={() => setCurrentGame('menu')} />;
+    return <PinchToResizeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'pinch-to-open-treasure-box') {
-    return <PinchToOpenTreasureBoxGame onBack={() => setCurrentGame('menu')} />;
+    return <PinchToOpenTreasureBoxGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
 
   // Level 2 Session 2: Trace Curved Line games
   if (currentGame === 'rainbow-trace') {
-    return <RainbowCurveTraceGame onBack={() => setCurrentGame('menu')} />;
+    return <RainbowCurveTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'snake-slide') {
-    return <SnakeSlideGame onBack={() => setCurrentGame('menu')} />;
+    return <SnakeSlideGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'moon-path') {
-    return <MoonPathGame onBack={() => setCurrentGame('menu')} />;
+    return <MoonPathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'smile-maker') {
-    return <SmileMakerGame onBack={() => setCurrentGame('menu')} />;
+    return <SmileMakerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'curvy-road-drive') {
-    return <CurvyRoadDriveGame onBack={() => setCurrentGame('menu')} />;
+    return <CurvyRoadDriveGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'mountain-climb') {
-    return <MountainClimbGame onBack={() => setCurrentGame('menu')} />;
+    return <MountainClimbGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'lightning-bolt') {
-    return <LightningBoltGame onBack={() => setCurrentGame('menu')} />;
+    return <LightningBoltGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'saw-path') {
-    return <SawPathGame onBack={() => setCurrentGame('menu')} />;
+    return <SawPathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'robot-wire-fix') {
-    return <RobotWireFixGame onBack={() => setCurrentGame('menu')} />;
+    return <RobotWireFixGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'zig-zag-race') {
-    return <ZigZagRaceGame onBack={() => setCurrentGame('menu')} />;
+    return <ZigZagRaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 3: Speech Therapy Airflow Games
@@ -4915,7 +5008,7 @@ export default function SessionGamesScreen() {
   }
 
   if (currentGame === 'balloon-inflate') {
-    return <BalloonInflateGame onBack={() => setCurrentGame('menu')} />;
+    return <BalloonInflateGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 4: Tongue Elevation Games
@@ -5067,170 +5160,170 @@ export default function SessionGamesScreen() {
 
   // Level 2 Session 3: Trace Zig-Zag games (OT)
   if (currentGame === 'mountain-climb') {
-    return <MountainClimbGame onBack={() => setCurrentGame('menu')} />;
+    return <MountainClimbGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'lightning-bolt') {
-    return <LightningBoltGame onBack={() => setCurrentGame('menu')} />;
+    return <LightningBoltGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'saw-path') {
-    return <SawPathGame onBack={() => setCurrentGame('menu')} />;
+    return <SawPathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'robot-wire-fix') {
-    return <RobotWireFixGame onBack={() => setCurrentGame('menu')} />;
+    return <RobotWireFixGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'zig-zag-race') {
-    return <ZigZagRaceGame onBack={() => setCurrentGame('menu')} />;
+    return <ZigZagRaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 4: Follow Path (Drag) games
   if (currentGame === 'maze-walk') {
-    return <MazeWalkGame onBack={() => setCurrentGame('menu')} />;
+    return <MazeWalkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'river-boat-guide') {
-    return <RiverBoatGuideGame onBack={() => setCurrentGame('menu')} />;
+    return <RiverBoatGuideGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'ant-trail-follow') {
-    return <AntTrailFollowGame onBack={() => setCurrentGame('menu')} />;
+    return <AntTrailFollowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'ball-roll-path') {
-    return <BallRollPathGame onBack={() => setCurrentGame('menu')} />;
+    return <BallRollPathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'dont-touch-grass') {
-    return <DontTouchGrassGame onBack={() => setCurrentGame('menu')} />;
+    return <DontTouchGrassGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 5: Connect Dots games
   if (currentGame === 'dot-to-dot-animal') {
-    return <DotToDotAnimalGame onBack={() => setCurrentGame('menu')} />;
+    return <DotToDotAnimalGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'star-builder') {
-    return <StarBuilderGame onBack={() => setCurrentGame('menu')} />;
+    return <StarBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'house-drawing') {
-    return <HouseDrawingGame onBack={() => setCurrentGame('menu')} />;
+    return <HouseDrawingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'hidden-shape-reveal') {
-    return <HiddenShapeRevealGame onBack={() => setCurrentGame('menu')} />;
+    return <HiddenShapeRevealGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'connect-in-order-glow') {
-    return <ConnectInOrderGlowGame onBack={() => setCurrentGame('menu')} />;
+    return <ConnectInOrderGlowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 6: Match Shape Outline games
   if (currentGame === 'puzzle-drop-shapes') {
-    return <PuzzleDropShapesGame onBack={() => setCurrentGame('menu')} />;
+    return <PuzzleDropShapesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shadow-match') {
-    return <ShadowMatchGame onBack={() => setCurrentGame('menu')} />;
+    return <ShadowMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'cookie-cutter-match') {
-    return <CookieCutterMatchGame onBack={() => setCurrentGame('menu')} />;
+    return <CookieCutterMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'parking-shapes') {
-    return <ParkingShapesGame onBack={() => setCurrentGame('menu')} />;
+    return <ParkingShapesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'fast-match') {
-    return <FastMatchGame onBack={() => setCurrentGame('menu')} />;
+    return <FastMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 7: Trace Large Shapes games
   if (currentGame === 'big-circle-trace') {
-    return <BigCircleTraceGame onBack={() => setCurrentGame('menu')} />;
+    return <BigCircleTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'big-square-walk') {
-    return <BigSquareWalkGame onBack={() => setCurrentGame('menu')} />;
+    return <BigSquareWalkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'triangle-mountain-trace') {
-    return <TriangleMountainTraceGame onBack={() => setCurrentGame('menu')} />;
+    return <TriangleMountainTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'paint-the-shape') {
-    return <PaintTheShapeGame onBack={() => setCurrentGame('menu')} />;
+    return <PaintTheShapeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'glow-border-trace') {
-    return <GlowBorderTraceGame onBack={() => setCurrentGame('menu')} />;
+    return <GlowBorderTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 8: Trace Small Shapes games
   if (currentGame === 'tiny-circle-coins') {
-    return <TinyCircleCoinsGame onBack={() => setCurrentGame('menu')} />;
+    return <TinyCircleCoinsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'mini-square-locks') {
-    return <MiniSquareLocksGame onBack={() => setCurrentGame('menu')} />;
+    return <MiniSquareLocksGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'dot-border-shapes') {
-    return <DotBorderShapesGame onBack={() => setCurrentGame('menu')} />;
+    return <DotBorderShapesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'careful-trace-challenge') {
-    return <CarefulTraceChallengeGame onBack={() => setCurrentGame('menu')} />;
+    return <CarefulTraceChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shrink-mode-trace') {
-    return <ShrinkModeTraceGame onBack={() => setCurrentGame('menu')} />;
+    return <ShrinkModeTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 9: Copy Simple Patterns games
   if (currentGame === 'copy-the-line-pattern') {
-    return <CopyTheLinePatternGame onBack={() => setCurrentGame('menu')} />;
+    return <CopyTheLinePatternGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'block-pattern-copy') {
-    return <BlockPatternCopyGame onBack={() => setCurrentGame('menu')} />;
+    return <BlockPatternCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'color-pattern-match') {
-    return <ColorPatternMatchGame onBack={() => setCurrentGame('menu')} />;
+    return <ColorPatternMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'stick-design-copy') {
-    return <StickDesignCopyGame onBack={() => setCurrentGame('menu')} />;
+    return <StickDesignCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'look-hide-draw') {
-    return <LookHideDrawGame onBack={() => setCurrentGame('menu')} />;
+    return <LookHideDrawGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 10: Mirror Drawing Basics games
   if (currentGame === 'mirror-line-draw') {
-    return <MirrorLineDrawGame onBack={() => setCurrentGame('menu')} />;
+    return <MirrorLineDrawGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'butterfly-wings') {
-    return <ButterflyWingsGame onBack={() => setCurrentGame('menu')} />;
+    return <ButterflyWingsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'face-symmetry-draw') {
-    return <FaceSymmetryDrawGame onBack={() => setCurrentGame('menu')} />;
+    return <FaceSymmetryDrawGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'half-shape-complete') {
-    return <HalfShapeCompleteGame onBack={() => setCurrentGame('menu')} />;
+    return <HalfShapeCompleteGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'mirror-maze') {
-    return <MirrorMazeGame onBack={() => setCurrentGame('menu')} />;
+    return <MirrorMazeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Speech Therapy Level 1 Session 3 games
@@ -5411,661 +5504,664 @@ export default function SessionGamesScreen() {
 
   // Level 2 Session 1 games (Occupational Therapy - Trace Straight Line)
   if (currentGame === 'train-track-line') {
-    return <TrainTrackLineGame onBack={() => setCurrentGame('menu')} />;
+    return <TrainTrackLineGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'light-the-laser') {
-    return <LightTheLaserGame onBack={() => setCurrentGame('menu')} />;
+    return <LightTheLaserGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'road-roller') {
-    return <RoadRollerGame onBack={() => setCurrentGame('menu')} />;
+    return <RoadRollerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'rain-drop-slide') {
-    return <RainDropSlideGame onBack={() => setCurrentGame('menu')} />;
+    return <RainDropSlideGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'start-stop-line') {
-    return <StartStopLineGame onBack={() => setCurrentGame('menu')} />;
+    return <StartStopLineGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 3 Session 1 games - Tap with Rhythm
   if (currentGame === 'beat-match-tap') {
-    return <BeatMatchTapGame onBack={() => setCurrentGame('menu')} />;
+    return <BeatMatchTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'copy-my-rhythm') {
-    return <CopyMyRhythmGame onBack={() => setCurrentGame('menu')} />;
+    return <CopyMyRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'stop-go-drum') {
-    return <StopGoDrumGame onBack={() => setCurrentGame('menu')} />;
+    return <StopGoDrumGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'loud-soft-rhythm') {
-    return <LoudSoftRhythmGame onBack={() => setCurrentGame('menu')} />;
+    return <LoudSoftRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'instrument-choice') {
-    return <InstrumentChoiceGame onBack={() => setCurrentGame('menu')} />;
+    return <InstrumentChoiceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 3 Session 2 games - Big vs Small Movements
   if (currentGame === 'big-swipe-small-swipe') {
-    return <BigSwipeSmallSwipeGame onBack={() => setCurrentGame('menu')} />;
+    return <BigSwipeSmallSwipeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'big-tap-small-tap') {
-    return <BigTapSmallTapGame onBack={() => setCurrentGame('menu')} />;
+    return <BigTapSmallTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'stretch-pinch') {
-    return <StretchPinchGame onBack={() => setCurrentGame('menu')} />;
+    return <StretchPinchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Note: BigPathTraceGame doesn't exist yet, commenting out
   // if (currentGame === 'big-path-trace') {
-  //   return <BigPathTraceGame onBack={() => setCurrentGame('menu')} />;
+  //   return <BigPathTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   // }
 
   if (currentGame === 'big-throw-small-throw') {
-    return <BigThrowSmallThrowGame onBack={() => setCurrentGame('menu')} />;
+    return <BigThrowSmallThrowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 3 Session 3 games - Tap with Rhythm (Drum Beats)
   if (currentGame === 'single-beat-tap') {
-    return <SingleBeatTapGame onBack={() => setCurrentGame('menu')} />;
+    return <SingleBeatTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'double-beat-copy') {
-    return <DoubleBeatCopyGame onBack={() => setCurrentGame('menu')} />;
+    return <DoubleBeatCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'pause-and-tap') {
-    return <PauseAndTapGame onBack={() => setCurrentGame('menu')} />;
+    return <PauseAndTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'fast-beat-challenge') {
-    return <FastBeatChallengeGame onBack={() => setCurrentGame('menu')} />;
+    return <FastBeatChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'slow-beat-calm-mode') {
-    return <SlowBeatCalmModeGame onBack={() => setCurrentGame('menu')} />;
+    return <SlowBeatCalmModeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 3 Session 3 games - Fast vs Slow Movements
   if (currentGame === 'slow-turtle-move') {
-    return <SlowTurtleMoveGame onBack={() => setCurrentGame('menu')} />;
+    return <SlowTurtleMoveGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'fast-rabbit-run') {
-    return <FastRabbitRunGame onBack={() => setCurrentGame('menu')} />;
+    return <FastRabbitRunGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'speed-match') {
-    return <SpeedMatchGame onBack={() => setCurrentGame('menu')} />;
+    return <SpeedMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'traffic-light-game') {
-    return <TrafficLightGame onBack={() => setCurrentGame('menu')} />;
+    return <TrafficLightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'music-speed-control') {
-    return <MusicSpeedControlGame onBack={() => setCurrentGame('menu')} />;
+    return <MusicSpeedControlGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 3 Session 4 games - Up-Down Gestures & Big vs Small Movements
   if (currentGame === 'balloon-up') {
-    return <BalloonUpGame onBack={() => setCurrentGame('menu')} />;
+    return <BalloonUpGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'ball-drop') {
-    return <BallDropGame onBack={() => setCurrentGame('menu')} />;
+    return <BallDropGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'elevator-game') {
-    return <ElevatorGame onBack={() => setCurrentGame('menu')} />;
+    return <ElevatorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jump-arrow') {
-    return <JumpArrowGame onBack={() => setCurrentGame('menu')} />;
+    return <JumpArrowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'rain-catch') {
-    return <RainCatchGame onBack={() => setCurrentGame('menu')} />;
+    return <RainCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'big-tap-l3s4') {
-    return <BigTapL3S4Game onBack={() => setCurrentGame('menu')} />;
+    return <BigTapL3S4Game onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'small-dot-touch') {
-    return <SmallDotTouchGame onBack={() => setCurrentGame('menu')} />;
+    return <SmallDotTouchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'big-small-switch') {
-    return <BigSmallSwitchGame onBack={() => setCurrentGame('menu')} />;
+    return <BigSmallSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'balloon-inflate-l3s4') {
-    return <BalloonInflateL3S4Game onBack={() => setCurrentGame('menu')} />;
+    return <BalloonInflateL3S4Game onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'compare-and-move') {
-    return <CompareAndMoveGame onBack={() => setCurrentGame('menu')} />;
+    return <CompareAndMoveGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 3 Session 5 games - Left-Right Swipes
   if (currentGame === 'car-turn') {
-    return <CarTurnGame onBack={() => setCurrentGame('menu')} />;
+    return <CarTurnGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'arrow-match') {
-    return <ArrowMatchGame onBack={() => setCurrentGame('menu')} />;
+    return <ArrowMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'animal-run') {
-    return <AnimalRunGame onBack={() => setCurrentGame('menu')} />;
+    return <AnimalRunGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'mirror-swipe') {
-    return <MirrorSwipeGame onBack={() => setCurrentGame('menu')} />;
+    return <MirrorSwipeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'catch-the-ball') {
-    return <CatchTheBallGame onBack={() => setCurrentGame('menu')} />;
+    return <CatchTheBallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 3 Session 6 games - Jump Imitation (Tap Twice)
   if (currentGame === 'frog-jump') {
-    return <FrogJumpGame onBack={() => setCurrentGame('menu')} />;
+    return <FrogJumpGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jump-count') {
-    return <JumpCountGame onBack={() => setCurrentGame('menu')} />;
+    return <JumpCountGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'double-tap-only') {
-    return <DoubleTapOnlyGame onBack={() => setCurrentGame('menu')} />;
+    return <DoubleTapOnlyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'rhythm-jump') {
-    return <RhythmJumpGame onBack={() => setCurrentGame('menu')} />;
+    return <RhythmJumpGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'obstacle-jump') {
-    return <ObstacleJumpGame onBack={() => setCurrentGame('menu')} />;
+    return <ObstacleJumpGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 3 Session 7 games - Swinging Movement Imitation
   if (currentGame === 'pendulum-copy') {
-    return <PendulumCopyGame onBack={() => setCurrentGame('menu')} />;
+    return <PendulumCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'monkey-swing') {
-    return <MonkeySwingGame onBack={() => setCurrentGame('menu')} />;
+    return <MonkeySwingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'fan-motion') {
-    return <FanMotionGame onBack={() => setCurrentGame('menu')} />;
+    return <FanMotionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'rope-swing-timing') {
-    return <RopeSwingTimingGame onBack={() => setCurrentGame('menu')} />;
+    return <RopeSwingTimingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'music-swing') {
-    return <MusicSwingGame onBack={() => setCurrentGame('menu')} />;
+    return <MusicSwingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 3 Session 8 games - Whole Body Map
   if (currentGame === 'touch-head') {
-    return <TouchHeadGame onBack={() => setCurrentGame('menu')} />;
+    return <TouchHeadGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shoulders-tap') {
-    return <ShouldersTapGame onBack={() => setCurrentGame('menu')} />;
+    return <ShouldersTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'body-puzzle') {
-    return <BodyPuzzleGame onBack={() => setCurrentGame('menu')} />;
+    return <BodyPuzzleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'follow-the-body') {
-    return <FollowTheBodyGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowTheBodyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'body-flash') {
-    return <BodyFlashGame onBack={() => setCurrentGame('menu')} />;
+    return <BodyFlashGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 3 Session 9 games - Mirror Movements
   if (currentGame === 'copy-pose') {
-    return <CopyPoseGame onBack={() => setCurrentGame('menu')} />;
+    return <CopyPoseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'hand-mirror') {
-    return <HandMirrorGame onBack={() => setCurrentGame('menu')} />;
+    return <HandMirrorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'pattern-copy') {
-    return <PatternCopyGame onBack={() => setCurrentGame('menu')} />;
+    return <PatternCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'delayed-mirror') {
-    return <DelayedMirrorGame onBack={() => setCurrentGame('menu')} />;
+    return <DelayedMirrorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'fast-copy') {
-    return <FastCopyGame onBack={() => setCurrentGame('menu')} />;
+    return <FastCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 3 Session 10 games - Posture-Based Games
   if (currentGame === 'freeze-pose') {
-    return <FreezePoseGame onBack={() => setCurrentGame('menu')} />;
+    return <FreezePoseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'animal-pose') {
-    return <AnimalPoseGame onBack={() => setCurrentGame('menu')} />;
+    return <AnimalPoseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shape-pose') {
-    return <ShapePoseGame onBack={() => setCurrentGame('menu')} />;
+    return <ShapePoseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'count-hold') {
-    return <CountHoldGame onBack={() => setCurrentGame('menu')} />;
+    return <CountHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'pose-match') {
-    return <PoseMatchGame onBack={() => setCurrentGame('menu')} />;
+    return <PoseMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 4 Session 1 games - Drag Object Left → Right
   if (currentGame === 'ball-transfer') {
-    return <BallTransferGame onBack={() => setCurrentGame('menu')} />;
+    return <BallTransferGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'feed-the-monster') {
-    return <FeedTheMonsterGame onBack={() => setCurrentGame('menu')} />;
+    return <FeedTheMonsterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'road-crossing') {
-    return <RoadCrossingGame onBack={() => setCurrentGame('menu')} />;
+    return <RoadCrossingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'color-match-drag') {
-    return <ColorMatchDragGame onBack={() => setCurrentGame('menu')} />;
+    return <ColorMatchDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'timed-drag') {
-    return <TimedDragGame onBack={() => setCurrentGame('menu')} />;
+    return <TimedDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 4 Session 2 games - Drag Object Right → Left
   if (currentGame === 'reverse-ball-pass') {
-    return <ReverseBallPassGame onBack={() => setCurrentGame('menu')} />;
+    return <ReverseBallPassGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'collect-stars') {
-    return <CollectStarsGame onBack={() => setCurrentGame('menu')} />;
+    return <CollectStarsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'reverse-path') {
-    return <ReversePathGame onBack={() => setCurrentGame('menu')} />;
+    return <ReversePathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'mirror-drag') {
-    return <MirrorDragGame onBack={() => setCurrentGame('menu')} />;
+    return <MirrorDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'pattern-drag') {
-    return <PatternDragGame onBack={() => setCurrentGame('menu')} />;
+    return <PatternDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 4 Session 3 games - Diagonal Dragging
   if (currentGame === 'top-left-bottom-right') {
-    return <TopLeftToBottomRightGame onBack={() => setCurrentGame('menu')} />;
+    return <TopLeftToBottomRightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'x-path-trace') {
-    return <XPathTraceGame onBack={() => setCurrentGame('menu')} />;
+    return <XPathTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'diagonal-catch') {
-    return <DiagonalCatchGame onBack={() => setCurrentGame('menu')} />;
+    return <DiagonalCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'zigzag-drag') {
-    return <ZigZagDragGame onBack={() => setCurrentGame('menu')} />;
+    return <ZigZagDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'diagonal-match') {
-    return <DiagonalMatchGame onBack={() => setCurrentGame('menu')} />;
+    return <DiagonalMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 4 Session 4 games - Two-Hand Tapping (Dual Targets)
   if (currentGame === 'double-circle-tap') {
-    return <DoubleCircleTapGame onBack={() => setCurrentGame('menu')} />;
+    return <DoubleCircleTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'piano-keys') {
-    return <PianoKeysGame onBack={() => setCurrentGame('menu')} />;
+    return <PianoKeysGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'drum-duo') {
-    return <DrumDuoGame onBack={() => setCurrentGame('menu')} />;
+    return <DrumDuoGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'light-up-targets') {
-    return <LightUpTargetsGame onBack={() => setCurrentGame('menu')} />;
+    return <LightUpTargetsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'hold-and-tap') {
-    return <HoldAndTapGame onBack={() => setCurrentGame('menu')} />;
+    return <HoldAndTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 4 Session 5 games - Alternating Hands
   if (currentGame === 'left-right-tap') {
-    return <LeftRightTapGame onBack={() => setCurrentGame('menu')} />;
+    return <LeftRightTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'walking-hands') {
-    return <WalkingHandsGame onBack={() => setCurrentGame('menu')} />;
+    return <WalkingHandsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'flash-side') {
-    return <FlashSideGame onBack={() => setCurrentGame('menu')} />;
+    return <FlashSideGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'drum-alternate') {
-    return <DrumAlternateGame onBack={() => setCurrentGame('menu')} />;
+    return <DrumAlternateGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'speed-alternate') {
-    return <SpeedAlternateGame onBack={() => setCurrentGame('menu')} />;
+    return <SpeedAlternateGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 4 Session 6 games - Pass Ball Across Midline
   if (currentGame === 'hand-to-hand-pass') {
-    return <HandToHandPassGame onBack={() => setCurrentGame('menu')} />;
+    return <HandToHandPassGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'throw-catch') {
-    return <ThrowCatchGame onBack={() => setCurrentGame('menu')} />;
+    return <ThrowCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'target-pass') {
-    return <TargetPassGame onBack={() => setCurrentGame('menu')} />;
+    return <TargetPassGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'rhythm-pass') {
-    return <RhythmPassGame onBack={() => setCurrentGame('menu')} />;
+    return <RhythmPassGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'obstacle-pass') {
-    return <ObstaclePassGame onBack={() => setCurrentGame('menu')} />;
+    return <ObstaclePassGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 4 Session 7 games - Follow Cross-Body Arrows
   if (currentGame === 'arrow-touch') {
-    return <ArrowTouchGame onBack={() => setCurrentGame('menu')} />;
+    return <ArrowTouchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'arrow-swipe') {
-    return <ArrowSwipeGame onBack={() => setCurrentGame('menu')} />;
+    return <ArrowSwipeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'moving-arrows') {
-    return <MovingArrowsGame onBack={() => setCurrentGame('menu')} />;
+    return <MovingArrowsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'arrow-sequence') {
-    return <ArrowSequenceGame onBack={() => setCurrentGame('menu')} />;
+    return <ArrowSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'speed-arrows') {
-    return <SpeedArrowsGame onBack={() => setCurrentGame('menu')} />;
+    return <SpeedArrowsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 4 Session 8 games - Tap Alternating Sides
   if (currentGame === 'side-lights-l4s8') {
-    return <SideLightsGame onBack={() => setCurrentGame('menu')} />;
+    return <SideLightsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'ping-pong-tap') {
-    return <PingPongTapGame onBack={() => setCurrentGame('menu')} />;
+    return <PingPongTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'sound-side-tap') {
-    return <SoundSideTapGame onBack={() => setCurrentGame('menu')} />;
+    return <SoundSideTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'count-and-tap') {
-    return <CountAndTapGame onBack={() => setCurrentGame('menu')} />;
+    return <CountAndTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'fast-switch') {
-    return <FastSwitchGame onBack={() => setCurrentGame('menu')} />;
+    return <FastSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 4 Session 9 games - Drag Two Objects Simultaneously
   if (currentGame === 'double-drag') {
-    return <DoubleDragGame onBack={() => setCurrentGame('menu')} />;
+    return <DoubleDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'match-pair') {
-    return <MatchPairGame onBack={() => setCurrentGame('menu')} />;
+    return <MatchPairGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shape-sort') {
-    return <ShapeSortGame onBack={() => setCurrentGame('menu')} />;
+    return <ShapeSortGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'rope-pull') {
-    return <RopePullGame onBack={() => setCurrentGame('menu')} />;
+    return <RopePullGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'balance-drag') {
-    return <BalanceDragGame onBack={() => setCurrentGame('menu')} />;
+    return <BalanceDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 4 Session 10 games - Cross-Body Rhythm Imitation
   if (currentGame === 'clap-pattern') {
-    return <ClapPatternGame onBack={() => setCurrentGame('menu')} />;
+    return <ClapPatternGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-shoulder-pattern') {
-    return <TapShoulderPatternGame onBack={() => setCurrentGame('menu')} />;
+    return <TapShoulderPatternGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'music-copy') {
-    return <MusicCopyGame onBack={() => setCurrentGame('menu')} />;
+    return <MusicCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'memory-rhythm') {
-    return <MemoryRhythmGame onBack={() => setCurrentGame('menu')} />;
+    return <MemoryRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'speed-rhythm') {
-    return <SpeedRhythmGame onBack={() => setCurrentGame('menu')} />;
+    return <SpeedRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 5 Session 1 games - Follow Moving Object
   if (currentGame === 'catch-moving-ball') {
-    return <CatchMovingBallGame onBack={() => setCurrentGame('menu')} />;
+    return <CatchMovingBallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'follow-the-butterfly') {
-    return <FollowTheButterflyGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowTheButterflyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'avoid-the-bomb') {
-    return <AvoidTheBombGame onBack={() => setCurrentGame('menu')} />;
+    return <AvoidTheBombGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'chase-the-star') {
-    return <ChaseTheStarGame onBack={() => setCurrentGame('menu')} />;
+    return <ChaseTheStarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'zigzag-follow') {
-    return <ZigZagFollowGame onBack={() => setCurrentGame('menu')} />;
+    return <ZigZagFollowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 5 Session 2: Targeted Tapping
   if (currentGame === 'pop-the-bubble') {
-    return <PopTheBubbleGame onBack={() => setCurrentGame('menu')} />;
+    return <PopTheBubbleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'color-dot-hit') {
-    return <ColorDotHitGame onBack={() => setCurrentGame('menu')} />;
+    return <ColorDotHitGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'small-target') {
-    return <SmallTargetGame onBack={() => setCurrentGame('menu')} />;
+    return <SmallTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'moving-target') {
-    return <MovingTargetGame onBack={() => setCurrentGame('menu')} />;
+    return <MovingTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'timed-target') {
-    return <TimedTargetGame onBack={() => setCurrentGame('menu')} />;
+    return <TimedTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
 
   // Level 5 Session 4: Visual Focus
   if (currentGame === 'find-the-star') {
-    return <FindTheStarGame onBack={() => setCurrentGame('menu')} />;
+    return <FindTheStarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'memory-flash') {
-    return <MemoryFlashGame onBack={() => setCurrentGame('menu')} />;
+    return <MemoryFlashGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'match-shadow') {
-    return <MatchShadowGame onBack={() => setCurrentGame('menu')} />;
+    return <MatchShadowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'what-moved') {
-    return <WhatMovedGame onBack={() => setCurrentGame('menu')} />;
+    return <WhatMovedGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'spot-the-color') {
-    return <SpotTheColorGame onBack={() => setCurrentGame('menu')} />;
+    return <SpotTheColorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 5 Session 5: Moving Eye Control
   if (currentGame === 'side-eye-track') {
-    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} />;
+    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'up-down-track') {
-    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} />;
+    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'circular-track') {
-    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} />;
+    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jump-track') {
-    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} />;
+    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'multi-dot') {
-    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} />;
+    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 5 Session 6: Speed Matching
   if (currentGame === 'fast-catch') {
-    return <FastCatchGame onBack={() => setCurrentGame('menu')} />;
+    return <FastCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'slow-catch') {
-    return <SlowCatchGame onBack={() => setCurrentGame('menu')} />;
+    return <SlowCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'speed-switch') {
-    return <SpeedSwitchGame onBack={() => setCurrentGame('menu')} />;
+    return <SpeedSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'music-speed') {
-    return <MusicSpeedGame onBack={() => setCurrentGame('menu')} />;
+    return <MusicSpeedGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'countdown-hit') {
-    return <CountdownHitGame onBack={() => setCurrentGame('menu')} />;
+    return <CountdownHitGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 5 Session 7: Depth & Distance
   if (currentGame === 'near-vs-far') {
-    return <NearVsFarGame onBack={() => setCurrentGame('menu')} />;
+    return <NearVsFarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'zoom-touch') {
-    return <NearVsFarGame onBack={() => setCurrentGame('menu')} />;
+    return <NearVsFarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'falling-objects') {
-    return <NearVsFarGame onBack={() => setCurrentGame('menu')} />;
+    return <NearVsFarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shrinking-target') {
-    return <NearVsFarGame onBack={() => setCurrentGame('menu')} />;
+    return <NearVsFarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === '3-layer-tap') {
-    return <NearVsFarGame onBack={() => setCurrentGame('menu')} />;
+    return <NearVsFarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 5 Session 8: Multi-Object Tracking
   if (currentGame === 'follow-red') {
-    return <FollowRedGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowRedGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'two-moving-balls') {
-    return <TwoMovingBallsGame onBack={() => setCurrentGame('menu')} />;
+    return <TwoMovingBallsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'distraction-mode') {
-    return <DistractionModeGame onBack={() => setCurrentGame('menu')} />;
+    return <DistractionModeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'pattern-chase') {
-    return <PatternChaseGame onBack={() => setCurrentGame('menu')} />;
+    return <PatternChaseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'speed-objects') {
-    return <SpeedObjectsGame onBack={() => setCurrentGame('menu')} />;
+    return <SpeedObjectsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 5 Session 9: Visual Reaction
   if (currentGame === 'flash-tap') {
-    return <FlashTapGame onBack={() => setCurrentGame('menu')} />;
+    return <FlashTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'go-stop') {
-    return <GoStopGame onBack={() => setCurrentGame('menu')} />;
+    return <GoStopGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'surprise-pop') {
-    return <SurprisePopGame onBack={() => setCurrentGame('menu')} />;
+    return <SurprisePopGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'sound-light') {
-    return <SoundLightGame onBack={() => setCurrentGame('menu')} />;
+    return <SoundLightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'quick-choice') {
-    return <QuickChoiceGame onBack={() => setCurrentGame('menu')} />;
+    return <QuickChoiceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
+
+  // Therapy display label for breadcrumb
+  const therapyLabel = therapyId === 'speech' ? 'Speech Therapy' : therapyId === 'occupational' ? 'Occupational Therapy' : therapyId === 'behavioral' ? 'Behavioral Therapy' : therapyId.charAt(0).toUpperCase() + therapyId.slice(1).replace(/-/g, ' ');
 
   // ---------- Menu UI ----------
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <Animated.View style={styles.header} entering={FadeInDown.duration(250)}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backButton}
@@ -6074,17 +6170,24 @@ export default function SessionGamesScreen() {
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Session Games</Text>
+          <Text style={styles.breadcrumbText}>{therapyLabel} › Level {levelNumber} › Session {sessionNumber}</Text>
+          <View style={styles.headerTitleRow}>
+            <Text style={styles.headerTitle}>Session {sessionNumber} Games</Text>
+            <Ionicons name="game-controller" size={22} color="#2563EB" />
+          </View>
           <Text style={styles.headerSubtitle}>
-            {therapyId.charAt(0).toUpperCase() + therapyId.slice(1)} • Level {levelNumber} • Session {sessionNumber}
+            Complete games to earn stars and unlock the next.
           </Text>
         </View>
-      </View>
+      </Animated.View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>Choose a Game</Text>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="sparkles" size={20} color="#F59E0B" />
+          <Text style={styles.sectionTitle}>Choose a Game</Text>
+        </View>
         <Text style={styles.sectionSubtitle}>
-          Complete games to progress through your therapy session
+          Complete each game to earn stars and unlock the next.
         </Text>
 
         <View style={styles.gamesGrid}>
@@ -6099,404 +6202,27 @@ export default function SessionGamesScreen() {
             GAMES.filter(game => game.available).map((game, index) => {
               const unlocked = isGameUnlocked(game.id, index);
               const isLocked = !unlocked;
-              
+              const gameNumber = index + 1;
               return (
-              <TouchableOpacity
-                key={game.id}
-                style={[
-                  styles.gameCard,
-                  { borderColor: isLocked ? '#E5E7EB' : game.color },
-                  isLocked && styles.gameCardDisabled,
-                ]}
-                onPress={() => {
-                  if (isLocked) {
-                    Alert.alert('Locked', 'Complete the previous game to unlock this game.');
-                    return;
-                  }
-                  if (game.id === 'follow-ball') setCurrentGame('follow-ball');
-                  if (game.id === 'catch-star') setCurrentGame('catch-star');
-                  if (game.id === 'slow-to-fast') setCurrentGame('slow-to-fast');
-                  if (game.id === 'track-freeze') setCurrentGame('track-freeze');
-                  if (game.id === 'follow-look') setCurrentGame('follow-look');
-                  if (game.id === 'tap-magic') setCurrentGame('tap-magic');
-                  if (game.id === 'tap-animate') setCurrentGame('tap-animate');
-                  if (game.id === 'tap-reveal') setCurrentGame('tap-reveal');
-                  if (game.id === 'tap-sound') setCurrentGame('tap-sound');
-                  if (game.id === 'tap-choice') setCurrentGame('tap-choice');
-                  if (game.id === 'sound-to-tap') setCurrentGame('sound-to-tap');
-                  if (game.id === 'which-sound') setCurrentGame('which-sound');
-                  if (game.id === 'find-sound-source') setCurrentGame('find-sound-source');
-                  if (game.id === 'stop-when-sound-stops') setCurrentGame('stop-when-sound-stops');
-                  if (game.id === 'loud-vs-soft') setCurrentGame('loud-vs-soft');
-                  if (game.id === 'follow-my-eyes') setCurrentGame('follow-my-eyes');
-                  if (game.id === 'which-side') setCurrentGame('which-side');
-                  if (game.id === 'follow-gaze-animation') setCurrentGame('follow-gaze-animation');
-                  if (game.id === 'eyes-only') setCurrentGame('eyes-only');
-                  if (game.id === 'big-tap') setCurrentGame('big-tap');
-                  if (game.id === 'tap-red-circle') setCurrentGame('tap-red-circle');
-                  if (game.id === 'game-3') setCurrentGame('game-3');
-                  if (game.id === 'game-4') setCurrentGame('game-4');
-                  if (game.id === 'game-5') setCurrentGame('game-5');
-                  if (game.id === 'small-circle-tap') setCurrentGame('small-circle-tap');
-                  if (game.id === 'tap-only-small') setCurrentGame('tap-only-small');
-                  if (game.id === 'shrinking-target') setCurrentGame('shrinking-target');
-                  if (game.id === 'track-then-tap') setCurrentGame('track-then-tap');
-                  if (game.id === 'multiple-small-targets') setCurrentGame('multiple-small-targets');
-                  if (game.id === 'tap-slowly') setCurrentGame('tap-slowly');
-                  if (game.id === 'tap-fast') setCurrentGame('tap-fast');
-                  if (game.id === 'slow-then-fast') setCurrentGame('slow-then-fast');
-                  if (game.id === 'race-the-dot') setCurrentGame('race-the-dot');
-                  if (game.id === 'hold-the-button') setCurrentGame('hold-the-button');
-                  if (game.id === 'grow-the-balloon') setCurrentGame('grow-the-balloon');
-                  if (game.id === 'launch-rocket') setCurrentGame('launch-rocket');
-                  if (game.id === 'squish-the-jelly') setCurrentGame('squish-the-jelly');
-                  if (game.id === 'hold-the-light') setCurrentGame('hold-the-light');
-                  if (game.id === 'drag-ball-to-goal') setCurrentGame('drag-ball-to-goal');
-                  if (game.id === 'follow-the-line') setCurrentGame('follow-the-line');
-                  if (game.id === 'drag-animal-home') setCurrentGame('drag-animal-home');
-                  if (game.id === 'drag-slowly') setCurrentGame('drag-slowly');
-                  if (game.id === 'puzzle-piece-drag') setCurrentGame('puzzle-piece-drag');
-                  if (game.id === 'tap-the-numbers') setCurrentGame('tap-the-numbers');
-                  if (game.id === 'tap-lights-in-order') setCurrentGame('tap-lights-in-order');
-                  if (game.id === 'follow-the-arrows') setCurrentGame('follow-the-arrows');
-                  if (game.id === 'tap-colours-in-order') setCurrentGame('tap-colours-in-order');
-                  if (game.id === 'tap-the-big-one') setCurrentGame('tap-the-big-one');
-                  if (game.id === 'tap-the-small-one') setCurrentGame('tap-the-small-one');
-                  if (game.id === 'tap-the-shape-i-show-you') setCurrentGame('tap-the-shape-i-show-you');
-                  if (game.id === 'find-the-odd-one-out') setCurrentGame('find-the-odd-one-out');
-                  if (game.id === 'match-shape-to-outline') setCurrentGame('match-shape-to-outline');
-                  if (game.id === 'tiny-dot-tap') setCurrentGame('tiny-dot-tap');
-                  if (game.id === 'tap-the-center-of-the-target') setCurrentGame('tap-the-center-of-the-target');
-                  if (game.id === 'moving-small-target') setCurrentGame('moving-small-target');
-                  if (game.id === 'tap-only-the-smallest-shape') setCurrentGame('tap-only-the-smallest-shape');
-                  if (game.id === 'tap-the-hidden-small-object') setCurrentGame('tap-the-hidden-small-object');
-                  if (game.id === 'shrinking-circle-tap') setCurrentGame('shrinking-circle-tap');
-                  if (game.id === 'tap-when-star-is-smallest') setCurrentGame('tap-when-star-is-smallest');
-                  if (game.id === 'shrink-stop-tap') setCurrentGame('shrink-stop-tap');
-                  if (game.id === 'multiple-shrinking-targets') setCurrentGame('multiple-shrinking-targets');
-                  if (game.id === 'shrinking-object-movement') setCurrentGame('shrinking-object-movement');
-                  if (game.id === 'pinch-to-pop') setCurrentGame('pinch-to-pop');
-                  if (game.id === 'two-finger-simultaneous-tap') setCurrentGame('two-finger-simultaneous-tap');
-                  if (game.id === 'pinch-to-resize') setCurrentGame('pinch-to-resize');
-                  if (game.id === 'pinch-to-open-treasure-box') setCurrentGame('pinch-to-open-treasure-box');
-                  // Level 2 Session 2 games
-                  if (game.id === 'rainbow-trace') setCurrentGame('rainbow-trace');
-                  if (game.id === 'snake-slide') setCurrentGame('snake-slide');
-                  if (game.id === 'moon-path') setCurrentGame('moon-path');
-                  if (game.id === 'smile-maker') setCurrentGame('smile-maker');
-                  if (game.id === 'curvy-road-drive') setCurrentGame('curvy-road-drive');
-                  // Level 2 Session 3 games - Occupational Therapy Trace Zig-Zag
-                  if (game.id === 'mountain-climb') setCurrentGame('mountain-climb');
-                  if (game.id === 'lightning-bolt') setCurrentGame('lightning-bolt');
-                  if (game.id === 'saw-path') setCurrentGame('saw-path');
-                  if (game.id === 'robot-wire-fix') setCurrentGame('robot-wire-fix');
-                  if (game.id === 'zig-zag-race') setCurrentGame('zig-zag-race');
-                  // Level 2 Session 3 games - Speech Therapy Airflow
-                  if (game.id === 'blow-the-bubble') setCurrentGame('blow-the-bubble');
-                  if (game.id === 'move-the-feather') setCurrentGame('move-the-feather');
-                  if (game.id === 'windmill-spin') setCurrentGame('windmill-spin');
-                  if (game.id === 'blow-out-candle') setCurrentGame('blow-out-candle');
-                  if (game.id === 'balloon-inflate') setCurrentGame('balloon-inflate');
-                  // Level 2 Session 4 games
-                  if (game.id === 'maze-walk') setCurrentGame('maze-walk');
-                  if (game.id === 'river-boat-guide') setCurrentGame('river-boat-guide');
-                  if (game.id === 'ant-trail-follow') setCurrentGame('ant-trail-follow');
-                  if (game.id === 'ball-roll-path') setCurrentGame('ball-roll-path');
-                  if (game.id === 'dont-touch-grass') setCurrentGame('dont-touch-grass');
-                  // Level 2 Session 4 games - Speech Therapy (Tongue Elevation)
-                  if (game.id === 'ice-cream-lick') setCurrentGame('ice-cream-lick');
-                  if (game.id === 'touch-the-star') setCurrentGame('touch-the-star');
-                  if (game.id === 'tongue-elevator') setCurrentGame('tongue-elevator');
-                  if (game.id === 'roof-tap') setCurrentGame('roof-tap');
-                  if (game.id === 'smile-and-lift') setCurrentGame('smile-and-lift');
-                  // Level 2 Session 5 games - Speech Therapy (Tongue Lateralization)
-                  if (game.id === 'paint-the-wall') setCurrentGame('paint-the-wall');
-                  if (game.id === 'cookie-sweep') setCurrentGame('cookie-sweep');
-                  if (game.id === 'catch-the-dot') setCurrentGame('catch-the-dot');
-                  if (game.id === 'side-lights') setCurrentGame('side-lights');
-                  if (game.id === 'mirror-match') setCurrentGame('mirror-match');
-                  // Level 2 Session 6 games - Speech Therapy (Bilabial Strength)
-                  if (game.id === 'balloon-pump') setCurrentGame('balloon-pump');
-                  if (game.id === 'bubble-press') setCurrentGame('bubble-press');
-                  if (game.id === 'mama-call') setCurrentGame('mama-call');
-                  if (game.id === 'drum-lips') setCurrentGame('drum-lips');
-                  if (game.id === 'box-push') setCurrentGame('box-push');
-                  // Level 2 Session 7 games - Speech Therapy (Lip Rounding)
-                  if (game.id === 'fish-mouth') setCurrentGame('fish-mouth');
-                  if (game.id === 'tunnel-blow') setCurrentGame('tunnel-blow');
-                  if (game.id === 'o-shape-match') setCurrentGame('o-shape-match');
-                  if (game.id === 'o-u-switch') setCurrentGame('o-u-switch');
-                  if (game.id === 'mirror-round') setCurrentGame('mirror-round');
-                  // Level 2 Session 8 games - Speech Therapy (Breath Control)
-                  if (game.id === 'ball-float') setCurrentGame('ball-float');
-                  if (game.id === 'cloud-push') setCurrentGame('cloud-push');
-                  if (game.id === 'train-steam') setCurrentGame('train-steam');
-                  if (game.id === 'breath-meter') setCurrentGame('breath-meter');
-                  if (game.id === 'stop-go-breathing') setCurrentGame('stop-go-breathing');
-                  // Level 2 Session 9 games - Speech Therapy (Simple Oral Sequences)
-                  if (game.id === 'traffic-mouth') setCurrentGame('traffic-mouth');
-                  if (game.id === 'robot-sequence') setCurrentGame('robot-sequence');
-                  if (game.id === 'pattern-match') setCurrentGame('pattern-match');
-                  if (game.id === 'copy-the-beat') setCurrentGame('copy-the-beat');
-                  if (game.id === 'sequence-builder') setCurrentGame('sequence-builder');
-                  // Level 2 Session 10 games - Speech Therapy (Foundational Imitation)
-                  if (game.id === 'face-to-face-avatar') setCurrentGame('face-to-face-avatar');
-                  if (game.id === 'highlight-zones') setCurrentGame('highlight-zones');
-                  if (game.id === 'one-step-imitation') setCurrentGame('one-step-imitation');
-                  if (game.id === 'two-step-imitation') setCurrentGame('two-step-imitation');
-                  if (game.id === 'success-replay') setCurrentGame('success-replay');
-                  // Level 2 Session 5 games
-                  if (game.id === 'dot-to-dot-animal') setCurrentGame('dot-to-dot-animal');
-                  if (game.id === 'star-builder') setCurrentGame('star-builder');
-                  if (game.id === 'house-drawing') setCurrentGame('house-drawing');
-                  if (game.id === 'hidden-shape-reveal') setCurrentGame('hidden-shape-reveal');
-                  if (game.id === 'connect-in-order-glow') setCurrentGame('connect-in-order-glow');
-                  // Level 2 Session 6 games
-                  if (game.id === 'puzzle-drop-shapes') setCurrentGame('puzzle-drop-shapes');
-                  if (game.id === 'shadow-match') setCurrentGame('shadow-match');
-                  if (game.id === 'cookie-cutter-match') setCurrentGame('cookie-cutter-match');
-                  if (game.id === 'parking-shapes') setCurrentGame('parking-shapes');
-                  if (game.id === 'fast-match') setCurrentGame('fast-match');
-                  // Level 2 Session 7 games
-                  if (game.id === 'big-circle-trace') setCurrentGame('big-circle-trace');
-                  if (game.id === 'big-square-walk') setCurrentGame('big-square-walk');
-                  if (game.id === 'triangle-mountain-trace') setCurrentGame('triangle-mountain-trace');
-                  if (game.id === 'paint-the-shape') setCurrentGame('paint-the-shape');
-                  if (game.id === 'glow-border-trace') setCurrentGame('glow-border-trace');
-                  // Level 2 Session 8 games
-                  if (game.id === 'tiny-circle-coins') setCurrentGame('tiny-circle-coins');
-                  if (game.id === 'mini-square-locks') setCurrentGame('mini-square-locks');
-                  if (game.id === 'dot-border-shapes') setCurrentGame('dot-border-shapes');
-                  if (game.id === 'careful-trace-challenge') setCurrentGame('careful-trace-challenge');
-                  if (game.id === 'shrink-mode-trace') setCurrentGame('shrink-mode-trace');
-                  // Level 2 Session 9 games
-                  if (game.id === 'copy-the-line-pattern') setCurrentGame('copy-the-line-pattern');
-                  if (game.id === 'block-pattern-copy') setCurrentGame('block-pattern-copy');
-                  if (game.id === 'color-pattern-match') setCurrentGame('color-pattern-match');
-                  if (game.id === 'stick-design-copy') setCurrentGame('stick-design-copy');
-                  if (game.id === 'look-hide-draw') setCurrentGame('look-hide-draw');
-                  // Level 2 Session 10 games
-                  if (game.id === 'mirror-line-draw') setCurrentGame('mirror-line-draw');
-                  if (game.id === 'butterfly-wings') setCurrentGame('butterfly-wings');
-                  if (game.id === 'face-symmetry-draw') setCurrentGame('face-symmetry-draw');
-                  if (game.id === 'half-shape-complete') setCurrentGame('half-shape-complete');
-                  if (game.id === 'mirror-maze') setCurrentGame('mirror-maze');
-                  if (game.id === 'follow-my-point') setCurrentGame('follow-my-point');
-                  if (game.id === 'point-to-object-appears') setCurrentGame('point-to-object-appears');
-                  if (game.id === 'tap-the-pointed-object') setCurrentGame('tap-the-pointed-object');
-                  if (game.id === 'moving-arm-pointing') setCurrentGame('moving-arm-pointing');
-                  if (game.id === 'multi-point-follow') setCurrentGame('multi-point-follow');
-                  if (game.id === 'tap-what-you-like') setCurrentGame('tap-what-you-like');
-                  if (game.id === 'which-one-moved') setCurrentGame('which-one-moved');
-                  if (game.id === 'sound-to-choice') setCurrentGame('sound-to-choice');
-                  if (game.id === 'show-me-the-toy') setCurrentGame('show-me-the-toy');
-                  if (game.id === 'food-vs-toy') setCurrentGame('food-vs-toy');
-                  if (game.id === 'pass-the-ball') setCurrentGame('pass-the-ball');
-                  if (game.id === 'tap-only-on-your-turn') setCurrentGame('tap-only-on-your-turn');
-                  if (game.id === 'your-turn-to-complete') setCurrentGame('your-turn-to-complete');
-                  if (game.id === 'wait-for-the-signal') setCurrentGame('wait-for-the-signal');
-                  if (game.id === 'turn-timer') setCurrentGame('turn-timer');
-                  if (game.id === 'watch-and-wait') setCurrentGame('watch-and-wait');
-                  if (game.id === 'growing-flower') setCurrentGame('growing-flower');
-                  if (game.id === 'timer-bar-tap') setCurrentGame('timer-bar-tap');
-                  if (game.id === 'follow-slow-movement') setCurrentGame('follow-slow-movement');
-                  if (game.id === 'shapes-appear-one-by-one') setCurrentGame('shapes-appear-one-by-one');
-                  if (game.id === 'touch-the-ball') setCurrentGame('touch-the-ball');
-                  if (game.id === 'tap-the-circle') setCurrentGame('tap-the-circle');
-                  if (game.id === 'find-the-sound-source') setCurrentGame('find-the-sound-source');
-                  if (game.id === 'tap-what-i-show-you') setCurrentGame('tap-what-i-show-you');
-                  if (game.id === 'follow-the-arrow') setCurrentGame('follow-the-arrow');
-                  if (game.id === 'tap-the-target-ignore-distraction') setCurrentGame('tap-the-target-ignore-distraction');
-                  if (game.id === 'sound-distraction-challenge') setCurrentGame('sound-distraction-challenge');
-                  if (game.id === 'slow-task-with-pop-up-distraction') setCurrentGame('slow-task-with-pop-up-distraction');
-                  if (game.id === 'sequence-with-distraction') setCurrentGame('sequence-with-distraction');
-                  if (game.id === 'jaw-awareness-crocodile') setCurrentGame('jaw-awareness-crocodile');
-                  if (game.id === 'jaw-swing-adventure') setCurrentGame('jaw-swing-adventure');
-                  if (game.id === 'jaw-push-challenge') setCurrentGame('jaw-push-challenge');
-                  if (game.id === 'jaw-rhythm-tap') setCurrentGame('jaw-rhythm-tap');
-                  if (game.id === 'jaw-strength-builder') setCurrentGame('jaw-strength-builder');
-                  // Level 2 Session 1 games (Occupational Therapy - Trace Straight Line)
-                  if (game.id === 'train-track-line') setCurrentGame('train-track-line');
-                  if (game.id === 'light-the-laser') setCurrentGame('light-the-laser');
-                  if (game.id === 'road-roller') setCurrentGame('road-roller');
-                  if (game.id === 'rain-drop-slide') setCurrentGame('rain-drop-slide');
-                  if (game.id === 'start-stop-line') setCurrentGame('start-stop-line');
-                  // Level 3 Session 1 games
-                  if (game.id === 'single-beat-tap') setCurrentGame('single-beat-tap');
-                  if (game.id === 'double-beat-copy') setCurrentGame('double-beat-copy');
-                  if (game.id === 'pause-and-tap') setCurrentGame('pause-and-tap');
-                  if (game.id === 'fast-beat-challenge') setCurrentGame('fast-beat-challenge');
-                  if (game.id === 'slow-beat-calm-mode') setCurrentGame('slow-beat-calm-mode');
-                  // Level 3 Session 2 games
-                  if (game.id === 'big-tap-l3s4') setCurrentGame('big-tap-l3s4');
-                  if (game.id === 'small-dot-touch') setCurrentGame('small-dot-touch');
-                  if (game.id === 'big-small-switch') setCurrentGame('big-small-switch');
-                  if (game.id === 'balloon-inflate-l3s4') setCurrentGame('balloon-inflate-l3s4');
-                  if (game.id === 'compare-and-move') setCurrentGame('compare-and-move');
-                  // Level 3 Session 4: Up-Down Gestures
-                  if (game.id === 'balloon-up') setCurrentGame('balloon-up');
-                  if (game.id === 'ball-drop') setCurrentGame('ball-drop');
-                  if (game.id === 'elevator-game') setCurrentGame('elevator-game');
-                  if (game.id === 'jump-arrow') setCurrentGame('jump-arrow');
-                  if (game.id === 'rain-catch') setCurrentGame('rain-catch');
-                  // Level 3 Session 5: Left-Right Swipes
-                  if (game.id === 'car-turn') setCurrentGame('car-turn');
-                  if (game.id === 'arrow-match') setCurrentGame('arrow-match');
-                  if (game.id === 'animal-run') setCurrentGame('animal-run');
-                  if (game.id === 'mirror-swipe') setCurrentGame('mirror-swipe');
-                  if (game.id === 'catch-the-ball') setCurrentGame('catch-the-ball');
-                  // Level 3 Session 6: Jump Imitation (Tap Twice)
-                  if (game.id === 'frog-jump') setCurrentGame('frog-jump');
-                  if (game.id === 'jump-count') setCurrentGame('jump-count');
-                  if (game.id === 'double-tap-only') setCurrentGame('double-tap-only');
-                  if (game.id === 'rhythm-jump') setCurrentGame('rhythm-jump');
-                  if (game.id === 'obstacle-jump') setCurrentGame('obstacle-jump');
-                  // Level 3 Session 7: Swinging Movement Imitation
-                  if (game.id === 'pendulum-copy') setCurrentGame('pendulum-copy');
-                  if (game.id === 'monkey-swing') setCurrentGame('monkey-swing');
-                  if (game.id === 'fan-motion') setCurrentGame('fan-motion');
-                  if (game.id === 'rope-swing-timing') setCurrentGame('rope-swing-timing');
-                  if (game.id === 'music-swing') setCurrentGame('music-swing');
-                  // Level 3 Session 8: Whole Body Map
-                  if (game.id === 'touch-head') setCurrentGame('touch-head');
-                  if (game.id === 'shoulders-tap') setCurrentGame('shoulders-tap');
-                  if (game.id === 'body-puzzle') setCurrentGame('body-puzzle');
-                  if (game.id === 'follow-the-body') setCurrentGame('follow-the-body');
-                  if (game.id === 'body-flash') setCurrentGame('body-flash');
-                  // Level 3 Session 9: Mirror Movements
-                  if (game.id === 'copy-pose') setCurrentGame('copy-pose');
-                  if (game.id === 'hand-mirror') setCurrentGame('hand-mirror');
-                  if (game.id === 'pattern-copy') setCurrentGame('pattern-copy');
-                  if (game.id === 'delayed-mirror') setCurrentGame('delayed-mirror');
-                  if (game.id === 'fast-copy') setCurrentGame('fast-copy');
-                  // Level 3 Session 10: Posture-Based Games
-                  if (game.id === 'freeze-pose') setCurrentGame('freeze-pose');
-                  if (game.id === 'animal-pose') setCurrentGame('animal-pose');
-                  if (game.id === 'shape-pose') setCurrentGame('shape-pose');
-                  if (game.id === 'count-hold') setCurrentGame('count-hold');
-                  if (game.id === 'pose-match') setCurrentGame('pose-match');
-                  // Level 4 Session 1: Drag Object Left → Right
-                  if (game.id === 'ball-transfer') setCurrentGame('ball-transfer');
-                  if (game.id === 'feed-the-monster') setCurrentGame('feed-the-monster');
-                  if (game.id === 'road-crossing') setCurrentGame('road-crossing');
-                  if (game.id === 'color-match-drag') setCurrentGame('color-match-drag');
-                  if (game.id === 'timed-drag') setCurrentGame('timed-drag');
-                  // Level 4 Session 2: Drag Object Right → Left
-                  if (game.id === 'reverse-ball-pass') setCurrentGame('reverse-ball-pass');
-                  if (game.id === 'collect-stars') setCurrentGame('collect-stars');
-                  if (game.id === 'reverse-path') setCurrentGame('reverse-path');
-                  if (game.id === 'mirror-drag') setCurrentGame('mirror-drag');
-                  if (game.id === 'pattern-drag') setCurrentGame('pattern-drag');
-                  // Level 4 Session 3: Diagonal Dragging
-                  if (game.id === 'top-left-bottom-right') setCurrentGame('top-left-bottom-right');
-                  if (game.id === 'x-path-trace') setCurrentGame('x-path-trace');
-                  if (game.id === 'diagonal-catch') setCurrentGame('diagonal-catch');
-                  if (game.id === 'zigzag-drag') setCurrentGame('zigzag-drag');
-                  if (game.id === 'diagonal-match') setCurrentGame('diagonal-match');
-                  // Level 4 Session 4: Two-Hand Tapping (Dual Targets)
-                  if (game.id === 'double-circle-tap') setCurrentGame('double-circle-tap');
-                  if (game.id === 'piano-keys') setCurrentGame('piano-keys');
-                  if (game.id === 'drum-duo') setCurrentGame('drum-duo');
-                  if (game.id === 'light-up-targets') setCurrentGame('light-up-targets');
-                  if (game.id === 'hold-and-tap') setCurrentGame('hold-and-tap');
-                  // Level 3 Session 3: Fast vs Slow Movements
-                  if (game.id === 'slow-turtle-move') setCurrentGame('slow-turtle-move');
-                  if (game.id === 'fast-rabbit-run') setCurrentGame('fast-rabbit-run');
-                  if (game.id === 'speed-match') setCurrentGame('speed-match');
-                  if (game.id === 'traffic-light-game') setCurrentGame('traffic-light-game');
-                  if (game.id === 'music-speed-control') setCurrentGame('music-speed-control');
-                  // Level 3 Session 3: Tap with Rhythm (Drum Beats)
-                  if (game.id === 'single-beat-tap') setCurrentGame('single-beat-tap');
-                  if (game.id === 'double-beat-copy') setCurrentGame('double-beat-copy');
-                  if (game.id === 'pause-and-tap') setCurrentGame('pause-and-tap');
-                  if (game.id === 'fast-beat-challenge') setCurrentGame('fast-beat-challenge');
-                  if (game.id === 'slow-beat-calm-mode') setCurrentGame('slow-beat-calm-mode');
-                  // Level 3 Session 4: Big vs Small Movements
-                  if (game.id === 'big-tap-l3s4') setCurrentGame('big-tap-l3s4');
-                  if (game.id === 'small-dot-touch') setCurrentGame('small-dot-touch');
-                  if (game.id === 'big-small-switch') setCurrentGame('big-small-switch');
-                  if (game.id === 'balloon-inflate-l3s4') setCurrentGame('balloon-inflate-l3s4');
-                  if (game.id === 'compare-and-move') setCurrentGame('compare-and-move');
-                  // Level 5 Session 1 games
-                  if (game.id === 'catch-moving-ball') setCurrentGame('catch-moving-ball');
-                  if (game.id === 'follow-the-butterfly') setCurrentGame('follow-the-butterfly');
-                  if (game.id === 'avoid-the-bomb') setCurrentGame('avoid-the-bomb');
-                  if (game.id === 'chase-the-star') setCurrentGame('chase-the-star');
-                  if (game.id === 'zigzag-follow') setCurrentGame('zigzag-follow');
-                  // Level 5 Session 2: Targeted Tapping
-                  if (game.id === 'pop-the-bubble') setCurrentGame('pop-the-bubble');
-                  if (game.id === 'color-dot-hit') setCurrentGame('color-dot-hit');
-                  if (game.id === 'small-target') setCurrentGame('small-target');
-                  if (game.id === 'moving-target') setCurrentGame('moving-target');
-                  if (game.id === 'timed-target') setCurrentGame('timed-target');
-                  // Level 5 Session 3: Drag to Track
-                  // Level 5 Session 4: Visual Focus
-                  if (game.id === 'find-the-star') setCurrentGame('find-the-star');
-                  if (game.id === 'memory-flash') setCurrentGame('memory-flash');
-                  if (game.id === 'match-shadow') setCurrentGame('match-shadow');
-                  if (game.id === 'what-moved') setCurrentGame('what-moved');
-                  if (game.id === 'spot-the-color') setCurrentGame('spot-the-color');
-                  // Level 5 Session 5: Moving Eye Control
-                  if (game.id === 'side-eye-track') setCurrentGame('side-eye-track');
-                  if (game.id === 'up-down-track') setCurrentGame('up-down-track');
-                  if (game.id === 'circular-track') setCurrentGame('circular-track');
-                  if (game.id === 'jump-track') setCurrentGame('jump-track');
-                  if (game.id === 'multi-dot') setCurrentGame('multi-dot');
-                  // Level 5 Session 6: Speed Matching
-                  if (game.id === 'fast-catch') setCurrentGame('fast-catch');
-                  if (game.id === 'slow-catch') setCurrentGame('slow-catch');
-                  if (game.id === 'speed-switch') setCurrentGame('speed-switch');
-                  if (game.id === 'music-speed') setCurrentGame('music-speed');
-                  if (game.id === 'countdown-hit') setCurrentGame('countdown-hit');
-                  // Level 5 Session 7: Depth & Distance
-                  if (game.id === 'near-vs-far') setCurrentGame('near-vs-far');
-                  if (game.id === 'zoom-touch') setCurrentGame('zoom-touch');
-                  if (game.id === 'falling-objects') setCurrentGame('falling-objects');
-                  if (game.id === 'shrinking-target') setCurrentGame('shrinking-target');
-                  if (game.id === '3-layer-tap') setCurrentGame('3-layer-tap');
-                  // Level 5 Session 8: Multi-Object Tracking
-                  if (game.id === 'follow-red') setCurrentGame('follow-red');
-                  if (game.id === 'two-moving-balls') setCurrentGame('two-moving-balls');
-                  if (game.id === 'distraction-mode') setCurrentGame('distraction-mode');
-                  if (game.id === 'pattern-chase') setCurrentGame('pattern-chase');
-                  if (game.id === 'speed-objects') setCurrentGame('speed-objects');
-                  // Level 5 Session 9: Visual Reaction
-                  if (game.id === 'flash-tap') setCurrentGame('flash-tap');
-                  if (game.id === 'go-stop') setCurrentGame('go-stop');
-                  if (game.id === 'surprise-pop') setCurrentGame('surprise-pop');
-                  if (game.id === 'sound-light') setCurrentGame('sound-light');
-                  if (game.id === 'quick-choice') setCurrentGame('quick-choice');
-                }}
-                activeOpacity={0.8}
-              >
-              <View style={[styles.gameIcon, { backgroundColor: `${game.color}20` }]}>
-                <Text style={styles.gameEmoji}>{game.emoji}</Text>
-              </View>
-              <View style={styles.gameContent}>
-                <Text style={[styles.gameTitle, isLocked && styles.gameTitleDisabled]}>
-                  {game.title}
-                </Text>
-                <Text style={[styles.gameDescription, isLocked && { color: '#9CA3AF' }]}>
-                  {game.description}
-                </Text>
-              </View>
-              {isLocked ? (
-                <View style={[styles.lockBadge, { backgroundColor: '#F1F5F9' }]}>
-                  <Ionicons name="lock-closed" size={18} color="#9CA3AF" />
-                </View>
-              ) : (
-                <View
-                  style={[
-                    styles.playBadge,
-                    { backgroundColor: `${game.color}20` },
-                  ]}
-                >
-                  <Ionicons name="play" size={20} color={game.color} />
-                </View>
-              )}
-            </TouchableOpacity>
-            );
-            }))}
+                <GameMenuCard
+                  key={game.id}
+                  game={game}
+                  index={index}
+                  unlocked={unlocked}
+                  isLocked={isLocked}
+                  gameNumber={gameNumber}
+                  onPress={() => {
+                    if (isLocked) {
+                      Alert.alert('Locked', 'Complete the previous game to unlock this game.');
+                      return;
+                    }
+                    setCurrentGame(game.id as GameKey);
+                  }}
+                  cardStyles={styles}
+                />
+              );
+            })
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -6527,14 +6253,24 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#0F172A',
   },
+  breadcrumbText: {
+    fontSize: 12,
+    color: '#64748B',
+    marginBottom: 4,
+  },
   headerContent: {
     flex: 1,
   },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
     color: '#0F172A',
-    marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
@@ -6543,11 +6279,16 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '800',
     color: '#0F172A',
-    marginBottom: 8,
   },
   sectionSubtitle: {
     fontSize: 14,
@@ -6562,23 +6303,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 20,
-    padding: 20,
+    padding: 16,
     borderWidth: 2,
+    minHeight: 72,
     shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
     marginBottom: 4,
   },
   gameCardDisabled: {
-    opacity: 0.6,
+    opacity: 0.7,
     borderColor: '#E5E7EB',
+    backgroundColor: '#F8FAFC',
+  },
+  gameNumberCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  gameNumberText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
   },
   lockBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -6629,14 +6386,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 5,
-  },
-  lockBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F3F4F6',
   },
   emptyState: {
     padding: 48,

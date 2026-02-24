@@ -68,7 +68,7 @@ type Shape = {
   opacity: Animated.Value;
 };
 
-const TapOnlyTheSmallestShapeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const TapOnlyTheSmallestShapeGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
 
   const [round, setRound] = useState(1);
@@ -401,10 +401,9 @@ const TapOnlyTheSmallestShapeGame: React.FC<{ onBack?: () => void }> = ({ onBack
         message="Discrimination Master!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();

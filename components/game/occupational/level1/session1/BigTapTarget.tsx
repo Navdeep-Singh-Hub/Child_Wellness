@@ -50,9 +50,10 @@ const usePopSound = () => {
 
 interface BigTapTargetProps {
   onBack: () => void;
+  onComplete?: () => void;
 }
 
-export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
+export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const [score, setScore] = useState(0);
   const [targetsLeft, setTargetsLeft] = useState(12);
@@ -167,10 +168,9 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
         message="Amazing Work!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed for OT games)
           stopAllSpeech();
           cleanupSounds();
-          onBack();
+          if (onComplete) onComplete(); else onBack();
         }}
         onHome={() => {
           stopAllSpeech();

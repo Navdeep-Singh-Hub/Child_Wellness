@@ -66,7 +66,7 @@ const useSoundEffect = (uri: string) => {
   return play;
 };
 
-const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const HoldTheLightGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const playSuccess = useSoundEffect(SUCCESS_SOUND);
   const playFlicker = useSoundEffect(FLICKER_SOUND);
@@ -351,10 +351,9 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         message="Light Master!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();

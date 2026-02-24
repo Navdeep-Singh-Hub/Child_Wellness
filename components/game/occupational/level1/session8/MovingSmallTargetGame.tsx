@@ -60,7 +60,7 @@ const useSoundEffect = (uri: string) => {
   return play;
 };
 
-const MovingSmallTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const MovingSmallTargetGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -605,10 +605,9 @@ const MovingSmallTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         message="Tracking Master!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();

@@ -66,7 +66,7 @@ const useSoundEffect = (uri: string) => {
   return play;
 };
 
-const TapTheShapeIShowYouGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const TapTheShapeIShowYouGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
 
   const [round, setRound] = useState(1);
@@ -285,10 +285,9 @@ const TapTheShapeIShowYouGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
         message="Shape Master!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();

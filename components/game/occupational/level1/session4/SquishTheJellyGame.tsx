@@ -65,7 +65,7 @@ const useSoundEffect = (uri: string) => {
   return play;
 };
 
-const SquishTheJellyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const SquishTheJellyGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const playSuccess = useSoundEffect(SUCCESS_SOUND);
   const playSplat = useSoundEffect(SPLAT_SOUND);
@@ -291,10 +291,9 @@ const SquishTheJellyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         message="Jelly Master!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();

@@ -65,7 +65,7 @@ const usePopSound = () => {
   return play;
 };
 
-const SmallCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const SmallCircleTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const playPop = usePopSound();
 
@@ -208,10 +208,9 @@ const SmallCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         message="Excellent Precision!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();

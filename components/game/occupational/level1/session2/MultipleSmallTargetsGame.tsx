@@ -68,7 +68,7 @@ type Dot = {
   tapped: boolean;
 };
 
-const MultipleSmallTargetsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const MultipleSmallTargetsGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const playPop = usePopSound();
 
@@ -274,10 +274,9 @@ const MultipleSmallTargetsGame: React.FC<{ onBack?: () => void }> = ({ onBack })
         message="Perfect Precision!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();

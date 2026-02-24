@@ -70,7 +70,7 @@ const useSoundEffect = (uri: string) => {
   return play;
 };
 
-const MultiTapFunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const MultiTapFunGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -267,10 +267,9 @@ const MultiTapFunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         message="All Balloons Popped!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();

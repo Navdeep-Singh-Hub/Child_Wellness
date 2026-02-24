@@ -68,7 +68,7 @@ const useSoundEffect = (uri: string) => {
   return play;
 };
 
-const RaceTheDotGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const RaceTheDotGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const playSuccess = useSoundEffect(SUCCESS_SOUND);
   const playGoal = useSoundEffect(GOAL_SOUND);
@@ -274,10 +274,9 @@ const RaceTheDotGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         message="Race Complete!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();

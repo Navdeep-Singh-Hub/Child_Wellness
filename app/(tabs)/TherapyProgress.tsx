@@ -1,45 +1,83 @@
 import Paywall from '@/components/Paywall';
-import { DailyActivitiesVideos } from '@/components/daily-activities/DailyActivitiesVideos';
 import {
-    advanceTherapyProgress,
-    fetchTherapyProgress,
-    getSubscriptionStatus,
-    initTherapyProgress,
-    type SubscriptionStatus,
-    type TherapyProgress,
+  advanceTherapyProgress,
+  fetchTherapyProgress,
+  getSubscriptionStatus,
+  initTherapyProgress,
+  type SubscriptionStatus,
+  type TherapyProgress,
 } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Linking from 'expo-linking';
+import Lottie from 'lottie-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import {
+  LEVEL_STAGGER_MS,
+  PRESS_SCALE_AMOUNT,
+  SESSION_STAGGER_MS,
+  SPRING_CONFIG,
+  THERAPY_STAGGER_MS,
+} from '@/constants/therapyProgressAnimations';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+
+const loadingAnimation = require('@/assets/animation/loading.json');
+let NativeLottie: React.ComponentType<{ source: object; autoPlay?: boolean; loop?: boolean; style?: object }> | null = null;
+if (Platform.OS !== 'web') {
+  try {
+    NativeLottie = require('lottie-react-native').default;
+  } catch {
+    NativeLottie = null;
+  }
+}
+
+function TherapyProgressLoadingAnimation({ size = 160 }: { size?: number }) {
+  if (Platform.OS === 'web') {
+    return (
+      <Lottie
+        animationData={loadingAnimation}
+        loop
+        autoplay
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  if (NativeLottie) {
+    return (
+      <NativeLottie
+        source={loadingAnimation}
+        autoPlay
+        loop
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  return <ActivityIndicator size="large" color="#8B5CF6" />;
+}
 
 // Therapy Avatar website URL
 const THERAPY_AVATAR_URL = 'https://therapy-avatar.vercel.app';
-
-// FOR TESTING: Set to true to force progressive unlocking even for free access users
-// Set to false in production
-// IMPORTANT: Set this to true to test progressive unlocking with non-free-access users
-const FORCE_PROGRESSIVE_UNLOCK = true; // Changed to true for testing
-
-// Helper function to convert hex to rgba
-const hexToRgba = (hex: string, alpha: number): string => {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
 
 const THERAPIES = [
   { id: 'speech', label: 'Speech Therapy', desc: 'Improve communication and speech skills', color: '#2563EB', icon: 'mic' },
@@ -91,7 +129,8 @@ export default function TherapyProgressScreen() {
 
   // Re-check access when returning from Paywall
   useEffect(() => {
-    const unsubscribe = router.addListener?.('focus', () => {
+    const r = router as { addListener?: (e: string, cb: () => void) => (() => void) | undefined };
+    const unsubscribe = r.addListener?.('focus', () => {
       checkSubscriptionAccess();
     });
     return unsubscribe;
@@ -128,7 +167,7 @@ export default function TherapyProgressScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8B5CF6" />
+          <TherapyProgressLoadingAnimation size={160} />
           <Text style={styles.loadingText}>Checking access...</Text>
         </View>
       </SafeAreaView>
@@ -139,36 +178,7 @@ export default function TherapyProgressScreen() {
     return <Paywall onSuccess={checkSubscriptionAccess} />;
   }
 
-  const handleSelectTherapy = async (therapyId: string) => {
-    // If Therapy Avatar is selected, open the external website
-    if (therapyId === 'therapy-avatar') {
-      try {
-        const url = THERAPY_AVATAR_URL;
-        console.log('[TherapyProgress] Opening Therapy Avatar website:', url);
-
-        if (Platform.OS === 'web') {
-          // On web, open in new tab
-          if (typeof window !== 'undefined' && window.open) {
-            window.open(url, '_blank', 'noopener,noreferrer');
-          } else {
-            Alert.alert('Error', 'Could not open the Therapy Avatar website. Please check your browser settings.');
-          }
-        } else {
-          // On native (iOS/Android), open in browser
-          const canOpen = await Linking.canOpenURL(url);
-          if (canOpen) {
-            await Linking.openURL(url);
-          } else {
-            Alert.alert('Error', 'Could not open the Therapy Avatar website. Please check the URL.');
-          }
-        }
-      } catch (error: any) {
-        console.error('[TherapyProgress] Failed to open Therapy Avatar website:', error);
-        Alert.alert('Error', error?.message || 'Could not open the Therapy Avatar website.');
-      }
-      return;
-    }
-
+  const handleSelectTherapy = (therapyId: string) => {
     // For daily-activities, navigate directly to videos (skip levels/sessions)
     if (therapyId === 'daily-activities') {
       router.push({
@@ -179,7 +189,6 @@ export default function TherapyProgressScreen() {
       });
       return;
     }
-
     // For special-education, navigate directly to special education navigator (skip levels/sessions)
     if (therapyId === 'special-education') {
       router.push({
@@ -187,6 +196,13 @@ export default function TherapyProgressScreen() {
         params: {
           therapy: 'special-education',
         },
+      });
+      return;
+    }
+    // For therapy-avatar, open the external Vercel app
+    if (therapyId === 'therapy-avatar') {
+      Linking.openURL(THERAPY_AVATAR_URL).catch(() => {
+        Alert.alert('Could not open', 'Unable to open Therapy Avatar. Please try again.');
       });
       return;
     }
@@ -227,7 +243,7 @@ export default function TherapyProgressScreen() {
 
   const currentTherapy = selectedTherapy ? progressMap.get(selectedTherapy) : null;
   const currentLevelObj =
-    currentTherapy?.levels.find((l) => l.levelNumber === selectedLevel) || null;
+    currentTherapy?.levels?.find((l) => l.levelNumber === selectedLevel) ?? null;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -236,7 +252,7 @@ export default function TherapyProgressScreen() {
 
         {loading ? (
           <View style={styles.loading}>
-            <ActivityIndicator size="large" color="#2563EB" />
+            <TherapyProgressLoadingAnimation size={140} />
           </View>
         ) : (
           <>
@@ -266,7 +282,6 @@ export default function TherapyProgressScreen() {
                     therapy={progressMap.get(selectedTherapy)}
                     onSelectLevel={handleSelectLevel}
                     onBack={() => setMode('therapies')}
-                    subscriptionStatus={subscriptionStatus}
                   />
                 )}
               </>
@@ -282,8 +297,8 @@ export default function TherapyProgressScreen() {
                     therapy={progressMap.get(selectedTherapy)!}
                     level={currentLevelObj}
                     saving={saving}
+                    onBack={() => setMode('levels')}
                     onComplete={handleCompleteSession}
-                    subscriptionStatus={subscriptionStatus}
                   />
                 )}
               </>
@@ -298,33 +313,114 @@ export default function TherapyProgressScreen() {
 function Header({ mode, onBack, showBack }: { mode: ViewMode; onBack: () => void; showBack: boolean }) {
   const title =
     mode === 'therapies'
-      ? 'Select a Therapy'
+      ? 'Your Adventures'
       : mode === 'levels'
-      ? 'Choose a Level'
-      : 'Select a Session';
+      ? 'Choose Your Level'
+      : 'Pick a Session';
   const subtitle =
     mode === 'therapies'
-      ? 'Choose a therapy to start your learning journey'
+      ? 'Pick an adventure to continue your journey.'
       : mode === 'levels'
-      ? 'Each therapy has 10 levels · 10 sessions per level · 5 games per session'
-      : 'Select a session to start playing games';
+      ? 'Beat each level to unlock the next one.'
+      : 'Complete games in each session to level up.';
 
   return (
-    <View style={styles.headerContainer}>
-      <View style={styles.headerTop}>
-        {showBack && (
-          <TouchableOpacity onPress={onBack} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={20} color="#2563EB" />
-            <Text style={styles.backText}>Back</Text>
-          </TouchableOpacity>
-        )}
-        <View style={styles.menuButton}>
-          <Ionicons name="menu" size={24} color="#1E293B" />
-        </View>
+    <View style={{ marginBottom: 16 }}>
+      {showBack && (
+        <TouchableOpacity onPress={onBack} style={{ marginBottom: 8 }}>
+          <Text style={{ color: '#2563EB', fontWeight: '700' }}>← Back</Text>
+        </TouchableOpacity>
+      )}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Text style={{ fontSize: 26, fontWeight: '900', color: '#0F172A' }}>{title}</Text>
+        {mode === 'levels' && <Ionicons name="trophy" size={22} color="#F59E0B" />}
+        {mode === 'sessions' && <Ionicons name="play-circle" size={22} color="#2563EB" />}
       </View>
-      <Text style={styles.headerTitle}>{title}</Text>
-      <Text style={styles.headerSubtitle}>{subtitle}</Text>
+      <Text style={{ marginTop: 4, color: '#475569', lineHeight: 20 }}>{subtitle}</Text>
     </View>
+  );
+}
+
+// Lighten hex color for gradient end
+function lightenHex(hex: string, factor: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.min(255, ((n >> 16) & 0xff) + (255 - ((n >> 16) & 0xff)) * factor);
+  const g = Math.min(255, ((n >> 8) & 0xff) + (255 - ((n >> 8) & 0xff)) * factor);
+  const b = Math.min(255, (n & 0xff) + (255 - (n & 0xff)) * factor);
+  return `#${Math.round(r).toString(16).padStart(2, '0')}${Math.round(g).toString(16).padStart(2, '0')}${Math.round(b).toString(16).padStart(2, '0')}`;
+}
+
+function TherapyCard({
+  t,
+  index,
+  progress,
+  onSelect,
+  saving,
+}: {
+  t: (typeof THERAPIES)[number];
+  index: number;
+  progress: TherapyProgress | undefined;
+  onSelect: (therapyId: string) => void;
+  saving: boolean;
+}) {
+  const press = useSharedValue(0);
+  const currentLevel = progress?.currentLevel ?? 1;
+  const currentSession = progress?.currentSession ?? 1;
+  const completedSessions = progress?.levels?.reduce(
+    (sum, lv) => sum + (lv.sessions?.filter((s) => s.completed).length ?? 0),
+    0,
+  ) ?? 0;
+  const gradientColors = [t.color, lightenHex(t.color, 0.85)] as [string, string];
+
+  const pressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 - press.value * PRESS_SCALE_AMOUNT }],
+  }));
+
+  return (
+    <Animated.View
+      style={styles.therapyCardTouchable}
+      entering={FadeInUp.delay(index * THERAPY_STAGGER_MS).springify().damping(SPRING_CONFIG.damping)}
+    >
+      <TouchableOpacity
+        activeOpacity={1}
+        onPressIn={() => { press.value = withSpring(1, SPRING_CONFIG); }}
+        onPressOut={() => { press.value = withSpring(0, SPRING_CONFIG); }}
+        onPress={() => onSelect(t.id)}
+        disabled={saving}
+        style={styles.therapyCardTouchableInner}
+      >
+        <Animated.View style={pressStyle}>
+          <LinearGradient
+            colors={gradientColors}
+            style={styles.therapyCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.therapyStarBadge}>
+              <Ionicons name="star" size={14} color="#F59E0B" />
+              <Text style={styles.therapyStarText}>{completedSessions}</Text>
+            </View>
+            <View style={[styles.therapyIconWrap, { backgroundColor: 'rgba(255,255,255,0.35)' }]}>
+              <Ionicons name={t.icon as any} size={28} color="#fff" />
+            </View>
+            <Text style={styles.therapyTitleWhite}>{t.label}</Text>
+            <Text style={styles.therapyDescWhite}>{t.desc}</Text>
+            <Text style={styles.therapyMetaWhite}>Level {currentLevel} · Session {currentSession}</Text>
+            <View style={styles.therapyProgressBar}>
+              <View
+                style={[
+                  styles.therapyProgressFill,
+                  {
+                    width: `${Math.min(100, (currentLevel - 1) * 10 + currentSession)}%`,
+                  },
+                ]}
+              />
+            </View>
+            <Ionicons name="chevron-forward" size={22} color="rgba(255,255,255,0.9)" style={styles.therapyChevron} />
+          </LinearGradient>
+        </Animated.View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
@@ -341,45 +437,97 @@ function TherapyGrid({
 }) {
   return (
     <View style={styles.grid}>
-      {therapies.map((t) => {
-        const progress = progressMap.get(t.id);
-        const currentLevel = progress?.currentLevel ?? 1;
-        const currentSession = progress?.currentSession ?? 1;
-        const iconGradientColors = [hexToRgba(t.color, 0.2), hexToRgba(t.color, 0.08)];
-        const borderColor = hexToRgba(t.color, 0.3);
-        const badgeBgColor = hexToRgba(t.color, 0.15);
-        
-        return (
-          <TouchableOpacity
-            key={t.id}
-            style={[styles.therapyCard, { borderColor }]}
-            activeOpacity={0.85}
-            onPress={() => onSelect(t.id)}
-            disabled={saving}
-          >
+      {therapies.map((t, index) => (
+        <TherapyCard
+          key={t.id}
+          t={t}
+          index={index}
+          progress={progressMap.get(t.id)}
+          onSelect={onSelect}
+          saving={saving}
+        />
+      ))}
+    </View>
+  );
+}
+
+function LevelCard({
+  lvl,
+  index,
+  currentLevel,
+  therapyMeta,
+  onSelectLevel,
+}: {
+  lvl: { levelNumber: number };
+  index: number;
+  currentLevel: number;
+  therapyMeta: { id: string; label: string; color: string };
+  onSelectLevel: (level: number, unlocked: boolean) => void;
+}) {
+  const unlocked = lvl.levelNumber <= currentLevel;
+  const isCurrent = lvl.levelNumber === currentLevel;
+  const press = useSharedValue(0);
+  const pulse = useSharedValue(0);
+
+  React.useEffect(() => {
+    if (isCurrent) {
+      pulse.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1200 }),
+          withTiming(0, { duration: 1200 })
+        ),
+        -1
+      );
+    }
+    return () => {
+      pulse.value = 0;
+    };
+  }, [isCurrent, pulse]);
+
+  const pressStyle = useAnimatedStyle(() => {
+    const pressScale = 1 - press.value * PRESS_SCALE_AMOUNT;
+    const pulseScale = isCurrent ? 1 + pulse.value * PRESS_SCALE_AMOUNT : 1;
+    return { transform: [{ scale: pressScale * pulseScale }] };
+  });
+
+  return (
+    <Animated.View
+      style={styles.levelCardTouchable}
+      entering={FadeInUp.delay(index * LEVEL_STAGGER_MS).springify().damping(SPRING_CONFIG.damping)}
+    >
+      <TouchableOpacity
+        activeOpacity={1}
+        onPressIn={() => { if (unlocked) press.value = withSpring(1, SPRING_CONFIG); }}
+        onPressOut={() => { press.value = withSpring(0, SPRING_CONFIG); }}
+        onPress={() => onSelectLevel(lvl.levelNumber, unlocked)}
+        style={styles.levelCardTouchableInner}
+      >
+        <Animated.View style={pressStyle}>
+          {unlocked ? (
             <LinearGradient
-              colors={iconGradientColors}
+              colors={[therapyMeta.color, lightenHex(therapyMeta.color, 0.7)] as [string, string]}
+              style={[styles.levelCard, styles.levelCardUnlocked, isCurrent && styles.levelCardCurrent]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.therapyIconWrap}
             >
-              <Ionicons name={t.icon as any} size={36} color={t.color} />
-            </LinearGradient>
-            <View style={styles.therapyContent}>
-              <Text style={styles.therapyTitle}>{t.label}</Text>
-              <Text style={styles.therapyDesc}>{t.desc}</Text>
-              <View style={styles.therapyMetaContainer}>
-                <View style={[styles.progressBadge, { backgroundColor: badgeBgColor }]}>
-                  <Text style={[styles.therapyMeta, { color: t.color }]}>
-                    Level {currentLevel} • Session {currentSession}
-                  </Text>
-                </View>
+              <Text style={styles.levelTitleLight}>Level {lvl.levelNumber}</Text>
+              <Text style={styles.levelSubtitleLight}>10 sessions</Text>
+              <View style={styles.playButton}>
+                <Text style={styles.playButtonText}>Play</Text>
+                <Ionicons name="play" size={14} color="#fff" />
               </View>
+            </LinearGradient>
+          ) : (
+            <View style={[styles.levelCard, styles.levelCardLocked]}>
+              <Ionicons name="lock-closed" size={20} color="#9CA3AF" style={{ marginBottom: 6 }} />
+              <Text style={[styles.levelTitle, styles.lockedText]}>Level {lvl.levelNumber}</Text>
+              <Text style={[styles.levelSubtitle, styles.lockedText]}>10 sessions</Text>
+              <Text style={styles.lockedLabel}>Locked</Text>
             </View>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
+          )}
+        </Animated.View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
@@ -388,150 +536,145 @@ function LevelsGrid({
   therapy,
   onSelectLevel,
   onBack,
-  subscriptionStatus,
 }: {
   therapyMeta: { id: string; label: string; color: string };
   therapy?: TherapyProgress;
   onSelectLevel: (level: number, unlocked: boolean) => void;
   onBack: () => void;
-  subscriptionStatus: SubscriptionStatus | null;
 }) {
   const levels = therapy?.levels || [];
   const currentLevel = therapy?.currentLevel ?? 1;
-  // Check for free access: either isFreeAccess flag or status === 'free'
-  // Default to false (locked) if subscriptionStatus is null
-  // FORCE_PROGRESSIVE_UNLOCK overrides free access for testing
-  const isFreeAccess = FORCE_PROGRESSIVE_UNLOCK 
-    ? false 
-    : (subscriptionStatus 
-      ? (subscriptionStatus.isFreeAccess === true || subscriptionStatus.status === 'free')
-      : false);
-  
-  console.log('=== LEVELS GRID DEBUG ===');
-  console.log('[LevelsGrid] subscriptionStatus:', subscriptionStatus);
-  console.log('[LevelsGrid] FORCE_PROGRESSIVE_UNLOCK:', FORCE_PROGRESSIVE_UNLOCK);
-  console.log('[LevelsGrid] isFreeAccess:', isFreeAccess);
-  console.log('[LevelsGrid] isFreeAccess check:', {
-    hasStatus: !!subscriptionStatus,
-    isFreeAccessFlag: subscriptionStatus?.isFreeAccess,
-    statusValue: subscriptionStatus?.status,
-    forceProgressive: FORCE_PROGRESSIVE_UNLOCK,
-    calculated: isFreeAccess,
-    willUseProgressiveUnlock: !isFreeAccess
-  });
-  console.log('[LevelsGrid] levels count:', levels.length);
-  console.log('[LevelsGrid] levels data:', levels.map(l => ({
-    levelNumber: l.levelNumber,
-    session10: {
-      completed: l.sessions.find(s => s.sessionNumber === 10)?.completed,
-      completedGames: l.sessions.find(s => s.sessionNumber === 10)?.completedGames?.length ?? 0
-    }
-  })));
-
-  // Helper function to check if a level is unlocked
-  const isLevelUnlocked = (levelNumber: number): boolean => {
-    // Free access users have everything unlocked
-    if (isFreeAccess) {
-      console.log(`[UNLOCK] Level ${levelNumber}: Free access - UNLOCKED`);
-      return true;
-    }
-    
-    // Level 1 is always unlocked (for non-free-access users too)
-    if (levelNumber === 1) {
-      console.log(`[UNLOCK] Level ${levelNumber}: Level 1 - UNLOCKED (always)`);
-      return true;
-    }
-    
-    // For non-free-access users, check progressive unlock
-    // A level is unlocked ONLY if the previous level's last session (session 10) has at least one completed game
-    const previousLevel = levels.find(l => l.levelNumber === levelNumber - 1);
-    if (!previousLevel) {
-      console.log(`[UNLOCK] Level ${levelNumber}: Previous level not found - LOCKED`);
-      return false;
-    }
-    
-    const lastSession = previousLevel.sessions.find(s => s.sessionNumber === 10);
-    if (!lastSession) {
-      console.log(`[UNLOCK] Level ${levelNumber}: Previous level session 10 not found - LOCKED`);
-      return false;
-    }
-    
-    const hasCompletedGames = (lastSession.completedGames?.length ?? 0) > 0;
-    const isCompleted = lastSession.completed ?? false;
-    const unlocked = isCompleted || hasCompletedGames;
-    
-    console.log(`[UNLOCK] Level ${levelNumber}: Previous level last session - completed: ${isCompleted}, games: ${lastSession.completedGames?.length ?? 0}, unlocked: ${unlocked}`);
-    
-    // Explicitly return false if not unlocked (default to locked)
-    if (!unlocked) {
-      console.log(`[UNLOCK] Level ${levelNumber}: LOCKED - need to complete Level ${levelNumber - 1} Session 10 first`);
-      return false;
-    }
-    
-    return true;
-  };
-
   return (
     <View style={{ gap: 12 }}>
       <TouchableOpacity onPress={onBack}>
         <Text style={{ color: '#2563EB', fontWeight: '700' }}>← Back to Therapies</Text>
       </TouchableOpacity>
-      <View style={[styles.banner, { borderColor: hexToRgba(therapyMeta.color, 0.3) }]}>
-        <LinearGradient
-          colors={[hexToRgba(therapyMeta.color, 0.2), hexToRgba(therapyMeta.color, 0.1)]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.iconBadge}
-        >
+      <View style={[styles.banner, { borderColor: therapyMeta.color }]}>
+        <View style={[styles.iconBadge, { backgroundColor: `${therapyMeta.color}20` }]}>
           <Ionicons name="medkit-outline" size={22} color={therapyMeta.color} />
-        </LinearGradient>
+        </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.bannerTitle}>{therapyMeta.label}</Text>
           <Text style={styles.bannerSubtitle}>10 sessions available</Text>
         </View>
       </View>
       <Text style={styles.sectionTitle}>Levels</Text>
-      {isFreeAccess && (
-        <View style={{ padding: 8, backgroundColor: '#FEF3C7', borderRadius: 8, marginBottom: 12 }}>
-          <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '600' }}>
-            ⚠️ Free Access Mode: All levels unlocked
-          </Text>
-        </View>
-      )}
       <View style={styles.grid}>
-        {levels.map((lvl) => {
-          const unlocked = isLevelUnlocked(lvl.levelNumber);
-          console.log(`[LevelsGrid] Rendering Level ${lvl.levelNumber}: unlocked=${unlocked}, isFreeAccess=${isFreeAccess}`);
-          return (
-            <TouchableOpacity
-              key={lvl.levelNumber}
-              style={[
-                styles.levelCard,
-                unlocked ? styles.cardUnlocked : styles.cardLocked,
-                unlocked && lvl.levelNumber === currentLevel ? { borderColor: therapyMeta.color } : null,
-              ]}
-              activeOpacity={unlocked ? 0.9 : 1}
-              onPress={() => {
-                if (!unlocked) {
-                  Alert.alert('Locked', 'Complete the previous level to unlock this level.');
-                  return;
-                }
-                onSelectLevel(lvl.levelNumber, unlocked);
-              }}
-            >
-              <Text style={[styles.levelTitle, !unlocked && styles.lockedText]}>Level {lvl.levelNumber}</Text>
-              <Text style={[styles.levelSubtitle, !unlocked && styles.lockedText]}>10 sessions available</Text>
-              {!unlocked && (
-                <View style={styles.lockBadge}>
-                  <Ionicons name="lock-closed" size={14} color="#9CA3AF" />
-                  <Text style={{ color: '#9CA3AF', fontWeight: '700', marginLeft: 4 }}>Locked</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
+        {levels.map((lvl, index) => (
+          <LevelCard
+            key={lvl.levelNumber}
+            lvl={lvl}
+            index={index}
+            currentLevel={currentLevel}
+            therapyMeta={therapyMeta}
+            onSelectLevel={onSelectLevel}
+          />
+        ))}
       </View>
     </View>
+  );
+}
+
+function SessionCard({
+  sess,
+  index,
+  level,
+  therapyMeta,
+}: {
+  sess: { sessionNumber: number; completed: boolean };
+  index: number;
+  level: NonNullable<TherapyProgress['levels']>[number];
+  therapyMeta: { id: string; label: string; color: string };
+}) {
+  const router = useRouter();
+  const prevInLevel = level.sessions.find((s: { sessionNumber: number; completed: boolean }) => s.sessionNumber === sess.sessionNumber - 1);
+  const unlocked = sess.sessionNumber === 1 || prevInLevel?.completed === true;
+  const completed = sess.completed;
+  const isCurrentSession = unlocked && !completed;
+
+  const press = useSharedValue(0);
+  const pulse = useSharedValue(0);
+
+  React.useEffect(() => {
+    if (isCurrentSession) {
+      pulse.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1500 }),
+          withTiming(0, { duration: 1500 })
+        ),
+        -1
+      );
+    }
+    return () => { pulse.value = 0; };
+  }, [isCurrentSession, pulse]);
+
+  const pressStyle = useAnimatedStyle(() => {
+    const pressScale = 1 - press.value * PRESS_SCALE_AMOUNT;
+    const pulseScale = isCurrentSession ? 1 + pulse.value * 0.015 : 1;
+    return { transform: [{ scale: pressScale * pulseScale }] };
+  });
+
+  return (
+    <Animated.View
+      style={styles.sessionCardTouchable}
+      entering={FadeInUp.delay(index * SESSION_STAGGER_MS).springify().damping(SPRING_CONFIG.damping)}
+    >
+      <TouchableOpacity
+        activeOpacity={1}
+        onPressIn={() => { if (unlocked) press.value = withSpring(1, SPRING_CONFIG); }}
+        onPressOut={() => { press.value = withSpring(0, SPRING_CONFIG); }}
+        onPress={() => {
+          if (!unlocked) return;
+          router.push({
+            pathname: '/(tabs)/SessionGames',
+            params: {
+              therapy: therapyMeta.id,
+              level: level.levelNumber.toString(),
+              session: sess.sessionNumber.toString(),
+            },
+          });
+        }}
+        style={styles.sessionCardTouchableInner}
+      >
+        <Animated.View style={pressStyle}>
+          {completed ? (
+            <View style={[styles.sessionCard, styles.sessionCardCompleted]}>
+              <View style={styles.sessionCardContent}>
+                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                <Text style={styles.sessionTitle}>Session {sess.sessionNumber}</Text>
+                <Text style={styles.sessionSubtitle}>5 games</Text>
+                <View style={styles.playAgainChip}>
+                  <Text style={styles.playAgainText}>Play again</Text>
+                </View>
+              </View>
+            </View>
+          ) : unlocked ? (
+            <LinearGradient
+              colors={[therapyMeta.color, lightenHex(therapyMeta.color, 0.75)] as [string, string]}
+              style={[styles.sessionCard, styles.sessionCardUnlocked]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.sessionCardContent}>
+                <Text style={styles.sessionTitleLight}>Session {sess.sessionNumber}</Text>
+                <Text style={styles.sessionSubtitleLight}>5 games</Text>
+                <View style={styles.playNowButton}>
+                  <Text style={styles.playNowButtonText}>Play Now</Text>
+                  <Ionicons name="play" size={14} color="#fff" />
+                </View>
+              </View>
+            </LinearGradient>
+          ) : (
+            <View style={[styles.sessionCard, styles.sessionCardLocked]}>
+              <Ionicons name="lock-closed" size={20} color="#9CA3AF" style={{ marginBottom: 6 }} />
+              <Text style={[styles.sessionTitle, styles.lockedText]}>Session {sess.sessionNumber}</Text>
+              <Text style={[styles.sessionSubtitle, styles.lockedText]}>5 games</Text>
+              <Text style={styles.lockedLabel}>Locked</Text>
+            </View>
+          )}
+        </Animated.View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
@@ -540,162 +683,44 @@ function SessionsGrid({
   therapy,
   level,
   saving,
+  onBack,
   onComplete,
-  subscriptionStatus,
 }: {
   therapyMeta: { id: string; label: string; color: string };
   therapy: TherapyProgress;
-  level: TherapyProgress['levels'][number];
+  level: NonNullable<TherapyProgress['levels']>[number];
   saving: boolean;
+  onBack: () => void;
   onComplete: (therapyId: string, levelNumber: number, sessionNumber: number) => void;
-  subscriptionStatus: SubscriptionStatus | null;
 }) {
-  const router = useRouter();
-  // Check for free access: either isFreeAccess flag or status === 'free'
-  // Default to false (locked) if subscriptionStatus is null
-  // FORCE_PROGRESSIVE_UNLOCK overrides free access for testing
-  const isFreeAccess = FORCE_PROGRESSIVE_UNLOCK 
-    ? false 
-    : (subscriptionStatus 
-      ? (subscriptionStatus.isFreeAccess === true || subscriptionStatus.status === 'free')
-      : false);
-  
-  console.log('=== SESSIONS GRID DEBUG ===');
-  console.log('[SessionsGrid] subscriptionStatus:', subscriptionStatus);
-  console.log('[SessionsGrid] FORCE_PROGRESSIVE_UNLOCK:', FORCE_PROGRESSIVE_UNLOCK);
-  console.log('[SessionsGrid] isFreeAccess:', isFreeAccess);
-  console.log('[SessionsGrid] isFreeAccess check:', {
-    hasStatus: !!subscriptionStatus,
-    isFreeAccessFlag: subscriptionStatus?.isFreeAccess,
-    statusValue: subscriptionStatus?.status,
-    forceProgressive: FORCE_PROGRESSIVE_UNLOCK,
-    calculated: isFreeAccess,
-    willUseProgressiveUnlock: !isFreeAccess
-  });
-  console.log('[SessionsGrid] level:', level.levelNumber);
-  console.log('[SessionsGrid] sessions count:', level.sessions.length);
-  console.log('[SessionsGrid] sessions data:', level.sessions.map(s => ({
-    sessionNumber: s.sessionNumber,
-    completed: s.completed,
-    completedGames: s.completedGames?.length ?? 0,
-    completedGamesList: s.completedGames
-  })));
-
-  // Helper function to check if a session is unlocked
-  const isSessionUnlocked = (sessionNumber: number): boolean => {
-    // Free access users have everything unlocked
-    if (isFreeAccess) {
-      console.log(`[UNLOCK] Session ${sessionNumber}: Free access - UNLOCKED`);
-      return true;
-    }
-    
-    // Session 1 is always unlocked (for non-free-access users too)
-    if (sessionNumber === 1) {
-      console.log(`[UNLOCK] Session ${sessionNumber}: Session 1 - UNLOCKED (always)`);
-      return true;
-    }
-    
-    // For non-free-access users, check progressive unlock
-    // A session is unlocked ONLY if the previous session has at least one completed game
-    const previousSession = level.sessions.find(s => s.sessionNumber === sessionNumber - 1);
-    if (!previousSession) {
-      console.log(`[UNLOCK] Session ${sessionNumber}: Previous session not found - LOCKED`);
-      return false;
-    }
-    
-    const hasCompletedGames = (previousSession.completedGames?.length ?? 0) > 0;
-    const isCompleted = previousSession.completed ?? false;
-    const unlocked = isCompleted || hasCompletedGames;
-    
-    console.log(`[UNLOCK] Session ${sessionNumber}: Previous session (${sessionNumber - 1}) - completed: ${isCompleted}, games: ${previousSession.completedGames?.length ?? 0}, unlocked: ${unlocked}`);
-    
-    // Explicitly return false if not unlocked (default to locked)
-    if (!unlocked) {
-      console.log(`[UNLOCK] Session ${sessionNumber}: LOCKED - need to complete Session ${sessionNumber - 1} first`);
-      return false;
-    }
-    
-    return true;
-  };
-
   return (
     <View style={{ gap: 12 }}>
-      <TouchableOpacity onPress={() => {}}>
+      <TouchableOpacity onPress={onBack}>
         <Text style={{ color: '#2563EB', fontWeight: '700' }}>← Back to {therapyMeta.label}</Text>
       </TouchableOpacity>
-      <View style={[styles.banner, { borderColor: hexToRgba(therapyMeta.color, 0.3) }]}>
-        <LinearGradient
-          colors={[hexToRgba(therapyMeta.color, 0.2), hexToRgba(therapyMeta.color, 0.1)]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.iconBadge}
-        >
+      <Animated.View
+        style={[styles.banner, { borderColor: therapyMeta.color }]}
+        entering={FadeInDown.duration(300)}
+      >
+        <View style={[styles.iconBadge, { backgroundColor: `${therapyMeta.color}20` }]}>
           <Ionicons name="calendar-outline" size={22} color={therapyMeta.color} />
-        </LinearGradient>
+        </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.bannerTitle}>{therapyMeta.label} - Level {level.levelNumber}</Text>
           <Text style={styles.bannerSubtitle}>Select a session to start playing games</Text>
         </View>
-      </View>
+      </Animated.View>
       <Text style={styles.sectionTitle}>Sessions</Text>
-      {isFreeAccess && (
-        <View style={{ padding: 8, backgroundColor: '#FEF3C7', borderRadius: 8, marginBottom: 12 }}>
-          <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '600' }}>
-            ⚠️ Free Access Mode: All sessions unlocked
-          </Text>
-        </View>
-      )}
       <View style={styles.grid}>
-        {level.sessions.map((sess) => {
-          const unlocked = isSessionUnlocked(sess.sessionNumber);
-          const completed = sess.completed;
-          const labelColor = unlocked ? '#0F172A' : '#9CA3AF';
-          console.log(`[SessionsGrid] Rendering Session ${sess.sessionNumber}: unlocked=${unlocked}, isFreeAccess=${isFreeAccess}, completed=${completed}, games=${sess.completedGames?.length ?? 0}`);
-          return (
-            <TouchableOpacity
-              key={sess.sessionNumber}
-              style={[
-                styles.sessionCard,
-                unlocked ? styles.cardUnlocked : styles.cardLocked,
-                completed ? { borderColor: therapyMeta.color, borderWidth: 2 } : null,
-              ]}
-              activeOpacity={unlocked ? 0.9 : 1}
-              onPress={() => {
-                if (!unlocked) {
-                  Alert.alert('Locked', 'Complete the previous session to unlock this session.');
-                  return;
-                }
-                
-                // Navigate to unlocked session
-                router.push({
-                  pathname: '/(tabs)/SessionGames',
-                  params: {
-                    therapy: therapyMeta.id,
-                    level: level.levelNumber.toString(),
-                    session: sess.sessionNumber.toString(),
-                  },
-                });
-              }}
-            >
-              <Text style={[styles.levelTitle, { color: labelColor }]}>
-                Session {sess.sessionNumber}
-              </Text>
-              <Text style={[styles.levelSubtitle, { color: labelColor }]}>5 games available</Text>
-              {!unlocked && (
-                <View style={styles.lockBadge}>
-                  <Ionicons name="lock-closed" size={14} color="#9CA3AF" />
-                  <Text style={{ color: '#9CA3AF', fontWeight: '700', marginLeft: 4 }}>Locked</Text>
-                </View>
-              )}
-              {completed && (
-                <View style={styles.completeBadge}>
-                  <Ionicons name="checkmark-circle" size={16} color={therapyMeta.color} />
-                  <Text style={{ color: therapyMeta.color, fontWeight: '700', marginLeft: 4 }}>Completed</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
+        {level.sessions.map((sess: { sessionNumber: number; completed: boolean }, index: number) => (
+          <SessionCard
+            key={sess.sessionNumber}
+            sess={sess}
+            index={index}
+            level={level}
+            therapyMeta={therapyMeta}
+          />
+        ))}
       </View>
       {saving && (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -708,7 +733,7 @@ function SessionsGrid({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -719,7 +744,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6B7280',
   },
-  content: { padding: 20, paddingBottom: 32 },
+  content: { padding: 16, paddingBottom: 32 },
   initButton: {
     marginTop: 12,
     alignSelf: 'flex-start',
@@ -733,201 +758,183 @@ const styles = StyleSheet.create({
   },
   initButtonText: { color: '#fff', fontWeight: '800' },
   loading: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
-  headerContainer: {
-    marginBottom: 24,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: '#F1F5F9',
-  },
-  backText: {
-    color: '#2563EB',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  menuButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#F8FAFC',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: '#0F172A',
-    letterSpacing: -0.5,
-    marginBottom: 8,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#64748B',
-    lineHeight: 24,
-    fontWeight: '500',
-  },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 16,
+    gap: 12,
+  },
+  therapyCardTouchable: {
+    width: '48%',
+    minHeight: 44,
+  },
+  therapyCardTouchableInner: {
+    width: '100%',
   },
   therapyCard: {
-    width: '47.5%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderRadius: 24,
+    padding: 16,
+    minHeight: 140,
     shadowColor: '#000',
     shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
-  },
-  therapyIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  therapyContent: {
-    flex: 1,
-  },
-  therapyTitle: {
-    fontSize: 19,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 8,
-    letterSpacing: -0.3,
-  },
-  therapyDesc: {
-    color: '#64748B',
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 12,
-    fontWeight: '500',
-  },
-  therapyMetaContainer: {
-    marginTop: 'auto',
-  },
-  progressBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  therapyMeta: {
-    fontWeight: '700',
-    fontSize: 13,
-    letterSpacing: 0.2,
-  },
-  banner: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    overflow: 'hidden',
   },
-  bannerTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#0F172A',
-    letterSpacing: -0.3,
+  therapyStarBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
   },
-  bannerSubtitle: {
-    color: '#64748B',
-    marginTop: 4,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  iconBadge: {
+  therapyStarText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  therapyIconWrap: {
     width: 48,
     height: 48,
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 10,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginTop: 12,
-    marginBottom: 8,
-    letterSpacing: -0.3,
+  therapyTitleWhite: { fontSize: 16, fontWeight: '800', color: '#fff' },
+  therapyDescWhite: { color: 'rgba(255,255,255,0.9)', marginTop: 4, lineHeight: 18, fontSize: 13 },
+  therapyMetaWhite: { marginTop: 8, fontWeight: '700', color: 'rgba(255,255,255,0.95)', fontSize: 13 },
+  therapyProgressBar: {
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    borderRadius: 2,
+    marginTop: 10,
+    overflow: 'hidden',
   },
-  levelCard: {
-    width: '47.5%',
-    borderRadius: 18,
-    padding: 18,
-    borderWidth: 1.5,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+  therapyProgressFill: {
+    height: '100%',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 2,
   },
-  sessionCard: {
-    width: '47.5%',
-    borderRadius: 18,
-    padding: 18,
-    borderWidth: 1.5,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
-  cardUnlocked: {
+  therapyChevron: { position: 'absolute', right: 12, top: '50%', marginTop: -11 },
+  therapyTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
+  therapyDesc: { color: '#475569', marginTop: 6, lineHeight: 18 },
+  therapyMeta: { marginTop: 10, fontWeight: '700', color: '#2563EB' },
+  banner: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 2,
     borderColor: '#E2E8F0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
-  cardLocked: {
+  bannerTitle: { fontSize: 20, fontWeight: '900', color: '#0F172A' },
+  bannerSubtitle: { color: '#475569', marginTop: 2 },
+  iconBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', marginTop: 8, marginBottom: 4 },
+  levelCardTouchable: { width: '48%' },
+  levelCardTouchableInner: { width: '100%' },
+  levelCard: {
+    width: '100%',
+    borderRadius: 20,
+    padding: 14,
+    minHeight: 100,
+    borderWidth: 2,
+  },
+  levelCardUnlocked: {
+    borderColor: 'transparent',
+  },
+  levelCardCurrent: {
+    borderColor: 'rgba(255,255,255,0.8)',
+  },
+  levelCardLocked: {
     borderColor: '#E5E7EB',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  levelTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#0F172A',
-    letterSpacing: -0.2,
+  levelTitleLight: { fontSize: 16, fontWeight: '800', color: '#fff' },
+  levelSubtitleLight: { color: 'rgba(255,255,255,0.9)', marginTop: 4, fontSize: 13 },
+  playButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
   },
-  levelSubtitle: {
-    color: '#64748B',
-    marginTop: 6,
-    fontSize: 13,
-    fontWeight: '500',
-  },
+  playButtonText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  levelTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
+  levelSubtitle: { color: '#475569', marginTop: 4 },
+  lockedLabel: { color: '#9CA3AF', fontWeight: '700', marginTop: 4, fontSize: 13 },
   lockedText: { color: '#9CA3AF' },
+  sessionCardTouchable: { width: '48%' },
+  sessionCardTouchableInner: { width: '100%' },
+  sessionCard: {
+    width: '100%',
+    borderRadius: 20,
+    padding: 14,
+    minHeight: 100,
+    borderWidth: 2,
+  },
+  sessionCardCompleted: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#10B981',
+  },
+  sessionCardUnlocked: {
+    borderColor: 'transparent',
+  },
+  sessionCardLocked: {
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sessionCardContent: { flex: 1 },
+  sessionTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
+  sessionSubtitle: { color: '#475569', marginTop: 4, fontSize: 13 },
+  sessionTitleLight: { fontSize: 16, fontWeight: '800', color: '#fff' },
+  sessionSubtitleLight: { color: 'rgba(255,255,255,0.9)', marginTop: 4, fontSize: 13 },
+  playNowButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  playNowButtonText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  playAgainChip: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: '#D1FAE5',
+    borderRadius: 12,
+  },
+  playAgainText: { color: '#059669', fontWeight: '700', fontSize: 13 },
+  cardUnlocked: { borderColor: '#E2E8F0' },
+  cardLocked: { borderColor: '#E5E7EB', backgroundColor: '#F8FAFC' },
   lockBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    marginTop: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     backgroundColor: '#F1F5F9',
     borderRadius: 10,
     alignSelf: 'flex-start',
@@ -935,9 +942,9 @@ const styles = StyleSheet.create({
   completeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    marginTop: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     backgroundColor: '#ECFEFF',
     borderRadius: 10,
     alignSelf: 'flex-start',
@@ -968,9 +975,5 @@ function DailyActivitiesRedirect() {
     </View>
   );
 }
-
-
-
-
 
 

@@ -69,7 +69,7 @@ const useSoundEffect = (uri: string) => {
   return play;
 };
 
-const TapTheSmallOneGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const TapTheSmallOneGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
 
   const [round, setRound] = useState(1);
@@ -346,10 +346,9 @@ const TapTheSmallOneGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         message="Size Expert!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();
