@@ -83,7 +83,7 @@ const useSoundEffect = (uri: string) => {
   return play;
 };
 
-const DragAnimalHomeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const DragAnimalHomeGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const playSuccess = useSoundEffect(SUCCESS_SOUND);
 
@@ -280,10 +280,9 @@ const DragAnimalHomeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         message="All Animals Home!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();

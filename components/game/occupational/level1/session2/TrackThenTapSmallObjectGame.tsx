@@ -81,7 +81,7 @@ const OBJECT_COLORS: Record<ObjectType, string> = {
   star: '#F59E0B',
 };
 
-const TrackThenTapSmallObjectGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const TrackThenTapSmallObjectGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const playSuccess = useSoundEffect(SUCCESS_SOUND);
   const playMiss = useSoundEffect(MISS_SOUND);
@@ -322,10 +322,9 @@ const TrackThenTapSmallObjectGame: React.FC<{ onBack?: () => void }> = ({ onBack
         message="Excellent Tracking!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();

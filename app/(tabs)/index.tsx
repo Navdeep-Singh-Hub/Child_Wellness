@@ -553,6 +553,32 @@ export default function Index() {
           ))}
         </View>
 
+        {/* Your Adventures - Therapy Progress */}
+        <Text style={styles.sectionTitle}>Your Adventures</Text>
+        <Pressable
+          onPress={() => router.push('/(tabs)/TherapyProgress')}
+          style={({ pressed }) => [
+            styles.adventureCard,
+            pressed && { transform: [{ scale: 0.98 }] },
+          ]}
+        >
+          <LinearGradient
+            colors={['#2563EB', '#3B82F6']}
+            style={styles.adventureGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.adventureIconWrap}>
+              <Ionicons name="sparkles" size={28} color="#FFF" />
+            </View>
+            <View style={styles.adventureTextWrap}>
+              <Text style={styles.adventureTitle}>Therapy Progress</Text>
+              <Text style={styles.adventureCaption}>Continue your journey · Level up with games</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.9)" />
+          </LinearGradient>
+        </Pressable>
+
         {/* Enhanced Quick Actions */}
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <ScrollView
@@ -873,6 +899,42 @@ const styles = StyleSheet.create({
     marginTop: 40,
     marginBottom: 20,
     letterSpacing: -0.5,
+  },
+  adventureCard: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    marginBottom: 8,
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  adventureGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    minHeight: 88,
+  },
+  adventureIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  adventureTextWrap: { flex: 1 },
+  adventureTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFF',
+    marginBottom: 4,
+  },
+  adventureCaption: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.9)',
   },
   statsGrid: {
     flexDirection: 'row',

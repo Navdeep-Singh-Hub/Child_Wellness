@@ -63,7 +63,7 @@ const useSoundEffect = (uri: string) => {
   return play;
 };
 
-const TapAndHoldGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const TapAndHoldGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
 
   const [round, setRound] = useState(1);
@@ -324,10 +324,9 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         message="Excellent Holding!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();

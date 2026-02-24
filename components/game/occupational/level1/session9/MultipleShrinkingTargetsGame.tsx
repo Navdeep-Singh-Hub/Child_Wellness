@@ -129,7 +129,7 @@ type Target = {
   shrinkDuration: number;
 };
 
-const MultipleShrinkingTargetsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const MultipleShrinkingTargetsGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const playSuccess = useSoundEffect(SUCCESS_SOUND);
   const playError = useSoundEffect(ERROR_SOUND);
@@ -513,10 +513,9 @@ const MultipleShrinkingTargetsGame: React.FC<{ onBack?: () => void }> = ({ onBac
         message="Discrimination Master!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();

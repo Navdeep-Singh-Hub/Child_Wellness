@@ -67,7 +67,7 @@ const useSoundEffect = (uri: string) => {
   return play;
 };
 
-const PinchToPopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const PinchToPopGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const playSuccess = useSoundEffect(SUCCESS_SOUND);
   const playError = useSoundEffect(ERROR_SOUND);
@@ -417,10 +417,9 @@ const PinchToPopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         message="Pinch Master!"
         showButtons={true}
         onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
           stopAllSpeech();
           cleanupSounds();
-          onBack?.();
+          if (onComplete) onComplete(); else onBack?.();
         }}
         onHome={() => {
           stopAllSpeech();
