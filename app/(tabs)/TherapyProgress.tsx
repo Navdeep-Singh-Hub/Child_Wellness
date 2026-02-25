@@ -160,6 +160,8 @@ export default function TherapyProgressScreen() {
 
   const progressMap = useMemo(() => new Map(therapies.map((t) => [t.therapy, t])), [therapies]);
   const hasData = therapies && therapies.length > 0;
+  // Free-access users (e.g. FREE_ACCESS_IDS) get all levels and sessions unlocked
+  const isFreeAccess = subscriptionStatus?.isFreeAccess === true;
 
   // Show Paywall if user doesn't have access
   if (checkingAccess) {
@@ -281,6 +283,7 @@ export default function TherapyProgressScreen() {
                     therapy={progressMap.get(selectedTherapy)}
                     onSelectLevel={handleSelectLevel}
                     onBack={() => setMode('therapies')}
+                    isFreeAccess={isFreeAccess}
                   />
                 )}
               </>
@@ -298,6 +301,7 @@ export default function TherapyProgressScreen() {
                     saving={saving}
                     onBack={() => setMode('levels')}
                     onComplete={handleCompleteSession}
+                    isFreeAccess={isFreeAccess}
                   />
                 )}
               </>
@@ -535,14 +539,17 @@ function LevelsGrid({
   therapy,
   onSelectLevel,
   onBack,
+  isFreeAccess,
 }: {
   therapyMeta: { id: string; label: string; color: string };
   therapy?: TherapyProgress;
   onSelectLevel: (level: number, unlocked: boolean) => void;
   onBack: () => void;
+  isFreeAccess?: boolean;
 }) {
   const levels = therapy?.levels || [];
-  const currentLevel = therapy?.currentLevel ?? 1;
+  const maxLevel = levels.length > 0 ? Math.max(...levels.map((l) => l.levelNumber)) : 10;
+  const currentLevel = isFreeAccess ? maxLevel : (therapy?.currentLevel ?? 1);
   return (
     <View style={{ gap: 12 }}>
       <TouchableOpacity onPress={onBack}>
@@ -579,15 +586,17 @@ function SessionCard({
   index,
   level,
   therapyMeta,
+  isFreeAccess,
 }: {
   sess: { sessionNumber: number; completed: boolean };
   index: number;
   level: NonNullable<TherapyProgress['levels']>[number];
   therapyMeta: { id: string; label: string; color: string };
+  isFreeAccess?: boolean;
 }) {
   const router = useRouter();
   const prevInLevel = level.sessions.find((s: { sessionNumber: number; completed: boolean }) => s.sessionNumber === sess.sessionNumber - 1);
-  const unlocked = sess.sessionNumber === 1 || prevInLevel?.completed === true;
+  const unlocked = isFreeAccess === true || sess.sessionNumber === 1 || prevInLevel?.completed === true;
   const completed = sess.completed;
   const isCurrentSession = unlocked && !completed;
 
@@ -684,6 +693,7 @@ function SessionsGrid({
   saving,
   onBack,
   onComplete,
+  isFreeAccess,
 }: {
   therapyMeta: { id: string; label: string; color: string };
   therapy: TherapyProgress;
@@ -691,6 +701,7 @@ function SessionsGrid({
   saving: boolean;
   onBack: () => void;
   onComplete: (therapyId: string, levelNumber: number, sessionNumber: number) => void;
+  isFreeAccess?: boolean;
 }) {
   return (
     <View style={{ gap: 12 }}>
@@ -718,6 +729,7 @@ function SessionsGrid({
             index={index}
             level={level}
             therapyMeta={therapyMeta}
+            isFreeAccess={isFreeAccess}
           />
         ))}
       </View>

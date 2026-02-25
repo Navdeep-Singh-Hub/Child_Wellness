@@ -4663,15 +4663,13 @@ export default function SessionGamesScreen() {
     },
   ];
 
-  // FOR TESTING: Set to true to force progressive unlocking even for free access users
-  const FORCE_PROGRESSIVE_UNLOCK = true; // Changed to true for testing
+  // FOR TESTING: Set to true to force progressive unlocking for paying users (free-access IDs always get all games)
+  const FORCE_PROGRESSIVE_UNLOCK = true;
 
-  // Check for free access
-  const isFreeAccess = FORCE_PROGRESSIVE_UNLOCK 
-    ? false 
-    : (subscriptionStatus 
-      ? (subscriptionStatus.isFreeAccess === true || subscriptionStatus.status === 'free')
-      : false);
+  // Free-access users (FREE_ACCESS_IDS / FREE_ACCESS_EMAILS) get all games unlocked in every session
+  const isFreeAccess = Boolean(
+    subscriptionStatus?.isFreeAccess === true || subscriptionStatus?.status === 'free'
+  );
 
   // Get completed games for current session
   const currentSessionProgress = therapyProgress?.levels
