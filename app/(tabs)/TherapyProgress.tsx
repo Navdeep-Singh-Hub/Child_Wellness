@@ -82,7 +82,6 @@ const THERAPY_AVATAR_URL = 'https://therapy-avatar.vercel.app';
 const THERAPIES = [
   { id: 'speech', label: 'Speech Therapy', desc: 'Improve communication and speech skills', color: '#2563EB', icon: 'mic' },
   { id: 'occupational', label: 'Occupational Therapy', desc: 'Develop daily living and motor skills', color: '#10B981', icon: 'hand-left' },
-  { id: 'behavioral', label: 'Behavioral Therapy', desc: 'Learn positive behaviors and social skills', color: '#F59E0B', icon: 'sparkles' },
   { id: 'special-education', label: 'Special Education', desc: 'Educational activities tailored for special needs', color: '#8B5CF6', icon: 'school' },
   { id: 'daily-activities', label: 'Social Stories', desc: 'Learn through animated social stories', color: '#EC4899', icon: 'book' },
   { id: 'therapy-avatar', label: 'Therapy Avatar', desc: 'Interactive avatar-based learning', color: '#0EA5E9', icon: 'happy' },

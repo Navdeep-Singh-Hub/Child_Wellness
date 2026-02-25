@@ -17,7 +17,6 @@ router.use((req, res, next) => {
 const THERAPIES = [
   'speech',
   'occupational',
-  'behavioral',
   'special-education',
   'daily-activities',
   'therapy-avatar',
@@ -358,7 +357,5 @@ async function ensureUserDoc(req) {
     throw error;
   }
 }
-
-
 
 

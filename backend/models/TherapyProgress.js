@@ -57,14 +57,13 @@ const TherapyProgressSchema = new Schema(
       enum: [
         'speech',
         'occupational',
-        'behavioral',
         'special-education',
         'daily-activities',
         'therapy-avatar',
       ],
       required: true,
     },
-    // Standard structure (for speech, occupational, behavioral, etc.)
+    // Standard structure (for speech, occupational, etc.)
     levels: { type: [LevelProgressSchema], default: [] },
     currentLevel: { type: Number, default: 1 },
     currentSession: { type: Number, default: 1 },

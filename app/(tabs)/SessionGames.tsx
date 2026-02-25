@@ -6155,7 +6155,7 @@ export default function SessionGamesScreen() {
   }
 
   // Therapy display label for breadcrumb
-  const therapyLabel = therapyId === 'speech' ? 'Speech Therapy' : therapyId === 'occupational' ? 'Occupational Therapy' : therapyId === 'behavioral' ? 'Behavioral Therapy' : therapyId.charAt(0).toUpperCase() + therapyId.slice(1).replace(/-/g, ' ');
+  const therapyLabel = therapyId === 'speech' ? 'Speech Therapy' : therapyId === 'occupational' ? 'Occupational Therapy' : therapyId.charAt(0).toUpperCase() + therapyId.slice(1).replace(/-/g, ' ');
 
   // ---------- Menu UI ----------
 

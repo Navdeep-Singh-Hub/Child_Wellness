@@ -9,7 +9,7 @@ Games from the `components/game/` folder are displayed in the therapy progress s
 - **Location**: `app/(tabs)/TherapyProgress.tsx`
 - **Purpose**: Shows the hierarchy: Therapies → Levels → Sessions
 - **Structure**:
-  - 6 Therapies (speech, occupational, behavioral, special-education, daily-activities, therapy-avatar)
+  - 5 Therapies (speech, occupational, special-education, daily-activities, therapy-avatar)
   - 10 Levels per therapy
   - 10 Sessions per level
   - 5 Games per session
