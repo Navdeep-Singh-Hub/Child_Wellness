@@ -204,22 +204,6 @@ export default function About() {
               </Text>
             </View>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-              <View style={{ 
-                width: 36, 
-                height: 36, 
-                borderRadius: 18, 
-                backgroundColor: '#E9D5FF',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: 12
-              }}>
-                <Ionicons name="people-outline" size={18} color="#8B5CF6" />
-              </View>
-              <Text style={{ color: '#374151', fontSize: 16, fontWeight: '600' }}>
-                Behavioral Therapy (BT)
-              </Text>
-            </View>
           </View>
 
           <Text style={{ color: '#6B7280', lineHeight: 22, fontSize: 14, marginTop: 12, fontStyle: 'italic' }}>
