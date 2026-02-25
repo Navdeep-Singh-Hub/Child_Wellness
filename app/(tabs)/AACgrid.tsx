@@ -52,7 +52,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 const MENU_WIDTH = 280;
 const CLOSED_OFFSET = MENU_WIDTH + 16;
 
-function GridMenu({ inline = false }: { inline?: boolean }) {
+function GridMenu({ inline = false, selectedLang = 'en-US' }: { inline?: boolean; selectedLang?: 'en-US' | 'hi-IN' | 'pa-IN' | 'ta-IN' | 'te-IN' }) {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
@@ -91,15 +91,17 @@ function GridMenu({ inline = false }: { inline?: boolean }) {
     }
   }, [open]);
 
+  // Get menu items with translations - we'll need selectedLang from parent
+  // For now, using English as default, will be updated in main component
   const menuItems = [
-    { title: 'Home', route: '/(tabs)', icon: 'home-outline' },
-    { title: 'Games', route: '/(tabs)/Games', icon: 'game-controller-outline' },
-    { title: 'Smart Explorer', route: '/(tabs)/SmartExplorer', icon: 'map-outline' },
-    { title: 'Grids', route: '/(tabs)/AACgrid', icon: 'grid-outline' },
-    { title: 'Profile', route: '/(tabs)/Profile', icon: 'person-outline' },
-    { title: 'Contact Us', route: '/(tabs)/Contact', icon: 'mail-outline' },
-    { title: 'About Us', route: '/(tabs)/About', icon: 'information-circle-outline' },
-    { title: 'Add Tile', route: '/(tabs)/AACgrid?addTile=true', icon: 'add-circle-outline', isAction: true },
+    { title: 'Home', route: '/(tabs)', icon: 'home-outline', key: 'home' },
+    { title: 'Games', route: '/(tabs)/Games', icon: 'game-controller-outline', key: 'games' },
+    { title: 'Smart Explorer', route: '/(tabs)/SmartExplorer', icon: 'map-outline', key: 'smartExplorer' },
+    { title: 'Grids', route: '/(tabs)/AACgrid', icon: 'grid-outline', key: 'grids' },
+    { title: 'Profile', route: '/(tabs)/Profile', icon: 'person-outline', key: 'profile' },
+    { title: 'Contact Us', route: '/(tabs)/Contact', icon: 'mail-outline', key: 'contactUs' },
+    { title: 'About Us', route: '/(tabs)/About', icon: 'information-circle-outline', key: 'aboutUs' },
+    { title: 'Add Tile', route: '/(tabs)/AACgrid?addTile=true', icon: 'add-circle-outline', isAction: true, key: 'addTile' },
   ];
 
   const navigateTo = (route: string) => {
@@ -136,7 +138,7 @@ function GridMenu({ inline = false }: { inline?: boolean }) {
           shadowOffset: { width: 0, height: 6 },
           elevation: 10,
         }}
-        accessibilityLabel="Open menu"
+            accessibilityLabel={t('openMenu', selectedLang)}
       >
         <Ionicons name="menu" size={22} color="#fff" />
       </TouchableOpacity>
@@ -178,7 +180,7 @@ function GridMenu({ inline = false }: { inline?: boolean }) {
           >
             <View style={{ paddingHorizontal: 20, paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <Text style={{ fontSize: 24, fontWeight: '800', color: '#111827' }}>Menu</Text>
+                <Text style={{ fontSize: 24, fontWeight: '800', color: '#111827' }}>{t('menu', selectedLang)}</Text>
                 <TouchableOpacity
                   onPress={() => setOpen(false)}
                   style={{
@@ -225,7 +227,7 @@ function GridMenu({ inline = false }: { inline?: boolean }) {
                   <TouchableOpacity
                     key={item.title}
                     onPress={() => {
-                      if (isAction && item.title === 'Add Tile') {
+                      if (isAction && item.key === 'addTile') {
                         setOpen(false);
                         // Trigger add modal via context or direct call
                         setTimeout(() => {
@@ -263,7 +265,7 @@ function GridMenu({ inline = false }: { inline?: boolean }) {
                         color: isActive ? '#2563EB' : (isAction ? '#6366F1' : '#374151'),
                       }}
                     >
-                      {item.title}
+                      {item.key ? t(item.key, selectedLang) : item.title}
                     </Text>
                     {isActive && (
                       <View style={{
@@ -294,6 +296,355 @@ const LANG_OPTIONS: { key: LangKey; label: string }[] = [
   { key: 'ta-IN', label: 'Tamil' },
   { key: 'te-IN', label: 'Telugu' },
 ];
+
+// UI Translations for interface elements
+const UI_TRANSLATIONS: Record<LangKey, Record<string, string>> = {
+  'en-US': {
+    menu: 'Menu',
+    home: 'Home',
+    games: 'Games',
+    smartExplorer: 'Smart Explorer',
+    grids: 'Grids',
+    profile: 'Profile',
+    contactUs: 'Contact Us',
+    aboutUs: 'About Us',
+    addTile: 'Add Tile',
+    chooseLanguage: 'Choose language',
+    close: 'Close',
+    createCustomTile: 'Create custom tile',
+    editTile: 'Edit Tile',
+    delete: 'Delete',
+    edit: 'Edit',
+    save: 'Save',
+    cancel: 'Cancel',
+    uploading: 'Uploading…',
+    saving: 'Saving…',
+    id: 'ID (no spaces)',
+    label: 'Label',
+    emoji: 'Emoji (optional)',
+    imageUrl: 'Image URL',
+    upload: 'Upload',
+    imageUrlPlaceholder: 'https://example.com/picture.png',
+    idPlaceholder: 'e.g. my_dog',
+    labelPlaceholder: 'e.g. My dog',
+    emojiPlaceholder: 'e.g. 🐶',
+    chooseImage: 'Choose image from device',
+    changeImage: 'Change image',
+    maxSize: 'Max size: 1MB',
+    willUploadOnSave: 'Will upload on Save',
+    mustStartWithHttp: 'Must start with http:// or https://',
+    favorites: 'Favorites',
+    myTiles: 'My Tiles',
+    deleteTile: 'Delete tile',
+    deleteConfirm: 'Delete',
+    goBack: 'Go back to Home',
+    openMenu: 'Open menu',
+    common: 'Common',
+    searchWords: 'Search words…',
+    buildSentence: 'Build a sentence…',
+    transport: 'Transport',
+    food: 'Food',
+    jobs: 'Jobs',
+    emotions: 'Emotions',
+    actions: 'Actions',
+    imageSelected: 'Image selected',
+    photoAccessRequired: 'Photo access is required to pick an image.',
+    allowPhotoAccess: 'Allow photo access to continue.',
+    imageTooLarge: 'Image too large (max 1MB).',
+    noImageSelected: 'No image selected.',
+    customTileCreated: 'Custom tile created.',
+    couldNotCreateTile: 'Could not create tile.',
+    failed: 'Failed',
+    couldNotUpdateFavorites: 'Could not update favorites',
+    idAndLabelRequired: 'ID and Label are required.',
+    pleaseEnterId: 'Please enter an ID (only letters, numbers, _ or -).',
+    missingId: 'Missing ID.',
+    invalidId: 'Invalid ID. Use letters, numbers, _ or - (2–40 chars).',
+    invalidIdFormat: 'Invalid ID format.',
+    pleaseEnterLabel: 'Please enter a Label.',
+    missingLabel: 'Missing Label.',
+    pleaseAddImageUrl: 'Please add an Image URL or switch to Upload.',
+    missingImageUrl: 'Missing Image URL.',
+    invalidUrl: 'That does not look like a valid http/https URL.',
+    pleaseChooseImage: 'Please choose an image to upload (max 1MB).',
+  },
+  'hi-IN': {
+    menu: 'मेनू',
+    home: 'होम',
+    games: 'गेम्स',
+    smartExplorer: 'स्मार्ट एक्सप्लोरर',
+    grids: 'ग्रिड्स',
+    profile: 'प्रोफाइल',
+    contactUs: 'संपर्क करें',
+    aboutUs: 'हमारे बारे में',
+    addTile: 'टाइल जोड़ें',
+    chooseLanguage: 'भाषा चुनें',
+    close: 'बंद करें',
+    createCustomTile: 'कस्टम टाइल बनाएं',
+    editTile: 'टाइल संपादित करें',
+    delete: 'हटाएं',
+    edit: 'संपादित करें',
+    save: 'सहेजें',
+    cancel: 'रद्द करें',
+    uploading: 'अपलोड हो रहा है…',
+    saving: 'सहेजा जा रहा है…',
+    id: 'आईडी (बिना स्पेस के)',
+    label: 'लेबल',
+    emoji: 'इमोजी (वैकल्पिक)',
+    imageUrl: 'छवि URL',
+    upload: 'अपलोड करें',
+    imageUrlPlaceholder: 'https://example.com/picture.png',
+    idPlaceholder: 'जैसे: my_dog',
+    labelPlaceholder: 'जैसे: मेरा कुत्ता',
+    emojiPlaceholder: 'जैसे: 🐶',
+    chooseImage: 'डिवाइस से छवि चुनें',
+    changeImage: 'छवि बदलें',
+    maxSize: 'अधिकतम आकार: 1MB',
+    willUploadOnSave: 'सहेजने पर अपलोड होगा',
+    mustStartWithHttp: 'http:// या https:// से शुरू होना चाहिए',
+    favorites: 'पसंदीदा',
+    myTiles: 'मेरी टाइल्स',
+    deleteTile: 'टाइल हटाएं',
+    deleteConfirm: 'हटाएं',
+    goBack: 'होम पर वापस जाएं',
+    openMenu: 'मेनू खोलें',
+    common: 'सामान्य',
+    searchWords: 'शब्द खोजें…',
+    buildSentence: 'वाक्य बनाएं…',
+    transport: 'यातायात',
+    food: 'भोजन',
+    jobs: 'नौकरियां',
+    emotions: 'भावनाएं',
+    actions: 'क्रियाएं',
+    imageSelected: 'छवि चयनित',
+    photoAccessRequired: 'छवि चुनने के लिए फोटो एक्सेस आवश्यक है।',
+    allowPhotoAccess: 'जारी रखने के लिए फोटो एक्सेस की अनुमति दें।',
+    imageTooLarge: 'छवि बहुत बड़ी है (अधिकतम 1MB)।',
+    noImageSelected: 'कोई छवि चयनित नहीं।',
+    customTileCreated: 'कस्टम टाइल बनाई गई।',
+    couldNotCreateTile: 'टाइल नहीं बना सके।',
+    failed: 'असफल',
+    couldNotUpdateFavorites: 'पसंदीदा अपडेट नहीं कर सके',
+    idAndLabelRequired: 'आईडी और लेबल आवश्यक हैं।',
+    pleaseEnterId: 'कृपया एक आईडी दर्ज करें (केवल अक्षर, संख्या, _ या -)।',
+    missingId: 'आईडी गायब है।',
+    invalidId: 'अमान्य आईडी। अक्षर, संख्या, _ या - (2-40 वर्ण) का उपयोग करें।',
+    invalidIdFormat: 'अमान्य आईडी प्रारूप।',
+    pleaseEnterLabel: 'कृपया एक लेबल दर्ज करें।',
+    missingLabel: 'लेबल गायब है।',
+    pleaseAddImageUrl: 'कृपया एक छवि URL जोड़ें या अपलोड पर स्विच करें।',
+    missingImageUrl: 'छवि URL गायब है।',
+    invalidUrl: 'यह एक मान्य http/https URL नहीं लगता।',
+    pleaseChooseImage: 'कृपया अपलोड करने के लिए एक छवि चुनें (अधिकतम 1MB)।',
+  },
+  'pa-IN': {
+    menu: 'ਮੀਨੂ',
+    home: 'ਹੋਮ',
+    games: 'ਗੇਮਜ਼',
+    smartExplorer: 'ਸਮਾਰਟ ਐਕਸਪਲੋਰਰ',
+    grids: 'ਗ੍ਰਿਡਸ',
+    profile: 'ਪ੍ਰੋਫਾਈਲ',
+    contactUs: 'ਸੰਪਰਕ ਕਰੋ',
+    aboutUs: 'ਸਾਡੇ ਬਾਰੇ',
+    addTile: 'ਟਾਈਲ ਜੋੜੋ',
+    chooseLanguage: 'ਭਾਸ਼ਾ ਚੁਣੋ',
+    close: 'ਬੰਦ ਕਰੋ',
+    createCustomTile: 'ਕਸਟਮ ਟਾਈਲ ਬਣਾਓ',
+    editTile: 'ਟਾਈਲ ਸੰਪਾਦਿਤ ਕਰੋ',
+    delete: 'ਹਟਾਓ',
+    edit: 'ਸੰਪਾਦਿਤ ਕਰੋ',
+    save: 'ਸੁਰੱਖਿਅਤ ਕਰੋ',
+    cancel: 'ਰੱਦ ਕਰੋ',
+    uploading: 'ਅਪਲੋਡ ਹੋ ਰਿਹਾ ਹੈ…',
+    saving: 'ਸੁਰੱਖਿਅਤ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ…',
+    id: 'ਆਈਡੀ (ਸਪੇਸ ਤੋਂ ਬਿਨਾਂ)',
+    label: 'ਲੇਬਲ',
+    emoji: 'ਇਮੋਜੀ (ਵਿਕਲਪਿਕ)',
+    imageUrl: 'ਚਿੱਤਰ URL',
+    upload: 'ਅਪਲੋਡ ਕਰੋ',
+    imageUrlPlaceholder: 'https://example.com/picture.png',
+    idPlaceholder: 'ਜਿਵੇਂ: my_dog',
+    labelPlaceholder: 'ਜਿਵੇਂ: ਮੇਰਾ ਕੁੱਤਾ',
+    emojiPlaceholder: 'ਜਿਵੇਂ: 🐶',
+    chooseImage: 'ਡਿਵਾਈਸ ਤੋਂ ਚਿੱਤਰ ਚੁਣੋ',
+    changeImage: 'ਚਿੱਤਰ ਬਦਲੋ',
+    maxSize: 'ਅਧਿਕਤਮ ਸਾਈਜ਼: 1MB',
+    willUploadOnSave: 'ਸੁਰੱਖਿਅਤ ਕਰਨ ਤੇ ਅਪਲੋਡ ਹੋਵੇਗਾ',
+    mustStartWithHttp: 'http:// ਜਾਂ https:// ਤੋਂ ਸ਼ੁਰੂ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ',
+    favorites: 'ਪਸੰਦੀਦਾ',
+    myTiles: 'ਮੇਰੀਆਂ ਟਾਈਲਾਂ',
+    deleteTile: 'ਟਾਈਲ ਹਟਾਓ',
+    deleteConfirm: 'ਹਟਾਓ',
+    goBack: 'ਹੋਮ ਤੇ ਵਾਪਸ ਜਾਓ',
+    openMenu: 'ਮੀਨੂ ਖੋਲ੍ਹੋ',
+    common: 'ਸਾਧਾਰਣ',
+    searchWords: 'ਸ਼ਬਦ ਖੋਜੋ…',
+    buildSentence: 'ਵਾਕ ਬਣਾਓ…',
+    transport: 'ਆਵਾਜਾਈ',
+    food: 'ਖਾਣਾ',
+    jobs: 'ਨੌਕਰੀਆਂ',
+    emotions: 'ਭਾਵਨਾਵਾਂ',
+    actions: 'ਕਾਰਵਾਈਆਂ',
+    imageSelected: 'ਚਿੱਤਰ ਚੁਣਿਆ ਗਿਆ',
+    photoAccessRequired: 'ਚਿੱਤਰ ਚੁਣਨ ਲਈ ਫੋਟੋ ਪਹੁੰਚ ਲੋੜੀਂਦੀ ਹੈ।',
+    allowPhotoAccess: 'ਜਾਰੀ ਰੱਖਣ ਲਈ ਫੋਟੋ ਪਹੁੰਚ ਦੀ ਇਜਾਜ਼ਤ ਦਿਓ।',
+    imageTooLarge: 'ਚਿੱਤਰ ਬਹੁਤ ਵੱਡਾ ਹੈ (ਅਧਿਕਤਮ 1MB)।',
+    noImageSelected: 'ਕੋਈ ਚਿੱਤਰ ਚੁਣਿਆ ਨਹੀਂ ਗਿਆ।',
+    customTileCreated: 'ਕਸਟਮ ਟਾਈਲ ਬਣਾਈ ਗਈ।',
+    couldNotCreateTile: 'ਟਾਈਲ ਨਹੀਂ ਬਣਾ ਸਕੇ।',
+    failed: 'ਅਸਫਲ',
+    couldNotUpdateFavorites: 'ਪਸੰਦੀਦਾ ਅਪਡੇਟ ਨਹੀਂ ਕਰ ਸਕੇ',
+    idAndLabelRequired: 'ਆਈਡੀ ਅਤੇ ਲੇਬਲ ਲੋੜੀਂਦੇ ਹਨ।',
+    pleaseEnterId: 'ਕ੍ਰਿਪਾ ਕਰਕੇ ਇੱਕ ਆਈਡੀ ਦਰਜ ਕਰੋ (ਕੇਵਲ ਅੱਖਰ, ਨੰਬਰ, _ ਜਾਂ -)।',
+    missingId: 'ਆਈਡੀ ਗਾਇਬ ਹੈ।',
+    invalidId: 'ਅਵੈਧ ਆਈਡੀ। ਅੱਖਰ, ਨੰਬਰ, _ ਜਾਂ - (2-40 ਅੱਖਰ) ਦੀ ਵਰਤੋਂ ਕਰੋ।',
+    invalidIdFormat: 'ਅਵੈਧ ਆਈਡੀ ਫਾਰਮੈਟ।',
+    pleaseEnterLabel: 'ਕ੍ਰਿਪਾ ਕਰਕੇ ਇੱਕ ਲੇਬਲ ਦਰਜ ਕਰੋ।',
+    missingLabel: 'ਲੇਬਲ ਗਾਇਬ ਹੈ।',
+    pleaseAddImageUrl: 'ਕ੍ਰਿਪਾ ਕਰਕੇ ਇੱਕ ਚਿੱਤਰ URL ਜੋੜੋ ਜਾਂ ਅਪਲੋਡ \'ਤੇ ਸਵਿਚ ਕਰੋ।',
+    missingImageUrl: 'ਚਿੱਤਰ URL ਗਾਇਬ ਹੈ।',
+    invalidUrl: 'ਇਹ ਇੱਕ ਵੈਧ http/https URL ਨਹੀਂ ਲੱਗਦਾ।',
+    pleaseChooseImage: 'ਕ੍ਰਿਪਾ ਕਰਕੇ ਅਪਲੋਡ ਕਰਨ ਲਈ ਇੱਕ ਚਿੱਤਰ ਚੁਣੋ (ਅਧਿਕਤਮ 1MB)।',
+  },
+  'ta-IN': {
+    menu: 'மெனு',
+    home: 'வீடு',
+    games: 'விளையாட்டுகள்',
+    smartExplorer: 'ஸ்மார்ட் எக்ஸ்ப்ளோரர்',
+    grids: 'கட்டங்கள்',
+    profile: 'சுயவிவரம்',
+    contactUs: 'எங்களைத் தொடர்பு கொள்ளுங்கள்',
+    aboutUs: 'எங்களைப் பற்றி',
+    addTile: 'டைல் சேர்',
+    chooseLanguage: 'மொழியைத் தேர்ந்தெடுக்கவும்',
+    close: 'மூடு',
+    createCustomTile: 'தனிப்பயன் டைல் உருவாக்க',
+    editTile: 'டைல் திருத்த',
+    delete: 'நீக்கு',
+    edit: 'திருத்த',
+    save: 'சேமி',
+    cancel: 'ரத்துசெய்',
+    uploading: 'பதிவேற்றப்படுகிறது…',
+    saving: 'சேமிக்கப்படுகிறது…',
+    id: 'ஐடி (இடைவெளி இல்லாமல்)',
+    label: 'லேபிள்',
+    emoji: 'எமோஜி (விருப்பமானது)',
+    imageUrl: 'பட URL',
+    upload: 'பதிவேற்று',
+    imageUrlPlaceholder: 'https://example.com/picture.png',
+    idPlaceholder: 'எ.கா: my_dog',
+    labelPlaceholder: 'எ.கா: என் நாய்',
+    emojiPlaceholder: 'எ.கா: 🐶',
+    chooseImage: 'சாதனத்திலிருந்து படத்தைத் தேர்ந்தெடுக்கவும்',
+    changeImage: 'படத்தை மாற்று',
+    maxSize: 'அதிகபட்ச அளவு: 1MB',
+    willUploadOnSave: 'சேமிக்கும்போது பதிவேற்றப்படும்',
+    mustStartWithHttp: 'http:// அல்லது https:// இல் தொடங்க வேண்டும்',
+    favorites: 'பிடித்தவை',
+    myTiles: 'எனது டைல்கள்',
+    deleteTile: 'டைலை நீக்கு',
+    deleteConfirm: 'நீக்கு',
+    goBack: 'வீட்டிற்குத் திரும்பு',
+    openMenu: 'மெனுவைத் திற',
+    common: 'பொதுவான',
+    searchWords: 'சொற்களைத் தேடு…',
+    buildSentence: 'வாக்கியத்தை உருவாக்கு…',
+    transport: 'போக்குவரத்து',
+    food: 'உணவு',
+    jobs: 'வேலைகள்',
+    emotions: 'உணர்வுகள்',
+    actions: 'செயல்கள்',
+    imageSelected: 'படம் தேர்ந்தெடுக்கப்பட்டது',
+    photoAccessRequired: 'படத்தைத் தேர்ந்தெடுக்க புகைப்பட அணுகல் தேவை.',
+    allowPhotoAccess: 'தொடர புகைப்பட அணுகலை அனுமதிக்கவும்.',
+    imageTooLarge: 'படம் மிகப் பெரியது (அதிகபட்சம் 1MB).',
+    noImageSelected: 'படம் தேர்ந்தெடுக்கப்படவில்லை.',
+    customTileCreated: 'தனிப்பயன் டைல் உருவாக்கப்பட்டது.',
+    couldNotCreateTile: 'டைலை உருவாக்க முடியவில்லை.',
+    failed: 'தோல்வி',
+    couldNotUpdateFavorites: 'பிடித்தவைகளை புதுப்பிக்க முடியவில்லை',
+    idAndLabelRequired: 'ஐடி மற்றும் லேபிள் தேவை.',
+    pleaseEnterId: 'ஒரு ஐடியை உள்ளிடவும் (எழுத்துக்கள், எண்கள், _ அல்லது - மட்டும்).',
+    missingId: 'ஐடி காணவில்லை.',
+    invalidId: 'தவறான ஐடி. எழுத்துக்கள், எண்கள், _ அல்லது - (2-40 எழுத்துக்கள்) பயன்படுத்தவும்.',
+    invalidIdFormat: 'தவறான ஐடி வடிவம்.',
+    pleaseEnterLabel: 'ஒரு லேபிளை உள்ளிடவும்.',
+    missingLabel: 'லேபிள் காணவில்லை.',
+    pleaseAddImageUrl: 'ஒரு பட URL ஐ சேர்க்கவும் அல்லது பதிவேற்றத்திற்கு மாறவும்.',
+    missingImageUrl: 'பட URL காணவில்லை.',
+    invalidUrl: 'இது சரியான http/https URL போல் தெரியவில்லை.',
+    pleaseChooseImage: 'பதிவேற்ற ஒரு படத்தைத் தேர்ந்தெடுக்கவும் (அதிகபட்சம் 1MB).',
+  },
+  'te-IN': {
+    menu: 'మెనూ',
+    home: 'హోమ్',
+    games: 'గేమ్స్',
+    smartExplorer: 'స్మార్ట్ ఎక్స్ప్లోరర్',
+    grids: 'గ్రిడ్స్',
+    profile: 'ప్రొఫైల్',
+    contactUs: 'మాకు సంప్రదించండి',
+    aboutUs: 'మా గురించి',
+    addTile: 'టైల్ జోడించు',
+    chooseLanguage: 'భాషను ఎంచుకోండి',
+    close: 'మూసివేయి',
+    createCustomTile: 'కస్టమ్ టైల్ సృష్టించు',
+    editTile: 'టైల్ సవరించు',
+    delete: 'తొలగించు',
+    edit: 'సవరించు',
+    save: 'సేవ్ చేయి',
+    cancel: 'రద్దు చేయి',
+    uploading: 'అప్లోడ్ అవుతోంది…',
+    saving: 'సేవ్ అవుతోంది…',
+    id: 'ఐడి (స్పేస్ లేకుండా)',
+    label: 'లేబుల్',
+    emoji: 'ఇమోజీ (ఐచ్ఛికం)',
+    imageUrl: 'చిత్ర URL',
+    upload: 'అప్లోడ్ చేయి',
+    imageUrlPlaceholder: 'https://example.com/picture.png',
+    idPlaceholder: 'ఉదా: my_dog',
+    labelPlaceholder: 'ఉదా: నా కుక్క',
+    emojiPlaceholder: 'ఉదా: 🐶',
+    chooseImage: 'పరికరం నుండి చిత్రాన్ని ఎంచుకోండి',
+    changeImage: 'చిత్రాన్ని మార్చు',
+    maxSize: 'గరిష్ట పరిమాణం: 1MB',
+    willUploadOnSave: 'సేవ్ చేసినప్పుడు అప్లోడ్ అవుతుంది',
+    mustStartWithHttp: 'http:// లేదా https:// తో ప్రారంభం కావాలి',
+    favorites: 'ఇష్టమైనవి',
+    myTiles: 'నా టైల్స్',
+    deleteTile: 'టైల్ తొలగించు',
+    deleteConfirm: 'తొలగించు',
+    goBack: 'హోమ్‌కు తిరిగి వెళ్ళు',
+    openMenu: 'మెనూను తెరువు',
+    common: 'సాధారణ',
+    searchWords: 'పదాలను శోధించు…',
+    buildSentence: 'వాక్యాన్ని నిర్మించు…',
+    transport: 'రవాణా',
+    food: 'ఆహారం',
+    jobs: 'ఉద్యోగాలు',
+    emotions: 'భావోద్వేగాలు',
+    actions: 'చర్యలు',
+    imageSelected: 'చిత్రం ఎంచుకోబడింది',
+    photoAccessRequired: 'చిత్రాన్ని ఎంచుకోడానికి ఫోటో యాక్సెస్ అవసరం.',
+    allowPhotoAccess: 'కొనసాగించడానికి ఫోటో యాక్సెస్ అనుమతించండి.',
+    imageTooLarge: 'చిత్రం చాలా పెద్దది (గరిష్టం 1MB).',
+    noImageSelected: 'చిత్రం ఎంచుకోబడలేదు.',
+    customTileCreated: 'కస్టమ్ టైల్ సృష్టించబడింది.',
+    couldNotCreateTile: 'టైల్ సృష్టించలేకపోయింది.',
+    failed: 'విఫలం',
+    couldNotUpdateFavorites: 'ఇష్టమైనవాటిని నవీకరించలేకపోయింది',
+    idAndLabelRequired: 'ఐడి మరియు లేబుల్ అవసరం.',
+    pleaseEnterId: 'ఒక ఐడిని నమోదు చేయండి (అక్షరాలు, సంఖ్యలు, _ లేదా - మాత్రమే).',
+    missingId: 'ఐడి లేదు.',
+    invalidId: 'చెల్లని ఐడి. అక్షరాలు, సంఖ్యలు, _ లేదా - (2-40 అక్షరాలు) ఉపయోగించండి.',
+    invalidIdFormat: 'చెల్లని ఐడి ఫార్మాట్.',
+    pleaseEnterLabel: 'ఒక లేబుల్ను నమోదు చేయండి.',
+    missingLabel: 'లేబుల్ లేదు.',
+    pleaseAddImageUrl: 'ఒక చిత్ర URL ని జోడించండి లేదా అప్లోడ్‌కు మారండి.',
+    missingImageUrl: 'చిత్ర URL లేదు.',
+    invalidUrl: 'ఇది చెల్లుబాటు అయ్యే http/https URL లాగా కనిపించడం లేదు.',
+    pleaseChooseImage: 'అప్లోడ్ చేయడానికి చిత్రాన్ని ఎంచుకోండి (గరిష్ట పరిమాణం: 1MB).',
+  },
+};
 
 
 // Per-language dictionary. Full parity across languages.
@@ -439,6 +790,10 @@ const TRANSLATIONS: Record<LangKey, Record<string, string>> = {
   },
 };
 
+// Helper function to get UI text based on language
+const t = (key: string, lang: 'en-US' | 'hi-IN' | 'pa-IN' | 'ta-IN' | 'te-IN'): string => {
+  return UI_TRANSLATIONS[lang]?.[key] || UI_TRANSLATIONS['en-US'][key] || key;
+};
 
 // ---------- Smart voice selection (Expo Speech) — prefer FEMALE per language ----------
 // type LangKey = 'en-US' | 'hi-IN' | 'pa-IN' | 'ta-IN' | 'te-IN';
@@ -705,7 +1060,9 @@ function SectionHeader({ id, title }: { id: Category['id']; title: string }) {
 }
 
 
-function AnimatedCommonChip({ t, onPress }: { t: Tile; onPress: (t: Tile) => void }) {
+function AnimatedCommonChip({ t, onPress, selectedLang = 'en-US' }: { t: Tile; onPress: (t: Tile) => void; selectedLang?: LangKey }) {
+  // Get translated label, fallback to original label for custom tiles
+  const displayLabel = tWord(t.id, selectedLang) !== t.id ? tWord(t.id, selectedLang) : t.label;
   const scale = useSharedValue(1);
   const springCfg = { stiffness: 230, damping: 22, mass: 1 };
 
@@ -750,7 +1107,7 @@ function AnimatedCommonChip({ t, onPress }: { t: Tile; onPress: (t: Tile) => voi
       ]}
       accessibilityRole="button"
     >
-      <Text style={{ fontWeight: '700', color: '#111827' }}>{t.label}</Text>
+      <Text style={{ fontWeight: '700', color: '#111827' }}>{displayLabel}</Text>
     </AnimatedPressable>
   );
 }
@@ -758,7 +1115,7 @@ function AnimatedCommonChip({ t, onPress }: { t: Tile; onPress: (t: Tile) => voi
 
 
 function TileCard({
-  t, index, onPress, accent, isFav, onToggleFav, isMyTile, onEditTile, onDeleteTile
+  t, index, onPress, accent, isFav, onToggleFav, isMyTile, onEditTile, onDeleteTile, selectedLang = 'en-US'
 }: {
   t: Tile;
   index: number;
@@ -769,7 +1126,10 @@ function TileCard({
   isMyTile?: boolean;
   onEditTile?: (t: Tile) => void;
   onDeleteTile?: (t: Tile) => void;
+  selectedLang?: LangKey;
 }) {
+  // Get translated label, fallback to original label for custom tiles
+  const displayLabel = tWord(t.id, selectedLang) !== t.id ? tWord(t.id, selectedLang) : t.label;
   // Reanimated shared values
   const scale = useSharedValue(1);
   const appear = useSharedValue(0); // mount fade/scale
@@ -928,7 +1288,7 @@ function TileCard({
         {/* Label badge - pill-shaped, floating above bottom */}
         <View style={styles.overlayLabelWrap}>
           <View style={styles.labelBadge}>
-            <Text numberOfLines={1} style={styles.overlayLabelText}>{t.label}</Text>
+            <Text numberOfLines={1} style={styles.overlayLabelText}>{displayLabel}</Text>
           </View>
         </View>
 
@@ -1105,6 +1465,20 @@ export default function AACGrid() {
   const horizontalPadding = 16 * 2, gap = 8, target = 100;
   const cols = Math.max(2, Math.min(6, Math.floor((width - horizontalPadding + gap) / (target + gap))));
 
+  // Helper function to get translated category title
+  const getCategoryTitle = (categoryId: Category['id'], lang: LangKey): string => {
+    const titleMap: Record<Category['id'], string> = {
+      transport: t('transport', lang),
+      food: t('food', lang),
+      jobs: t('jobs', lang),
+      emotions: t('emotions', lang),
+      actions: t('actions', lang),
+      favorites: t('favorites', lang),
+      mytiles: t('myTiles', lang),
+    };
+    return titleMap[categoryId] || categoryId;
+  };
+
   const allCategories: Category[] = useMemo(() => {
     const favTiles: Tile[] = [];
     const every: Tile[] = [
@@ -1116,25 +1490,28 @@ export default function AACGrid() {
 
     const myTilesCat: Category = {
       id: MY_CATEGORY_ID as any,
-      title: 'My Tiles',
+      title: t('myTiles', selectedLang),
       color: '#E0F2FE',
       tiles: customTiles.map(ct => ({ id: ct.id, label: ct.label, emoji: ct.emoji, imageUrl: ct.imageUrl })),
     };
 
     const favCat: Category = {
       id: FAV_CATEGORY_ID as any,
-      title: 'Favorites',
+      title: t('favorites', selectedLang),
       color: '#FFE8A3',
       tiles: favTiles,
     };
 
-    const coreCategories = CATEGORIES.filter((c) => c.id !== FAV_CATEGORY_ID && c.id !== MY_CATEGORY_ID);
+    const coreCategories = CATEGORIES.map(c => ({
+      ...c,
+      title: getCategoryTitle(c.id, selectedLang),
+    })).filter((c) => c.id !== FAV_CATEGORY_ID && c.id !== MY_CATEGORY_ID);
     return [
       favCat,
       ...coreCategories,
       myTilesCat,
     ];
-  }, [favorites, customTiles]);
+  }, [favorites, customTiles, selectedLang]);
 
   const category = useMemo(() => allCategories.find(c => c.id === activeCat) ?? allCategories[0], [activeCat, allCategories]);
 
@@ -1170,8 +1547,8 @@ export default function AACGrid() {
   async function pickImageFromDevice() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      setFormError('Photo access is required to pick an image.');
-      showError('Allow photo access to continue.');
+      setFormError(t('photoAccessRequired', selectedLang));
+      showError(t('allowPhotoAccess', selectedLang));
       return;
     }
 
@@ -1186,8 +1563,8 @@ export default function AACGrid() {
       const info: any = await FileSystem.getInfoAsync(uri as any);
       if ((info as any)?.size && (info as any).size > MAX_IMAGE_BYTES) {
         setPickedUri('');
-        setFormError('Image is larger than 1MB. Please choose a smaller file.');
-        showError('Image too large (max 1MB).');
+        setFormError(t('imageTooLarge', selectedLang));
+        showError(t('imageTooLarge', selectedLang));
         return;
       }
     } catch {
@@ -1196,7 +1573,7 @@ export default function AACGrid() {
 
     setFormError(null);
     setPickedUri(uri);
-    Toast.show({ type: 'info', text1: 'Image selected', text2: 'Will upload on Save' });
+    Toast.show({ type: 'info', text1: t('imageSelected', selectedLang), text2: t('willUploadOnSave', selectedLang) });
   }
 
 
@@ -1341,12 +1718,16 @@ export default function AACGrid() {
       }
     };
 
+    const deleteText = t('deleteConfirm', selectedLang);
+    const cancelText = t('cancel', selectedLang);
+    const deleteTileText = t('deleteTile', selectedLang);
+
     if (Platform.OS === "web") {
-      if (window.confirm(`Delete "${tile.label}"?`)) go();
+      if (window.confirm(`${deleteText} "${tile.label}"?`)) go();
     } else {
-      Alert.alert("Delete tile", `Delete "${tile.label}"?`, [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: go },
+      Alert.alert(deleteTileText, `${deleteText} "${tile.label}"?`, [
+        { text: cancelText, style: "cancel" },
+        { text: deleteText, style: "destructive", onPress: go },
       ]);
     }
   }
@@ -1425,7 +1806,7 @@ export default function AACGrid() {
           {/* <TouchableOpacity
             onPress={() => router.navigate("/(tabs)")}
             accessibilityRole="button"
-            accessibilityLabel="Go back to Home"
+            accessibilityLabel={t('goBack', selectedLang)}
             activeOpacity={0.9}
             style={{
               width: 40,
@@ -1452,7 +1833,7 @@ export default function AACGrid() {
             ]}
           >
             <TextInput
-              placeholder="Search words…"
+              placeholder={t('searchWords', selectedLang)}
               value={query}
               onChangeText={setQuery}
               style={styles.input}
@@ -1494,7 +1875,7 @@ export default function AACGrid() {
           </TouchableOpacity>
 
           {/* Menu button inline with search + language */}
-          <GridMenu inline />
+          <GridMenu inline selectedLang={selectedLang} />
 
         </View>
       </View>
@@ -1520,7 +1901,7 @@ export default function AACGrid() {
         >
           <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
             {utterance.length === 0 ? (
-              <Text style={{ color: theme.accent, fontWeight: '600' }}>Build a sentence…</Text>
+              <Text style={{ color: theme.accent, fontWeight: '600' }}>{t('buildSentence', selectedLang)}</Text>
             ) : (
               utterance.map((tileId, i) => (
                 <View
@@ -1605,7 +1986,7 @@ export default function AACGrid() {
 
       {/* Common words lane */}
       <View style={{ marginTop: 10 }}>
-        <Text style={{ paddingHorizontal: 16, color: '#6B7280', marginBottom: 6, fontWeight: '600' }}>Common</Text>
+        <Text style={{ paddingHorizontal: 16, color: '#6B7280', marginBottom: 6, fontWeight: '600' }}>{t('common', selectedLang)}</Text>
         <FlatList
           data={COMMON_WORDS}
           keyExtractor={(t) => t.id}
@@ -1622,6 +2003,7 @@ export default function AACGrid() {
                 setUtterance(s => [...s, tile.id]);
                 scheduleSpeak(tWord(tile.id, selectedLang), selectedLang, 10, speechRate);
               }}
+              selectedLang={selectedLang}
             />
           )}
         />
@@ -1665,12 +2047,13 @@ export default function AACGrid() {
                   const { favorites: favList } = await toggleFavorite(id);
                   setFavorites(new Set(favList));
                 } catch (e) {
-                  Alert.alert('Failed', 'Could not update favorites');
+                  Alert.alert(t('failed', selectedLang), t('couldNotUpdateFavorites', selectedLang));
                 }
               }}
               isMyTile={isMyTile(item)}
               onEditTile={onEditTile}
               onDeleteTile={confirmDelete}
+              selectedLang={selectedLang}
             />
           </View>
         )}
@@ -1680,7 +2063,7 @@ export default function AACGrid() {
       {langMenuOpen && (
         <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)' }}>
           <View style={{ marginTop: 80, marginHorizontal: 16, borderRadius: 16, backgroundColor: '#fff', padding: 12, ...shadow.m }}>
-            <Text style={{ fontWeight: '800', fontSize: 16, marginBottom: 8 }}>Choose language</Text>
+            <Text style={{ fontWeight: '800', fontSize: 16, marginBottom: 8 }}>{t('chooseLanguage', selectedLang)}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 8 }}>
               {LANG_OPTIONS.map((opt) => {
                 const active = selectedLang === opt.key;
@@ -1702,7 +2085,7 @@ export default function AACGrid() {
             </View>
             <View style={{ alignItems: 'flex-end', marginTop: 10 }}>
               <TouchableOpacity onPress={() => setLangMenuOpen(false)} style={[styles.secondaryBtn]}>
-                <Text style={{ fontWeight: '700', color: '#111827' }}>Close</Text>
+                <Text style={{ fontWeight: '700', color: '#111827' }}>{t('close', selectedLang)}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1731,21 +2114,21 @@ export default function AACGrid() {
               // ensures scrolling on web if content is tall
               style={{ flexGrow: 0 }}
             >
-              <Text style={{ fontSize: 18, fontWeight: '800', marginBottom: 10 }}>Create custom tile</Text>
+              <Text style={{ fontSize: 18, fontWeight: '800', marginBottom: 10 }}>{t('createCustomTile', selectedLang)}</Text>
               <NiceAlert message={formError} />
 
 
               {/* ID */}
-              <Text style={{ fontWeight: '700', color: '#374151' }}>ID (no spaces)</Text>
-              <TextInput value={newId} onChangeText={setNewId} placeholder="e.g. my_dog" style={styles.input} autoCapitalize="none" />
+              <Text style={{ fontWeight: '700', color: '#374151' }}>{t('id', selectedLang)}</Text>
+              <TextInput value={newId} onChangeText={setNewId} placeholder={t('idPlaceholder', selectedLang)} style={styles.input} autoCapitalize="none" />
 
               {/* Label */}
-              <Text style={{ fontWeight: '700', color: '#374151', marginTop: 8 }}>Label</Text>
-              <TextInput value={newLabel} onChangeText={setNewLabel} placeholder="e.g. My dog" style={styles.input} />
+              <Text style={{ fontWeight: '700', color: '#374151', marginTop: 8 }}>{t('label', selectedLang)}</Text>
+              <TextInput value={newLabel} onChangeText={setNewLabel} placeholder={t('labelPlaceholder', selectedLang)} style={styles.input} />
 
               {/* Emoji */}
-              <Text style={{ fontWeight: '700', color: '#374151', marginTop: 8 }}>Emoji (optional)</Text>
-              <TextInput value={newEmoji} onChangeText={setNewEmoji} placeholder="e.g. 🐶" style={styles.input} />
+              <Text style={{ fontWeight: '700', color: '#374151', marginTop: 8 }}>{t('emoji', selectedLang)}</Text>
+              <TextInput value={newEmoji} onChangeText={setNewEmoji} placeholder={t('emojiPlaceholder', selectedLang)} style={styles.input} />
 
               {/* Source mode toggle */}
               <View style={{ flexDirection: 'row', marginTop: 12, marginBottom: 8 }}>
@@ -1753,27 +2136,27 @@ export default function AACGrid() {
                   onPress={() => setSourceMode('url')}
                   style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, backgroundColor: sourceMode === 'url' ? '#2563EB' : '#E5E7EB', marginRight: 8 }}
                 >
-                  <Text style={{ color: sourceMode === 'url' ? '#fff' : '#111827', fontWeight: '700' }}>Image URL</Text>
+                  <Text style={{ color: sourceMode === 'url' ? '#fff' : '#111827', fontWeight: '700' }}>{t('imageUrl', selectedLang)}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => setSourceMode('upload')}
                   style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, backgroundColor: sourceMode === 'upload' ? '#2563EB' : '#E5E7EB' }}
                 >
-                  <Text style={{ color: sourceMode === 'upload' ? '#fff' : '#111827', fontWeight: '700' }}>Upload</Text>
+                  <Text style={{ color: sourceMode === 'upload' ? '#fff' : '#111827', fontWeight: '700' }}>{t('upload', selectedLang)}</Text>
                 </TouchableOpacity>
               </View>
 
               {sourceMode === 'url' ? (
                 <>
-                  <Text style={{ fontWeight: '700', color: '#374151' }}>Image URL</Text>
+                  <Text style={{ fontWeight: '700', color: '#374151' }}>{t('imageUrl', selectedLang)}</Text>
                   <Text style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>
-                    Must start with http:// or https://
+                    {t('mustStartWithHttp', selectedLang)}
                   </Text>
 
                   <TextInput
                     value={newImageUrl}
                     onChangeText={setNewImageUrl}
-                    placeholder="https://example.com/picture.png"
+                    placeholder={t('imageUrlPlaceholder', selectedLang)}
                     style={styles.input}
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -1789,17 +2172,17 @@ export default function AACGrid() {
                   >
                     <Ionicons name="image-outline" size={20} color="#4B5563" />
                     <Text style={{ marginTop: 6, color: '#374151', fontWeight: '700' }}>
-                      {pickedUri ? 'Change image' : 'Choose image from device'}
+                      {pickedUri ? t('changeImage', selectedLang) : t('chooseImage', selectedLang)}
                     </Text>
                     <Text style={{ marginTop: 2, fontSize: 12, color: '#6B7280' }}>
-                      Max size: 1MB
+                      {t('maxSize', selectedLang)}
                     </Text>
                   </TouchableOpacity>
 
                   {pickedUri ? (
                     <View style={{ alignItems: 'center', marginTop: 10 }}>
                       <Image source={{ uri: pickedUri }} style={{ width: 120, height: 120, borderRadius: 12 }} />
-                      <Text style={{ marginTop: 6, fontSize: 12, color: '#6B7280' }}>Will upload on Save</Text>
+                      <Text style={{ marginTop: 6, fontSize: 12, color: '#6B7280' }}>{t('willUploadOnSave', selectedLang)}</Text>
                     </View>
                   ) : null}
                 </>
@@ -1817,7 +2200,7 @@ export default function AACGrid() {
                   setSaving(false);
                   setUploading(false);
                 }} style={[styles.secondaryBtn, { marginRight: 8 }]}>
-                  <Text>Cancel</Text>
+                  <Text>{t('cancel', selectedLang)}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={async () => {
@@ -1830,45 +2213,45 @@ export default function AACGrid() {
 
                     // Field validations
                     if (!id && !label) {
-                      setFormError?.('ID and Label are required.');
-                      showError?.('ID and Label are required.');
+                      setFormError?.(t('idAndLabelRequired', selectedLang));
+                      showError?.(t('idAndLabelRequired', selectedLang));
                       return;
                     }
                     if (!id) {
-                      setFormError?.('Please enter an ID (only letters, numbers, _ or -).');
-                      showError?.('Missing ID.');
+                      setFormError?.(t('pleaseEnterId', selectedLang));
+                      showError?.(t('missingId', selectedLang));
                       return;
                     }
                     if (!/^[a-zA-Z0-9_-]{2,40}$/.test(id)) {
-                      setFormError?.('Invalid ID. Use letters, numbers, _ or - (2–40 chars).');
-                      showError?.('Invalid ID format.');
+                      setFormError?.(t('invalidId', selectedLang));
+                      showError?.(t('invalidIdFormat', selectedLang));
                       return;
                     }
                     if (!label) {
-                      setFormError?.('Please enter a Label.');
-                      showError?.('Missing Label.');
+                      setFormError?.(t('pleaseEnterLabel', selectedLang));
+                      showError?.(t('missingLabel', selectedLang));
                       return;
                     }
 
                     // Image requirement: either a valid URL (when mode=url) or a picked file (when mode=upload)
                     if (sourceMode === 'url') {
                       if (!imageUrlRaw) {
-                        setFormError?.('Please add an Image URL or switch to Upload.');
-                        showError?.('Missing Image URL.');
+                        setFormError?.(t('pleaseAddImageUrl', selectedLang));
+                        showError?.(t('missingImageUrl', selectedLang));
                         return;
                       }
                       try {
                         const u = new URL(imageUrlRaw);
                         if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error();
                       } catch {
-                        setFormError?.('That does not look like a valid http/https URL.');
-                        showError?.('Invalid URL.');
+                        setFormError?.(t('invalidUrl', selectedLang));
+                        showError?.(t('invalidUrl', selectedLang));
                         return;
                       }
                     } else {
                       if (!pickedUri) {
-                        setFormError?.('Please choose an image to upload (max 1MB).');
-                        showError?.('No image selected.');
+                        setFormError?.(t('pleaseChooseImage', selectedLang));
+                        showError?.(t('noImageSelected', selectedLang));
                         return;
                       }
                     }
@@ -1898,11 +2281,11 @@ export default function AACGrid() {
                       setSourceMode('url');
 
                       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                      showSuccess?.('Custom tile created.');
+                      showSuccess?.(t('customTileCreated', selectedLang));
                     } catch (e: any) {
                       console.error('Error creating tile:', e);
-                      setFormError?.(e?.message || 'Could not create tile.');
-                      showError?.(e?.message || 'Could not create tile.');
+                      setFormError?.(e?.message || t('couldNotCreateTile', selectedLang));
+                      showError?.(e?.message || t('couldNotCreateTile', selectedLang));
                     } finally {
                       setSaving(false);
                     }
@@ -1911,7 +2294,7 @@ export default function AACGrid() {
                   style={[styles.primaryBtn, { backgroundColor: (uploading || saving) ? '#9CA3AF' : '#2563EB' }]}
                 >
                   <Text style={{ color: '#fff', fontWeight: '800' }}>
-                    {uploading ? 'Uploading…' : saving ? 'Saving…' : 'Save'}
+                    {uploading ? t('uploading', selectedLang) : saving ? t('saving', selectedLang) : t('save', selectedLang)}
                   </Text>
                 </TouchableOpacity>
 
@@ -1925,22 +2308,22 @@ export default function AACGrid() {
       <Modal visible={editOpen} transparent animationType="fade" onRequestClose={() => setEditOpen(false)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Edit Tile</Text>
+            <Text style={styles.modalTitle}>{t('editTile', selectedLang)}</Text>
 
-            <Text style={styles.label}>Label</Text>
+            <Text style={styles.label}>{t('label', selectedLang)}</Text>
             <TextInput
               value={editForm?.label ?? ""}
               onChangeText={(t) => setEditForm((f) => (f ? { ...f, label: t } : f))}
               style={styles.input}
-              placeholder="Enter label"
+              placeholder={t('labelPlaceholder', selectedLang)}
             />
 
-            <Text style={styles.label}>Image URL (optional)</Text>
+            <Text style={styles.label}>{t('imageUrl', selectedLang)} ({t('emoji', selectedLang).replace(' (optional)', '')})</Text>
             <TextInput
               value={editForm?.imageUrl ?? ""}
               onChangeText={(t) => setEditForm((f) => (f ? { ...f, imageUrl: t } : f))}
               style={styles.input}
-              placeholder="https://…"
+              placeholder={t('imageUrlPlaceholder', selectedLang)}
               autoCapitalize="none"
             />
 
@@ -1950,7 +2333,7 @@ export default function AACGrid() {
                 style={[styles.btn, styles.btnGhost]}
                 disabled={savingEdit}
               >
-                <Text style={styles.btnText}>Cancel</Text>
+                <Text style={styles.btnText}>{t('cancel', selectedLang)}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -1958,7 +2341,7 @@ export default function AACGrid() {
                 style={[styles.btn, styles.btnPrimary]}
                 disabled={savingEdit}
               >
-                <Text style={styles.btnText}>{savingEdit ? "Saving…" : "Save"}</Text>
+                <Text style={styles.btnText}>{savingEdit ? t('saving', selectedLang) : t('save', selectedLang)}</Text>
               </TouchableOpacity>
             </View>
 
@@ -1969,7 +2352,7 @@ export default function AACGrid() {
                   const url = await uploadPickedImage();
                   if (url) setEditForm(f => f ? { ...f, imageUrl: url } : f);
                 } catch (e) {
-                  Alert.alert('Upload failed', 'Could not upload image');
+                  Alert.alert(t('failed', selectedLang), t('couldNotCreateTile', selectedLang));
                 }
               }
             }} style={[styles.btn, styles.btnSecondary]}>
