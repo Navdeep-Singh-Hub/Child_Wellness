@@ -1,5 +1,6 @@
+import { getSubscriptionStatus, type SubscriptionStatus } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -29,6 +30,21 @@ interface SectionSelectorProps {
 
 export function SectionSelector({ onSelectSection, onShowMap }: SectionSelectorProps) {
   const { progress } = useSpecialEducationProgress();
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+
+  useEffect(() => {
+    const checkSubscription = async () => {
+      try {
+        const status = await getSubscriptionStatus();
+        setSubscriptionStatus(status);
+      } catch (error) {
+        console.error('Failed to check subscription status:', error);
+      }
+    };
+    checkSubscription();
+  }, []);
+
+  const isFreeAccess = subscriptionStatus?.isFreeAccess === true;
 
   return (
     <ScrollView
@@ -45,7 +61,8 @@ export function SectionSelector({ onSelectSection, onShowMap }: SectionSelectorP
         <View style={styles.sectionsGrid}>
           {SECTIONS.map((section) => {
             const sectionData = progress?.sections.find((s) => s.sectionNumber === section.number);
-            const unlocked = sectionData?.unlocked || section.number === 1;
+            // Unlock Section 1 always, and Section 2 (The Matcher) for free access users
+            const unlocked = sectionData?.unlocked || section.number === 1 || (isFreeAccess && section.number === 2);
             const completed = sectionData?.completed || false;
             
             return (

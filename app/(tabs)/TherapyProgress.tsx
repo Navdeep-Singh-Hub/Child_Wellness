@@ -1,4 +1,5 @@
 import Paywall from '@/components/Paywall';
+import { SessionSelector } from '@/components/special-education/SessionSelector';
 import {
   advanceTherapyProgress,
   fetchTherapyProgress,
@@ -190,14 +191,11 @@ export default function TherapyProgressScreen() {
       });
       return;
     }
-    // For special-education, navigate directly to special education navigator (skip levels/sessions)
+    // For special-education, use standard structure (Level 1 with 10 sessions)
     if (therapyId === 'special-education') {
-      router.push({
-        pathname: '/(tabs)/SessionGames',
-        params: {
-          therapy: 'special-education',
-        },
-      });
+      // Navigate to levels view (will show Level 1)
+      setMode('levels');
+      setSelectedTherapy(therapyId);
       return;
     }
     // For therapy-avatar, open the external Vercel app
@@ -703,6 +701,38 @@ function SessionsGrid({
   onComplete: (therapyId: string, levelNumber: number, sessionNumber: number) => void;
   isFreeAccess?: boolean;
 }) {
+  const router = useRouter();
+
+  // For special-education, use custom SessionSelector
+  if (therapyMeta.id === 'special-education') {
+    return (
+      <View style={{ gap: 12 }}>
+        <TouchableOpacity onPress={onBack}>
+          <Text style={{ color: '#2563EB', fontWeight: '700' }}>← Back to {therapyMeta.label}</Text>
+        </TouchableOpacity>
+        <SessionSelector
+          sessions={level.sessions.map((s: { sessionNumber: number; completed: boolean; completedGames: string[] }) => ({
+            sessionNumber: s.sessionNumber,
+            completed: s.completed,
+            completedGames: s.completedGames || [],
+          }))}
+          onSelectSession={(sessionNumber) => {
+            router.push({
+              pathname: '/(tabs)/SessionGames',
+              params: {
+                therapy: therapyMeta.id,
+                level: level.levelNumber.toString(),
+                session: sessionNumber.toString(),
+              },
+            });
+          }}
+          onBack={onBack}
+          isFreeAccess={isFreeAccess}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={{ gap: 12 }}>
       <TouchableOpacity onPress={onBack}>
