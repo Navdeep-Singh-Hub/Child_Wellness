@@ -4,6 +4,13 @@ import { DailyActivitiesVideos } from '@/components/daily-activities/DailyActivi
 // Special Education
 import { SpecialEducationNavigator } from '@/components/special-education/SpecialEducationNavigator';
 
+// The Matcher Games (Special Education Level 1 Session 2)
+import SoundToPictureGame from '@/components/game/matcher/games/SoundToPictureGame';
+import LetterToSoundGame from '@/components/game/matcher/games/LetterToSoundGame';
+import SoundCountingGame from '@/components/game/matcher/games/SoundCountingGame';
+import PicturePairGame from '@/components/game/matcher/games/PicturePairGame';
+import RapidMatchGame from '@/components/game/matcher/games/RapidMatchGame';
+
 // Speech Therapy Level 1 Session 1
 import { CatchTheBouncingStar } from '@/components/game/speech/level1/session1/CatchTheBouncingStar';
 import { FollowTheBall } from '@/components/game/speech/level1/session1/FollowTheBall';
@@ -485,7 +492,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fetchTherapyProgress, getSubscriptionStatus, type SubscriptionStatus, type TherapyProgress } from '@/utils/api';
+import { advanceTherapyProgress, fetchTherapyProgress, getSubscriptionStatus, type SubscriptionStatus, type TherapyProgress } from '@/utils/api';
 
 type GameKey =
   | 'menu'
@@ -938,10 +945,8 @@ export default function SessionGamesScreen() {
     return <DailyActivitiesVideos />;
   }
 
-  // Handle special-education differently - show special education navigator
-  if (therapyId === 'special-education') {
-    return <SpecialEducationNavigator />;
-  }
+  // Handle special-education - now uses standard structure (Level 1 with 10 sessions)
+  // No special handling needed, it will use the standard game flow
 
   // Function to get the next game in sequence
   const getNextGame = React.useCallback((currentGameId: GameKey): { gameId: GameKey | null; nextSession?: number; nextLevel?: number } | null => {
@@ -1084,8 +1089,21 @@ export default function SessionGamesScreen() {
   const isGame5Available =
     therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 1;
 
-  // Level 1 Session 2 games (ONLY for Session 2 - will be added later)
-  // For now, Session 2 will show placeholder games or empty list
+  // Special Education Level 1 Session 2: The Matcher games
+  const isSoundToPictureAvailable =
+    therapyId === 'special-education' && levelNumber === 1 && sessionNumber === 2;
+
+  const isLetterToSoundAvailable =
+    therapyId === 'special-education' && levelNumber === 1 && sessionNumber === 2;
+
+  const isSoundCountingAvailable =
+    therapyId === 'special-education' && levelNumber === 1 && sessionNumber === 2;
+
+  const isPicturePairAvailable =
+    therapyId === 'special-education' && levelNumber === 1 && sessionNumber === 2;
+
+  const isRapidMatchAvailable =
+    therapyId === 'special-education' && levelNumber === 1 && sessionNumber === 2;
 
   // Level 1 Session 2 Game 1: Small Circle Tap - available for OT Level 1 Session 2
   const isSmallCircleTapAvailable =
@@ -4661,6 +4679,47 @@ export default function SessionGamesScreen() {
       color: '#6366F1',
       available: isQuickChoiceAvailable,
     },
+    // Special Education Level 1 Session 2: The Matcher games
+    {
+      id: 'sound-to-picture',
+      title: 'Sound to Picture Match',
+      emoji: '🎵',
+      description: 'Listen to a sound and find the picture that starts with it',
+      color: '#0EA5E9',
+      available: isSoundToPictureAvailable,
+    },
+    {
+      id: 'letter-to-sound',
+      title: 'Letter to Sound Match',
+      emoji: '🔤',
+      description: 'Match letters to their sounds',
+      color: '#0EA5E9',
+      available: isLetterToSoundAvailable,
+    },
+    {
+      id: 'sound-counting',
+      title: 'Sound Counting Match',
+      emoji: '🔢',
+      description: 'Count sounds in words and match with numbers',
+      color: '#0EA5E9',
+      available: isSoundCountingAvailable,
+    },
+    {
+      id: 'picture-pair',
+      title: 'Picture Pair Sound Match',
+      emoji: '🖼️',
+      description: 'Match pictures that start with the same sound',
+      color: '#0EA5E9',
+      available: isPicturePairAvailable,
+    },
+    {
+      id: 'rapid-match',
+      title: 'Rapid Sound Match Challenge',
+      emoji: '⚡',
+      description: 'Fast-paced sound matching with moving objects',
+      color: '#0EA5E9',
+      available: isRapidMatchAvailable,
+    },
   ];
 
   // FOR TESTING: Set to true to force progressive unlocking for paying users (free-access IDs always get all games)
@@ -4704,6 +4763,26 @@ export default function SessionGamesScreen() {
     console.log(`[GAME UNLOCK] Game ${gameId} (index ${gameIndex}): Previous game ${previousGame.id} completed: ${previousGameCompleted}, unlocked: ${previousGameCompleted}`);
     
     return previousGameCompleted;
+  };
+
+  // Handle game completion for The Matcher games
+  const handleGameComplete = async (gameId: string, stats: { correct: number; total: number; accuracy: number; gameId: string }) => {
+    try {
+      await advanceTherapyProgress({
+        therapy: therapyId,
+        levelNumber,
+        sessionNumber,
+        gameId,
+        markCompleted: stats.correct === stats.total, // Mark as completed if all correct
+      });
+      
+      // Refresh therapy progress
+      const progress = await fetchTherapyProgress();
+      const therapy = progress.therapies.find(t => t.therapy === therapyId);
+      setTherapyProgress(therapy || null);
+    } catch (error) {
+      console.error('[SessionGames] Error marking game complete:', error);
+    }
   };
 
   // ---------- Game render switches ----------
@@ -5977,6 +6056,67 @@ export default function SessionGamesScreen() {
 
   if (currentGame === 'memory-rhythm') {
     return <MemoryRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Special Education Level 1 Session 2: The Matcher games
+  if (currentGame === 'sound-to-picture') {
+    return (
+      <SoundToPictureGame
+        onBack={() => setCurrentGame('menu')}
+        onComplete={(stats) => {
+          handleGameComplete('sound-to-picture', stats);
+          handleContinue();
+        }}
+      />
+    );
+  }
+
+  if (currentGame === 'letter-to-sound') {
+    return (
+      <LetterToSoundGame
+        onBack={() => setCurrentGame('menu')}
+        onComplete={(stats) => {
+          handleGameComplete('letter-to-sound', stats);
+          handleContinue();
+        }}
+      />
+    );
+  }
+
+  if (currentGame === 'sound-counting') {
+    return (
+      <SoundCountingGame
+        onBack={() => setCurrentGame('menu')}
+        onComplete={(stats) => {
+          handleGameComplete('sound-counting', stats);
+          handleContinue();
+        }}
+      />
+    );
+  }
+
+  if (currentGame === 'picture-pair') {
+    return (
+      <PicturePairGame
+        onBack={() => setCurrentGame('menu')}
+        onComplete={(stats) => {
+          handleGameComplete('picture-pair', stats);
+          handleContinue();
+        }}
+      />
+    );
+  }
+
+  if (currentGame === 'rapid-match') {
+    return (
+      <RapidMatchGame
+        onBack={() => setCurrentGame('menu')}
+        onComplete={(stats) => {
+          handleGameComplete('rapid-match', stats);
+          handleContinue();
+        }}
+      />
+    );
   }
 
   if (currentGame === 'speed-rhythm') {

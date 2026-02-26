@@ -27,27 +27,21 @@ const SESSIONS = 10;
 const GAMES_PER_SESSION = 5;
 
 const buildEmptyTherapy = (therapy) => {
+  // Special Education now uses standard structure: Level 1 with 10 sessions
+  // Each session corresponds to: The Explorer, The Matcher, The Builder, etc.
   if (therapy === 'special-education') {
-    // Special Education: 10 sections, 10 levels per section, 5 games per level
     return {
       therapy,
-      sections: Array.from({ length: 10 }, (_, i) => ({
-        sectionNumber: i + 1,
-        levels: Array.from({ length: 10 }, (_, j) => ({
-          levelNumber: j + 1,
-          games: Array.from({ length: 5 }, (_, k) => ({
-            gameNumber: k + 1,
-            completed: false,
-            accuracy: 0,
-          })),
+      currentLevel: 1,
+      currentSession: 1,
+      levels: Array.from({ length: 1 }, (_, i) => ({
+        levelNumber: i + 1,
+        sessions: Array.from({ length: 10 }, (_, j) => ({
+          sessionNumber: j + 1,
+          completedGames: [],
           completed: false,
         })),
-        completed: false,
-        unlocked: i === 0, // Only first section unlocked initially
       })),
-      currentSection: 1,
-      currentLevelSE: 1,
-      currentGame: 1,
       updatedAt: new Date(),
     };
   }
@@ -176,52 +170,8 @@ router.post('/progress/advance', async (req, res) => {
     const t = doc.therapies.find((x) => x.therapy === therapy);
     if (!t) return res.status(404).json({ error: 'Therapy not found' });
 
-    // Handle Special Education (section-based structure)
-    if (therapy === 'special-education' && sectionNumber && levelNumberSE && gameNumber !== undefined) {
-      const section = t.sections.find((s) => s.sectionNumber === Number(sectionNumber));
-      if (!section) return res.status(404).json({ error: 'Section not found' });
-      
-      const level = section.levels.find((l) => l.levelNumber === Number(levelNumberSE));
-      if (!level) return res.status(404).json({ error: 'Level not found' });
-      
-      const game = level.games.find((g) => g.gameNumber === Number(gameNumber));
-      if (!game) return res.status(404).json({ error: 'Game not found' });
-
-      // Mark game as completed
-      game.completed = true;
-      game.lastPlayedAt = new Date();
-      if (accuracy !== undefined) {
-        game.accuracy = Number(accuracy);
-      }
-
-      // Check if all games in level are completed
-      const allGamesCompleted = level.games.every((g) => g.completed);
-      if (allGamesCompleted) {
-        level.completed = true;
-      }
-
-      // Check if all levels in section are completed
-      const allLevelsCompleted = section.levels.every((l) => l.completed);
-      if (allLevelsCompleted) {
-        section.completed = true;
-        // Unlock next section
-        const nextSection = t.sections.find((s) => s.sectionNumber === section.sectionNumber + 1);
-        if (nextSection) {
-          nextSection.unlocked = true;
-        }
-      }
-
-      // Update current pointers
-      t.currentSection = Number(sectionNumber);
-      t.currentLevelSE = Number(levelNumberSE);
-      t.currentGame = Number(gameNumber);
-
-      t.updatedAt = new Date();
-      await doc.save();
-      return res.json({ ok: true, therapy: t });
-    }
-
-    // Standard structure for other therapies
+    // Special Education now uses standard structure (Level 1 with 10 sessions)
+    // Standard structure for all therapies including special-education
     const lvl = t.levels.find((l) => l.levelNumber === Number(levelNumber));
     if (!lvl) return res.status(404).json({ error: 'Level not found' });
     const sess = lvl.sessions.find((s) => s.sessionNumber === Number(sessionNumber));
