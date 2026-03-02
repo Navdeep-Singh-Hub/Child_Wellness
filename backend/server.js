@@ -16,6 +16,8 @@ import { smartExplorerRouter } from './routes/smartExplorer.js';
 import subscriptionRouter from './routes/subscription.js';
 import { tapGame } from './routes/tapGame.js';
 import { therapyProgressRouter } from './routes/therapyProgress.js';
+import { adminAnalyticsRouter } from './routes/adminAnalytics.js';
+import { ActivityLog } from './models/ActivityLog.js';
 
 const app = express();
 // Behind proxies (Vercel/Render/Nginx), respect X-Forwarded-* headers
@@ -322,6 +324,32 @@ app.use('/api/therapy', (req, res, next) => {
 
 app.use('/api/games', requireAuth, gameRoutes);
 
+// Activity log (event-based time tracking for admin analytics)
+app.post('/api/me/activity', requireAuth, async (req, res) => {
+  try {
+    const user = await ensureUser(req.auth0Id, req.auth0Email || '', req.auth0Name || '');
+    const { eventType, therapy, gameKey, level, session, durationMs, meta } = req.body || {};
+    if (!eventType) return res.status(400).json({ error: 'eventType required' });
+    await ActivityLog.create({
+      userId: user._id,
+      eventType,
+      therapy: therapy || undefined,
+      gameKey: gameKey || undefined,
+      level: level || undefined,
+      session: session || undefined,
+      durationMs: durationMs || 0,
+      meta: meta || {},
+    });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('activity log', e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Admin analytics (requires ADMIN_AUTH0_IDS env)
+app.use('/api/admin/analytics', requireAuth, adminAnalyticsRouter);
+
 // Subscription and payment routes (require auth) with logging
 app.use('/api/subscription', (req, res, next) => {
   console.log(`[SUBSCRIPTION ROUTE] ${req.method} ${req.originalUrl || req.path}`);
@@ -508,8 +536,7 @@ app.post('/api/me/profile', requireAuth, async (req, res) => {
         }
       }
     }
-    // Allow setting gender only if not already set
-    if (!user.gender && gender && ['male', 'female', 'other', 'prefer-not-to-say'].includes(gender)) {
+    if (gender && ['male', 'female', 'other', 'prefer-not-to-say'].includes(gender)) {
       user.gender = gender;
     }
     // Phone number - required and can be updated

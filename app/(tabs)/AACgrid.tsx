@@ -889,7 +889,7 @@ async function pickVoice(lang: LangKey): Promise<Speech.Voice | null> {
 const TWO = (l: LangKey) => l.slice(0, 2).toLowerCase();
 const DEFAULT_SPEECH_RATE = 0.8;
 
-// Use shared TTS utility for audio management
+// Shared TTS: speech-to-speech (en_US-hfc) when available, expo-speech fallback (used first in grid)
 
 // Normalize text for better TTS pronunciation, especially for iOS
 function normalizeForSpeech(text: string, lang: LangKey): string {
@@ -908,25 +908,18 @@ function normalizeForSpeech(text: string, lang: LangKey): string {
   return text;
 }
 
-async function speakSmart(text: string, lang: LangKey, rateOverride?: number) {
-  // Normalize text for better pronunciation
+async function speakSmart(text: string, lang: LangKey, rateOverride?: number, skipStop?: boolean) {
   const normalizedText = normalizeForSpeech(text, lang);
-
-  // Use shared TTS utility (speech-to-speech on web, expo-speech on native)
-  // For language-specific voices, we'll use expo-speech fallback
   const rate = typeof rateOverride === 'number' ? rateOverride : DEFAULT_SPEECH_RATE;
+  const opts = skipStop ? { skipStop: true } : undefined;
 
-  // Try shared TTS utility first (uses speech-to-speech on web)
   try {
-    await speakTTS(normalizedText, rate, lang);
+    await speakTTS(normalizedText, rate, lang, opts);
     return;
   } catch (error) {
     console.warn('[AAC] Shared TTS failed, using expo-speech with language voice:', error);
   }
-
-  // Fallback: try speakTTS again (it will use expo-speech with language support)
-  // Note: Voice selection is handled by expo-speech automatically based on language
-  await speakTTS(normalizedText, rate, lang);
+  await speakTTS(normalizedText, rate, lang, opts);
 }
 
 
@@ -939,12 +932,18 @@ function tSentence(ids: string[], lang: LangKey) {
 }
 
 // ---------- TTS scheduler: run speech AFTER animations ----------
-function scheduleSpeak(text: string, lang: LangKey, delayMs = 30, rate?: number) {
+// On native, InteractionManager.runAfterInteractions can wait too long (e.g. FlatList/layout
+// keep "interactions" active), so TTS never fires. Use setTimeout only on native.
+function scheduleSpeak(text: string, lang: LangKey, delayMs = 30, rate?: number, skipStop?: boolean) {
   const run = () => {
     setTimeout(() => {
-      speakSmart(text, lang, rate);
+      speakSmart(text, lang, rate, skipStop);
     }, Math.max(0, delayMs));
   };
+  if (Platform.OS !== 'web') {
+    run();
+    return;
+  }
   try {
     InteractionManager.runAfterInteractions(run);
   } catch {
@@ -970,11 +969,11 @@ function speakStretched(sentence: string, lang: LangKey, wordGapMs = 420, rate?:
 
   list.forEach((chunk, i) => {
     const delay = i * (wordGapMs + 10);
-    scheduleSpeak(chunk, lang, delay, rate);
+    scheduleSpeak(chunk, lang, delay, rate, i > 0);
   });
 
   if (chunks.length > MAX_CHUNKS) {
-    scheduleSpeak('...', lang, list.length * (wordGapMs + 10), rate);
+    scheduleSpeak('...', lang, list.length * (wordGapMs + 10), rate, true);
   }
 }
 
