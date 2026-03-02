@@ -405,6 +405,25 @@ export async function initTherapyProgress(): Promise<{ ok: boolean; therapies: T
   return res.json();
 }
 
+/** Event-based time tracking for admin analytics. Call when user starts/ends a game or session. */
+export async function logActivity(payload: {
+  eventType: 'session_start' | 'session_end' | 'game_start' | 'game_end' | 'game_complete' | 'therapy_view';
+  therapy?: string;
+  gameKey?: string;
+  level?: number;
+  session?: number;
+  durationMs?: number;
+  meta?: Record<string, unknown>;
+}): Promise<{ ok: boolean }> {
+  const res = await fetch(`${API_BASE_URL}/api/me/activity`, {
+    method: 'POST',
+    headers: await authHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
 export async function advanceTherapyProgress(payload: {
   therapy: string;
   levelNumber?: number;

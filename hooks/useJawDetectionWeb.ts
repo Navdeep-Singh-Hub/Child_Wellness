@@ -34,12 +34,15 @@ export interface JawDetectionResult {
 }
 
 // Constants for jaw detection
-// Thresholds adjusted for normalized coordinates (0-1 range from MediaPipe)
-// Based on observed values: closed ~0.022-0.030, open ~0.035-0.045
-const OPEN_THRESHOLD = 0.038;  // Increased to require more obvious mouth opening (prevents false positives)
-const CLOSE_THRESHOLD = 0.028; // Set between closed (~0.022-0.030) and open (~0.038+) for hysteresis
-const EMA_ALPHA = 0.25;
-const THROTTLE_MS = 80; // ~12 fps
+// MAR (Mouth Aspect Ratio) style. Bias toward "closed" so we only show open when clearly open.
+const OPEN_THRESHOLD = 0.048;   // Must exceed this to switch closed→open (strict)
+const CLOSE_THRESHOLD = 0.036;  // Below this to switch open→closed (hysteresis)
+const EMA_ALPHA = 0.35;
+const THROTTLE_MS = 66;
+const CALIBRATION_FRAMES = 45;
+// Only count as "open" when ratio is past this fraction of (min..max) — higher = less false "open"
+const ADAPTIVE_OPEN_FRACTION = 0.55;
+const ADAPTIVE_MIN_RANGE = 0.012; // Don't use adaptive until user has shown a real open (range > this)
 
 // MediaPipe types - dynamic import to avoid issues in non-web environments
 let FaceLandmarker: any = null;
@@ -164,7 +167,10 @@ async function processFrame(
   videoElement: HTMLVideoElement | HTMLCanvasElement,
   ema: React.MutableRefObject<number>,
   currentIsOpen: React.MutableRefObject<boolean>,
-  emaLateral?: React.MutableRefObject<number>
+  emaLateral?: React.MutableRefObject<number>,
+  ratioMinRef?: React.MutableRefObject<number>,
+  ratioMaxRef?: React.MutableRefObject<number>,
+  calibrationFramesRef?: React.MutableRefObject<number>
 ): Promise<{ 
   ratio: number; 
   isOpen: boolean; 
@@ -237,50 +243,48 @@ async function processFrame(
 
     const landmarks = result.faceLandmarks[0];
     
-    // MediaPipe Face Mesh has 468 landmarks
-    // Key mouth landmarks:
-    // - Upper lip top center: 13
-    // - Lower lip bottom center: 14
-    // - Mouth left corner: 61
-    // - Mouth right corner: 291
-    // - Upper lip top region: 12, 13, 14, 15 (for averaging)
-    // - Lower lip bottom region: 18, 19, 20 (for averaging)
-    
-    // Get upper lip top points (average for stability)
-    const upperLipPoints = [
-      landmarks[12],
-      landmarks[13],
-      landmarks[14],
-      landmarks[15],
-    ].filter(Boolean);
-    
-    // Get lower lip bottom points (average for stability)
-    const lowerLipPoints = [
-      landmarks[18],
-      landmarks[19],
-      landmarks[20],
-    ].filter(Boolean);
-    
-    // Get mouth corners
+    // MediaPipe Face Mesh 468: mouth inner contour indices
+    // Corners: 61 (left), 291 (right)
+    // Upper inner lip: 12, 13, 14, 15  |  Lower: 16, 17, 18, 19, 20
     const mouthLeft = landmarks[61];
     const mouthRight = landmarks[291];
+    const mouthWidth = mouthLeft && mouthRight ? dist(mouthLeft, mouthRight) : 0;
+    if (!mouthLeft || !mouthRight || mouthWidth < 0.01) return null;
 
-    if (!upperLipPoints.length || !lowerLipPoints.length || !mouthLeft || !mouthRight) {
-      return null;
+    // MAR (Mouth Aspect Ratio): (vertical1 + vertical2) / (2 * width) — more accurate
+    // Vertical pairs: (13→17) and (14→18) — left-of-center and center-right opening
+    const p13 = landmarks[13], p14 = landmarks[14], p17 = landmarks[17], p18 = landmarks[18];
+    let rawRatio: number;
+    if (p13 && p14 && p17 && p18) {
+      const v1 = dist(p13, p17);
+      const v2 = dist(p14, p18);
+      rawRatio = (v1 + v2) / (2 * mouthWidth);
+    } else {
+      // Fallback: mean upper lip vs mean lower lip (original method)
+      const upperLipPoints = [landmarks[12], landmarks[13], landmarks[14], landmarks[15]].filter(Boolean) as Array<{ x: number; y: number }>;
+      const lowerLipPoints = [landmarks[18], landmarks[19], landmarks[20]].filter(Boolean) as Array<{ x: number; y: number }>;
+      if (!upperLipPoints.length || !lowerLipPoints.length) return null;
+      const upperLip = meanPoint(upperLipPoints);
+      const lowerLip = meanPoint(lowerLipPoints);
+      rawRatio = dist(upperLip, lowerLip) / mouthWidth;
     }
 
-    // Calculate mean points (similar to hand gesture project's meanPoint function)
+    // Running min/max for adaptive per-user calibration
+    if (ratioMinRef && ratioMaxRef && calibrationFramesRef) {
+      if (calibrationFramesRef.current < CALIBRATION_FRAMES) {
+        calibrationFramesRef.current += 1;
+      }
+      const minSoFar = ratioMinRef.current;
+      const maxSoFar = ratioMaxRef.current;
+      ratioMinRef.current = minSoFar === Infinity ? rawRatio : Math.min(minSoFar, rawRatio);
+      ratioMaxRef.current = maxSoFar === -Infinity ? rawRatio : Math.max(maxSoFar, rawRatio);
+    }
+
+    // Keep for landmarks export and for protrusion/lateral (used below)
+    const upperLipPoints = [landmarks[12], landmarks[13], landmarks[14], landmarks[15]].filter(Boolean) as Array<{ x: number; y: number }>;
+    const lowerLipPoints = [landmarks[18], landmarks[19], landmarks[20]].filter(Boolean) as Array<{ x: number; y: number }>;
     const upperLip = meanPoint(upperLipPoints);
     const lowerLip = meanPoint(lowerLipPoints);
-
-    // Calculate mouth width (normalization factor) - distance between corners
-    const mouthWidth = dist(mouthLeft, mouthRight);
-    
-    // Calculate vertical gap between lips
-    const gap = dist(upperLip, lowerLip);
-    
-    // Calculate ratio (gap / mouth width) - same as native version
-    const rawRatio = gap / Math.max(1, mouthWidth);
 
     // Apply EMA smoothing (same as native version)
     const smoothed = ema.current === 0 
@@ -391,11 +395,23 @@ async function processFrame(
     // Update global position for next frame
     globalCurrentLateralPosition = lateralPosition;
 
-    // Hysteresis threshold to prevent flicker (same as native version)
+    // Open/closed decision: use adaptive threshold when we have enough calibration
     const wasOpen = currentIsOpen.current;
+    let openThreshold = OPEN_THRESHOLD;
+    let closeThreshold = CLOSE_THRESHOLD;
+    if (ratioMinRef && ratioMaxRef && calibrationFramesRef && calibrationFramesRef.current >= CALIBRATION_FRAMES) {
+      const rmin = ratioMinRef.current;
+      const rmax = ratioMaxRef.current;
+      const range = rmax - rmin;
+      if (range > ADAPTIVE_MIN_RANGE) {
+        openThreshold = rmin + range * ADAPTIVE_OPEN_FRACTION;
+        closeThreshold = rmin + range * (ADAPTIVE_OPEN_FRACTION - 0.18);
+        if (closeThreshold < rmin) closeThreshold = rmin;
+      }
+    }
     const nextIsOpen = wasOpen
-      ? smoothed > CLOSE_THRESHOLD
-      : smoothed > OPEN_THRESHOLD;
+      ? smoothed > closeThreshold
+      : smoothed > openThreshold;
     
     // Update state
     const stateChanged = wasOpen !== nextIsOpen;
@@ -478,12 +494,14 @@ export function useJawDetectionWeb(
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const ema = useRef(0);
-  const emaLateral = useRef(0); // EMA for lateral position smoothing
-  const emaTongueElevation = useRef(0); // EMA for tongue elevation smoothing
-  const emaCheekExpansion = useRef(0); // EMA for cheek expansion smoothing
+  const emaLateral = useRef(0);
   const lastTimestamp = useRef(0);
   const currentIsOpen = useRef(false);
   const processingIntervalRef = useRef<number | null>(null);
+  // Adaptive calibration: track min/max mouth ratio for this user
+  const ratioMinRef = useRef(Infinity);
+  const ratioMaxRef = useRef(-Infinity);
+  const calibrationFramesRef = useRef(0);
 
   // Initialize MediaPipe - always initialize on web, not dependent on isActive
   useEffect(() => {
@@ -724,7 +742,7 @@ export function useJawDetectionWeb(
             }
             lastTimestamp.current = now;
 
-            const result = await processFrame(videoRef.current, ema, currentIsOpen, emaLateral);
+            const result = await processFrame(videoRef.current, ema, currentIsOpen, emaLateral, ratioMinRef, ratioMaxRef, calibrationFramesRef);
             
             if (result) {
               setIsDetecting(true);
@@ -860,7 +878,7 @@ export function useJawDetectionWeb(
           }
           lastTimestamp.current = now;
 
-          const result = await processFrame(videoRef.current, ema, currentIsOpen, emaLateral);
+          const result = await processFrame(videoRef.current, ema, currentIsOpen, emaLateral, ratioMinRef, ratioMaxRef, calibrationFramesRef);
         
           if (result) {
             setIsDetecting(true);
