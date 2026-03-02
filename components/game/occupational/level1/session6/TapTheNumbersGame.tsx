@@ -101,7 +101,7 @@ const TapTheNumbersGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setDone(true);
       setRoundActive(false);
       setShowCongratulations(true);
-      
+
       speakTTS('Amazing work! You completed the game!', 0.78);
 
       // Log game in background (don't wait for it)

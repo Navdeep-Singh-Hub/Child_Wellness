@@ -300,6 +300,15 @@ export default function Index() {
         gradient: ['#EC4899', '#DB2777'],
         onPress: () => router.push('/(tabs)/Profile'),
       },
+      {
+        key: 'matcher',
+        label: 'The Matcher',
+        caption: 'Sound & Match',
+        icon: 'musical-notes',
+        accent: '#6366F1',
+        gradient: ['#6366F1', '#4F46E5'],
+        onPress: () => router.push('/the-matcher'),
+      },
     ];
     return defaults;
   }, [router]);
