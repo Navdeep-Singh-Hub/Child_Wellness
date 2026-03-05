@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 export interface SpecialEducationProgress {
   sections: Array<{
     sectionNumber: number;
-    levels: Array<{
-      levelNumber: number;
+    sessions: Array<{
+      sessionNumber: number;
       games: Array<{
         gameNumber: number;
         completed: boolean;
@@ -18,7 +18,7 @@ export interface SpecialEducationProgress {
     unlocked: boolean;
   }>;
   currentSection: number;
-  currentLevel: number;
+  currentSession: number;
   currentGame: number;
 }
 
@@ -37,21 +37,37 @@ export function useSpecialEducationProgress() {
       const specialEd = response.therapies.find((t) => t.therapy === 'special-education');
       
       if (specialEd && specialEd.sections) {
+        // Normalize: backend may return sections[].levels (legacy) or sections[].sessions
+        const sections = specialEd.sections.map((s: any) => ({
+          ...s,
+          sessions: s.sessions ?? (s.levels || []).map((l: any) => ({
+            sessionNumber: l.levelNumber ?? l.sessionNumber,
+            games: l.games ?? [],
+            completed: l.completed ?? false,
+          })),
+        }));
         setProgress({
-          sections: specialEd.sections,
+          sections,
           currentSection: specialEd.currentSection || 1,
-          currentLevel: specialEd.currentLevelSE || 1,
+          currentSession: specialEd.currentSessionSE ?? 1,
           currentGame: specialEd.currentGame || 1,
         });
       } else {
-        // Initialize if not found
         const initResponse = await initTherapyProgress();
         const initSpecialEd = initResponse.therapies.find((t) => t.therapy === 'special-education');
         if (initSpecialEd && initSpecialEd.sections) {
+          const sections = initSpecialEd.sections.map((s: any) => ({
+            ...s,
+            sessions: s.sessions ?? (s.levels || []).map((l: any) => ({
+              sessionNumber: l.levelNumber ?? l.sessionNumber,
+              games: l.games ?? [],
+              completed: l.completed ?? false,
+            })),
+          }));
           setProgress({
-            sections: initSpecialEd.sections,
+            sections,
             currentSection: initSpecialEd.currentSection || 1,
-            currentLevel: initSpecialEd.currentLevelSE || 1,
+            currentSession: initSpecialEd.currentSessionSE ?? 1,
             currentGame: initSpecialEd.currentGame || 1,
           });
         }
@@ -65,7 +81,7 @@ export function useSpecialEducationProgress() {
 
   const markGameComplete = async (
     section: number,
-    level: number,
+    session: number,
     game: number,
     accuracy: number = 100
   ) => {
@@ -73,11 +89,11 @@ export function useSpecialEducationProgress() {
       await advanceTherapyProgress({
         therapy: 'special-education',
         sectionNumber: section,
-        levelNumberSE: level,
+        sessionNumberSE: session,
         gameNumber: game,
         accuracy,
       });
-      await loadProgress(); // Reload to get updated state
+      await loadProgress();
     } catch (error) {
       console.error('Failed to mark game complete:', error);
       throw error;
@@ -92,31 +108,27 @@ export function useSpecialEducationProgress() {
   };
 }
 
-// Helper to check if a section/level/game is unlocked
+// Helper to check if a section/session/game is unlocked
 export function isUnlocked(
   progress: SpecialEducationProgress | null,
   section: number,
-  level: number,
+  session: number,
   game: number
 ): boolean {
-  if (!progress) return section === 1 && level === 1 && game === 1;
-  
+  if (!progress) return section === 1 && session === 1 && game === 1;
   const sectionData = progress.sections.find((s) => s.sectionNumber === section);
   if (!sectionData || !sectionData.unlocked) return false;
-  
-  // For POC, only Section 1, Level 1, Game 1 is unlocked
-  if (section === 1 && level === 1 && game === 1) return true;
-  
-  // Future: Check if previous game/level/section is completed
-  if (section === 1 && level === 1) {
-    // Check if previous game is completed
-    const levelData = sectionData.levels.find((l) => l.levelNumber === level);
-    if (levelData && game > 1) {
-      const prevGame = levelData.games.find((g) => g.gameNumber === game - 1);
-      return prevGame?.completed || false;
-    }
+  if (section === 1 && session === 1 && game === 1) return true;
+  const sessionData = sectionData.sessions?.find((s) => s.sessionNumber === session);
+  if (!sessionData) return false;
+  if (game > 1) {
+    const prevGame = sessionData.games?.find((g) => g.gameNumber === game - 1);
+    return prevGame?.completed ?? false;
   }
-  
+  if (session > 1) {
+    const prevSession = sectionData.sessions?.find((s) => s.sessionNumber === session - 1);
+    return prevSession?.completed ?? false;
+  }
   return false;
 }
 

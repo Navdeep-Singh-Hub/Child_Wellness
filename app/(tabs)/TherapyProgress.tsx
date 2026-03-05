@@ -191,11 +191,9 @@ export default function TherapyProgressScreen() {
       });
       return;
     }
-    // For special-education, use standard structure (Level 1 with 10 sessions)
+    // Special Education: open dedicated flow (sections → sessions → games)
     if (therapyId === 'special-education') {
-      // Navigate to levels view (will show Level 1)
-      setMode('levels');
-      setSelectedTherapy(therapyId);
+      router.push({ pathname: '/(tabs)/SessionGames', params: { therapy: 'special-education' } });
       return;
     }
     // For therapy-avatar, open the external Vercel app
