@@ -10,16 +10,16 @@ import {
 import { useSpecialEducationProgress, isUnlocked } from './shared/SpecialEducationProgress';
 
 const SECTION_INFO: { [key: number]: { title: string; theme: string; emoji: string; color: string } } = {
-  1: { title: 'The Explorer', theme: 'Forest', emoji: '🌲', color: '#10B981' },
-  2: { title: 'The Matcher', theme: 'Ocean', emoji: '🌊', color: '#0EA5E9' },
-  3: { title: 'The Builder', theme: 'Mountain', emoji: '⛰️', color: '#8B5CF6' },
-  4: { title: 'The Grouper', theme: 'Desert', emoji: '🏜️', color: '#F59E0B' },
-  5: { title: 'The Counter', theme: 'Sky', emoji: '☁️', color: '#3B82F6' },
-  6: { title: 'The Logic Lab', theme: 'City', emoji: '🏙️', color: '#6366F1' },
-  7: { title: 'The Reader', theme: 'Space', emoji: '🚀', color: '#8B5CF6' },
-  8: { title: 'The Citizen', theme: 'Planet', emoji: '🪐', color: '#EC4899' },
-  9: { title: 'The Clockwise', theme: 'Galaxy', emoji: '🌌', color: '#6366F1' },
-  10: { title: 'The Graduate', theme: 'Space Station', emoji: '🛸', color: '#8B5CF6' },
+  1: { title: 'Explorer', theme: 'Forest', emoji: '🌲', color: '#10B981' },
+  2: { title: 'Matcher', theme: 'Ocean', emoji: '🌊', color: '#0EA5E9' },
+  3: { title: 'Builder', theme: 'Mountain', emoji: '⛰️', color: '#8B5CF6' },
+  4: { title: 'Grouper', theme: 'Desert', emoji: '🏜️', color: '#F59E0B' },
+  5: { title: 'Counter', theme: 'Sky', emoji: '☁️', color: '#3B82F6' },
+  6: { title: 'Logic Lab', theme: 'City', emoji: '🏙️', color: '#6366F1' },
+  7: { title: 'Reader', theme: 'Space', emoji: '🚀', color: '#8B5CF6' },
+  8: { title: 'Citizen', theme: 'Planet', emoji: '🪐', color: '#EC4899' },
+  9: { title: 'Clockwise', theme: 'Galaxy', emoji: '🌌', color: '#6366F1' },
+  10: { title: 'Graduate', theme: 'Space Station', emoji: '🛸', color: '#8B5CF6' },
 };
 
 interface LevelSelectorProps {

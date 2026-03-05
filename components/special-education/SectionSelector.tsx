@@ -11,16 +11,16 @@ import {
 import { useSpecialEducationProgress, isUnlocked } from './shared/SpecialEducationProgress';
 
 const SECTIONS = [
-  { number: 1, title: 'The Explorer', theme: 'Forest', emoji: '🌲', color: '#10B981' },
-  { number: 2, title: 'The Matcher', theme: 'Ocean', emoji: '🌊', color: '#0EA5E9', locked: true },
-  { number: 3, title: 'The Builder', theme: 'Mountain', emoji: '⛰️', color: '#8B5CF6', locked: true },
-  { number: 4, title: 'The Grouper', theme: 'Desert', emoji: '🏜️', color: '#F59E0B', locked: true },
-  { number: 5, title: 'The Counter', theme: 'Sky', emoji: '☁️', color: '#3B82F6', locked: true },
-  { number: 6, title: 'The Logic Lab', theme: 'City', emoji: '🏙️', color: '#6366F1', locked: true },
-  { number: 7, title: 'The Reader', theme: 'Space', emoji: '🚀', color: '#8B5CF6', locked: true },
-  { number: 8, title: 'The Citizen', theme: 'Planet', emoji: '🪐', color: '#EC4899', locked: true },
-  { number: 9, title: 'The Clockwise', theme: 'Galaxy', emoji: '🌌', color: '#6366F1', locked: true },
-  { number: 10, title: 'The Graduate', theme: 'Space Station', emoji: '🛸', color: '#8B5CF6', locked: true },
+  { number: 1, title: 'Explorer', theme: 'Forest', emoji: '🌲', color: '#10B981' },
+  { number: 2, title: 'Matcher', theme: 'Ocean', emoji: '🌊', color: '#0EA5E9', locked: true },
+  { number: 3, title: 'Builder', theme: 'Mountain', emoji: '⛰️', color: '#8B5CF6', locked: true },
+  { number: 4, title: 'Grouper', theme: 'Desert', emoji: '🏜️', color: '#F59E0B', locked: true },
+  { number: 5, title: 'Counter', theme: 'Sky', emoji: '☁️', color: '#3B82F6', locked: true },
+  { number: 6, title: 'Logic Lab', theme: 'City', emoji: '🏙️', color: '#6366F1', locked: true },
+  { number: 7, title: 'Reader', theme: 'Space', emoji: '🚀', color: '#8B5CF6', locked: true },
+  { number: 8, title: 'Citizen', theme: 'Planet', emoji: '🪐', color: '#EC4899', locked: true },
+  { number: 9, title: 'Clockwise', theme: 'Galaxy', emoji: '🌌', color: '#6366F1', locked: true },
+  { number: 10, title: 'Graduate', theme: 'Space Station', emoji: '🛸', color: '#8B5CF6', locked: true },
 ];
 
 interface SectionSelectorProps {
@@ -54,7 +54,7 @@ export function SectionSelector({ onSelectSection, onShowMap }: SectionSelectorP
       <View style={styles.introSection}>
         <Text style={styles.introTitle}>Learn English & Math</Text>
         <Text style={styles.introDescription}>
-          Journey through 10 sections, each with 10 levels and 5 games. Start with Section 1: The Explorer to learn letters and numbers!
+          Journey through 10 sections, each with 10 levels and 5 games. Start with Section 1: Explorer to learn letters and numbers!
         </Text>
       </View>
 
