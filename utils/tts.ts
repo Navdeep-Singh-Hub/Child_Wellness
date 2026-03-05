@@ -110,8 +110,11 @@ async function initializeTTS(): Promise<void> {
 
       console.log('[TTS] speech-to-speech TTS initialized successfully');
     } catch (err) {
-      console.warn('[TTS] Failed to initialize speech-to-speech TTS:', err);
+      // Silently fail - we'll use expo-speech fallback
+      console.warn('[TTS] Failed to initialize speech-to-speech TTS, will use expo-speech fallback:', err?.message || err);
       ttsReady = false;
+      ttsLogic = null;
+      sharedAudioPlayer = null;
     } finally {
       isInitializing = false;
     }
@@ -125,19 +128,20 @@ async function initializeTTS(): Promise<void> {
  */
 export function stopTTS(): void {
   try {
-    // Clear scheduled timers
+    // Clear scheduled timers first
     scheduledSpeechTimers.forEach(t => clearTimeout(t));
     scheduledSpeechTimers = [];
 
+    // Stop expo-speech first (works on both web and native)
+    Speech.stop();
+
+    // Then stop speech-to-speech audio queue
     if (Platform.OS === 'web' && sharedAudioPlayer && ttsReady) {
-      // Stop speech-to-speech audio
+      // Stop speech-to-speech audio and clear queue
       sharedAudioPlayer.stopAndClearQueue().catch((err: any) => {
         console.warn('[TTS] Error stopping audio player:', err);
       });
     }
-
-    // Stop expo-speech (works on both web and native)
-    Speech.stop();
   } catch (e) {
     console.warn('[TTS] Error stopping TTS:', e);
   }
@@ -169,8 +173,8 @@ export async function speak(text: string, rate: number = DEFAULT_TTS_RATE, langu
 
     // Try to use speech-to-speech TTS on web
     if (Platform.OS === 'web') {
-      // Initialize if not already initialized
-      if (!ttsReady && !isInitializing) {
+      // Initialize if not already initialized (only once, don't retry if it failed)
+      if (!ttsReady && !isInitializing && ttsLogic === null) {
         await initializeTTS();
       }
 
@@ -181,7 +185,9 @@ export async function speak(text: string, rate: number = DEFAULT_TTS_RATE, langu
           sharedAudioPlayer.addAudioIntoQueue(result.audio, result.sampleRate);
           return;
         } catch (error) {
-          console.warn('[TTS] speech-to-speech TTS failed, falling back to expo-speech:', error);
+          // If synthesis fails, mark as not ready and fall back
+          console.warn('[TTS] speech-to-speech synthesis failed, falling back to expo-speech:', error);
+          ttsReady = false;
           // Fall through to expo-speech
         }
       }

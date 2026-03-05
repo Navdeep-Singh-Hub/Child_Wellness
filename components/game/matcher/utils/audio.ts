@@ -1,5 +1,5 @@
 // Audio utilities for The Matcher games
-import { speak, stopTTS } from '@/utils/tts';
+import { speak, stopTTS, clearScheduledSpeech } from '@/utils/tts';
 import { Audio as ExpoAudio } from 'expo-av';
 import { Platform } from 'react-native';
 
@@ -71,22 +71,29 @@ export async function playSoundEffect(type: 'correct' | 'incorrect' | 'celebrati
 }
 
 export async function playPhoneme(phoneme: string): Promise<void> {
+  // speak() already calls stopTTS() internally, so we don't need to stop here
   const normalized = phoneme.toLowerCase().trim();
   const word = PHONEME_WORDS[normalized] || PHONEME_WORDS[`/${normalized}/`] || normalized.replace(/[\/]/g, '');
   await speak(word, 0.6);
 }
 
 export async function playLetterSound(letter: string): Promise<void> {
+  // speak() already calls stopTTS() internally, so we don't need to stop here
   const phoneme = `/${letter.toLowerCase()}/`;
   await playPhoneme(phoneme);
 }
 
 export async function playWord(word: string): Promise<void> {
+  // speak() already calls stopTTS() internally, so we don't need to stop here
   await speak(word, 0.75);
 }
 
 export function stopAllAudio(): void {
+  // Clear all scheduled speech first
+  clearScheduledSpeech();
+  // Stop TTS
   stopTTS();
+  // Clear sound cache
   soundCache.forEach((sound) => {
     sound.unloadAsync().catch(() => {});
   });

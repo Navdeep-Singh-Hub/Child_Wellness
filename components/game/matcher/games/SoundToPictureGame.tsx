@@ -1,6 +1,4 @@
 // Game 1: Sound to Picture Match
-import { playPhoneme, playSoundEffect, speakFeedback, stopAllAudio } from '../utils/audio';
-import { SOUND_PICTURE_DATA, getOptionsCount, shuffleArray, Difficulty } from '../utils/gameData';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
@@ -13,6 +11,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { playPhoneme, playSoundEffect, speakFeedback, stopAllAudio } from '../utils/audio';
+import { Difficulty, SOUND_PICTURE_DATA, getOptionsCount, shuffleArray } from '../utils/gameData';
 
 interface SoundToPictureGameProps {
   onComplete: (stats: { correct: number; total: number; accuracy: number; gameId: string }) => void;
@@ -34,15 +34,41 @@ export default function SoundToPictureGame({ onComplete, onBack }: SoundToPictur
 
   const cardScale = useSharedValue(1);
   const cardGlow = useSharedValue(0);
+  const soundTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     loadRound();
   }, [round, difficulty]);
 
   useEffect(() => {
-    if (currentItem) {
-      playPhoneme(currentItem.phoneme);
+    // Clear any pending timeout
+    if (soundTimeoutRef.current) {
+      clearTimeout(soundTimeoutRef.current);
+      soundTimeoutRef.current = null;
     }
+
+    if (currentItem) {
+      // Stop any previous audio first - do this immediately
+      stopAllAudio();
+      
+      // Wait a bit longer to ensure TTS queue is fully cleared
+      soundTimeoutRef.current = setTimeout(async () => {
+        // Stop again just before playing to be absolutely sure
+        stopAllAudio();
+        await new Promise(resolve => setTimeout(resolve, 150));
+        await playPhoneme(currentItem.phoneme).catch(() => {});
+        soundTimeoutRef.current = null;
+      }, 600);
+    }
+
+    // Cleanup on unmount or when currentItem changes
+    return () => {
+      if (soundTimeoutRef.current) {
+        clearTimeout(soundTimeoutRef.current);
+        soundTimeoutRef.current = null;
+      }
+      stopAllAudio();
+    };
   }, [currentItem]);
 
   const loadRound = () => {
@@ -125,12 +151,12 @@ export default function SoundToPictureGame({ onComplete, onBack }: SoundToPictur
     };
   }, []);
 
-  if (!currentItem) return null;
-
   const cardAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: cardScale.value }],
     shadowOpacity: cardGlow.value * 0.5,
   }));
+
+  if (!currentItem) return null;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
