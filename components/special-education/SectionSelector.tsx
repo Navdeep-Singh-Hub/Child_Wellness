@@ -54,7 +54,7 @@ export function SectionSelector({ onSelectSection, onShowMap }: SectionSelectorP
       <View style={styles.introSection}>
         <Text style={styles.introTitle}>Learn English & Math</Text>
         <Text style={styles.introDescription}>
-          Journey through 10 sections, each with 10 levels and 5 games. Start with Section 1: The Explorer to learn letters and numbers!
+          Explorer, Matcher, Builder, and more — each has 10 sessions. Every session has 5 games. Start with The Explorer!
         </Text>
       </View>
 

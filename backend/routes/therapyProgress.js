@@ -27,25 +27,31 @@ const SESSIONS = 10;
 const GAMES_PER_SESSION = 5;
 
 const buildEmptyTherapy = (therapy) => {
-  // Special Education now uses standard structure: Level 1 with 10 sessions
-  // Each session corresponds to: The Explorer, The Matcher, The Builder, etc.
+  // Special Education: 10 sections (Explorer, Matcher, Builder, etc.), each with 10 sessions, each session with 5 games
   if (therapy === 'special-education') {
     return {
       therapy,
-      currentLevel: 1,
-      currentSession: 1,
-      levels: Array.from({ length: 1 }, (_, i) => ({
-        levelNumber: i + 1,
+      currentSection: 1,
+      currentSessionSE: 1,
+      currentGame: 1,
+      sections: Array.from({ length: 10 }, (_, i) => ({
+        sectionNumber: i + 1,
         sessions: Array.from({ length: 10 }, (_, j) => ({
           sessionNumber: j + 1,
-          completedGames: [],
+          games: Array.from({ length: GAMES_PER_SESSION }, (_, k) => ({
+            gameNumber: k + 1,
+            completed: false,
+            accuracy: 0,
+          })),
           completed: false,
         })),
+        completed: false,
+        unlocked: i === 0,
       })),
       updatedAt: new Date(),
     };
   }
-  
+
   // Standard structure for other therapies
   return {
     therapy,
@@ -153,15 +159,14 @@ router.post('/progress/init', async (req, res) => {
 
 router.post('/progress/advance', async (req, res) => {
   try {
-    // Ensure CORS headers are set
     const origin = req.headers.origin;
     if (origin) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
     }
-    
+
     const user = await ensureUserDoc(req);
-    const { therapy, levelNumber, sessionNumber, gameId, markCompleted, sectionNumber, levelNumberSE, gameNumber, accuracy } = req.body || {};
+    const { therapy, levelNumber, sessionNumber, gameId, markCompleted, sectionNumber, levelNumberSE, sessionNumberSE, gameNumber, accuracy } = req.body || {};
     if (!THERAPIES.includes(therapy)) return res.status(400).json({ error: 'Invalid therapy' });
 
     const doc = await UserTherapyProgress.findOne({ userId: user._id });
@@ -170,9 +175,39 @@ router.post('/progress/advance', async (req, res) => {
     const t = doc.therapies.find((x) => x.therapy === therapy);
     if (!t) return res.status(404).json({ error: 'Therapy not found' });
 
-    // Special Education now uses standard structure (Level 1 with 10 sessions)
-    // Standard structure for all therapies including special-education
-    const lvl = t.levels.find((l) => l.levelNumber === Number(levelNumber));
+    // Special Education: sections[].sessions[].games[]
+    if (therapy === 'special-education' && t.sections && t.sections.length) {
+      const secNum = Number(sectionNumber);
+      const sessNum = Number(sessionNumberSE ?? sessionNumber);
+      const gameNum = Number(gameNumber);
+      const section = t.sections.find((s) => s.sectionNumber === secNum);
+      if (!section || !section.sessions) return res.status(404).json({ error: 'Section or session not found' });
+      const session = section.sessions.find((s) => s.sessionNumber === sessNum);
+      if (!session || !session.games) return res.status(404).json({ error: 'Session not found' });
+      const game = session.games.find((g) => g.gameNumber === gameNum);
+      if (game) {
+        game.completed = true;
+        game.accuracy = Number(accuracy) || 100;
+        game.lastPlayedAt = new Date();
+      }
+      const allDone = session.games.every((g) => g.completed);
+      if (allDone) session.completed = true;
+      const sectionDone = section.sessions.every((s) => s.completed);
+      if (sectionDone) section.completed = true;
+      if (section.sectionNumber < 10 && section.completed) {
+        const nextSection = t.sections.find((s) => s.sectionNumber === section.sectionNumber + 1);
+        if (nextSection) nextSection.unlocked = true;
+      }
+      t.currentSection = secNum;
+      t.currentSessionSE = sessNum;
+      t.currentGame = gameNum;
+      t.updatedAt = new Date();
+      await doc.save();
+      return res.json({ ok: true, therapy: t });
+    }
+
+    // Standard structure (speech, occupational, etc.)
+    const lvl = t.levels && t.levels.find((l) => l.levelNumber === Number(levelNumber));
     if (!lvl) return res.status(404).json({ error: 'Level not found' });
     const sess = lvl.sessions.find((s) => s.sessionNumber === Number(sessionNumber));
     if (!sess) return res.status(404).json({ error: 'Session not found' });
@@ -184,8 +219,6 @@ router.post('/progress/advance', async (req, res) => {
       sess.completed = true;
       sess.lastPlayedAt = new Date();
     }
-
-    // Auto-advance pointers if session completed
     if (sess.completed) {
       if (t.currentSession < SESSIONS) {
         t.currentSession += 1;

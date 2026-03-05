@@ -44,7 +44,7 @@ export function LevelSelector({ section, onBack, onSelectLevel, onShowMap }: Lev
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>{sectionInfo.title}</Text>
-          <Text style={styles.headerSubtitle}>Section {section} • {sectionInfo.theme}</Text>
+          <Text style={styles.headerSubtitle}>{sectionInfo.theme} • 10 sessions</Text>
         </View>
         <TouchableOpacity onPress={onShowMap} style={styles.mapButton}>
           <Ionicons name="map" size={24} color={sectionInfo.color} />
@@ -58,46 +58,46 @@ export function LevelSelector({ section, onBack, onSelectLevel, onShowMap }: Lev
         <View style={styles.infoBanner}>
           <Text style={styles.infoEmoji}>{sectionInfo.emoji}</Text>
           <View style={styles.infoText}>
-            <Text style={styles.infoTitle}>10 Levels Available</Text>
+            <Text style={styles.infoTitle}>10 Sessions</Text>
             <Text style={styles.infoDescription}>
-              Each level has 5 games: Intro, Choice, Trace, Sorter, and Celebration
+              Each session has 5 games. Complete a session to unlock the next.
             </Text>
           </View>
         </View>
 
         <View style={styles.levelsGrid}>
-          {levels.map((level) => {
-            const levelData = sectionData?.levels.find((l) => l.levelNumber === level);
-            const unlocked = isUnlocked(progress, section, level, 1) || level === 1; // For POC, only level 1 is unlocked
-            const completed = levelData?.completed || false;
+          {levels.map((sessionNum) => {
+            const sessionData = sectionData?.sessions?.find((s) => s.sessionNumber === sessionNum);
+            const unlocked = isUnlocked(progress, section, sessionNum, 1) || sessionNum === 1;
+            const completed = sessionData?.completed || false;
             return (
               <TouchableOpacity
-                key={level}
-              style={[
-                styles.levelCard,
-                unlocked ? styles.levelCardUnlocked : styles.levelCardLocked,
-                unlocked && { borderColor: sectionInfo.color },
-                completed && { borderWidth: 3 },
-              ]}
-              onPress={() => unlocked && onSelectLevel(level)}
-              disabled={!unlocked}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.levelIcon, { backgroundColor: `${sectionInfo.color}20` }]}>
-                <Text style={styles.levelNumber}>{level}</Text>
-                {completed && (
-                  <View style={styles.completedBadge}>
-                    <Ionicons name="checkmark-circle" size={16} color={sectionInfo.color} />
+                key={sessionNum}
+                style={[
+                  styles.levelCard,
+                  unlocked ? styles.levelCardUnlocked : styles.levelCardLocked,
+                  unlocked && { borderColor: sectionInfo.color },
+                  completed && { borderWidth: 3 },
+                ]}
+                onPress={() => unlocked && onSelectLevel(sessionNum)}
+                disabled={!unlocked}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.levelIcon, { backgroundColor: `${sectionInfo.color}20` }]}>
+                  <Text style={styles.levelNumber}>{sessionNum}</Text>
+                  {completed && (
+                    <View style={styles.completedBadge}>
+                      <Ionicons name="checkmark-circle" size={16} color={sectionInfo.color} />
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.levelLabel}>Session {sessionNum}</Text>
+                {!unlocked && (
+                  <View style={styles.lockBadge}>
+                    <Ionicons name="lock-closed" size={12} color="#9CA3AF" />
                   </View>
                 )}
-              </View>
-              <Text style={styles.levelLabel}>Level {level}</Text>
-              {!unlocked && (
-                <View style={styles.lockBadge}>
-                  <Ionicons name="lock-closed" size={12} color="#9CA3AF" />
-                </View>
-              )}
-            </TouchableOpacity>
+              </TouchableOpacity>
             );
           })}
         </View>

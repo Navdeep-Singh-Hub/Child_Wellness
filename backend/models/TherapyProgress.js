@@ -29,21 +29,21 @@ const GameProgressSchema = new Schema(
   { _id: false },
 );
 
-// Special Education: Level progress within a section
-const SpecialEducationLevelSchema = new Schema(
+// Special Education: Session progress within a section (10 sessions per section)
+const SpecialEducationSessionSchema = new Schema(
   {
-    levelNumber: { type: Number, required: true }, // 1..10 within a section
-    games: { type: [GameProgressSchema], default: [] },
+    sessionNumber: { type: Number, required: true }, // 1..10 within a section
+    games: { type: [GameProgressSchema], default: [] }, // 5 games per session
     completed: { type: Boolean, default: false },
   },
   { _id: false },
 );
 
-// Special Education: Section progress
+// Special Education: Section progress (Explorer, Matcher, Builder, etc. — 10 sections)
 const SectionProgressSchema = new Schema(
   {
     sectionNumber: { type: Number, required: true }, // 1..10
-    levels: { type: [SpecialEducationLevelSchema], default: [] },
+    sessions: { type: [SpecialEducationSessionSchema], default: [] }, // 10 sessions, each with 5 games
     completed: { type: Boolean, default: false },
     unlocked: { type: Boolean, default: false },
   },
@@ -67,10 +67,10 @@ const TherapyProgressSchema = new Schema(
     levels: { type: [LevelProgressSchema], default: [] },
     currentLevel: { type: Number, default: 1 },
     currentSession: { type: Number, default: 1 },
-    // Special Education structure (section-based)
+    // Special Education structure (section-based): 10 sections, 10 sessions each, 5 games per session
     sections: { type: [SectionProgressSchema], default: [] },
     currentSection: { type: Number, default: 1 },
-    currentLevelSE: { type: Number, default: 1 }, // Level within section
+    currentSessionSE: { type: Number, default: 1 }, // Session within section (1..10)
     currentGame: { type: Number, default: 1 },
     updatedAt: { type: Date, default: Date.now },
   },

@@ -953,8 +953,10 @@ export default function SessionGamesScreen() {
     return <DailyActivitiesVideos />;
   }
 
-  // Handle special-education - now uses standard structure (Level 1 with 10 sessions)
-  // No special handling needed, it will use the standard game flow
+  // Special Education: 10 sections (Explorer, Matcher, Builder, etc.), 10 sessions each, 5 games per session
+  if (therapyId === 'special-education') {
+    return <SpecialEducationNavigator />;
+  }
 
   // Function to get the next game in sequence
   const getNextGame = React.useCallback((currentGameId: GameKey): { gameId: GameKey | null; nextSession?: number; nextLevel?: number } | null => {

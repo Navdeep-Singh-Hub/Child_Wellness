@@ -365,11 +365,11 @@ export type TherapyProgress = {
   }>;
   currentLevel?: number;
   currentSession?: number;
-  // Special Education structure
+  // Special Education: 10 sections (Explorer, Matcher, etc.), 10 sessions each, 5 games per session
   sections?: Array<{
     sectionNumber: number;
-    levels: Array<{
-      levelNumber: number;
+    sessions: Array<{
+      sessionNumber: number;
       games: Array<{
         gameNumber: number;
         completed: boolean;
@@ -382,7 +382,7 @@ export type TherapyProgress = {
     unlocked: boolean;
   }>;
   currentSection?: number;
-  currentLevelSE?: number;
+  currentSessionSE?: number;
   currentGame?: number;
   updatedAt?: string;
 };
@@ -430,9 +430,9 @@ export async function advanceTherapyProgress(payload: {
   sessionNumber?: number;
   gameId?: string;
   markCompleted?: boolean;
-  // Special Education fields
+  // Special Education: section → session → game
   sectionNumber?: number;
-  levelNumberSE?: number;
+  sessionNumberSE?: number;
   gameNumber?: number;
   accuracy?: number;
 }): Promise<{ ok: boolean; therapy: TherapyProgress }> {
