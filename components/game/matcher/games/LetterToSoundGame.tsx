@@ -3,7 +3,7 @@ import { playLetterSound, playPhoneme, playSoundEffect, speakFeedback, stopAllAu
 import { LETTER_SOUND_DATA, getOptionsCount, shuffleArray, Difficulty } from '../utils/gameData';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -34,18 +34,41 @@ export default function LetterToSoundGame({ onComplete, onBack }: LetterToSoundG
 
   const letterScale = useSharedValue(1);
   const letterGlow = useSharedValue(0);
+  const soundTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     loadRound();
   }, [round, difficulty]);
 
   useEffect(() => {
-    if (currentItem) {
-      // Auto-play letter sound after a short delay
-      setTimeout(() => {
-        playLetterSound(currentItem.letter);
-      }, 500);
+    // Clear any pending timeout
+    if (soundTimeoutRef.current) {
+      clearTimeout(soundTimeoutRef.current);
+      soundTimeoutRef.current = null;
     }
+
+    if (currentItem) {
+      // Stop any previous audio first - do this immediately
+      stopAllAudio();
+      
+      // Wait a bit longer to ensure TTS queue is fully cleared
+      soundTimeoutRef.current = setTimeout(async () => {
+        // Stop again just before playing to be absolutely sure
+        stopAllAudio();
+        await new Promise(resolve => setTimeout(resolve, 150));
+        await playLetterSound(currentItem.letter).catch(() => {});
+        soundTimeoutRef.current = null;
+      }, 700);
+    }
+
+    // Cleanup on unmount or when currentItem changes
+    return () => {
+      if (soundTimeoutRef.current) {
+        clearTimeout(soundTimeoutRef.current);
+        soundTimeoutRef.current = null;
+      }
+      stopAllAudio();
+    };
   }, [currentItem]);
 
   const loadRound = () => {
@@ -133,12 +156,12 @@ export default function LetterToSoundGame({ onComplete, onBack }: LetterToSoundG
     };
   }, []);
 
-  if (!currentItem) return null;
-
   const letterAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: letterScale.value }],
     shadowOpacity: letterGlow.value * 0.5,
   }));
+
+  if (!currentItem) return null;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

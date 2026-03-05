@@ -12,16 +12,16 @@ import {
 
 // Map session numbers to their names
 const SESSION_NAMES: Record<number, { title: string; theme: string; emoji: string; color: string }> = {
-  1: { title: 'The Explorer', theme: 'Forest', emoji: '🌲', color: '#10B981' },
-  2: { title: 'The Matcher', theme: 'Ocean', emoji: '🌊', color: '#0EA5E9' },
-  3: { title: 'The Builder', theme: 'Mountain', emoji: '⛰️', color: '#8B5CF6' },
-  4: { title: 'The Grouper', theme: 'Desert', emoji: '🏜️', color: '#F59E0B' },
-  5: { title: 'The Counter', theme: 'Sky', emoji: '☁️', color: '#3B82F6' },
-  6: { title: 'The Logic Lab', theme: 'City', emoji: '🏙️', color: '#6366F1' },
-  7: { title: 'The Reader', theme: 'Space', emoji: '🚀', color: '#8B5CF6' },
-  8: { title: 'The Citizen', theme: 'Planet', emoji: '🪐', color: '#EC4899' },
-  9: { title: 'The Clockwise', theme: 'Galaxy', emoji: '🌌', color: '#6366F1' },
-  10: { title: 'The Graduate', theme: 'Space Station', emoji: '🛸', color: '#8B5CF6' },
+  1: { title: 'Explorer', theme: 'Forest', emoji: '🌲', color: '#10B981' },
+  2: { title: 'Matcher', theme: 'Ocean', emoji: '🌊', color: '#0EA5E9' },
+  3: { title: 'Builder', theme: 'Mountain', emoji: '⛰️', color: '#8B5CF6' },
+  4: { title: 'Grouper', theme: 'Desert', emoji: '🏜️', color: '#F59E0B' },
+  5: { title: 'Counter', theme: 'Sky', emoji: '☁️', color: '#3B82F6' },
+  6: { title: 'Logic Lab', theme: 'City', emoji: '🏙️', color: '#6366F1' },
+  7: { title: 'Reader', theme: 'Space', emoji: '🚀', color: '#8B5CF6' },
+  8: { title: 'Citizen', theme: 'Planet', emoji: '🪐', color: '#EC4899' },
+  9: { title: 'Clockwise', theme: 'Galaxy', emoji: '🌌', color: '#6366F1' },
+  10: { title: 'Graduate', theme: 'Space Station', emoji: '🛸', color: '#8B5CF6' },
 };
 
 interface SessionSelectorProps {
@@ -47,7 +47,15 @@ export function SessionSelector({ sessions, onSelectSession, onBack, isFreeAcces
     checkSubscription();
   }, []);
 
-  const isFreeAccessUser = isFreeAccess || subscriptionStatus?.isFreeAccess === true;
+  const isFreeAccessUser = isFreeAccess || subscriptionStatus?.isFreeAccess === true || subscriptionStatus?.status === 'free';
+  
+  // Debug log for free access
+  console.log('[SessionSelector] Free access check:', {
+    isFreeAccess,
+    subscriptionStatusIsFreeAccess: subscriptionStatus?.isFreeAccess,
+    subscriptionStatus: subscriptionStatus?.status,
+    isFreeAccessUser,
+  });
 
   const handleSessionPress = (sessionNumber: number) => {
     if (!onSelectSession) {
@@ -73,7 +81,7 @@ export function SessionSelector({ sessions, onSelectSession, onBack, isFreeAcces
       <View style={styles.introSection}>
         <Text style={styles.introTitle}>Level 1: Special Education</Text>
         <Text style={styles.introDescription}>
-          Journey through 10 sessions, each with 5 games. Start with Session 1: The Explorer to learn letters and numbers!
+          Journey through 10 sessions, each with 5 games. Start with Session 1: Explorer to learn letters and numbers!
         </Text>
       </View>
 
@@ -82,13 +90,14 @@ export function SessionSelector({ sessions, onSelectSession, onBack, isFreeAcces
           const sessionInfo = SESSION_NAMES[session.sessionNumber];
           if (!sessionInfo) return null;
 
-          // Unlock Session 1 always, and Session 2 (The Matcher) for free access users
-          // For others, unlock if previous session is completed
+          // Unlock logic:
+          // - Free access users: All sessions unlocked
+          // - Regular users: Session 1 always, others unlock if previous session is completed
           const prevSession = sessions.find((s) => s.sessionNumber === session.sessionNumber - 1);
           const unlocked = 
-            session.sessionNumber === 1 || 
-            (isFreeAccessUser && session.sessionNumber === 2) ||
-            (prevSession && (prevSession.completed || prevSession.completedGames.length > 0));
+            isFreeAccessUser || // Free access users get all sessions
+            session.sessionNumber === 1 || // Session 1 always unlocked
+            (prevSession && (prevSession.completed || prevSession.completedGames.length > 0)); // Others unlock if previous completed
 
           const completed = session.completed || session.completedGames.length > 0;
 
