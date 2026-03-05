@@ -10,6 +10,7 @@ import Animated, {
   useSharedValue,
   withTiming,
   withSpring,
+  withSequence,
   runOnJS,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -103,7 +104,9 @@ export default function RapidMatchGame({ onComplete, onBack }: RapidMatchGamePro
     setTimeLeft(ROUND_TIME);
     roundStartTime.current = Date.now();
 
-    // Play sound
+    // Stop any previous audio first
+    stopAllAudio();
+    // Play sound after a short delay
     setTimeout(() => {
       playPhoneme(item.phoneme);
     }, 300);

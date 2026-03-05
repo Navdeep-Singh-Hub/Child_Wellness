@@ -3,7 +3,7 @@ import { playWord, playSoundEffect, speakFeedback, stopAllAudio } from '../utils
 import { SOUND_COUNT_DATA, Difficulty } from '../utils/gameData';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -39,12 +39,37 @@ export default function SoundCountingGame({ onComplete, onBack }: SoundCountingG
     loadRound();
   }, [round, difficulty]);
 
+  const soundTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
-    if (currentItem) {
-      setTimeout(() => {
-        playWord(currentItem.word);
-      }, 500);
+    // Clear any pending timeout
+    if (soundTimeoutRef.current) {
+      clearTimeout(soundTimeoutRef.current);
+      soundTimeoutRef.current = null;
     }
+
+    if (currentItem) {
+      // Stop any previous audio first - do this immediately
+      stopAllAudio();
+      
+      // Wait a bit longer to ensure TTS queue is fully cleared
+      soundTimeoutRef.current = setTimeout(async () => {
+        // Stop again just before playing to be absolutely sure
+        stopAllAudio();
+        await new Promise(resolve => setTimeout(resolve, 150));
+        await playWord(currentItem.word).catch(() => {});
+        soundTimeoutRef.current = null;
+      }, 600);
+    }
+
+    // Cleanup on unmount or when currentItem changes
+    return () => {
+      if (soundTimeoutRef.current) {
+        clearTimeout(soundTimeoutRef.current);
+        soundTimeoutRef.current = null;
+      }
+      stopAllAudio();
+    };
   }, [currentItem]);
 
   const loadRound = () => {
@@ -124,8 +149,6 @@ export default function SoundCountingGame({ onComplete, onBack }: SoundCountingG
     };
   }, []);
 
-  if (!currentItem) return null;
-
   const wordAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: wordScale.value }],
   }));
@@ -134,6 +157,8 @@ export default function SoundCountingGame({ onComplete, onBack }: SoundCountingG
     transform: [{ scale: dotsScale.value }],
     opacity: dotsScale.value,
   }));
+
+  if (!currentItem) return null;
 
   const numbers = [1, 2, 3, 4, 5];
 
