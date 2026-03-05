@@ -79,6 +79,13 @@ import { JawRhythmTapGame } from '@/components/game/speech/level2/session1/JawRh
 import { JawStrengthBuilderGame } from '@/components/game/speech/level2/session1/JawStrengthBuilderGame';
 import { JawSwingAdventureGame } from '@/components/game/speech/level2/session1/JawSwingAdventureGame';
 
+// Speech Therapy Level 2 Session 2 (Curved path / mouth tracing)
+import { BallRollCurvedTrackGame } from '@/components/game/speech/level2/session2/BallRollCurvedTrackGame';
+import { DriveCarCurvyRoadGame } from '@/components/game/speech/level2/session2/DriveCarCurvyRoadGame';
+import { PaintCurvedSnakeGame } from '@/components/game/speech/level2/session2/PaintCurvedSnakeGame';
+import { RainbowCurveTraceGame as RainbowCurveTraceSpeechGame } from '@/components/game/speech/level2/session2/RainbowCurveTraceGame';
+import { TraceSmilingMouthGame } from '@/components/game/speech/level2/session2/TraceSmilingMouthGame';
+
 // Occupational Therapy Level 2 Session 1: Trace Straight Line
 import LightTheLaserGame from '@/components/game/LightTheLaserGame';
 import RainDropSlideGame from '@/components/game/RainDropSlideGame';
@@ -544,6 +551,7 @@ type GameKey =
   | 'jaw-push-challenge'
   | 'jaw-rhythm-tap'
   | 'jaw-strength-builder'
+  | 'rainbow-curve-trace-speech'
   | 'ice-cream-lick'
   | 'touch-the-star'
   | 'tongue-elevator'
@@ -656,10 +664,10 @@ type GameKey =
   | 'mirror-drag'
   | 'pattern-drag'
   | 'rainbow-curve-trace'
-  | 'drive-car-curvy-road'
+  | 'paint-curved-snake'
   | 'trace-smiling-mouth'
   | 'ball-roll-curved-track'
-  | 'paint-curved-snake'
+  | 'drive-car-curvy-road'
   | 'blow-the-bubble'
   | 'move-the-feather'
   | 'windmill-spin'
@@ -1573,6 +1581,18 @@ export default function SessionGamesScreen() {
     therapyId === 'speech' && levelNumber === 2 && sessionNumber === 1;
   const isJawStrengthBuilderAvailable =
     therapyId === 'speech' && levelNumber === 2 && sessionNumber === 1;
+
+  // Level 2 Session 2 games - Speech Therapy (Curved path / mouth tracing)
+  const isPaintCurvedSnakeAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 2;
+  const isRainbowCurveTraceSpeechAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 2;
+  const isTraceSmilingMouthAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 2;
+  const isBallRollCurvedTrackAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 2;
+  const isDriveCarCurvyRoadAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 2;
 
   // Level 2 Session 1 games - Occupational Therapy (Trace Straight Line)
   const isTrainTrackLineAvailable =
@@ -3570,6 +3590,47 @@ export default function SessionGamesScreen() {
       description: 'Hold your jaw open or closed to build structures! Build jaw strength and endurance.',
       color: '#F59E0B',
       available: isJawStrengthBuilderAvailable,
+    },
+    // Speech Level 2 Session 2: Curved path / mouth tracing
+    {
+      id: 'paint-curved-snake',
+      title: 'Paint Curved Snake',
+      emoji: '🐍',
+      description: 'Paint snake curves with your finger. Build smooth curved tracing.',
+      color: '#22C55E',
+      available: isPaintCurvedSnakeAvailable,
+    },
+    {
+      id: 'rainbow-curve-trace-speech',
+      title: 'Rainbow Curve Trace',
+      emoji: '🌈',
+      description: 'Trace rainbow paths with your finger. Build curved path control.',
+      color: '#8B5CF6',
+      available: isRainbowCurveTraceSpeechAvailable,
+    },
+    {
+      id: 'trace-smiling-mouth',
+      title: 'Trace Smiling Mouth',
+      emoji: '😊',
+      description: 'Trace smile curves with your finger. Build mouth-shape awareness.',
+      color: '#F59E0B',
+      available: isTraceSmilingMouthAvailable,
+    },
+    {
+      id: 'ball-roll-curved-track',
+      title: 'Ball Roll Curved Track',
+      emoji: '🎱',
+      description: 'Roll a ball along a curved track with your finger. Build curved tracking.',
+      color: '#0EA5E9',
+      available: isBallRollCurvedTrackAvailable,
+    },
+    {
+      id: 'drive-car-curvy-road',
+      title: 'Drive Car Curvy Road',
+      emoji: '🚗',
+      description: 'Drive a car along a curvy road with your finger. Build path following.',
+      color: '#EF4444',
+      available: isDriveCarCurvyRoadAvailable,
     },
     {
       id: 'train-track-line',
@@ -5588,6 +5649,23 @@ export default function SessionGamesScreen() {
 
   if (currentGame === 'jaw-strength-builder') {
     return <JawStrengthBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Level 2 Session 2: Curved path / mouth tracing
+  if (currentGame === 'paint-curved-snake') {
+    return <PaintCurvedSnakeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'rainbow-curve-trace-speech') {
+    return <RainbowCurveTraceSpeechGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'trace-smiling-mouth') {
+    return <TraceSmilingMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'ball-roll-curved-track') {
+    return <BallRollCurvedTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'drive-car-curvy-road') {
+    return <DriveCarCurvyRoadGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 1 games (Occupational Therapy - Trace Straight Line)

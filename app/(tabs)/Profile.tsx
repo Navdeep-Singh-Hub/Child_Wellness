@@ -1,4 +1,5 @@
 import { useAuth } from '@/app/providers/AuthProvider';
+import { getAdminCheck } from '@/utils/adminApi';
 import { getMyProfile, updateMyProfile } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -98,13 +99,17 @@ const AnimatedInput = ({ label, value, onChangeText, icon, placeholder, editable
 };
 
 export default function ProfileScreen() {
-    const { logout } = useAuth();
+    const { logout, session } = useAuth();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [dob, setDob] = useState<string | null>(null);
+    const [gender, setGender] = useState('');
+    const [phoneCountryCode, setPhoneCountryCode] = useState('+91');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [saving, setSaving] = useState(false);
     const [loaded, setLoaded] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
 
     // Animations
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -122,6 +127,9 @@ export default function ProfileScreen() {
                 setLastName(p.lastName || '');
                 setEmail(p.email || '');
                 setDob(p.dob || null);
+                setGender(p.gender || '');
+                setPhoneCountryCode(p.phoneCountryCode || '+91');
+                setPhoneNumber(p.phoneNumber || '');
             } catch {
                 // ignore
             } finally {
@@ -134,6 +142,12 @@ export default function ProfileScreen() {
         })();
     }, []);
 
+    // Admin check: use session.sub so backend can match ADMIN_AUTH0_IDS
+    useEffect(() => {
+        const auth0Id = session?.profile?.sub ?? session?.profile?.user_id ?? undefined;
+        getAdminCheck(auth0Id).then((r) => setIsAdmin(r.isAdmin)).catch(() => setIsAdmin(false));
+    }, [session?.profile?.sub, session?.profile?.user_id]);
+
     const onSave = async () => {
         try {
             setSaving(true);
@@ -143,7 +157,14 @@ export default function ProfileScreen() {
                 Animated.timing(avatarPulse, { toValue: 1, duration: 150, useNativeDriver: true }),
             ]).start();
 
-            await updateMyProfile({ firstName, lastName });
+            await updateMyProfile({
+                firstName,
+                lastName,
+                dob: dob || undefined,
+                gender: gender || undefined,
+                phoneCountryCode: phoneCountryCode.trim() || undefined,
+                phoneNumber: phoneNumber.trim() || undefined,
+            });
             Alert.alert('Success', 'Profile updated successfully ✨');
         } catch (e: any) {
             Alert.alert('Error', e?.message || 'Failed to save');
@@ -246,11 +267,54 @@ export default function ProfileScreen() {
                             />
 
                             <AnimatedInput
-                                label="Date of Birth"
-                                value={dob || 'Not set'}
+                                label="Date of Birth (YYYY-MM-DD)"
+                                value={dob || ''}
+                                onChangeText={(t) => setDob(t.trim() || null)}
                                 icon="calendar-outline"
-                                editable={false}
+                                placeholder="e.g. 2020-01-01"
+                                editable={loaded && !saving}
                             />
+
+                            <Text style={styles.inputLabel}>Gender</Text>
+                            <View style={styles.genderRow}>
+                                {['male', 'female', 'other', 'prefer-not-to-say'].map((g) => (
+                                    <Pressable
+                                        key={g}
+                                        onPress={() => setGender(gender === g ? '' : g)}
+                                        style={[
+                                            styles.genderChip,
+                                            gender === g && styles.genderChipActive,
+                                        ]}
+                                    >
+                                        <Text style={[styles.genderChipText, gender === g && styles.genderChipTextActive]}>
+                                            {g === 'prefer-not-to-say' ? 'Prefer not to say' : g.charAt(0).toUpperCase() + g.slice(1)}
+                                        </Text>
+                                    </Pressable>
+                                ))}
+                            </View>
+
+                            <View style={{ flexDirection: 'row', gap: 12 }}>
+                                <View style={{ width: 100 }}>
+                                    <AnimatedInput
+                                        label="Country code"
+                                        value={phoneCountryCode}
+                                        onChangeText={setPhoneCountryCode}
+                                        icon="call-outline"
+                                        placeholder="+91"
+                                        editable={loaded && !saving}
+                                    />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <AnimatedInput
+                                        label="Phone number"
+                                        value={phoneNumber}
+                                        onChangeText={setPhoneNumber}
+                                        icon="call-outline"
+                                        placeholder="10-digit number"
+                                        editable={loaded && !saving}
+                                    />
+                                </View>
+                            </View>
 
                             <Pressable
                                 onPress={onSave}
@@ -278,6 +342,21 @@ export default function ProfileScreen() {
                                 </LinearGradient>
                             </Pressable>
                         </GlassCard>
+
+                        {/* Admin Dashboard (only when user is in ADMIN_AUTH0_IDS) */}
+                        {isAdmin && (
+                            <Pressable
+                                onPress={() => router.push('/(admin)/dashboard' as any)}
+                                style={({ pressed }) => [
+                                    styles.adminButton,
+                                    pressed && { backgroundColor: '#D1FAE5' },
+                                ]}
+                            >
+                                <Ionicons name="shield-checkmark-outline" size={20} color="#047857" />
+                                <Text style={styles.adminButtonText}>Admin Analytics</Text>
+                                <Ionicons name="chevron-forward" size={18} color="#047857" />
+                            </Pressable>
+                        )}
 
                         {/* Logout Button */}
                         <Pressable
@@ -411,6 +490,33 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         marginLeft: 4,
     },
+    genderRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginBottom: 16,
+    },
+    genderChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        backgroundColor: '#F8FAFC',
+    },
+    genderChipActive: {
+        borderColor: '#3B82F6',
+        backgroundColor: '#EFF6FF',
+    },
+    genderChipText: {
+        fontSize: 14,
+        color: '#64748B',
+        fontWeight: '500',
+    },
+    genderChipTextActive: {
+        color: '#2563EB',
+        fontWeight: '600',
+    },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -457,6 +563,24 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         marginLeft: 8,
+    },
+    adminButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#D1FAE5',
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        borderRadius: 16,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#A7F3D0',
+        gap: 8,
+    },
+    adminButtonText: {
+        color: '#047857',
+        fontSize: 16,
+        fontWeight: '600',
     },
     footerText: {
         textAlign: 'center',

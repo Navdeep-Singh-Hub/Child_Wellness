@@ -1,13 +1,19 @@
-import CongratulationsScreen from '@/components/game/CongratulationsScreen';
-import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
-import { useJawDetection } from '@/hooks/useJawDetection';
-import type { MouthLandmarks } from '@/hooks/useJawDetectionWeb';
-import { logGameAndAward } from '@/utils/api';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+/**
+ * JawAwarenessCrocodileGame
+ * 
+ * AAC Game: 5 rounds, each round the user must open their mouth on command.
+ * Uses MediaPipe Face Landmarker (web) or falls back gracefully on native.
+ * 
+ * Design: Playful jungle/croc theme — deep greens, warm yellows, chunky rounded UI.
+ * Child-friendly, high-contrast, accessible.
+ */
+
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   Animated,
   Easing,
@@ -17,1538 +23,1279 @@ import {
   StyleSheet,
   Text,
   useWindowDimensions,
-  View
+  View,
 } from 'react-native';
 
-// Conditional import for VisionCamera
-let Camera: any = null;
-if (Platform.OS !== 'web') {
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const TOTAL_ROUNDS = 5;
+const OPEN_COMMAND_DURATION_MS = 4000;   // how long the "OPEN" window lasts
+const CLOSE_WAIT_DURATION_MS   = 2000;   // wait after success for user to close
+const COUNTDOWN_SECONDS        = 3;      // countdown before each round
+// Strict thresholds so we only show "open" when mouth is clearly open (MAR-style ratio)
+const OPEN_RATIO_THRESHOLD     = 0.052;  // must exceed to switch closed→open (stricter)
+const CLOSE_RATIO_THRESHOLD    = 0.038;  // below this = closed (hysteresis)
+const CLOSED_FOR_NEXT_ROUND    = 0.034;  // must be below this (strict) to allow next round
+const EMA_ALPHA                = 0.32;
+const OPEN_HOLD_MS             = 350;    // mouth must stay open this long to count round success
+const WAIT_FOR_CLOSED_MS       = 800;    // must be closed this long before next round
+const WAIT_FOR_CLOSED_POLL_MS  = 150;
+const WAIT_FOR_CLOSED_MAX_MS   = 6000;   // max wait then start anyway
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type Phase =
+  | 'idle'
+  | 'countdown'
+  | 'open_command'
+  | 'round_success'
+  | 'round_fail'
+  | 'complete';
+
+interface RoundResult {
+  round: number;
+  success: boolean;
+}
+
+// ─── MediaPipe loader (web only) ─────────────────────────────────────────────
+
+let _faceLandmarker: any = null;
+let _mpLoaded = false;
+let _mpLoading = false;
+let _mpCallbacks: Array<(ok: boolean) => void> = [];
+
+async function ensureMediaPipe(): Promise<boolean> {
+  if (Platform.OS !== 'web') return false;
+  if (_mpLoaded) return !!_faceLandmarker;
+  if (_mpLoading) {
+    return new Promise(res => _mpCallbacks.push(res));
+  }
+  _mpLoading = true;
   try {
-    const visionCamera = require('react-native-vision-camera');
-    Camera = visionCamera.Camera;
+    const { FaceLandmarker, FilesetResolver } = await import(
+      '@mediapipe/tasks-vision'
+    );
+    const vision = await FilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm'
+    );
+    _faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+        delegate: 'GPU',
+      },
+      outputFaceBlendshapes: false,
+      runningMode: 'VIDEO',
+      numFaces: 1,
+    });
+    _mpLoaded = true;
+    _mpCallbacks.forEach(cb => cb(true));
+    return true;
   } catch (e) {
-    console.warn('react-native-vision-camera not available:', e);
+    console.error('MediaPipe init failed', e);
+    _mpLoaded = true;
+    _mpCallbacks.forEach(cb => cb(false));
+    return false;
+  } finally {
+    _mpLoading = false;
+    _mpCallbacks = [];
   }
 }
+
+// ─── Face detection helpers ───────────────────────────────────────────────────
+
+function dist(a: { x: number; y: number }, b: { x: number; y: number }): number {
+  const dx = a.x - b.x, dy = a.y - b.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+/** MAR-style mouth ratio: (vertical1 + vertical2) / (2 * width) — more accurate than single gap. */
+function computeMouthRatio(landmarks: any[]): number {
+  if (!landmarks || landmarks.length < 300) return 0;
+  const left = landmarks[61], right = landmarks[291];
+  if (!left || !right) return 0;
+  const width = dist(left, right);
+  if (width < 0.001) return 0;
+  const p13 = landmarks[13], p14 = landmarks[14], p17 = landmarks[17], p18 = landmarks[18];
+  if (p13 && p14 && p17 && p18) {
+    const v1 = dist(p13, p17);
+    const v2 = dist(p14, p18);
+    return (v1 + v2) / (2 * width);
+  }
+  const upper = landmarks[13], lower = landmarks[18];
+  if (!upper || !lower) return 0;
+  return dist(upper, lower) / width;
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 type Props = {
-  onBack: () => void;
+  onBack?: () => void;
   onComplete?: () => void;
-  requiredRounds?: number;
 };
-
-const CYCLE_DURATION_MS = 3000; // 3 seconds open, 3 seconds closed
-const TOTAL_CYCLES = 6;
-const MATCH_THRESHOLD = 0.7; // 70% of frames must match for success
-
-// Responsive sizing based on screen dimensions
-const getResponsiveSize = (baseSize: number, isTablet: boolean, isMobile: boolean) => {
-  if (isTablet) return baseSize * 1.3;
-  if (isMobile) return baseSize * 0.9;
-  return baseSize;
-};
-
-let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
-
-function clearScheduledSpeech() {
-  scheduledSpeechTimers.forEach(t => clearTimeout(t));
-  scheduledSpeechTimers = [];
-  try {
-    stopTTS();
-  } catch {}
-}
-
-function speak(text: string, rate = DEFAULT_TTS_RATE) {
-  try {
-    clearScheduledSpeech();
-    speakTTS(text, rate);
-  } catch (e) {
-    console.warn('speak error', e);
-  }
-}
-
-/**
- * Draw mouth landmarks on canvas overlay (web only)
- */
-function drawLandmarks(canvas: HTMLCanvasElement, landmarks: MouthLandmarks) {
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  const container = canvas.parentElement;
-  if (!container) return;
-  
-  const video = container.querySelector('video') as HTMLVideoElement;
-  if (!video || !video.videoWidth || !video.videoHeight) return;
-
-  const videoWidth = video.videoWidth;
-  const videoHeight = video.videoHeight;
-  const scaleX = canvas.width / videoWidth;
-  const scaleY = canvas.height / videoHeight;
-
-  // Draw all mouth landmarks as subtle points
-  if (landmarks.allMouthLandmarks) {
-    ctx.strokeStyle = '#FF6B6B';
-    ctx.fillStyle = '#FF6B6B';
-    ctx.lineWidth = 1.5;
-
-    landmarks.allMouthLandmarks.forEach((point) => {
-      const x = point.x * videoWidth * scaleX;
-      const y = point.y * videoHeight * scaleY;
-      ctx.beginPath();
-      ctx.arc(x, y, 2, 0, 2 * Math.PI);
-      ctx.fill();
-    });
-  }
-
-  // Draw upper lip line
-  if (landmarks.upperLip.length > 0) {
-    ctx.strokeStyle = '#4ECDC4';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    landmarks.upperLip.forEach((point, index) => {
-      const x = point.x * videoWidth * scaleX;
-      const y = point.y * videoHeight * scaleY;
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    });
-    ctx.stroke();
-  }
-
-  // Draw lower lip line
-  if (landmarks.lowerLip.length > 0) {
-    ctx.strokeStyle = '#45B7D1';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    landmarks.lowerLip.forEach((point, index) => {
-      const x = point.x * videoWidth * scaleX;
-      const y = point.y * videoHeight * scaleY;
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    });
-    ctx.stroke();
-  }
-
-  // Draw mouth opening indicator
-  if (landmarks.upperLip.length > 0 && landmarks.lowerLip.length > 0) {
-    const upperCenter = landmarks.upperLip[Math.floor(landmarks.upperLip.length / 2)];
-    const lowerCenter = landmarks.lowerLip[Math.floor(landmarks.lowerLip.length / 2)];
-    
-    ctx.strokeStyle = '#FFD93D';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 5]);
-    ctx.beginPath();
-    ctx.moveTo(upperCenter.x * videoWidth * scaleX, upperCenter.y * videoHeight * scaleY);
-    ctx.lineTo(lowerCenter.x * videoWidth * scaleX, lowerCenter.y * videoHeight * scaleY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-}
-
-type ModelState = 'open' | 'closed' | 'transitioning';
 
 export const JawAwarenessCrocodileGame: React.FC<Props> = ({
   onBack,
   onComplete,
-  requiredRounds = TOTAL_CYCLES,
 }) => {
-  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
-  const isTablet = SCREEN_WIDTH >= 768;
-  const isMobile = SCREEN_WIDTH < 600;
-  
-  const [gameFinished, setGameFinished] = useState(false);
-  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
-  const [finalStats, setFinalStats] = useState<{
-    totalRounds: number;
-    correctMatches: number;
-    matchAccuracy: number;
-    avgOpenHoldMs: number;
-    falseOpens: number;
-    attentionScore: number;
-    xpAwarded: number;
-  } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
-  
-  // Game state
-  const [modelState, setModelState] = useState<ModelState>('closed');
-  const [canPlay, setCanPlay] = useState(false);
-  const [currentCycle, setCurrentCycle] = useState(0);
-  
-  // Scoring
-  const [correctMatches, setCorrectMatches] = useState(0);
-  const [matchFrames, setMatchFrames] = useState(0);
-  const [totalFrames, setTotalFrames] = useState(0);
-  const [falseOpens, setFalseOpens] = useState(0);
-  const openStartTimeRef = useRef<number | null>(null);
-  const openHoldTimesRef = useRef<number[]>([]);
-  
-  // Jaw detection
-  const jawDetection = useJawDetection(Platform.OS === 'web' ? true : canPlay);
-  const { isOpen: childJawOpen, isDetecting, hasCamera, error: jawError } = jawDetection;
-  // Web-specific properties (type assertion needed)
-  const previewContainerId = (jawDetection as any).previewContainerId;
-  const landmarks = (jawDetection as any).landmarks;
-  
-  // Refs for state management
-  const currentJawOpenRef = useRef<boolean>(false);
-  const canPlayRef = useRef<boolean>(false);
-  const lastChildStateRef = useRef<boolean>(false);
-  const matchCheckRef = useRef<{ matches: number; total: number }>({ matches: 0, total: 0 });
-  const hasGivenOpenFeedbackRef = useRef<boolean>(false);
-  const previousJawOpenForFeedbackRef = useRef<boolean>(false);
-  const gameStartedRef = useRef(false);
-  const modelStateRef = useRef<ModelState>('closed');
-  const stableJawStateRef = useRef<{ state: boolean; since: number } | null>(null);
-  const MIN_STABLE_DURATION_MS = 400; // Jaw must be in same state for 400ms to count (increased to prevent false positives)
-  
-  // Animations
-  const emojiScale = useRef(new Animated.Value(1)).current;
-  const emojiOpacity = useRef(new Animated.Value(0)).current;
-  const mouthScale = useRef(new Animated.Value(1)).current;
-  const starScale = useRef(new Animated.Value(0)).current;
-  const starOpacity = useRef(new Animated.Value(0)).current;
-  const particleOpacity = useRef(new Animated.Value(0)).current;
-  const progressBarWidth = useRef(new Animated.Value(0)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  
-  // Timeouts and intervals
-  const cycleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const matchCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const gameStartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const previewRef = useRef<View>(null);
+  const { width: SW, height: SH } = useWindowDimensions();
+  const isWide = SW >= 700;
 
-  // Encouraging phrases
-  const encouragingPhrases = [
-    'Great job!',
-    'Well done!',
-    'Excellent!',
-    'Amazing!',
-    'Fantastic!',
-    'Perfect!',
-    'Wonderful!',
-    'Super!',
-    'You got it!',
-    'Keep it up!',
-  ];
-  
-  const getRandomEncouragement = () => {
-    return encouragingPhrases[Math.floor(Math.random() * encouragingPhrases.length)];
-  };
+  // ── Phase & round state ──────────────────────────────────────────────────
+  const [phase, setPhase]           = useState<Phase>('idle');
+  const [currentRound, setCurrentRound] = useState(1);
+  const [countdown, setCountdown]   = useState(COUNTDOWN_SECONDS);
+  const [roundResults, setRoundResults] = useState<RoundResult[]>([]);
+  const [mouthOpen, setMouthOpen]   = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [mpReady, setMpReady]       = useState(false);
+  const [openProgress, setOpenProgress] = useState(0); // 0-1
+  const [landmarks, setLandmarks]   = useState<Array<{ x: number; y: number; z?: number }> | null>(null);
 
-  // Sync refs with state
-  useEffect(() => {
-    currentJawOpenRef.current = childJawOpen;
-  }, [childJawOpen]);
-  
-  useEffect(() => {
-    canPlayRef.current = canPlay;
-  }, [canPlay]);
+  // ── Refs ─────────────────────────────────────────────────────────────────
+  const phaseRef       = useRef<Phase>('idle');
+  const mouthOpenRef   = useRef(false);
+  const emaRef         = useRef(0);
+  const openHoldStartRef = useRef<number | null>(null);
+  const roundSuccessRef  = useRef(false);
+  const processingRef    = useRef(false);
+  const animFrameRef     = useRef<number | null>(null);
+  const videoRef         = useRef<HTMLVideoElement | null>(null);
+  const streamRef        = useRef<MediaStream | null>(null);
+  const intervalRef      = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef       = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownRef     = useRef<ReturnType<typeof setInterval> | null>(null);
+  const waitForClosedRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const closedSinceRef     = useRef<number>(0);
+  const openHoldTimeoutRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastMpTs           = useRef(0);
+  const previewContainerRef = useRef<View>(null);
+  const previewContainerElRef = useRef<HTMLElement | null>(null);
+  const overlayCanvasRef   = useRef<HTMLCanvasElement | null>(null);
+  const previewVideoRef    = useRef<HTMLVideoElement | null>(null);
 
-  useEffect(() => {
-    modelStateRef.current = modelState;
-  }, [modelState]);
+  // ── Animations ───────────────────────────────────────────────────────────
+  const jawAnim    = useRef(new Animated.Value(0)).current;  // 0=closed 1=open
+  const shakeAnim  = useRef(new Animated.Value(0)).current;
+  const pulseAnim  = useRef(new Animated.Value(1)).current;
+  const successAnim= useRef(new Animated.Value(0)).current;
+  const bgAnim     = useRef(new Animated.Value(0)).current;
 
-  // Reset feedback flag when model state changes to 'open' - ensure fresh state for each round
-  useEffect(() => {
-    if (modelState === 'open') {
-      // Reset all feedback tracking to ensure fresh detection for this round
-      hasGivenOpenFeedbackRef.current = false;
-      previousJawOpenForFeedbackRef.current = false;
-      lastChildStateRef.current = false;
-      // Also reset current jaw state ref to ensure we detect a fresh transition
-      currentJawOpenRef.current = childJawOpen;
-    }
-  }, [modelState, childJawOpen]);
+  // ── Sync phase ref ───────────────────────────────────────────────────────
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
+  useEffect(() => { mouthOpenRef.current = mouthOpen; }, [mouthOpen]);
 
-  // Direct feedback when child opens mouth during open phase - strict detection
+  // ── MediaPipe setup ──────────────────────────────────────────────────────
   useEffect(() => {
-    // Only check during open phase when game is active and detecting
-    if (modelState !== 'open' || !canPlay || !isDetecting) {
-      // Update previous state even when not checking to track transitions
-      previousJawOpenForFeedbackRef.current = childJawOpen;
+    if (Platform.OS !== 'web') {
+      // Native fallback: just mark ready (could use VisionCamera here)
+      setMpReady(true);
       return;
     }
-    
-    // Check for actual transition from closed to open
-    // previousJawOpenForFeedbackRef should be false (closed) and childJawOpen should be true (open)
-    const wasClosed = previousJawOpenForFeedbackRef.current === false;
-    const isNowOpen = childJawOpen === true;
-    const justOpened = wasClosed && isNowOpen;
-    
-    // Update previous state for next check
-    const previousState = previousJawOpenForFeedbackRef.current;
-    previousJawOpenForFeedbackRef.current = childJawOpen;
-    
-    // Only give feedback if:
-    // 1. Child just transitioned from closed to open (actual transition detected)
-    // 2. We haven't given feedback yet for this round's open phase
-    // 3. Model is actually in 'open' state
-    // 4. Detection is working
-    // 5. This is a real transition (not just state persistence)
-    if (justOpened && !hasGivenOpenFeedbackRef.current && isDetecting) {
-      // Add a small delay to ensure the state is stable
-      const feedbackTimer = setTimeout(() => {
-        // Triple-check conditions before giving feedback
-        if (
-          currentJawOpenRef.current === true && 
-          modelState === 'open' && 
-          canPlayRef.current && 
-          isDetecting &&
-          !hasGivenOpenFeedbackRef.current // Double-check we haven't given it yet
-        ) {
-          hasGivenOpenFeedbackRef.current = true;
-          const encouragement = getRandomEncouragement();
-          speak(encouragement);
-          
-          try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          } catch {}
-        }
-      }, 200); // Slightly longer delay to ensure stable detection
-      
-      return () => clearTimeout(feedbackTimer);
-    }
-    
-    // Update last child state for tracking
-    if (lastChildStateRef.current !== childJawOpen) {
-      lastChildStateRef.current = childJawOpen;
-    }
-  }, [childJawOpen, modelState, canPlay, isDetecting]);
+    ensureMediaPipe().then(ok => setMpReady(ok));
+  }, []);
 
-  // Pulse animation for emoji when active
+  // ── Camera setup ─────────────────────────────────────────────────────────
   useEffect(() => {
-    if (canPlay && modelState === 'open') {
-      const pulse = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.1,
-            duration: 600,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 600,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
-      );
-      pulse.start();
-      return () => pulse.stop();
-    } else {
-      pulseAnim.setValue(1);
+    if (Platform.OS !== 'web') {
+      setCameraReady(true);
+      return;
     }
-  }, [canPlay, modelState, pulseAnim]);
 
-  const finishGame = useCallback(async () => {
-    if (cycleTimeoutRef.current) {
-      clearTimeout(cycleTimeoutRef.current);
-      cycleTimeoutRef.current = null;
-    }
-    if (matchCheckIntervalRef.current) {
-      clearInterval(matchCheckIntervalRef.current);
-      matchCheckIntervalRef.current = null;
-    }
-    if (gameStartTimeoutRef.current) {
-      clearTimeout(gameStartTimeoutRef.current);
-      gameStartTimeoutRef.current = null;
-    }
-    
-    setGameFinished(true);
-    clearScheduledSpeech();
+    let active = true;
 
-    const totalCycles = currentCycle > 0 ? currentCycle : 1;
-    const matchAccuracy = totalFrames > 0 ? (matchFrames / totalFrames) * 100 : 0;
-    const avgOpenHoldMs = openHoldTimesRef.current.length > 0
-      ? openHoldTimesRef.current.reduce((a, b) => a + b, 0) / openHoldTimesRef.current.length
-      : 0;
-    const attentionScore = Math.min(100, Math.round(matchAccuracy * 0.7 + (correctMatches / totalCycles) * 30));
-    const xp = correctMatches * 50;
-
-    setFinalStats({
-      totalRounds: totalCycles,
-      correctMatches,
-      matchAccuracy,
-      avgOpenHoldMs,
-      falseOpens,
-      attentionScore,
-      xpAwarded: xp,
-    });
-
-    try {
-      await logGameAndAward({
-        type: 'jaw-awareness-crocodile',
-        correct: correctMatches,
-        total: totalCycles,
-        accuracy: matchAccuracy,
-        xpAwarded: xp,
-        mode: 'therapy',
-        skillTags: ['jaw-awareness', 'oral-motor-control', 'imitation', 'speech-therapy'],
-        incorrectAttempts: totalCycles - correctMatches,
-        meta: {
-          openCloseCycles: totalCycles,
-          matchAccuracy,
-          avgOpenHoldMs,
-          falseOpens,
-          attentionScore,
-        },
-      });
-      onComplete?.();
-    } catch (e) {
-      console.warn('Failed to save game log:', e instanceof Error ? e.message : 'Unknown error');
-    }
-  }, [correctMatches, currentCycle, matchFrames, totalFrames, falseOpens, onComplete]);
-
-  const startCycle = useCallback(() => {
-    setCurrentCycle(prev => {
-      const nextCycle = prev + 1;
-      if (nextCycle > requiredRounds) {
-        finishGame();
-        return prev;
-      }
-      return nextCycle;
-    });
-    
-    // Reset ALL feedback and detection state for new cycle
-    matchCheckRef.current = { matches: 0, total: 0 };
-    hasGivenOpenFeedbackRef.current = false;
-    previousJawOpenForFeedbackRef.current = false; // Reset this too!
-    lastChildStateRef.current = false;
-    stableJawStateRef.current = null; // Reset stability tracking for new cycle
-    openStartTimeRef.current = null; // Reset open hold tracking
-
-    // Clear any scheduled speech first, then speak the instruction
-    clearScheduledSpeech();
-    
-    // Set model state first
-    setModelState('open');
-    
-    // Small delay to ensure speech system is ready and state is set
-    setTimeout(() => {
-      speak('Open your mouth!', DEFAULT_TTS_RATE);
-    }, 200);
-
-    // Animate emoji mouth opening
-    Animated.parallel([
-      Animated.spring(mouthScale, {
-        toValue: 1.3,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-      Animated.timing(emojiScale, {
-        toValue: 1.1,
-        duration: 500,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Check for matches during open phase - fresh detection for this round
-    let isOpenPhase = true;
-    const checkMatches = () => {
-      const currentCanPlay = canPlayRef.current;
-      const currentModelState = modelStateRef.current; // Use ref for current state
-      
-      // Only check matches if:
-      // 1. We're in the open phase
-      // 2. Game can play
-      // 3. Model is actually in 'open' state
-      // 4. Detection is working
-      if (isOpenPhase && currentCanPlay && currentModelState === 'open' && isDetecting) {
-        const currentState = currentJawOpenRef.current;
-        const now = Date.now();
-        
-        // Track stable jaw state (prevents false positives from flickering)
-        // This ensures we only count stable states, not rapid flickering
-        if (stableJawStateRef.current?.state === currentState) {
-          // Same state, check if it's been stable long enough
-          if (now - stableJawStateRef.current.since >= MIN_STABLE_DURATION_MS) {
-            matchCheckRef.current.total++;
-            setTotalFrames(prev => prev + 1);
-            
-            // Only count as match if child's jaw is actually open (matching model's open state)
-            if (currentState === true) {
-              matchCheckRef.current.matches++;
-              setMatchFrames(prev => prev + 1);
-              
-              if (!openStartTimeRef.current) {
-                openStartTimeRef.current = Date.now();
-              }
-            } else {
-              // Jaw is closed when it should be open - not a match
-              if (openStartTimeRef.current) {
-                const holdTime = Date.now() - openStartTimeRef.current;
-                openHoldTimesRef.current.push(holdTime);
-                openStartTimeRef.current = null;
-              }
-            }
-          }
-        } else {
-          // State changed, reset stability tracking - fresh detection for this round
-          stableJawStateRef.current = { state: currentState, since: now };
-        }
-        
-        // Update last child state for tracking
-        if (lastChildStateRef.current !== currentState) {
-          lastChildStateRef.current = currentState;
-        }
-      }
-    };
-
-    matchCheckIntervalRef.current = setInterval(checkMatches, 100) as unknown as NodeJS.Timeout;
-
-    // After CYCLE_DURATION_MS, model closes
-    cycleTimeoutRef.current = (setTimeout(() => {
-      isOpenPhase = false;
-      if (matchCheckIntervalRef.current) {
-        clearInterval(matchCheckIntervalRef.current);
-        matchCheckIntervalRef.current = null;
-      }
-
-      const matchRate = matchCheckRef.current.total > 0
-        ? matchCheckRef.current.matches / matchCheckRef.current.total
-        : 0;
-      
-      if (matchRate >= MATCH_THRESHOLD) {
-        setCorrectMatches(prev => prev + 1);
-        
-        try {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        } catch {}
-
-        Animated.parallel([
-          Animated.spring(starScale, {
-            toValue: 1.2,
-            tension: 50,
-            friction: 7,
-            useNativeDriver: true,
-          }),
-          Animated.timing(starOpacity, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.sequence([
-            Animated.timing(particleOpacity, {
-              toValue: 1,
-              duration: 200,
-              useNativeDriver: true,
-            }),
-            Animated.timing(particleOpacity, {
-              toValue: 0,
-              duration: 800,
-              useNativeDriver: true,
-            }),
-          ]),
-        ]).start();
-
-        // Don't speak - we'll show animation when cycle completes
-      }
-
-      setModelState('closed');
-      // Reset feedback flag for closed phase (in case we need it later)
-      hasGivenOpenFeedbackRef.current = false;
-      previousJawOpenForFeedbackRef.current = childJawOpen; // Track current state
-      
-      // Clear any scheduled speech and speak the instruction
-      clearScheduledSpeech();
-      setTimeout(() => {
-        speak('Close your mouth!');
-      }, 100);
-
-      Animated.parallel([
-        Animated.spring(mouthScale, {
-          toValue: 1,
-          tension: 50,
-          friction: 7,
-          useNativeDriver: true,
-        }),
-        Animated.timing(emojiScale, {
-          toValue: 1,
-          duration: 500,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      // Check for matches during closed phase - fresh detection for this phase
-      matchCheckRef.current = { matches: 0, total: 0 };
-      stableJawStateRef.current = null; // Reset stability tracking for closed phase
-      // Reset feedback tracking for closed phase
-      hasGivenOpenFeedbackRef.current = false;
-      previousJawOpenForFeedbackRef.current = childJawOpen; // Track current state for closed phase
-      let isClosedPhase = true;
-      const checkClosedMatches = () => {
-        const currentCanPlay = canPlayRef.current;
-        const currentModelState = modelStateRef.current; // Use ref for current state
-        
-        // Only check matches if:
-        // 1. We're in the closed phase
-        // 2. Game can play
-        // 3. Model is actually in 'closed' state
-        // 4. Detection is working
-        if (isClosedPhase && currentCanPlay && currentModelState === 'closed' && isDetecting) {
-          const currentState = currentJawOpenRef.current;
-          const now = Date.now();
-          
-          // Track stable jaw state (prevents false positives from flickering)
-          if (stableJawStateRef.current?.state === currentState) {
-            // Same state, check if it's been stable long enough
-            if (now - stableJawStateRef.current.since >= MIN_STABLE_DURATION_MS) {
-              matchCheckRef.current.total++;
-              setTotalFrames(prev => prev + 1);
-              
-              // Only count as match if child's jaw is actually closed (matching model's closed state)
-              if (currentState === false) {
-                matchCheckRef.current.matches++;
-                setMatchFrames(prev => prev + 1);
-              } else {
-                // Jaw is open when it should be closed - false open
-                setFalseOpens(prev => prev + 1);
-              }
-            }
-          } else {
-            // State changed, reset stability tracking
-            stableJawStateRef.current = { state: currentState, since: now };
-          }
-        }
-      };
-
-      matchCheckIntervalRef.current = setInterval(checkClosedMatches, 100) as unknown as NodeJS.Timeout;
-
-      // After CYCLE_DURATION_MS, start next cycle or finish
-      cycleTimeoutRef.current = (setTimeout(() => {
-        isClosedPhase = false;
-        if (matchCheckIntervalRef.current) {
-          clearInterval(matchCheckIntervalRef.current);
-          matchCheckIntervalRef.current = null;
-        }
-
-        setCurrentCycle(prevCycle => {
-          Animated.timing(progressBarWidth, {
-            toValue: (prevCycle / requiredRounds) * 100,
-            duration: 400,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: false,
-          }).start();
-          return prevCycle;
+    (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: 640, height: 480 },
         });
+        if (!active) { stream.getTracks().forEach(t => t.stop()); return; }
+        streamRef.current = stream;
 
-        Animated.parallel([
-          Animated.timing(starOpacity, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(starScale, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start();
-
-        // Show success animation before starting next cycle
-        setShowRoundSuccess(true);
-        setTimeout(() => {
-          setShowRoundSuccess(false);
-          startCycle();
-        }, 2500);
-      }, CYCLE_DURATION_MS)) as unknown as NodeJS.Timeout;
-    }, CYCLE_DURATION_MS)) as unknown as NodeJS.Timeout;
-  }, [requiredRounds, finishGame, progressBarWidth]);
-
-  const startGame = useCallback(() => {
-    if (gameStartedRef.current) return;
-    
-    if (!hasCamera) {
-      if (Platform.OS === 'web') {
-        const checkCamera = (attempts = 0) => {
-          if (hasCamera) {
-            gameStartedRef.current = true;
-            setCanPlay(true);
-            speak('Watch the emoji and copy its mouth!');
-          } else if (jawError) {
-            speak('Camera access denied. Please allow camera access and refresh the page.');
-          } else if (attempts < 5) {
-            setTimeout(() => checkCamera(attempts + 1), 1000);
-          } else {
-            speak('Camera not available. Please check your browser permissions.');
-          }
-        };
-        setTimeout(() => checkCamera(), 500);
-        return;
-      } else {
-        speak('Camera not available. Please use a dev build.');
-        return;
+        // Create hidden video element
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.playsInline = true;
+        video.muted = true;
+        video.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0;';
+        document.body.appendChild(video);
+        await video.play();
+        videoRef.current = video;
+        if (active) setCameraReady(true);
+      } catch (e: any) {
+        if (!active) return;
+        const msg = e?.name === 'NotAllowedError'
+          ? 'Camera permission denied'
+          : e?.message || 'Camera error';
+        setCameraError(msg);
       }
-    }
+    })();
 
-    gameStartedRef.current = true;
-    setCanPlay(true);
-    speak('Watch the emoji and copy its mouth!');
-    
-    Animated.parallel([
-      Animated.spring(emojiScale, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-      Animated.timing(emojiOpacity, {
-        toValue: 1,
-        duration: 500,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    gameStartTimeoutRef.current = setTimeout(() => {
-      startCycle();
-    }, 2000) as unknown as NodeJS.Timeout;
-  }, [hasCamera, jawError, startCycle]);
-
-  useEffect(() => {
-    if (hasCamera && !gameStartedRef.current) {
-      startGame();
-    } else if (!hasCamera && Platform.OS === 'web' && !jawError) {
-      const timeout = setTimeout(() => {
-        if (hasCamera && !gameStartedRef.current) {
-          startGame();
-        }
-      }, 1000);
-      return () => clearTimeout(timeout);
-    }
-  }, [hasCamera, jawError, startGame]);
-
-  // Web: Explicitly set data-native-id attribute on container element
-  useEffect(() => {
-    if (Platform.OS !== 'web' || !previewContainerId) return;
-
-    const setAttribute = () => {
-      try {
-        let element: HTMLElement | null = null;
-        
-        // Try to find by data-native-id first
-        if (previewContainerId) {
-          element = document.querySelector(`[data-native-id="${previewContainerId}"]`) as HTMLElement;
-        }
-        
-        // Try nativeID attribute
-        if (!element && previewContainerId) {
-          element = document.querySelector(`[nativeID="${previewContainerId}"]`) as HTMLElement;
-        }
-        
-        // Try by ref
-        if (!element && previewRef.current) {
-          try {
-            const refElement = (previewRef.current as any)?.base || 
-                             (previewRef.current as any)?._nativeNode ||
-                             previewRef.current;
-            if (refElement && refElement.setAttribute) {
-              element = refElement;
-            }
-          } catch {}
-        }
-        
-        // Try querySelector with nativeID
-        if (!element && previewContainerId) {
-          element = document.querySelector(`[nativeID="${previewContainerId}"]`) as HTMLElement;
-        }
-        
-        // Set data-native-id attribute if element found
-        if (element) {
-          if (!element.getAttribute('data-native-id')) {
-            element.setAttribute('data-native-id', previewContainerId);
-          }
-          // Also set the hardcoded ID the hook looks for
-          if (!element.getAttribute('data-native-id-backup')) {
-            element.setAttribute('data-native-id-backup', 'jaw-preview-container');
-          }
-          if (!element.getAttribute('data-jaw-preview-container')) {
-            element.setAttribute('data-jaw-preview-container', 'true');
-          }
-        }
-      } catch (e) {
-        // Silently fail
-      }
-    };
-
-    // Try immediately
-    setAttribute();
-    
-    // Retry with delay to catch late mounting
-    const timeout = setTimeout(setAttribute, 100);
-    const timeout2 = setTimeout(setAttribute, 500);
-    
     return () => {
-      clearTimeout(timeout);
-      clearTimeout(timeout2);
-    };
-  }, [previewContainerId]);
-
-  // Web: Ensure container is properly set up - let hook handle video injection
-  useEffect(() => {
-    if (Platform.OS !== 'web' || !previewContainerId) return;
-
-    const setupContainer = () => {
-      // Try multiple selectors to find container - hook looks for 'jaw-preview-container'
-      let container = document.querySelector(`[data-native-id="${previewContainerId}"]`) as HTMLElement;
-      
-      if (!container) {
-        container = document.querySelector(`[nativeID="${previewContainerId}"]`) as HTMLElement;
+      active = false;
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+        videoRef.current.remove();
+        videoRef.current = null;
       }
-      
-      // Also try the hardcoded ID the hook uses
-      if (!container) {
-        container = document.querySelector('[data-native-id="jaw-preview-container"]') as HTMLElement;
-      }
-      
-      if (!container && previewRef.current) {
-        try {
-          const refElement = (previewRef.current as any)?.base || 
-                           (previewRef.current as any)?._nativeNode ||
-                           previewRef.current;
-          if (refElement) {
-            container = refElement;
-          }
-        } catch {}
-      }
-      
-      // Try to find by walking DOM
-      if (!container) {
-        const allDivs = Array.from(document.querySelectorAll('div'));
-        container = allDivs.find((div) => {
-          const nativeId = div.getAttribute('data-native-id') || 
-                          div.getAttribute('nativeID') || 
-                          (div as any).nativeID;
-          return nativeId === previewContainerId || nativeId === 'jaw-preview-container';
-        }) as HTMLElement || null;
-      }
-
-      if (!container) return;
-
-      // Ensure attributes are set
-      if (!container.getAttribute('data-native-id')) {
-        container.setAttribute('data-native-id', previewContainerId);
-      }
-      if (!container.getAttribute('data-jaw-preview-container')) {
-        container.setAttribute('data-jaw-preview-container', 'true');
-      }
-    };
-
-    // Try immediately
-    setupContainer();
-    
-    // Retry with delays
-    const timeout1 = setTimeout(setupContainer, 100);
-    const timeout2 = setTimeout(setupContainer, 500);
-    const timeout3 = setTimeout(setupContainer, 1000);
-    
-    return () => {
-      clearTimeout(timeout1);
-      clearTimeout(timeout2);
-      clearTimeout(timeout3);
-    };
-  }, [previewContainerId, hasCamera, isDetecting, canPlay]);
-
-  // Setup canvas overlay for web
-  useEffect(() => {
-    if (Platform.OS !== 'web' || !hasCamera) return;
-
-    const setupCanvas = (attempts = 0) => {
-      let container: HTMLElement | null = null;
-      
-      const videoElement = document.querySelector('video[data-jaw-preview-video]') as HTMLVideoElement;
-      if (videoElement?.parentElement) {
-        container = videoElement.parentElement as HTMLElement;
-      }
-      
-      if (!container && previewRef.current) {
-        try {
-          const refNode = (previewRef.current as any)?._nativeNode || 
-                         (previewRef.current as any)?._node ||
-                         (previewRef.current as any)?.current;
-          if (refNode instanceof HTMLElement) {
-            container = refNode;
-          }
-        } catch (e) {}
-      }
-      
-      if (!container) {
-        container = document.querySelector('[data-native-id="jaw-preview-container"]') as HTMLElement;
-      }
-      
-      if (!container) {
-        if (attempts < 30) {
-          setTimeout(() => setupCanvas(attempts + 1), 100);
-        }
-        return;
-      }
-
-      let canvas = container.querySelector('canvas') as HTMLCanvasElement;
-      if (!canvas) {
-        canvas = document.createElement('canvas');
-        canvas.style.position = 'absolute';
-        canvas.style.top = '0';
-        canvas.style.left = '0';
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-        canvas.style.pointerEvents = 'none';
-        canvas.style.zIndex = '100';
-        canvas.style.borderRadius = '12px';
-        canvas.style.backgroundColor = 'transparent';
-        container.appendChild(canvas);
-        canvasRef.current = canvas;
-      }
-
-      if (container.offsetWidth > 0 && container.offsetHeight > 0) {
-        canvas.width = container.offsetWidth;
-        canvas.height = container.offsetHeight;
-      }
-    };
-
-    setupCanvas();
-  }, [hasCamera, previewContainerId, landmarks]);
-
-  // Update canvas when landmarks change
-  useEffect(() => {
-    if (Platform.OS !== 'web' || !landmarks) return;
-    
-    const ensureCanvasAndDraw = (attempt = 0): boolean => {
-      let container: HTMLElement | null = null;
-      
-      const videoElement = document.querySelector('video[data-jaw-preview-video]') as HTMLVideoElement;
-      if (videoElement?.parentElement) {
-        container = videoElement.parentElement as HTMLElement;
-      }
-      
-      if (!container) {
-        container = document.querySelector('[data-native-id="jaw-preview-container"]') as HTMLElement;
-      }
-      
-      if (!container) {
-        if (attempt < 20) {
-          setTimeout(() => ensureCanvasAndDraw(attempt + 1), 100);
-        }
-        return false;
-      }
-      
-      let canvas = container.querySelector('canvas') as HTMLCanvasElement;
-      if (!canvas) {
-        canvas = document.createElement('canvas');
-        canvas.style.position = 'absolute';
-        canvas.style.top = '0';
-        canvas.style.left = '0';
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-        canvas.style.pointerEvents = 'none';
-        canvas.style.zIndex = '100';
-        canvas.style.borderRadius = '12px';
-        canvas.style.backgroundColor = 'transparent';
-        container.appendChild(canvas);
-        canvasRef.current = canvas;
-      }
-      
-      if (container.offsetWidth > 0 && container.offsetHeight > 0) {
-        canvas.width = container.offsetWidth;
-        canvas.height = container.offsetHeight;
-      }
-      
-      try {
-        drawLandmarks(canvas, landmarks);
-        return true;
-      } catch (error) {
-        return false;
-      }
-    };
-    
-    ensureCanvasAndDraw(0);
-  }, [landmarks]);
-
-  useEffect(() => {
-    return () => {
-      clearScheduledSpeech();
-      if (cycleTimeoutRef.current) clearTimeout(cycleTimeoutRef.current);
-      if (matchCheckIntervalRef.current) clearInterval(matchCheckIntervalRef.current);
-      if (gameStartTimeoutRef.current) clearTimeout(gameStartTimeoutRef.current);
     };
   }, []);
 
-  if (gameFinished && finalStats) {
-    return (
-      <CongratulationsScreen
-        message="Amazing Work!"
-        showButtons={true}
-        correct={finalStats.correctMatches}
-        total={finalStats.totalRounds}
-        accuracy={finalStats.matchAccuracy}
-        xpAwarded={finalStats.xpAwarded}
-        onContinue={() => {
-          onComplete?.();
-        }}
-        onHome={onBack}
-      />
-    );
-  }
+  // ── Frame processing ─────────────────────────────────────────────────────
+  const processFrame = useCallback(async () => {
+    if (!_faceLandmarker || !videoRef.current) return;
+    const video = videoRef.current;
+    if (video.readyState < 2) return;
+    // Run detection during countdown, open phase, or round_success (to detect mouth closed for next round)
+    const ph = phaseRef.current;
+    if (ph !== 'countdown' && ph !== 'open_command' && ph !== 'round_success') return;
 
-  const matchAccuracy = totalFrames > 0 ? (matchFrames / totalFrames) * 100 : 0;
-  const emojiSize = getResponsiveSize(150, isTablet, isMobile);
-  const cameraPreviewSize = getResponsiveSize(120, isTablet, isMobile);
+    const now = performance.now();
+    if (now - lastMpTs.current < 80) return;
+    lastMpTs.current = now;
 
+    try {
+      const w = video.videoWidth || 640;
+      const h = video.videoHeight || 480;
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(video, 0, 0, w, h);
+      const imageData = ctx.getImageData(0, 0, w, h);
+      if (!imageData?.data) return;
+
+      const result = _faceLandmarker.detectForVideo(imageData, now);
+      const lms = result?.faceLandmarks?.[0];
+      setLandmarks(lms ?? null);
+      const ratio = lms ? computeMouthRatio(lms) : 0;
+
+      emaRef.current = EMA_ALPHA * ratio + (1 - EMA_ALPHA) * emaRef.current;
+      const ema = emaRef.current;
+
+      const wasOpen = mouthOpenRef.current;
+      const isNowOpen = wasOpen
+        ? ema > CLOSE_RATIO_THRESHOLD
+        : ema > OPEN_RATIO_THRESHOLD;
+
+      if (isNowOpen !== wasOpen) {
+        setMouthOpen(isNowOpen);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (!cameraReady || !mpReady || Platform.OS !== 'web') return;
+    const id = setInterval(processFrame, 80);
+    intervalRef.current = id;
+    return () => clearInterval(id);
+  }, [cameraReady, mpReady, processFrame]);
+
+  // ── Inject video preview + overlay canvas (web) ───────────────────────────
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    if (phase === 'idle' || phase === 'complete' || !streamRef.current) return;
+
+    const PREVIEW_ID = 'croc-preview-container';
+    const tryInject = () => {
+      let container: HTMLElement | null =
+        document.getElementById(PREVIEW_ID) ||
+        document.querySelector(`[data-native-id="${PREVIEW_ID}"]`) ||
+        document.querySelector(`[nativeID="${PREVIEW_ID}"]`);
+      if (!container) {
+        const divs = document.querySelectorAll('div');
+        for (let i = 0; i < divs.length; i++) {
+          const div = divs[i];
+          if (div.getAttribute('data-native-id') === PREVIEW_ID || div.getAttribute('nativeID') === PREVIEW_ID || (div as any).id === PREVIEW_ID) {
+            container = div as HTMLElement;
+            break;
+          }
+        }
+      }
+      if (!container || container.offsetWidth === 0) return false;
+
+      if (!container.getAttribute('data-native-id')) container.setAttribute('data-native-id', PREVIEW_ID);
+      previewContainerElRef.current = container;
+
+      let video = container.querySelector('video[data-croc-preview]') as HTMLVideoElement;
+      if (!video) {
+        video = document.createElement('video');
+        video.setAttribute('data-croc-preview', 'true');
+        video.autoplay = true;
+        video.playsInline = true;
+        video.muted = true;
+        video.setAttribute('playsinline', 'true');
+        video.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1;background:#000;';
+        container.appendChild(video);
+        previewVideoRef.current = video;
+      }
+      if (streamRef.current) {
+        video.srcObject = streamRef.current;
+        video.play().catch(() => {});
+      }
+
+      let canvas = overlayCanvasRef.current;
+      if (!canvas || !container.contains(canvas)) {
+        canvas = document.createElement('canvas');
+        canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none;';
+        container.appendChild(canvas);
+        overlayCanvasRef.current = canvas;
+      }
+      return true;
+    };
+
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    const scheduleInject = () => {
+      if (tryInject()) return;
+      let attempts = 0;
+      intervalId = setInterval(() => {
+        attempts++;
+        if (tryInject() || attempts > 60) {
+          if (intervalId) clearInterval(intervalId);
+          intervalId = null;
+        }
+      }, 150);
+    };
+    const t1 = setTimeout(scheduleInject, 100);
+    return () => {
+      clearTimeout(t1);
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [phase, cameraReady]);
+
+  // ── Draw jaw landmarks on overlay canvas ───────────────────────────────────
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !landmarks || !overlayCanvasRef.current || !previewContainerElRef.current) return;
+    const canvas = overlayCanvasRef.current;
+    const container = previewContainerElRef.current;
+    const w = container.offsetWidth || 320;
+    const h = container.offsetHeight || 240;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, w, h);
+
+    const mouthIndices = [61, 291, 13, 14, 17, 18];
+    mouthIndices.forEach((idx, i) => {
+      const p = landmarks[idx];
+      if (!p) return;
+      const x = p.x * w;
+      const y = p.y * h;
+      ctx.beginPath();
+      ctx.arc(x, y, i < 2 ? 6 : 4, 0, Math.PI * 2);
+      ctx.fillStyle = i < 2 ? '#FFD166' : (mouthOpen ? '#40C057' : '#F4845F');
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+    if (landmarks[13] && landmarks[17]) {
+      ctx.beginPath();
+      ctx.moveTo(landmarks[13].x * w, landmarks[13].y * h);
+      ctx.lineTo(landmarks[17].x * w, landmarks[17].y * h);
+      ctx.strokeStyle = mouthOpen ? '#40C057' : '#F4845F';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+    if (landmarks[14] && landmarks[18]) {
+      ctx.beginPath();
+      ctx.moveTo(landmarks[14].x * w, landmarks[14].y * h);
+      ctx.lineTo(landmarks[18].x * w, landmarks[18].y * h);
+      ctx.strokeStyle = mouthOpen ? '#40C057' : '#F4845F';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+  }, [landmarks, mouthOpen]);
+
+  // ── Game logic ───────────────────────────────────────────────────────────
+
+  const clearTimers = useCallback(() => {
+    if (intervalRef.current) { /* don't clear detection */ }
+    if (timeoutRef.current)  { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+    if (countdownRef.current){ clearInterval(countdownRef.current); countdownRef.current = null; }
+    if (waitForClosedRef.current) { clearInterval(waitForClosedRef.current); waitForClosedRef.current = null; }
+    if (openHoldTimeoutRef.current) { clearTimeout(openHoldTimeoutRef.current); openHoldTimeoutRef.current = null; }
+  }, []);
+
+  const startCountdown = useCallback((round: number) => {
+    setPhase('countdown');
+    setCountdown(COUNTDOWN_SECONDS);
+    roundSuccessRef.current = false;
+
+    let c = COUNTDOWN_SECONDS;
+    const id = setInterval(() => {
+      c -= 1;
+      setCountdown(c);
+      if (c <= 0) {
+        clearInterval(id);
+        startOpenPhase(round);
+      }
+    }, 1000);
+    countdownRef.current = id;
+  }, []); // eslint-disable-line
+
+  const startOpenPhase = useCallback((round: number) => {
+    setPhase('open_command');
+    setOpenProgress(0);
+    roundSuccessRef.current = false;
+    openHoldStartRef.current = null;
+    if (openHoldTimeoutRef.current) clearTimeout(openHoldTimeoutRef.current);
+    openHoldTimeoutRef.current = null;
+    setMouthOpen(false);
+    mouthOpenRef.current = false;
+    emaRef.current = 0;
+
+    // Animate progress bar
+    const startTs = Date.now();
+    const tick = () => {
+      const elapsed = Date.now() - startTs;
+      const p = Math.min(elapsed / OPEN_COMMAND_DURATION_MS, 1);
+      setOpenProgress(p);
+      if (p < 1) {
+        animFrameRef.current = requestAnimationFrame(tick);
+      }
+    };
+    animFrameRef.current = requestAnimationFrame(tick);
+
+    // Timeout: if not opened in time → fail
+    timeoutRef.current = setTimeout(() => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (!roundSuccessRef.current) {
+        handleRoundFail(round);
+      }
+    }, OPEN_COMMAND_DURATION_MS);
+  }, []); // eslint-disable-line
+
+  const handleRoundSuccess = useCallback((round: number) => {
+    if (roundSuccessRef.current) return;
+    roundSuccessRef.current = true;
+    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
+    if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null; }
+
+    setOpenProgress(1);
+    setRoundResults(prev => [...prev, { round, success: true }]);
+    setPhase('round_success');
+
+    Animated.sequence([
+      Animated.spring(successAnim, { toValue: 1, useNativeDriver: true, tension: 60 }),
+      Animated.delay(CLOSE_WAIT_DURATION_MS),
+    ]).start(() => {
+      successAnim.setValue(0);
+      if (round >= TOTAL_ROUNDS) {
+        setPhase('complete');
+        onComplete?.();
+        return;
+      }
+      // Wait for mouth to be *actually* closed (EMA ratio below strict threshold)
+      closedSinceRef.current = 0;
+      const startWait = Date.now();
+      waitForClosedRef.current = setInterval(() => {
+        const ema = emaRef.current;
+        const isClosedByRatio = ema < CLOSED_FOR_NEXT_ROUND;
+        if (isClosedByRatio) {
+          closedSinceRef.current = closedSinceRef.current || Date.now();
+          if (Date.now() - closedSinceRef.current >= WAIT_FOR_CLOSED_MS) {
+            if (waitForClosedRef.current) clearInterval(waitForClosedRef.current);
+            waitForClosedRef.current = null;
+            startCountdown(round + 1);
+            setCurrentRound(round + 1);
+          }
+        } else {
+          closedSinceRef.current = 0;
+        }
+        if (Date.now() - startWait >= WAIT_FOR_CLOSED_MAX_MS) {
+          if (waitForClosedRef.current) clearInterval(waitForClosedRef.current);
+          waitForClosedRef.current = null;
+          startCountdown(round + 1);
+          setCurrentRound(round + 1);
+        }
+      }, WAIT_FOR_CLOSED_POLL_MS) as unknown as ReturnType<typeof setInterval>;
+    });
+  }, [successAnim, onComplete]); // eslint-disable-line
+
+  const handleRoundFail = useCallback((round: number) => {
+    setRoundResults(prev => [...prev, { round, success: false }]);
+    setPhase('round_fail');
+
+    // Shake animation
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 8, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -8, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+    ]).start(() => {
+      // Retry same round
+      timeoutRef.current = setTimeout(() => {
+        startCountdown(round);
+        setCurrentRound(round);
+      }, 1200);
+    });
+  }, [shakeAnim]); // eslint-disable-line
+
+  // ── Watch mouth state during open phase (require open for OPEN_HOLD_MS) ───
+  useEffect(() => {
+    if (phaseRef.current !== 'open_command') return;
+    if (mouthOpen && !roundSuccessRef.current) {
+      if (!openHoldTimeoutRef.current) {
+        openHoldTimeoutRef.current = setTimeout(() => {
+          openHoldTimeoutRef.current = null;
+          if (mouthOpenRef.current && !roundSuccessRef.current) {
+            handleRoundSuccess(currentRound);
+          }
+        }, OPEN_HOLD_MS);
+      }
+    } else {
+      if (openHoldTimeoutRef.current) {
+        clearTimeout(openHoldTimeoutRef.current);
+        openHoldTimeoutRef.current = null;
+      }
+    }
+  }, [mouthOpen, currentRound, handleRoundSuccess]);
+
+  // ── Jaw animation ────────────────────────────────────────────────────────
+  useEffect(() => {
+    Animated.spring(jawAnim, {
+      toValue: mouthOpen ? 1 : 0,
+      useNativeDriver: true,
+      tension: 80,
+      friction: 8,
+    }).start();
+  }, [mouthOpen, jawAnim]);
+
+  // Pulse when in open_command phase
+  useEffect(() => {
+    if (phase === 'open_command') {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.06, duration: 500, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
+          Animated.timing(pulseAnim, { toValue: 1.0, duration: 500, useNativeDriver: true, easing: Easing.inOut(Easing.ease) }),
+        ])
+      );
+      loop.start();
+      return () => loop.stop();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [phase, pulseAnim]);
+
+  // ── Start game ────────────────────────────────────────────────────────────
+  const startGame = useCallback(() => {
+    if (waitForClosedRef.current) clearInterval(waitForClosedRef.current);
+    waitForClosedRef.current = null;
+    if (openHoldTimeoutRef.current) clearTimeout(openHoldTimeoutRef.current);
+    openHoldTimeoutRef.current = null;
+    setRoundResults([]);
+    setCurrentRound(1);
+    setMouthOpen(false);
+    mouthOpenRef.current = false;
+    emaRef.current = 0;
+    setLandmarks(null);
+    startCountdown(1);
+  }, []); // eslint-disable-line
+
+  // ── Derived ───────────────────────────────────────────────────────────────
+  const completedSuccessfully = roundResults.filter(r => r.success).length;
+  const jawRotate = jawAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '35deg'] });
+  const successScale = successAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1.3, 1] });
+
+  // ── Colors / sizes ────────────────────────────────────────────────────────
+  const CROC_SIZE  = isWide ? 220 : 160;
+  const CROC_HALF  = CROC_SIZE / 2;
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#E0F2FE', '#BAE6FD', '#7DD3FC']}
-        style={styles.gradient}
-      >
-        {/* Header Overlay */}
-        <View style={[styles.header, { zIndex: 20 }]}>
-          <Pressable
-            onPress={() => {
-              clearScheduledSpeech();
-              onBack();
-            }}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={22} color="#0F172A" />
-            <Text style={styles.backText}>Back</Text>
+    <SafeAreaView style={styles.root}>
+      {/* Background jungle pattern */}
+      <View style={styles.bgLeaves} pointerEvents="none">
+        {['🌿','🍃','🌿','🍂','🌿','🍃','🌿'].map((l, i) => (
+          <Text key={i} style={[styles.bgLeaf, { top: `${10 + i * 12}%`, left: `${(i * 17) % 90}%`, opacity: 0.12 }]}>{l}</Text>
+        ))}
+      </View>
+
+      {/* Header */}
+      <View style={styles.header}>
+        {onBack && (
+          <Pressable style={styles.backBtn} onPress={onBack} accessibilityLabel="Go back">
+            <Text style={styles.backArrow}>←</Text>
           </Pressable>
-          <View style={styles.headerText}>
-            <Text style={[styles.title, isMobile && styles.titleMobile]}>Jaw Awareness</Text>
-            <Text style={[styles.subtitle, isMobile && styles.subtitleMobile]}>
-              {canPlay ? 'Copy the emoji!' : 'Get ready...'}
-            </Text>
+        )}
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Croc Mouth 🐊</Text>
+          <Text style={styles.headerSub}>Open your mouth with Croc!</Text>
+        </View>
+        {/* Round dots */}
+        <View style={styles.dotsRow}>
+          {Array.from({ length: TOTAL_ROUNDS }).map((_, i) => {
+            const res = roundResults.find(r => r.round === i + 1);
+            return (
+              <View
+                key={i}
+                style={[
+                  styles.dot,
+                  res?.success ? styles.dotSuccess :
+                  res?.success === false ? styles.dotFail :
+                  i + 1 === currentRound && phase !== 'idle' ? styles.dotActive :
+                  styles.dotEmpty,
+                ]}
+              />
+            );
+          })}
+        </View>
+      </View>
+
+      {/* Video container with jaw coordinates overlay (web, when playing) */}
+      {Platform.OS === 'web' && phase !== 'idle' && phase !== 'complete' && (
+        <View
+          ref={previewContainerRef}
+          nativeID="croc-preview-container"
+          {...(Platform.OS === 'web' ? { id: 'croc-preview-container', 'data-native-id': 'croc-preview-container' } as any : {})}
+          style={styles.previewContainer}
+          collapsable={false}
+        >
+          <View style={styles.previewPlaceholder} pointerEvents="none">
+            <Text style={styles.previewPlaceholderText}>📷 Camera</Text>
           </View>
         </View>
+      )}
 
-        <View style={styles.playArea}>
-          {/* Full-screen camera container - Always render so hook can find it */}
-          {previewContainerId && (
-            <View
-              ref={previewRef}
-              style={[
-                StyleSheet.absoluteFill,
-                styles.cameraContainer,
-                { zIndex: 1 }
-              ]}
-              nativeID={previewContainerId}
-              {...(Platform.OS === 'web' && { 
-                'data-native-id': previewContainerId,
-                'data-jaw-preview-container': 'true',
-                // Also set the hardcoded ID the hook looks for
-                'data-native-id-backup': 'jaw-preview-container'
-              })}
-              collapsable={false}
-            >
-              {Platform.OS === 'web' ? (
-                <>
-                  {(!hasCamera || !isDetecting) && (
-                    <View style={styles.cameraLoading}>
-                      <Text style={styles.cameraLoadingText}>
-                        {!hasCamera ? 'Requesting camera access...' : 'Loading camera...'}
-                      </Text>
-                    </View>
-                  )}
-                </>
-              ) : (
-                hasCamera && jawDetection.device && Camera && (
-                  <Camera
-                    style={StyleSheet.absoluteFill}
-                    device={jawDetection.device}
-                    isActive={canPlay}
-                    frameProcessor={jawDetection.frameProcessor}
-                    frameProcessorFps={30}
-                  />
-                )
-              )}
+      {/* Main content area */}
+      <View style={styles.content}>
+
+        {/* ── IDLE / Start screen ── */}
+        {phase === 'idle' && (
+          <View style={styles.centerBox}>
+            <Text style={styles.bigCroc}>🐊</Text>
+            <Text style={styles.idleTitle}>Ready to play?</Text>
+            <Text style={styles.idleDesc}>
+              Open your mouth wide when Croc opens his!{'\n'}
+              Complete {TOTAL_ROUNDS} rounds to win! 🌟
+            </Text>
+            {cameraError ? (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorIcon}>📷</Text>
+                <Text style={styles.errorText}>{cameraError}</Text>
+              </View>
+            ) : (
+              <Pressable
+                style={({ pressed }) => [styles.startBtn, pressed && styles.startBtnPressed]}
+                onPress={startGame}
+                accessibilityLabel="Start game"
+              >
+                <Text style={styles.startBtnText}>Let's Go! 🎮</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+
+        {/* ── COUNTDOWN ── */}
+        {phase === 'countdown' && (
+          <View style={styles.centerBox}>
+            <Text style={styles.roundLabel}>Round {currentRound} of {TOTAL_ROUNDS}</Text>
+            <View style={styles.countdownCircle}>
+              <Text style={styles.countdownNumber}>{countdown}</Text>
             </View>
-          )}
+            <Text style={styles.countdownHint}>Get ready…</Text>
+          </View>
+        )}
 
-          {/* Camera Status Overlay - Small corner indicator */}
-          {hasCamera && (
-            <View style={[
-              styles.cameraStatusOverlay,
-              {
-                width: cameraPreviewSize,
-                height: cameraPreviewSize * 1.33,
-                top: isMobile ? 10 : 20,
-                right: isMobile ? 10 : 20,
-              }
+        {/* ── OPEN COMMAND / ROUND FAIL ── */}
+        {(phase === 'open_command' || phase === 'round_fail') && (
+          <View style={styles.centerBox}>
+            <Text style={styles.roundLabel}>Round {currentRound} of {TOTAL_ROUNDS}</Text>
+
+            {/* Crocodile SVG-style with animated jaw */}
+            <Animated.View style={[
+              styles.crocWrapper,
+              { transform: [{ scale: pulseAnim }, { translateX: shakeAnim }] },
             ]}>
-              <View style={styles.cameraOverlay}>
-                <View style={[
-                  styles.jawStatusIndicator,
-                  childJawOpen ? styles.jawOpen : styles.jawClosed
-                ]}>
-                  <Text style={styles.jawStatusText}>
-                    {childJawOpen ? 'OPEN ✅' : 'CLOSED ⛔'}
-                  </Text>
-                </View>
-                {!isDetecting && (
-                  <Text style={styles.detectionWarning}>
-                    Position your face
-                  </Text>
-                )}
+              {/* Body */}
+              <View style={[styles.crocBody, { width: CROC_SIZE, height: CROC_HALF }]}>
+                <Text style={[styles.crocBodyText, { fontSize: CROC_HALF * 0.7 }]}>🐊</Text>
               </View>
-            </View>
-          )}
+              {/* Animated upper jaw */}
+              <Animated.View style={[
+                styles.jawTop,
+                {
+                  width: CROC_SIZE * 0.7,
+                  height: CROC_HALF * 0.6,
+                  transform: [{ rotate: jawRotate }],
+                  transformOrigin: 'bottom center',
+                },
+              ]}>
+                <Text style={{ fontSize: CROC_HALF * 0.5 }}>🟢</Text>
+              </Animated.View>
+            </Animated.View>
 
-          {/* Error Message */}
-          {jawError && (
-            <View style={[styles.errorBanner, isMobile && styles.errorBannerMobile]}>
-              <Ionicons name="alert-circle" size={24} color="#EF4444" />
-              <Text style={styles.errorText}>{jawError}</Text>
-            </View>
-          )}
-
-          {/* Progress Bar */}
-          {canPlay && (
-            <View style={[styles.progressBarContainer, isMobile && styles.progressBarContainerMobile]}>
-              <View style={styles.progressBarBackground}>
-                <Animated.View
-                  style={[
-                    styles.progressBarFill,
-                    {
-                      width: progressBarWidth.interpolate({
-                        inputRange: [0, 100],
-                        outputRange: ['0%', '100%'],
-                      }),
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={[styles.progressText, isMobile && styles.progressTextMobile]}>
-                Round {currentCycle} / {requiredRounds}
+            {/* Big instruction */}
+            <View style={[styles.commandBubble, mouthOpen && styles.commandBubbleOpen]}>
+              <Text style={[styles.commandText, mouthOpen && styles.commandTextOpen]}>
+                {mouthOpen ? '😁 GREAT! Keep it open!' : '👄 OPEN YOUR MOUTH!'}
               </Text>
             </View>
-          )}
 
-          {/* Model Emoji */}
-          <View style={styles.emojiContainer}>
-            <Animated.View
-              style={[
-                styles.emojiWrapper,
-                {
-                  transform: [
-                    { scale: Animated.multiply(emojiScale, pulseAnim) },
-                  ],
-                  opacity: emojiOpacity,
-                },
-              ]}
-            >
-              <Animated.View
-                style={[
-                  styles.emojiMain,
-                  {
-                    width: emojiSize,
-                    height: emojiSize,
-                    transform: [{ scaleY: mouthScale }],
-                  },
-                ]}
-              >
-                <Text style={[styles.emojiText, { fontSize: emojiSize * 0.75 }]}>
-                  {modelState === 'open' ? '😮' : '😐'}
-                </Text>
-              </Animated.View>
+            {/* Timer bar */}
+            <View style={styles.timerBarBg}>
+              <View style={[styles.timerBarFill, { width: `${(1 - openProgress) * 100}%` as any }]} />
+            </View>
 
-              <View style={[styles.modelIndicator, isMobile && styles.modelIndicatorMobile]}>
-                <Text style={[styles.modelIndicatorText, isMobile && styles.modelIndicatorTextMobile]}>
-                  {modelState === 'open' ? 'OPEN YOUR MOUTH' : 'CLOSE YOUR MOUTH'}
-                </Text>
+            {/* Status */}
+            <View style={[styles.statusChip, mouthOpen ? styles.statusOpen : styles.statusClosed]}>
+              <Text style={styles.statusText}>
+                {mouthOpen ? '🟢 Mouth OPEN' : '🔴 Mouth CLOSED'}
+              </Text>
+            </View>
+
+            {phase === 'round_fail' && (
+              <View style={styles.failBanner}>
+                <Text style={styles.failText}>⏰ Time's up! Try again!</Text>
               </View>
-            </Animated.View>
+            )}
           </View>
+        )}
 
-          {/* Star Reward */}
-          <Animated.View
-            style={[
-              styles.starContainer,
-              {
-                transform: [{ scale: starScale }],
-                opacity: starOpacity,
-              },
-            ]}
-          >
-            <Text style={[styles.starEmoji, { fontSize: getResponsiveSize(60, isTablet, isMobile) }]}>⭐</Text>
-          </Animated.View>
-
-          {/* Particle Effects */}
-          <Animated.View
-            style={[
-              styles.particles,
-              {
-                opacity: particleOpacity,
-              },
-            ]}
-            pointerEvents="none"
-          >
-            {[...Array(8)].map((_, i) => {
-              const angle = (i * 45) * (Math.PI / 180);
-              const distance = getResponsiveSize(80, isTablet, isMobile);
-              return (
-                <View
-                  key={i}
-                  style={[
-                    styles.particle,
-                    {
-                      transform: [
-                        { translateX: Math.cos(angle) * distance },
-                        { translateY: Math.sin(angle) * distance },
-                      ],
-                    },
-                  ]}
-                >
-                  <Text style={[styles.particleEmoji, { fontSize: getResponsiveSize(24, isTablet, isMobile) }]}>✨</Text>
-                </View>
-              );
-            })}
-          </Animated.View>
-
-          {/* Stats */}
-          <View style={[styles.statsContainer, isMobile && styles.statsContainerMobile]}>
-            <Text style={[styles.statsText, isMobile && styles.statsTextMobile]}>
-              Matches: {correctMatches} / {currentCycle}
+        {/* ── ROUND SUCCESS ── */}
+        {phase === 'round_success' && (
+          <Animated.View style={[styles.centerBox, { transform: [{ scale: successScale }] }]}>
+            <Text style={styles.successEmoji}>🌟</Text>
+            <Text style={styles.successTitle}>
+              {currentRound >= TOTAL_ROUNDS ? 'Last one!' : `Round ${currentRound} done!`}
             </Text>
-            <Text style={[styles.statsSubtext, isMobile && styles.statsSubtextMobile]}>
-              Accuracy: {Math.round(matchAccuracy)}% • False Opens: {falseOpens}
+            <Text style={styles.successMsg}>
+              {['Amazing! 🎉', 'Fantastic! 🦸', 'You did it! 🙌', 'So good! ⭐', 'Keep going! 🚀'][currentRound - 1] ?? 'Great!'}
             </Text>
-          </View>
-        </View>
+            <View style={styles.checkRow}>
+              {Array.from({ length: currentRound }).map((_, i) => (
+                <Text key={i} style={styles.checkMark}>✅</Text>
+              ))}
+              {Array.from({ length: TOTAL_ROUNDS - currentRound }).map((_, i) => (
+                <Text key={i} style={styles.checkEmpty}>⬜</Text>
+              ))}
+            </View>
+          </Animated.View>
+        )}
 
-        {/* Skills Footer */}
-        <View style={[styles.skillsContainer, isMobile && styles.skillsContainerMobile]}>
-          <View style={styles.skillItem}>
-            <Ionicons name="medical" size={isMobile ? 18 : 20} color="#0F172A" />
-            <Text style={[styles.skillText, isMobile && styles.skillTextMobile]}>Jaw Awareness</Text>
+        {/* ── COMPLETE ── */}
+        {phase === 'complete' && (
+          <View style={styles.centerBox}>
+            <Text style={styles.confetti}>🎊🏆🎊</Text>
+            <Text style={styles.completeTitle}>You did it!</Text>
+            <Text style={styles.completeDesc}>
+              All {TOTAL_ROUNDS} rounds complete!{'\n'}Your jaw is getting stronger! 💪
+            </Text>
+            <View style={styles.trophyRow}>
+              {Array.from({ length: TOTAL_ROUNDS }).map((_, i) => (
+                <Text key={i} style={styles.trophyStar}>⭐</Text>
+              ))}
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.playAgainBtn, pressed && styles.playAgainBtnPressed]}
+              onPress={startGame}
+              accessibilityLabel="Play again"
+            >
+              <Text style={styles.playAgainText}>Play Again 🔄</Text>
+            </Pressable>
+            {onBack && (
+              <Pressable style={styles.doneBtn} onPress={onBack}>
+                <Text style={styles.doneBtnText}>Done ✓</Text>
+              </Pressable>
+            )}
           </View>
-          <View style={styles.skillItem}>
-            <Ionicons name="copy" size={isMobile ? 18 : 20} color="#0F172A" />
-            <Text style={[styles.skillText, isMobile && styles.skillTextMobile]}>Imitation</Text>
-          </View>
-          <View style={styles.skillItem}>
-            <Ionicons name="musical-notes" size={isMobile ? 18 : 20} color="#0F172A" />
-            <Text style={[styles.skillText, isMobile && styles.skillTextMobile]}>Oral Motor</Text>
-          </View>
-        </View>
-      </LinearGradient>
+        )}
 
-      {/* Round Success Animation */}
-      <RoundSuccessAnimation
-        visible={showRoundSuccess}
-        stars={3}
-      />
+      </View>
+
+      {/* Camera status pill (bottom) */}
+      {Platform.OS === 'web' && phase !== 'idle' && phase !== 'complete' && (
+        <View style={styles.cameraStatus}>
+          <View style={[styles.cameraStatusDot, cameraReady && mpReady ? styles.cameraOn : styles.cameraOff]} />
+          <Text style={styles.cameraStatusText}>
+            {cameraReady && mpReady ? 'Camera active' : cameraError ? 'No camera' : 'Starting camera…'}
+          </Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const JUNGLE_GREEN   = '#1B4332';
+const MID_GREEN      = '#2D6A4F';
+const LIGHT_GREEN    = '#52B788';
+const YELLOW         = '#FFD166';
+const ORANGE         = '#F4845F';
+const WHITE          = '#FAFDF6';
+const CREAM          = '#F0FFF4';
+const DARK_TEXT      = '#0D2818';
+const SUCCESS_COLOR  = '#40C057';
+const FAIL_COLOR     = '#FA5252';
+
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
+    backgroundColor: CREAM,
+    fontFamily: Platform.OS === 'web' ? "'Fredoka One', cursive" : undefined,
+  } as any,
+  bgLeaves: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    pointerEvents: 'none',
+    zIndex: 0,
   },
-  gradient: {
-    flex: 1,
+  bgLeaf: {
+    position: 'absolute',
+    fontSize: 60,
   },
+
+  // ── Header ──────────────────────────────────────────────────────────────
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-    backgroundColor: 'rgba(224, 242, 254, 0.95)', // Semi-transparent background for visibility over camera
-    position: 'relative',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 8,
-    marginRight: 12,
-  },
-  backText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-    marginLeft: 4,
-  },
-  headerText: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#0F172A',
-  },
-  titleMobile: {
-    fontSize: 20,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#475569',
-    marginTop: 2,
-  },
-  subtitleMobile: {
-    fontSize: 12,
-  },
-  playArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    position: 'relative',
-  },
-  cameraContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#000000',
-  },
-  cameraLoading: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#000000',
-  },
-  cameraLoadingText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  cameraStatusOverlay: {
-    position: 'absolute',
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
+    paddingVertical: 12,
+    backgroundColor: JUNGLE_GREEN,
+    zIndex: 10,
     shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: MID_GREEN,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backArrow: {
+    color: WHITE,
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: YELLOW,
+    letterSpacing: 0.5,
+    fontFamily: Platform.OS === 'web' ? "'Fredoka One', cursive" : undefined,
+  } as any,
+  headerSub: {
+    fontSize: 12,
+    color: LIGHT_GREEN,
+    marginTop: 1,
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  dot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  dotEmpty: {
+    backgroundColor: MID_GREEN,
+    borderColor: LIGHT_GREEN,
+  },
+  dotActive: {
+    backgroundColor: YELLOW,
+    borderColor: YELLOW,
+  },
+  dotSuccess: {
+    backgroundColor: SUCCESS_COLOR,
+    borderColor: SUCCESS_COLOR,
+  },
+  dotFail: {
+    backgroundColor: FAIL_COLOR,
+    borderColor: FAIL_COLOR,
+  },
+
+  // ── Video preview (jaw coordinates overlay) ───────────────────────────────
+  previewContainer: {
+    width: '100%',
+    maxWidth: 420,
+    aspectRatio: 4 / 3,
+    alignSelf: 'center',
+    backgroundColor: '#0D2818',
+    overflow: 'hidden',
+    marginHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 3,
+    borderColor: LIGHT_GREEN,
+    zIndex: 5,
+    position: 'relative',
+    minHeight: 180,
+  },
+  previewPlaceholder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 0,
+  },
+  previewPlaceholderText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 14,
+  },
+
+  // ── Content ──────────────────────────────────────────────────────────────
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    zIndex: 2,
+  },
+  centerBox: {
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 500,
+  },
+
+  // ── Idle ─────────────────────────────────────────────────────────────────
+  bigCroc: {
+    fontSize: 100,
+    marginBottom: 12,
+  },
+  idleTitle: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: JUNGLE_GREEN,
+    marginBottom: 10,
+    textAlign: 'center',
+    fontFamily: Platform.OS === 'web' ? "'Fredoka One', cursive" : undefined,
+  } as any,
+  idleDesc: {
+    fontSize: 16,
+    color: MID_GREEN,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 28,
+  },
+  startBtn: {
+    backgroundColor: YELLOW,
+    paddingHorizontal: 48,
+    paddingVertical: 18,
+    borderRadius: 50,
+    borderBottomWidth: 5,
+    borderBottomColor: '#D4A017',
+    shadowColor: JUNGLE_GREEN,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-    zIndex: 15,
-    backgroundColor: 'transparent',
   },
-  cameraOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    padding: 8,
-    alignItems: 'center',
+  startBtnPressed: {
+    transform: [{ translateY: 3 }],
+    borderBottomWidth: 2,
   },
-  jawStatusIndicator: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginBottom: 4,
+  startBtnText: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: JUNGLE_GREEN,
+    fontFamily: Platform.OS === 'web' ? "'Fredoka One', cursive" : undefined,
+  } as any,
+
+  // ── Countdown ────────────────────────────────────────────────────────────
+  roundLabel: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: MID_GREEN,
+    marginBottom: 20,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
-  jawOpen: {
-    backgroundColor: '#22C55E',
-  },
-  jawClosed: {
-    backgroundColor: '#64748B',
-  },
-  jawStatusText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  detectionWarning: {
-    color: '#FCD34D',
-    fontSize: 8,
-    textAlign: 'center',
-  },
-  errorBanner: {
-    position: 'absolute',
-    top: 40,
-    width: '90%',
-    backgroundColor: '#FEE2E2',
-    padding: 16,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#EF4444',
-    zIndex: 15,
-  },
-  errorBannerMobile: {
-    top: 60,
-    padding: 12,
-    width: '95%',
-  },
-  errorText: {
-    color: '#DC2626',
-    fontSize: 14,
-    marginLeft: 12,
-    flex: 1,
-  },
-  progressBarContainer: {
-    position: 'absolute',
-    top: 20,
-    width: '85%',
-    alignItems: 'center',
-    zIndex: 5,
-  },
-  progressBarContainerMobile: {
-    top: 60,
-    width: '90%',
-  },
-  progressBarBackground: {
-    width: '100%',
-    height: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#22C55E',
-    borderRadius: 4,
-  },
-  progressText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0F172A',
-  },
-  progressTextMobile: {
-    fontSize: 12,
-  },
-  emojiContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 5,
-  },
-  emojiWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emojiMain: {
+  countdownCircle: {
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: JUNGLE_GREEN,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    borderWidth: 6,
+    borderColor: YELLOW,
+    shadowColor: JUNGLE_GREEN,
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 16,
-  },
-  emojiText: {
-    textAlign: 'center',
-  },
-  modelIndicator: {
-    marginTop: 20,
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
     shadowRadius: 12,
     elevation: 12,
   },
-  modelIndicatorMobile: {
-    marginTop: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  countdownNumber: {
+    fontSize: 70,
+    fontWeight: '900',
+    color: YELLOW,
+    fontFamily: Platform.OS === 'web' ? "'Fredoka One', cursive" : undefined,
+  } as any,
+  countdownHint: {
+    fontSize: 18,
+    color: MID_GREEN,
+    marginTop: 20,
+    fontWeight: '600',
   },
-  modelIndicatorText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  modelIndicatorTextMobile: {
-    fontSize: 14,
-  },
-  starContainer: {
-    position: 'absolute',
-    top: '35%',
+
+  // ── Croc ─────────────────────────────────────────────────────────────────
+  crocWrapper: {
     alignItems: 'center',
-    zIndex: 8,
+    marginBottom: 24,
+    position: 'relative',
   },
-  starEmoji: {
-    textAlign: 'center',
-  },
-  particles: {
-    position: 'absolute',
-    top: '35%',
-    width: 0,
-    height: 0,
-    zIndex: 7,
-  },
-  particle: {
-    position: 'absolute',
-    width: 30,
-    height: 30,
+  crocBody: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  particleEmoji: {
+  crocBodyText: {
     textAlign: 'center',
   },
-  statsContainer: {
+  jawTop: {
     position: 'absolute',
-    bottom: 100,
+    top: -20,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+
+  // ── Command ───────────────────────────────────────────────────────────────
+  commandBubble: {
+    backgroundColor: JUNGLE_GREEN,
+    borderRadius: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    marginBottom: 20,
+    borderWidth: 3,
+    borderColor: MID_GREEN,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
+    minWidth: 260,
     alignItems: 'center',
   },
-  statsContainerMobile: {
-    bottom: 80,
+  commandBubbleOpen: {
+    backgroundColor: SUCCESS_COLOR,
+    borderColor: '#2F9E44',
   },
-  statsText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#0F172A',
-    marginBottom: 4,
+  commandText: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: YELLOW,
+    textAlign: 'center',
+    fontFamily: Platform.OS === 'web' ? "'Fredoka One', cursive" : undefined,
+  } as any,
+  commandTextOpen: {
+    color: WHITE,
   },
-  statsTextMobile: {
-    fontSize: 16,
+
+  // ── Timer bar ─────────────────────────────────────────────────────────────
+  timerBarBg: {
+    width: '85%',
+    height: 16,
+    backgroundColor: '#D8F3DC',
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: LIGHT_GREEN,
   },
-  statsSubtext: {
-    fontSize: 14,
-    color: '#475569',
+  timerBarFill: {
+    height: '100%',
+    backgroundColor: ORANGE,
+    borderRadius: 6,
   },
-  statsSubtextMobile: {
-    fontSize: 12,
-  },
-  skillsContainer: {
+
+  // ── Status chip ───────────────────────────────────────────────────────────
+  statusChip: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    paddingTop: 12,
-  },
-  skillsContainerMobile: {
-    paddingHorizontal: 12,
-    paddingBottom: 16,
-    paddingTop: 8,
-  },
-  skillItem: {
     alignItems: 'center',
-    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 30,
+    marginBottom: 8,
   },
-  skillText: {
-    fontSize: 12,
-    color: '#475569',
-    marginTop: 4,
+  statusOpen: {
+    backgroundColor: '#D3F9D8',
+    borderWidth: 2,
+    borderColor: SUCCESS_COLOR,
+  },
+  statusClosed: {
+    backgroundColor: '#FFE3E3',
+    borderWidth: 2,
+    borderColor: '#FF6B6B',
+  },
+  statusText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: DARK_TEXT,
+  },
+
+  // ── Fail banner ───────────────────────────────────────────────────────────
+  failBanner: {
+    backgroundColor: '#FFE3E3',
+    borderRadius: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderWidth: 2,
+    borderColor: FAIL_COLOR,
+    marginTop: 8,
+  },
+  failText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: FAIL_COLOR,
     textAlign: 'center',
   },
-  skillTextMobile: {
-    fontSize: 10,
-    marginTop: 2,
+
+  // ── Round success ─────────────────────────────────────────────────────────
+  successEmoji: {
+    fontSize: 90,
+    marginBottom: 10,
+  },
+  successTitle: {
+    fontSize: 34,
+    fontWeight: '900',
+    color: JUNGLE_GREEN,
+    marginBottom: 6,
+    fontFamily: Platform.OS === 'web' ? "'Fredoka One', cursive" : undefined,
+  } as any,
+  successMsg: {
+    fontSize: 20,
+    color: MID_GREEN,
+    fontWeight: '600',
+    marginBottom: 20,
+  },
+  checkRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 4,
+  },
+  checkMark: { fontSize: 28 },
+  checkEmpty: { fontSize: 28 },
+
+  // ── Complete ──────────────────────────────────────────────────────────────
+  confetti: {
+    fontSize: 56,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  completeTitle: {
+    fontSize: 42,
+    fontWeight: '900',
+    color: JUNGLE_GREEN,
+    marginBottom: 8,
+    fontFamily: Platform.OS === 'web' ? "'Fredoka One', cursive" : undefined,
+  } as any,
+  completeDesc: {
+    fontSize: 17,
+    color: MID_GREEN,
+    textAlign: 'center',
+    lineHeight: 26,
+    marginBottom: 20,
+  },
+  trophyRow: {
+    flexDirection: 'row',
+    gap: 4,
+    marginBottom: 28,
+  },
+  trophyStar: { fontSize: 32 },
+  playAgainBtn: {
+    backgroundColor: YELLOW,
+    paddingHorizontal: 40,
+    paddingVertical: 16,
+    borderRadius: 50,
+    borderBottomWidth: 5,
+    borderBottomColor: '#D4A017',
+    marginBottom: 14,
+    shadowColor: JUNGLE_GREEN,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  playAgainBtnPressed: {
+    transform: [{ translateY: 3 }],
+    borderBottomWidth: 2,
+  },
+  playAgainText: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: JUNGLE_GREEN,
+    fontFamily: Platform.OS === 'web' ? "'Fredoka One', cursive" : undefined,
+  } as any,
+  doneBtn: {
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: MID_GREEN,
+  },
+  doneBtnText: {
+    fontSize: 16,
+    color: MID_GREEN,
+    fontWeight: '700',
+  },
+
+  // ── Camera status ─────────────────────────────────────────────────────────
+  cameraStatus: {
+    position: 'absolute',
+    bottom: 16,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(27,67,50,0.85)',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    zIndex: 20,
+    gap: 8,
+  },
+  cameraStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  cameraOn:  { backgroundColor: SUCCESS_COLOR },
+  cameraOff: { backgroundColor: FAIL_COLOR },
+  cameraStatusText: {
+    color: WHITE,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // ── Error box ─────────────────────────────────────────────────────────────
+  errorBox: {
+    backgroundColor: '#FFF3F3',
+    borderRadius: 14,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: FAIL_COLOR,
+    maxWidth: 320,
+  },
+  errorIcon: { fontSize: 32, marginBottom: 8 },
+  errorText: {
+    color: FAIL_COLOR,
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
+
+export default JawAwarenessCrocodileGame;
