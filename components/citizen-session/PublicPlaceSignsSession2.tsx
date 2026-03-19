@@ -1,0 +1,299 @@
+/**
+ * Level 8 – The Citizen, Session 2: Public Place Signs
+ * Flow: Intro → Game 1 (Sign Recognition) → Game 2 (Sign Meaning) → Game 3 (Coin Value Match) → Game 4 (Coin Value Builder) → Notebook → Result
+ * AAC-friendly: clear, predictable, sensory-friendly.
+ */
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
+  Pressable,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { getLastCompletedGameIndex, markSessionGameComplete } from '@/components/special-education/shared/useSessionIntroProgress';
+import { PublicSignRecognition } from './PublicSignRecognition';
+import { PublicSignMeaningMatch } from './PublicSignMeaningMatch';
+import { CoinValueMatch } from './CoinValueMatch';
+import { CoinValueBuilder } from './CoinValueBuilder';
+import { PublicPlaceSignsNotebookUpload } from './PublicPlaceSignsNotebookUpload';
+
+const TOTAL_GAMES = 5;
+const GAME_COUNT = 4;
+const SECTION_NUMBER = 8;
+const SESSION_NUMBER = 2;
+const SUCCESS = '#22C55E';
+const BG = '#F3F4F6';
+const CITIZEN_COLOR = '#EC4899';
+
+interface PublicPlaceSignsSession2Props {
+  onExit?: () => void;
+}
+
+export function PublicPlaceSignsSession2({ onExit }: PublicPlaceSignsSession2Props = {}) {
+  const [step, setStep] = useState(0);
+  const [stars, setStars] = useState(0);
+  const [notebookCorrect, setNotebookCorrect] = useState<boolean | null>(null);
+  const [lastCompletedGameIndex, setLastCompletedGameIndex] = useState(0);
+
+  useEffect(() => {
+    if (step === 0) {
+      getLastCompletedGameIndex(SECTION_NUMBER, SESSION_NUMBER, GAME_COUNT).then(setLastCompletedGameIndex);
+    }
+  }, [step]);
+
+  const advance = useCallback(async () => {
+    const currentStep = step;
+    setStars((s) => Math.min(s + 1, TOTAL_GAMES));
+    setStep((g) => Math.min(g + 1, 6));
+    if (currentStep >= 1 && currentStep <= GAME_COUNT) {
+      await markSessionGameComplete(SECTION_NUMBER, SESSION_NUMBER, currentStep);
+      setLastCompletedGameIndex((prev) => Math.max(prev, currentStep));
+    }
+  }, [step]);
+
+  const handleNotebookComplete = useCallback((correct: boolean) => {
+    setNotebookCorrect(correct);
+    if (correct) setStars((s) => Math.min(s + 1, TOTAL_GAMES));
+    setStep(6);
+  }, []);
+
+  const progressPct = step >= 1 && step <= 5 ? (step / TOTAL_GAMES) * 100 : 0;
+
+  if (step === 0) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        {onExit ? (
+          <Pressable
+            onPress={onExit}
+            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="arrow-back" size={24} color={CITIZEN_COLOR} />
+            <Text style={styles.backButtonText}>Back</Text>
+          </Pressable>
+        ) : null}
+        <ScrollView contentContainerStyle={styles.introScroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.introHeader}>
+            <Text style={styles.introTitle}>Public Place Signs</Text>
+            <Text style={styles.introSub}>Let's learn signs we see in public places.</Text>
+          </View>
+          <View style={styles.cardsWrap}>
+            {[
+              { icon: '🚻', title: 'Tap the correct sign', desc: 'TOILET, MEN, WOMEN' },
+              { icon: '📋', title: 'Match sign with place', desc: 'Restroom, exit' },
+              { icon: '🪙', title: 'Match coin with value', desc: '₹5, ₹10' },
+              { icon: '💰', title: 'Make the correct value', desc: '₹5 + ₹5 = ?' },
+            ].map((card, i) => {
+              const gameNum = i + 1;
+              const unlocked = lastCompletedGameIndex >= i;
+              return (
+                <Pressable
+                  key={i}
+                  onPress={() => unlocked && setStep(gameNum)}
+                  style={({ pressed }) => [
+                    styles.introCard,
+                    !unlocked && styles.introCardLocked,
+                    unlocked && pressed && styles.introCardPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={unlocked ? `${card.title}. Tap to play.` : `${card.title}. Complete game ${gameNum - 1} first.`}
+                  accessibilityState={{ disabled: !unlocked }}
+                >
+                  <Text style={styles.introCardIcon}>{card.icon}</Text>
+                  <Text style={[styles.introCardTitle, !unlocked && styles.introCardTextLocked]}>{card.title}</Text>
+                  <Text style={[styles.introCardDesc, !unlocked && styles.introCardTextLocked]}>{card.desc}</Text>
+                  {!unlocked && (
+                    <View style={styles.introCardLockBadge}>
+                      <Ionicons name="lock-closed" size={20} color="#94A3B8" />
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+          {(() => {
+            const nextStep = Math.min(lastCompletedGameIndex + 1, 5);
+            const startLabel = nextStep <= GAME_COUNT ? `Start Game ${nextStep}` : 'Notebook';
+            return (
+              <Pressable
+                onPress={() => setStep(nextStep)}
+                style={({ pressed }) => [styles.startBtn, pressed && styles.pressed]}
+                accessibilityLabel={nextStep === 1 ? 'Start first game' : `Start game ${nextStep}`}
+              >
+                <Text style={styles.startBtnText}>{nextStep === 1 ? 'Start' : startLabel}</Text>
+              </Pressable>
+            );
+          })()}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  if (step === 6) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <ScrollView contentContainerStyle={styles.resultScroll} showsVerticalScrollIndicator={false}>
+          <Text style={styles.resultTitle}>Great job recognizing public signs!</Text>
+          <View style={styles.resultBadge}>
+            <Text style={styles.resultBadgeEmoji}>⭐</Text>
+            <Text style={styles.resultBadgeText}>Public Signs Star</Text>
+          </View>
+          <View style={styles.resultStats}>
+            <Text style={styles.resultStat}>Games completed: {stars}</Text>
+            <Text style={styles.resultStat}>
+              Notebook: {notebookCorrect === null ? '—' : notebookCorrect ? '✓ Done' : 'Try again'}
+            </Text>
+          </View>
+          <View style={styles.starsRow}>
+            {Array.from({ length: TOTAL_GAMES }, (_, i) => (
+              <Text key={i} style={[styles.star, i < stars && styles.starEarned]}>⭐</Text>
+            ))}
+          </View>
+          {onExit ? (
+            <TouchableOpacity style={styles.backBtn} onPress={onExit} activeOpacity={0.8}>
+              <Text style={styles.backBtnText}>Back to sessions</Text>
+            </TouchableOpacity>
+          ) : null}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  const goBack = () => setStep((s) => Math.max(0, s - 1));
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={[styles.header, { borderBottomColor: CITIZEN_COLOR }]}>
+        <Pressable
+          onPress={goBack}
+          style={({ pressed }) => [styles.backButtonHeader, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back one step"
+        >
+          <Ionicons name="arrow-back" size={24} color={CITIZEN_COLOR} />
+          <Text style={styles.backButtonText}>Back</Text>
+        </Pressable>
+        <Text style={[styles.title, { color: '#BE185D' }]}>Public Place Signs</Text>
+        <Text style={[styles.subtitle, { color: CITIZEN_COLOR }]}>The Citizen · Session 2</Text>
+        <View style={styles.progressRow}>
+          <View style={[styles.progressBg, { backgroundColor: `${CITIZEN_COLOR}30` }]}>
+            <View style={[styles.progressFill, { width: `${progressPct}%`, backgroundColor: CITIZEN_COLOR }]} />
+          </View>
+          <Text style={[styles.progressText, { color: '#BE185D' }]}>{step} / {TOTAL_GAMES}</Text>
+        </View>
+        <View style={styles.starsRow}>
+          {Array.from({ length: TOTAL_GAMES }, (_, i) => (
+            <Text key={i} style={[styles.star, i < stars && styles.starEarned]}>⭐</Text>
+          ))}
+        </View>
+      </View>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {step === 1 && <PublicSignRecognition onComplete={advance} />}
+        {step === 2 && <PublicSignMeaningMatch onComplete={advance} />}
+        {step === 3 && <CoinValueMatch onComplete={advance} />}
+        {step === 4 && <CoinValueBuilder onComplete={advance} />}
+        {step === 5 && <PublicPlaceSignsNotebookUpload onComplete={handleNotebookComplete} />}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: BG },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  backButtonHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 6,
+    marginBottom: 4,
+  },
+  backButtonText: { fontSize: 17, fontWeight: '700', color: CITIZEN_COLOR },
+  header: {
+    backgroundColor: '#FCE7F3',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
+    borderBottomWidth: 3,
+  },
+  title: { fontSize: 22, fontWeight: '800', textAlign: 'center' },
+  subtitle: { fontSize: 14, textAlign: 'center', marginTop: 4 },
+  progressRow: { flexDirection: 'row', alignItems: 'center', marginTop: 14, gap: 12 },
+  progressBg: { flex: 1, height: 14, borderRadius: 7, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 7 },
+  progressText: { fontSize: 16, fontWeight: '700', minWidth: 48 },
+  starsRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 10, gap: 6 },
+  star: { fontSize: 24, opacity: 0.35 },
+  starEarned: { opacity: 1 },
+  scroll: { flex: 1 },
+  scrollContent: { flexGrow: 1, paddingBottom: 24 },
+  introScroll: { flexGrow: 1, padding: 24, paddingBottom: 40 },
+  introHeader: { marginBottom: 24 },
+  introTitle: { fontSize: 28, fontWeight: '800', color: '#BE185D', textAlign: 'center', marginBottom: 12 },
+  introSub: { fontSize: 18, color: '#EC4899', textAlign: 'center', lineHeight: 26 },
+  cardsWrap: { gap: 16, marginBottom: 28 },
+  introCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 3,
+    borderColor: CITIZEN_COLOR,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  introCardLocked: { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1', opacity: 0.9 },
+  introCardPressed: { opacity: 0.9 },
+  introCardTextLocked: { color: '#94A3B8' },
+  introCardLockBadge: { marginLeft: 'auto', padding: 6 },
+  introCardIcon: { fontSize: 36 },
+  introCardTitle: { fontSize: 20, fontWeight: '800', color: '#1f2937', flex: 1 },
+  introCardDesc: { fontSize: 16, color: '#6b7280' },
+  startBtn: {
+    backgroundColor: CITIZEN_COLOR,
+    paddingVertical: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  startBtnText: { fontSize: 24, fontWeight: '800', color: '#FFF' },
+  pressed: { opacity: 0.9 },
+  resultScroll: { flexGrow: 1, padding: 24, alignItems: 'center', paddingBottom: 40 },
+  resultTitle: { fontSize: 24, fontWeight: '800', color: '#BE185D', textAlign: 'center', marginBottom: 24 },
+  resultBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#DCFCE7',
+    paddingVertical: 16,
+    paddingHorizontal: 28,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: SUCCESS,
+    gap: 10,
+    marginBottom: 24,
+  },
+  resultBadgeEmoji: { fontSize: 32 },
+  resultBadgeText: { fontSize: 20, fontWeight: '800', color: '#166534' },
+  resultStats: { marginBottom: 16 },
+  resultStat: { fontSize: 18, color: '#374151', marginBottom: 4 },
+  backBtn: {
+    marginTop: 24,
+    backgroundColor: CITIZEN_COLOR,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 12,
+  },
+  backBtnText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
+});

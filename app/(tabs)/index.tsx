@@ -3,6 +3,7 @@ import { images } from '@/constants/images';
 import {
   fetchMyStats,
   fetchSkillProfile,
+  getMyProfile,
   type SkillProfileEntry,
   type StatsResponse
 } from '@/utils/api';
@@ -148,6 +149,7 @@ export default function Index() {
   });
   const [refreshing, setRefreshing] = useState(false);
   const [skillProfile, setSkillProfile] = useState<SkillProfileEntry[] | null>([]);
+  const [firstName, setFirstName] = useState<string | null>(null);
   const [selectedMood, setSelectedMood] = useState<MoodOption>('focused');
   const [canScroll, setCanScroll] = useState(true);
   const [layoutHeight, setLayoutHeight] = useState(0);
@@ -170,13 +172,17 @@ export default function Index() {
     
     // Load both API calls in parallel for faster loading
     try {
-      const [s, profile] = await Promise.all([
+      const [s, profile, me] = await Promise.all([
         fetchMyStats().catch((error) => {
           console.warn('Failed to load stats', error);
           return null;
         }),
         fetchSkillProfile().catch((error) => {
           console.warn('Failed to load skill profile', error);
+          return null;
+        }),
+        getMyProfile().catch((error) => {
+          console.warn('Failed to load profile', error);
           return null;
         })
       ]);
@@ -190,6 +196,10 @@ export default function Index() {
       // Update skill profile immediately when available
       if (profile) {
         setSkillProfile(profile.skills || []);
+      }
+      
+      if (me?.firstName) {
+        setFirstName(me.firstName);
       }
       
       // Mark that we've loaded at least once
@@ -435,7 +445,9 @@ export default function Index() {
         <Animated.View style={[styles.header, { opacity: headerOpacity, transform: [{ translateY: headerTranslateY }] }]}>
           <View style={styles.headerContent}>
             <View style={styles.greetingContainer}>
-              <Text style={styles.greeting}>Hello there! 👋</Text>
+              <Text style={styles.greeting}>
+                {firstName ? `Hi, ${firstName}! 👋` : 'Hello there! 👋'}
+              </Text>
               <Text style={styles.subGreeting}>Ready for an amazing day?</Text>
             </View>
             {stats?.levelLabel && (
@@ -519,8 +531,36 @@ export default function Index() {
           </GlassCard>
         </Animated.View>
 
-        {/* Enhanced Stats Grid */}
-        <Text style={styles.sectionTitle}>Your Progress</Text>
+        {/* Primary CTA: Continue your journey */}
+        <Text style={styles.sectionTitle}>Continue your journey</Text>
+        <Pressable
+          onPress={() => router.push('/(tabs)/TherapyProgress')}
+          style={({ pressed }) => [
+            styles.adventureCard,
+            pressed && { transform: [{ scale: 0.98 }] },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Open Therapy Progress. Continue your journey and level up with games."
+        >
+          <LinearGradient
+            colors={['#2563EB', '#3B82F6']}
+            style={styles.adventureGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.adventureIconWrap}>
+              <Ionicons name="sparkles" size={28} color="#FFF" />
+            </View>
+            <View style={styles.adventureTextWrap}>
+              <Text style={styles.adventureTitle}>Therapy Progress</Text>
+              <Text style={styles.adventureCaption}>Pick up where you left off · Level up with games</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.9)" />
+          </LinearGradient>
+        </Pressable>
+
+        {/* Stats Grid */}
+        <Text style={styles.sectionTitle}>Your progress</Text>
         <View style={styles.statsGrid}>
           {statBlocks.map((block) => (
             <Animated.View
@@ -562,33 +602,7 @@ export default function Index() {
           ))}
         </View>
 
-        {/* Your Adventures - Therapy Progress */}
-        <Text style={styles.sectionTitle}>Your Adventures</Text>
-        <Pressable
-          onPress={() => router.push('/(tabs)/TherapyProgress')}
-          style={({ pressed }) => [
-            styles.adventureCard,
-            pressed && { transform: [{ scale: 0.98 }] },
-          ]}
-        >
-          <LinearGradient
-            colors={['#2563EB', '#3B82F6']}
-            style={styles.adventureGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.adventureIconWrap}>
-              <Ionicons name="sparkles" size={28} color="#FFF" />
-            </View>
-            <View style={styles.adventureTextWrap}>
-              <Text style={styles.adventureTitle}>Therapy Progress</Text>
-              <Text style={styles.adventureCaption}>Continue your journey · Level up with games</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.9)" />
-          </LinearGradient>
-        </Pressable>
-
-        {/* Enhanced Quick Actions */}
+        {/* Quick Actions */}
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <ScrollView
           horizontal
@@ -624,6 +638,9 @@ export default function Index() {
                   styles.actionCard,
                   pressed && { transform: [{ scale: 0.96 }] }
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel={`${action.label}. ${action.caption}`}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <LinearGradient
                   colors={action.gradient}
@@ -644,8 +661,9 @@ export default function Index() {
           ))}
         </ScrollView>
 
-        {/* Enhanced Mood Selector */}
+        {/* Mood Selector */}
         <Text style={styles.sectionTitle}>How are you feeling?</Text>
+        <Text style={styles.sectionSubtitle}>We'll keep it in mind for your activities.</Text>
         <GlassCard style={styles.moodContainer} intensity={0.95}>
           <LinearGradient
             colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
@@ -684,6 +702,9 @@ export default function Index() {
                       isSelected && styles.moodButtonSelected,
                       pressed && { transform: [{ scale: 0.95 }] }
                     ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Feeling ${mood}. ${isSelected ? 'Selected' : 'Tap to select'}`}
+                    accessibilityState={{ selected: isSelected }}
                   >
                     {isSelected && (
                       <LinearGradient
@@ -906,8 +927,14 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#1E1B4B',
     marginTop: 40,
-    marginBottom: 20,
+    marginBottom: 8,
     letterSpacing: -0.5,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    marginBottom: 16,
+    fontWeight: '500',
   },
   adventureCard: {
     borderRadius: 24,

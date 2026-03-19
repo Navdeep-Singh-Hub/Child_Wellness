@@ -1,0 +1,242 @@
+/**
+ * Notebook Task — Draw a book ON a table. Upload photo, AI check: table_detected, book_detected, book_on_table.
+ */
+import { speak } from '@/utils/tts';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Alert,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { GameLayout } from '@/components/farm-session/GameLayout';
+import { API_BASE_URL, authHeaders } from '@/utils/api';
+
+const INSTRUCTIONS = 'Draw a book ON a table. Then upload or take a photo of your drawing.';
+
+export function PrepositionOnNotebookUpload({
+  onComplete,
+}: {
+  onComplete: (correct: boolean) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [result, setResult] = useState<{
+    correct: boolean;
+    feedback: string;
+    table_detected?: boolean;
+    book_detected?: boolean;
+    book_on_table?: boolean;
+  } | null>(null);
+  const [imageUri, setImageUri] = useState<string | null>(null);
+
+  const pickImage = async () => {
+    const permission =
+      Platform.OS === 'web'
+        ? { status: 'granted' as const }
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow access to photos to upload your notebook.');
+      return;
+    }
+    const pickerResult = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+    if (pickerResult.canceled) return;
+    const uri = pickerResult.assets[0].uri;
+    setImageUri(uri);
+    setResult(null);
+    await uploadImage(uri);
+  };
+
+  const takePhoto = async () => {
+    const permission =
+      Platform.OS === 'web'
+        ? { status: 'granted' as const }
+        : await ImagePicker.requestCameraPermissionsAsync();
+    if (permission.status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow camera to take a photo.');
+      return;
+    }
+    const pickerResult = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+    if (pickerResult.canceled) return;
+    const uri = pickerResult.assets[0].uri;
+    setImageUri(uri);
+    setResult(null);
+    await uploadImage(uri);
+  };
+
+  const uploadImage = async (uri: string) => {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      const filename = 'notebook.jpg';
+      const type = 'image/jpeg';
+
+      if (Platform.OS === 'web' && (uri.startsWith('blob:') || uri.startsWith('data:'))) {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        formData.append('file', blob, filename);
+      } else {
+        formData.append('file', {
+          uri,
+          name: filename,
+          type,
+        } as any);
+      }
+
+      const headers = await authHeaders({ multipart: true });
+      delete (headers as Record<string, string>)['Content-Type'];
+
+      const res = await fetch(`${API_BASE_URL}/api/upload-preposition-on-task`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Upload failed: ${res.status}`);
+      }
+      const data = await res.json();
+      const tableOk = data.table_detected ?? true;
+      const bookOk = data.book_detected ?? true;
+      const onTableOk = data.book_on_table ?? true;
+      const correct = data.correct ?? (tableOk && bookOk && onTableOk);
+      const feedback = data.feedback || (correct ? 'Great job!' : "Let's try again!");
+      setResult({
+        correct,
+        feedback,
+        table_detected: data.table_detected,
+        book_detected: data.book_detected,
+        book_on_table: data.book_on_table,
+      });
+      if (correct) {
+        speak('Great job!');
+        setTimeout(() => onComplete(true), 2200);
+      } else {
+        speak("Let's try again!");
+        onComplete(false);
+      }
+    } catch (e: any) {
+      setResult({
+        correct: false,
+        feedback: e?.message || 'Upload failed. Try again.',
+      });
+      speak("Let's try again!");
+      onComplete(false);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <GameLayout
+      title="Notebook Activity"
+      instruction="Draw a book ON a table. Then upload or take a photo."
+      icon="📓"
+      backgroundVariant="indigo"
+    >
+      <View style={styles.content}>
+        <Text style={styles.instructions}>{INSTRUCTIONS}</Text>
+        <View style={styles.exampleRow}>
+          <Text style={styles.exampleLabel}>Example: </Text>
+          <View style={styles.exampleVisual}>
+            <View style={styles.exampleTable} />
+            <View style={styles.exampleBook} />
+          </View>
+          <Text style={styles.exampleText}>book on table</Text>
+        </View>
+        <View style={styles.buttonRow}>
+          <Pressable
+            onPress={pickImage}
+            disabled={uploading}
+            style={({ pressed }) => [styles.uploadBtn, pressed && styles.pressed, uploading && styles.disabled]}
+            accessibilityLabel="Upload photo"
+          >
+            {uploading ? (
+              <ActivityIndicator color="#FFF" size="large" />
+            ) : (
+              <>
+                <Text style={styles.btnEmoji}>📷</Text>
+                <Text style={styles.btnText}>Upload Photo</Text>
+              </>
+            )}
+          </Pressable>
+          <Pressable
+            onPress={takePhoto}
+            disabled={uploading}
+            style={({ pressed }) => [styles.uploadBtn, pressed && styles.pressed, uploading && styles.disabled]}
+            accessibilityLabel="Take photo"
+          >
+            <Text style={styles.btnEmoji}>📸</Text>
+            <Text style={styles.btnText}>Take Photo</Text>
+          </Pressable>
+        </View>
+        {result && (
+          <View style={[styles.resultBox, result.correct ? styles.resultCorrect : styles.resultIncorrect]}>
+            <Text style={styles.resultText}>{result.feedback}</Text>
+          </View>
+        )}
+      </View>
+    </GameLayout>
+  );
+}
+
+const styles = StyleSheet.create({
+  content: { padding: 16 },
+  instructions: { fontSize: 18, color: '#374151', marginBottom: 16, textAlign: 'center' },
+  exampleRow: { alignItems: 'center', marginBottom: 24 },
+  exampleLabel: { fontSize: 16, fontWeight: '600', color: '#6B7280', marginBottom: 8 },
+  exampleVisual: { width: 80, height: 70, position: 'relative', marginBottom: 8 },
+  exampleTable: {
+    position: 'absolute',
+    bottom: 0,
+    left: 10,
+    width: 60,
+    height: 22,
+    backgroundColor: '#D4A574',
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#92400E',
+  },
+  exampleBook: {
+    position: 'absolute',
+    top: 18,
+    left: 26,
+    width: 28,
+    height: 22,
+    backgroundColor: '#FEF3C7',
+    borderWidth: 2,
+    borderColor: '#D97706',
+    borderRadius: 4,
+  },
+  exampleText: { fontSize: 14, color: '#6B7280' },
+  buttonRow: { flexDirection: 'row', gap: 12, justifyContent: 'center', flexWrap: 'wrap' },
+  uploadBtn: {
+    backgroundColor: '#4F46E5',
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    minWidth: 140,
+  },
+  pressed: { opacity: 0.9 },
+  disabled: { opacity: 0.7 },
+  btnEmoji: { fontSize: 32, marginBottom: 4 },
+  btnText: { fontSize: 18, fontWeight: '800', color: '#FFF' },
+  resultBox: { marginTop: 20, padding: 16, borderRadius: 12, alignItems: 'center' },
+  resultCorrect: { backgroundColor: '#DCFCE7', borderWidth: 2, borderColor: '#22C55E' },
+  resultIncorrect: { backgroundColor: '#FEE2E2', borderWidth: 2, borderColor: '#EF4444' },
+  resultText: { fontSize: 18, fontWeight: '700', color: '#1f2937' },
+});
