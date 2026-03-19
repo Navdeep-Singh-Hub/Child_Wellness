@@ -115,10 +115,29 @@ export function isUnlocked(
   session: number,
   game: number
 ): boolean {
-  if (!progress) return section === 1 && session === 1 && game === 1;
+  // Matcher (section 2) sessions 1–10 are always unlocked for play (Farm through Celebration Party)
+  if (section === 2 && session >= 1 && session <= 10) return true;
+  // Grouper (section 4) sessions 1–10: word families + Family Challenge + Grouper Master — always unlocked
+  if (section === 4 && (session === 1 || session === 2 || session === 3 || session === 4 || session === 5 || session === 6 || session === 7 || session === 8 || session === 9 || session === 10)) return true;
+  // Logic Lab (section 6) sessions 1–10 — Preposition IN…Logic Lab Master — always unlocked
+  if (section === 6 && (session === 1 || session === 2 || session === 3 || session === 4 || session === 5 || session === 6 || session === 7 || session === 8 || session === 9 || session === 10)) return true;
+  // The Citizen (section 8) Sessions 1–10: Safety Signs … Community Signs, Citizen Master Challenge — always unlocked
+  if (section === 8 && (session === 1 || session === 2 || session === 3 || session === 4 || session === 5 || session === 6 || session === 7 || session === 8 || session === 9 || session === 10)) return true;
+  // The Graduate (section 10) Sessions 1–9: Simple Conversations … Dialogue Builder, Story Problem Solver — always unlocked
+  if (section === 10 && (session === 1 || session === 2 || session === 3 || session === 4 || session === 5 || session === 6 || session === 7 || session === 8 || session === 9 || session === 10)) return true;
+  // Explorer (section 1) Sessions 1–10 — always unlocked
+  if (section === 1 && (session === 1 || session === 2 || session === 3 || session === 4 || session === 5 || session === 6 || session === 7 || session === 8 || session === 9 || session === 10)) return true;
+  // Builder (section 3) Sessions 1–10 — always unlocked
+  if (section === 3 && (session === 1 || session === 2 || session === 3 || session === 4 || session === 5 || session === 6 || session === 7 || session === 8 || session === 9 || session === 10)) return true;
+  // Reader (section 7) Sessions 1–10 — always unlocked
+  if (section === 7 && (session === 1 || session === 2 || session === 3 || session === 4 || session === 5 || session === 6 || session === 7 || session === 8 || session === 9 || session === 10)) return true;
+  // Counter (section 5) Sessions 1–10 — always unlocked
+  if (section === 5 && (session === 1 || session === 2 || session === 3 || session === 4 || session === 5 || session === 6 || session === 7 || session === 8 || session === 9 || session === 10)) return true;
+  // Level 9 / Clockwise (section 9) Session 1 — always unlocked (more sessions can be added later)
+  if (section === 9 && (session === 1 || session === 2 || session === 3 || session === 4 || session === 5 || session === 6 || session === 7 || session === 8 || session === 9 || session === 10)) return true;
+  if (!progress) return false;
   const sectionData = progress.sections.find((s) => s.sectionNumber === section);
   if (!sectionData || !sectionData.unlocked) return false;
-  if (section === 1 && session === 1 && game === 1) return true;
   const sessionData = sectionData.sessions?.find((s) => s.sessionNumber === session);
   if (!sessionData) return false;
   if (game > 1) {

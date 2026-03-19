@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --farm-green: #4CAF50;
+  --farm-sky: #60A5FA;
+  --farm-yellow: #FACC15;
+}
+
+body {
+  @apply antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Touch-friendly tap targets */
+button, [role="button"], .touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}

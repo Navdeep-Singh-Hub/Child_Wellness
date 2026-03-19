@@ -1,0 +1,46 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { ConfettiOnMount } from '@/components/Confetti';
+
+export default function ResultPage() {
+  return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-farm-sky/30 to-farm-green/20 p-6">
+      <ConfettiOnMount />
+      <div className="flex-1 flex flex-col items-center justify-center max-w-lg mx-auto text-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="rounded-3xl bg-white p-8 shadow-2xl border-4 border-farm-yellow"
+        >
+          <p className="text-5xl mb-4">⭐</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">
+            Farm Helper Badge
+          </h1>
+          <p className="text-xl text-gray-700 mt-4">
+            Great job helping on the farm!
+          </p>
+          <p className="text-gray-600 mt-2">
+            You played sound games, rhyming, syllables, counting, and your notebook task.
+          </p>
+        </motion.div>
+
+        <motion.div
+          className="mt-10 flex flex-col gap-4 w-full"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Link
+            href="/farm-session-1"
+            className="block w-full text-center rounded-2xl bg-farm-green text-white font-bold text-xl py-4 shadow-lg"
+          >
+            Play again
+          </Link>
+        </motion.div>
+      </div>
+    </div>
+  );
+}

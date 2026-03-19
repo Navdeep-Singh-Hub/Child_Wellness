@@ -1,0 +1,5 @@
+{
+  "/page": "app/page.js",
+  "/farm-session-1/game/[id]/page": "app/farm-session-1/game/[id]/page.js",
+  "/farm-session-1/page": "app/farm-session-1/page.js"
+}

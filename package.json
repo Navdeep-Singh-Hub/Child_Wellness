@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.8.0",
-    "@expo/vector-icons": "^15.0.2",
+    "@expo/vector-icons": "^15.0.3",
     "@mediapipe/tasks-vision": "^0.10.3",
     "@react-native-community/datetimepicker": "^8.4.5",
     "@react-navigation/bottom-tabs": "^7.4.0",
