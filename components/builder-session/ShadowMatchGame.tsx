@@ -14,11 +14,36 @@ const PAIRS = [
   { id: 'star', emoji: '⭐', label: 'Star' },
 ];
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+function shuffleWithoutSameColumn<T extends { id: string }>(base: T[], source: T[]): T[] {
+  if (source.length <= 1) return [...source];
+  let candidate = shuffleArray(source);
+  let tries = 0;
+  while (candidate.some((item, i) => item.id === base[i]?.id) && tries < 20) {
+    candidate = shuffleArray(source);
+    tries += 1;
+  }
+  if (candidate.some((item, i) => item.id === base[i]?.id)) {
+    return [...source.slice(1), source[0]];
+  }
+  return candidate;
+}
+
 export interface ShadowMatchGameProps {
   onComplete: () => void;
 }
 
 export function ShadowMatchGame({ onComplete }: ShadowMatchGameProps) {
+  const [objectOrder] = useState(() => shuffleArray(PAIRS));
+  const [shadowOrder] = useState(() => shuffleWithoutSameColumn(objectOrder, PAIRS));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [matched, setMatched] = useState<Set<string>>(new Set());
   const [showSuccess, setShowSuccess] = useState(false);
@@ -54,12 +79,12 @@ export function ShadowMatchGame({ onComplete }: ShadowMatchGameProps) {
       speak(`Correct! ${PAIRS.find((p) => p.id === id)?.label} matches!`, 0.7);
       setMatched((m) => new Set(m).add(id));
       setSelectedId(null);
-      if (matched.size + 1 >= PAIRS.length) {
+      if (matched.size + 1 >= objectOrder.length) {
         setShowSuccess(true);
         setTimeout(() => onComplete(), 2200);
       }
     },
-    [selectedId, matched, onComplete, triggerWrong]
+    [selectedId, matched, onComplete, triggerWrong, objectOrder.length]
   );
 
   if (showSuccess) {
@@ -85,7 +110,7 @@ export function ShadowMatchGame({ onComplete }: ShadowMatchGameProps) {
       <View style={styles.container}>
         <Text style={styles.label}>Objects</Text>
         <Animated.View style={[styles.row, { transform: [{ translateX: shakeX }] }]}>
-          {PAIRS.map((p) => (
+          {objectOrder.map((p) => (
             <Pressable
               key={p.id}
               onPress={() => handleObjectTap(p.id)}
@@ -103,7 +128,7 @@ export function ShadowMatchGame({ onComplete }: ShadowMatchGameProps) {
         </Animated.View>
         <Text style={styles.label}>Shadows</Text>
         <View style={styles.row}>
-          {PAIRS.map((p) => (
+          {shadowOrder.map((p) => (
             <Pressable
               key={`shadow-${p.id}`}
               onPress={() => handleShadowTap(p.id)}

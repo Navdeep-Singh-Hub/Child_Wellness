@@ -73,7 +73,6 @@ export function SuperheroMatchSets({ onComplete }: { onComplete: () => void }) {
         <Animated.View style={[styles.setWrap, { transform: [{ translateX: shakeX }] }]}>
           <View style={styles.setBox}>
             <Text style={styles.setEmojis} numberOfLines={1}>{round.emoji.repeat(Math.min(round.count, 10))}</Text>
-            <Text style={styles.setLabel}>{round.count} {round.label}</Text>
           </View>
         </Animated.View>
         <Text style={styles.prompt}>Tap the correct number:</Text>
@@ -109,7 +108,6 @@ const styles = StyleSheet.create({
     minWidth: 260,
   },
   setEmojis: { fontSize: 28, marginBottom: 8, letterSpacing: 2 },
-  setLabel: { fontSize: 18, fontWeight: '700', color: '#991B1B' },
   prompt: { fontSize: 18, color: '#4b5563', marginBottom: 20 },
   numbersRow: { flexDirection: 'row', gap: 12, flexWrap: 'wrap', justifyContent: 'center' },
   numBtn: {

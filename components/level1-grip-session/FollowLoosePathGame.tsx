@@ -12,6 +12,9 @@ import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
 
 const PATH_WIDTH = 70;
 const PROGRESS_THRESHOLD = 0.8;
+const TRACE_TOLERANCE = PATH_WIDTH / 2;
+const START_T_THRESHOLD = 0.12;
+const MAX_PROGRESS_JUMP = 0.18;
 
 function samplePath(numPoints: number, width: number, height: number): { x: number; y: number; t: number }[] {
   const pts: { x: number; y: number; t: number }[] = [];
@@ -74,7 +77,10 @@ export function FollowLoosePathGame({
   const pathD = useMemo(() => getPathD(pathPoints), [pathPoints]);
   const [progress, setProgress] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [pathError, setPathError] = useState('');
   const progressRef = React.useRef(0);
+  const hasStartedTracingRef = React.useRef(false);
+  const isCompletingRef = React.useRef(false);
   const dashOffset = useSharedValue(0);
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
@@ -92,22 +98,63 @@ export function FollowLoosePathGame({
 
   const panGesture = Gesture.Pan()
     .runOnJS(true)
+    .onStart((e) => {
+      setPathError('');
+      const startT = closestProgress({ x: e.x, y: e.y }, pathPoints, TRACE_TOLERANCE);
+      if (startT === null || startT > START_T_THRESHOLD) {
+        hasStartedTracingRef.current = false;
+        progressRef.current = 0;
+        setProgress(0);
+        setPathError('Start tracing from the beginning of the path.');
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        } catch (_) {}
+        return;
+      }
+      hasStartedTracingRef.current = true;
+    })
     .onUpdate((e) => {
-      const t = closestProgress({ x: e.x, y: e.y }, pathPoints, PATH_WIDTH);
+      if (isCompletingRef.current) return;
+      if (!hasStartedTracingRef.current) return;
+      const t = closestProgress({ x: e.x, y: e.y }, pathPoints, TRACE_TOLERANCE);
+      if (t === null && progressRef.current > 0) {
+        progressRef.current = 0;
+        setProgress(0);
+        setPathError('You moved outside the path. Stay inside the guide and try again.');
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        } catch (_) {}
+        return;
+      }
+      if (t !== null && t - progressRef.current > MAX_PROGRESS_JUMP) {
+        progressRef.current = 0;
+        setProgress(0);
+        hasStartedTracingRef.current = false;
+        setPathError('Follow the path continuously. Jumping ahead is not allowed.');
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        } catch (_) {}
+        return;
+      }
       if (t !== null && t > progressRef.current) {
         progressRef.current = t;
         setProgress(t);
         if (t >= PROGRESS_THRESHOLD) {
+          isCompletingRef.current = true;
           setShowConfetti(true);
           try {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           } catch (_) {}
           setTimeout(() => {
             setShowConfetti(false);
+            isCompletingRef.current = false;
             onComplete();
           }, 1500);
         }
       }
+    })
+    .onEnd(() => {
+      hasStartedTracingRef.current = false;
     });
 
   return (
@@ -121,7 +168,12 @@ export function FollowLoosePathGame({
     >
       <View style={styles.outer}>
         <View style={styles.svgWrap} onLayout={onLayout}>
-          <Svg style={StyleSheet.absoluteFill}>
+          <Svg
+            style={StyleSheet.absoluteFill}
+            width={dimensions.width}
+            height={dimensions.height}
+            viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+          >
             <Path
               d={pathD}
               stroke="rgba(91,33,182,0.25)"
@@ -146,6 +198,7 @@ export function FollowLoosePathGame({
           </GestureDetector>
         </View>
         <View style={styles.progressRow}>
+          {!!pathError && <Text style={styles.errorText}>{pathError}</Text>}
           <Text style={styles.progressLabel}>Progress: {Math.round(progress * 100)}%</Text>
           <View style={styles.barBg}>
             <View style={[styles.barFill, { width: `${Math.min(100, progress * 100)}%` }]} />
@@ -159,8 +212,9 @@ export function FollowLoosePathGame({
 
 const styles = StyleSheet.create({
   outer: { flex: 1 },
-  svgWrap: { flex: 1, minHeight: 320 },
+  svgWrap: { flex: 1, minHeight: 320, overflow: 'hidden' },
   progressRow: { marginTop: 16, gap: 8 },
+  errorText: { fontSize: 14, fontWeight: '700', color: '#DC2626' },
   progressLabel: { fontSize: 16, fontWeight: '700', color: '#5B21B6' },
   barBg: { height: 14, backgroundColor: '#E5E7EB', borderRadius: 7, overflow: 'hidden' },
   barFill: { height: '100%', backgroundColor: '#5B21B6', borderRadius: 7 },

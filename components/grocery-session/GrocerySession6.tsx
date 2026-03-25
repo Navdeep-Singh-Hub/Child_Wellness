@@ -169,7 +169,13 @@ export function GrocerySession6({ onExit }: GrocerySession6Props = {}) {
     );
   }
 
-  const goBack = () => setStep((s) => Math.max(0, s - 1));
+  const goBack = () => {
+    if (onExit) {
+      onExit();
+      return;
+    }
+    setStep((s) => Math.max(0, s - 1));
+  };
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
@@ -177,7 +183,7 @@ export function GrocerySession6({ onExit }: GrocerySession6Props = {}) {
           onPress={goBack}
           style={({ pressed }) => [styles.backButtonHeader, pressed && styles.pressed]}
           accessibilityRole="button"
-          accessibilityLabel="Go back one step"
+          accessibilityLabel="Go back to sessions"
         >
           <Ionicons name="arrow-back" size={24} color="#B45309" />
           <Text style={styles.backButtonText}>Back</Text>

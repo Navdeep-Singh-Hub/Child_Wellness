@@ -88,7 +88,6 @@ export function DirectionGame({ onComplete }: DirectionGameProps) {
             accessibilityLabel="Move left"
           >
             <Ionicons name="arrow-back" size={44} color="#FFF" />
-            <Text style={styles.dirLabel}>LEFT</Text>
           </Pressable>
           <Pressable
             onPress={() => handleTap('right')}
@@ -96,7 +95,6 @@ export function DirectionGame({ onComplete }: DirectionGameProps) {
             accessibilityLabel="Move right"
           >
             <Ionicons name="arrow-forward" size={44} color="#FFF" />
-            <Text style={styles.dirLabel}>RIGHT</Text>
           </Pressable>
         </Animated.View>
       </View>
@@ -119,6 +117,5 @@ const styles = StyleSheet.create({
   },
   leftBtn: { backgroundColor: '#3B82F6' },
   rightBtn: { backgroundColor: '#10B981' },
-  dirLabel: { fontSize: 16, fontWeight: '800', color: '#FFF', marginTop: 8 },
   pressed: { opacity: 0.9 },
 });

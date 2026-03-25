@@ -17,6 +17,7 @@ export interface DragLettersGameProps {
 
 export function DragLettersGame({ onComplete }: DragLettersGameProps) {
   const [slots, setSlots] = useState<(string | null)[]>([null, null, null]);
+  const [usedOptionIndexes, setUsedOptionIndexes] = useState<number[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
   const [wrongShake] = useState(() => new Animated.Value(0));
 
@@ -37,7 +38,8 @@ export function DragLettersGame({ onComplete }: DragLettersGameProps) {
   const expectedLetter = nextIndex >= 0 ? TARGET_WORD[nextIndex] : null;
 
   const handleLetterTap = useCallback(
-    (letter: string) => {
+    (letter: string, optionIndex: number) => {
+      if (usedOptionIndexes.includes(optionIndex)) return;
       if (nextIndex < 0) return;
       if (letter !== expectedLetter) {
         triggerWrong();
@@ -46,6 +48,7 @@ export function DragLettersGame({ onComplete }: DragLettersGameProps) {
       const next = [...slots];
       next[nextIndex] = letter;
       setSlots(next);
+      setUsedOptionIndexes((prev) => [...prev, optionIndex]);
       speak(letter, 0.7);
       if (nextIndex === 2) {
         speak('DOG! Great job!', 0.75);
@@ -53,7 +56,7 @@ export function DragLettersGame({ onComplete }: DragLettersGameProps) {
         setTimeout(() => onComplete(), 2200);
       }
     },
-    [slots, nextIndex, expectedLetter, onComplete, triggerWrong]
+    [slots, nextIndex, expectedLetter, onComplete, triggerWrong, usedOptionIndexes]
   );
 
   if (showSuccess) {
@@ -87,15 +90,19 @@ export function DragLettersGame({ onComplete }: DragLettersGameProps) {
         </Animated.View>
         <Text style={styles.lettersLabel}>Tap in order</Text>
         <View style={styles.lettersRow}>
-          {LETTERS.map((letter) => (
-            <Pressable
-              key={letter}
-              onPress={() => handleLetterTap(letter)}
-              style={({ pressed }) => [styles.letterBtn, pressed && styles.pressed]}
-              accessibilityLabel={`Letter ${letter}`}
-            >
-              <Text style={styles.letterText}>{letter}</Text>
-            </Pressable>
+          {LETTERS.map((letter, i) => (
+            usedOptionIndexes.includes(i) ? (
+              <View key={`${letter}-${i}`} style={styles.letterBtnGone} />
+            ) : (
+              <Pressable
+                key={`${letter}-${i}`}
+                onPress={() => handleLetterTap(letter, i)}
+                style={({ pressed }) => [styles.letterBtn, pressed && styles.pressed]}
+                accessibilityLabel={`Letter ${letter}`}
+              >
+                <Text style={styles.letterText}>{letter}</Text>
+              </Pressable>
+            )
           ))}
         </View>
       </View>
@@ -131,5 +138,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pressed: { opacity: 0.9, backgroundColor: '#EDE9FE' },
+  letterBtnGone: { width: 80, height: 80 },
   letterText: { fontSize: 40, fontWeight: '800', color: '#5B21B6' },
 });

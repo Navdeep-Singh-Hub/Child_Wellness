@@ -14,11 +14,22 @@ const SHAPES = [
   { id: 'triangle', label: 'Triangle', shape: 'triangle' as const, color: '#10B981', emoji: '🔺' },
 ];
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 export interface ShapeHolesGameProps {
   onComplete: () => void;
 }
 
 export function ShapeHolesGame({ onComplete }: ShapeHolesGameProps) {
+  const [shuffledShapes] = useState(() => shuffleArray(SHAPES));
+  const [shuffledHoles] = useState(() => shuffleArray(SHAPES));
   const [placed, setPlaced] = useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -54,12 +65,12 @@ export function ShapeHolesGame({ onComplete }: ShapeHolesGameProps) {
       speak(`Correct! ${SHAPES.find((s) => s.id === selectedId)?.label} fits!`, 0.7);
       setPlaced((p) => new Set(p).add(selectedId));
       setSelectedId(null);
-      if (placed.size + 1 >= SHAPES.length) {
+      if (placed.size + 1 >= shuffledShapes.length) {
         setShowSuccess(true);
         setTimeout(() => onComplete(), 2200);
       }
     },
-    [selectedId, placed, onComplete, triggerWrong]
+    [selectedId, placed, onComplete, triggerWrong, shuffledShapes.length]
   );
 
   if (showSuccess) {
@@ -75,8 +86,6 @@ export function ShapeHolesGame({ onComplete }: ShapeHolesGameProps) {
 
   const shakeX = wrongShake.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
 
-  const shapeSize = 56;
-
   return (
     <GameLayout
       title="Place Shapes"
@@ -87,7 +96,7 @@ export function ShapeHolesGame({ onComplete }: ShapeHolesGameProps) {
       <View style={styles.container}>
         <Text style={styles.label}>Shapes</Text>
         <Animated.View style={[styles.shapesRow, { transform: [{ translateX: shakeX }] }]}>
-          {SHAPES.map((s) => (
+          {shuffledShapes.map((s) => (
             <Pressable
               key={s.id}
               onPress={() => handleShapeTap(s.id)}
@@ -104,27 +113,31 @@ export function ShapeHolesGame({ onComplete }: ShapeHolesGameProps) {
         </Animated.View>
         <Text style={styles.label}>Holes</Text>
         <View style={styles.holesRow}>
-          {SHAPES.map((s) => (
-            <Pressable
-              key={`hole-${s.id}`}
-              onPress={() => handleHoleTap(s.id)}
-              style={[
-                styles.hole,
-                placed.has(s.id) && styles.holeFilled,
-              ]}
-              accessibilityLabel={`${s.label} hole`}
-            >
-              {placed.has(s.id) ? (
-                <Text style={styles.filledEmoji}>{s.emoji}</Text>
-              ) : (
-                <Text style={styles.holeHint}>?</Text>
-              )}
-            </Pressable>
+          {shuffledHoles.map((s) => (
+            <View key={`hole-${s.id}`} style={styles.holeWrap}>
+              <Pressable
+                onPress={() => handleHoleTap(s.id)}
+                style={[
+                  styles.hole,
+                  placed.has(s.id) && styles.holeFilled,
+                ]}
+                accessibilityLabel={`${s.label} hole`}
+              >
+                {placed.has(s.id) ? (
+                  <Text style={styles.filledEmoji}>{s.emoji}</Text>
+                ) : (
+                  <Text style={styles.holeGhostEmoji}>{s.emoji}</Text>
+                )}
+              </Pressable>
+              <Text style={styles.holeLabel}>{s.label}</Text>
+            </View>
           ))}
         </View>
         {selectedId ? (
           <Text style={styles.hint}>Tap the {SHAPES.find((s) => s.id === selectedId)?.label.toLowerCase()} hole</Text>
-        ) : null}
+        ) : (
+          <Text style={styles.hint}>First tap a shape, then tap the same hole.</Text>
+        )}
       </View>
     </GameLayout>
   );
@@ -148,6 +161,7 @@ const styles = StyleSheet.create({
   shapeSelected: { borderColor: '#22C55E', backgroundColor: '#DCFCE7' },
   shapePlaced: { opacity: 0.4 },
   holesRow: { flexDirection: 'row', gap: 24 },
+  holeWrap: { alignItems: 'center', gap: 6 },
   hole: {
     width: 64,
     height: 64,
@@ -159,6 +173,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   holeFilled: { backgroundColor: '#F3F4F6' },
-  holeHint: { fontSize: 28, fontWeight: '800', color: '#9CA3AF' },
+  holeGhostEmoji: { fontSize: 30, opacity: 0.35 },
+  holeLabel: { fontSize: 13, fontWeight: '700', color: '#6B7280' },
   filledEmoji: { fontSize: 32 },
+  hint: { marginTop: 14, fontSize: 16, fontWeight: '600', color: '#6B7280' },
 });

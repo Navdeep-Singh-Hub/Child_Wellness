@@ -14,11 +14,38 @@ const PAIRS: { id: string; animal: string; animalEmoji: string; habitatId: strin
   { id: 'dog', animal: 'Dog', animalEmoji: '🐕', habitatId: 'home', habitat: 'Home', habitatEmoji: '🏠' },
 ];
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+function shuffleHabitatsWithoutSameColumn(
+  animals: typeof PAIRS,
+  habitats: { id: string; label: string; emoji: string }[]
+) {
+  if (habitats.length <= 1) return [...habitats];
+  let candidate = shuffleArray(habitats);
+  let tries = 0;
+  while (candidate.some((h, i) => h.id === animals[i]?.habitatId) && tries < 20) {
+    candidate = shuffleArray(habitats);
+    tries += 1;
+  }
+  if (candidate.some((h, i) => h.id === animals[i]?.habitatId)) {
+    return [...habitats.slice(1), habitats[0]];
+  }
+  return candidate;
+}
+
 export interface AnimalHabitatGameProps {
   onComplete: () => void;
 }
 
 export function AnimalHabitatGame({ onComplete }: AnimalHabitatGameProps) {
+  const [animalOrder] = useState(() => shuffleArray(PAIRS));
   const [matched, setMatched] = useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -57,12 +84,12 @@ export function AnimalHabitatGame({ onComplete }: AnimalHabitatGameProps) {
       speak(`Correct! ${pair?.animal} lives in ${pair?.habitat}!`, 0.7);
       setMatched((m) => new Set(m).add(selectedId));
       setSelectedId(null);
-      if (matched.size + 1 >= PAIRS.length) {
+      if (matched.size + 1 >= animalOrder.length) {
         setShowSuccess(true);
         setTimeout(() => onComplete(), 2200);
       }
     },
-    [selectedId, matched, onComplete, triggerWrong]
+    [selectedId, matched, onComplete, triggerWrong, animalOrder.length]
   );
 
   if (showSuccess) {
@@ -83,6 +110,7 @@ export function AnimalHabitatGame({ onComplete }: AnimalHabitatGameProps) {
     { id: 'sky', label: 'Sky', emoji: '☁️' },
     { id: 'home', label: 'Home', emoji: '🏠' },
   ];
+  const [habitatOrder] = useState(() => shuffleHabitatsWithoutSameColumn(animalOrder, habitats));
 
   return (
     <GameLayout
@@ -94,7 +122,7 @@ export function AnimalHabitatGame({ onComplete }: AnimalHabitatGameProps) {
       <View style={styles.container}>
         <Text style={styles.label}>Animals</Text>
         <Animated.View style={[styles.animalsRow, { transform: [{ translateX: shakeX }] }]}>
-          {PAIRS.map((p) => (
+          {animalOrder.map((p) => (
             <Pressable
               key={p.id}
               onPress={() => handleAnimalTap(p.id)}
@@ -108,7 +136,7 @@ export function AnimalHabitatGame({ onComplete }: AnimalHabitatGameProps) {
         </Animated.View>
         <Text style={styles.label}>Habitats</Text>
         <View style={styles.habitatsRow}>
-          {habitats.map((h) => (
+          {habitatOrder.map((h) => (
             <Pressable
               key={h.id}
               onPress={() => handleHabitatTap(h.id)}

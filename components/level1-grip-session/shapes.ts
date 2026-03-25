@@ -1,5 +1,19 @@
 import type { Point } from './shapeFillUtils';
 
+/** Circle outline: 200x200 box approximation with many points. */
+export const CIRCLE_POLYGON: Point[] = (() => {
+  const pts: Point[] = [];
+  const cx = 100;
+  const cy = 100;
+  const r = 62;
+  const steps = 48;
+  for (let i = 0; i < steps; i++) {
+    const a = (i / steps) * Math.PI * 2;
+    pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r });
+  }
+  return pts;
+})();
+
 /** Butterfly outline: 200x200 box, symmetric. Points in shape-local coords (0..200). */
 export const BUTTERFLY_POLYGON: Point[] = (() => {
   const pts: Point[] = [];
@@ -51,6 +65,15 @@ export function shapeToCanvas(poly: Point[], width: number, height: number): Poi
     x: offsetX + p.x * scale,
     y: offsetY + p.y * scale,
   }));
+}
+
+/** SVG path for butterfly outline (same 200x200 box). Built from polygon. */
+export function getCirclePath(w: number, h: number): string {
+  const scaled = shapeToCanvas(CIRCLE_POLYGON, w, h);
+  if (scaled.length === 0) return '';
+  let path = `M ${scaled[0].x} ${scaled[0].y}`;
+  for (let i = 1; i < scaled.length; i++) path += ` L ${scaled[i].x} ${scaled[i].y}`;
+  return path + ' Z';
 }
 
 /** SVG path for butterfly outline (same 200x200 box). Built from polygon. */

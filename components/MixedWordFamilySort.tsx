@@ -22,11 +22,22 @@ const ITEMS: { id: string; label: string; family: Family }[] = [
   { id: 'bun', label: 'bun', family: 'un' },
 ];
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 export function MixedWordFamilySort({ onComplete }: { onComplete: () => void }) {
+  const [itemOrder] = useState(() => shuffleArray(ITEMS));
+  const [boxOrder] = useState(() => shuffleArray(BOXES));
   const [assignments, setAssignments] = useState<Record<string, Family | null>>({
     cat: null, hat: null, pin: null, tin: null, sun: null, bun: null,
   });
-  const [currentItem, setCurrentItem] = useState<string | null>('cat');
+  const [currentItem, setCurrentItem] = useState<string | null>(itemOrder[0]?.id ?? null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [snapAnim] = useState(() => new Animated.Value(0));
   const [wrongShake] = useState(() => new Animated.Value(0));
@@ -51,7 +62,7 @@ export function MixedWordFamilySort({ onComplete }: { onComplete: () => void }) 
   const handleBoxTap = useCallback(
     (family: Family) => {
       if (!currentItem) return;
-      const item = ITEMS.find((i) => i.id === currentItem);
+      const item = itemOrder.find((i) => i.id === currentItem);
       if (!item) return;
       const correct = item.family === family;
       if (correct) {
@@ -59,7 +70,7 @@ export function MixedWordFamilySort({ onComplete }: { onComplete: () => void }) 
         triggerSnap();
         setAssignments((a) => {
           const next = { ...a, [currentItem]: family };
-          const nextItem = ITEMS.find((i) => !next[i.id])?.id ?? null;
+          const nextItem = itemOrder.find((i) => !next[i.id])?.id ?? null;
           setCurrentItem(nextItem);
           if (!nextItem) {
             speak('Great job!');
@@ -73,7 +84,7 @@ export function MixedWordFamilySort({ onComplete }: { onComplete: () => void }) 
         triggerWrong();
       }
     },
-    [currentItem, onComplete, triggerSnap, triggerWrong]
+    [currentItem, itemOrder, onComplete, triggerSnap, triggerWrong]
   );
 
   if (showSuccess) return <SuccessCelebration variant="indigo" />;
@@ -89,7 +100,7 @@ export function MixedWordFamilySort({ onComplete }: { onComplete: () => void }) 
       <View style={styles.content}>
         <View style={styles.pickArea}>
           <Text style={styles.pickLabel}>Tap a family for:</Text>
-          {ITEMS.map((item) => {
+          {itemOrder.map((item) => {
             const assigned = assignments[item.id];
             const isCurrent = currentItem === item.id;
             if (assigned) return null;
@@ -114,7 +125,7 @@ export function MixedWordFamilySort({ onComplete }: { onComplete: () => void }) 
           {!currentItem && <Text style={styles.doneHint}>All sorted!</Text>}
         </View>
         <View style={styles.boxesRow}>
-          {BOXES.map((b) => (
+          {boxOrder.map((b) => (
             <Pressable
               key={b.id}
               onPress={() => handleBoxTap(b.id)}
@@ -122,7 +133,7 @@ export function MixedWordFamilySort({ onComplete }: { onComplete: () => void }) 
               accessibilityLabel={b.label}
             >
               <Text style={styles.boxLabel}>{b.label}</Text>
-              {ITEMS.filter((i) => assignments[i.id] === b.id).map((i) => (
+              {itemOrder.filter((i) => assignments[i.id] === b.id).map((i) => (
                 <Text key={i.id} style={styles.assignedWord}>{i.label}</Text>
               ))}
             </Pressable>

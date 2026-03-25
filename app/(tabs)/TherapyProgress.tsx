@@ -1,12 +1,19 @@
 import Paywall from '@/components/Paywall';
 import { SessionSelector } from '@/components/special-education/SessionSelector';
 import {
-  advanceTherapyProgress,
-  fetchTherapyProgress,
-  getSubscriptionStatus,
-  initTherapyProgress,
-  type SubscriptionStatus,
-  type TherapyProgress,
+    LEVEL_STAGGER_MS,
+    PRESS_SCALE_AMOUNT,
+    SESSION_STAGGER_MS,
+    SPRING_CONFIG,
+    THERAPY_STAGGER_MS,
+} from '@/constants/therapyProgressAnimations';
+import {
+    advanceTherapyProgress,
+    fetchTherapyProgress,
+    getSubscriptionStatus,
+    initTherapyProgress,
+    type SubscriptionStatus,
+    type TherapyProgress,
 } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,33 +21,26 @@ import { useRouter } from 'expo-router';
 import Lottie from 'lottie-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Alert,
+    Linking,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import {
-  LEVEL_STAGGER_MS,
-  PRESS_SCALE_AMOUNT,
-  SESSION_STAGGER_MS,
-  SPRING_CONFIG,
-  THERAPY_STAGGER_MS,
-} from '@/constants/therapyProgressAnimations';
 import Animated, {
-  FadeInDown,
-  FadeInUp,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withSpring,
-  withTiming,
+    FadeInDown,
+    FadeInUp,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSequence,
+    withSpring,
+    withTiming,
 } from 'react-native-reanimated';
 
 const loadingAnimation = require('@/assets/animation/loading.json');
@@ -162,7 +162,9 @@ export default function TherapyProgressScreen() {
   const progressMap = useMemo(() => new Map(therapies.map((t) => [t.therapy, t])), [therapies]);
   const hasData = therapies && therapies.length > 0;
   // Free-access users (e.g. FREE_ACCESS_IDS) get all levels and sessions unlocked
-  const isFreeAccess = subscriptionStatus?.isFreeAccess === true;
+  const isFreeAccess = Boolean(
+    subscriptionStatus?.isFreeAccess === true || subscriptionStatus?.status === 'free'
+  );
 
   // Show Paywall if user doesn't have access
   if (checkingAccess) {

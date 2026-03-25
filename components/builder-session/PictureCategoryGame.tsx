@@ -20,11 +20,22 @@ const FRUITS = [
 ];
 const ITEMS = [...ANIMALS, ...FRUITS];
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 export interface PictureCategoryGameProps {
   onComplete: () => void;
 }
 
 export function PictureCategoryGame({ onComplete }: PictureCategoryGameProps) {
+  const [shuffledItems] = useState(() => shuffleArray(ITEMS));
+  const [basketOrder] = useState(() => shuffleArray(['animal', 'fruit'] as const));
   const [sorted, setSorted] = useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -62,12 +73,12 @@ export function PictureCategoryGame({ onComplete }: PictureCategoryGameProps) {
       speak(`Correct! ${item.label} is ${item.category === 'animal' ? 'an animal' : 'a fruit'}!`, 0.7);
       setSorted((s) => new Set(s).add(selectedId));
       setSelectedId(null);
-      if (sorted.size + 1 >= ITEMS.length) {
+      if (sorted.size + 1 >= shuffledItems.length) {
         setShowSuccess(true);
         setTimeout(() => onComplete(), 2200);
       }
     },
-    [selectedId, sorted, onComplete, triggerWrong]
+    [selectedId, sorted, onComplete, triggerWrong, shuffledItems.length]
   );
 
   if (showSuccess) {
@@ -93,7 +104,7 @@ export function PictureCategoryGame({ onComplete }: PictureCategoryGameProps) {
       <View style={styles.container}>
         <Text style={styles.label}>Items</Text>
         <Animated.View style={[styles.itemsRow, { transform: [{ translateX: shakeX }] }]}>
-          {ITEMS.map((item) => (
+          {shuffledItems.map((item) => (
             <Pressable
               key={item.id}
               onPress={() => handleItemTap(item.id)}
@@ -111,22 +122,17 @@ export function PictureCategoryGame({ onComplete }: PictureCategoryGameProps) {
         </Animated.View>
         <Text style={styles.label}>Baskets</Text>
         <View style={styles.basketsRow}>
-          <Pressable
-            onPress={() => handleBasketTap('animal')}
-            style={[styles.basket, styles.animalBasket]}
-            accessibilityLabel="Animal basket"
-          >
-            <Text style={styles.basketEmoji}>🐕</Text>
-            <Text style={styles.basketLabel}>Animal</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => handleBasketTap('fruit')}
-            style={[styles.basket, styles.fruitBasket]}
-            accessibilityLabel="Fruit basket"
-          >
-            <Text style={styles.basketEmoji}>🍎</Text>
-            <Text style={styles.basketLabel}>Fruit</Text>
-          </Pressable>
+          {basketOrder.map((basket) => (
+            <Pressable
+              key={basket}
+              onPress={() => handleBasketTap(basket)}
+              style={[styles.basket, basket === 'animal' ? styles.animalBasket : styles.fruitBasket]}
+              accessibilityLabel={`${basket === 'animal' ? 'Animal' : 'Fruit'} basket`}
+            >
+              <Text style={styles.basketEmoji}>{basket === 'animal' ? '🐕' : '🍎'}</Text>
+              <Text style={styles.basketLabel}>{basket === 'animal' ? 'Animal' : 'Fruit'}</Text>
+            </Pressable>
+          ))}
         </View>
         {selectedId ? (
           <Text style={styles.hint}>

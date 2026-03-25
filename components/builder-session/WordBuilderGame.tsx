@@ -18,6 +18,7 @@ export interface WordBuilderGameProps {
 export function WordBuilderGame({ onComplete }: WordBuilderGameProps) {
   const [nextIndex, setNextIndex] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [usedOptionIndexes, setUsedOptionIndexes] = useState<number[]>([]);
   const [wrongShake] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
@@ -34,11 +35,13 @@ export function WordBuilderGame({ onComplete }: WordBuilderGameProps) {
   }, [wrongShake]);
 
   const handleLetterTap = useCallback(
-    (letter: string) => {
+    (letter: string, optionIndex: number) => {
+      if (usedOptionIndexes.includes(optionIndex)) return;
       const expected = TARGET[nextIndex];
       if (letter === expected) {
         const newIndex = nextIndex + 1;
         setNextIndex(newIndex);
+        setUsedOptionIndexes((prev) => [...prev, optionIndex]);
         speak(letter, 0.6);
         if (newIndex >= TARGET.length) {
           speak('Ball! You spelled BALL!', 0.75);
@@ -49,7 +52,7 @@ export function WordBuilderGame({ onComplete }: WordBuilderGameProps) {
         triggerWrong();
       }
     },
-    [nextIndex, onComplete, triggerWrong]
+    [nextIndex, onComplete, triggerWrong, usedOptionIndexes]
   );
 
   if (showSuccess) {
@@ -84,14 +87,18 @@ export function WordBuilderGame({ onComplete }: WordBuilderGameProps) {
         <Text style={styles.tapLabel}>Tap the letters in order</Text>
         <Animated.View style={[styles.lettersRow, { transform: [{ translateX: shakeX }] }]}>
           {LETTERS.map((letter, i) => (
-            <Pressable
-              key={`${letter}-${i}`}
-              onPress={() => handleLetterTap(letter)}
-              style={({ pressed }) => [styles.letterBtn, pressed && styles.pressed]}
-              accessibilityLabel={`Letter ${letter}`}
-            >
-              <Text style={styles.letterText}>{letter}</Text>
-            </Pressable>
+            usedOptionIndexes.includes(i) ? (
+              <View key={`${letter}-${i}`} style={styles.letterBtnGone} />
+            ) : (
+              <Pressable
+                key={`${letter}-${i}`}
+                onPress={() => handleLetterTap(letter, i)}
+                style={({ pressed }) => [styles.letterBtn, pressed && styles.pressed]}
+                accessibilityLabel={`Letter ${letter}`}
+              >
+                <Text style={styles.letterText}>{letter}</Text>
+              </Pressable>
+            )
           ))}
         </Animated.View>
       </View>
@@ -127,5 +134,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   letterText: { fontSize: 28, fontWeight: '800', color: '#5B21B6' },
+  letterBtnGone: { width: 56, height: 56 },
   pressed: { opacity: 0.9, backgroundColor: '#EDE9FE' },
 });

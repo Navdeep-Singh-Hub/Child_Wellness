@@ -3,11 +3,11 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
-    "build": "expo export -p web",
+    "start": "node --max-old-space-size=6144 ./node_modules/expo/bin/cli start",
+    "android": "node --max-old-space-size=6144 ./node_modules/expo/bin/cli run:android",
+    "ios": "node --max-old-space-size=6144 ./node_modules/expo/bin/cli run:ios",
+    "web": "node --max-old-space-size=6144 ./node_modules/expo/bin/cli start --web",
+    "build": "node --max-old-space-size=6144 ./node_modules/expo/bin/cli export -p web",
     "lint": "expo lint",
     "postinstall": "patch-package",
     "setup:local": "node -e \"require('fs').writeFileSync('.env.local', 'EXPO_PUBLIC_API_BASE_URL=http://localhost:4000\\n', 'utf8'); console.log('✅ Created .env.local with localhost configuration')\""

@@ -6,6 +6,7 @@ import { speak } from '@/utils/tts';
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Pressable, Image, StyleSheet, Animated } from 'react-native';
 import { GameLayout } from '../farm-session/GameLayout';
+import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
 
 type Round = { promptWord: string; correctId: string; items: { id: string; label: string; image: string }[] };
 
