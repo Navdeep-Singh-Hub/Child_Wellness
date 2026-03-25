@@ -14,11 +14,42 @@ const ITEMS = [
   { id: 'green', color: 'green' as const, label: 'Green', emoji: '🟢' },
 ];
 
+const BINS = [
+  { id: 'red' as const, label: 'Red' },
+  { id: 'blue' as const, label: 'Blue' },
+  { id: 'green' as const, label: 'Green' },
+];
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+function shuffleWithoutSameColumn<T extends { id: string }>(base: T[], source: T[]): T[] {
+  if (source.length <= 1) return [...source];
+  let candidate = shuffleArray(source);
+  let tries = 0;
+  while (candidate.some((item, i) => item.id === base[i]?.id) && tries < 20) {
+    candidate = shuffleArray(source);
+    tries += 1;
+  }
+  if (candidate.some((item, i) => item.id === base[i]?.id)) {
+    return [...source.slice(1), source[0]];
+  }
+  return candidate;
+}
+
 export interface ColorSortingGameProps {
   onComplete: () => void;
 }
 
 export function ColorSortingGame({ onComplete }: ColorSortingGameProps) {
+  const [itemOrder] = useState(() => shuffleArray(ITEMS));
+  const [binOrder] = useState(() => shuffleWithoutSameColumn(itemOrder, BINS));
   const [sorted, setSorted] = useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -56,12 +87,12 @@ export function ColorSortingGame({ onComplete }: ColorSortingGameProps) {
       speak(`Correct! ${item.label}!`, 0.7);
       setSorted((s) => new Set(s).add(selectedId));
       setSelectedId(null);
-      if (sorted.size + 1 >= ITEMS.length) {
+      if (sorted.size + 1 >= itemOrder.length) {
         setShowSuccess(true);
         setTimeout(() => onComplete(), 2200);
       }
     },
-    [selectedId, sorted, onComplete, triggerWrong]
+    [selectedId, sorted, onComplete, triggerWrong, itemOrder.length]
   );
 
   if (showSuccess) {
@@ -87,7 +118,7 @@ export function ColorSortingGame({ onComplete }: ColorSortingGameProps) {
       <View style={styles.container}>
         <Text style={styles.label}>Balls</Text>
         <Animated.View style={[styles.itemsRow, { transform: [{ translateX: shakeX }] }]}>
-          {ITEMS.map((item) => (
+          {itemOrder.map((item) => (
             <Pressable
               key={item.id}
               onPress={() => handleItemTap(item.id)}
@@ -104,15 +135,19 @@ export function ColorSortingGame({ onComplete }: ColorSortingGameProps) {
         </Animated.View>
         <Text style={styles.label}>Boxes</Text>
         <View style={styles.binsRow}>
-          <Pressable onPress={() => handleBinTap('red')} style={[styles.bin, styles.redBin]} accessibilityLabel="Red box">
-            <Text style={styles.binLabel}>Red</Text>
-          </Pressable>
-          <Pressable onPress={() => handleBinTap('blue')} style={[styles.bin, styles.blueBin]} accessibilityLabel="Blue box">
-            <Text style={styles.binLabel}>Blue</Text>
-          </Pressable>
-          <Pressable onPress={() => handleBinTap('green')} style={[styles.bin, styles.greenBin]} accessibilityLabel="Green box">
-            <Text style={styles.binLabel}>Green</Text>
-          </Pressable>
+          {binOrder.map((bin) => (
+            <Pressable
+              key={bin.id}
+              onPress={() => handleBinTap(bin.id)}
+              style={[
+                styles.bin,
+                bin.id === 'red' ? styles.redBin : bin.id === 'blue' ? styles.blueBin : styles.greenBin,
+              ]}
+              accessibilityLabel={`${bin.label} box`}
+            >
+              <Text style={styles.binLabel}>{bin.label}</Text>
+            </Pressable>
+          ))}
         </View>
         {selectedId ? (
           <Text style={styles.hint}>Tap the {ITEMS.find((i) => i.id === selectedId)?.label.toLowerCase()} box</Text>

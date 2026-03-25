@@ -14,11 +14,36 @@ const COLORS = [
   { id: 'yellow', label: 'Yellow', color: '#FBBF24', emoji: '🟡' },
 ];
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+function shuffleWithoutSameColumn<T extends { id: string }>(base: T[], source: T[]): T[] {
+  if (source.length <= 1) return [...source];
+  let candidate = shuffleArray(source);
+  let tries = 0;
+  while (candidate.some((item, i) => item.id === base[i]?.id) && tries < 20) {
+    candidate = shuffleArray(source);
+    tries += 1;
+  }
+  if (candidate.some((item, i) => item.id === base[i]?.id)) {
+    return [...source.slice(1), source[0]];
+  }
+  return candidate;
+}
+
 export interface ColorMatchGameProps {
   onComplete: () => void;
 }
 
 export function ColorMatchGame({ onComplete }: ColorMatchGameProps) {
+  const [colorOrder] = useState(() => shuffleArray(COLORS));
+  const [boxOrder] = useState(() => shuffleWithoutSameColumn(colorOrder, COLORS));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [matched, setMatched] = useState<Set<string>>(new Set());
   const [showSuccess, setShowSuccess] = useState(false);
@@ -54,12 +79,12 @@ export function ColorMatchGame({ onComplete }: ColorMatchGameProps) {
       speak(`Correct! ${COLORS.find((c) => c.id === id)?.label} matches!`, 0.7);
       setMatched((m) => new Set(m).add(id));
       setSelectedId(null);
-      if (matched.size + 1 >= COLORS.length) {
+      if (matched.size + 1 >= colorOrder.length) {
         setShowSuccess(true);
         setTimeout(() => onComplete(), 2200);
       }
     },
-    [selectedId, matched, onComplete, triggerWrong]
+    [selectedId, matched, onComplete, triggerWrong, colorOrder.length]
   );
 
   if (showSuccess) {
@@ -85,7 +110,7 @@ export function ColorMatchGame({ onComplete }: ColorMatchGameProps) {
       <View style={styles.container}>
         <Text style={styles.label}>Colors</Text>
         <Animated.View style={[styles.row, { transform: [{ translateX: shakeX }] }]}>
-          {COLORS.map((c) => (
+          {colorOrder.map((c) => (
             <Pressable
               key={c.id}
               onPress={() => handleColorTap(c.id)}
@@ -104,7 +129,7 @@ export function ColorMatchGame({ onComplete }: ColorMatchGameProps) {
         </Animated.View>
         <Text style={styles.label}>Boxes</Text>
         <View style={styles.row}>
-          {COLORS.map((c) => (
+          {boxOrder.map((c) => (
             <Pressable
               key={`box-${c.id}`}
               onPress={() => handleBoxTap(c.id)}

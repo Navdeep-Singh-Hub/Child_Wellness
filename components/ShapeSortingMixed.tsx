@@ -22,10 +22,21 @@ const ITEMS: { id: string; shape: ShapeType; label: string }[] = [
   { id: 't2', shape: 'triangle', label: 'Triangle' },
 ];
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 export function ShapeSortingMixed({ onComplete }: { onComplete: () => void }) {
-  const initialAssignments = ITEMS.reduce((acc, i) => ({ ...acc, [i.id]: null }), {} as Record<string, ShapeType | null>);
+  const [itemOrder] = useState(() => shuffleArray(ITEMS));
+  const [basketOrder] = useState(() => shuffleArray(BASKETS));
+  const initialAssignments = itemOrder.reduce((acc, i) => ({ ...acc, [i.id]: null }), {} as Record<string, ShapeType | null>);
   const [assignments, setAssignments] = useState<Record<string, ShapeType | null>>(initialAssignments);
-  const [currentItem, setCurrentItem] = useState<string | null>(ITEMS[0].id);
+  const [currentItem, setCurrentItem] = useState<string | null>(itemOrder[0]?.id ?? null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [snapAnim] = useState(() => new Animated.Value(0));
   const [wrongShake] = useState(() => new Animated.Value(0));
@@ -50,7 +61,7 @@ export function ShapeSortingMixed({ onComplete }: { onComplete: () => void }) {
   const handleBasketTap = useCallback(
     (shape: ShapeType) => {
       if (!currentItem) return;
-      const item = ITEMS.find((i) => i.id === currentItem);
+      const item = itemOrder.find((i) => i.id === currentItem);
       if (!item) return;
       const correct = item.shape === shape;
       if (correct) {
@@ -58,7 +69,7 @@ export function ShapeSortingMixed({ onComplete }: { onComplete: () => void }) {
         triggerSnap();
         setAssignments((a) => {
           const next = { ...a, [currentItem]: shape };
-          const nextItem = ITEMS.find((i) => !next[i.id])?.id ?? null;
+          const nextItem = itemOrder.find((i) => !next[i.id])?.id ?? null;
           setCurrentItem(nextItem);
           if (!nextItem) {
             speak('Great job!');
@@ -72,7 +83,7 @@ export function ShapeSortingMixed({ onComplete }: { onComplete: () => void }) {
         triggerWrong();
       }
     },
-    [currentItem, onComplete, triggerSnap, triggerWrong]
+    [currentItem, itemOrder, onComplete, triggerSnap, triggerWrong]
   );
 
   if (showSuccess) return <SuccessCelebration variant="indigo" />;
@@ -90,7 +101,7 @@ export function ShapeSortingMixed({ onComplete }: { onComplete: () => void }) {
       <View style={styles.content}>
         <View style={styles.pickArea}>
           <Text style={styles.pickLabel}>Tap a basket for:</Text>
-          {ITEMS.map((item) => {
+          {itemOrder.map((item) => {
             const assigned = assignments[item.id];
             const isCurrent = currentItem === item.id;
             if (assigned) return null;
@@ -113,7 +124,7 @@ export function ShapeSortingMixed({ onComplete }: { onComplete: () => void }) {
           {!currentItem && <Text style={styles.doneHint}>All sorted!</Text>}
         </View>
         <View style={styles.basketsRow}>
-          {BASKETS.map((b) => (
+          {basketOrder.map((b) => (
             <Pressable
               key={b.id}
               onPress={() => handleBasketTap(b.id)}
@@ -122,7 +133,7 @@ export function ShapeSortingMixed({ onComplete }: { onComplete: () => void }) {
             >
               <Text style={styles.basketEmoji}>{b.emoji}</Text>
               <Text style={styles.basketLabel}>{b.label}</Text>
-              {ITEMS.filter((i) => assignments[i.id] === b.id).map((i) => (
+              {itemOrder.filter((i) => assignments[i.id] === b.id).map((i) => (
                 <Text key={i.id} style={styles.assignedShape}>{shapeEmoji(i.shape)}</Text>
               ))}
             </Pressable>

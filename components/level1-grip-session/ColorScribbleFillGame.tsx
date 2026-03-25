@@ -6,8 +6,8 @@ import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { DrawingCanvas, DrawingCanvasRef, Stroke } from '@/components/games/Level1/DrawingCanvas';
-import { pathToPoints, pointInPolygon, polygonArea } from './shapeFillUtils';
-import { BUTTERFLY_POLYGON, FLOWER_POLYGON, shapeToCanvas, getButterflyPath, getFlowerPath } from './shapes';
+import { pathToPoints, pointInPolygon } from './shapeFillUtils';
+import { CIRCLE_POLYGON, FLOWER_POLYGON, shapeToCanvas, getCirclePath, getFlowerPath } from './shapes';
 import { GameContainerGrip } from './GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
 
@@ -15,8 +15,8 @@ const FILL_THRESHOLD = 0.6;
 const BRUSH_SIZE = 14;
 
 const SHAPES = [
-  { key: 'butterfly', polygon: BUTTERFLY_POLYGON, getPath: getButterflyPath, label: 'Butterfly' },
-  { key: 'flower', polygon: FLOWER_POLYGON, getPath: getFlowerPath, label: 'Flower' },
+  { key: 'circle', polygon: CIRCLE_POLYGON, getPath: getCirclePath, label: 'Circle' },
+  { key: 'star', polygon: FLOWER_POLYGON, getPath: getFlowerPath, label: 'Star' },
 ] as const;
 
 function computeFillRatio(
@@ -24,17 +24,76 @@ function computeFillRatio(
   shapePolygonCanvas: { x: number; y: number }[],
   brushSize: number
 ): number {
-  const shapeArea = polygonArea(shapePolygonCanvas);
-  if (shapeArea <= 0) return 0;
-  let filledArea = 0;
-  const brushArea = Math.PI * brushSize * brushSize;
+  if (shapePolygonCanvas.length < 3) return 0;
+
+  const radius = brushSize;
+  const cellSize = Math.max(4, Math.floor(brushSize * 0.6));
+  const filledCells = new Set<string>();
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of shapePolygonCanvas) {
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
+  }
+
+  const markBrushCoverage = (x: number, y: number) => {
+    const gxMin = Math.floor((x - radius) / cellSize);
+    const gxMax = Math.floor((x + radius) / cellSize);
+    const gyMin = Math.floor((y - radius) / cellSize);
+    const gyMax = Math.floor((y + radius) / cellSize);
+    for (let gx = gxMin; gx <= gxMax; gx++) {
+      for (let gy = gyMin; gy <= gyMax; gy++) {
+        const cx = gx * cellSize + cellSize / 2;
+        const cy = gy * cellSize + cellSize / 2;
+        const dx = cx - x;
+        const dy = cy - y;
+        if (dx * dx + dy * dy > radius * radius) continue;
+        if (!pointInPolygon({ x: cx, y: cy }, shapePolygonCanvas)) continue;
+        filledCells.add(`${gx},${gy}`);
+      }
+    }
+  };
+
   for (const stroke of strokes) {
     const points = pathToPoints(stroke.path);
-    for (const p of points) {
-      if (pointInPolygon(p, shapePolygonCanvas)) filledArea += brushArea;
+    if (points.length === 0) continue;
+    markBrushCoverage(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+      const a = points[i - 1];
+      const b = points[i];
+      const dist = Math.hypot(b.x - a.x, b.y - a.y);
+      const steps = Math.max(1, Math.ceil(dist / (cellSize * 0.5)));
+      for (let s = 1; s <= steps; s++) {
+        const t = s / steps;
+        const x = a.x + (b.x - a.x) * t;
+        const y = a.y + (b.y - a.y) * t;
+        markBrushCoverage(x, y);
+      }
     }
   }
-  return filledArea / shapeArea;
+
+  let shapeCellCount = 0;
+  const gxMin = Math.floor(minX / cellSize);
+  const gxMax = Math.floor(maxX / cellSize);
+  const gyMin = Math.floor(minY / cellSize);
+  const gyMax = Math.floor(maxY / cellSize);
+  for (let gx = gxMin; gx <= gxMax; gx++) {
+    for (let gy = gyMin; gy <= gyMax; gy++) {
+      const cx = gx * cellSize + cellSize / 2;
+      const cy = gy * cellSize + cellSize / 2;
+      if (pointInPolygon({ x: cx, y: cy }, shapePolygonCanvas)) {
+        shapeCellCount += 1;
+      }
+    }
+  }
+
+  if (shapeCellCount === 0) return 0;
+  return Math.min(1, filledCells.size / shapeCellCount);
 }
 
 export function ColorScribbleFillGame({
@@ -54,8 +113,9 @@ export function ColorScribbleFillGame({
   const [showConfetti, setShowConfetti] = useState(false);
   const strokesRef = useRef<Stroke[]>([]);
   const canvasRef = useRef<DrawingCanvasRef>(null);
+  const isAdvancingRef = useRef(false);
 
-  const shape = SHAPES[shapeIndex];
+  const shape = SHAPES[shapeIndex] ?? SHAPES[0];
   const shapePolygonCanvas = shapeToCanvas(shape.polygon, dimensions.width, dimensions.height);
   const outlinePath = shape.getPath(dimensions.width, dimensions.height);
 
@@ -66,10 +126,12 @@ export function ColorScribbleFillGame({
 
   const handleStrokeEnd = useCallback(
     (strokes: Stroke[]) => {
+      if (isAdvancingRef.current) return;
       strokesRef.current = strokes;
       const ratio = computeFillRatio(strokes, shapePolygonCanvas, BRUSH_SIZE);
       setFillRatio(ratio);
       if (ratio >= FILL_THRESHOLD) {
+        isAdvancingRef.current = true;
         setShowConfetti(true);
         try {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -80,8 +142,10 @@ export function ColorScribbleFillGame({
             setShapeIndex((i) => i + 1);
             canvasRef.current?.clear();
             setFillRatio(0);
+            isAdvancingRef.current = false;
           } else {
             onComplete();
+            isAdvancingRef.current = false;
           }
         }, 1500);
       }
@@ -109,7 +173,12 @@ export function ColorScribbleFillGame({
             onStrokeEnd={handleStrokeEnd}
           />
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
-            <Svg style={StyleSheet.absoluteFill}>
+            <Svg
+              style={StyleSheet.absoluteFill}
+              width={dimensions.width}
+              height={dimensions.height}
+              viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+            >
               <Path
                 d={outlinePath}
                 stroke="#5B21B6"
@@ -134,7 +203,7 @@ export function ColorScribbleFillGame({
 const styles = StyleSheet.create({
   outer: { flex: 1 },
   shapeLabel: { fontSize: 18, fontWeight: '800', color: '#5B21B6', marginBottom: 8, textAlign: 'center' },
-  canvasWrap: { flex: 1, minHeight: 260, borderRadius: 24, overflow: 'hidden' },
+  canvasWrap: { flex: 1, minHeight: 260, borderRadius: 24, overflow: 'hidden', backgroundColor: '#FFF' },
   progressRow: { marginTop: 12, gap: 6 },
   progressLabel: { fontSize: 16, fontWeight: '700', color: '#5B21B6' },
   barBg: { height: 12, backgroundColor: '#E5E7EB', borderRadius: 6, overflow: 'hidden' },

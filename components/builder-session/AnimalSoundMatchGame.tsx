@@ -14,11 +14,36 @@ const ANIMALS = [
   { id: 'cow', emoji: '🐄', label: 'Cow', sound: 'Moo!', soundId: 'moo' },
 ];
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+function shuffleWithoutSameColumn<T extends { id: string }>(base: T[], source: T[]): T[] {
+  if (source.length <= 1) return [...source];
+  let candidate = shuffleArray(source);
+  let tries = 0;
+  while (candidate.some((item, i) => item.id === base[i]?.id) && tries < 20) {
+    candidate = shuffleArray(source);
+    tries += 1;
+  }
+  if (candidate.some((item, i) => item.id === base[i]?.id)) {
+    return [...source.slice(1), source[0]];
+  }
+  return candidate;
+}
+
 export interface AnimalSoundMatchGameProps {
   onComplete: () => void;
 }
 
 export function AnimalSoundMatchGame({ onComplete }: AnimalSoundMatchGameProps) {
+  const [shuffledAnimals] = useState(() => shuffleArray(ANIMALS));
+  const [shuffledSounds] = useState(() => shuffleWithoutSameColumn(shuffledAnimals, ANIMALS));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [matched, setMatched] = useState<Set<string>>(new Set());
   const [showSuccess, setShowSuccess] = useState(false);
@@ -56,12 +81,12 @@ export function AnimalSoundMatchGame({ onComplete }: AnimalSoundMatchGameProps) 
       speak(animal.sound, 0.7);
       setMatched((m) => new Set(m).add(selectedId));
       setSelectedId(null);
-      if (matched.size + 1 >= ANIMALS.length) {
+      if (matched.size + 1 >= shuffledAnimals.length) {
         setShowSuccess(true);
         setTimeout(() => onComplete(), 2200);
       }
     },
-    [selectedId, matched, onComplete, triggerWrong]
+    [selectedId, matched, onComplete, triggerWrong, shuffledAnimals.length]
   );
 
   if (showSuccess) {
@@ -87,7 +112,7 @@ export function AnimalSoundMatchGame({ onComplete }: AnimalSoundMatchGameProps) 
       <View style={styles.container}>
         <Text style={styles.label}>Animals</Text>
         <Animated.View style={[styles.row, { transform: [{ translateX: shakeX }] }]}>
-          {ANIMALS.map((a) => (
+          {shuffledAnimals.map((a) => (
             <Pressable
               key={a.id}
               onPress={() => handleAnimalTap(a.id)}
@@ -105,7 +130,7 @@ export function AnimalSoundMatchGame({ onComplete }: AnimalSoundMatchGameProps) 
         </Animated.View>
         <Text style={styles.label}>Sounds</Text>
         <View style={styles.row}>
-          {ANIMALS.map((a) => (
+          {shuffledSounds.map((a) => (
             <Pressable
               key={a.soundId}
               onPress={() => handleSoundTap(a.soundId)}

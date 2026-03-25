@@ -127,7 +127,8 @@ export function ShapeBuilderGame({ onComplete }: ShapeBuilderGameProps) {
   );
 }
 
-const frameSize = 120;
+const sideLength = 96;
+const slotThickness = 24;
 
 const styles = StyleSheet.create({
   container: { alignItems: 'center', paddingVertical: 24 },
@@ -147,8 +148,8 @@ const styles = StyleSheet.create({
   stickSelected: { borderColor: '#22C55E', backgroundColor: '#A78BFA' },
   stickPlaced: { opacity: 0.4 },
   squareFrame: {
-    width: frameSize + 40,
-    height: frameSize + 40,
+    width: sideLength + slotThickness * 2,
+    height: sideLength + slotThickness * 2,
     position: 'relative',
   },
   slot: {
@@ -158,10 +159,10 @@ const styles = StyleSheet.create({
     borderColor: '#9CA3AF',
     borderRadius: 8,
   },
-  slotTop: { top: 0, left: 20, width: 80, height: 24 },
-  slotRight: { top: 48, right: 0, width: 24, height: 80 },
-  slotBottom: { bottom: 0, left: 20, width: 80, height: 24 },
-  slotLeft: { top: 48, left: 0, width: 24, height: 80 },
+  slotTop: { top: 0, left: slotThickness, width: sideLength, height: slotThickness },
+  slotRight: { top: slotThickness, right: 0, width: slotThickness, height: sideLength },
+  slotBottom: { bottom: 0, left: slotThickness, width: sideLength, height: slotThickness },
+  slotLeft: { top: slotThickness, left: 0, width: slotThickness, height: sideLength },
   slotFilled: { backgroundColor: '#22C55E', borderColor: '#22C55E' },
   hint: { marginTop: 20, fontSize: 16, color: '#6B7280', fontWeight: '600' },
 });

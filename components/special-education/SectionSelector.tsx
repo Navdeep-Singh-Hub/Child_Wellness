@@ -44,7 +44,9 @@ export function SectionSelector({ onSelectSection, onShowMap }: SectionSelectorP
     checkSubscription();
   }, []);
 
-  const isFreeAccess = subscriptionStatus?.isFreeAccess === true;
+  const isFreeAccess = Boolean(
+    subscriptionStatus?.isFreeAccess === true || subscriptionStatus?.status === 'free'
+  );
 
   return (
     <ScrollView
@@ -62,7 +64,19 @@ export function SectionSelector({ onSelectSection, onShowMap }: SectionSelectorP
           {SECTIONS.map((section) => {
             const sectionData = progress?.sections.find((s) => s.sectionNumber === section.number);
             // Unlock Section 1 (Explorer), Section 2 (Matcher), Section 4 (Grouper — -AT Word Family) always
-            const unlocked = sectionData?.unlocked || section.number === 1 || section.number === 2 || section.number === 3 || section.number === 4 || section.number === 5 || section.number === 6 || section.number === 7 || section.number === 8 || section.number === 9 || section.number === 10;
+            const unlocked =
+              isFreeAccess ||
+              sectionData?.unlocked ||
+              section.number === 1 ||
+              section.number === 2 ||
+              section.number === 3 ||
+              section.number === 4 ||
+              section.number === 5 ||
+              section.number === 6 ||
+              section.number === 7 ||
+              section.number === 8 ||
+              section.number === 9 ||
+              section.number === 10;
             const completed = sectionData?.completed || false;
             
             return (

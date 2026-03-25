@@ -172,7 +172,13 @@ export function JungleSession3({ onExit }: JungleSession3Props = {}) {
   }
 
   // —— Games 1–5 ——
-  const goBack = () => setStep((s) => Math.max(0, s - 1));
+  const goBack = () => {
+    if (onExit) {
+      onExit();
+      return;
+    }
+    setStep((s) => Math.max(0, s - 1));
+  };
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
@@ -180,7 +186,7 @@ export function JungleSession3({ onExit }: JungleSession3Props = {}) {
           onPress={goBack}
           style={({ pressed }) => [styles.backButtonHeader, pressed && styles.pressed]}
           accessibilityRole="button"
-          accessibilityLabel="Go back one step"
+          accessibilityLabel="Go back to sessions"
         >
           <Ionicons name="arrow-back" size={24} color="#166534" />
           <Text style={styles.backButtonText}>Back</Text>

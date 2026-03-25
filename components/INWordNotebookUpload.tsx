@@ -12,6 +12,7 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { GameLayout } from '@/components/farm-session/GameLayout';
@@ -24,6 +25,8 @@ export function INWordNotebookUpload({
 }: {
   onComplete: (correct: boolean) => void;
 }) {
+  const { width } = useWindowDimensions();
+  const isSmallScreen = width < 420;
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<{
     correct: boolean;
@@ -148,15 +151,20 @@ export function INWordNotebookUpload({
     >
       <View style={styles.content}>
         <Text style={styles.instructions}>{INSTRUCTIONS}</Text>
-        <View style={styles.exampleRow}>
+        <View style={[styles.exampleRow, isSmallScreen && styles.exampleRowSmall]}>
           <Text style={styles.exampleLabel}>Examples: </Text>
-          <Text style={styles.exampleWords}>pin · tin · bin</Text>
+          <Text style={[styles.exampleWords, isSmallScreen && styles.exampleWordsSmall]}>pin · tin · bin</Text>
         </View>
-        <View style={styles.buttonRow}>
+        <View style={[styles.buttonRow, isSmallScreen && styles.buttonRowSmall]}>
           <Pressable
             onPress={pickImage}
             disabled={uploading}
-            style={({ pressed }) => [styles.uploadBtn, pressed && styles.pressed, uploading && styles.disabled]}
+            style={({ pressed }) => [
+              styles.uploadBtn,
+              isSmallScreen && styles.uploadBtnSmall,
+              pressed && styles.pressed,
+              uploading && styles.disabled,
+            ]}
             accessibilityLabel="Upload photo"
           >
             {uploading ? (
@@ -171,7 +179,12 @@ export function INWordNotebookUpload({
           <Pressable
             onPress={takePhoto}
             disabled={uploading}
-            style={({ pressed }) => [styles.uploadBtn, pressed && styles.pressed, uploading && styles.disabled]}
+            style={({ pressed }) => [
+              styles.uploadBtn,
+              isSmallScreen && styles.uploadBtnSmall,
+              pressed && styles.pressed,
+              uploading && styles.disabled,
+            ]}
             accessibilityLabel="Take photo"
           >
             <Text style={styles.btnEmoji}>📸</Text>
@@ -205,9 +218,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   exampleRow: { flexDirection: 'row', marginBottom: 28, alignItems: 'center' },
+  exampleRowSmall: { flexDirection: 'column', gap: 4 },
   exampleLabel: { fontSize: 18, color: '#4b5563' },
   exampleWords: { fontSize: 22, fontWeight: '800', color: '#4F46E5' },
+  exampleWordsSmall: { fontSize: 30, textAlign: 'center' },
   buttonRow: { flexDirection: 'row', gap: 16, marginBottom: 20 },
+  buttonRowSmall: { width: '100%', maxWidth: 320, flexDirection: 'column' },
   uploadBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -221,6 +237,7 @@ const styles = StyleSheet.create({
     borderColor: '#4338CA',
     minWidth: 140,
   },
+  uploadBtnSmall: { width: '100%', minWidth: 0 },
   pressed: { opacity: 0.9 },
   disabled: { opacity: 0.8 },
   btnEmoji: { fontSize: 28 },

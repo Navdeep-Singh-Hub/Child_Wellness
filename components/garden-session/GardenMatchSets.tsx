@@ -73,7 +73,6 @@ export function GardenMatchSets({ onComplete }: { onComplete: () => void }) {
         <Animated.View style={[styles.setWrap, { transform: [{ translateX: shakeX }] }]}>
           <View style={styles.setBox}>
             <Text style={styles.setEmojis}>{round.emoji.repeat(round.count)}</Text>
-            <Text style={styles.setLabel}>{round.count} {round.label}</Text>
           </View>
         </Animated.View>
         <Text style={styles.prompt}>Tap the correct number:</Text>
@@ -109,7 +108,6 @@ const styles = StyleSheet.create({
     minWidth: 220,
   },
   setEmojis: { fontSize: 36, marginBottom: 8 },
-  setLabel: { fontSize: 18, fontWeight: '700', color: '#166534' },
   prompt: { fontSize: 18, color: '#4b5563', marginBottom: 20 },
   numbersRow: { flexDirection: 'row', gap: 14 },
   numBtn: {

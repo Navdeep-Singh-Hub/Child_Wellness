@@ -74,6 +74,17 @@ export function INWordSession2({ onExit }: INWordSession2Props = {}) {
     const startLabel = nextStep <= 4 ? `Start Game ${nextStep}` : 'Notebook';
     return (
       <SafeAreaView style={styles.safe}>
+        {onExit ? (
+          <Pressable
+            onPress={onExit}
+            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back to sessions"
+          >
+            <Ionicons name="arrow-back" size={24} color={PRIMARY} />
+            <Text style={styles.backButtonText}>Back</Text>
+          </Pressable>
+        ) : null}
         <ScrollView contentContainerStyle={styles.introScroll} showsVerticalScrollIndicator={false}>
           <View style={styles.introHeader}>
             <Text style={styles.introTitle}>The -IN Family</Text>
@@ -161,9 +172,26 @@ export function INWordSession2({ onExit }: INWordSession2Props = {}) {
     );
   }
 
+  const goBack = () => {
+    if (onExit) {
+      onExit();
+      return;
+    }
+    setStep((s) => Math.max(0, s - 1));
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
+        <Pressable
+          onPress={goBack}
+          style={({ pressed }) => [styles.backButtonHeader, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back to sessions"
+        >
+          <Ionicons name="arrow-back" size={24} color={PRIMARY} />
+          <Text style={styles.backButtonText}>Back</Text>
+        </Pressable>
         <Text style={styles.title}>The -IN Family</Text>
         <Text style={styles.subtitle}>Session 2</Text>
         <View style={styles.progressRow}>
@@ -191,6 +219,24 @@ export function INWordSession2({ onExit }: INWordSession2Props = {}) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: BG },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  backButtonHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    gap: 6,
+    marginBottom: 4,
+  },
+  backButtonText: { fontSize: 17, fontWeight: '700', color: PRIMARY },
   header: {
     backgroundColor: '#E0E7FF',
     paddingHorizontal: 20,

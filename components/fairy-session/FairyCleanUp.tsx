@@ -63,7 +63,6 @@ export function FairyCleanUp({ onComplete }: { onComplete: () => void }) {
         if (next.size === CORRECT_ITEMS.length) {
           speak('Great job!');
           setShowSuccess(true);
-          Animated.timing(confettiAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
           setTimeout(() => onComplete(), 2200);
         }
       } else {

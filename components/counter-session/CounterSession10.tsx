@@ -154,7 +154,13 @@ export function CounterSession10({ onExit }: CounterSession10Props = {}) {
     );
   }
 
-  const goBack = () => setStep((s) => Math.max(0, s - 1));
+  const goBack = () => {
+    if (onExit) {
+      onExit();
+      return;
+    }
+    setStep((s) => Math.max(0, s - 1));
+  };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: DESIGN.background }]}>
@@ -163,7 +169,7 @@ export function CounterSession10({ onExit }: CounterSession10Props = {}) {
           onPress={goBack}
           style={({ pressed }) => [styles.backButtonHeader, pressed && styles.pressed]}
           accessibilityRole="button"
-          accessibilityLabel="Go back one step"
+          accessibilityLabel="Go back to sessions"
         >
           <Ionicons name="arrow-back" size={24} color={DESIGN.primary} />
           <Text style={[styles.backButtonText, { color: DESIGN.primary }]}>Back</Text>

@@ -155,8 +155,8 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       accessibilityLabel="Drawing Canvas"
     >
       <GestureDetector gesture={gesture}>
-        <View style={StyleSheet.absoluteFill}>
-          <Svg style={StyleSheet.absoluteFill}>
+        <View style={styles.drawingSurface}>
+          <Svg style={styles.svg} width="100%" height="100%">
             {/* Completed Strokes */}
             {strokes.map((stroke, index) => (
               <Path
@@ -193,5 +193,14 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: 'hidden',
     borderRadius: 24, // match React Native rounded-3xl approx
+  },
+  drawingSurface: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  svg: {
+    width: '100%',
+    height: '100%',
   },
 });
