@@ -14,13 +14,18 @@ import { GameSelector } from './GameSelector';
 import { ProgressMap } from './ProgressMap';
 import { FreeHandSession1 } from '@/components/level1-grip-session/FreeHandSession1';
 import { ControlledScribblingSession2 } from '@/components/level1-controlled-session/ControlledScribblingSession2';
-import { LettersEFSession3 } from '@/components/explorer-session/LettersEFSession3';
-import { StandingLinesSession4 } from '@/components/level1-standing-lines-session/StandingLinesSession4';
-import { SleepingSlantingSession5 } from '@/components/level1-sleeping-slant-session/SleepingSlantingSession5';
+import { CurvesVowelsSession5 } from '@/components/level1-curves-vowels-session/CurvesVowelsSession5';
+import { StraightLineLettersSession4 } from '@/components/level1-straight-letters-session/StraightLineLettersSession4';
+import { SlantCurveLettersSession5 } from '@/components/level1-slant-curve-letters-session/SlantCurveLettersSession5';
+import { FullAlphabetSession6 } from '@/components/level1-full-alphabet-session/FullAlphabetSession6';
 import { LettersKLSession6 } from '@/components/explorer-session/LettersKLSession6';
+import { ReducedGuidanceSession7 } from '@/components/level1-reduced-guidance-session/ReducedGuidanceSession7';
 import { LettersMNSession7 } from '@/components/explorer-session/LettersMNSession7';
+import { CopyLettersSession8 } from '@/components/level1-copy-letters-session/CopyLettersSession8';
 import { LettersOPSession8 } from '@/components/explorer-session/LettersOPSession8';
+import { FreeWritingSession9 } from '@/components/level1-free-writing-session/FreeWritingSession9';
 import { LettersQRSession9 } from '@/components/explorer-session/LettersQRSession9';
+import { MasterSession10 } from '@/components/level1-master-session/MasterSession10';
 import { ExplorerMasterSession10 } from '@/components/explorer-session/ExplorerMasterSession10';
 import { FarmSession1 } from '@/components/farm-session/FarmSession1';
 import { OceanSession2 } from '@/components/ocean-session/OceanSession2';
@@ -194,69 +199,69 @@ export function SpecialEducationNavigator() {
     };
     return <ControlledScribblingSession2 onExit={handleExitSession} />;
   }
-  // Explorer (section 1) Session 3: Letters E & F — full session flow
+  // Explorer (section 1) Session 3: Curved Lines — full session flow
   if (mode === 'games' && selectedSection === 1 && selectedSession === 3) {
     const handleExitSession = () => {
       setMode('sessions');
       setSelectedSession(null);
     };
-    return <LettersEFSession3 onExit={handleExitSession} />;
+    return <CurvesVowelsSession5 onExit={handleExitSession} />;
   }
-  // Explorer (section 1) Session 4: Letters G & H — full session flow
+  // Explorer (section 1) Session 4: Straight-Line Letters — full session flow
   if (mode === 'games' && selectedSection === 1 && selectedSession === 4) {
     const handleExitSession = () => {
       setMode('sessions');
       setSelectedSession(null);
     };
-    return <StandingLinesSession4 onExit={handleExitSession} />;
+    return <StraightLineLettersSession4 onExit={handleExitSession} />;
   }
-  // Explorer (section 1) Session 5: Letters I & J — full session flow
+  // Explorer (section 1) Session 5: Slant & Curve Letters — full session flow
   if (mode === 'games' && selectedSection === 1 && selectedSession === 5) {
     const handleExitSession = () => {
       setMode('sessions');
       setSelectedSession(null);
     };
-    return <SleepingSlantingSession5 onExit={handleExitSession} />;
+    return <SlantCurveLettersSession5 onExit={handleExitSession} />;
   }
-  // Explorer (section 1) Session 6: Letters K & L — full session flow
+  // Explorer (section 1) Session 6: Full A–Z Tracing — full session flow
   if (mode === 'games' && selectedSection === 1 && selectedSession === 6) {
     const handleExitSession = () => {
       setMode('sessions');
       setSelectedSession(null);
     };
-    return <LettersKLSession6 onExit={handleExitSession} />;
+    return <FullAlphabetSession6 onExit={handleExitSession} />;
   }
-  // Explorer (section 1) Session 7: Letters M & N — full session flow
+  // Explorer (section 1) Session 7: Reduced Guidance — full session flow
   if (mode === 'games' && selectedSection === 1 && selectedSession === 7) {
     const handleExitSession = () => {
       setMode('sessions');
       setSelectedSession(null);
     };
-    return <LettersMNSession7 onExit={handleExitSession} />;
+    return <ReducedGuidanceSession7 onExit={handleExitSession} />;
   }
-  // Explorer (section 1) Session 8: Letters O & P — full session flow
+  // Explorer (section 1) Session 8: Copy Letters — full session flow
   if (mode === 'games' && selectedSection === 1 && selectedSession === 8) {
     const handleExitSession = () => {
       setMode('sessions');
       setSelectedSession(null);
     };
-    return <LettersOPSession8 onExit={handleExitSession} />;
+    return <CopyLettersSession8 onExit={handleExitSession} />;
   }
-  // Explorer (section 1) Session 9: Letters Q & R — full session flow
+  // Explorer (section 1) Session 9: Free Writing — full session flow
   if (mode === 'games' && selectedSection === 1 && selectedSession === 9) {
     const handleExitSession = () => {
       setMode('sessions');
       setSelectedSession(null);
     };
-    return <LettersQRSession9 onExit={handleExitSession} />;
+    return <FreeWritingSession9 onExit={handleExitSession} />;
   }
-  // Explorer (section 1) Session 10: Explorer Master — full session flow
+  // Explorer (section 1) Session 10: Master Writing (FINAL) — full session flow
   if (mode === 'games' && selectedSection === 1 && selectedSession === 10) {
     const handleExitSession = () => {
       setMode('sessions');
       setSelectedSession(null);
     };
-    return <ExplorerMasterSession10 onExit={handleExitSession} />;
+    return <MasterSession10 onExit={handleExitSession} />;
   }
 
   // Builder (section 3) Session 1: Object & Shape Fun — full session flow

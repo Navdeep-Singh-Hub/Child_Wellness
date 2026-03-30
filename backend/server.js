@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './loadEnv.js';
 import express from 'express';
 import fs from 'fs';
 import mongoose from 'mongoose';
@@ -18,6 +18,8 @@ import { tapGame } from './routes/tapGame.js';
 import { therapyProgressRouter } from './routes/therapyProgress.js';
 import { adminAnalyticsRouter } from './routes/adminAnalytics.js';
 import { ActivityLog } from './models/ActivityLog.js';
+import { handleRecognizeLetter } from './routes/recognizeLetterRoute.js';
+import { handleValidateLetter } from './routes/validateLetterRoute.js';
 
 const app = express();
 // Behind proxies (Vercel/Render/Nginx), respect X-Forwarded-* headers
@@ -36,6 +38,31 @@ const allowedOrigins = [
   'http://127.0.0.1:8081', // Also allow 127.0.0.1 for web
 ];
 
+const ALLOW_LAN_CORS =
+  process.env.ALLOW_LAN_CORS === '1' || process.env.ALLOW_LAN_CORS === 'true';
+
+function isPrivateLanOrigin(origin) {
+  try {
+    const u = new URL(origin);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
+    const h = u.hostname;
+    if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(h)) return true;
+    if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(h)) return true;
+    if (/^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(h)) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/** CORS: whitelist + optional private LAN (Expo web at http://192.168.x.x:8081 → API :4000). */
+function corsOriginAllowed(origin) {
+  if (!origin) return false;
+  if (allowedOrigins.includes(origin)) return true;
+  if (ALLOW_LAN_CORS && isPrivateLanOrigin(origin)) return true;
+  return false;
+}
+
 // CRITICAL: Handle OPTIONS preflight requests FIRST - before ANY other middleware
 // This MUST be the absolute first middleware to catch all OPTIONS requests
 app.use((req, res, next) => {
@@ -49,7 +76,7 @@ app.use((req, res, next) => {
     console.log(`[CORS] Allowed origins:`, allowedOrigins);
     
     // Set CORS headers for allowed origins
-    if (origin && allowedOrigins.includes(origin)) {
+    if (corsOriginAllowed(origin)) {
       console.log(`[CORS] ✅ ALLOWING OPTIONS request from ${origin} to ${url}`);
       // Use writeHead to ensure headers are written before response ends
       const headers = {
@@ -81,7 +108,7 @@ app.options('*', (req, res) => {
   const origin = req.headers.origin;
   console.log(`[CORS] app.options('*') handler triggered from origin: ${origin} to ${req.originalUrl || req.path}`);
   
-  if (origin && allowedOrigins.includes(origin)) {
+  if (corsOriginAllowed(origin)) {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Credentials': 'true',
@@ -101,7 +128,7 @@ app.use((req, res, next) => {
   const origin = req.headers.origin;
   
   // Set CORS headers for all responses if origin is allowed
-  if (origin && allowedOrigins.includes(origin)) {
+  if (corsOriginAllowed(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
@@ -249,6 +276,118 @@ app.post('/api/verify-line-types', requireAuth, upload.single('file'), (req, res
     success: mockCorrect,
     message: mockCorrect ? 'SUCCESS' : 'TRY AGAIN',
     feedback: mockCorrect ? 'Great line control!' : 'Try again. Draw sleeping and slanting lines on paper and upload a photo.',
+  });
+});
+
+// ---- verify-curves route (Level 1 Curved Lines Session 5: draw curved lines on paper, upload photo)
+// AI prompt: Analyze the uploaded image. Check if the drawing contains curved lines (waves, arcs, circles). Criteria: lines should show curvature, imperfections allowed. SUCCESS if curved lines are detected, TRY AGAIN if no curves are recognizable.
+app.post('/api/verify-curves', requireAuth, upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded', success: false });
+  }
+  const mockCorrect = true; // TODO: AI vision — detect curved lines (waves, arcs, circles)
+  res.json({
+    success: mockCorrect,
+    message: mockCorrect ? 'SUCCESS' : 'TRY AGAIN',
+    feedback: mockCorrect ? 'Great curve drawing!' : 'Try again. Draw curved lines (waves, circles, arcs) on paper and upload a photo.',
+  });
+});
+
+// ---- verify-capital-letter route (Level 1 Session 5: write any capital letter A–Z, upload photo)
+// AI prompt: Check if the image contains any recognizable uppercase English letter A–Z. Accept imperfect handwriting.
+app.post('/api/verify-capital-letter', requireAuth, upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded', success: false });
+  }
+  const mockCorrect = true; // TODO: AI vision — detect any uppercase A–Z letter
+  res.json({
+    success: mockCorrect,
+    message: mockCorrect ? 'SUCCESS' : 'TRY AGAIN',
+    feedback: mockCorrect ? 'Great letter writing!' : 'Try again. Write any capital letter (A–Z) on paper.',
+  });
+});
+
+// ---- verify-master-writing route (Level 1 Session 10 FINAL: write A–Z clearly on paper, upload photo)
+// AI prompt: Check if the image contains the complete uppercase alphabet A–Z written clearly and in order. Check recognizability and sequence consistency.
+app.post('/api/verify-master-writing', requireAuth, upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded', success: false });
+  }
+  const mockCorrect = true; // TODO: AI vision — verify full A–Z, recognizability, and sequence
+  res.json({
+    success: mockCorrect,
+    message: mockCorrect ? 'SUCCESS' : 'TRY AGAIN',
+    feedback: mockCorrect ? 'Outstanding! You have mastered capital letter writing!' : 'Try again. Write A–Z clearly and in order on paper.',
+  });
+});
+
+// ---- verify-free-writing route (Level 1 Session 9: write A–Z without dots, upload photo)
+// AI prompt: Check if the image contains multiple uppercase letters A–Z written without dotted guides. Accept imperfect handwriting.
+app.post('/api/verify-free-writing', requireAuth, upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded', success: false });
+  }
+  const mockCorrect = true; // TODO: AI vision — detect multiple free-written uppercase A–Z letters
+  res.json({
+    success: mockCorrect,
+    message: mockCorrect ? 'SUCCESS' : 'TRY AGAIN',
+    feedback: mockCorrect ? 'Amazing free writing!' : 'Try again. Write A–Z without any dots or guides.',
+  });
+});
+
+// ---- verify-copy-letters route (Level 1 Session 8: write 5 letters from A–Z, upload photo)
+// AI prompt: Check if the image contains at least 5 recognizable uppercase English letters. Accept imperfect handwriting.
+app.post('/api/verify-copy-letters', requireAuth, upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded', success: false });
+  }
+  const mockCorrect = true; // TODO: AI vision — detect at least 5 uppercase letters
+  res.json({
+    success: mockCorrect,
+    message: mockCorrect ? 'SUCCESS' : 'TRY AGAIN',
+    feedback: mockCorrect ? 'Great letter writing!' : 'Try again. Write any 5 letters from A–Z on paper.',
+  });
+});
+
+// ---- verify-light-dots route (Level 1 Session 7: write A–Z using light dots, upload photo)
+// AI prompt: Check if the image contains multiple uppercase letters written with light dotted guides. Accept imperfect handwriting.
+app.post('/api/verify-light-dots', requireAuth, upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded', success: false });
+  }
+  const mockCorrect = true; // TODO: AI vision — detect multiple A–Z letters with light dot guides
+  res.json({
+    success: mockCorrect,
+    message: mockCorrect ? 'SUCCESS' : 'TRY AGAIN',
+    feedback: mockCorrect ? 'Great light-dot writing!' : 'Try again. Write A–Z using light dots on paper.',
+  });
+});
+
+// ---- verify-az-tracing route (Level 1 Session 6: trace A–Z using dots, upload photo)
+// AI prompt: Check if the image contains multiple traced uppercase English letters A–Z. Accept imperfect handwriting.
+app.post('/api/verify-az-tracing', requireAuth, upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded', success: false });
+  }
+  const mockCorrect = true; // TODO: AI vision — detect multiple traced uppercase A–Z letters
+  res.json({
+    success: mockCorrect,
+    message: mockCorrect ? 'SUCCESS' : 'TRY AGAIN',
+    feedback: mockCorrect ? 'Great alphabet tracing!' : 'Try again. Trace letters A–Z using the dotted guides.',
+  });
+});
+
+// ---- verify-straight-letters route (Level 1 Session 4: write any straight-line letter I/L/T/H/E/F on paper, upload photo)
+// AI prompt: Check if the image contains any uppercase straight-line letters like I, L, T, H, E, F. Accept imperfect shapes.
+app.post('/api/verify-straight-letters', requireAuth, upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded', success: false });
+  }
+  const mockCorrect = true; // TODO: AI vision — detect straight-line letters (I/L/T/H/E/F)
+  res.json({
+    success: mockCorrect,
+    message: mockCorrect ? 'SUCCESS' : 'TRY AGAIN',
+    feedback: mockCorrect ? 'Great letter writing!' : 'Try again. Write any letter: I, L, T, H, E, F on paper.',
   });
 });
 
@@ -1650,7 +1789,8 @@ app.post('/api/upload-graduate-master-task', requireAuth, upload.single('file'),
 app.use('/api/webhooks/razorpay', express.raw({ type: 'application/json' }));
 
 // JSON middleware - MUST be after multer routes and webhook routes
-app.use(express.json());
+// Default 100kb is too small for /api/recognize-letter (base64 PNGs from the canvas).
+app.use(express.json({ limit: '12mb' }));
 
 
 // Health check endpoint
@@ -1658,11 +1798,30 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true });
 });
 
+// Letter validation API is live — use POST (this GET is for deploy / curl checks only)
+app.get('/api/validate-letter', (req, res) => {
+  const origin = req.headers.origin;
+  if (corsOriginAllowed(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  res.json({
+    ok: true,
+    method: 'POST',
+    path: '/api/validate-letter',
+    body: {
+      image: 'string (PNG base64, with or without data:image/...;base64, prefix)',
+      expectedLetter: 'string A–Z',
+      mimeType: 'optional, default image/png',
+    },
+  });
+});
+
 // Test therapy endpoint (no auth) to verify routing works
 app.get('/api/therapy/test', (req, res) => {
   console.log('[THERAPY TEST] Test endpoint hit');
   const origin = req.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
+  if (corsOriginAllowed(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
@@ -1673,7 +1832,7 @@ app.get('/api/therapy/test', (req, res) => {
 app.get('/api/subscription/test', (req, res) => {
   console.log('[SUBSCRIPTION TEST] Test endpoint hit');
   const origin = req.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
+  if (corsOriginAllowed(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
@@ -1743,7 +1902,7 @@ function requireAuth(req, res, next) {
 app.options('/api/therapy/progress', (req, res) => {
   const origin = req.headers.origin;
   console.log(`[CORS] Explicit OPTIONS handler for /api/therapy/progress from origin: ${origin}`);
-  if (origin && allowedOrigins.includes(origin)) {
+  if (corsOriginAllowed(origin)) {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Credentials': 'true',
@@ -1761,7 +1920,7 @@ app.options('/api/therapy/progress', (req, res) => {
 app.options('/api/subscription/status', (req, res) => {
   const origin = req.headers.origin;
   console.log(`[CORS] Explicit OPTIONS handler for /api/subscription/status from origin: ${origin}`);
-  if (origin && allowedOrigins.includes(origin)) {
+  if (corsOriginAllowed(origin)) {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Credentials': 'true',
@@ -1778,13 +1937,29 @@ app.options('/api/subscription/status', (req, res) => {
 app.options('/api/subscription/*', (req, res) => {
   const origin = req.headers.origin;
   console.log(`[CORS] Explicit OPTIONS handler for /api/subscription/* from origin: ${origin} to ${req.originalUrl || req.path}`);
-  if (origin && allowedOrigins.includes(origin)) {
+  if (corsOriginAllowed(origin)) {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-auth0-id, x-auth0-email, x-auth0-name',
       'Access-Control-Max-Age': '86400'
+    });
+    return res.end();
+  }
+  res.writeHead(204);
+  return res.end();
+});
+
+app.options('/api/validate-letter', (req, res) => {
+  const origin = req.headers.origin;
+  if (corsOriginAllowed(origin)) {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-auth0-id, x-auth0-email, x-auth0-name',
+      'Access-Control-Max-Age': '86400',
     });
     return res.end();
   }
@@ -1804,6 +1979,11 @@ app.use('/api/therapy', (req, res, next) => {
 }, requireAuth, therapyProgressRouter);
 
 app.use('/api/games', requireAuth, gameRoutes);
+
+// OpenAI vision — handwritten uppercase letter (A–Z), forgiving recognition for children
+app.post('/api/recognize-letter', requireAuth, handleRecognizeLetter);
+// Copy-letter games: compares drawing to expected letter (frontend uses this)
+app.post('/api/validate-letter', requireAuth, handleValidateLetter);
 
 // Activity log (event-based time tracking for admin analytics)
 app.post('/api/me/activity', requireAuth, async (req, res) => {
@@ -2550,7 +2730,7 @@ app.use((err, req, res, next) => {
   
   // Set CORS headers on error response
   const origin = req.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
+  if (corsOriginAllowed(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
@@ -2560,9 +2740,11 @@ app.use((err, req, res, next) => {
     return next(err);
   }
   
+  const errMsg = err.message || 'Internal server error';
   res.status(err.status || 500).json({
     ok: false,
-    error: err.message || 'Internal server error',
+    error: errMsg,
+    message: errMsg,
   });
 });
 
@@ -2570,14 +2752,18 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
   // Set CORS headers on 404 response
   const origin = req.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
+  if (corsOriginAllowed(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
   
+  const reqPath = req.originalUrl || req.path || '';
   res.status(404).json({
     ok: false,
     error: 'Route not found',
+    message: `No route for ${req.method} ${reqPath}. If you expect letter recognition, deploy or restart the latest backend (POST /api/validate-letter or /api/recognize-letter).`,
+    path: reqPath,
+    method: req.method,
   });
 });
 
@@ -2607,7 +2793,18 @@ async function startServer() {
     const server = app.listen(port, '0.0.0.0', () => {
       console.log(`[SERVER] ✅ API listening on 0.0.0.0:${port}`);
       console.log(`[SERVER] Health check: http://localhost:${port}/api/health`);
+      console.log(`[SERVER] Letter validation: POST http://localhost:${port}/api/validate-letter`);
       console.log(`[SERVER] Subscription status: http://localhost:${port}/api/subscription/status`);
+      if (!process.env.OPENAI_API_KEY?.trim()) {
+        console.warn(
+          '\n[SERVER] ⚠️  OPENAI_API_KEY is missing — copy-letter games respond with "Letter check is not set up yet".',
+        );
+        console.warn(
+          '[SERVER]    Fix: create backend/.env with OPENAI_API_KEY=sk-... (see backend/env.example), then restart.\n',
+        );
+      } else {
+        console.log('[SERVER] OpenAI letter check: enabled');
+      }
     });
     
     server.on('error', (error) => {

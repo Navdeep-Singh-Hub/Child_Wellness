@@ -109,7 +109,7 @@ export function StandingLinesSession4({ onExit }: StandingLinesSession4Props = {
     );
   }
 
-  const goBack = () => setStep((s) => (s === 1 ? 0 : s - 1));
+  const goBack = () => setStep(0);
 
   if (showCelebration) {
     return <SuccessCelebration title="Great straight lines!" subtitle="Session complete!" />;

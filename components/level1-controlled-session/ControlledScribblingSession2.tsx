@@ -119,7 +119,7 @@ export function ControlledScribblingSession2({ onExit }: ControlledScribblingSes
   }
 
   // —— Game / Task (steps 1–5) ——
-  const goBack = () => setStep((s) => (s === 1 ? 0 : s - 1));
+  const goBack = () => setStep(0);
 
   if (showCelebration) {
     return <SuccessCelebration title="Great control!" subtitle="Session complete!" />;

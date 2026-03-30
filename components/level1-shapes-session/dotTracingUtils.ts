@@ -1,7 +1,7 @@
 /**
  * Dot-to-dot tracing: target dots, stroke points, proximity detection, completion %.
  */
-import { pathToPoints } from '@/components/level1-grip-session/shapeFillUtils';
+import { pathToPoints, pointToSegmentDist } from '@/components/level1-grip-session/shapeFillUtils';
 
 export interface Point {
   x: number;
@@ -13,18 +13,21 @@ export function distance(a: Point, b: Point): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-/** Check which target dots are "hit" by stroke points (within hitRadius). Returns Set of dot indices. */
+/** Check which target dots are "hit" by stroke segments (within hitRadius). Returns Set of dot indices. */
 export function getConnectedDotIndices(
   strokePath: string,
   targetDots: Point[],
   hitRadius: number
 ): Set<number> {
-  const strokePoints = pathToPoints(strokePath);
+  const pts = pathToPoints(strokePath);
   const connected = new Set<number>();
   for (let i = 0; i < targetDots.length; i++) {
-    const dot = targetDots[i];
-    for (const p of strokePoints) {
-      if (distance(p, dot) <= hitRadius) {
+    if (pts.length === 1) {
+      if (distance(pts[0], targetDots[i]) <= hitRadius) connected.add(i);
+      continue;
+    }
+    for (let pi = 0; pi < pts.length - 1; pi++) {
+      if (pointToSegmentDist(targetDots[i], pts[pi], pts[pi + 1]) <= hitRadius) {
         connected.add(i);
         break;
       }

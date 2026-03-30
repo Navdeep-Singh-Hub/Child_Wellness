@@ -13,6 +13,14 @@ const isLocalhost =
   (window.location.hostname === 'localhost' ||
    window.location.hostname === '127.0.0.1');
 
+/** Same machine / LAN: use API on this host so Expo Web on http://192.168.x.x:8081 hits http://192.168.x.x:4000 */
+function isPrivateLanHostname(hostname: string): boolean {
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return false;
+  if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true;
+  return false;
+}
 
 // Normalize API_BASE_URL: remove trailing slash and /api if present
 // (since all endpoints already include /api/)
@@ -20,6 +28,12 @@ const isLocalhost =
 let rawBase: string;
 if (isLocalhost) {
   rawBase = 'http://localhost:4000';
+} else if (
+  Platform.OS === 'web' &&
+  typeof window !== 'undefined' &&
+  isPrivateLanHostname(window.location.hostname)
+) {
+  rawBase = `http://${window.location.hostname}:4000`;
 } else {
   rawBase =
     process.env.EXPO_PUBLIC_API_BASE_URL?.trim() ||

@@ -1,7 +1,7 @@
 /**
  * Vertical (standing) line tracing: dots, direction (top→bottom), straightness.
  */
-import { pathToPoints } from '@/components/level1-grip-session/shapeFillUtils';
+import { pathToPoints, pointToSegmentDist } from '@/components/level1-grip-session/shapeFillUtils';
 
 export interface Point {
   x: number;
@@ -22,19 +22,24 @@ export function verticalDots(x: number, topY: number, bottomY: number, count: nu
   return points;
 }
 
-/** Check which dots are hit by stroke (within hitRadius). */
+/** Check which dots are hit by stroke (within hitRadius), using segment distance. */
 export function getConnectedDotIndices(
   strokePath: string,
   targetDots: Point[],
   hitRadius: number
 ): Set<number> {
-  const strokePoints = pathToPoints(strokePath);
+  const pts = pathToPoints(strokePath);
   const connected = new Set<number>();
   for (let i = 0; i < targetDots.length; i++) {
-    const dot = targetDots[i];
-    for (const p of strokePoints) {
-      if (distance(p, dot) <= hitRadius) connected.add(i);
-      if (connected.has(i)) break;
+    if (pts.length === 1) {
+      if (distance(pts[0], targetDots[i]) <= hitRadius) connected.add(i);
+      continue;
+    }
+    for (let pi = 0; pi < pts.length - 1; pi++) {
+      if (pointToSegmentDist(targetDots[i], pts[pi], pts[pi + 1]) <= hitRadius) {
+        connected.add(i);
+        break;
+      }
     }
   }
   return connected;

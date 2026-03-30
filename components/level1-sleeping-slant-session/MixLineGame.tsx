@@ -20,13 +20,12 @@ import { verticalDots, isPathMostlyVertical } from '@/components/level1-standing
 import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
 
-const HIT_RADIUS = 24;
-const DOT_COUNT = 4;
-const SUCCESS_PCT = 80;
+const HIT_RADIUS = 28;
+const DOT_COUNT = 2;
 const MAX_H_V_DEVIATION = 45;
 const ANGLE_TOLERANCE = 28;
 
-type LineKind = 'vertical' | 'horizontal' | 'slantLeft' | 'slantRight';
+type LineKind = 'vertical' | 'horizontal' | 'slantRight';
 
 interface LineDef {
   kind: LineKind;
@@ -34,26 +33,26 @@ interface LineDef {
 }
 
 function buildLines(width: number, height: number): LineDef[] {
-  const margin = 50;
-  const cx = width / 2;
-  const cy = height / 2;
-  const len = Math.min(width, height) * 0.2;
+  const margin = 60;
+  const lineLen = Math.min(width, height) * 0.35;
+  const topY = margin + 20;
+  const botY = topY + lineLen;
+  const midY = (topY + botY) / 2;
+  const leftCol = width * 0.18;
+  const midCol = width * 0.5;
+  const rightCol = width * 0.82;
   return [
-    { kind: 'vertical', dots: verticalDots(cx - 60, cy - len, cy + len, DOT_COUNT) },
-    { kind: 'horizontal', dots: horizontalDots(cy - 50, cx - len, cx + len, DOT_COUNT) },
-    { kind: 'slantLeft', dots: slantDots(cx - 50, cy + 30, cx + 50, cy - 30, DOT_COUNT) },
-    { kind: 'slantRight', dots: slantDots(cx - 50, cy - 30, cx + 50, cy + 30, DOT_COUNT) },
+    { kind: 'vertical', dots: verticalDots(leftCol, topY, botY, DOT_COUNT) },
+    { kind: 'horizontal', dots: horizontalDots(midY, midCol - lineLen / 2, midCol + lineLen / 2, DOT_COUNT) },
+    { kind: 'slantRight', dots: slantDots(rightCol - lineLen / 3, topY, rightCol + lineLen / 3, botY, DOT_COUNT) },
   ];
 }
 
 function checkLineCorrect(strokePath: string, kind: LineKind): boolean {
-  const pct = 100;
-  const connected = 1;
   if (kind === 'vertical') return isPathMostlyVertical(strokePath, MAX_H_V_DEVIATION);
   if (kind === 'horizontal') return isPathMostlyHorizontal(strokePath, MAX_H_V_DEVIATION);
   const angle = getStrokeAngle(strokePath);
-  if (kind === 'slantLeft') return isAngleNear(angle, 45, ANGLE_TOLERANCE) || isAngleNear(angle, -135, ANGLE_TOLERANCE);
-  return isAngleNear(angle, -45, ANGLE_TOLERANCE) || isAngleNear(angle, 135, ANGLE_TOLERANCE);
+  return isAngleNear(angle, 45, ANGLE_TOLERANCE) || isAngleNear(angle, -135, ANGLE_TOLERANCE);
 }
 
 export function MixLineGame({
@@ -95,8 +94,7 @@ export function MixLineGame({
           for (let i = 0; i < line.dots.length; i++) {
             if (next.has(L * DOT_COUNT + i)) hitCount++;
           }
-          const linePct = (hitCount / line.dots.length) * 100;
-          if (linePct >= 75 && checkLineCorrect(last, line.kind)) {
+          if (hitCount >= 1 && checkLineCorrect(last, line.kind)) {
             newCorrect.add(line.kind);
           }
         }
@@ -104,7 +102,7 @@ export function MixLineGame({
       setCorrectLines((prev) => {
         const merged = new Set(prev);
         newCorrect.forEach((k) => merged.add(k));
-        if (pct >= 70 && merged.size >= 3) {
+        if (merged.size >= 3) {
           setTimeout(() => {
             setShowConfetti(true);
             try {
@@ -153,7 +151,7 @@ export function MixLineGame({
                   key={i}
                   cx={d.x}
                   cy={d.y}
-                  r={connected.has(i) ? 12 : 8}
+                  r={connected.has(i) ? 16 : 12}
                   fill={connected.has(i) ? '#22C55E' : '#A78BFA'}
                   opacity={connected.has(i) ? 1 : 0.85}
                 />

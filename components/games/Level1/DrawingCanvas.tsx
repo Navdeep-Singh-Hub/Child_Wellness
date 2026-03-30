@@ -18,6 +18,8 @@ export interface Stroke {
 interface DrawingCanvasProps {
   onStrokeStart?: () => void;
   onStrokeEnd?: (strokes: Stroke[]) => void;
+  /** Fires while drawing so games can score coverage before finger lifts (completed strokes + current polyline). */
+  onTracingChange?: (paths: { path: string }[]) => void;
   brushSize?: number;
   canvasColor?: string;
   randomColors?: boolean;
@@ -51,6 +53,7 @@ const pointsToPath = (points: { x: number; y: number }[]) => {
 export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   onStrokeStart,
   onStrokeEnd,
+  onTracingChange,
   brushSize = 10,
   canvasColor = 'transparent',
   randomColors = true,
@@ -91,6 +94,21 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     return COLORS[randIndex];
   }, [randomColors]);
 
+  const emitTracingPaths = useCallback((currentPts: { x: number; y: number }[]) => {
+    if (!onTracingChange) return;
+    const paths = strokesRef.current.map((s) => ({ path: s.path }));
+    if (currentPts.length === 0) {
+      onTracingChange(paths);
+      return;
+    }
+    const pts =
+      currentPts.length === 1
+        ? [...currentPts, { x: currentPts[0].x + 0.1, y: currentPts[0].y + 0.1 }]
+        : currentPts;
+    paths.push({ path: pointsToPath(pts) });
+    onTracingChange(paths);
+  }, [onTracingChange]);
+
   const panGesture = Gesture.Pan()
     .runOnJS(true)
     .minDistance(0)
@@ -111,15 +129,16 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       } else {
         setCurrentPoints([p]);
         currentPointsRef.current = [p];
+        emitTracingPaths([p]);
       }
     })
     .onUpdate((e) => {
       if (singleDotMode) return;
-      setCurrentPoints(prev => {
-        const next = [...prev, { x: e.x, y: e.y }];
-        currentPointsRef.current = next;
-        return next;
-      });
+      const prev = currentPointsRef.current;
+      const next = [...prev, { x: e.x, y: e.y }];
+      currentPointsRef.current = next;
+      setCurrentPoints(next);
+      emitTracingPaths(next);
     })
     .onEnd(() => {
       if (singleDotMode) return;
@@ -132,6 +151,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         setStrokes(newStrokes);
         setCurrentPoints([]);
         currentPointsRef.current = [];
+        onTracingChange?.(newStrokes.map((s) => ({ path: s.path })));
         onStrokeEnd?.(newStrokes);
       }
     });
