@@ -1,18 +1,21 @@
 /**
  * Game 2: Random Letter Test — random letters appear one at a time.
- * Child writes each letter on a blank canvas.
+ * Child writes each letter on a blank canvas. Validation: OpenAI vision (strict).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
 import { DrawingCanvas, DrawingCanvasRef, Stroke } from '@/components/games/Level1/DrawingCanvas';
 import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
-import { ALPHABET, scaleStrokes, type Point, type StrokeDef } from '@/components/level1-full-alphabet-session/alphabetData';
-import { letterCopyMatchScore, letterMatchPass } from '@/components/level1-grip-session/shapeFillUtils';
+import { ALPHABET } from '@/components/level1-full-alphabet-session/alphabetData';
+import { isLetterValidationPass, letterRecognitionFailureHint, validateLetterImage } from '@/utils/recognizeLetter';
+import { captureDrawingForAi } from '@/components/level1-copy-letters-session/captureDrawingBase64';
+import { LetterRecognitionFeedback } from '@/components/level1-copy-letters-session/LetterRecognitionFeedback';
 
 const ROUND_SIZE = 12;
+const RECOGNITION_DEBOUNCE_MS = 750;
 
 function shuffleArr<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -23,49 +26,83 @@ function shuffleArr<T>(arr: T[]): T[] {
   return a;
 }
 
-function samplePoints(strokes: StrokeDef[]): Point[] {
-  const pts: Point[] = [];
-  for (const s of strokes) {
-    const len = Math.hypot(s.to.x - s.from.x, s.to.y - s.from.y);
-    const steps = Math.max(2, Math.ceil(len / 18));
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      pts.push({ x: s.from.x + (s.to.x - s.from.x) * t, y: s.from.y + (s.to.y - s.from.y) * t });
-    }
-  }
-  return pts;
-}
-
 export function RandomLetterTestGame({
   currentStep, totalSteps, onBack, onComplete,
 }: { currentStep: number; totalSteps: number; onBack: () => void; onComplete: () => void }) {
-  const [dims, setDims] = useState({ width: 300, height: 300 });
   const [idx, setIdx] = useState(0);
-  const [pct, setPct] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
   const canvasRef = useRef<DrawingCanvasRef>(null);
+  const shotRef = useRef<View>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestIdRef = useRef(0);
+  const latestStrokesRef = useRef<Stroke[]>([]);
+
+  const [checking, setChecking] = useState(false);
+  const [predicted, setPredicted] = useState<string | null>(null);
+  const [confidence, setConfidence] = useState<number | null>(null);
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
+  const [validationPassed, setValidationPassed] = useState(false);
+  const [barPct, setBarPct] = useState(0);
 
   const subset = useMemo(() => shuffleArr(ALPHABET).slice(0, ROUND_SIZE), []);
   const def = subset[idx];
-  const guides = useMemo(() => scaleStrokes(def.strokes, dims.width, dims.height), [def, dims]);
-  const samples = useMemo(() => samplePoints(guides), [guides]);
-
-  const onLayout = useCallback((e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    if (width > 0 && height > 0) setDims({ width, height });
-  }, []);
 
   useEffect(() => {
-    setPct(0);
+    setPredicted(null);
+    setConfidence(null);
+    setAiFeedback(null);
+    setValidationPassed(false);
+    setBarPct(0);
+    setChecking(false);
     canvasRef.current?.clear();
+    latestStrokesRef.current = [];
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
     try { Speech.stop(); Speech.speak(`Write ${def.letter}!`, { rate: 0.9, pitch: 1.1 }); } catch (_) {}
   }, [idx, def.letter]);
 
-  const handleStrokeEnd = useCallback((strokes: Stroke[]) => {
-    const match = letterCopyMatchScore(strokes, samples, { coverageHitRadius: 30 });
-    setPct(Math.round(match.combined * 100));
+  const runRecognition = useCallback(async () => {
+    const expected = def.letter;
+    const b64 = await captureDrawingForAi(shotRef, latestStrokesRef.current);
+    if (!b64) {
+      setAiFeedback('Could not save your drawing. Try again.');
+      return;
+    }
+
+    const reqId = ++requestIdRef.current;
+    setChecking(true);
+    setPredicted(null);
+    setConfidence(null);
+    setValidationPassed(false);
+
+    const data = await validateLetterImage(b64, expected, 'image/png');
+    if (reqId !== requestIdRef.current) return;
+
+    setChecking(false);
+
+    if (!data.ok) {
+      setValidationPassed(false);
+      setBarPct(0);
+      setAiFeedback(
+        data.error === 'recognition_unavailable'
+          ? 'Letter check is not set up yet. Ask a grown-up to add the key on the server.'
+          : letterRecognitionFailureHint(data) || 'Could not check your letter. Try again.'
+      );
+      return;
+    }
+
+    setPredicted(data.detectedLetter ?? '?');
+    setConfidence(data.confidence ?? 0);
+    setAiFeedback(data.feedback || null);
+    setBarPct(isLetterValidationPass(data) ? 100 : Math.round(Number(data.confidence) || 0));
+
+    const passed = isLetterValidationPass(data);
+    setValidationPassed(passed);
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (_) {}
-    if (letterMatchPass(match, 'freeWrite')) {
+
+    if (passed) {
       try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
       if (idx < subset.length - 1) {
         setShowConfetti(true);
@@ -75,12 +112,30 @@ export function RandomLetterTestGame({
         setTimeout(() => { setShowConfetti(false); onComplete(); }, 1500);
       }
     }
-  }, [samples, idx, subset.length, onComplete]);
+  }, [def.letter, idx, subset.length, onComplete]);
 
-  const handleClear = useCallback(() => {
+  const handleRetry = useCallback(() => {
     canvasRef.current?.clear();
-    setPct(0);
+    latestStrokesRef.current = [];
+    setPredicted(null);
+    setConfidence(null);
+    setAiFeedback(null);
+    setValidationPassed(false);
+    setBarPct(0);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
   }, []);
+
+  const handleStrokeEnd = useCallback((strokes: Stroke[]) => {
+    latestStrokesRef.current = strokes;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      runRecognition();
+    }, RECOGNITION_DEBOUNCE_MS);
+  }, [runRecognition]);
 
   return (
     <GameContainerGrip
@@ -96,17 +151,33 @@ export function RandomLetterTestGame({
         <Text style={styles.promptCounter}>{idx + 1}/{subset.length}</Text>
       </View>
 
-      <View style={styles.canvasWrap} onLayout={onLayout}>
-        <DrawingCanvas ref={canvasRef} brushSize={10} canvasColor="rgba(255,255,255,0.55)" randomColors={false} onStrokeEnd={handleStrokeEnd} />
+      <View style={styles.canvasWrap}>
+        <View ref={shotRef} collapsable={false} style={styles.captureWrap}>
+          <DrawingCanvas ref={canvasRef} brushSize={10} canvasColor="rgba(255,255,255,0.55)" randomColors={false} onStrokeEnd={handleStrokeEnd} />
+        </View>
       </View>
 
+      <LetterRecognitionFeedback
+        checking={checking}
+        predicted={predicted}
+        confidence={confidence}
+        feedback={aiFeedback}
+        expectedLetter={def.letter}
+        passed={validationPassed}
+        onRetry={handleRetry}
+      />
+
       <View style={styles.bottomRow}>
-        <Pressable onPress={handleClear} style={({ pressed }) => [styles.clearBtn, pressed && styles.pressed]}>
+        <Pressable onPress={handleRetry} style={({ pressed }) => [styles.clearBtn, pressed && styles.pressed]}>
           <Text style={styles.clearText}>Clear</Text>
         </Pressable>
         <View style={styles.progressCol}>
-          <Text style={styles.label}>Match: {pct}%</Text>
-          <View style={styles.barBg}><View style={[styles.barFill, { width: `${pct}%` }]} /></View>
+          <Text style={styles.label}>
+            {validationPassed ? 'Match: 100%' : `Match: ${barPct}%`}
+          </Text>
+          <View style={styles.barBg}>
+            <View style={[styles.barFill, { width: `${validationPassed ? 100 : barPct}%` }]} />
+          </View>
         </View>
       </View>
       {showConfetti && <ConfettiEffect />}
@@ -119,6 +190,7 @@ const styles = StyleSheet.create({
   promptLetter: { fontSize: 60, fontWeight: '900', color: '#7C3AED' },
   promptCounter: { fontSize: 14, fontWeight: '600', color: '#9CA3AF' },
   canvasWrap: { flex: 1, minHeight: 220, borderRadius: 24, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.5)', borderWidth: 2, borderColor: '#E5E7EB' },
+  captureWrap: { flex: 1, minHeight: 220 },
   bottomRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 12 },
   clearBtn: { backgroundColor: '#F3E8FF', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 14 },
   clearText: { fontSize: 15, fontWeight: '700', color: '#7C3AED' },

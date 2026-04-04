@@ -3,14 +3,17 @@
  * No visual prompt at all — audio only. Tests full recall.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
 import { DrawingCanvas, DrawingCanvasRef, Stroke } from '@/components/games/Level1/DrawingCanvas';
 import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
-import { ALPHABET, scaleStrokes, type Point, type StrokeDef } from '@/components/level1-full-alphabet-session/alphabetData';
-import { letterCopyMatchScore, letterMatchPass } from '@/components/level1-grip-session/shapeFillUtils';
+import { ALPHABET } from '@/components/level1-full-alphabet-session/alphabetData';
+import { isLetterValidationPass, validateLetterImage } from '@/utils/recognizeLetter';
+import { captureDrawingForAi } from '@/components/level1-copy-letters-session/captureDrawingBase64';
+
+const RECOGNITION_DEBOUNCE_MS = 750;
 
 const ROUND_SIZE = 10;
 
@@ -23,51 +26,49 @@ function shuffleArr<T>(arr: T[]): T[] {
   return a;
 }
 
-function samplePoints(strokes: StrokeDef[]): Point[] {
-  const pts: Point[] = [];
-  for (const s of strokes) {
-    const len = Math.hypot(s.to.x - s.from.x, s.to.y - s.from.y);
-    const steps = Math.max(2, Math.ceil(len / 20));
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      pts.push({ x: s.from.x + (s.to.x - s.from.x) * t, y: s.from.y + (s.to.y - s.from.y) * t });
-    }
-  }
-  return pts;
-}
-
 export function MemoryChallengeGame({
   currentStep, totalSteps, onBack, onComplete,
 }: { currentStep: number; totalSteps: number; onBack: () => void; onComplete: () => void }) {
-  const [dims, setDims] = useState({ width: 300, height: 300 });
   const [idx, setIdx] = useState(0);
   const [pct, setPct] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const canvasRef = useRef<DrawingCanvasRef>(null);
+  const shotRef = useRef<View>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestIdRef = useRef(0);
+  const latestStrokesRef = useRef<Stroke[]>([]);
 
   const subset = useMemo(() => shuffleArr(ALPHABET).slice(0, ROUND_SIZE), []);
   const def = subset[idx];
-  const guides = useMemo(() => scaleStrokes(def.strokes, dims.width, dims.height), [def, dims]);
-  const samples = useMemo(() => samplePoints(guides), [guides]);
-
-  const onLayout = useCallback((e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    if (width > 0 && height > 0) setDims({ width, height });
-  }, []);
 
   useEffect(() => {
     setPct(0);
     setRevealed(false);
     canvasRef.current?.clear();
+    latestStrokesRef.current = [];
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
     try { Speech.stop(); Speech.speak(`Write the letter ${def.letter}`, { rate: 0.8, pitch: 1.1 }); } catch (_) {}
   }, [idx, def.letter]);
 
-  const handleStrokeEnd = useCallback((strokes: Stroke[]) => {
-    const match = letterCopyMatchScore(strokes, samples, { coverageHitRadius: 32 });
-    setPct(Math.round(match.combined * 100));
+  const runRecognition = useCallback(async () => {
+    const expected = def.letter;
+    const b64 = await captureDrawingForAi(shotRef, latestStrokesRef.current);
+    if (!b64) return;
+    const reqId = ++requestIdRef.current;
+    const data = await validateLetterImage(b64, expected, 'image/png');
+    if (reqId !== requestIdRef.current) return;
+    if (!data.ok) {
+      setPct(0);
+      return;
+    }
+    const p = isLetterValidationPass(data);
+    setPct(p ? 100 : Math.round(Number(data.confidence) || 0));
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (_) {}
-    if (letterMatchPass(match, 'master')) {
+    if (p) {
       try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
       try { Speech.stop(); Speech.speak(`Great ${def.letter}!`, { rate: 0.9 }); } catch (_) {}
       if (idx < subset.length - 1) {
@@ -78,9 +79,26 @@ export function MemoryChallengeGame({
         setTimeout(() => { setShowConfetti(false); onComplete(); }, 1500);
       }
     }
-  }, [samples, def, idx, subset.length, onComplete]);
+  }, [def.letter, idx, subset.length, onComplete]);
 
-  const handleClear = useCallback(() => { canvasRef.current?.clear(); setPct(0); }, []);
+  const handleStrokeEnd = useCallback((strokes: Stroke[]) => {
+    latestStrokesRef.current = strokes;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      runRecognition();
+    }, RECOGNITION_DEBOUNCE_MS);
+  }, [runRecognition]);
+
+  const handleClear = useCallback(() => {
+    canvasRef.current?.clear();
+    latestStrokesRef.current = [];
+    setPct(0);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+  }, []);
   const handleRepeat = useCallback(() => {
     try { Speech.stop(); Speech.speak(def.letter, { rate: 0.7, pitch: 1.0 }); } catch (_) {}
   }, [def.letter]);
@@ -111,8 +129,10 @@ export function MemoryChallengeGame({
         </View>
       )}
 
-      <View style={styles.canvasWrap} onLayout={onLayout}>
-        <DrawingCanvas ref={canvasRef} brushSize={10} canvasColor="rgba(255,255,255,0.55)" randomColors={false} onStrokeEnd={handleStrokeEnd} />
+      <View style={styles.canvasWrap}>
+        <View ref={shotRef} collapsable={false} style={styles.captureWrap}>
+          <DrawingCanvas ref={canvasRef} brushSize={10} canvasColor="rgba(255,255,255,0.55)" randomColors={false} onStrokeEnd={handleStrokeEnd} />
+        </View>
       </View>
 
       <View style={styles.bottomRow}>
@@ -144,6 +164,7 @@ const styles = StyleSheet.create({
   revealBox: { alignSelf: 'center', backgroundColor: '#DBEAFE', paddingHorizontal: 20, paddingVertical: 6, borderRadius: 12, marginBottom: 6 },
   revealLetter: { fontSize: 28, fontWeight: '900', color: '#1E40AF' },
   canvasWrap: { flex: 1, minHeight: 200, borderRadius: 24, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.5)', borderWidth: 2, borderColor: '#E5E7EB' },
+  captureWrap: { flex: 1, minHeight: 200 },
   bottomRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 10 },
   actionBtn: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 14 },
   clearBtn: { backgroundColor: '#FEE2E2' },

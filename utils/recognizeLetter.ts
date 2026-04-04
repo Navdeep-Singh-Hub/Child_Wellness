@@ -20,16 +20,33 @@ export interface ValidateLetterResult {
   message?: string;
 }
 
-/** Min model confidence (0–100) to count as a clear pass for copy-letter games. */
-export const LETTER_VALIDATION_PASS_MIN_CONFIDENCE = 85;
+/** Min model confidence (0–100) to accept a letter as correct (strict but fair). */
+export const LETTER_VALIDATION_PASS_MIN_CONFIDENCE = 70;
 
-/** Pass/fail for advancing: must match server `isCorrect` and meet confidence floor (defense in depth). */
+/** Below this, reject as low-quality / unclear drawing (even if model guessed a letter). */
+export const LETTER_VALIDATION_MIN_QUALITY_CONFIDENCE = 50;
+
+/**
+ * Pass only when the API returns a strict success: matching letter, model agrees, confidence OK,
+ * not UNKNOWN, and above minimum quality. Mirrors server `/api/validate-letter` logic.
+ */
 export function isLetterValidationPass(
-  data: Pick<ValidateLetterResult, 'isCorrect' | 'confidence'>
+  data: Pick<ValidateLetterResult, 'isCorrect' | 'confidence' | 'detectedLetter' | 'expectedLetter'>
 ): boolean {
   const c = Number(data.confidence);
-  if (!Number.isFinite(c)) return false;
-  return data.isCorrect === true && c >= LETTER_VALIDATION_PASS_MIN_CONFIDENCE;
+  if (!Number.isFinite(c) || c < LETTER_VALIDATION_MIN_QUALITY_CONFIDENCE) return false;
+  if (c < LETTER_VALIDATION_PASS_MIN_CONFIDENCE) return false;
+
+  const det = String(data.detectedLetter ?? '').toUpperCase().trim();
+  if (det === 'UNKNOWN' || det === '' || det === '?') return false;
+
+  const exp = String(data.expectedLetter ?? '')
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '')
+    .slice(0, 1);
+  if (!exp || det !== exp) return false;
+
+  return data.isCorrect === true;
 }
 
 export type LetterCheckFailure = RecognizeLetterResult | ValidateLetterResult;

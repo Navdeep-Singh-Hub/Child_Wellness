@@ -56,7 +56,7 @@ export function LetterRecognitionFeedback({
   if (!predicted && !feedback) return null;
 
   const messageFailed = !passed && (predicted != null || feedback != null);
-  const failCopy = feedback?.trim() || 'Try again!';
+  const failCopy = feedback?.trim() || 'Try again! Draw the letter properly.';
 
   return (
     <View style={styles.box}>
@@ -80,7 +80,7 @@ export function LetterRecognitionFeedback({
           </View>
         </>
       ) : null}
-      {passed ? <Text style={styles.perfect}>Perfect! 🎉</Text> : null}
+      {passed ? <Text style={styles.perfect}>Great job!</Text> : null}
       {passed && feedback?.trim() ? <Text style={styles.feedbackSub}>{feedback.trim()}</Text> : null}
       {messageFailed && !passed ? <Text style={styles.feedback}>{failCopy}</Text> : null}
       {onRetry && !checking && !passed && (predicted != null || feedback) ? (

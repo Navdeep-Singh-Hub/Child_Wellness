@@ -1,5 +1,6 @@
 /**
- * Boundary detection for controlled scribbling: circle, polygon, fill %, outside %.
+ * Boundary detection for controlled scribbling: circle, polygon, fill %, outside ratio.
+ * Only stroke samples INSIDE the boundary contribute to fill coverage (prevents cheating).
  */
 import { pathToPoints, pointInPolygon, polygonArea, Point } from '@/components/level1-grip-session/shapeFillUtils';
 
@@ -17,7 +18,7 @@ export function circleArea(r: number): number {
   return Math.PI * r * r;
 }
 
-function pointInBoundary(p: Point, boundary: Boundary): boolean {
+export function pointInBoundary(p: Point, boundary: Boundary): boolean {
   if (boundary.type === 'circle') return pointInCircle(p, boundary);
   return pointInPolygon(p, boundary.points);
 }
@@ -28,11 +29,26 @@ export function boundaryArea(boundary: Boundary): number {
 }
 
 export interface FillStats {
+  /** Fraction of shape grid cells covered by valid (inside-only) strokes, 0–1 */
+  insideCoverage: number;
+  /** Raw fill % of the shape (0–100), inside cells / shape cells */
   fillInsidePercent: number;
+  /** Display fill % after penalty when outsideRatio > 0.2 */
+  fillDisplayPercent: number;
+  /** Fraction of stroke sample points outside the boundary, 0–1 */
+  outsideRatio: number;
+  /** Fraction of stroke sample points inside the boundary, 0–1 */
+  insideRatio: number;
+  insidePoints: number;
+  outsidePoints: number;
+  /** Legacy: outsideRatio * 100 for games that compare to a max percent */
   outsidePercent: number;
+  /** Legacy: insidePoints / totalPoints * 100 */
   accuracy: number;
   totalStrokeArea: number;
   insideStrokeArea: number;
+  /** True when strict win condition is met */
+  passesStrict: boolean;
 }
 
 export interface StrokeLike {
@@ -40,7 +56,39 @@ export interface StrokeLike {
   width: number;
 }
 
-/** Compute fill % inside boundary, % of strokes outside, and accuracy (inside/total). */
+const OUTSIDE_PENALTY_THRESHOLD = 0.2;
+const STRICT_COVERAGE_MIN = 0.95;
+const STRICT_OUTSIDE_MAX = 0.1;
+
+/** Add grid cells covered by brush at (x,y) only if they lie inside the boundary shape. */
+function addInsideCoverageCells(
+  x: number,
+  y: number,
+  r: number,
+  cellSize: number,
+  boundary: Boundary,
+  insideCells: Set<string>
+) {
+  const gxMin = Math.floor((x - r) / cellSize);
+  const gxMax = Math.floor((x + r) / cellSize);
+  const gyMin = Math.floor((y - r) / cellSize);
+  const gyMax = Math.floor((y + r) / cellSize);
+  for (let gx = gxMin; gx <= gxMax; gx++) {
+    for (let gy = gyMin; gy <= gyMax; gy++) {
+      const cx = gx * cellSize + cellSize / 2;
+      const cy = gy * cellSize + cellSize / 2;
+      const dx = cx - x;
+      const dy = cy - y;
+      if (dx * dx + dy * dy > r * r) continue;
+      const key = `${gx},${gy}`;
+      if (pointInBoundary({ x: cx, y: cy }, boundary)) {
+        insideCells.add(key);
+      }
+    }
+  }
+}
+
+/** Compute fill %, point ratios, penalty. Only inside stroke samples add coverage. */
 export function getFillStats(
   strokes: StrokeLike[],
   boundary: Boundary,
@@ -49,35 +97,25 @@ export function getFillStats(
   const radius = Math.max(2, brushSize);
   const cellSize = Math.max(4, Math.floor(brushSize * 0.6));
   const insideCells = new Set<string>();
-  const outsideCells = new Set<string>();
 
-  const addCoverage = (x: number, y: number, r: number) => {
-    const gxMin = Math.floor((x - r) / cellSize);
-    const gxMax = Math.floor((x + r) / cellSize);
-    const gyMin = Math.floor((y - r) / cellSize);
-    const gyMax = Math.floor((y + r) / cellSize);
-    for (let gx = gxMin; gx <= gxMax; gx++) {
-      for (let gy = gyMin; gy <= gyMax; gy++) {
-        const cx = gx * cellSize + cellSize / 2;
-        const cy = gy * cellSize + cellSize / 2;
-        const dx = cx - x;
-        const dy = cy - y;
-        if (dx * dx + dy * dy > r * r) continue;
-        const key = `${gx},${gy}`;
-        if (pointInBoundary({ x: cx, y: cy }, boundary)) {
-          insideCells.add(key);
-        } else {
-          outsideCells.add(key);
-        }
-      }
-    }
-  };
+  let insidePoints = 0;
+  let outsidePoints = 0;
 
   for (const stroke of strokes) {
     const points = pathToPoints(stroke.path);
     if (points.length === 0) continue;
     const r = Math.max(2, stroke.width ?? radius);
-    addCoverage(points[0].x, points[0].y, r);
+
+    const sampleAndCount = (x: number, y: number) => {
+      if (pointInBoundary({ x, y }, boundary)) {
+        insidePoints += 1;
+        addInsideCoverageCells(x, y, r, cellSize, boundary, insideCells);
+      } else {
+        outsidePoints += 1;
+      }
+    };
+
+    sampleAndCount(points[0].x, points[0].y);
     for (let i = 1; i < points.length; i++) {
       const a = points[i - 1];
       const b = points[i];
@@ -87,15 +125,10 @@ export function getFillStats(
         const t = s / steps;
         const x = a.x + (b.x - a.x) * t;
         const y = a.y + (b.y - a.y) * t;
-        addCoverage(x, y, r);
+        sampleAndCount(x, y);
       }
     }
   }
-
-  const totalCoveredCells = insideCells.size + outsideCells.size;
-  const totalStrokeArea = totalCoveredCells * cellSize * cellSize;
-  const insideStrokeArea = insideCells.size * cellSize * cellSize;
-  const outsideStrokeArea = outsideCells.size * cellSize * cellSize;
 
   let shapeCellCount = 0;
   if (boundary.type === 'circle') {
@@ -135,15 +168,40 @@ export function getFillStats(
     }
   }
 
-  const fillInsidePercent = shapeCellCount > 0 ? (insideCells.size / shapeCellCount) * 100 : 0;
-  const outsidePercent = totalCoveredCells > 0 ? (outsideStrokeArea / totalStrokeArea) * 100 : 0;
-  const accuracy = totalCoveredCells > 0 ? (insideStrokeArea / totalStrokeArea) * 100 : 0;
+  const insideCoverage = shapeCellCount > 0 ? insideCells.size / shapeCellCount : 0;
+  let fillInsidePercent = shapeCellCount > 0 ? (insideCells.size / shapeCellCount) * 100 : 0;
+
+  const totalPoints = insidePoints + outsidePoints;
+  const outsideRatio = totalPoints > 0 ? outsidePoints / totalPoints : 0;
+  const insideRatio = totalPoints > 0 ? insidePoints / totalPoints : 0;
+
+  let fillDisplayPercent = fillInsidePercent;
+  if (outsideRatio > OUTSIDE_PENALTY_THRESHOLD) {
+    fillDisplayPercent = fillInsidePercent * 0.5;
+  }
+
+  const totalCoveredCells = insideCells.size;
+  const totalStrokeArea = totalCoveredCells * cellSize * cellSize;
+  const insideStrokeArea = totalCoveredCells * cellSize * cellSize;
+
+  const outsidePercent = outsideRatio * 100;
+  const accuracy = totalPoints > 0 ? (insidePoints / totalPoints) * 100 : 0;
+
+  const passesStrict =
+    insideCoverage >= STRICT_COVERAGE_MIN && outsideRatio <= STRICT_OUTSIDE_MAX;
 
   return {
+    insideCoverage,
     fillInsidePercent,
+    fillDisplayPercent,
+    outsideRatio,
+    insideRatio,
+    insidePoints,
+    outsidePoints,
     outsidePercent,
     accuracy,
     totalStrokeArea,
     insideStrokeArea,
+    passesStrict,
   };
 }

@@ -4,31 +4,36 @@
  */
 import OpenAI from 'openai';
 
-const SYSTEM_PROMPT = `You are an expert in recognizing children's handwritten uppercase English letters.
+const SYSTEM_PROMPT = `You are an expert in evaluating children's handwritten uppercase English letters.
 
-The drawings may be:
-- imperfect
-- shaky
-- slightly distorted
+Be STRICT but fair.
 
-Your job:
-1. Identify the letter
-2. Compare with expected letter
-3. Be forgiving like a teacher`;
+Rules:
+- Only return isCorrect = true if the letter is clearly recognizable as the intended shape.
+- If the drawing is random, messy, or does not resemble a real letter, return isCorrect = false.
+- Do NOT guess incorrectly. If you cannot tell what letter it is, use detectedLetter "UNKNOWN" and isCorrect false.
+- Prioritize accuracy over generosity.`;
 
 function buildUserPrompt(expectedLetter) {
-  return `Analyze this drawing.
+  return `Expected letter: ${expectedLetter}
 
-Expected letter: ${expectedLetter}
+Analyze the drawing.
 
 Return JSON only with this exact shape:
 {
-  "detectedLetter": "A-Z single uppercase character",
+  "detectedLetter": "A-Z or UNKNOWN",
   "isCorrect": true or false,
   "confidence": number from 0 to 100,
   "feedback": "short friendly message for the child"
-}`;
 }
+
+If the drawing does not resemble any letter, use:
+"detectedLetter": "UNKNOWN"
+"isCorrect": false`;
+}
+
+const PASS_MIN_CONFIDENCE = 70;
+const MIN_QUALITY_CONFIDENCE = 50;
 
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -108,9 +113,15 @@ export async function handleValidateLetter(req, res) {
       });
     }
 
-    let detectedLetter = String(parsed.detectedLetter || '').toUpperCase().trim();
-    detectedLetter = detectedLetter.replace(/[^A-Z]/g, '');
-    detectedLetter = detectedLetter.slice(0, 1) || '?';
+    const rawDetected = String(parsed.detectedLetter ?? '').trim();
+    const upperDetected = rawDetected.toUpperCase();
+    let detectedLetter;
+    if (upperDetected === 'UNKNOWN' || rawDetected === '' || /^UNKNOWN$/i.test(rawDetected)) {
+      detectedLetter = 'UNKNOWN';
+    } else {
+      const letter = upperDetected.replace(/[^A-Z]/g, '').slice(0, 1);
+      detectedLetter = letter || 'UNKNOWN';
+    }
 
     let confidence = Number(parsed.confidence);
     if (!Number.isFinite(confidence)) confidence = 0;
@@ -118,9 +129,15 @@ export async function handleValidateLetter(req, res) {
 
     const feedback = String(parsed.feedback || 'Nice try! Keep practicing.').slice(0, 220);
 
-    /** Letter must match and model confidence must be high enough to advance the game (not the same as UI “progress”). */
-    const PASS_MIN_CONFIDENCE = 85;
-    const isCorrect = detectedLetter === expected && confidence >= PASS_MIN_CONFIDENCE;
+    const modelSaysCorrect = parsed.isCorrect === true;
+    const isUnknown = detectedLetter === 'UNKNOWN';
+    const lowQuality = confidence < MIN_QUALITY_CONFIDENCE;
+    const isCorrect =
+      !isUnknown &&
+      !lowQuality &&
+      detectedLetter === expected &&
+      confidence >= PASS_MIN_CONFIDENCE &&
+      modelSaysCorrect;
 
     return res.json({
       ok: true,

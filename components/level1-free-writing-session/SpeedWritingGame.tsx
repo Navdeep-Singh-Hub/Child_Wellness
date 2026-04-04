@@ -9,11 +9,13 @@ import * as Speech from 'expo-speech';
 import { DrawingCanvas, DrawingCanvasRef, Stroke } from '@/components/games/Level1/DrawingCanvas';
 import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
-import { ALPHABET, scaleStrokes, type Point, type StrokeDef } from '@/components/level1-full-alphabet-session/alphabetData';
-import { letterCopyMatchScore, letterMatchPass } from '@/components/level1-grip-session/shapeFillUtils';
+import { ALPHABET } from '@/components/level1-full-alphabet-session/alphabetData';
+import { isLetterValidationPass, letterRecognitionFailureHint, validateLetterImage } from '@/utils/recognizeLetter';
+import { captureDrawingForAi } from '@/components/level1-copy-letters-session/captureDrawingBase64';
 
 const ROUND_SIZE = 10;
 const TIME_LIMIT = 12;
+const RECOGNITION_DEBOUNCE_MS = 750;
 
 function shuffleArr<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -22,19 +24,6 @@ function shuffleArr<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
-}
-
-function samplePoints(strokes: StrokeDef[]): Point[] {
-  const pts: Point[] = [];
-  for (const s of strokes) {
-    const len = Math.hypot(s.to.x - s.from.x, s.to.y - s.from.y);
-    const steps = Math.max(2, Math.ceil(len / 18));
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      pts.push({ x: s.from.x + (s.to.x - s.from.x) * t, y: s.from.y + (s.to.y - s.from.y) * t });
-    }
-  }
-  return pts;
 }
 
 export function SpeedWritingGame({
@@ -48,13 +37,15 @@ export function SpeedWritingGame({
   const [done, setDone] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const canvasRef = useRef<DrawingCanvasRef>(null);
+  const shotRef = useRef<View>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestIdRef = useRef(0);
+  const latestStrokesRef = useRef<Stroke[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const doneRef = useRef(false);
 
   const subset = useMemo(() => shuffleArr(ALPHABET).slice(0, ROUND_SIZE), []);
   const def = subset[idx];
-  const guides = useMemo(() => scaleStrokes(def.strokes, dims.width, dims.height), [def, dims]);
-  const samples = useMemo(() => samplePoints(guides), [guides]);
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -67,6 +58,11 @@ export function SpeedWritingGame({
     setDone(false);
     doneRef.current = false;
     canvasRef.current?.clear();
+    latestStrokesRef.current = [];
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
     try { Speech.stop(); Speech.speak(`Quick! Write ${def.letter}`, { rate: 1.0, pitch: 1.2 }); } catch (_) {}
 
     timerRef.current = setInterval(() => {
@@ -107,13 +103,33 @@ export function SpeedWritingGame({
     }
   }, [idx, subset.length, onComplete]);
 
+  const runRecognition = useCallback(async () => {
+    if (doneRef.current) return;
+    const expected = def.letter;
+    const b64 = await captureDrawingForAi(shotRef, latestStrokesRef.current);
+    if (!b64) return;
+    const reqId = ++requestIdRef.current;
+    const data = await validateLetterImage(b64, expected, 'image/png');
+    if (reqId !== requestIdRef.current) return;
+    if (!data.ok) {
+      setPct(0);
+      return;
+    }
+    const p = isLetterValidationPass(data);
+    setPct(p ? 100 : Math.round(Number(data.confidence) || 0));
+    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (_) {}
+    if (p) advanceLetter();
+  }, [def.letter, advanceLetter]);
+
   const handleStrokeEnd = useCallback((strokes: Stroke[]) => {
     if (doneRef.current) return;
-    const match = letterCopyMatchScore(strokes, samples, { coverageHitRadius: 30 });
-    setPct(Math.round(match.combined * 100));
-    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (_) {}
-    if (letterMatchPass(match, 'speed')) advanceLetter();
-  }, [samples, advanceLetter]);
+    latestStrokesRef.current = strokes;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      runRecognition();
+    }, RECOGNITION_DEBOUNCE_MS);
+  }, [runRecognition]);
 
   const handleSkip = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -180,6 +196,7 @@ const styles = StyleSheet.create({
   scoreBox: { backgroundColor: '#D1FAE5', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12 },
   scoreText: { fontSize: 18, fontWeight: '800', color: '#059669' },
   canvasWrap: { flex: 1, minHeight: 220, borderRadius: 24, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.5)', borderWidth: 2, borderColor: '#E5E7EB' },
+  captureWrap: { flex: 1, minHeight: 220 },
   timeUpOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(220,38,38,0.08)' },
   timeUpText: { fontSize: 28, fontWeight: '900', color: '#DC2626' },
   bottomRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 12 },

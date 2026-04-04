@@ -1,8 +1,9 @@
-import React, { useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
-import { View, StyleSheet, LayoutChangeEvent, PanResponderInstance, Dimensions } from 'react-native';
+import React, { useRef, useState, useCallback, useImperativeHandle, forwardRef, useMemo } from 'react';
+import { View, StyleSheet, LayoutChangeEvent } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Svg, { Path } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedProps, withTiming } from 'react-native-reanimated';
+import { pathToPoints, type Point } from '@/components/level1-grip-session/shapeFillUtils';
 
 export interface DrawingCanvasRef {
   clear: () => void;
@@ -15,6 +16,13 @@ export interface Stroke {
   width: number;
 }
 
+/** When set, stroke segments are colored by whether sample points are inside the shape (e.g. boundary games). */
+export interface BoundaryStrokeSplit {
+  isInside: (x: number, y: number) => boolean;
+  insideColor: string;
+  outsideColor: string;
+}
+
 interface DrawingCanvasProps {
   onStrokeStart?: () => void;
   onStrokeEnd?: (strokes: Stroke[]) => void;
@@ -24,6 +32,7 @@ interface DrawingCanvasProps {
   canvasColor?: string;
   randomColors?: boolean;
   singleDotMode?: boolean; // For Game 3
+  boundaryStrokeSplit?: BoundaryStrokeSplit;
 }
 
 const COLORS = ['#FF3B30', '#FF9500', '#FFCC00', '#4CD964', '#5AC8FA', '#007AFF', '#5856D6', '#FF2D55'];
@@ -49,6 +58,50 @@ const pointsToPath = (points: { x: number; y: number }[]) => {
   return path;
 };
 
+function splitPolylineByInside(
+  points: Point[],
+  isInside: (x: number, y: number) => boolean
+): { points: Point[]; inside: boolean }[] {
+  if (points.length === 0) return [];
+  const out: { points: Point[]; inside: boolean }[] = [];
+  let cur: Point[] = [points[0]];
+  let curIn = isInside(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) {
+    const ins = isInside(points[i].x, points[i].y);
+    if (ins === curIn) {
+      cur.push(points[i]);
+    } else {
+      out.push({ points: cur, inside: curIn });
+      cur = [points[i]];
+      curIn = ins;
+    }
+  }
+  out.push({ points: cur, inside: curIn });
+  return out;
+}
+
+function strokeToColoredSegments(
+  stroke: Stroke,
+  split: BoundaryStrokeSplit
+): { path: string; color: string }[] {
+  const pts = pathToPoints(stroke.path);
+  if (pts.length === 0) return [];
+  const groups = splitPolylineByInside(pts, split.isInside);
+  const segs: { path: string; color: string }[] = [];
+  for (const g of groups) {
+    let p = g.points;
+    if (p.length === 1) {
+      p = [...p, { x: p[0].x + 0.15, y: p[0].y + 0.15 }];
+    }
+    const d = pointsToPath(p);
+    segs.push({
+      path: d,
+      color: g.inside ? split.insideColor : split.outsideColor,
+    });
+  }
+  return segs;
+}
+
 
 export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   onStrokeStart,
@@ -57,7 +110,8 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   brushSize = 10,
   canvasColor = 'transparent',
   randomColors = true,
-  singleDotMode = false
+  singleDotMode = false,
+  boundaryStrokeSplit,
 }, ref) => {
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [currentPoints, setCurrentPoints] = useState<{ x: number; y: number }[]>([]);
@@ -168,6 +222,22 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
 
   const currentPathString = pointsToPath(currentPoints);
 
+  const currentSegments = useMemo(() => {
+    if (!boundaryStrokeSplit || currentPoints.length === 0) return null;
+    const pts =
+      currentPoints.length === 1
+        ? [...currentPoints, { x: currentPoints[0].x + 0.15, y: currentPoints[0].y + 0.15 }]
+        : currentPoints;
+    return splitPolylineByInside(pts, boundaryStrokeSplit.isInside).map((g) => {
+      let p = g.points;
+      if (p.length === 1) p = [...p, { x: p[0].x + 0.15, y: p[0].y + 0.15 }];
+      return {
+        path: pointsToPath(p),
+        color: g.inside ? boundaryStrokeSplit.insideColor : boundaryStrokeSplit.outsideColor,
+      };
+    });
+  }, [currentPoints, boundaryStrokeSplit]);
+
   return (
     <View 
       style={[styles.container, { backgroundColor: canvasColor }]} 
@@ -178,28 +248,56 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
         <View style={styles.drawingSurface}>
           <Svg style={styles.svg} width="100%" height="100%">
             {/* Completed Strokes */}
-            {strokes.map((stroke, index) => (
-              <Path
-                key={`stroke-${index}`}
-                d={stroke.path}
-                stroke={stroke.color}
-                strokeWidth={stroke.width}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-            ))}
+            {strokes.flatMap((stroke, index) =>
+              boundaryStrokeSplit ? (
+                strokeToColoredSegments(stroke, boundaryStrokeSplit).map((seg, j) => (
+                  <Path
+                    key={`stroke-${index}-${j}`}
+                    d={seg.path}
+                    stroke={seg.color}
+                    strokeWidth={stroke.width}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
+                ))
+              ) : [
+                <Path
+                  key={`stroke-${index}`}
+                  d={stroke.path}
+                  stroke={stroke.color}
+                  strokeWidth={stroke.width}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />,
+              ]
+            )}
             
             {/* Current Active Stroke */}
             {!singleDotMode && currentPoints.length > 0 && (
-              <Path
-                d={currentPathString}
-                stroke={currentColor}
-                strokeWidth={brushSize}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
+              boundaryStrokeSplit && currentSegments ? (
+                currentSegments.map((seg, j) => (
+                  <Path
+                    key={`cur-${j}`}
+                    d={seg.path}
+                    stroke={seg.color}
+                    strokeWidth={brushSize}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
+                ))
+              ) : (
+                <Path
+                  d={currentPathString}
+                  stroke={currentColor}
+                  strokeWidth={brushSize}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                />
+              )
             )}
           </Svg>
         </View>

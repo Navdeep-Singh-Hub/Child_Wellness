@@ -2,15 +2,18 @@
  * Game 4: Fun Writing Game — write letters in creative ways.
  * Each round has a fun prompt: rainbow, giant, tiny, backwards, wavy style.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent, Pressable } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
 import { DrawingCanvas, DrawingCanvasRef, Stroke } from '@/components/games/Level1/DrawingCanvas';
 import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
-import { ALPHABET, scaleStrokes, type Point, type StrokeDef } from '@/components/level1-full-alphabet-session/alphabetData';
-import { letterCopyMatchScore, letterMatchPass } from '@/components/level1-grip-session/shapeFillUtils';
+import { ALPHABET } from '@/components/level1-full-alphabet-session/alphabetData';
+import { isLetterValidationPass, validateLetterImage } from '@/utils/recognizeLetter';
+import { captureDrawingForAi } from '@/components/level1-copy-letters-session/captureDrawingBase64';
+
+const RECOGNITION_DEBOUNCE_MS = 750;
 
 interface FunRound {
   letter: string;
@@ -31,46 +34,46 @@ const FUN_ROUNDS: FunRound[] = [
   { letter: 'Z', style: 'Zigzag', emoji: '⚡', hint: 'Make it sharp and bold!', useColors: false },
 ];
 
-function samplePoints(strokes: StrokeDef[]): Point[] {
-  const pts: Point[] = [];
-  for (const s of strokes) {
-    const len = Math.hypot(s.to.x - s.from.x, s.to.y - s.from.y);
-    const steps = Math.max(2, Math.ceil(len / 20));
-    for (let i = 0; i <= steps; i++) { const t = i / steps; pts.push({ x: s.from.x + (s.to.x - s.from.x) * t, y: s.from.y + (s.to.y - s.from.y) * t }); }
-  }
-  return pts;
-}
-
 export function FunWritingGame({
   currentStep, totalSteps, onBack, onComplete,
 }: { currentStep: number; totalSteps: number; onBack: () => void; onComplete: () => void }) {
-  const [dims, setDims] = useState({ width: 300, height: 300 });
   const [idx, setIdx] = useState(0);
   const [pct, setPct] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
   const canvasRef = useRef<DrawingCanvasRef>(null);
+  const shotRef = useRef<View>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestIdRef = useRef(0);
+  const latestStrokesRef = useRef<Stroke[]>([]);
 
   const round = FUN_ROUNDS[idx];
-  const def = useMemo(() => ALPHABET.find((l) => l.letter === round.letter) || ALPHABET[0], [round.letter]);
-  const guides = useMemo(() => scaleStrokes(def.strokes, dims.width, dims.height), [def, dims]);
-  const samples = useMemo(() => samplePoints(guides), [guides]);
-
-  const onLayout = useCallback((e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    if (width > 0 && height > 0) setDims({ width, height });
-  }, []);
 
   useEffect(() => {
     setPct(0);
     canvasRef.current?.clear();
+    latestStrokesRef.current = [];
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
     try { Speech.stop(); Speech.speak(`${round.style} ${round.letter}! ${round.hint}`, { rate: 0.85, pitch: 1.1 }); } catch (_) {}
   }, [idx, round]);
 
-  const handleStrokeEnd = useCallback((strokes: Stroke[]) => {
-    const match = letterCopyMatchScore(strokes, samples, { coverageHitRadius: 34 });
-    setPct(Math.round(match.combined * 100));
+  const runRecognition = useCallback(async () => {
+    const expected = round.letter;
+    const b64 = await captureDrawingForAi(shotRef, latestStrokesRef.current);
+    if (!b64) return;
+    const reqId = ++requestIdRef.current;
+    const data = await validateLetterImage(b64, expected, 'image/png');
+    if (reqId !== requestIdRef.current) return;
+    if (!data.ok) {
+      setPct(0);
+      return;
+    }
+    const p = isLetterValidationPass(data);
+    setPct(p ? 100 : Math.round(Number(data.confidence) || 0));
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (_) {}
-    if (letterMatchPass(match, 'fun')) {
+    if (p) {
       try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
       if (idx < FUN_ROUNDS.length - 1) {
         setShowConfetti(true);
@@ -80,9 +83,26 @@ export function FunWritingGame({
         setTimeout(() => { setShowConfetti(false); onComplete(); }, 1500);
       }
     }
-  }, [samples, idx, onComplete]);
+  }, [round.letter, idx, onComplete]);
 
-  const handleClear = useCallback(() => { canvasRef.current?.clear(); setPct(0); }, []);
+  const handleStrokeEnd = useCallback((strokes: Stroke[]) => {
+    latestStrokesRef.current = strokes;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      runRecognition();
+    }, RECOGNITION_DEBOUNCE_MS);
+  }, [runRecognition]);
+
+  const handleClear = useCallback(() => {
+    canvasRef.current?.clear();
+    latestStrokesRef.current = [];
+    setPct(0);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+  }, []);
 
   return (
     <GameContainerGrip
@@ -104,9 +124,11 @@ export function FunWritingGame({
 
       <Text style={styles.counter}>{idx + 1}/{FUN_ROUNDS.length}</Text>
 
-      <View style={styles.canvasWrap} onLayout={onLayout}>
-        <DrawingCanvas ref={canvasRef} brushSize={12} canvasColor="rgba(255,255,255,0.55)"
-          randomColors={round.useColors} onStrokeEnd={handleStrokeEnd} />
+      <View style={styles.canvasWrap}>
+        <View ref={shotRef} collapsable={false} style={styles.captureWrap}>
+          <DrawingCanvas ref={canvasRef} brushSize={12} canvasColor="rgba(255,255,255,0.55)"
+            randomColors={round.useColors} onStrokeEnd={handleStrokeEnd} />
+        </View>
       </View>
 
       <View style={styles.bottomRow}>
@@ -132,6 +154,7 @@ const styles = StyleSheet.create({
   promptHint: { fontSize: 12, fontWeight: '600', color: '#C2410C', maxWidth: 80, textAlign: 'right' },
   counter: { textAlign: 'center', fontSize: 13, fontWeight: '700', color: '#9CA3AF', marginBottom: 4 },
   canvasWrap: { flex: 1, minHeight: 200, borderRadius: 24, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.5)', borderWidth: 2, borderColor: '#FED7AA' },
+  captureWrap: { flex: 1, minHeight: 200 },
   bottomRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 12 },
   clearBtn: { backgroundColor: '#FEE2E2', paddingVertical: 10, paddingHorizontal: 18, borderRadius: 14 },
   clearText: { fontSize: 14, fontWeight: '700', color: '#DC2626' },

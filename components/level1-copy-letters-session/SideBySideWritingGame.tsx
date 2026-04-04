@@ -114,6 +114,7 @@ export function SideBySideWritingGame({
     setPredicted(null);
     setConfidence(null);
     setAiFeedback(null);
+    setValidationPassed(false);
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
       debounceRef.current = null;
