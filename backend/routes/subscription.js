@@ -221,6 +221,40 @@ async function hasFreeAccess(auth0Id) {
 }
 
 /**
+ * Growth promo: grant full app access (therapy progress, sessions) until registered user count
+ * reaches USER_GROWTH_FREE_ACCESS_MAX_USERS (default 1000). Does not skip subscription/trial
+ * creation — when the cap is hit, normal trial/paywall rules apply.
+ *
+ * Set USER_GROWTH_FREE_ACCESS=true in backend .env to enable.
+ * Disabled when DISABLE_FREE_ACCESS_FOR_TESTING=true (same as other free-access testing).
+ */
+async function getUserGrowthPromoState() {
+  if (process.env.DISABLE_FREE_ACCESS_FOR_TESTING === 'true') {
+    return { active: false };
+  }
+  if (process.env.USER_GROWTH_FREE_ACCESS !== 'true') {
+    return { active: false };
+  }
+  const raw = process.env.USER_GROWTH_FREE_ACCESS_MAX_USERS || '1000';
+  const maxUsers = parseInt(raw, 10);
+  if (!Number.isFinite(maxUsers) || maxUsers <= 0) {
+    console.warn('[USER GROWTH PROMO] Invalid USER_GROWTH_FREE_ACCESS_MAX_USERS — promo off');
+    return { active: false };
+  }
+  try {
+    const userCount = await User.countDocuments();
+    const active = userCount < maxUsers;
+    console.log(
+      `[USER GROWTH PROMO] registered=${userCount}, cap=${maxUsers}, active=${active}`
+    );
+    return { active, userCount, maxUsers };
+  } catch (e) {
+    console.error('[USER GROWTH PROMO] User.countDocuments failed:', e);
+    return { active: false };
+  }
+}
+
+/**
  * Helper: Check if subscription is active (trial or paid)
  */
 async function checkSubscriptionStatus(auth0Id) {
@@ -236,6 +270,24 @@ async function checkSubscriptionStatus(auth0Id) {
       nextBillingDate: null,
       razorpaySubscriptionId: null,
       isFreeAccess: true, // Flag to indicate free access
+    };
+  }
+
+  const promo = await getUserGrowthPromoState();
+  if (promo.active) {
+    return {
+      hasAccess: true,
+      status: 'promo',
+      isTrial: false,
+      isActive: true,
+      trialEndDate: null,
+      subscriptionEndDate: null,
+      nextBillingDate: null,
+      razorpaySubscriptionId: null,
+      isFreeAccess: true,
+      isUserGrowthPromo: true,
+      userCount: promo.userCount,
+      userGrowthCap: promo.maxUsers,
     };
   }
   

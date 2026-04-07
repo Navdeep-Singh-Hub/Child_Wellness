@@ -685,14 +685,17 @@ export async function completeSmartExplorerSession(sessionId: string) {
 export type SubscriptionStatus = {
   ok: boolean;
   hasAccess: boolean;
-  status: 'none' | 'trial' | 'active' | 'expired' | 'cancelled' | 'past_due' | 'free';
+  status: 'none' | 'trial' | 'active' | 'expired' | 'cancelled' | 'past_due' | 'free' | 'promo';
   isTrial: boolean;
   isActive: boolean;
   trialEndDate: string | null;
   subscriptionEndDate: string | null;
   nextBillingDate: string | null;
   razorpaySubscriptionId: string | null;
-  isFreeAccess?: boolean; // For free access users
+  isFreeAccess?: boolean; // Whitelist or user-growth promo (full unlock)
+  isUserGrowthPromo?: boolean;
+  userCount?: number;
+  userGrowthCap?: number;
 };
 
 /**
