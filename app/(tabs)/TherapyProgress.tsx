@@ -90,6 +90,9 @@ const THERAPIES = [
 
 type ViewMode = 'therapies' | 'levels' | 'sessions';
 
+/** TEMPORARY: `true` = no "Checking access…", no paywall — screen opens and loads data immediately. Set `false` to restore gating. */
+const SKIP_THERAPY_ACCESS_GATE = true;
+
 export default function TherapyProgressScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -101,7 +104,7 @@ export default function TherapyProgressScreen() {
   
   // Subscription access control
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
-  const [checkingAccess, setCheckingAccess] = useState(true);
+  const [checkingAccess, setCheckingAccess] = useState(!SKIP_THERAPY_ACCESS_GATE);
 
   const fetchData = async (autoInit = true) => {
     setLoading(true);
@@ -122,15 +125,39 @@ export default function TherapyProgressScreen() {
     }
   };
 
-  // Check subscription access on mount
+  // Mount: either open immediately (skip gate) or check subscription first
   useEffect(() => {
+    if (SKIP_THERAPY_ACCESS_GATE) {
+      void fetchData();
+      void (async () => {
+        try {
+          const status = await getSubscriptionStatus();
+          setSubscriptionStatus(status);
+        } catch (e) {
+          console.error('[THERAPY PROGRESS] subscription (background):', e);
+        }
+      })();
+      return;
+    }
     checkSubscriptionAccess();
   }, []);
 
-  // Re-check access when returning from Paywall
+  // Focus: refresh data / access when returning to tab
   useEffect(() => {
     const r = router as { addListener?: (e: string, cb: () => void) => (() => void) | undefined };
     const unsubscribe = r.addListener?.('focus', () => {
+      if (SKIP_THERAPY_ACCESS_GATE) {
+        void fetchData();
+        void (async () => {
+          try {
+            const status = await getSubscriptionStatus();
+            setSubscriptionStatus(status);
+          } catch (e) {
+            console.error('[THERAPY PROGRESS] subscription on focus:', e);
+          }
+        })();
+        return;
+      }
       checkSubscriptionAccess();
     });
     return unsubscribe;
@@ -163,23 +190,26 @@ export default function TherapyProgressScreen() {
   const hasData = therapies && therapies.length > 0;
   // Free-access users (e.g. FREE_ACCESS_IDS) get all levels and sessions unlocked
   const isFreeAccess = Boolean(
-    subscriptionStatus?.isFreeAccess === true || subscriptionStatus?.status === 'free'
+    subscriptionStatus?.isFreeAccess === true ||
+      subscriptionStatus?.status === 'free' ||
+      subscriptionStatus?.status === 'promo'
   );
 
-  // Show Paywall if user doesn't have access
-  if (checkingAccess) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <TherapyProgressLoadingAnimation size={160} />
-          <Text style={styles.loadingText}>Checking access...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  if (!SKIP_THERAPY_ACCESS_GATE) {
+    if (checkingAccess) {
+      return (
+        <SafeAreaView style={styles.container}>
+          <View style={styles.loadingContainer}>
+            <TherapyProgressLoadingAnimation size={160} />
+            <Text style={styles.loadingText}>Checking access...</Text>
+          </View>
+        </SafeAreaView>
+      );
+    }
 
-  if (!subscriptionStatus?.hasAccess) {
-    return <Paywall onSuccess={checkSubscriptionAccess} />;
+    if (!subscriptionStatus?.hasAccess) {
+      return <Paywall onSuccess={checkSubscriptionAccess} />;
+    }
   }
 
   const handleSelectTherapy = (therapyId: string) => {
