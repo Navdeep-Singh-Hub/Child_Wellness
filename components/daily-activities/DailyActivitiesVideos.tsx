@@ -1,18 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Dimensions,
-  Image,
-  Modal,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Dimensions,
+    Image,
+    Modal,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 // Video data structure
@@ -43,6 +43,30 @@ const DAILY_ACTIVITIES_VIDEOS: VideoItem[] = [
     title: 'Being Kind to Others',
     description: 'A gentle animated story where a child notices a sad classmate and chooses to be kind by sharing a toy. As they play together, more children join and everyone becomes happy. This teaches empathy, kindness, sharing, friendship, and how small acts of kindness can make everyone feel better.',
     videoPath: require('@/assets/videos/being kind to others.mp4'),
+  },
+  {
+    id: 'toilet-training-1',
+    title: 'Toilet Training',
+    description: 'A social story about learning to use the toilet, building confidence and healthy routines step by step.',
+    videoPath: require('@/assets/videos/toilet training.mp4'),
+  },
+  {
+    id: 'good-touch-bad-touch-1',
+    title: 'Good Touch, Bad Touch',
+    description: 'Teaches children about safe and unsafe touch in a calm, age-appropriate way so they know how to stay safe and when to tell a trusted adult.',
+    videoPath: require('@/assets/videos/good touch bad touch final canva.mp4'),
+  },
+  {
+    id: 'hands-not-for-hitting-1',
+    title: 'Hands Are Not for Hitting',
+    description: 'Shows that hands are for helping, playing, and hugging—not for hurting others—and what to do with big feelings instead.',
+    videoPath: require('@/assets/videos/HANDS ARE NOT FOR HITTING CANVA FINAL.mp4'),
+  },
+  {
+    id: 'classroom-behaviour-1',
+    title: 'Classroom Behaviour',
+    description: 'A story about following classroom rules, listening, and getting along with teachers and classmates at school.',
+    videoPath: require('@/assets/videos/classroom behaviour final canva.mp4'),
   },
 ];
 
