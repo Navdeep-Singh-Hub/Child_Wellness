@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 
 export interface HandLandmarks {
   indexFingerTip: { x: number; y: number } | null;
@@ -586,9 +587,9 @@ export function useHandDetectionWeb(
   const processingIntervalRef = useRef<number | null>(null);
   const previewContainerId = 'hand-preview-container';
 
-  // Initialize MediaPipe - always initialize on web, not dependent on isActive
+  // Initialize MediaPipe — web only (avoid document/navigator on iOS/Android)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
       console.log('🚀 Initializing Hand Landmarker...');
       initializeHandLandmarker()
         .then((success) => {
@@ -606,9 +607,9 @@ export function useHandDetectionWeb(
     }
   }, []); // Run once on mount
 
-  // Setup webcam - always setup on web, not dependent on isActive
+  // Setup webcam — web only
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') {
       return;
     }
 
@@ -859,35 +860,39 @@ export function useHandDetectionWeb(
       }
 
       // Clean up preview video - stop streams but let React handle DOM cleanup
-      const container = document.querySelector(`[data-native-id="${previewContainerId}"]`) as HTMLElement;
-      if (container) {
-        const videos = container.querySelectorAll('video');
-        videos.forEach(video => {
-          if (video.srcObject) {
-            const stream = video.srcObject as MediaStream;
-            stream.getTracks().forEach(track => track.stop());
-          }
-          // Hide video instead of removing to avoid React conflicts
-          (video as HTMLElement).style.display = 'none';
-        });
+      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+        const container = document.querySelector(`[data-native-id="${previewContainerId}"]`) as HTMLElement;
+        if (container) {
+          const videos = container.querySelectorAll('video');
+          videos.forEach(video => {
+            if (video.srcObject) {
+              const stream = video.srcObject as MediaStream;
+              stream.getTracks().forEach(track => track.stop());
+            }
+            // Hide video instead of removing to avoid React conflicts
+            (video as HTMLElement).style.display = 'none';
+          });
+        }
+
+        const previewVideo = document.querySelector(`video[data-hand-preview-video]`) as HTMLVideoElement;
+        if (previewVideo && previewVideo.srcObject) {
+          const stream = previewVideo.srcObject as MediaStream;
+          stream.getTracks().forEach(track => track.stop());
+          previewVideo.srcObject = null;
+          previewVideo.style.display = 'none';
+        }
       }
-      
-      // Also check for any preview videos by data attribute
-      const previewVideo = document.querySelector(`video[data-hand-preview-video]`) as HTMLVideoElement;
-      if (previewVideo && previewVideo.srcObject) {
-        const stream = previewVideo.srcObject as MediaStream;
-        stream.getTracks().forEach(track => track.stop());
-        previewVideo.srcObject = null;
-        // Hide instead of removing
-        previewVideo.style.display = 'none';
-      }
-      
+
       setHasCamera(false);
     };
   }, []); // Run once on mount
 
   // Process frames when active
   useEffect(() => {
+    if (Platform.OS !== 'web') {
+      return;
+    }
+
     console.log('🔄 Frame processing useEffect triggered:', {
       isActive,
       hasVideoRef: !!videoRef.current,
@@ -1001,7 +1006,7 @@ export function useHandDetectionWeb(
         processingIntervalRef.current = null;
       }
       console.log('▶️ Starting frame processing interval, THROTTLE_MS:', THROTTLE_MS);
-      processingIntervalRef.current = window.setInterval(processFrames, THROTTLE_MS);
+      processingIntervalRef.current = setInterval(processFrames, THROTTLE_MS) as unknown as number;
       // Also try processing immediately
       console.log('🚀 Calling processFrames immediately...');
       processFrames();

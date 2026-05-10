@@ -1,10 +1,10 @@
 /**
- * Require admin: allow only if x-auth0-id is in ADMIN_AUTH0_IDS env (comma-separated).
+ * Require admin: allow only if req.auth0Id (from JWT or dev headers) is in ADMIN_AUTH0_IDS (comma-separated).
  * For development, set ADMIN_AUTH0_IDS=* to allow any authenticated user.
  */
 export function requireAdmin(req, res, next) {
   if (req.method === 'OPTIONS') return next();
-  const auth0Id = req.headers['x-auth0-id'] || req.body?.auth0Id || req.query?.auth0Id;
+  const auth0Id = req.auth0Id;
   const allowed = process.env.ADMIN_AUTH0_IDS || '';
   if (!allowed.trim()) {
     return res.status(403).json({ ok: false, error: 'Admin access not configured' });

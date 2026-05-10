@@ -45,24 +45,28 @@ export function Game5Celebration({ onBack, onComplete, section, level }: Game5Ce
   const sparkleOpacity = useSharedValue(0);
 
   const speak = (text: string) => {
-    Speech.stop();
     setIsSpeaking(true);
-    
-    if (Platform.OS === 'web') {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = DEFAULT_TTS_RATE;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utterance);
-    } else {
-      Speech.speak(text, {
-        rate: DEFAULT_TTS_RATE,
-        pitch: 1.0,
-        onDone: () => setIsSpeaking(false),
-        onStopped: () => setIsSpeaking(false),
-      });
+    try {
+      Speech.stop();
+
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.speechSynthesis) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = DEFAULT_TTS_RATE;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+      } else {
+        Speech.speak(text, {
+          rate: DEFAULT_TTS_RATE,
+          pitch: 1.0,
+          onDone: () => setIsSpeaking(false),
+          onStopped: () => setIsSpeaking(false),
+        });
+      }
+    } catch {
+      setIsSpeaking(false);
     }
   };
 
@@ -86,13 +90,13 @@ export function Game5Celebration({ onBack, onComplete, section, level }: Game5Ce
   const handleAnswer = (correct: boolean) => {
     if (correct) {
       setScore(score + 1);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       celebrationScale.value = withSpring(1.2, { damping: 6 }, () => {
         celebrationScale.value = withSpring(1);
       });
       speak('Excellent!');
     } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       speak('Good try!');
     }
 
@@ -108,7 +112,7 @@ export function Game5Celebration({ onBack, onComplete, section, level }: Game5Ce
   const handleComplete = async () => {
     const accuracy = Math.round((score / TOTAL_ROUNDS) * 100);
     sparkleOpacity.value = withTiming(1, { duration: 500 });
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     
     try {
       await markGameComplete(section, level, 5, accuracy);

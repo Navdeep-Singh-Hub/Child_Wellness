@@ -1,5 +1,4 @@
 import Constants from "expo-constants";
-import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import Auth0 from "react-native-auth0";
@@ -73,16 +72,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async () => {
-    const redirectUri = Linking.createURL("/callback"); // childwellness://.../callback
     console.log("=== AUTH0 LOGIN DEBUG ===");
-    console.log("Redirect URI:", redirectUri);
+    console.log("Redirect URI: using react-native-auth0 default callback");
     console.log("Domain:", domain);
     console.log("ClientId:", clientId?.substring(0, 15) + "...");
     console.log("=========================");
     const res = await auth0.webAuth.authorize({
       scope: "openid profile email offline_access",
       ...(audience ? { audience } : {}),
-      redirectUri,
     });
     
     // Decode profile from ID token instead of making an extra API call
@@ -114,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      await auth0.webAuth.clearSession({ redirectUri: Linking.createURL("/logout") });
+      await auth0.webAuth.clearSession();
     } catch {
       // best-effort: still clear local state
     }
@@ -123,12 +120,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signup = async (emailHint?: string) => {
-    const redirectUri = Linking.createURL("/callback");
-    console.log("Auth0 Signup - Redirect URI:", redirectUri);
+    console.log("Auth0 Signup - Redirect URI: using react-native-auth0 default callback");
     const res = await auth0.webAuth.authorize({
       scope: "openid profile email offline_access",
       ...(audience ? { audience } : {}),
-      redirectUri,
       screen_hint: "signup",
       login_hint: emailHint || "",
     });

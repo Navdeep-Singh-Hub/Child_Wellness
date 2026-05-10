@@ -11,7 +11,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import Lottie from 'lottie-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -58,10 +57,14 @@ const { width } = Dimensions.get('window');
 const isSmall = width < 380;
 const homeProgressLoaderAnimation = require('@/assets/animation/loading.json');
 
-let NativeLottie: any = null;
-if (Platform.OS !== 'web') {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  NativeLottie = require('lottie-react-native').default;
+let WebLottie: any = null;
+if (Platform.OS === 'web') {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    WebLottie = require('lottie-react').default;
+  } catch {
+    WebLottie = null;
+  }
 }
 const compactNumber = (n: number) =>
   Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
@@ -109,23 +112,12 @@ function HomeLoadingContent() {
 }
 
 function HomeLoadingAnimation({ size = 240 }: { size?: number }) {
-  if (Platform.OS === 'web') {
+  if (Platform.OS === 'web' && WebLottie) {
     return (
-      <Lottie
+      <WebLottie
         animationData={homeProgressLoaderAnimation}
         loop
         autoplay
-        style={{ width: size, height: size }}
-      />
-    );
-  }
-
-  if (NativeLottie) {
-    return (
-      <NativeLottie
-        source={homeProgressLoaderAnimation}
-        autoPlay
-        loop
         style={{ width: size, height: size }}
       />
     );
@@ -488,7 +480,7 @@ export default function Index() {
                   </View>
                 </GlassCard>
                 <Text style={styles.heroTitle}>Keep it up! 🎉</Text>
-                <Text style={styles.heroSubtitle}>You're making amazing progress today.</Text>
+                <Text style={styles.heroSubtitle}>You&apos;re making amazing progress today.</Text>
 
                 <View style={styles.heroStatsRow}>
                   <GlassCard style={styles.heroStat} intensity={0.95}>
@@ -663,7 +655,7 @@ export default function Index() {
 
         {/* Mood Selector */}
         <Text style={styles.sectionTitle}>How are you feeling?</Text>
-        <Text style={styles.sectionSubtitle}>We'll keep it in mind for your activities.</Text>
+        <Text style={styles.sectionSubtitle}>We&apos;ll keep it in mind for your activities.</Text>
         <GlassCard style={styles.moodContainer} intensity={0.95}>
           <LinearGradient
             colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}

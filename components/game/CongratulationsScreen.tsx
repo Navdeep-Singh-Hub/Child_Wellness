@@ -7,12 +7,11 @@
 import React from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Lottie from 'lottie-react';
 
-let NativeLottie: any = null;
-if (Platform.OS !== 'web') {
+let WebLottie: any = null;
+if (Platform.OS === 'web') {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  NativeLottie = require('lottie-react-native').default;
+  WebLottie = require('lottie-react').default;
 }
 
 const wowAnimation = require('@/assets/animation/Wow! Sticker Animation.json');
@@ -52,11 +51,11 @@ export default function CongratulationsScreen({
       : undefined;
 
   const renderLottie = (animationData: any, size: number, style?: any) => {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === 'web' && WebLottie) {
       // For web, merge styles into a single object (no arrays)
       const webStyle = { width: size, height: size, ...(style || {}) };
       return (
-        <Lottie
+        <WebLottie
           animationData={animationData}
           loop
           autoplay
@@ -65,19 +64,11 @@ export default function CongratulationsScreen({
       );
     }
 
-    if (NativeLottie) {
-      // For native, use array format
-      return (
-        <NativeLottie
-          source={animationData}
-          autoPlay
-          loop
-          style={[{ width: size, height: size }, style]}
-        />
-      );
-    }
-
-    return null;
+    return (
+      <View style={[styles.nativeAnimationFallback, { width: size, height: size }, style]}>
+        <Text style={styles.nativeAnimationText}>{animationData === wowAnimation ? 'Wow!' : '*'}</Text>
+      </View>
+    );
   };
 
   const confettiSize = isTablet ? 200 : isMobile ? 120 : 160;
@@ -246,6 +237,15 @@ const styles = StyleSheet.create({
     zIndex: 10,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  nativeAnimationFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nativeAnimationText: {
+    color: '#92400E',
+    fontSize: 40,
+    fontWeight: '900',
   },
   messageContainer: {
     alignItems: 'center',

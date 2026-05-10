@@ -75,10 +75,8 @@ export function useJawDetection(
   isActive: boolean = true,
   options?: FaceDetectionOptions
 ): JawDetectionResult {
-  // Use web version if on web platform
-  // Check Platform.OS at runtime, not module load time
-  // React Native Web sets Platform.OS to 'web', but also check for browser globals
-  const isWeb = Platform.OS === 'web' || (typeof window !== 'undefined' && typeof document !== 'undefined' && typeof navigator !== 'undefined' && navigator.mediaDevices);
+  // Route strictly by Platform.OS so native never loads the web MediaPipe hook when globals are polyfilled.
+  const isWeb = Platform.OS === 'web';
   
   // Early return for web - must happen before any hooks are called
   if (isWeb) {
@@ -160,10 +158,7 @@ export function useJawDetection(
   const hasCamera = useCameraDevice !== null && device !== null;
 
   useEffect(() => {
-    // Only show this error on native platforms, not web
-    // Double-check we're not on web before showing error
-    const isWebCheck = Platform.OS === 'web' || (typeof window !== 'undefined' && typeof document !== 'undefined');
-    if (!hasCamera && !isWebCheck) {
+    if (!hasCamera && Platform.OS !== 'web') {
       updateError('VisionCamera not available. Please use a dev build (npx expo run:android or npx expo run:ios) instead of Expo Go.');
     }
   }, [hasCamera, updateError]);

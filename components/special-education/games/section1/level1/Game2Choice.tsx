@@ -93,24 +93,28 @@ export function Game2Choice({ onBack, onComplete, section, level }: Game2ChoiceP
   const currentQuestionData = questions[round - 1];
 
   const speak = (text: string) => {
-    Speech.stop();
     setIsSpeaking(true);
-    
-    if (Platform.OS === 'web') {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = DEFAULT_TTS_RATE;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utterance);
-    } else {
-      Speech.speak(text, {
-        rate: DEFAULT_TTS_RATE,
-        pitch: 1.0,
-        onDone: () => setIsSpeaking(false),
-        onStopped: () => setIsSpeaking(false),
-      });
+    try {
+      Speech.stop();
+
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.speechSynthesis) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = DEFAULT_TTS_RATE;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+      } else {
+        Speech.speak(text, {
+          rate: DEFAULT_TTS_RATE,
+          pitch: 1.0,
+          onDone: () => setIsSpeaking(false),
+          onStopped: () => setIsSpeaking(false),
+        });
+      }
+    } catch {
+      setIsSpeaking(false);
     }
   };
 
@@ -132,13 +136,13 @@ export function Game2Choice({ onBack, onComplete, section, level }: Game2ChoiceP
 
     if (correct) {
       setScore(score + 1);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       scaleAnim.value = withSpring(1.2, { damping: 6 }, () => {
         scaleAnim.value = withSpring(1);
       });
       speak('Great job!');
     } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       speak('Try again');
     }
 

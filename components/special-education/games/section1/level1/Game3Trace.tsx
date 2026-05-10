@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -20,6 +20,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { useSpecialEducationProgress } from '../../../shared/SpecialEducationProgress';
 import { useHandDetectionWeb } from '@/hooks/useHandDetectionWeb';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 const DEFAULT_TTS_RATE = 0.6;
 
@@ -77,25 +78,60 @@ export function Game3Trace({ onBack, onComplete, section, level }: Game3TracePro
 
   const currentTraceData = traces[round - 1];
 
+  const [traceBoxLayout, setTraceBoxLayout] = useState({ width: 1, height: 1 });
+
+  const updateProgressFromNormalized = useCallback(
+    (nx: number, ny: number) => {
+      let minDistance = Infinity;
+      for (const point of currentTraceData.points) {
+        const distance = Math.sqrt(Math.pow(nx - point.x, 2) + Math.pow(ny - point.y, 2));
+        minDistance = Math.min(minDistance, distance);
+      }
+      if (minDistance < 0.1) {
+        tracedPathRef.current.push({ x: nx, y: ny });
+        const progress = Math.min(1, tracedPathRef.current.length / (currentTraceData.points.length * 10));
+        setTraceProgress(progress);
+        progressAnim.value = withTiming(progress, { duration: 100 });
+      }
+    },
+    [currentTraceData]
+  );
+
+  const nativeTracePan = useMemo(
+    () =>
+      Gesture.Pan()
+        .enabled(Platform.OS !== 'web' && isTracing)
+        .onUpdate((e) => {
+          const w = Math.max(traceBoxLayout.width, 1);
+          const h = Math.max(traceBoxLayout.height, 1);
+          updateProgressFromNormalized(e.x / w, e.y / h);
+        }),
+    [isTracing, traceBoxLayout.width, traceBoxLayout.height, updateProgressFromNormalized]
+  );
+
   const speak = (text: string) => {
-    Speech.stop();
     setIsSpeaking(true);
-    
-    if (Platform.OS === 'web') {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = DEFAULT_TTS_RATE;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utterance);
-    } else {
-      Speech.speak(text, {
-        rate: DEFAULT_TTS_RATE,
-        pitch: 1.0,
-        onDone: () => setIsSpeaking(false),
-        onStopped: () => setIsSpeaking(false),
-      });
+    try {
+      Speech.stop();
+
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.speechSynthesis) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = DEFAULT_TTS_RATE;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+      } else {
+        Speech.speak(text, {
+          rate: DEFAULT_TTS_RATE,
+          pitch: 1.0,
+          onDone: () => setIsSpeaking(false),
+          onStopped: () => setIsSpeaking(false),
+        });
+      }
+    } catch {
+      setIsSpeaking(false);
     }
   };
 
@@ -106,9 +142,9 @@ export function Game3Trace({ onBack, onComplete, section, level }: Game3TracePro
     return () => clearTimeout(timer);
   }, [round]);
 
-  // Simplified tracing: just check if user moves finger near the path
+  // Web: camera hand position. Native: touch pan on trace area (see nativeTracePan).
   useEffect(() => {
-    if (!isTracing || !handDetection.handPosition) return;
+    if (Platform.OS !== 'web' || !isTracing || !handDetection.handPosition) return;
 
     const handX = handDetection.handPosition.x;
     const handY = handDetection.handPosition.y;
@@ -140,7 +176,7 @@ export function Game3Trace({ onBack, onComplete, section, level }: Game3TracePro
 
   const handleCompleteTrace = () => {
     setIsTracing(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     speak('Great job!');
 
     if (round < TOTAL_ROUNDS) {
@@ -176,26 +212,38 @@ export function Game3Trace({ onBack, onComplete, section, level }: Game3TracePro
     const centerY = screenHeight * 0.5;
     const size = Math.min(screenWidth, screenHeight) * 0.4;
 
+    const guide = (
+      <View
+        style={[styles.traceGuide, { width: size, height: size }]}
+        onLayout={(e) => {
+          const { width, height } = e.nativeEvent.layout;
+          if (width > 0 && height > 0) {
+            setTraceBoxLayout({ width, height });
+          }
+        }}
+      >
+        <Text
+          style={[
+            styles.traceSymbol,
+            {
+              fontSize: size * 0.6,
+              color: currentTraceData.type === 'letter' ? '#3B82F6' : '#10B981',
+            },
+          ]}
+        >
+          {currentTraceData.symbol}
+        </Text>
+        {tracedPathRef.current.length > 0 && (
+          <View style={styles.tracedPath}>
+            {/* Visual feedback for traced path */}
+          </View>
+        )}
+      </View>
+    );
+
     return (
       <View style={styles.traceContainer}>
-        <View style={[styles.traceGuide, { width: size, height: size }]}>
-          <Text
-            style={[
-              styles.traceSymbol,
-              {
-                fontSize: size * 0.6,
-                color: currentTraceData.type === 'letter' ? '#3B82F6' : '#10B981',
-              },
-            ]}
-          >
-            {currentTraceData.symbol}
-          </Text>
-          {tracedPathRef.current.length > 0 && (
-            <View style={styles.tracedPath}>
-              {/* Visual feedback for traced path */}
-            </View>
-          )}
-        </View>
+        {Platform.OS === 'web' ? guide : <GestureDetector gesture={nativeTracePan}>{guide}</GestureDetector>}
       </View>
     );
   };
@@ -214,7 +262,9 @@ export function Game3Trace({ onBack, onComplete, section, level }: Game3TracePro
         <View style={styles.instructionContainer}>
           <Text style={styles.instructionText}>
             {isTracing
-              ? 'Move your finger along the path'
+              ? Platform.OS === 'web'
+                ? 'Move your finger along the path'
+                : 'Drag your finger on the shape'
               : `Round ${round}/${TOTAL_ROUNDS}: Trace the ${currentTraceData.type === 'letter' ? 'letter' : 'number'}`}
           </Text>
           {isSpeaking && (
@@ -256,7 +306,7 @@ export function Game3Trace({ onBack, onComplete, section, level }: Game3TracePro
           </TouchableOpacity>
         )}
 
-        {!handDetection.handPosition && (
+        {Platform.OS === 'web' && isTracing && !handDetection.handPosition && (
           <View style={styles.handWarning}>
             <Ionicons name="hand-left-outline" size={24} color="#F59E0B" />
             <Text style={styles.handWarningText}>Show your hand to the camera</Text>

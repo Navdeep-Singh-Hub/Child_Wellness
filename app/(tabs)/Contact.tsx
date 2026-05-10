@@ -36,7 +36,9 @@ const Pressy = ({
   const tap = async () => {
     if (disabled) return;
     // tactile
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
     // spring pop
     scale.value = withSpring(0.96, { stiffness: 300, damping: 18 }, () => {
       scale.value = withSpring(1, { stiffness: 250, damping: 18 });
@@ -119,10 +121,14 @@ export default function Contact() {
       });
       setSubject('');
       setMessage('');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      try {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {}
       Alert.alert('Sent ✅', 'Thanks! We received your message.');
     } catch (e: any) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      try {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      } catch {}
       Alert.alert('Failed to send', e?.message || 'Please try again later.');
     } finally {
       setSending(false);

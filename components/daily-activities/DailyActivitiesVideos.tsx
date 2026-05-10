@@ -513,36 +513,8 @@ function NativeVideoPlayer({
     : video.videoPath;
 
   React.useEffect(() => {
-    if (!videoRef.current) return;
-
-    const statusUpdateListener = videoRef.current.addListener('statusUpdate', (status: any) => {
-      if (status.status === 'readyToPlay') {
-        onLoad();
-        // Auto-play when ready
-        videoRef.current?.playAsync();
-      } else if (status.status === 'error') {
-        const errorMsg = status.error?.message || 'Failed to load video';
-        console.error('Video player error:', status.error);
-        onError(errorMsg);
-      } else if (status.status === 'playing') {
-        onPlayStateChange(true);
-      } else if (status.status === 'paused' || status.status === 'stopped') {
-        onPlayStateChange(false);
-      }
-    });
-
-    const playbackStatusUpdateListener = videoRef.current.addListener('playbackStatusUpdate', (status: any) => {
-      if (status.isPlaying) {
-        onPlayStateChange(true);
-      } else {
-        onPlayStateChange(false);
-      }
-    });
-
-    return () => {
-      statusUpdateListener?.remove();
-      playbackStatusUpdateListener?.remove();
-    };
+    // Keep callback refs warm; actual status updates come from onPlaybackStatusUpdate prop.
+    onPlayStateChange(false);
   }, [onLoad, onError, onPlayStateChange]);
 
   return (
@@ -555,6 +527,18 @@ function NativeVideoPlayer({
         useNativeControls
         shouldPlay={false}
         isLooping={false}
+        onPlaybackStatusUpdate={(status: any) => {
+          if (!status) return;
+          if (status.isLoaded === false) {
+            const errorMsg = status.error || 'Failed to load video';
+            onError(errorMsg);
+            return;
+          }
+          if (status.isLoaded) {
+            onLoad();
+            onPlayStateChange(Boolean(status.isPlaying));
+          }
+        }}
       />
     </View>
   );

@@ -1,10 +1,11 @@
 /**
- * POST /api/validate-letter — OpenAI vision: compare child drawing to expected uppercase letter (A–Z).
+ * POST /api/validate-letter — OpenAI vision: compare child drawing to expected English letter.
+ * Supports both uppercase (A–Z) and lowercase (a–z) expectations.
  * Body: { image: string (base64 or data URL), expectedLetter: string, mimeType?: string }
  */
 import OpenAI from 'openai';
 
-const SYSTEM_PROMPT = `You are an expert in evaluating children's handwritten uppercase English letters.
+const SYSTEM_PROMPT = `You are an expert in evaluating children's handwritten English letters.
 
 Be STRICT but fair.
 
@@ -14,14 +15,15 @@ Rules:
 - Do NOT guess incorrectly. If you cannot tell what letter it is, use detectedLetter "UNKNOWN" and isCorrect false.
 - Prioritize accuracy over generosity.`;
 
-function buildUserPrompt(expectedLetter) {
+function buildUserPrompt(expectedLetter, expectedCase) {
   return `Expected letter: ${expectedLetter}
+Expected case: ${expectedCase}
 
 Analyze the drawing.
 
 Return JSON only with this exact shape:
 {
-  "detectedLetter": "A-Z or UNKNOWN",
+  "detectedLetter": "single English letter (A-Z or a-z) or UNKNOWN",
   "isCorrect": true or false,
   "confidence": number from 0 to 100,
   "feedback": "short friendly message for the child"
@@ -61,16 +63,22 @@ export async function handleValidateLetter(req, res) {
       return res.status(400).json({
         ok: false,
         error: 'expectedLetter required',
-        message: 'expectedLetter must be a single A–Z letter',
+        message: 'expectedLetter must be a single A–Z or a–z letter',
       });
     }
 
-    let expected = String(rawExpected).toUpperCase().trim().replace(/[^A-Z]/g, '').slice(0, 1);
+    const expectedRaw = String(rawExpected).trim();
+    const requestedLower = /^[a-z]$/.test(expectedRaw);
+    const requestedUpper = /^[A-Z]$/.test(expectedRaw);
+    const expectedCase = requestedLower ? 'lowercase' : requestedUpper ? 'uppercase' : 'uppercase';
+    let expected = requestedLower
+      ? expectedRaw.toLowerCase().replace(/[^a-z]/g, '').slice(0, 1)
+      : expectedRaw.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 1);
     if (!expected) {
       return res.status(400).json({
         ok: false,
         error: 'invalid expectedLetter',
-        message: 'expectedLetter must be A–Z',
+        message: 'expectedLetter must be A–Z or a–z',
       });
     }
 
@@ -94,7 +102,7 @@ export async function handleValidateLetter(req, res) {
         {
           role: 'user',
           content: [
-            { type: 'text', text: buildUserPrompt(expected) },
+            { type: 'text', text: buildUserPrompt(expected, expectedCase) },
             { type: 'image_url', image_url: { url: dataUrl, detail: 'low' } },
           ],
         },
@@ -114,13 +122,14 @@ export async function handleValidateLetter(req, res) {
     }
 
     const rawDetected = String(parsed.detectedLetter ?? '').trim();
-    const upperDetected = rawDetected.toUpperCase();
+    const normalizedDetected = expectedCase === 'lowercase'
+      ? rawDetected.toLowerCase().replace(/[^a-z]/g, '').slice(0, 1)
+      : rawDetected.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 1);
     let detectedLetter;
-    if (upperDetected === 'UNKNOWN' || rawDetected === '' || /^UNKNOWN$/i.test(rawDetected)) {
+    if (/^UNKNOWN$/i.test(rawDetected) || rawDetected === '') {
       detectedLetter = 'UNKNOWN';
     } else {
-      const letter = upperDetected.replace(/[^A-Z]/g, '').slice(0, 1);
-      detectedLetter = letter || 'UNKNOWN';
+      detectedLetter = normalizedDetected || 'UNKNOWN';
     }
 
     let confidence = Number(parsed.confidence);

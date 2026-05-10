@@ -10,7 +10,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect } from 'expo-router';
-import Lottie from 'lottie-react';
 import React, { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
@@ -30,9 +29,9 @@ import LoginButton from '../comonents/login';
 
 const progressLoaderAnimation = require('@/assets/animation/loading.json');
 
-let NativeLottie: any = null;
-if (Platform.OS !== 'web') {
-  NativeLottie = require('lottie-react-native').default;
+let WebLottie: any = null;
+if (Platform.OS === 'web') {
+  WebLottie = require('lottie-react').default;
 }
 
 export default function RootIndex() {
@@ -187,7 +186,7 @@ export default function RootIndex() {
         >
           <View style={styles.heroContent}>
             <Text style={styles.heroTitle}>
-              Your Child's Health{'\n'}and Development{'\n'}in One Place
+              Your Child&apos;s Health{'\n'}and Development{'\n'}in One Place
             </Text>
             <Text style={styles.heroSubtitle}>
               Empowering children with AAC tools, games, and personalized learning experiences
@@ -256,7 +255,7 @@ export default function RootIndex() {
                 </View>
                 <Text style={styles.ctaTitle}>Ready to Get Started?</Text>
                 <Text style={styles.ctaSubtitle}>
-                  Join thousands of families empowering their children's communication and learning
+                  Join thousands of families empowering their children&apos;s communication and learning
                 </Text>
                 <View style={styles.ctaButtonWrapper}>
                   <LoginButton />
@@ -285,23 +284,12 @@ const AuthLoadingContent = () => {
 };
 
 const LoadingAnimation = ({ size = 240 }: { size?: number }) => {
-  if (Platform.OS === 'web') {
+  if (Platform.OS === 'web' && WebLottie) {
     return (
-      <Lottie
+      <WebLottie
         animationData={progressLoaderAnimation}
         loop
         autoplay
-        style={{ width: size, height: size }}
-      />
-    );
-  }
-
-  if (NativeLottie) {
-    return (
-      <NativeLottie
-        source={progressLoaderAnimation}
-        autoPlay
-        loop
         style={{ width: size, height: size }}
       />
     );

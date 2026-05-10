@@ -20,6 +20,7 @@ import { adminAnalyticsRouter } from './routes/adminAnalytics.js';
 import { ActivityLog } from './models/ActivityLog.js';
 import { handleRecognizeLetter } from './routes/recognizeLetterRoute.js';
 import { handleValidateLetter } from './routes/validateLetterRoute.js';
+import { requireAuth } from './middleware/requireAuth.js';
 
 const app = express();
 // Behind proxies (Vercel/Render/Nginx), respect X-Forwarded-* headers
@@ -136,8 +137,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// TODO: Auth0 JWT middleware goes here
-// app.use(auth0JWTMiddleware());
+// Auth: per-route requireAuth (JWT when AUTH0_DOMAIN+AUTH0_AUDIENCE set; see middleware/requireAuth.js)
 
 // ---- serve /static so the app can load uploaded images
 app.use('/static', express.static(path.join(process.cwd(), 'static')));
@@ -1876,28 +1876,6 @@ async function ensureUser(auth0Id, email, name) {
   return user;
 }
 
-// Replace requireAuth to extract Auth0 user info from request body or JWT
-function requireAuth(req, res, next) {
-  // Skip authentication for OPTIONS requests (CORS preflight)
-  if (req.method === 'OPTIONS') {
-    console.log('[REQUIRE AUTH] Skipping auth for OPTIONS request');
-    return next();
-  }
-  
-  // For now, get auth0Id from request body or headers (we'll send it from frontend)
-  // TODO: In production, parse Auth0 JWT from Authorization header
-  const auth0Id = req.body?.auth0Id || req.headers['x-auth0-id'] || 'auth0_test_user';
-  const email = req.body?.email || req.headers['x-auth0-email'] || '';
-  const name = req.body?.name || req.headers['x-auth0-name'] || '';
-
-  console.log(`[REQUIRE AUTH] ${req.method} ${req.originalUrl || req.path} - auth0Id: ${auth0Id}`);
-
-  req.auth0Id = auth0Id;
-  req.auth0Email = email;
-  req.auth0Name = name;
-  req.userId = auth0Id; // Keep for backward compatibility
-  next();
-}
 // Explicit OPTIONS handlers for specific API routes (backup)
 app.options('/api/therapy/progress', (req, res) => {
   const origin = req.headers.origin;
@@ -2102,9 +2080,9 @@ app.get('/api/test', (req, res) => {
 // Create or fetch the authenticated user immediately after verification/login
 app.post('/api/users/ensure', requireAuth, async (req, res) => {
   try {
-    const auth0Id = req.body?.auth0Id || req.auth0Id;
-    const email = req.body?.email || req.auth0Email;
-    const name = req.body?.name || req.auth0Name;
+    const auth0Id = req.auth0Id;
+    const email = req.auth0Email;
+    const name = req.auth0Name;
 
     if (!auth0Id) {
       console.error('ensure-user: missing auth0Id', {

@@ -63,20 +63,12 @@ export function SectionSelector({ onSelectSection, onShowMap }: SectionSelectorP
         <View style={styles.sectionsGrid}>
           {SECTIONS.map((section) => {
             const sectionData = progress?.sections.find((s) => s.sectionNumber === section.number);
-            // Unlock Section 1 (Explorer), Section 2 (Matcher), Section 4 (Grouper — -AT Word Family) always
+            // Keep Explorer + Matcher open by default; later sections rely on progress/free access.
             const unlocked =
               isFreeAccess ||
               sectionData?.unlocked ||
               section.number === 1 ||
-              section.number === 2 ||
-              section.number === 3 ||
-              section.number === 4 ||
-              section.number === 5 ||
-              section.number === 6 ||
-              section.number === 7 ||
-              section.number === 8 ||
-              section.number === 9 ||
-              section.number === 10;
+              section.number === 2;
             const completed = sectionData?.completed || false;
             
             return (

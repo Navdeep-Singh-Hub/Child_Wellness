@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 
 export interface MouthLandmarks {
   upperLip: Array<{ x: number; y: number }>;
@@ -503,9 +504,9 @@ export function useJawDetectionWeb(
   const ratioMaxRef = useRef(-Infinity);
   const calibrationFramesRef = useRef(0);
 
-  // Initialize MediaPipe - always initialize on web, not dependent on isActive
+  // Initialize MediaPipe — web only (avoid document/navigator on iOS/Android)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
       initializeFaceLandmarker().catch((err) => {
         console.error('Failed to initialize face landmarker:', err);
         setError('Failed to initialize face detection');
@@ -513,10 +514,10 @@ export function useJawDetectionWeb(
     }
   }, []); // Run once on mount
 
-  // Setup webcam - always setup on web, not dependent on isActive
+  // Setup webcam — web only
   // isActive only controls frame processing, not camera initialization
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') {
       return;
     }
 
@@ -781,7 +782,7 @@ export function useJawDetectionWeb(
           if (processingIntervalRef.current) {
             clearInterval(processingIntervalRef.current);
           }
-          processingIntervalRef.current = window.setInterval(processFrames, THROTTLE_MS);
+          processingIntervalRef.current = setInterval(processFrames, THROTTLE_MS) as unknown as number;
         };
         startProcessing();
 
@@ -836,32 +837,35 @@ export function useJawDetectionWeb(
       }
       
       // Clean up preview video and canvas
-      const container = document.querySelector('[data-native-id="jaw-preview-container"]') as HTMLElement;
-      if (container) {
-        const previewVideo = container.querySelector('video');
-        if (previewVideo && previewVideo.srcObject) {
-          const stream = previewVideo.srcObject as MediaStream;
-          stream.getTracks().forEach(track => track.stop());
-        }
-        // Don't clear innerHTML - it conflicts with React
-        // Just stop the video stream and let React handle cleanup
-        const videos = container.querySelectorAll('video');
-        videos.forEach(video => {
-          if (video.srcObject) {
-            const stream = video.srcObject as MediaStream;
+      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+        const container = document.querySelector('[data-native-id="jaw-preview-container"]') as HTMLElement;
+        if (container) {
+          const previewVideo = container.querySelector('video');
+          if (previewVideo && previewVideo.srcObject) {
+            const stream = previewVideo.srcObject as MediaStream;
             stream.getTracks().forEach(track => track.stop());
           }
-          // Hide video instead of removing to avoid React conflicts
-          (video as HTMLElement).style.display = 'none';
-        });
+          const videos = container.querySelectorAll('video');
+          videos.forEach(video => {
+            if (video.srcObject) {
+              const stream = video.srcObject as MediaStream;
+              stream.getTracks().forEach(track => track.stop());
+            }
+            (video as HTMLElement).style.display = 'none';
+          });
+        }
       }
-      
+
       setHasCamera(false);
     };
   }, []); // Run once on mount, camera should initialize immediately
 
   // Control frame processing based on isActive
   useEffect(() => {
+    if (Platform.OS !== 'web') {
+      return;
+    }
+
     if (!isActive && processingIntervalRef.current) {
       // Pause processing when not active (but keep camera running)
       clearInterval(processingIntervalRef.current);
@@ -920,7 +924,7 @@ export function useJawDetectionWeb(
           setIsDetecting(false);
         }
       };
-      processingIntervalRef.current = window.setInterval(processFrames, THROTTLE_MS);
+      processingIntervalRef.current = setInterval(processFrames, THROTTLE_MS) as unknown as number;
     }
   }, [isActive]);
 

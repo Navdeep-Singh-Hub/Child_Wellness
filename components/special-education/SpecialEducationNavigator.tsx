@@ -26,17 +26,8 @@ import { LettersOPSession8 } from '@/components/explorer-session/LettersOPSessio
 import { FreeWritingSession9 } from '@/components/level1-free-writing-session/FreeWritingSession9';
 import { LettersQRSession9 } from '@/components/explorer-session/LettersQRSession9';
 import { MasterSession10 } from '@/components/level1-master-session/MasterSession10';
+import { MatcherSmallLettersSession } from '@/components/matcher-small-letters/MatcherSmallLettersSession';
 import { ExplorerMasterSession10 } from '@/components/explorer-session/ExplorerMasterSession10';
-import { FarmSession1 } from '@/components/farm-session/FarmSession1';
-import { OceanSession2 } from '@/components/ocean-session/OceanSession2';
-import { JungleSession3 } from '@/components/jungle-session/JungleSession3';
-import { SpaceSession4 } from '@/components/space-session/SpaceSession4';
-import { GardenSession5 } from '@/components/garden-session/GardenSession5';
-import { GrocerySession6 } from '@/components/grocery-session/GrocerySession6';
-import { MusicSession7 } from '@/components/music-session/MusicSession7';
-import { SuperheroSession8 } from '@/components/superhero-session/SuperheroSession8';
-import { FairySession9 } from '@/components/fairy-session/FairySession9';
-import { CelebrationSession10 } from '@/components/celebration-session/CelebrationSession10';
 import { ATWordSession1 } from '@/components/at-word-session/ATWordSession1';
 import { INWordSession2 } from '@/components/in-word-session/INWordSession2';
 import { UNWordSession3 } from '../un-word-session/UNWordSession3';
@@ -497,42 +488,13 @@ export function SpecialEducationNavigator() {
     return <ReaderSession10 onExit={handleExitSession} />;
   }
 
-  // Matcher (section 2) Sessions 1–10: Farm, Ocean, Jungle, Space, Garden, Grocery, Music, Superheroes, Fairy Tale, Celebration — show full session flow
+  // Matcher (section 2) Sessions 1–10: lowercase letters (a-z) curriculum
   if (mode === 'games' && selectedSection === 2 && selectedSession !== null && [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(selectedSession)) {
     const handleExitSession = () => {
       setMode('sessions');
       setSelectedSession(null);
     };
-    if (selectedSession === 1) {
-      return <FarmSession1 onExit={handleExitSession} />;
-    }
-    if (selectedSession === 2) {
-      return <OceanSession2 onExit={handleExitSession} />;
-    }
-    if (selectedSession === 3) {
-      return <JungleSession3 onExit={handleExitSession} />;
-    }
-    if (selectedSession === 4) {
-      return <SpaceSession4 onExit={handleExitSession} />;
-    }
-    if (selectedSession === 5) {
-      return <GardenSession5 onExit={handleExitSession} />;
-    }
-    if (selectedSession === 6) {
-      return <GrocerySession6 onExit={handleExitSession} />;
-    }
-    if (selectedSession === 7) {
-      return <MusicSession7 onExit={handleExitSession} />;
-    }
-    if (selectedSession === 8) {
-      return <SuperheroSession8 onExit={handleExitSession} />;
-    }
-    if (selectedSession === 9) {
-      return <FairySession9 onExit={handleExitSession} />;
-    }
-    if (selectedSession === 10) {
-      return <CelebrationSession10 onExit={handleExitSession} />;
-    }
+    return <MatcherSmallLettersSession sessionNumber={selectedSession} onExit={handleExitSession} />;
   }
 
   // Logic Lab (section 6) Sessions 1–10: Preposition IN…Sequence Master, Logic Lab Master

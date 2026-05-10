@@ -931,6 +931,16 @@ function tSentence(ids: string[], lang: LangKey) {
   return ids.map(w => tWord(w, lang)).join(' ');
 }
 
+function runHaptic(action: () => Promise<void>) {
+  try {
+    action().catch((e) => {
+      console.warn('[AAC] Haptics failed:', e);
+    });
+  } catch (e) {
+    console.warn('[AAC] Haptics failed:', e);
+  }
+}
+
 // ---------- TTS scheduler: run speech AFTER animations ----------
 // On native, InteractionManager.runAfterInteractions can wait too long (e.g. FlatList/layout
 // keep "interactions" active), so TTS never fires. Use setTimeout only on native.
@@ -1145,7 +1155,7 @@ function TileCard({
   }, [isFav]);
 
   const onHeart = () => {
-    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch { }
+    runHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium));
     heartScale.value = 1;
     heartScale.value = withSequence(
       withSpring(1.16, { stiffness: 520, damping: 28, mass: 0.6 }),
@@ -1722,7 +1732,14 @@ export default function AACGrid() {
     const deleteTileText = t('deleteTile', selectedLang);
 
     if (Platform.OS === "web") {
-      if (window.confirm(`${deleteText} "${tile.label}"?`)) go();
+      if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+        if (window.confirm(`${deleteText} "${tile.label}"?`)) go();
+      } else {
+        Alert.alert(deleteTileText, `${deleteText} "${tile.label}"?`, [
+          { text: cancelText, style: "cancel" },
+          { text: deleteText, style: "destructive", onPress: go },
+        ]);
+      }
     } else {
       Alert.alert(deleteTileText, `${deleteText} "${tile.label}"?`, [
         { text: cancelText, style: "cancel" },
@@ -1757,7 +1774,7 @@ export default function AACGrid() {
 
   // ======= Updated: do NOT await speech; schedule after animation =======
   const onTile = (t: Tile) => {
-    Haptics.selectionAsync();
+    runHaptic(() => Haptics.selectionAsync());
     setUtterance(s => [...s, t.id]);
     const say = tWord(t.id, selectedLang);
 
@@ -1772,7 +1789,7 @@ export default function AACGrid() {
 
   const onSpeakSentence = () => {
     if (!utterance.length) return;
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    runHaptic(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success));
     const say = tSentence(utterance, selectedLang);
 
     if (speechMode === 'stretched') {
@@ -1998,7 +2015,7 @@ export default function AACGrid() {
             <AnimatedCommonChip
               t={item}
               onPress={(tile) => {
-                Haptics.selectionAsync();
+                runHaptic(() => Haptics.selectionAsync());
                 setUtterance(s => [...s, tile.id]);
                 scheduleSpeak(tWord(tile.id, selectedLang), selectedLang, 10, speechRate);
               }}
@@ -2041,7 +2058,7 @@ export default function AACGrid() {
               accent={CATEGORY_STYLES[activeCat].accent}
               isFav={favorites.has(item.id)}
               onToggleFav={async (id) => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                runHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light));
                 try {
                   const { favorites: favList } = await toggleFavorite(id);
                   setFavorites(new Set(favList));
@@ -2279,7 +2296,7 @@ export default function AACGrid() {
                       setNewImageUrl(''); setPickedUri('');
                       setSourceMode('url');
 
-                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      runHaptic(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success));
                       showSuccess?.(t('customTileCreated', selectedLang));
                     } catch (e: any) {
                       console.error('Error creating tile:', e);

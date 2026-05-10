@@ -61,24 +61,28 @@ export function Game1Intro({ onBack, onComplete, section, level }: Game1IntroPro
   };
 
   const speak = (text: string) => {
-    Speech.stop();
     setIsSpeaking(true);
-    
-    if (Platform.OS === 'web') {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = DEFAULT_TTS_RATE;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utterance);
-    } else {
-      Speech.speak(text, {
-        rate: DEFAULT_TTS_RATE,
-        pitch: 1.0,
-        onDone: () => setIsSpeaking(false),
-        onStopped: () => setIsSpeaking(false),
-      });
+    try {
+      Speech.stop();
+
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.speechSynthesis) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = DEFAULT_TTS_RATE;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        window.speechSynthesis.speak(utterance);
+      } else {
+        Speech.speak(text, {
+          rate: DEFAULT_TTS_RATE,
+          pitch: 1.0,
+          onDone: () => setIsSpeaking(false),
+          onStopped: () => setIsSpeaking(false),
+        });
+      }
+    } catch {
+      setIsSpeaking(false);
     }
   };
 
@@ -108,7 +112,7 @@ export function Game1Intro({ onBack, onComplete, section, level }: Game1IntroPro
     const completeTimer = setTimeout(async () => {
       setHasCompleted(true);
       sparkleOpacity.value = withTiming(1, { duration: 500 });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       
       // Mark game as completed in backend
       try {
@@ -127,9 +131,9 @@ export function Game1Intro({ onBack, onComplete, section, level }: Game1IntroPro
       clearTimeout(timer);
       clearTimeout(numberTimer);
       clearTimeout(completeTimer);
-      Speech.stop();
-      if (Platform.OS === 'web') {
-        window.speechSynthesis.cancel();
+      try { Speech.stop(); } catch {}
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.speechSynthesis) {
+        try { window.speechSynthesis.cancel(); } catch {}
       }
     };
   }, []);
@@ -140,13 +144,13 @@ export function Game1Intro({ onBack, onComplete, section, level }: Game1IntroPro
       letterScale.value = withSpring(1.2, { damping: 6 }, () => {
         letterScale.value = withSpring(1);
       });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     } else {
       speak(numberContent.description);
       numberScale.value = withSpring(1.2, { damping: 6 }, () => {
         numberScale.value = withSpring(1);
       });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
   };
 

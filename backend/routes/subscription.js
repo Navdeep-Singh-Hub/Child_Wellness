@@ -10,16 +10,6 @@ const router = express.Router();
 // Log that router is being loaded
 console.log('[SUBSCRIPTION ROUTER] Router module loaded');
 
-// Middleware to ensure CORS headers on all responses from this router
-router.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-  next();
-});
-
 // Test route to verify router is working
 router.get('/test', (req, res) => {
   console.log('[SUBSCRIPTION ROUTER] Test route hit');
@@ -735,13 +725,6 @@ router.get('/status', async (req, res) => {
     }
     responseSent = true;
     
-    // Ensure CORS headers
-    const origin = req.headers.origin;
-    if (origin) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
-    
     res.status(statusCode).json(data);
   };
   
@@ -750,7 +733,7 @@ router.get('/status', async (req, res) => {
   console.log('[SUBSCRIPTION ROUTER] Request method:', req.method);
   
   try {
-    const auth0Id = req.auth0Id || req.headers['x-auth0-id'];
+    const auth0Id = req.auth0Id;
     
     // Log for debugging
     console.log(`[SUBSCRIPTION STATUS] Checking status for auth0Id: ${auth0Id}`);
@@ -1068,13 +1051,6 @@ router.use((err, req, res, next) => {
   console.error('[SUBSCRIPTION ROUTER] Unhandled error:', err);
   console.error('[SUBSCRIPTION ROUTER] Error stack:', err.stack);
   
-  // Ensure CORS headers on error
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-  
   if (!res.headersSent) {
     res.status(500).json({ error: 'Internal server error', details: err.message });
   }
@@ -1082,13 +1058,6 @@ router.use((err, req, res, next) => {
 
 router.use('*', (req, res) => {
   console.log(`[SUBSCRIPTION ROUTER] Unmatched route: ${req.method} ${req.originalUrl}`);
-  
-  // Ensure CORS headers on 404
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
   
   res.status(404).json({ 
     ok: false, 

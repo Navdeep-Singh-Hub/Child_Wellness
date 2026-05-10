@@ -483,7 +483,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { GAME_MENU_STAGGER_MS, PRESS_SCALE_AMOUNT, SPRING_CONFIG } from '@/constants/therapyProgressAnimations';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   FadeInDown,
   FadeInUp,
@@ -1007,6 +1007,38 @@ export default function SessionGamesScreen() {
   // Special Education: 10 sections (Explorer, Matcher, Builder, etc.), 10 sessions each, 5 games per session
   if (therapyId === 'special-education') {
     return <SpecialEducationNavigator />;
+  }
+
+  // Speech Level 2 currently relies on web-first camera/DOM pipelines.
+  // Gate it on native to avoid runtime breakage until native detectors are fully implemented.
+  const isSpeechLevel2OnNative = Platform.OS !== 'web' && therapyId === 'speech' && levelNumber === 2;
+  if (isSpeechLevel2OnNative) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={20} color="#334155" />
+              <Text style={styles.backText}>Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Session Games</Text>
+          </View>
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateTitle}>Coming Soon on Android/iOS</Text>
+            <Text style={styles.emptyStateText}>
+              Speech Level 2 camera games are being finalized for native devices. You can continue with Speech Level 1 or other therapies right now.
+            </Text>
+            <TouchableOpacity
+              style={{ marginTop: 16, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#2563EB', borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }}
+              onPress={() => router.replace({ pathname: '/(tabs)/TherapyProgress' })}
+            >
+              <Ionicons name="grid" size={18} color="#FFFFFF" />
+              <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Back to Therapy Progress</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   // Function to get the next game in sequence

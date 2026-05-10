@@ -15,7 +15,11 @@
       "AUTH0_DOMAIN": "child-wellness.us.auth0.com",
       "AUTH0_CLIENT_ID_NATIVE": "mVqiDhhSeBZ3BGUddxCvqheVb0VJcaGC",
       "AUTH0_CLIENT_ID_WEB": "pK2uzbNONOHaPUPWbD9s7Y3qx6nYntEW",
-      "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_RyBRdT9vru0wg0"
+      "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_RyBRdT9vru0wg0",
+      "router": {},
+      "eas": {
+        "projectId": "35d73d85-2351-4fc6-bfd2-8a76ca0f016e"
+      }
     },
     "ios": {
       "supportsTablet": true,
@@ -26,11 +30,13 @@
     "android": {
       "usesCleartextTraffic": true,
       "permissions": [
-        "CAMERA"
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.ChildWellness",
+      "package": "com.anonymous.childwellness",
       "minSdkVersion": 26
     },
     "web": {
@@ -83,6 +89,7 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "owner": "nonavi080080"
   }
 }

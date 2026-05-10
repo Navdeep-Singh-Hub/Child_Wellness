@@ -4,16 +4,6 @@ import { User } from '../models/User.js';
 
 const router = Router();
 
-// Middleware to ensure CORS headers on all responses from this router
-router.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-  next();
-});
-
 const THERAPIES = [
   'speech',
   'occupational',
@@ -76,22 +66,12 @@ router.get('/progress', async (req, res) => {
   const sendError = (status, message, details) => {
     if (responseSent || res.headersSent) return;
     responseSent = true;
-    const origin = req.headers.origin;
-    if (origin) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
     res.status(status).json({ error: message, details });
   };
   
   const sendSuccess = (data) => {
     if (responseSent || res.headersSent) return;
     responseSent = true;
-    const origin = req.headers.origin;
-    if (origin) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
     res.json(data);
   };
   
@@ -126,13 +106,6 @@ router.get('/progress', async (req, res) => {
 
 router.post('/progress/init', async (req, res) => {
   try {
-    // Ensure CORS headers are set
-    const origin = req.headers.origin;
-    if (origin) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
-    
     const user = await ensureUserDoc(req);
     let doc = await UserTherapyProgress.findOne({ userId: user._id });
     if (!doc) {
@@ -144,14 +117,6 @@ router.post('/progress/init', async (req, res) => {
     return res.json({ ok: true, therapies: doc.therapies });
   } catch (error) {
     console.error('therapy progress init error', error);
-    
-    // Ensure CORS headers on error
-    const origin = req.headers.origin;
-    if (origin) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
-    
     if (res.headersSent) return;
     return res.status(500).json({ error: 'Failed to init therapy progress' });
   }
@@ -159,12 +124,6 @@ router.post('/progress/init', async (req, res) => {
 
 router.post('/progress/advance', async (req, res) => {
   try {
-    const origin = req.headers.origin;
-    if (origin) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
-
     const user = await ensureUserDoc(req);
     const { therapy, levelNumber, sessionNumber, gameId, markCompleted, sectionNumber, levelNumberSE, sessionNumberSE, gameNumber, accuracy } = req.body || {};
     if (!THERAPIES.includes(therapy)) return res.status(400).json({ error: 'Invalid therapy' });
@@ -232,14 +191,6 @@ router.post('/progress/advance', async (req, res) => {
     return res.json({ ok: true, therapy: t });
   } catch (error) {
     console.error('therapy progress advance error', error);
-    
-    // Ensure CORS headers on error
-    const origin = req.headers.origin;
-    if (origin) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
-    
     if (res.headersSent) return;
     return res.status(500).json({ error: 'Failed to update therapy progress' });
   }
@@ -247,13 +198,6 @@ router.post('/progress/advance', async (req, res) => {
 
 router.post('/progress/reset', async (req, res) => {
   try {
-    // Ensure CORS headers are set
-    const origin = req.headers.origin;
-    if (origin) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
-    
     const user = await ensureUserDoc(req);
     const { therapy } = req.body || {};
     if (therapy && !THERAPIES.includes(therapy)) {
@@ -275,14 +219,6 @@ router.post('/progress/reset', async (req, res) => {
     return res.json({ ok: true, therapies: doc.therapies });
   } catch (error) {
     console.error('therapy progress reset error', error);
-    
-    // Ensure CORS headers on error
-    const origin = req.headers.origin;
-    if (origin) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
-    
     if (res.headersSent) return;
     return res.status(500).json({ error: 'Failed to reset therapy progress' });
   }
@@ -292,14 +228,7 @@ router.post('/progress/reset', async (req, res) => {
 router.use((err, req, res, next) => {
   console.error('[THERAPY ROUTER] Unhandled error:', err);
   console.error('[THERAPY ROUTER] Error stack:', err.stack);
-  
-  // Ensure CORS headers on error
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-  
+
   if (!res.headersSent) {
     res.status(500).json({ error: 'Internal server error', details: err.message });
   }

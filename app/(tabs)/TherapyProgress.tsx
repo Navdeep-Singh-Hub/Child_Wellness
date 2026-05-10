@@ -18,7 +18,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import Lottie from 'lottie-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
@@ -44,19 +43,22 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const loadingAnimation = require('@/assets/animation/loading.json');
-let NativeLottie: React.ComponentType<{ source: object; autoPlay?: boolean; loop?: boolean; style?: object }> | null = null;
-if (Platform.OS !== 'web') {
+let WebLottie: React.ComponentType<{ animationData: object; loop?: boolean; autoplay?: boolean; style?: object }> | null = null;
+if (Platform.OS === 'web') {
   try {
-    NativeLottie = require('lottie-react-native').default;
+    WebLottie = require('lottie-react').default;
   } catch {
-    NativeLottie = null;
+    WebLottie = null;
   }
 }
+let NativeLottie: React.ComponentType<{ source: object; autoPlay?: boolean; loop?: boolean; style?: object }> | null = null;
+// Use the native ActivityIndicator in APK builds. Some Android devices crash when
+// mounting lottie-react-native JSON animations during navigation/loading.
 
 function TherapyProgressLoadingAnimation({ size = 160 }: { size?: number }) {
-  if (Platform.OS === 'web') {
+  if (Platform.OS === 'web' && WebLottie) {
     return (
-      <Lottie
+      <WebLottie
         animationData={loadingAnimation}
         loop
         autoplay
