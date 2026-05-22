@@ -106,7 +106,7 @@ const AnimalRunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Animated.timing(animalRotation, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }).start();
       },
     })
@@ -132,7 +132,7 @@ const AnimalRunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       toValue: 1,
       tension: 50,
       friction: 7,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     const animalName = randomAnimal === 'dog' ? 'dog' : randomAnimal === 'cat' ? 'cat' : randomAnimal === 'rabbit' ? 'rabbit' : 'chicken';
@@ -169,24 +169,24 @@ const AnimalRunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Animated.timing(animalRotation, {
           toValue: rotation,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(animalRotation, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.sequence([
         Animated.timing(animalScale, {
           toValue: 1.3,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(animalScale, {
           toValue: 1,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();
@@ -218,7 +218,7 @@ const AnimalRunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       Animated.timing(animalRotation, {
         toValue: 0,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
   }, [animalX, animalRotation, targetDirection]);

@@ -165,13 +165,13 @@ export function BlowOutTheCandleGame({ onBack, onComplete, requiredRounds = TOTA
             toValue: 1,
             duration: 300 + Math.random() * 200,
             easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(flameFlickerAnim, {
             toValue: 0,
             duration: 300 + Math.random() * 200,
             easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ])
       ).start();
@@ -192,7 +192,7 @@ export function BlowOutTheCandleGame({ onBack, onComplete, requiredRounds = TOTA
         toValue: 1,
         duration: 500,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 

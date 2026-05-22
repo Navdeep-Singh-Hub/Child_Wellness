@@ -328,12 +328,12 @@ export const JawRhythmTapGame: React.FC<Props> = ({
             toValue: 1.4,
             tension: 50,
             friction: 7,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(celebrationOpacity, {
             toValue: 1,
             duration: 200,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
         Animated.parallel([
@@ -341,12 +341,12 @@ export const JawRhythmTapGame: React.FC<Props> = ({
             toValue: 1,
             tension: 50,
             friction: 7,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(celebrationOpacity, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
       ]).start();
@@ -382,13 +382,13 @@ export const JawRhythmTapGame: React.FC<Props> = ({
         toValue: 1.2,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }).start(() => {
         Animated.spring(beatCircleScale, {
           toValue: 1,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }).start();
       });
       
@@ -428,13 +428,13 @@ export const JawRhythmTapGame: React.FC<Props> = ({
         toValue: 1.3,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.spring(jawStateIndicatorScale, {
         toValue: 1,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
     
@@ -741,12 +741,12 @@ export const JawRhythmTapGame: React.FC<Props> = ({
           Animated.timing(beatCircleOpacity, {
             toValue: 1,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(beatCircleOpacity, {
             toValue: 0.5,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
         

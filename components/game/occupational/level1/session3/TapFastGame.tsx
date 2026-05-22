@@ -193,13 +193,13 @@ const TapFastGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = 
           toValue: 1.2,
           duration: 100,
           easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(scaleAnim, {
           toValue: 1,
           duration: 100,
           easing: Easing.in(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 

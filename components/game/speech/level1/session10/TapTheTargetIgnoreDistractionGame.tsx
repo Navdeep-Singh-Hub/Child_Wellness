@@ -1,12 +1,13 @@
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
+import { createGlowLoop } from '@/utils/animatedGlowLoop';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
     Animated,
     Easing,
@@ -28,6 +29,62 @@ const TARGET_SIZE = 160;
 const DISTRACTION_SIZE = 100;
 const DISTRACTION_DURATION_MS = 3000;
 const TAP_TIMEOUT_MS = 6000;
+
+type OrbitConfig = {
+  startDeg: number;
+  endDeg: number;
+  radius: number;
+  pivotX: number;
+  pivotY: number;
+};
+
+function trySetAnimatedValue(value: Animated.Value, next: number) {
+  try {
+    value.setValue(next);
+  } catch {
+    // React Compiler may freeze Animated.Value in dev.
+  }
+}
+
+function useGameAnimatedValues() {
+  const ref = useRef<{
+    targetScale: Animated.Value;
+    targetOpacity: Animated.Value;
+    targetPulse: Animated.Value;
+    targetGlow: Animated.Value;
+    targetGlowOpacity: Animated.Value;
+    distractionScale: Animated.Value;
+    distractionOpacity: Animated.Value;
+    distractionRotation: Animated.Value;
+    orbitProgress: Animated.Value;
+    celebrationScale: Animated.Value;
+    celebrationOpacity: Animated.Value;
+    warningScale: Animated.Value;
+    warningOpacity: Animated.Value;
+    particleOpacity: Animated.Value;
+  } | null>(null);
+
+  if (ref.current == null) {
+    ref.current = {
+      targetScale: new Animated.Value(0),
+      targetOpacity: new Animated.Value(0),
+      targetPulse: new Animated.Value(1),
+      targetGlow: new Animated.Value(1),
+      targetGlowOpacity: new Animated.Value(0),
+      distractionScale: new Animated.Value(0),
+      distractionOpacity: new Animated.Value(0),
+      distractionRotation: new Animated.Value(0),
+      orbitProgress: new Animated.Value(0),
+      celebrationScale: new Animated.Value(1),
+      celebrationOpacity: new Animated.Value(0),
+      warningScale: new Animated.Value(1),
+      warningOpacity: new Animated.Value(0),
+      particleOpacity: new Animated.Value(0),
+    };
+  }
+
+  return ref.current;
+}
 
 let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
@@ -90,24 +147,41 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
   const [missedTaps, setMissedTaps] = useState(0);
   const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [showDistraction, setShowDistraction] = useState(false);
-  
-  // Animations
-  const targetScale = useRef(new Animated.Value(0)).current;
-  const targetOpacity = useRef(new Animated.Value(0)).current;
-  const targetPulse = useRef(new Animated.Value(1)).current;
-  const targetGlow = useRef(new Animated.Value(0)).current;
-  const targetGlowOpacity = useRef(new Animated.Value(0)).current;
-  const distractionX = useRef(new Animated.Value(0)).current;
-  const distractionY = useRef(new Animated.Value(0)).current;
-  const distractionScale = useRef(new Animated.Value(0)).current;
-  const distractionOpacity = useRef(new Animated.Value(0)).current;
-  const distractionRotation = useRef(new Animated.Value(0)).current;
-  const orbitAngle = useRef(new Animated.Value(0)).current;
-  const celebrationScale = useRef(new Animated.Value(1)).current;
-  const celebrationOpacity = useRef(new Animated.Value(0)).current;
-  const warningScale = useRef(new Animated.Value(1)).current;
-  const warningOpacity = useRef(new Animated.Value(0)).current;
-  const particleOpacity = useRef(new Animated.Value(0)).current;
+  const [orbitConfig, setOrbitConfig] = useState<OrbitConfig | null>(null);
+
+  const {
+    targetScale,
+    targetOpacity,
+    targetPulse,
+    targetGlow,
+    targetGlowOpacity,
+    distractionScale,
+    distractionOpacity,
+    distractionRotation,
+    orbitProgress,
+    celebrationScale,
+    celebrationOpacity,
+    warningScale,
+    warningOpacity,
+    particleOpacity,
+  } = useGameAnimatedValues();
+
+  const targetPulseLoop = useMemo(
+    () => createGlowLoop(targetPulse, { min: 1, max: 1.08, duration: 1000, useNativeDriver: false }),
+    [targetPulse],
+  );
+  const targetGlowLoop = useMemo(
+    () => createGlowLoop(targetGlow, { min: 1, max: 1.15, duration: 1200, useNativeDriver: false }),
+    [targetGlow],
+  );
+  const targetGlowOpacityLoop = useMemo(
+    () => createGlowLoop(targetGlowOpacity, { min: 0.2, max: 0.4, duration: 1200, useNativeDriver: false }),
+    [targetGlowOpacity],
+  );
+  const distractionSpinLoop = useMemo(
+    () => createGlowLoop(distractionRotation, { min: 0, max: 1, duration: 2000, useNativeDriver: false }),
+    [distractionRotation],
+  );
   
   // Track warningOpacity value to avoid _value access
   const warningOpacityCurrentRef = useRef(0);
@@ -124,11 +198,18 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
   // Timeouts and animations
   const distractionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const distractionAnimationRef = useRef<NodeJS.Timeout | null>(null);
-  const distractionRotationAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
-  const pulseAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const orbitAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const startRoundRef = useRef<() => void>(undefined);
   const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
+
+  const stopIdleAnimations = useCallback(() => {
+    targetPulseLoop.stop();
+    targetGlowLoop.stop();
+    targetGlowOpacityLoop.stop();
+    distractionSpinLoop.stop();
+    orbitAnimationRef.current?.stop();
+    orbitAnimationRef.current = null;
+  }, [targetPulseLoop, targetGlowLoop, targetGlowOpacityLoop, distractionSpinLoop]);
 
   const finishGame = useCallback(async () => {
     if (distractionTimeoutRef.current) {
@@ -139,16 +220,7 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
       clearTimeout(tapTimeoutRef.current);
       tapTimeoutRef.current = null;
     }
-    if ((distractionAnimationRef as any).current) {
-      const { animation, listenerId } = (distractionAnimationRef as any).current;
-      animation.stop();
-      orbitAngle.removeListener(listenerId);
-      (distractionAnimationRef as any).current = null;
-    }
-    if (pulseAnimationRef.current) {
-      pulseAnimationRef.current.stop();
-      pulseAnimationRef.current = null;
-    }
+    stopIdleAnimations();
     
     setGameFinished(true);
     setShowRoundSuccess(false); // Clear animation when game finishes
@@ -188,7 +260,7 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
     } catch (e) {
       console.error('Failed to save game:', e);
     }
-  }, [correctTaps, distractionTaps, missedTaps, requiredRounds, onComplete]);
+  }, [correctTaps, distractionTaps, missedTaps, requiredRounds, onComplete, stopIdleAnimations]);
 
   const advanceToNextRound = useCallback((nextRound: number) => {
     if (nextRound >= requiredRounds) {
@@ -209,20 +281,8 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
       clearTimeout(tapTimeoutRef.current);
       tapTimeoutRef.current = null;
     }
-    if (distractionAnimationRef.current) {
-      const { animation, listenerId } = (distractionAnimationRef as any).current;
-      animation.stop();
-      orbitAngle.removeListener(listenerId);
-      distractionAnimationRef.current = null;
-    }
-    if (distractionRotationAnimationRef.current) {
-      distractionRotationAnimationRef.current.stop();
-      distractionRotationAnimationRef.current = null;
-    }
-    if (pulseAnimationRef.current) {
-      pulseAnimationRef.current.stop();
-      pulseAnimationRef.current = null;
-    }
+    stopIdleAnimations();
+    setOrbitConfig(null);
 
     if (rounds >= requiredRounds) {
       return;
@@ -241,22 +301,20 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
     setDistraction(randomDistraction);
 
     // Reset animations
-    targetScale.setValue(0);
-    targetOpacity.setValue(0);
-    targetPulse.setValue(1);
-    targetGlow.setValue(0);
-    targetGlowOpacity.setValue(0);
-    distractionX.setValue(0);
-    distractionY.setValue(0);
-    distractionScale.setValue(0);
-    distractionOpacity.setValue(0);
-    distractionRotation.setValue(0);
-    orbitAngle.setValue(0);
-    celebrationScale.setValue(1);
-    celebrationOpacity.setValue(0);
-    warningScale.setValue(1);
-    warningOpacity.setValue(0);
-    particleOpacity.setValue(0);
+    trySetAnimatedValue(targetScale, 0);
+    trySetAnimatedValue(targetOpacity, 0);
+    trySetAnimatedValue(targetPulse, 1);
+    trySetAnimatedValue(targetGlow, 1);
+    trySetAnimatedValue(targetGlowOpacity, 0);
+    trySetAnimatedValue(distractionScale, 0);
+    trySetAnimatedValue(distractionOpacity, 0);
+    trySetAnimatedValue(distractionRotation, 0);
+    trySetAnimatedValue(orbitProgress, 0);
+    trySetAnimatedValue(celebrationScale, 1);
+    trySetAnimatedValue(celebrationOpacity, 0);
+    trySetAnimatedValue(warningScale, 1);
+    trySetAnimatedValue(warningOpacity, 0);
+    trySetAnimatedValue(particleOpacity, 0);
 
     // Show target
     Animated.parallel([
@@ -264,68 +322,19 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
         toValue: 1,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(targetOpacity, {
         toValue: 1,
         duration: 500,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
-    // Pulse animation for target
-    pulseAnimationRef.current = Animated.loop(
-      Animated.sequence([
-        Animated.timing(targetPulse, {
-          toValue: 1.08,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(targetPulse, {
-          toValue: 1,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    pulseAnimationRef.current.start();
-
-    // Continuous glow for target to make it stand out
-    Animated.loop(
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(targetGlow, {
-            toValue: 1.15,
-            duration: 1200,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(targetGlowOpacity, {
-            toValue: 0.4,
-            duration: 1200,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(targetGlow, {
-            toValue: 1,
-            duration: 1200,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(targetGlowOpacity, {
-            toValue: 0.2,
-            duration: 1200,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]),
-      ])
-    ).start();
+    targetPulseLoop.start();
+    targetGlowLoop.start();
+    targetGlowOpacityLoop.start();
 
     speak(`Tap the ${randomTarget.name}`);
 
@@ -352,90 +361,63 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
       
       // Number of full rotations during duration
       const totalRotations = 2.5;
-      
-      // Set initial angle
-      orbitAngle.setValue(startAngle);
-      
-      // Calculate initial position on orbit
-      const startX = targetCenterX + Math.cos(startAngle) * orbitRadius - DISTRACTION_SIZE / 2;
-      const startY = targetCenterY + Math.sin(startAngle) * orbitRadius - DISTRACTION_SIZE / 2;
-      
-      distractionX.setValue(startX);
-      distractionY.setValue(startY);
-      
+      const endAngle = startAngle + Math.PI * 2 * totalRotations * orbitDirection;
+      const startDeg = (startAngle * 180) / Math.PI;
+      const endDeg = (endAngle * 180) / Math.PI;
+
+      setOrbitConfig({
+        startDeg,
+        endDeg,
+        radius: orbitRadius,
+        pivotX: targetCenterX,
+        pivotY: targetCenterY,
+      });
+
+      trySetAnimatedValue(orbitProgress, 0);
+
       // Animate distraction appearance
       Animated.parallel([
         Animated.spring(distractionScale, {
           toValue: 1,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(distractionOpacity, {
           toValue: 0.95, // More visible
           duration: 400,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 
-      // Create smooth orbital movement using Animated API
-      // Animate the angle from startAngle to startAngle + (2π * rotations * direction)
-      const endAngle = startAngle + (Math.PI * 2 * totalRotations * orbitDirection);
-      
-      // Create the orbital animation
-      const orbitAnimation = Animated.timing(orbitAngle, {
-        toValue: endAngle,
+      distractionSpinLoop.start();
+
+      const orbitAnimation = Animated.timing(orbitProgress, {
+        toValue: 1,
         duration: DISTRACTION_DURATION_MS,
         easing: Easing.linear,
-        useNativeDriver: false, // Must be false for position animations
+        useNativeDriver: false,
       });
-      
-      // Listen to angle changes and update position
-      const listenerId = orbitAngle.addListener(({ value }) => {
-        const currentX = targetCenterX + Math.cos(value) * orbitRadius - DISTRACTION_SIZE / 2;
-        const currentY = targetCenterY + Math.sin(value) * orbitRadius - DISTRACTION_SIZE / 2;
-        
-        distractionX.setValue(currentX);
-        distractionY.setValue(currentY);
-      });
-      
-      // Store listener ID for cleanup
-      (distractionAnimationRef as any).current = { animation: orbitAnimation, listenerId };
-      
-      // Start the orbital animation
+      orbitAnimationRef.current = orbitAnimation;
       orbitAnimation.start();
-      
-      // Continuous rotation animation (distraction spinning on its own axis)
-      distractionRotationAnimationRef.current = Animated.loop(
-        Animated.timing(distractionRotation, {
-          toValue: 1,
-          duration: 2000,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        })
-      );
-      distractionRotationAnimationRef.current.start();
 
       // Hide distraction after duration
       distractionTimeoutRef.current = (setTimeout(() => {
-        // Stop orbit animation and remove listener
-        if ((distractionAnimationRef as any).current) {
-          const { animation, listenerId } = (distractionAnimationRef as any).current;
-          animation.stop();
-          orbitAngle.removeListener(listenerId);
-          (distractionAnimationRef as any).current = null;
-        }
-        
+        orbitAnimationRef.current?.stop();
+        orbitAnimationRef.current = null;
+        distractionSpinLoop.stop();
+        setOrbitConfig(null);
+
         Animated.parallel([
           Animated.timing(distractionOpacity, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(distractionScale, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start(() => {
           setShowDistraction(false);
@@ -454,12 +436,12 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
         Animated.timing(targetOpacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(targetScale, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
       
@@ -473,7 +455,31 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
       
       tapTimeoutRef.current = null;
     }, TAP_TIMEOUT_MS)) as unknown as NodeJS.Timeout;
-  }, [rounds, requiredRounds, SCREEN_WIDTH, SCREEN_HEIGHT]);
+  }, [
+    rounds,
+    requiredRounds,
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+    stopIdleAnimations,
+    targetPulseLoop,
+    targetGlowLoop,
+    targetGlowOpacityLoop,
+    distractionSpinLoop,
+    orbitProgress,
+    targetScale,
+    targetOpacity,
+    targetPulse,
+    targetGlow,
+    targetGlowOpacity,
+    distractionScale,
+    distractionOpacity,
+    distractionRotation,
+    celebrationScale,
+    celebrationOpacity,
+    warningScale,
+    warningOpacity,
+    particleOpacity,
+  ]);
 
   const handleTargetTap = useCallback(() => {
     if (isProcessing || !canTap) return;
@@ -485,10 +491,7 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
       clearTimeout(tapTimeoutRef.current);
       tapTimeoutRef.current = null;
     }
-    if (pulseAnimationRef.current) {
-      pulseAnimationRef.current.stop();
-      pulseAnimationRef.current = null;
-    }
+    stopIdleAnimations();
 
     // Correct tap
     setCorrectTaps(prev => prev + 1);
@@ -504,12 +507,12 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
         Animated.timing(targetScale, {
           toValue: 1.5,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(targetScale, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.parallel([
@@ -517,23 +520,23 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
           toValue: 1.3,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(celebrationOpacity, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.sequence([
           Animated.timing(particleOpacity, {
             toValue: 1,
             duration: 200,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(particleOpacity, {
             toValue: 0,
             duration: 800,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
       ]),
@@ -551,12 +554,12 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
         Animated.timing(targetOpacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(celebrationOpacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
       
@@ -586,12 +589,12 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
         Animated.timing(distractionScale, {
           toValue: 0.8,
           duration: 150,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(distractionScale, {
           toValue: 1,
           duration: 150,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.parallel([
@@ -599,12 +602,12 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
           toValue: 1.1,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(warningOpacity, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();
@@ -617,12 +620,12 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
         Animated.timing(warningOpacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(warningScale, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
     }, 2000);
@@ -657,17 +660,7 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
       if (tapTimeoutRef.current) {
         clearTimeout(tapTimeoutRef.current);
       }
-      if (distractionAnimationRef.current) {
-        const { animation, listenerId } = (distractionAnimationRef as any).current;
-        animation.stop();
-        orbitAngle.removeListener(listenerId);
-      }
-      if (distractionRotationAnimationRef.current) {
-        distractionRotationAnimationRef.current.stop();
-      }
-      if (pulseAnimationRef.current) {
-        pulseAnimationRef.current.stop();
-      }
+      stopIdleAnimations();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -700,6 +693,14 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
   });
 
   const targetPulseScale = Animated.multiply(targetScale, targetPulse);
+
+  const orbitSpin =
+    orbitConfig != null
+      ? orbitProgress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [`${orbitConfig.startDeg}deg`, `${orbitConfig.endDeg}deg`],
+        })
+      : '0deg';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -794,39 +795,48 @@ export const TapTheTargetIgnoreDistractionGame: React.FC<Props> = ({
             </Animated.View>
           </Pressable>
 
-          {/* Distraction */}
-          {showDistraction && distraction && (
-            <Pressable
-              onPress={handleDistractionTap}
-              disabled={!canTap || isProcessing}
-              style={[
-                styles.distractionContainer,
-                {
-                  left: distractionX,
-                  top: distractionY,
-                },
-              ]}
+          {/* Distraction — orbit via transform (no addListener / setValue on position) */}
+          {showDistraction && distraction && orbitConfig && (
+            <Animated.View
+              pointerEvents="box-none"
+              style={{
+                position: 'absolute',
+                left: orbitConfig.pivotX,
+                top: orbitConfig.pivotY,
+                width: 0,
+                height: 0,
+                zIndex: 8,
+                transform: [{ rotate: orbitSpin }, { translateX: orbitConfig.radius }],
+              }}
             >
-              <Animated.View
-                style={[
-                  styles.distraction,
-                  {
-                    transform: [
-                      { scale: distractionScale },
-                      { rotate: distractionRot },
-                    ],
-                    opacity: distractionOpacity,
-                  },
-                ]}
+              <Pressable
+                onPress={handleDistractionTap}
+                disabled={!canTap || isProcessing}
+                hitSlop={24}
+                style={styles.distractionPressable}
               >
-                <LinearGradient
-                  colors={distraction.color as [string, string, ...string[]]}
-                  style={styles.distractionGradient}
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.distraction,
+                    {
+                      transform: [
+                        { scale: distractionScale },
+                        { rotate: distractionRot },
+                      ],
+                      opacity: distractionOpacity,
+                    },
+                  ]}
                 >
-                  <Text style={styles.distractionEmoji}>{distraction.emoji}</Text>
-                </LinearGradient>
-              </Animated.View>
-            </Pressable>
+                  <LinearGradient
+                    colors={distraction.color as [string, string, ...string[]]}
+                    style={styles.distractionGradient}
+                  >
+                    <Text style={styles.distractionEmoji}>{distraction.emoji}</Text>
+                  </LinearGradient>
+                </Animated.View>
+              </Pressable>
+            </Animated.View>
           )}
 
           {/* Celebration */}
@@ -1068,6 +1078,12 @@ const styles = StyleSheet.create({
     width: DISTRACTION_SIZE,
     height: DISTRACTION_SIZE,
     zIndex: 15, // Above target (target is zIndex 10) so it's visible when orbiting
+  },
+  distractionPressable: {
+    width: DISTRACTION_SIZE,
+    height: DISTRACTION_SIZE,
+    marginLeft: -DISTRACTION_SIZE / 2,
+    marginTop: -DISTRACTION_SIZE / 2,
   },
   distraction: {
     width: DISTRACTION_SIZE,

@@ -122,7 +122,7 @@ const RainCatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       toValue: 1,
       tension: 50,
       friction: 7,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     // Create rain drops periodically
@@ -157,12 +157,12 @@ const RainCatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       Animated.timing(handScale, {
         toValue: 1.3,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(handScale, {
         toValue: 1,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 

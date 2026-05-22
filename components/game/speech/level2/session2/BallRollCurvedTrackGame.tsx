@@ -7,6 +7,14 @@
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useHandDetectionWeb } from '@/hooks/useHandDetectionWeb';
+import {
+  isInCalibrationCenter,
+  TABLET_CALIBRATION_HINT,
+  USE_TABLET_TOUCH_TRACE,
+  useTabletFingerPan,
+  WEB_CALIBRATION_HINT,
+  TabletTraceStartButton,
+} from '@/components/game/speech/level2/shared/tabletTouchTrace';
 import { logGameAndAward } from '@/utils/api';
 import { snapToPath, generateCurvePath, Point } from '@/utils/pathUtils';
 import { Ionicons } from '@expo/vector-icons';
@@ -258,10 +266,12 @@ class SoundEffects {
 
 export function BallRollCurvedTrackGame({ onBack, onComplete }: Props) {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const handDetection = useHandDetectionWeb(true);
+  const handDetection = useHandDetectionWeb(!USE_TABLET_TOUCH_TRACE);
 
   // Game state
   const [gameState, setGameState] = useState<'calibration' | 'countdown' | 'playing' | 'roundComplete' | 'gameComplete'>('calibration');
+  const touchTraceEnabled = gameState === 'calibration' || gameState === 'playing';
+  const { touchPos, panHandlers } = useTabletFingerPan(touchTraceEnabled);
   const [gameRect, setGameRect] = useState({ width: 0, height: 0 });
   const [currentRound, setCurrentRound] = useState(1);
   const [trackPath, setTrackPath] = useState<Point[]>([]);
@@ -423,8 +433,19 @@ export function BallRollCurvedTrackGame({ onBack, onComplete }: Props) {
     countdownRef.current = countdownInterval as ReturnType<typeof setInterval>;
   }, [currentRound]);
 
+  useEffect(() => {
+    if (!USE_TABLET_TOUCH_TRACE || gameState !== 'calibration' || !touchPos || gameRect.width <= 0) {
+      return;
+    }
+    if (isInCalibrationCenter(touchPos, gameRect)) {
+      const t = setTimeout(() => startCountdown(), 500);
+      return () => clearTimeout(t);
+    }
+  }, [gameState, touchPos, gameRect, startCountdown]);
+
   // Start round
   useEffect(() => {
+    if (USE_TABLET_TOUCH_TRACE) return;
     if (gameState === 'calibration' && handDetection.landmarks?.indexFingerTip) {
       // Check if finger is in calibration box (center area)
       const video = Platform.OS === 'web' && typeof document !== 'undefined'
@@ -658,23 +679,62 @@ export function BallRollCurvedTrackGame({ onBack, onComplete }: Props) {
 
   // Track hand detection and provide feedback
   useEffect(() => {
-    if (gameState === 'playing' && !handDetection.landmarks?.indexFingerTip) {
-      const now = Date.now();
-      if (now - lastHandWarning > 3000) {
-        setLastHandWarning(now);
-        speak('Show your index finger to roll the ball!');
-      }
+    if (USE_TABLET_TOUCH_TRACE || gameState !== 'playing' || handDetection.landmarks?.indexFingerTip) {
+      return;
+    }
+    const now = Date.now();
+    if (now - lastHandWarning > 3000) {
+      setLastHandWarning(now);
+      speak('Show your index finger to roll the ball!');
     }
   }, [gameState, handDetection.landmarks, lastHandWarning]);
 
-  // Track index finger and update ball position
+  // Track finger (tablet touch or web camera) and update ball position
   useEffect(() => {
-    if (
-      gameState !== 'playing' ||
-      !handDetection.landmarks?.indexFingerTip ||
-      !trackPath.length
-    ) {
+    if (gameState !== 'playing' || !trackPath.length) {
       setIndexFingerPos(null);
+      setBallPosition(null);
+      return;
+    }
+
+    const applyTracePoint = (screenCoords: Point) => {
+      const smoothed = smoother.current.update(screenCoords.x, screenCoords.y);
+      setIndexFingerPos(smoothed);
+      const snapped = snapToPath(smoothed, trackPath, SNAP_DISTANCE);
+      setBallPosition(snapped);
+      updateCoverage(snapped);
+      const dx = snapped.x - starPosition.x;
+      const dy = snapped.y - starPosition.y;
+      const distToStar = Math.sqrt(dx * dx + dy * dy);
+      if (distToStar < 50 && timeRemaining > 0) {
+        speak('Great job! You reached the star!');
+        setTimeout(() => endRound(), 1000);
+      }
+      if (coverage >= COVERAGE_TARGET && timeRemaining > 0) {
+        speak('Great job! You reached the target!');
+        setTimeout(() => endRound(), 1000);
+      }
+      const coveragePercent = Math.round(coverage * 100);
+      const now = Date.now();
+      if ((coveragePercent === 50 || coveragePercent === 60) && now - lastProgressAnnouncement.current > 3000) {
+        lastProgressAnnouncement.current = now;
+        speak(`You're at ${coveragePercent} percent! Keep going!`);
+      }
+    };
+
+    if (USE_TABLET_TOUCH_TRACE) {
+      if (!touchPos) {
+        setIndexFingerPos(null);
+        setBallPosition(null);
+        return;
+      }
+      applyTracePoint(touchPos);
+      return;
+    }
+
+    if (!handDetection.landmarks?.indexFingerTip) {
+      setIndexFingerPos(null);
+      setBallPosition(null);
       return;
     }
 
@@ -702,53 +762,16 @@ export function BallRollCurvedTrackGame({ onBack, onComplete }: Props) {
 
       if (!screenCoords) {
         setIndexFingerPos(null);
+        setBallPosition(null);
         return;
       }
-
-      // Smooth the position
-      const smoothed = smoother.current.update(screenCoords.x, screenCoords.y);
-      setIndexFingerPos(smoothed);
-
-      // Snap ball to nearest point on track
-      const snapped = snapToPath(smoothed, trackPath, SNAP_DISTANCE);
-      setBallPosition(snapped);
-
-      // Update coverage
-      updateCoverage(snapped);
-
-      // Check if ball reached star
-      const dx = snapped.x - starPosition.x;
-      const dy = snapped.y - starPosition.y;
-      const distToStar = Math.sqrt(dx * dx + dy * dy);
-      
-      if (distToStar < 50 && timeRemaining > 0) {
-        speak('Great job! You reached the star!');
-        setTimeout(() => {
-          endRound();
-        }, 1000);
-      }
-
-      // Check if coverage target reached
-      if (coverage >= COVERAGE_TARGET && timeRemaining > 0) {
-        speak('Great job! You reached the target!');
-        setTimeout(() => {
-          endRound();
-        }, 1000);
-      }
-      
-      // Progress encouragement (only once per milestone)
-      const coveragePercent = Math.round(coverage * 100);
-      const now = Date.now();
-      if ((coveragePercent === 50 || coveragePercent === 60) && now - lastProgressAnnouncement.current > 3000) {
-        lastProgressAnnouncement.current = now;
-        speak(`You're at ${coveragePercent} percent! Keep going!`);
-      }
+      applyTracePoint(screenCoords);
     };
 
     updatePosition();
     const interval = setInterval(updatePosition, 33); // ~30 FPS
     return () => clearInterval(interval);
-  }, [gameState, handDetection.landmarks, trackPath, coverage, timeRemaining, starPosition, updateCoverage, endRound]);
+  }, [gameState, handDetection.landmarks, touchPos, trackPath, coverage, timeRemaining, starPosition, updateCoverage, endRound]);
 
   // Initialize on mount
   useEffect(() => {
@@ -826,15 +849,16 @@ export function BallRollCurvedTrackGame({ onBack, onComplete }: Props) {
 
       {/* Main Game Area */}
       <View style={styles.gameContainer}>
-        {/* Camera Preview */}
-        <View
-          nativeID={handDetection.previewContainerId}
-          style={styles.cameraPreview}
-          {...(Platform.OS === 'web' && {
-            'data-native-id': handDetection.previewContainerId,
-            'data-hand-preview-container': 'true',
-          })}
-        />
+        {!USE_TABLET_TOUCH_TRACE && (
+          <View
+            nativeID={handDetection.previewContainerId}
+            style={styles.cameraPreview}
+            {...(Platform.OS === 'web' && {
+              'data-native-id': handDetection.previewContainerId,
+              'data-hand-preview-container': 'true',
+            })}
+          />
+        )}
 
         {/* Game Overlay */}
         <View
@@ -844,8 +868,10 @@ export function BallRollCurvedTrackGame({ onBack, onComplete }: Props) {
             setGameRect({ width, height });
           }}
           {...(Platform.OS === 'web' && { 'data-game-area': 'true' })}
+          {...panHandlers}
         >
           <Svg
+            pointerEvents={USE_TABLET_TOUCH_TRACE ? 'none' : 'auto'}
             style={StyleSheet.absoluteFill}
             width={gameRect.width}
             height={gameRect.height}
@@ -981,10 +1007,14 @@ export function BallRollCurvedTrackGame({ onBack, onComplete }: Props) {
           {gameState === 'calibration' && (
             <View style={styles.calibrationContainer}>
               <Text style={styles.calibrationText}>
-                👆 Show your index finger in the center box
+                {USE_TABLET_TOUCH_TRACE ? TABLET_CALIBRATION_HINT : WEB_CALIBRATION_HINT}
             </Text>
             </View>
           )}
+          <TabletTraceStartButton
+            visible={gameState === 'calibration'}
+            onStart={startCountdown}
+          />
         </View>
           </View>
 

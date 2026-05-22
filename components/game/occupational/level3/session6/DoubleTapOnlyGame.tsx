@@ -69,7 +69,7 @@ const DoubleTapOnlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Animated.timing(warningOpacity, {
             toValue: 0,
             duration: 500,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }).start(() => {
             setSingleTapWarning(false);
           });
@@ -104,7 +104,7 @@ const DoubleTapOnlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Animated.timing(warningOpacity, {
             toValue: 0,
             duration: 500,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }).start(() => {
             setSingleTapWarning(false);
           });
@@ -136,12 +136,12 @@ const DoubleTapOnlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Animated.timing(characterScale, {
             toValue: 1.3,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(characterScale, {
             toValue: 1,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
       ]),
@@ -179,7 +179,7 @@ const DoubleTapOnlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       toValue: 1,
       tension: 50,
       friction: 7,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     if (Platform.OS === 'web') {

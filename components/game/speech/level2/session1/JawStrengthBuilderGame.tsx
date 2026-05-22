@@ -271,7 +271,7 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
         Animated.timing(holdTimerOpacity, {
           toValue: 1,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }).start();
       } else if (!shouldBeHolding && isHolding) {
         // Stop holding
@@ -295,7 +295,7 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
                 toValue: 0.5 + progress * 0.5,
                 tension: 50,
                 friction: 7,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }),
             ]).start();
             
@@ -306,12 +306,12 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
               Animated.timing(celebrationOpacity, {
                 toValue: 1,
                 duration: 200,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }),
               Animated.timing(celebrationOpacity, {
                 toValue: 0,
                 duration: 300,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }),
             ]).start();
             
@@ -359,7 +359,7 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
         Animated.timing(holdTimerOpacity, {
           toValue: 0,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }).start();
       } else if (isHolding && holdStartTime) {
         // Update hold time
@@ -819,12 +819,12 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
                 Animated.timing(celebrationOpacity, {
                   toValue: 1,
                   duration: 150,
-                  useNativeDriver: true,
+                  useNativeDriver: false,
                 }),
                 Animated.timing(celebrationOpacity, {
                   toValue: 0,
                   duration: 200,
-                  useNativeDriver: true,
+                  useNativeDriver: false,
                 }),
               ]).start();
               
@@ -935,12 +935,12 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
           Animated.timing(celebrationOpacity, {
             toValue: 1,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(celebrationOpacity, {
             toValue: 0,
             duration: 200,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
         
@@ -993,12 +993,12 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
             Animated.timing(celebrationOpacity, {
               toValue: 0.7,
               duration: 100,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(celebrationOpacity, {
               toValue: 0,
               duration: 150,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]).start();
           

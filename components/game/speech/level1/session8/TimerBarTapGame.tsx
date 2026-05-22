@@ -25,6 +25,7 @@ type Props = {
 };
 
 const BUTTON_SIZE = 140;
+const TAP_HIT_SLOP = 32;
 const BAR_WIDTH = 280;
 const BAR_HEIGHT = 24;
 const FILL_DURATION_MS = 6000; // 6 seconds to fill (randomized between 5-7)
@@ -224,7 +225,7 @@ export const TimerBarTapGame: React.FC<Props> = ({
     Animated.timing(buttonOpacity, {
       toValue: 1,
       duration: 400,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     // Fill bar animation
@@ -261,13 +262,13 @@ export const TimerBarTapGame: React.FC<Props> = ({
             toValue: 1.15,
             duration: 600,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(buttonPulse, {
             toValue: 1,
             duration: 600,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ])
       );
@@ -287,7 +288,7 @@ export const TimerBarTapGame: React.FC<Props> = ({
           Animated.timing(buttonOpacity, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(barFillWidth, {
             toValue: 0,
@@ -341,12 +342,12 @@ export const TimerBarTapGame: React.FC<Props> = ({
           Animated.timing(buttonScale, {
             toValue: 1.3,
             duration: 200,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(buttonScale, {
             toValue: 1,
             duration: 200,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
         Animated.parallel([
@@ -354,12 +355,12 @@ export const TimerBarTapGame: React.FC<Props> = ({
             toValue: 1,
             tension: 50,
             friction: 7,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(starsOpacity, {
             toValue: 1,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
       ]).start();
@@ -370,12 +371,12 @@ export const TimerBarTapGame: React.FC<Props> = ({
           Animated.timing(starsScale, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(starsOpacity, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
       }, 1500);
@@ -391,7 +392,7 @@ export const TimerBarTapGame: React.FC<Props> = ({
         Animated.timing(buttonOpacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(barFillWidth, {
           toValue: 0,
@@ -419,12 +420,12 @@ export const TimerBarTapGame: React.FC<Props> = ({
           toValue: 1,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(waitIndicatorOpacity, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 
@@ -434,12 +435,12 @@ export const TimerBarTapGame: React.FC<Props> = ({
           Animated.timing(waitIndicatorScale, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(waitIndicatorOpacity, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
       }, 2000);
@@ -449,12 +450,12 @@ export const TimerBarTapGame: React.FC<Props> = ({
         Animated.timing(buttonScale, {
           toValue: 0.95,
           duration: 100,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(buttonScale, {
           toValue: 1,
           duration: 100,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 
@@ -550,7 +551,7 @@ export const TimerBarTapGame: React.FC<Props> = ({
           </View>
         </View>
 
-        <View style={styles.playArea}>
+        <View style={styles.playArea} pointerEvents="box-none">
           {/* Timer Bar */}
           <View style={styles.barContainer}>
             <View style={styles.barBackground}>
@@ -640,7 +641,7 @@ export const TimerBarTapGame: React.FC<Props> = ({
           </Animated.View>
 
           {/* Progress Stats */}
-          <View style={styles.statsContainer}>
+          <View style={styles.statsContainer} pointerEvents="none">
             <Text style={styles.statsText}>
               Round {rounds + 1} / {requiredRounds}
             </Text>
@@ -768,6 +769,11 @@ const styles = StyleSheet.create({
   buttonContainer: {
     justifyContent: 'center',
     alignItems: 'center',
+    width: BUTTON_SIZE + 48,
+    height: BUTTON_SIZE + 48,
+    minWidth: BUTTON_SIZE + 48,
+    minHeight: BUTTON_SIZE + 48,
+    zIndex: 10,
   },
   button: {
     width: BUTTON_SIZE,

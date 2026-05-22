@@ -96,7 +96,7 @@ const BalloonInflateGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       toValue: 1,
       tension: 50,
       friction: 7,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     if (Platform.OS === 'web') {
@@ -118,7 +118,7 @@ const BalloonInflateGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       Animated.timing(balloonScale, {
         toValue: 1.2,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(balloonSizeAnim, {
         toValue: targetDirection === 'big' ? MAX_BALLOON_SIZE : MIN_BALLOON_SIZE,

@@ -55,12 +55,12 @@ const JumpCountGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         toValue: 1,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(numberOpacity, {
         toValue: 1,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -76,12 +76,12 @@ const JumpCountGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Animated.timing(numberOpacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(numberScale, {
           toValue: 0.5,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start(() => {
         setCurrentNumber(null);
@@ -126,12 +126,12 @@ const JumpCountGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Animated.timing(frogScale, {
             toValue: 1.3,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(frogScale, {
             toValue: 1,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
       ]),
@@ -173,17 +173,17 @@ const JumpCountGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       Animated.timing(frogScale, {
         toValue: 0.9,
         duration: 100,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(frogScale, {
         toValue: 1.1,
         duration: 100,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(frogScale, {
         toValue: 1,
         duration: 100,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
   }, [frogScale, currentNumber]);

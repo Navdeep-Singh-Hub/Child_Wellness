@@ -1,14 +1,20 @@
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
+import { createGlowLoop } from '@/utils/animatedGlowLoop';
 import { getSoundAsset } from '@/utils/soundAssets';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  clearScheduledSpeech,
+  speak as speakTTS,
+  DEFAULT_TTS_RATE,
+  stopTTS,
+} from '@/utils/tts';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -30,24 +36,6 @@ type Props = {
 };
 
 const BALL_SIZE = 100;
-let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
-
-function clearScheduledSpeech() {
-  scheduledSpeechTimers.forEach(t => clearTimeout(t));
-  scheduledSpeechTimers = [];
-  try {
-    stopTTS();
-  } catch {}
-}
-
-function speak(text: string, rate = DEFAULT_TTS_RATE) {
-  try {
-    clearScheduledSpeech();
-    speakTTS(text, rate);
-  } catch (e) {
-    console.warn('speak error', e);
-  }
-}
 
 export const StopWhenSoundStopsGame: React.FC<Props> = ({
   onBack,
@@ -68,6 +56,33 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [currentTrialResult, setCurrentTrialResult] = useState<'correct' | 'incorrect' | null>(null);
   const stopBallCalledRef = useRef(false); // Guard to prevent double execution
+  const gameStateRef = useRef<'moving' | 'stopped' | 'feedback'>('moving');
+  const gameActiveRef = useRef(true);
+  const gameTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const scheduleGameTimeout = useCallback((fn: () => void, delay: number) => {
+    const id = setTimeout(() => {
+      if (!gameActiveRef.current) return;
+      fn();
+    }, delay);
+    gameTimersRef.current.push(id);
+    return id;
+  }, []);
+
+  const clearGameTimeouts = useCallback(() => {
+    gameTimersRef.current.forEach(t => clearTimeout(t));
+    gameTimersRef.current = [];
+  }, []);
+
+  const speakGame = useCallback((text: string, rate = DEFAULT_TTS_RATE) => {
+    if (!gameActiveRef.current) return;
+    try {
+      clearScheduledSpeech();
+      speakTTS(text, rate);
+    } catch (e) {
+      console.warn('speak error', e);
+    }
+  }, []);
 
   const ballX = useRef(new Animated.Value(0)).current;
   const ballY = useRef(new Animated.Value(0)).current;
@@ -77,6 +92,25 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
   const stopTimer = useRef<NodeJS.Timeout | null>(null);
   const soundTimer = useRef<NodeJS.Timeout | null>(null);
   const continuousSoundRef = useRef<ExpoAudio.Sound | HTMLAudioElement | null>(null);
+
+  const ballGlowLoop = useMemo(
+    () => createGlowLoop(ballGlow, { min: 0, max: 1, duration: 600, useNativeDriver: false }),
+    [ballGlow],
+  );
+  const ballScaleLoop = useMemo(
+    () => createGlowLoop(ballScale, { min: 1, max: 1.15, duration: 500, useNativeDriver: false }),
+    [ballScale],
+  );
+
+  const stopPulseAnimations = useCallback(() => {
+    ballGlowLoop.stop();
+    ballScaleLoop.stop();
+  }, [ballGlowLoop, ballScaleLoop]);
+
+  const setGameStateSafe = useCallback((state: 'moving' | 'stopped' | 'feedback') => {
+    gameStateRef.current = state;
+    setGameState(state);
+  }, []);
 
   // Helper function to stop continuous sound
   const stopContinuousSound = useCallback(async () => {
@@ -91,6 +125,7 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
           const sound = continuousSoundRef.current as ExpoAudio.Sound;
           await sound.stopAsync();
           await sound.setIsLoopingAsync(false);
+          await sound.unloadAsync();
         }
         continuousSoundRef.current = null;
       } catch (e) {
@@ -100,28 +135,28 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
     }
   }, []);
 
-  useEffect(() => {
-    speak('Watch the ball! When the sound stops, tap it!');
-    setTimeout(() => {
-      startTrial();
-    }, 2000);
-    return () => {
-      movementAnim.current?.stop();
-      if (stopTimer.current) clearTimeout(stopTimer.current);
-      if (soundTimer.current) clearTimeout(soundTimer.current);
-      stopContinuousSound();
-      clearScheduledSpeech();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (trials >= requiredTrials && !gameFinished) {
-      finishGame();
+  const shutdownGame = useCallback(() => {
+    gameActiveRef.current = false;
+    clearGameTimeouts();
+    if (stopTimer.current) {
+      clearTimeout(stopTimer.current);
+      stopTimer.current = null;
     }
-  }, [trials, requiredTrials, gameFinished]);
+    if (soundTimer.current) {
+      clearTimeout(soundTimer.current);
+      soundTimer.current = null;
+    }
+    movementAnim.current?.stop();
+    stopPulseAnimations();
+    void stopContinuousSound();
+    clearScheduledSpeech();
+    stopTTS();
+    stopAllSpeech();
+    cleanupSounds();
+  }, [clearGameTimeouts, stopContinuousSound, stopPulseAnimations]);
 
   const finishGame = useCallback(async () => {
-    if (gameFinished) return;
+    if (gameFinished || !gameActiveRef.current) return;
     
     const stats = {
       totalTrials: requiredTrials,
@@ -130,12 +165,12 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
     };
     setFinalStats(stats);
     setGameFinished(true);
-    speak('Amazing! You completed all the trials!');
+    speakGame('Amazing! You completed all the trials!');
 
     try {
       const xpAwarded = correct * 10;
       const result = await logGameAndAward({
-        type: 'find-the-sound-source',
+        type: 'stop-when-sound-stops',
         correct: correct,
         total: requiredTrials,
         accuracy: stats.accuracy,
@@ -150,11 +185,54 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
     } catch (e) {
       console.error('Failed to save game:', e);
     }
-  }, [correct, requiredTrials, gameFinished]);
+  }, [correct, requiredTrials, gameFinished, speakGame]);
+
+  const handleTimeoutRef = useRef<() => void>(() => {});
+  const startTrialRef = useRef<() => Promise<void>>(async () => {});
+
+  const stopBall = useCallback(async () => {
+    if (stopBallCalledRef.current) return;
+    stopBallCalledRef.current = true;
+
+    if (soundTimer.current) {
+      clearTimeout(soundTimer.current);
+      soundTimer.current = null;
+    }
+
+    movementAnim.current?.stop();
+    await stopContinuousSound();
+    setGameStateSafe('stopped');
+
+    ballGlow.setValue(0);
+    ballScale.setValue(1);
+    stopPulseAnimations();
+    ballGlowLoop.start();
+    ballScaleLoop.start();
+
+    speakGame('Sound stopped! Tap now!');
+
+    stopTimer.current = scheduleGameTimeout(() => {
+      if (gameStateRef.current === 'stopped') {
+        handleTimeoutRef.current();
+      }
+    }, 3000) as unknown as NodeJS.Timeout;
+  }, [
+    ballGlow,
+    ballScale,
+    ballGlowLoop,
+    ballScaleLoop,
+    setGameStateSafe,
+    stopContinuousSound,
+    stopPulseAnimations,
+    speakGame,
+    scheduleGameTimeout,
+  ]);
 
   const startTrial = useCallback(async () => {
+    if (!gameActiveRef.current) return;
     // Stop any previous continuous sound
     await stopContinuousSound();
+    stopPulseAnimations();
     
     // Reset guard
     stopBallCalledRef.current = false;
@@ -172,7 +250,7 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
     
     // Reset trial result
     setCurrentTrialResult(null);
-    setGameState('moving');
+    setGameStateSafe('moving');
 
     // Random starting position
     const startX = 80 + Math.random() * (SCREEN_WIDTH - 160);
@@ -204,9 +282,14 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
           await audio.play();
           continuousSoundRef.current = audio;
         } else {
+          await ExpoAudio.setAudioModeAsync({
+            playsInSilentModeIOS: true,
+            staysActiveInBackground: false,
+            shouldDuckAndroid: true,
+          });
           const { sound } = await ExpoAudio.Sound.createAsync(
             soundAsset,
-            { volume: 0.7, shouldPlay: true, isLooping: true }
+            { volume: 0.7, shouldPlay: true, isLooping: true },
           );
           continuousSoundRef.current = sound;
         }
@@ -242,95 +325,60 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
     ]);
 
     // Set timer to stop sound (this is the primary trigger)
-    soundTimer.current = (setTimeout(() => {
+    soundTimer.current = scheduleGameTimeout(() => {
       if (!stopBallCalledRef.current) {
-        stopBall();
+        void stopBall();
       }
-    }, soundStopTime)) as unknown as NodeJS.Timeout;
+    }, soundStopTime) as unknown as NodeJS.Timeout;
 
-    // Animation completion is just a fallback - don't call stopBall if already called
-    // Animation completion is just a fallback - don't call stopBall if already called
-    movementAnim.current.start(() => {
-      // Only stop ball if sound timer hasn't fired yet
-      // The soundTimer is the primary trigger, this is just a safety fallback
-      if (!stopBallCalledRef.current) {
-        stopBall();
+    movementAnim.current.start(({ finished }) => {
+      if (finished && !stopBallCalledRef.current) {
+        void stopBall();
       }
     });
-  }, [ballX, ballY, SCREEN_WIDTH, SCREEN_HEIGHT, stopContinuousSound]);
+  }, [
+    ballX,
+    ballY,
+    ballGlow,
+    ballScale,
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+    stopBall,
+    stopContinuousSound,
+    stopPulseAnimations,
+    setGameStateSafe,
+    scheduleGameTimeout,
+  ]);
 
-  const stopBall = async () => {
-    // Guard: prevent double execution
-    if (stopBallCalledRef.current) return;
-    stopBallCalledRef.current = true;
-    
-    // Clear timers
-    if (soundTimer.current) {
-      clearTimeout(soundTimer.current);
-      soundTimer.current = null;
+  startTrialRef.current = startTrial;
+
+  useEffect(() => {
+    if (SCREEN_WIDTH < 100 || SCREEN_HEIGHT < 100) return;
+
+    speakGame('Watch the ball! When the sound stops, tap it!');
+    scheduleGameTimeout(() => {
+      void startTrialRef.current();
+    }, 2000);
+  }, [SCREEN_WIDTH, SCREEN_HEIGHT, speakGame, scheduleGameTimeout]);
+
+  useEffect(() => {
+    gameActiveRef.current = true;
+    return () => {
+      shutdownGame();
+    };
+  }, [shutdownGame]);
+
+  useEffect(() => {
+    if (trials >= requiredTrials && !gameFinished) {
+      void finishGame();
     }
-    
-    // Stop movement animation
-    movementAnim.current?.stop();
-    
-    // Stop continuous sound
-    await stopContinuousSound();
-    
-    // Update game state
-    setGameState('stopped');
-
-    // Stop glow animation
-    ballGlow.setValue(0);
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(ballGlow, {
-          toValue: 1,
-          duration: 600,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(ballGlow, {
-          toValue: 0,
-          duration: 600,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ])
-    ).start();
-
-    // Pulse animation
-    ballScale.setValue(1);
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(ballScale, {
-          toValue: 1.15,
-          duration: 500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(ballScale, {
-          toValue: 1,
-          duration: 500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    speak('Sound stopped! Tap now!');
-
-    // Auto-advance if not tapped within 3 seconds
-    stopTimer.current = (setTimeout(() => {
-      handleTimeout();
-    }, 3000)) as unknown as NodeJS.Timeout;
-  };
+  }, [trials, requiredTrials, gameFinished, finishGame]);
 
   const handleBallTap = () => {
-    if (gameState === 'moving') {
-      // Tapped while moving - impulse control violation!
+    const state = gameStateRef.current;
+    if (state === 'moving') {
       handleEarlyTap();
-    } else if (gameState === 'stopped') {
-      // Tapped when stopped - correct!
+    } else if (state === 'stopped') {
       handleCorrectTap();
     }
   };
@@ -346,42 +394,41 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
       soundTimer.current = null;
     }
     
-    // Stop sound and animations
-    stopContinuousSound();
+    stopPulseAnimations();
+    void stopContinuousSound();
     movementAnim.current?.stop();
     
     // Mark as incorrect
     setCurrentTrialResult('incorrect');
-    setGameState('feedback');
+    setGameStateSafe('feedback');
     
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     } catch {}
-    speak('Wait! The sound is still playing!');
+    speakGame('Wait! The sound is still playing!');
 
-    setTimeout(() => {
+    scheduleGameTimeout(() => {
       const nextTrials = trials + 1;
       setTrials(nextTrials);
       if (nextTrials < requiredTrials) {
-        setTimeout(() => {
-          speak('Watch the ball! When the sound stops, tap it!');
-          startTrial();
+        scheduleGameTimeout(() => {
+          speakGame('Watch the ball! When the sound stops, tap it!');
+          void startTrialRef.current();
         }, 2000);
       }
     }, 2000);
   };
 
   const handleCorrectTap = () => {
-    // Stop any pending timers
     if (stopTimer.current) {
       clearTimeout(stopTimer.current);
       stopTimer.current = null;
     }
-    
-    // Mark as correct
+    stopPulseAnimations();
+
     setCurrentTrialResult('correct');
     setCorrect(prev => prev + 1);
-    setGameState('feedback');
+    setGameStateSafe('feedback');
     
     try {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -395,45 +442,47 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
         toValue: 1.5,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.spring(ballScale, {
         toValue: 1,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
-    setTimeout(() => {
+    scheduleGameTimeout(() => {
       setShowRoundSuccess(false);
       const nextTrials = trials + 1;
       setTrials(nextTrials);
       if (nextTrials < requiredTrials) {
-        setTimeout(() => {
-          startTrial();
+        scheduleGameTimeout(() => {
+          void startTrialRef.current();
         }, 500);
       }
     }, 2500);
   };
 
-  const handleTimeout = () => {
-    // Mark as incorrect (timeout = didn't tap in time)
+  const handleTimeout = useCallback(() => {
+    stopPulseAnimations();
     setCurrentTrialResult('incorrect');
-    setGameState('feedback');
-    speak('Time\'s up! Try again!');
+    setGameStateSafe('feedback');
+    speakGame('Time\'s up! Try again!');
 
-    setTimeout(() => {
+    scheduleGameTimeout(() => {
       const nextTrials = trials + 1;
       setTrials(nextTrials);
       if (nextTrials < requiredTrials) {
-        setTimeout(() => {
-          speak('Watch the ball! When the sound stops, tap it!');
-          startTrial();
+        scheduleGameTimeout(() => {
+          speakGame('Watch the ball! When the sound stops, tap it!');
+          void startTrialRef.current();
         }, 2000);
       }
     }, 2000);
-  };
+  }, [requiredTrials, setGameStateSafe, stopPulseAnimations, trials, speakGame, scheduleGameTimeout]);
+
+  handleTimeoutRef.current = handleTimeout;
 
   const progressDots = Array.from({ length: requiredTrials }, (_, i) => i < trials);
 
@@ -473,15 +522,8 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
       >
         <View style={styles.header}>
           <Pressable
-            onPress={async () => {
-              await stopContinuousSound();
-              movementAnim.current?.stop();
-              if (stopTimer.current) clearTimeout(stopTimer.current);
-              if (soundTimer.current) clearTimeout(soundTimer.current);
-              clearScheduledSpeech();
-              stopTTS();
-              stopAllSpeech();
-              cleanupSounds();
+            onPress={() => {
+              shutdownGame();
               onBack();
             }}
             style={styles.backButton}
@@ -497,30 +539,30 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
         </View>
 
         <View style={styles.gameArea}>
-          <Pressable
-            onPress={handleBallTap}
-            style={styles.ballPressable}
-            hitSlop={30}
+          <Animated.View
+            style={[
+              styles.ball,
+              {
+                transform: [
+                  { translateX: Animated.subtract(ballX, BALL_SIZE / 2) },
+                  { translateY: Animated.subtract(ballY, BALL_SIZE / 2) },
+                  { scale: ballScale },
+                ],
+                shadowColor: gameState === 'stopped' ? '#22C55E' : '#3B82F6',
+                shadowOpacity: ballGlow.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.3, 0.8],
+                }),
+                shadowRadius: 40,
+                shadowOffset: { width: 0, height: 0 },
+                elevation: 20,
+              },
+            ]}
           >
-            <Animated.View
-              style={[
-                styles.ball,
-                {
-                  transform: [
-                    { translateX: Animated.subtract(ballX, BALL_SIZE / 2) },
-                    { translateY: Animated.subtract(ballY, BALL_SIZE / 2) },
-                    { scale: ballScale },
-                  ],
-                  shadowColor: gameState === 'stopped' ? '#22C55E' : '#3B82F6',
-                  shadowOpacity: ballGlow.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.3, 0.8],
-                  }),
-                  shadowRadius: 40,
-                  shadowOffset: { width: 0, height: 0 },
-                  elevation: 20,
-                },
-              ]}
+            <Pressable
+              onPress={handleBallTap}
+              style={styles.ballPressable}
+              hitSlop={24}
             >
               <LinearGradient
                 colors={gameState === 'stopped' ? ['#22C55E', '#16A34A'] : ['#3B82F6', '#2563EB']}
@@ -530,8 +572,8 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
               >
                 <Text style={styles.ballEmoji}>⚽</Text>
               </LinearGradient>
-            </Animated.View>
-          </Pressable>
+            </Pressable>
+          </Animated.View>
 
           {gameState === 'stopped' && (
             <View style={styles.instructionBadge}>
@@ -626,9 +668,11 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   ballPressable: {
-    position: 'absolute',
+    width: '100%',
+    height: '100%',
   },
   ball: {
+    position: 'absolute',
     width: BALL_SIZE,
     height: BALL_SIZE,
     borderRadius: BALL_SIZE / 2,

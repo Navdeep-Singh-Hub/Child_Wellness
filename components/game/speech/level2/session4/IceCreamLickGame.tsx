@@ -138,13 +138,13 @@ export function IceCreamLickGame({ onBack, onComplete, requiredRounds = TOTAL_RO
             toValue: 1,
             duration: 300,
             easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(scoopGlow, {
             toValue: 0,
             duration: 300,
             easing: Easing.in(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
         speak('Great! You reached the scoop!');

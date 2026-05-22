@@ -302,13 +302,13 @@ export const JawPushChallengeGame: React.FC<Props> = ({
             toValue: 1.15,
             duration: 200,
             easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(protrusionRingScale, {
             toValue: 1,
             duration: 200,
             easing: Easing.in(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
         
@@ -379,7 +379,7 @@ export const JawPushChallengeGame: React.FC<Props> = ({
           toValue: 1 + pushAmount * 0.3, // Scale up to 1.3x when pushing hard
           duration: 100,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }).start();
         
         return {
@@ -457,26 +457,26 @@ export const JawPushChallengeGame: React.FC<Props> = ({
             Animated.timing(celebrationOpacity, {
               toValue: 1,
               duration: 200,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.spring(obj.glowScale, {
               toValue: 1.5,
               tension: 50,
               friction: 7,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]),
           Animated.parallel([
             Animated.timing(celebrationOpacity, {
               toValue: 0,
               duration: 300,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.spring(obj.glowScale, {
               toValue: 1,
               tension: 50,
               friction: 7,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]),
         ]).start();
@@ -946,13 +946,13 @@ export const JawPushChallengeGame: React.FC<Props> = ({
             toValue: 1.1,
             duration: 800,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(obj.pulseAnim, {
             toValue: 1,
             duration: 800,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ])
       ).start();

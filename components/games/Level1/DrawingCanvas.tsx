@@ -1,9 +1,14 @@
 import React, { useRef, useState, useCallback, useImperativeHandle, forwardRef, useMemo } from 'react';
-import { View, StyleSheet, LayoutChangeEvent } from 'react-native';
+import { View, StyleSheet, LayoutChangeEvent, Platform } from 'react-native';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Svg, { Path } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedProps, withTiming } from 'react-native-reanimated';
 import { pathToPoints, type Point } from '@/components/level1-grip-session/shapeFillUtils';
+
+// Compensate for Android digitizer reporting the centroid of the finger contact
+// area, which sits a few pixels below where the user perceives the fingertip.
+// Without this, horizontal traces render visibly below the finger.
+const TOUCH_Y_OFFSET = Platform.OS === 'android' ? 14 : 0;
 
 export interface DrawingCanvasRef {
   clear: () => void;
@@ -172,10 +177,12 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
       setCurrentColor(newColor);
       currentColorRef.current = newColor;
 
-      const p = { x: e.x, y: e.y };
+      const tx = e.x;
+      const ty = e.y - TOUCH_Y_OFFSET;
+      const p = { x: tx, y: ty };
 
       if (singleDotMode) {
-        const dotPath = `M ${e.x} ${e.y} m -${brushSize}, 0 a ${brushSize},${brushSize} 0 1,0 ${brushSize*2},0 a ${brushSize},${brushSize} 0 1,0 -${brushSize*2},0`;
+        const dotPath = `M ${tx} ${ty} m -${brushSize}, 0 a ${brushSize},${brushSize} 0 1,0 ${brushSize*2},0 a ${brushSize},${brushSize} 0 1,0 -${brushSize*2},0`;
         const newStroke = { path: dotPath, color: newColor, width: brushSize };
         const newStrokes = [...strokesRef.current, newStroke];
         setStrokes(newStrokes);
@@ -189,7 +196,7 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
     .onUpdate((e) => {
       if (singleDotMode) return;
       const prev = currentPointsRef.current;
-      const next = [...prev, { x: e.x, y: e.y }];
+      const next = [...prev, { x: e.x, y: e.y - TOUCH_Y_OFFSET }];
       currentPointsRef.current = next;
       setCurrentPoints(next);
       emitTracingPaths(next);
@@ -213,7 +220,9 @@ export const DrawingCanvas = forwardRef<DrawingCanvasRef, DrawingCanvasProps>(({
   const gesture = singleDotMode ? Gesture.Tap().runOnJS(true).onEnd((e) => {
     onStrokeStart?.();
     const newColor = getNextColor();
-    const dotPath = `M ${e.x} ${e.y} m -${brushSize}, 0 a ${brushSize},${brushSize} 0 1,0 ${brushSize*2},0 a ${brushSize},${brushSize} 0 1,0 -${brushSize*2},0`;
+    const tx = e.x;
+    const ty = e.y - TOUCH_Y_OFFSET;
+    const dotPath = `M ${tx} ${ty} m -${brushSize}, 0 a ${brushSize},${brushSize} 0 1,0 ${brushSize*2},0 a ${brushSize},${brushSize} 0 1,0 -${brushSize*2},0`;
     const newStroke = { path: dotPath, color: newColor, width: brushSize };
     const newStrokes = [...strokesRef.current, newStroke];
     setStrokes(newStrokes);

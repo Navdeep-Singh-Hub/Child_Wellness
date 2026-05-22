@@ -97,7 +97,7 @@ const CarTurnGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Animated.timing(carRotation, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }).start();
       },
     })
@@ -118,7 +118,7 @@ const CarTurnGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       toValue: 1,
       tension: 50,
       friction: 7,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     const instruction = dir === 'left' 
@@ -154,24 +154,24 @@ const CarTurnGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Animated.timing(carRotation, {
           toValue: rotation,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(carRotation, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.sequence([
         Animated.timing(carScale, {
           toValue: 1.2,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(carScale, {
           toValue: 1,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();
@@ -203,7 +203,7 @@ const CarTurnGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       Animated.timing(carRotation, {
         toValue: 0,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
   }, [carX, carRotation, targetDirection]);

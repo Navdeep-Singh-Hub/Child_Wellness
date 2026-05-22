@@ -162,14 +162,28 @@ export function clearScheduledSpeech(): void {
  * @param rate - Speech rate (0.4-1.5, default 0.75)
  * @param language - Language code (optional, for expo-speech fallback)
  */
-export async function speak(text: string, rate: number = DEFAULT_TTS_RATE, language?: string): Promise<void> {
+export type SpeakOptions = {
+  /** When true, do not stop current speech (e.g. stretched AAC phrases). */
+  skipStop?: boolean;
+};
+
+export async function speak(
+  text: string,
+  rate: number = DEFAULT_TTS_RATE,
+  language?: string,
+  options?: SpeakOptions,
+): Promise<void> {
   if (!text || text.trim().length === 0) {
     return;
   }
 
   try {
-    // Stop any current playback
-    stopTTS();
+    if (!options?.skipStop) {
+      stopTTS();
+    } else {
+      scheduledSpeechTimers.forEach(t => clearTimeout(t));
+      scheduledSpeechTimers = [];
+    }
 
     // Try to use speech-to-speech TTS on web
     if (Platform.OS === 'web') {

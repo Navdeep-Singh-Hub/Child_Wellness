@@ -240,18 +240,18 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
           toValue: 1.2,
           tension: 50,
           friction: 5,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(distractionOpacity, {
           toValue: 0.95,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.timing(distractionScale, {
         toValue: 1,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -262,13 +262,13 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
           toValue: 1.15,
           duration: 600,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(distractionBounce, {
           toValue: 1,
           duration: 600,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     );
@@ -280,12 +280,12 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
         Animated.timing(distractionOpacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(distractionScale, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start(() => {
         setShowDistraction(false);
@@ -370,13 +370,13 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
           toValue: 1,
           duration: 400,
           easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(flowerScale, {
           toValue: 0.2,
           duration: 400,
           easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.parallel([
@@ -384,13 +384,13 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
           toValue: 1,
           duration: GROWTH_DURATION_MS,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(petalScale, {
           toValue: 1,
           duration: GROWTH_DURATION_MS,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();
@@ -410,7 +410,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
       duration: GROWTH_DURATION_MS * 0.7,
       delay: 400 + GROWTH_DURATION_MS * 0.3,
       easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     // Animate progress bar
@@ -460,13 +460,13 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
             toValue: 1.12,
             duration: 900,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(bloomPulse, {
             toValue: 1,
             duration: 900,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ])
       );
@@ -484,7 +484,7 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
           Animated.timing(flowerOpacity, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(progressBarWidth, {
             toValue: 0,
@@ -538,12 +538,12 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
           Animated.timing(flowerScale, {
             toValue: 1.3,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(flowerScale, {
             toValue: 1,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
         Animated.parallel([
@@ -551,12 +551,12 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
             toValue: 1.2,
             tension: 50,
             friction: 7,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(celebrationOpacity, {
             toValue: 1,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
       ]).start();
@@ -573,12 +573,12 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
           Animated.timing(flowerOpacity, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(celebrationOpacity, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(progressBarWidth, {
             toValue: 0,
@@ -609,12 +609,12 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
           Animated.timing(flowerScale, {
             toValue: 0.95,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(flowerScale, {
             toValue: 1,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
         Animated.parallel([
@@ -622,12 +622,12 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
             toValue: 1.1,
             tension: 50,
             friction: 7,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(warningOpacity, {
             toValue: 1,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
       ]).start();
@@ -639,12 +639,12 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
           Animated.timing(warningOpacity, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(warningScale, {
             toValue: 1,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
       }, 2000);
@@ -669,12 +669,12 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
         Animated.timing(distractionScale, {
           toValue: 0.8,
           duration: 150,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(distractionScale, {
           toValue: 1,
           duration: 150,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.parallel([
@@ -682,12 +682,12 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
           toValue: 1.1,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(warningOpacity, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();
@@ -699,12 +699,12 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
       Animated.timing(distractionOpacity, {
         toValue: 0,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(distractionScale, {
         toValue: 0,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start(() => {
       setShowDistraction(false);
@@ -715,12 +715,12 @@ export const SlowTaskWithPopUpDistractionGame: React.FC<Props> = ({
         Animated.timing(warningOpacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(warningScale, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
     }, 2000);

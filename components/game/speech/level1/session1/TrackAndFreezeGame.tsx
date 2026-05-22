@@ -3,6 +3,7 @@ import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import { NATIVE_EFFECT, NATIVE_MOVE } from '@/utils/animation';
 import { speak as speakTTS, clearScheduledSpeech, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -136,13 +137,13 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
           toValue: endX,
           duration: moveDuration,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: NATIVE_MOVE,
         }),
         Animated.timing(carY, {
           toValue: endY,
           duration: moveDuration,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: NATIVE_MOVE,
         }),
       ]);
       movementAnim.current.start(() => {
@@ -173,13 +174,13 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
           toValue: 1,
           duration: 600,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: NATIVE_EFFECT,
         }),
         Animated.timing(stopGlow, {
           toValue: 0,
           duration: 600,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: NATIVE_EFFECT,
         }),
       ])
     ).start();
@@ -191,13 +192,13 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
           toValue: 1.15,
           duration: 500,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: NATIVE_EFFECT,
         }),
         Animated.timing(pulseScale, {
           toValue: 1,
           duration: 500,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: NATIVE_EFFECT,
         }),
       ])
     ).start();
@@ -230,24 +231,26 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     } catch {}
 
-    // Shake animation
-    Animated.sequence([
-      Animated.timing(carX, {
-        toValue: carX.__getValue() + 10,
-        duration: 50,
-        useNativeDriver: false,
-      }),
-      Animated.timing(carX, {
-        toValue: carX.__getValue() - 20,
-        duration: 50,
-        useNativeDriver: false,
-      }),
-      Animated.timing(carX, {
-        toValue: carX.__getValue() + 10,
-        duration: 50,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    carX.stopAnimation((value) => {
+      const baseX = typeof value === 'number' ? value : 0;
+      Animated.sequence([
+        Animated.timing(carX, {
+          toValue: baseX + 10,
+          duration: 50,
+          useNativeDriver: NATIVE_MOVE,
+        }),
+        Animated.timing(carX, {
+          toValue: baseX - 10,
+          duration: 50,
+          useNativeDriver: NATIVE_MOVE,
+        }),
+        Animated.timing(carX, {
+          toValue: baseX,
+          duration: 50,
+          useNativeDriver: NATIVE_MOVE,
+        }),
+      ]).start();
+    });
   };
 
   const handleCorrectTap = () => {
@@ -262,23 +265,25 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
 
-    // Success animation
-    Animated.parallel([
-      Animated.timing(carScale, {
-        toValue: 1.3,
-        duration: 300,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }),
-      Animated.timing(carRotation, {
-        toValue: carRotation.__getValue() + 360,
-        duration: 500,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      carScale.setValue(1);
-      carRotation.setValue(carRotation.__getValue() % 360);
+    carRotation.stopAnimation((value) => {
+      const fromAngle = typeof value === 'number' ? value : 0;
+      Animated.parallel([
+        Animated.timing(carScale, {
+          toValue: 1.3,
+          duration: 300,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: NATIVE_EFFECT,
+        }),
+        Animated.timing(carRotation, {
+          toValue: fromAngle + 360,
+          duration: 500,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: NATIVE_EFFECT,
+        }),
+      ]).start(() => {
+        carScale.setValue(1);
+        carRotation.setValue(fromAngle);
+      });
     });
 
     // Show success animation instead of TTS
@@ -402,7 +407,7 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
             ))}
           </View>
 
-          {/* Moving/Stopped Car */}
+          {/* Moving/Stopped Car — position layer separate from scale/rotate for native driver */}
           <Animated.View
             style={[
               styles.carContainer,
@@ -410,6 +415,28 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
                 transform: [
                   { translateX: Animated.subtract(carX, CAR_SIZE / 2) },
                   { translateY: Animated.subtract(carY, CAR_SIZE / 2) },
+                ],
+              },
+            ]}
+          >
+            {gameState === 'stopped' && (
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.stopGlowRing,
+                  {
+                    backgroundColor: currentCar.glow,
+                    opacity: stopGlow.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.2, 0.55],
+                    }),
+                  },
+                ]}
+              />
+            )}
+            <Animated.View
+              style={{
+                transform: [
                   { scale: carScale },
                   {
                     rotate: carRotation.interpolate({
@@ -418,45 +445,33 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
                     }),
                   },
                 ],
-              },
-            ]}
-          >
-            <Pressable onPress={handleCarTap} hitSlop={20} style={styles.carPressable}>
-              <LinearGradient
-                colors={currentCar.gradient}
-                style={[
-                  styles.car,
-                  gameState === 'stopped' && {
-                    shadowColor: currentCar.glow,
-                    shadowOpacity: stopGlow.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.3, 0.8],
-                    }),
-                    shadowRadius: 20,
-                    shadowOffset: { width: 0, height: 0 },
-                    elevation: 10,
-                  },
-                ]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Animated.View
-                  style={[
-                    styles.carInner,
-                    {
-                      transform: [{ scale: gameState === 'stopped' ? pulseScale : 1 }],
-                    },
-                  ]}
+              }}
+            >
+              <Pressable onPress={handleCarTap} hitSlop={20} style={styles.carPressable}>
+                <LinearGradient
+                  colors={currentCar.gradient}
+                  style={styles.car}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
                 >
-                  <Text style={styles.carEmoji}>{currentCar.emoji}</Text>
-                  {gameState === 'stopped' && (
-                    <View style={styles.stopIndicator}>
-                      <Text style={styles.stopText}>STOP</Text>
-                    </View>
-                  )}
-                </Animated.View>
-              </LinearGradient>
-            </Pressable>
+                  <Animated.View
+                    style={[
+                      styles.carInner,
+                      {
+                        transform: [{ scale: gameState === 'stopped' ? pulseScale : 1 }],
+                      },
+                    ]}
+                  >
+                    <Text style={styles.carEmoji}>{currentCar.emoji}</Text>
+                    {gameState === 'stopped' && (
+                      <View style={styles.stopIndicator}>
+                        <Text style={styles.stopText}>STOP</Text>
+                      </View>
+                    )}
+                  </Animated.View>
+                </LinearGradient>
+              </Pressable>
+            </Animated.View>
           </Animated.View>
 
           {/* Feedback Messages */}
@@ -577,6 +592,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     zIndex: 1000,
     elevation: 10,
+  },
+  stopGlowRing: {
+    position: 'absolute',
+    width: CAR_SIZE + 36,
+    height: CAR_SIZE + 36,
+    left: -18,
+    top: -18,
+    borderRadius: 28,
   },
   carPressable: {
     width: CAR_SIZE,

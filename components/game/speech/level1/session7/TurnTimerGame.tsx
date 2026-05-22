@@ -126,12 +126,12 @@ export const TurnTimerGame: React.FC<Props> = ({
             toValue: 1.1,
             tension: 50,
             friction: 7,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(tapButtonOpacity, {
             toValue: 1,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
 
@@ -145,12 +145,12 @@ export const TurnTimerGame: React.FC<Props> = ({
             Animated.timing(tapButtonOpacity, {
               toValue: 0.5,
               duration: 300,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(tapButtonScale, {
               toValue: 1,
               duration: 300,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]).start();
 
@@ -188,22 +188,22 @@ export const TurnTimerGame: React.FC<Props> = ({
         Animated.timing(shakeAnimation, {
           toValue: 10,
           duration: 50,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(shakeAnimation, {
           toValue: -10,
           duration: 50,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(shakeAnimation, {
           toValue: 10,
           duration: 50,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(shakeAnimation, {
           toValue: 0,
           duration: 50,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 
@@ -236,12 +236,12 @@ export const TurnTimerGame: React.FC<Props> = ({
         Animated.timing(tapButtonScale, {
           toValue: 1.3,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(tapButtonScale, {
           toValue: 1,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 

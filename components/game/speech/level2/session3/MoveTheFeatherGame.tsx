@@ -156,13 +156,13 @@ export function MoveTheFeatherGame({ onBack, onComplete, requiredRounds = TOTAL_
             toValue: 1,
             duration: 2000,
             easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(featherRotation, {
             toValue: -1,
             duration: 2000,
             easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ])
       ).start();

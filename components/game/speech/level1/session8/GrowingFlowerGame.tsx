@@ -25,6 +25,7 @@ type Props = {
 };
 
 const FLOWER_SIZE = 200;
+const TAP_HIT_SLOP = 32;
 const GROWTH_DURATION_MS = 5500; // 5.5 seconds to fully bloom (slightly longer for better patience practice)
 const BLOOM_DURATION_MS = 4500; // How long bloomed flower is available (increased for better response time)
 
@@ -260,12 +261,12 @@ export const GrowingFlowerGame: React.FC<Props> = ({
         toValue: 1,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(waitIndicatorOpacity, {
         toValue: 1,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -279,13 +280,13 @@ export const GrowingFlowerGame: React.FC<Props> = ({
           toValue: 1,
           duration: 400,
           easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(flowerScale, {
           toValue: 0.2,
           duration: 400,
           easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       // Then grow to full size
@@ -294,19 +295,19 @@ export const GrowingFlowerGame: React.FC<Props> = ({
           toValue: 1,
           duration: GROWTH_DURATION_MS,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(petalScale, {
           toValue: 1,
           duration: GROWTH_DURATION_MS,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(petalRotation, {
           toValue: 1,
           duration: GROWTH_DURATION_MS,
           easing: Easing.linear,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();
@@ -326,7 +327,7 @@ export const GrowingFlowerGame: React.FC<Props> = ({
       duration: GROWTH_DURATION_MS * 0.7,
       delay: 400 + GROWTH_DURATION_MS * 0.3, // Start after initial appearance + delay
       easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     // Animate progress bar
@@ -368,12 +369,12 @@ export const GrowingFlowerGame: React.FC<Props> = ({
         Animated.timing(waitIndicatorOpacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(waitIndicatorScale, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 
@@ -383,12 +384,12 @@ export const GrowingFlowerGame: React.FC<Props> = ({
           toValue: 1,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(readyIndicatorOpacity, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 
@@ -398,12 +399,12 @@ export const GrowingFlowerGame: React.FC<Props> = ({
           toValue: 1,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(sparklesOpacity, {
           toValue: 1,
           duration: 500,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 
@@ -417,13 +418,13 @@ export const GrowingFlowerGame: React.FC<Props> = ({
             toValue: 1.12,
             duration: 900,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(bloomPulse, {
             toValue: 1,
             duration: 900,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ])
       );
@@ -449,17 +450,17 @@ export const GrowingFlowerGame: React.FC<Props> = ({
           Animated.timing(flowerOpacity, {
             toValue: 0,
             duration: 500,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(readyIndicatorOpacity, {
             toValue: 0,
             duration: 500,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(sparklesOpacity, {
             toValue: 0,
             duration: 500,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(progressBarWidth, {
             toValue: 0,
@@ -514,34 +515,34 @@ export const GrowingFlowerGame: React.FC<Props> = ({
             Animated.timing(celebrationScale, {
               toValue: 1.4,
               duration: 300,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(petalScale, {
               toValue: 1.3,
               duration: 300,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(centerScale, {
               toValue: 1.2,
               duration: 300,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]),
           Animated.parallel([
             Animated.timing(celebrationScale, {
               toValue: 1,
               duration: 300,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(petalScale, {
               toValue: 1,
               duration: 300,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(centerScale, {
               toValue: 1,
               duration: 300,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]),
         ]),
@@ -549,12 +550,12 @@ export const GrowingFlowerGame: React.FC<Props> = ({
           Animated.timing(sparklesScale, {
             toValue: 1.5,
             duration: 200,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(sparklesScale, {
             toValue: 1,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
       ]).start();
@@ -571,17 +572,17 @@ export const GrowingFlowerGame: React.FC<Props> = ({
           Animated.timing(flowerOpacity, {
             toValue: 0,
             duration: 500,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(readyIndicatorOpacity, {
             toValue: 0,
             duration: 500,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(sparklesOpacity, {
             toValue: 0,
             duration: 500,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(progressBarWidth, {
             toValue: 0,
@@ -610,24 +611,24 @@ export const GrowingFlowerGame: React.FC<Props> = ({
           Animated.timing(flowerScale, {
             toValue: 0.9,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(petalScale, {
             toValue: 0.9,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
         Animated.parallel([
           Animated.timing(flowerScale, {
             toValue: isBloomed ? 1 : flowerScaleCurrentRef.current,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(petalScale, {
             toValue: isBloomed ? 1 : petalScaleCurrentRef.current,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
       ]).start();
@@ -637,12 +638,12 @@ export const GrowingFlowerGame: React.FC<Props> = ({
         Animated.timing(waitIndicatorOpacity, {
           toValue: 1,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(waitIndicatorOpacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 
@@ -752,7 +753,7 @@ export const GrowingFlowerGame: React.FC<Props> = ({
           </View>
         </View>
 
-        <View style={styles.playArea}>
+        <View style={styles.playArea} pointerEvents="box-none">
           {/* Wait Indicator */}
           {!isBloomed && (
             <Animated.View
@@ -918,7 +919,7 @@ export const GrowingFlowerGame: React.FC<Props> = ({
           </View>
 
           {/* Progress Stats */}
-          <View style={styles.statsContainer}>
+          <View style={styles.statsContainer} pointerEvents="none">
             <Text style={styles.statsText}>
               Round {rounds + 1} / {requiredRounds}
             </Text>
@@ -1068,6 +1069,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 5,
+    width: FLOWER_SIZE + 48,
+    height: FLOWER_SIZE + 80,
+    minWidth: FLOWER_SIZE + 48,
+    minHeight: FLOWER_SIZE + 80,
   },
   flowerWrapper: {
     width: FLOWER_SIZE,

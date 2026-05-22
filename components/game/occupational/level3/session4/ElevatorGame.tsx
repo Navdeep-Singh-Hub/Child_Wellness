@@ -103,7 +103,7 @@ const ElevatorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       toValue: 1,
       tension: 50,
       friction: 7,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     if (Platform.OS === 'web') {
@@ -134,12 +134,12 @@ const ElevatorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Animated.timing(elevatorScale, {
           toValue: 1.1,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(elevatorScale, {
           toValue: 1,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();

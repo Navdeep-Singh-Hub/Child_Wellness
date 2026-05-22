@@ -2265,6 +2265,14 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Missing fields' });
     }
 
+    const safeAccuracy = (() => {
+      const acc = Number(accuracy);
+      if (!Number.isFinite(acc)) {
+        return total > 0 ? Math.round((correct / total) * 100) : 0;
+      }
+      return Math.max(0, Math.min(100, Math.round(acc)));
+    })();
+
     // Get or create user to get userId (ObjectId)
     const user = await ensureUser(auth0Id, req.auth0Email || '', req.auth0Name || '');
     const userId = user._id;
@@ -2281,7 +2289,7 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
       level: meta?.level,
       correct,
       total,
-      accuracy: Math.max(0, Math.min(100, Math.round(accuracy))),
+      accuracy: safeAccuracy,
       xpAwarded: xpAwarded || 0,
       durationMs: durationMs || 0,
       responseTimeMs: responseTimeMs || meta?.responseTimeMs || 0,
@@ -2452,6 +2460,9 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
     });
   } catch (e) {
     console.error('game-log error', e);
+    if (e?.name === 'ValidationError') {
+      return res.status(400).json({ error: 'Validation failed', details: e.message });
+    }
     res.status(500).json({ error: 'Server error' });
   }
 });

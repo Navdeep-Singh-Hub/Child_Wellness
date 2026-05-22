@@ -219,7 +219,7 @@ export function BlowTheBubbleGame({ onBack, onComplete, requiredRounds = TOTAL_R
           toValue: 0,
           duration: 300,
           easing: Easing.in(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(bubbleSizeAnim, {
           toValue: 0,
@@ -237,7 +237,7 @@ export function BlowTheBubbleGame({ onBack, onComplete, requiredRounds = TOTAL_R
           toValue: 0,
           duration: 1000,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
     });

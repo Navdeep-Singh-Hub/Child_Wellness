@@ -3,7 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createGlowLoop } from '@/utils/animatedGlowLoop';
 import {
     Animated,
     Dimensions,
@@ -27,6 +28,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BUTTON_SIZE = 140;
 type Star = {
   id: number;
+  /** Offset from burst center (use transform, not left/top Animated values). */
   x: Animated.Value;
   y: Animated.Value;
   scale: Animated.Value;
@@ -34,6 +36,8 @@ type Star = {
   rotation: Animated.Value;
   color: string;
   emoji: string;
+  originX: number;
+  originY: number;
 };
 
 let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
@@ -85,33 +89,16 @@ export const TapForMagicGame: React.FC<Props> = ({
   const buttonGlow = useRef(new Animated.Value(0.5)).current;
   const buttonRotation = useRef(new Animated.Value(0)).current;
   const backgroundPulse = useRef(new Animated.Value(0)).current;
+  const buttonGlowLoop = useMemo(() => createGlowLoop(buttonGlow), [buttonGlow]);
 
   useEffect(() => {
-    startGlowAnimation();
+    buttonGlowLoop.start();
     speak('Tap to make magic!');
     return () => {
+      buttonGlowLoop.stop();
       clearScheduledSpeech();
     };
-  }, []);
-
-  const startGlowAnimation = () => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(buttonGlow, {
-          toValue: 1,
-          duration: 1500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(buttonGlow, {
-          toValue: 0.5,
-          duration: 1500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ])
-    ).start();
-  };
+  }, [buttonGlowLoop]);
 
   const createStarBurst = useCallback(() => {
     const newStars: Star[] = [];
@@ -127,13 +114,15 @@ export const TapForMagicGame: React.FC<Props> = ({
 
       newStars.push({
         id: starIdCounter.current++,
-        x: new Animated.Value(centerX),
-        y: new Animated.Value(centerY),
+        x: new Animated.Value(0),
+        y: new Animated.Value(0),
         scale: new Animated.Value(0),
         opacity: new Animated.Value(1),
         rotation: new Animated.Value(0),
         color: COLORS[Math.floor(Math.random() * COLORS.length)].gradient[0],
         emoji: STAR_EMOJIS[Math.floor(Math.random() * STAR_EMOJIS.length)],
+        originX: centerX,
+        originY: centerY,
       });
     }
 
@@ -143,21 +132,21 @@ export const TapForMagicGame: React.FC<Props> = ({
     newStars.forEach((star, index) => {
       const angle = (index / numStars) * Math.PI * 2;
       const distance = 150 + Math.random() * 100;
-      const targetX = centerX + Math.cos(angle) * distance;
-      const targetY = centerY + Math.sin(angle) * distance;
+      const targetX = centerX + Math.cos(angle) * distance - centerX;
+      const targetY = centerY + Math.sin(angle) * distance - centerY;
 
       Animated.parallel([
         Animated.timing(star.x, {
           toValue: targetX,
           duration: 800,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
         Animated.timing(star.y, {
           toValue: targetY,
           duration: 800,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
         Animated.sequence([
           Animated.timing(star.scale, {
@@ -210,13 +199,13 @@ export const TapForMagicGame: React.FC<Props> = ({
           toValue: 0.9,
           duration: 100,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(buttonRotation, {
           toValue: 360,
           duration: 600,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.parallel([
@@ -224,14 +213,14 @@ export const TapForMagicGame: React.FC<Props> = ({
           toValue: 1.2,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.spring(buttonScale, {
         toValue: 1,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -359,10 +348,9 @@ export const TapForMagicGame: React.FC<Props> = ({
             ]}
           >
             <Pressable onPress={handleTap} hitSlop={40} style={styles.buttonPressable}>
-              <LinearGradient
-                colors={currentColorScheme.gradient}
+              <Animated.View
                 style={[
-                  styles.magicButton,
+                  styles.magicButtonGlow,
                   {
                     shadowColor: currentColorScheme.gradient[0],
                     shadowOpacity: buttonGlow.interpolate({
@@ -374,12 +362,17 @@ export const TapForMagicGame: React.FC<Props> = ({
                     elevation: 15,
                   },
                 ]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
               >
-                <Text style={styles.buttonEmoji}>✨</Text>
-                <Text style={styles.buttonText}>TAP</Text>
-              </LinearGradient>
+                <LinearGradient
+                  colors={currentColorScheme.gradient}
+                  style={styles.magicButton}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <Text style={styles.buttonEmoji}>✨</Text>
+                  <Text style={styles.buttonText}>TAP</Text>
+                </LinearGradient>
+              </Animated.View>
             </Pressable>
           </Animated.View>
 
@@ -390,9 +383,11 @@ export const TapForMagicGame: React.FC<Props> = ({
               style={[
                 styles.star,
                 {
-                  left: star.x,
-                  top: star.y,
+                  left: star.originX - 25,
+                  top: star.originY - 25,
                   transform: [
+                    { translateX: star.x },
+                    { translateY: star.y },
                     { scale: star.scale },
                     {
                       rotate: star.rotation.interpolate({
@@ -510,6 +505,11 @@ const styles = StyleSheet.create({
   buttonPressable: {
     width: BUTTON_SIZE,
     height: BUTTON_SIZE,
+  },
+  magicButtonGlow: {
+    width: BUTTON_SIZE,
+    height: BUTTON_SIZE,
+    borderRadius: BUTTON_SIZE / 2,
   },
   magicButton: {
     width: BUTTON_SIZE,

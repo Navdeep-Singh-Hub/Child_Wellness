@@ -5,6 +5,14 @@
  */
 
 import { useHandDetectionWeb } from '@/hooks/useHandDetectionWeb';
+import {
+  isInCalibrationCenter,
+  TABLET_CALIBRATION_HINT,
+  USE_TABLET_TOUCH_TRACE,
+  useTabletFingerPan,
+  WEB_CALIBRATION_HINT,
+  TabletTraceStartButton,
+} from '@/components/game/speech/level2/shared/tabletTouchTrace';
 import { Ionicons } from '@expo/vector-icons';
 import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -322,10 +330,12 @@ class SoundEffects {
 
 export function DriveCarCurvyRoadGame({ onBack, onComplete }: Props) {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const handDetection = useHandDetectionWeb(true);
+  const handDetection = useHandDetectionWeb(!USE_TABLET_TOUCH_TRACE);
 
   // Game state
   const [gameState, setGameState] = useState<'calibration' | 'countdown' | 'playing' | 'roundComplete' | 'gameComplete'>('calibration');
+  const touchTraceEnabled = gameState === 'calibration' || gameState === 'playing';
+  const { touchPos, panHandlers } = useTabletFingerPan(touchTraceEnabled);
   const [gameRect, setGameRect] = useState({ width: 0, height: 0 });
   const [currentRound, setCurrentRound] = useState(1);
   const [roadPath, setRoadPath] = useState<Point[]>([]);
@@ -503,8 +513,19 @@ export function DriveCarCurvyRoadGame({ onBack, onComplete }: Props) {
     countdownRef.current = countdownInterval as ReturnType<typeof setInterval>;
   }, [currentRound]);
 
+  useEffect(() => {
+    if (!USE_TABLET_TOUCH_TRACE || gameState !== 'calibration' || !touchPos || gameRect.width <= 0) {
+      return;
+    }
+    if (isInCalibrationCenter(touchPos, gameRect)) {
+      const t = setTimeout(() => startCountdown(), 500);
+      return () => clearTimeout(t);
+    }
+  }, [gameState, touchPos, gameRect, startCountdown]);
+
   // Start round
   useEffect(() => {
+    if (USE_TABLET_TOUCH_TRACE) return;
     if (gameState === 'calibration' && handDetection.landmarks?.indexFingerTip) {
       // Check if finger is in calibration box (center area)
       const video = Platform.OS === 'web' && typeof document !== 'undefined'
@@ -708,22 +729,49 @@ export function DriveCarCurvyRoadGame({ onBack, onComplete }: Props) {
 
   // Track hand detection and provide feedback
   useEffect(() => {
-    if (gameState === 'playing' && !handDetection.landmarks?.indexFingerTip) {
-      const now = Date.now();
-      if (now - lastHandWarning > 3000) {
-        setLastHandWarning(now);
-        speak('Show your index finger to drive the car!');
-      }
+    if (USE_TABLET_TOUCH_TRACE || gameState !== 'playing' || handDetection.landmarks?.indexFingerTip) {
+      return;
+    }
+    const now = Date.now();
+    if (now - lastHandWarning > 3000) {
+      setLastHandWarning(now);
+      speak('Show your index finger to drive the car!');
     }
   }, [gameState, handDetection.landmarks, lastHandWarning]);
 
-  // Track index finger and update car position
+  // Track finger (tablet touch or web camera) and update car position
   useEffect(() => {
-    if (
-      gameState !== 'playing' ||
-      !handDetection.landmarks?.indexFingerTip ||
-      !roadPath.length
-    ) {
+    if (gameState !== 'playing' || !roadPath.length) {
+      setCarPosition(null);
+      return;
+    }
+
+    const applyTracePoint = (screenCoords: Point) => {
+      const smoothed = smoother.current.update(screenCoords.x, screenCoords.y);
+      setCarPosition(smoothed);
+      updateCoverage(smoothed);
+      if (coverage >= COVERAGE_TARGET && timeRemaining > 0) {
+        speak('Great job! You reached the target!');
+        setTimeout(() => endRound(), 1000);
+      }
+      const coveragePercent = Math.round(coverage * 100);
+      const now = Date.now();
+      if ((coveragePercent === 50 || coveragePercent === 60) && now - lastProgressAnnouncement.current > 3000) {
+        lastProgressAnnouncement.current = now;
+        speak(`You're at ${coveragePercent} percent! Keep going!`);
+      }
+    };
+
+    if (USE_TABLET_TOUCH_TRACE) {
+      if (!touchPos) {
+        setCarPosition(null);
+        return;
+      }
+      applyTracePoint(touchPos);
+      return;
+    }
+
+    if (!handDetection.landmarks?.indexFingerTip) {
       setCarPosition(null);
       return;
     }
@@ -754,35 +802,13 @@ export function DriveCarCurvyRoadGame({ onBack, onComplete }: Props) {
         setCarPosition(null);
         return;
       }
-
-      // Smooth the position
-      const smoothed = smoother.current.update(screenCoords.x, screenCoords.y);
-      setCarPosition(smoothed);
-
-      // Update coverage
-      updateCoverage(smoothed);
-
-      // Check if coverage target reached
-      if (coverage >= COVERAGE_TARGET && timeRemaining > 0) {
-        speak('Great job! You reached the target!');
-        setTimeout(() => {
-          endRound();
-        }, 1000);
-      }
-      
-      // Progress encouragement (only once per milestone)
-      const coveragePercent = Math.round(coverage * 100);
-      const now = Date.now();
-      if ((coveragePercent === 50 || coveragePercent === 60) && now - lastProgressAnnouncement.current > 3000) {
-        lastProgressAnnouncement.current = now;
-        speak(`You're at ${coveragePercent} percent! Keep going!`);
-      }
+      applyTracePoint(screenCoords);
     };
 
     updatePosition();
     const interval = setInterval(updatePosition, 33); // ~30 FPS
     return () => clearInterval(interval);
-  }, [gameState, handDetection.landmarks, roadPath, coverage, timeRemaining, updateCoverage, endRound]);
+  }, [gameState, handDetection.landmarks, touchPos, roadPath, coverage, timeRemaining, updateCoverage, endRound]);
 
   // Initialize on mount
   useEffect(() => {
@@ -860,15 +886,16 @@ export function DriveCarCurvyRoadGame({ onBack, onComplete }: Props) {
 
       {/* Main Game Area */}
       <View style={styles.gameContainer}>
-        {/* Camera Preview */}
-        <View
-          nativeID={handDetection.previewContainerId}
-          style={styles.cameraPreview}
-          {...(Platform.OS === 'web' && {
-            'data-native-id': handDetection.previewContainerId,
-            'data-hand-preview-container': 'true',
-          })}
-        />
+        {!USE_TABLET_TOUCH_TRACE && (
+          <View
+            nativeID={handDetection.previewContainerId}
+            style={styles.cameraPreview}
+            {...(Platform.OS === 'web' && {
+              'data-native-id': handDetection.previewContainerId,
+              'data-hand-preview-container': 'true',
+            })}
+          />
+        )}
 
         {/* Game Overlay */}
         <View
@@ -878,8 +905,10 @@ export function DriveCarCurvyRoadGame({ onBack, onComplete }: Props) {
             setGameRect({ width, height });
           }}
           {...(Platform.OS === 'web' && { 'data-game-area': 'true' })}
+          {...panHandlers}
         >
           <Svg
+            pointerEvents={USE_TABLET_TOUCH_TRACE ? 'none' : 'auto'}
             style={StyleSheet.absoluteFill}
             width={gameRect.width}
             height={gameRect.height}
@@ -1015,10 +1044,14 @@ export function DriveCarCurvyRoadGame({ onBack, onComplete }: Props) {
           {gameState === 'calibration' && (
             <View style={styles.calibrationContainer}>
               <Text style={styles.calibrationText}>
-                👆 Show your index finger in the center box
+                {USE_TABLET_TOUCH_TRACE ? TABLET_CALIBRATION_HINT : WEB_CALIBRATION_HINT}
           </Text>
         </View>
           )}
+          <TabletTraceStartButton
+            visible={gameState === 'calibration'}
+            onStart={startCountdown}
+          />
         </View>
       </View>
 

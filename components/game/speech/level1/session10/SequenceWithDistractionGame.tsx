@@ -1,12 +1,13 @@
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
+import { createGlowLoop } from '@/utils/animatedGlowLoop';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
     Animated,
     Easing,
@@ -30,6 +31,44 @@ const APPEAR_INTERVAL_MS = 1800;
 const DISTRACTION_DURATION_MS = 2000;
 const TAP_TIMEOUT_MS = 12000;
 const DISTRACTION_INTERVAL_MS = 2500; // Show distraction every 2.5 seconds during tapping
+
+function trySetAnimatedValue(value: Animated.Value, next: number) {
+  try {
+    value.setValue(next);
+  } catch {
+    // React Compiler may freeze Animated.Value in dev.
+  }
+}
+
+function useGameAnimatedValues() {
+  const ref = useRef<{
+    distractionScale: Animated.Value;
+    distractionOpacity: Animated.Value;
+    distractionBounce: Animated.Value;
+    celebrationScale: Animated.Value;
+    celebrationOpacity: Animated.Value;
+    warningScale: Animated.Value;
+    warningOpacity: Animated.Value;
+    particleOpacity: Animated.Value;
+    progressBarWidth: Animated.Value;
+  } | null>(null);
+
+  if (ref.current == null) {
+    ref.current = {
+      distractionScale: new Animated.Value(0),
+      distractionOpacity: new Animated.Value(0),
+      distractionBounce: new Animated.Value(1),
+      celebrationScale: new Animated.Value(1),
+      celebrationOpacity: new Animated.Value(0),
+      warningScale: new Animated.Value(1),
+      warningOpacity: new Animated.Value(0),
+      particleOpacity: new Animated.Value(0),
+      progressBarWidth: new Animated.Value(0),
+    };
+  }
+
+  return ref.current;
+}
 
 let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
@@ -109,24 +148,31 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
   const [visibleCount, setVisibleCount] = useState(0);
   const [currentDistraction, setCurrentDistraction] = useState<typeof DISTRACTIONS[0] | null>(null);
   const [showDistraction, setShowDistraction] = useState(false);
+  const [distractionPos, setDistractionPos] = useState<{ x: number; y: number } | null>(null);
   const visibleCountRef = useRef(0);
-  
-  // Animations
+
+  const {
+    distractionScale,
+    distractionOpacity,
+    distractionBounce,
+    celebrationScale,
+    celebrationOpacity,
+    warningScale,
+    warningOpacity,
+    particleOpacity,
+    progressBarWidth,
+  } = useGameAnimatedValues();
+
+  const distractionBounceLoop = useMemo(
+    () => createGlowLoop(distractionBounce, { min: 1, max: 1.2, duration: 500, useNativeDriver: false }),
+    [distractionBounce],
+  );
+
+  // Per-shape animations (stable map, never frozen via useMemo deps)
   const shapeScales = useRef<Map<number, Animated.Value>>(new Map()).current;
   const shapeOpacities = useRef<Map<number, Animated.Value>>(new Map()).current;
   const shapeGlow = useRef<Map<number, Animated.Value>>(new Map()).current;
   const shapeGlowOpacity = useRef<Map<number, Animated.Value>>(new Map()).current;
-  const distractionX = useRef(new Animated.Value(0)).current;
-  const distractionY = useRef(new Animated.Value(0)).current;
-  const distractionScale = useRef(new Animated.Value(0)).current;
-  const distractionOpacity = useRef(new Animated.Value(0)).current;
-  const distractionBounce = useRef(new Animated.Value(1)).current;
-  const celebrationScale = useRef(new Animated.Value(1)).current;
-  const celebrationOpacity = useRef(new Animated.Value(0)).current;
-  const warningScale = useRef(new Animated.Value(1)).current;
-  const warningOpacity = useRef(new Animated.Value(0)).current;
-  const particleOpacity = useRef(new Animated.Value(0)).current;
-  const progressBarWidth = useRef(new Animated.Value(0)).current;
   
   // Track warningOpacity value to avoid _value access
   const warningOpacityCurrentRef = useRef(0);
@@ -145,7 +191,6 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
   const distractionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const distractionIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const distractionAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const startRoundRef = useRef<() => void>(undefined);
   const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
   const glowAnimationRefs = useRef<Map<number, Animated.CompositeAnimation>>(new Map()).current;
@@ -165,10 +210,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
       clearTimeout(tapTimeoutRef.current);
       tapTimeoutRef.current = null;
     }
-    if (distractionAnimationRef.current) {
-      distractionAnimationRef.current.stop();
-      distractionAnimationRef.current = null;
-    }
+    distractionBounceLoop.stop();
     glowAnimationRefs.forEach(anim => anim.stop());
     glowAnimationRefs.clear();
     
@@ -250,68 +292,49 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
     setShowDistraction(true);
     
     const { x, y } = getDistractionPosition();
-    
-    distractionX.setValue(x);
-    distractionY.setValue(y);
-    
-    // Animate appearance with pop effect
+    setDistractionPos({ x, y });
+
+    trySetAnimatedValue(distractionScale, 0);
+    trySetAnimatedValue(distractionBounce, 1);
+    trySetAnimatedValue(distractionOpacity, 0);
+
     Animated.parallel([
       Animated.spring(distractionScale, {
         toValue: 1,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(distractionOpacity, {
         toValue: 0.95,
         duration: 400,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
-    // Bounce animation
-    distractionAnimationRef.current = Animated.loop(
-      Animated.sequence([
-        Animated.timing(distractionBounce, {
-          toValue: 1.2,
-          duration: 500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(distractionBounce, {
-          toValue: 1,
-          duration: 500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    distractionAnimationRef.current.start();
+    distractionBounceLoop.start();
 
-    // Hide after duration
     distractionTimeoutRef.current = (setTimeout(() => {
-      if (distractionAnimationRef.current) {
-        distractionAnimationRef.current.stop();
-        distractionAnimationRef.current = null;
-      }
+      distractionBounceLoop.stop();
       Animated.parallel([
         Animated.timing(distractionOpacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(distractionScale, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start(() => {
         setShowDistraction(false);
-        distractionBounce.setValue(1);
+        setDistractionPos(null);
+        trySetAnimatedValue(distractionBounce, 1);
       });
       distractionTimeoutRef.current = null;
     }, DISTRACTION_DURATION_MS)) as unknown as NodeJS.Timeout;
-  }, [canTap, getDistractionPosition]);
+  }, [canTap, getDistractionPosition, distractionBounceLoop, distractionScale, distractionOpacity, distractionBounce]);
 
   const startDistractionInterval = useCallback(() => {
     if (distractionIntervalRef.current) {
@@ -347,10 +370,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
       clearTimeout(tapTimeoutRef.current);
       tapTimeoutRef.current = null;
     }
-    if (distractionAnimationRef.current) {
-      distractionAnimationRef.current.stop();
-      distractionAnimationRef.current = null;
-    }
+    distractionBounceLoop.stop();
     glowAnimationRefs.forEach(anim => anim.stop());
     glowAnimationRefs.clear();
 
@@ -366,7 +386,8 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
     visibleCountRef.current = 0;
     setShowDistraction(false);
     setCurrentDistraction(null);
-    progressBarWidth.setValue(0);
+    setDistractionPos(null);
+    trySetAnimatedValue(progressBarWidth, 0);
     
     // Select 3 random shapes for sequence
     const shuffled = [...SHAPES].sort(() => Math.random() - 0.5);
@@ -403,18 +424,18 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
         shapeGlow.set(shape.id, new Animated.Value(1));
         shapeGlowOpacity.set(shape.id, new Animated.Value(0));
       } else {
-        shapeScales.get(shape.id)!.setValue(0);
-        shapeOpacities.get(shape.id)!.setValue(0);
-        shapeGlow.get(shape.id)!.setValue(1);
-        shapeGlowOpacity.get(shape.id)!.setValue(0);
+        trySetAnimatedValue(shapeScales.get(shape.id)!, 0);
+        trySetAnimatedValue(shapeOpacities.get(shape.id)!, 0);
+        trySetAnimatedValue(shapeGlow.get(shape.id)!, 1);
+        trySetAnimatedValue(shapeGlowOpacity.get(shape.id)!, 0);
       }
     });
 
-    celebrationScale.setValue(1);
-    celebrationOpacity.setValue(0);
-    warningScale.setValue(1);
-    warningOpacity.setValue(0);
-    particleOpacity.setValue(0);
+    trySetAnimatedValue(celebrationScale, 1);
+    trySetAnimatedValue(celebrationOpacity, 0);
+    trySetAnimatedValue(warningScale, 1);
+    trySetAnimatedValue(warningOpacity, 0);
+    trySetAnimatedValue(particleOpacity, 0);
 
     speak('Watch the sequence...');
 
@@ -436,13 +457,13 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
             toValue: 1,
             tension: 50,
             friction: 7,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(shapeOpacities.get(shape.id)!, {
             toValue: 1,
             duration: 400,
             easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
 
@@ -473,12 +494,12 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
                   Animated.timing(shapeOpacities.get(s.id)!, {
                     toValue: 0,
                     duration: 300,
-                    useNativeDriver: true,
+                    useNativeDriver: false,
                   }),
                   Animated.timing(shapeScales.get(s.id)!, {
                     toValue: 0,
                     duration: 300,
-                    useNativeDriver: true,
+                    useNativeDriver: false,
                   }),
                 ]).start();
               });
@@ -544,24 +565,24 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
               Animated.timing(shapeScales.get(shapeId)!, {
                 toValue: 1.4,
                 duration: 200,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }),
               Animated.timing(shapeScales.get(shapeId)!, {
                 toValue: 1,
                 duration: 200,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }),
             ]),
             Animated.sequence([
               Animated.timing(particleOpacity, {
                 toValue: 1,
                 duration: 200,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }),
               Animated.timing(particleOpacity, {
                 toValue: 0,
                 duration: 600,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }),
             ]),
             Animated.timing(progressBarWidth, {
@@ -596,12 +617,12 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
                 toValue: 1.3,
                 tension: 50,
                 friction: 7,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }),
               Animated.timing(celebrationOpacity, {
                 toValue: 1,
                 duration: 300,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }),
               Animated.timing(progressBarWidth, {
                 toValue: 100,
@@ -623,12 +644,12 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
                   Animated.timing(shapeOpacities.get(s.id)!, {
                     toValue: 0,
                     duration: 300,
-                    useNativeDriver: true,
+                    useNativeDriver: false,
                   }),
                   Animated.timing(shapeScales.get(s.id)!, {
                     toValue: 0,
                     duration: 300,
-                    useNativeDriver: true,
+                    useNativeDriver: false,
                   }),
                 ]).start();
               });
@@ -636,7 +657,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
               Animated.timing(celebrationOpacity, {
                 toValue: 0,
                 duration: 300,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }).start();
               
               setTimeout(() => {
@@ -673,12 +694,12 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
               Animated.timing(shapeScales.get(shapeId)!, {
                 toValue: 0.85,
                 duration: 150,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }),
               Animated.timing(shapeScales.get(shapeId)!, {
                 toValue: 1,
                 duration: 150,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }),
             ]),
             Animated.parallel([
@@ -686,12 +707,12 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
                 toValue: 1.1,
                 tension: 50,
                 friction: 7,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }),
               Animated.timing(warningOpacity, {
                 toValue: 1,
                 duration: 300,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }),
             ]),
           ]).start();
@@ -703,12 +724,12 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
               Animated.timing(warningOpacity, {
                 toValue: 0,
                 duration: 300,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }),
               Animated.timing(warningScale, {
                 toValue: 1,
                 duration: 300,
-                useNativeDriver: true,
+                useNativeDriver: false,
               }),
             ]).start();
           }, 2000);
@@ -738,12 +759,12 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
         Animated.timing(distractionScale, {
           toValue: 0.8,
           duration: 150,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(distractionScale, {
           toValue: 1,
           duration: 150,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.parallel([
@@ -751,37 +772,34 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
           toValue: 1.1,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(warningOpacity, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();
 
     speak('Focus on the sequence!');
 
-    // Hide distraction
-    if (distractionAnimationRef.current) {
-      distractionAnimationRef.current.stop();
-      distractionAnimationRef.current = null;
-    }
+    distractionBounceLoop.stop();
     Animated.parallel([
       Animated.timing(distractionOpacity, {
         toValue: 0,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(distractionScale, {
         toValue: 0,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start(() => {
       setShowDistraction(false);
-      distractionBounce.setValue(1);
+      setDistractionPos(null);
+      trySetAnimatedValue(distractionBounce, 1);
     });
 
     setTimeout(() => {
@@ -789,12 +807,12 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
         Animated.timing(warningOpacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(warningScale, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
     }, 2000);
@@ -833,9 +851,7 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
       if (tapTimeoutRef.current) {
         clearTimeout(tapTimeoutRef.current);
       }
-      if (distractionAnimationRef.current) {
-        distractionAnimationRef.current.stop();
-      }
+      distractionBounceLoop.stop();
       glowAnimationRefs.forEach(anim => anim.stop());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -935,19 +951,21 @@ export const SequenceWithDistractionGame: React.FC<Props> = ({
           )}
 
           {/* Distraction Pop-up */}
-          {showDistraction && currentDistraction && (
+          {showDistraction && currentDistraction && distractionPos && (
             <Pressable
               onPress={handleDistractionTap}
               disabled={isProcessing || !canTap}
+              hitSlop={24}
               style={[
                 styles.distractionContainer,
                 {
-                  left: distractionX,
-                  top: distractionY,
+                  left: distractionPos.x,
+                  top: distractionPos.y,
                 },
               ]}
             >
               <Animated.View
+                pointerEvents="none"
                 style={[
                   styles.distraction,
                   {

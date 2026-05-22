@@ -152,7 +152,7 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
       toValue: 0.95,
       damping: 12,
       stiffness: 200,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     // Start progress animation
@@ -193,7 +193,7 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
         toValue: 1,
         damping: 12,
         stiffness: 200,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -230,13 +230,13 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
           toValue: 1.15,
           damping: 8,
           stiffness: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.spring(buttonScale, {
           toValue: 1,
           damping: 12,
           stiffness: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();

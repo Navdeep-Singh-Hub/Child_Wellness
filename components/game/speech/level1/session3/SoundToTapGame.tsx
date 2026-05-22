@@ -181,13 +181,13 @@ export const SoundToTapGame: React.FC<Props> = ({
         toValue: 1,
         tension: 30,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(circleOpacity, {
         toValue: 1,
         duration: 500,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -227,12 +227,12 @@ export const SoundToTapGame: React.FC<Props> = ({
           toValue: 1.3,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(circleOpacity, {
           toValue: 0.8,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.parallel([
@@ -240,12 +240,12 @@ export const SoundToTapGame: React.FC<Props> = ({
           toValue: 1,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(circleOpacity, {
           toValue: 1,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();

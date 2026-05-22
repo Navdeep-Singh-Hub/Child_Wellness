@@ -222,13 +222,13 @@ export const EyesOnlyGame: React.FC<Props> = ({
           toValue: 1.3,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.spring(tappedScale, {
           toValue: 1,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 
@@ -254,13 +254,13 @@ export const EyesOnlyGame: React.FC<Props> = ({
           toValue: 0.9,
           duration: 100,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(tappedScale, {
           toValue: 1,
           duration: 100,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
     }

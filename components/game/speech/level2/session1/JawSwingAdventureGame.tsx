@@ -513,12 +513,12 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
                   toValue: 1.5,
                   tension: 50,
                   friction: 7,
-                  useNativeDriver: true,
+                  useNativeDriver: false,
                 }),
                 Animated.timing(celebrationOpacity, {
                   toValue: 1,
                   duration: 200,
-                  useNativeDriver: true,
+                  useNativeDriver: false,
                 }),
               ]),
               Animated.parallel([
@@ -526,12 +526,12 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
                   toValue: 1,
                   tension: 50,
                   friction: 7,
-                  useNativeDriver: true,
+                  useNativeDriver: false,
                 }),
                 Animated.timing(celebrationOpacity, {
                   toValue: 0,
                   duration: 300,
-                  useNativeDriver: true,
+                  useNativeDriver: false,
                 }),
               ]),
             ]).start();
@@ -734,13 +734,13 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
         toValue: 1,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(characterOpacity, {
         toValue: 1,
         duration: 500,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 

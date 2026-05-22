@@ -94,12 +94,12 @@ const JumpArrowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         toValue: 1,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(arrowOpacity, {
         toValue: 1,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -109,12 +109,12 @@ const JumpArrowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Animated.timing(arrowScale, {
           toValue: 1.2,
           duration: 500,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(arrowScale, {
           toValue: 1,
           duration: 500,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     );
@@ -158,18 +158,18 @@ const JumpArrowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Animated.timing(characterScale, {
           toValue: 1.3,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(characterScale, {
           toValue: 1,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.timing(arrowOpacity, {
         toValue: 0,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 

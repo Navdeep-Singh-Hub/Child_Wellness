@@ -57,12 +57,12 @@ const RhythmJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       Animated.timing(beatScale, {
         toValue: 1.5,
         duration: 150,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(beatScale, {
         toValue: 1,
         duration: 150,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -75,12 +75,12 @@ const RhythmJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Animated.timing(beatScale, {
           toValue: 1.5,
           duration: 150,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(beatScale, {
           toValue: 1,
           duration: 150,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 
@@ -189,12 +189,12 @@ const RhythmJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Animated.timing(frogScale, {
             toValue: 1.3,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(frogScale, {
             toValue: 1,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
       ]),

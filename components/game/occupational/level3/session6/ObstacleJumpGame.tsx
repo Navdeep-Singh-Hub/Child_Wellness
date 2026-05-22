@@ -106,12 +106,12 @@ const ObstacleJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Animated.timing(characterScale, {
             toValue: 1.3,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(characterScale, {
             toValue: 1,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
       ]),
@@ -216,7 +216,7 @@ const ObstacleJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       toValue: 1,
       tension: 50,
       friction: 7,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     // Start obstacle after a delay

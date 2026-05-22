@@ -156,12 +156,12 @@ const PendulumCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Animated.timing(userScale, {
           toValue: 1.3,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(userScale, {
           toValue: 1,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();

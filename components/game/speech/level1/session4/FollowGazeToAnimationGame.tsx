@@ -177,13 +177,13 @@ export const FollowGazeToAnimationGame: React.FC<Props> = ({
         toValue: 1,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(balloonOpacity, {
         toValue: 1,
         duration: 300,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -200,13 +200,13 @@ export const FollowGazeToAnimationGame: React.FC<Props> = ({
           toValue: 1.1,
           duration: 600,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(balloonBounce, {
           toValue: 1,
           duration: 600,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     ).start();
@@ -228,13 +228,13 @@ export const FollowGazeToAnimationGame: React.FC<Props> = ({
         toValue: 1.5,
         duration: 300,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(balloonOpacity, {
         toValue: 0,
         duration: 300,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 

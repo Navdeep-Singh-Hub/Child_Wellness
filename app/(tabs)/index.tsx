@@ -14,10 +14,12 @@ import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Dimensions,
   Easing,
   Image,
+  Modal,
   Platform,
   Pressable,
   RefreshControl,
@@ -26,8 +28,10 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   View
 } from 'react-native';
+import { openKioskSettings, releaseKioskDeviceOwner, type KioskSettingsTarget } from '@/utils/kioskAdmin';
 
 // --- Types ---
 type IoniconName = keyof typeof Ionicons.glyphMap;
@@ -68,6 +72,7 @@ if (Platform.OS === 'web') {
 }
 const compactNumber = (n: number) =>
   Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
+const ADMIN_PIN = process.env.EXPO_PUBLIC_KIOSK_ADMIN_PIN || '2468';
 
 // --- Components ---
 
@@ -145,8 +150,13 @@ export default function Index() {
   const [selectedMood, setSelectedMood] = useState<MoodOption>('focused');
   const [canScroll, setCanScroll] = useState(true);
   const [layoutHeight, setLayoutHeight] = useState(0);
+  const [showAdminPin, setShowAdminPin] = useState(false);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const [adminPin, setAdminPin] = useState('');
   const enablePullToRefresh = Platform.OS !== 'android' || canScroll;
   const hasLoadedOnceRef = useRef(false);
+  const adminTapCountRef = useRef(0);
+  const lastAdminTapRef = useRef(0);
 
   // Animations
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -212,6 +222,71 @@ export default function Index() {
     await loadStats();
     setRefreshing(false);
   }, [loadStats]);
+
+  const handleAdminLogoPress = useCallback(() => {
+    const now = Date.now();
+    adminTapCountRef.current = now - lastAdminTapRef.current > 3000
+      ? 1
+      : adminTapCountRef.current + 1;
+    lastAdminTapRef.current = now;
+
+    if (adminTapCountRef.current >= 5) {
+      adminTapCountRef.current = 0;
+      setAdminPin('');
+      setShowAdminPin(true);
+    }
+  }, []);
+
+  const handleAdminPinSubmit = useCallback(() => {
+    if (adminPin === ADMIN_PIN) {
+      setShowAdminPin(false);
+      setShowAdminMenu(true);
+      setAdminPin('');
+      return;
+    }
+
+    setAdminPin('');
+    Alert.alert('Incorrect PIN', 'Please enter the admin PIN to open kiosk controls.');
+  }, [adminPin]);
+
+  const handleOpenAdminSetting = useCallback(async (target: KioskSettingsTarget) => {
+    try {
+      setShowAdminMenu(false);
+      await openKioskSettings(target);
+    } catch (error) {
+      Alert.alert('Could not open settings', 'Please try again or reconnect the tablet with ADB.');
+    }
+  }, []);
+
+  const handleReleaseKiosk = useCallback(() => {
+    Alert.alert(
+      'Release kiosk mode?',
+      'This removes device-owner and lock task so you can uninstall the app. The tablet will no longer be locked to this app.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Release',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const ok = await releaseKioskDeviceOwner();
+              setShowAdminMenu(false);
+              if (ok) {
+                Alert.alert(
+                  'Kiosk released',
+                  'You can now uninstall from Settings or run: adb uninstall com.anonymous.childwellness',
+                );
+              } else {
+                Alert.alert('Could not release', 'Try adb: dpm clear-device-owner-app com.anonymous.childwellness');
+              }
+            } catch {
+              Alert.alert('Could not release', 'Try adb: dpm clear-device-owner-app com.anonymous.childwellness');
+            }
+          },
+        },
+      ],
+    );
+  }, []);
 
   // Data
   const xp = stats?.xp ?? 0;
@@ -436,11 +511,21 @@ export default function Index() {
         {/* Enhanced Header Section */}
         <Animated.View style={[styles.header, { opacity: headerOpacity, transform: [{ translateY: headerTranslateY }] }]}>
           <View style={styles.headerContent}>
-            <View style={styles.greetingContainer}>
-              <Text style={styles.greeting}>
-                {firstName ? `Hi, ${firstName}! 👋` : 'Hello there! 👋'}
-              </Text>
-              <Text style={styles.subGreeting}>Ready for an amazing day?</Text>
+            <View style={styles.headerLeft}>
+              <Pressable
+                onPress={handleAdminLogoPress}
+                style={styles.adminLogoButton}
+                accessibilityRole="button"
+                accessibilityLabel="Child Wellness logo"
+              >
+                <Image source={images.logo} style={styles.adminLogoImage} />
+              </Pressable>
+              <View style={styles.greetingContainer}>
+                <Text style={styles.greeting}>
+                  {firstName ? `Hi, ${firstName}! 👋` : 'Hello there! 👋'}
+                </Text>
+                <Text style={styles.subGreeting}>Ready for an amazing day?</Text>
+              </View>
             </View>
             {stats?.levelLabel && (
               <GlassCard style={styles.headerBadge} intensity={0.95}>
@@ -456,6 +541,74 @@ export default function Index() {
             )}
           </View>
         </Animated.View>
+
+        <Modal
+          visible={showAdminPin}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowAdminPin(false)}
+        >
+          <View style={styles.adminModalBackdrop}>
+            <View style={styles.adminModalCard}>
+              <Text style={styles.adminModalTitle}>Admin Access</Text>
+              <Text style={styles.adminModalText}>
+                Enter PIN for display or full system settings. Wi‑Fi, Bluetooth, and mobile network are always available from the bar at the bottom of the screen.
+              </Text>
+              <TextInput
+                value={adminPin}
+                onChangeText={setAdminPin}
+                secureTextEntry
+                keyboardType="number-pad"
+                maxLength={8}
+                placeholder="PIN"
+                style={styles.adminPinInput}
+                onSubmitEditing={handleAdminPinSubmit}
+              />
+              <View style={styles.adminModalActions}>
+                <Pressable style={styles.adminSecondaryButton} onPress={() => setShowAdminPin(false)}>
+                  <Text style={styles.adminSecondaryButtonText}>Cancel</Text>
+                </Pressable>
+                <Pressable style={styles.adminPrimaryButton} onPress={handleAdminPinSubmit}>
+                  <Text style={styles.adminPrimaryButtonText}>Open</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          visible={showAdminMenu}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowAdminMenu(false)}
+        >
+          <View style={styles.adminModalBackdrop}>
+            <View style={styles.adminModalCard}>
+              <Text style={styles.adminModalTitle}>Kiosk Admin</Text>
+              <Text style={styles.adminModalText}>
+                Opening settings temporarily exits lock mode. Kiosk mode resumes when you return to the app. Use the
+                Wi‑Fi / Bluetooth / Mobile bar at the bottom of the screen anytime.
+              </Text>
+              <Pressable style={styles.adminMenuButton} onPress={() => handleOpenAdminSetting('display')}>
+                <Ionicons name="sunny" size={20} color="#2563EB" />
+                <Text style={styles.adminMenuButtonText}>Display Settings</Text>
+              </Pressable>
+              <Pressable style={styles.adminMenuButton} onPress={() => handleOpenAdminSetting('settings')}>
+                <Ionicons name="settings" size={20} color="#2563EB" />
+                <Text style={styles.adminMenuButtonText}>Full Settings</Text>
+              </Pressable>
+              {Platform.OS === 'android' && (
+                <Pressable style={[styles.adminMenuButton, styles.adminDangerButton]} onPress={handleReleaseKiosk}>
+                  <Ionicons name="exit-outline" size={20} color="#B91C1C" />
+                  <Text style={[styles.adminMenuButtonText, styles.adminDangerText]}>Release kiosk (allow uninstall)</Text>
+                </Pressable>
+              )}
+              <Pressable style={styles.adminSecondaryButton} onPress={() => setShowAdminMenu(false)}>
+                <Text style={styles.adminSecondaryButtonText}>Close</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
 
         {/* Enhanced Hero Card */}
         <Animated.View style={{ 
@@ -818,6 +971,30 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
+  headerLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  adminLogoButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  adminLogoImage: {
+    width: 34,
+    height: 34,
+    resizeMode: 'contain',
+  },
   greetingContainer: {
     flex: 1,
   },
@@ -847,6 +1024,101 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#92400E',
     marginLeft: 8,
+  },
+  adminModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  adminModalCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 16,
+  },
+  adminModalTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  adminModalText: {
+    fontSize: 15,
+    color: '#64748B',
+    lineHeight: 22,
+    marginBottom: 18,
+  },
+  adminPinInput: {
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 18,
+  },
+  adminModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  adminPrimaryButton: {
+    backgroundColor: '#2563EB',
+    borderRadius: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+  },
+  adminPrimaryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  adminSecondaryButton: {
+    backgroundColor: '#F1F5F9',
+    borderRadius: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  adminSecondaryButtonText: {
+    color: '#334155',
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  adminMenuButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    backgroundColor: '#EFF6FF',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 10,
+  },
+  adminMenuButtonText: {
+    marginLeft: 12,
+    color: '#1E3A8A',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  adminDangerButton: {
+    borderColor: '#FECACA',
+    backgroundColor: '#FEF2F2',
+  },
+  adminDangerText: {
+    color: '#B91C1C',
   },
   heroCard: {
     padding: 32,

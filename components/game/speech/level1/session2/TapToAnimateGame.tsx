@@ -86,6 +86,38 @@ const ROUNDS = [
 
 const TOTAL_ROUNDS = 6;
 
+function trySetAnimatedValue(value: Animated.Value, next: number) {
+  try {
+    value.setValue(next);
+  } catch {
+    // React Compiler may freeze Animated.Value; timing still updates display.
+  }
+}
+
+function useGameAnimatedValues() {
+  const ref = useRef<{
+    animalScale: Animated.Value;
+    animalY: Animated.Value;
+    animalRotation: Animated.Value;
+    animalBounce: Animated.Value;
+    sparkleScale: Animated.Value;
+    sparkleRotation: Animated.Value;
+  } | null>(null);
+
+  if (ref.current == null) {
+    ref.current = {
+      animalScale: new Animated.Value(1),
+      animalY: new Animated.Value(0),
+      animalRotation: new Animated.Value(0),
+      animalBounce: new Animated.Value(1),
+      sparkleScale: new Animated.Value(0),
+      sparkleRotation: new Animated.Value(0),
+    };
+  }
+
+  return ref.current;
+}
+
 export const TapToAnimateGame: React.FC<Props> = ({
   onBack,
   onComplete,
@@ -98,53 +130,47 @@ export const TapToAnimateGame: React.FC<Props> = ({
   const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
 
-  const animalScale = useRef(new Animated.Value(1)).current;
-  const animalY = useRef(new Animated.Value(0)).current;
-  const animalRotation = useRef(new Animated.Value(0)).current;
-  const animalBounce = useRef(new Animated.Value(1)).current;
-  const animalGlow = useRef(new Animated.Value(0.5)).current;
-  const sparkleScale = useRef(new Animated.Value(0)).current;
-  const sparkleRotation = useRef(new Animated.Value(0)).current;
+  const {
+    animalScale,
+    animalY,
+    animalRotation,
+    animalBounce,
+    sparkleScale,
+    sparkleRotation,
+  } = useGameAnimatedValues();
+
+  const activeAnimalAnimRef = useRef<Animated.CompositeAnimation | null>(null);
 
   const currentRoundData = ROUNDS[currentRound];
   const currentAnimal = ANIMALS[currentRoundData.animalIndex];
   const currentAnimation = currentRoundData.animation;
 
+  const stopActiveAnimalAnim = useCallback(() => {
+    activeAnimalAnimRef.current?.stop();
+    activeAnimalAnimRef.current = null;
+  }, []);
+
+  const resetAnimalPose = useCallback(() => {
+    trySetAnimatedValue(animalScale, 1);
+    trySetAnimatedValue(animalY, 0);
+    trySetAnimatedValue(animalRotation, 0);
+    trySetAnimatedValue(animalBounce, 1);
+  }, [animalScale, animalY, animalRotation, animalBounce]);
+
   useEffect(() => {
-    startGlowAnimation();
-    // Reset animation values for new round
-    animalScale.setValue(1);
-    animalY.setValue(0);
-    animalRotation.setValue(0);
-    animalBounce.setValue(1);
+    stopActiveAnimalAnim();
+    resetAnimalPose();
     setIsAnimating(false);
     setRoundComplete(false);
-    
+
     const verb = getAnimationVerb(currentAnimation);
     speak(`Tap to make the ${currentAnimal.name} ${verb}!`);
+
     return () => {
+      stopActiveAnimalAnim();
       clearScheduledSpeech();
     };
-  }, [currentRound]);
-
-  const startGlowAnimation = () => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(animalGlow, {
-          toValue: 1,
-          duration: 1500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(animalGlow, {
-          toValue: 0.5,
-          duration: 1500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ])
-    ).start();
-  };
+  }, [currentRound, currentAnimation, currentAnimal.name, resetAnimalPose, stopActiveAnimalAnim]);
 
   const getAnimationVerb = (anim: AnimationType): string => {
     switch (anim) {
@@ -155,50 +181,65 @@ export const TapToAnimateGame: React.FC<Props> = ({
     }
   };
 
+  const runAnimalAnim = useCallback((anim: Animated.CompositeAnimation, onDone?: () => void) => {
+    stopActiveAnimalAnim();
+    activeAnimalAnimRef.current = anim;
+    anim.start(({ finished }) => {
+      if (activeAnimalAnimRef.current === anim) {
+        activeAnimalAnimRef.current = null;
+      }
+      if (finished) onDone?.();
+    });
+  }, [stopActiveAnimalAnim]);
+
   const animateAnimal = useCallback((animType: AnimationType) => {
     if (isAnimating) return;
     
     setIsAnimating(true);
+    stopActiveAnimalAnim();
     
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
 
-    // Sparkle effect
-    sparkleScale.setValue(0);
-    sparkleRotation.setValue(0);
+    const onAnimDone = () => {
+      setIsAnimating(false);
+    };
+
+    trySetAnimatedValue(sparkleScale, 0);
+    trySetAnimatedValue(sparkleRotation, 0);
     Animated.parallel([
       Animated.timing(sparkleScale, {
         toValue: 1.5,
         duration: 400,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(sparkleRotation, {
         toValue: 360,
         duration: 400,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start(() => {
-      sparkleScale.setValue(0);
+      trySetAnimatedValue(sparkleScale, 0);
     });
 
     if (animType === 'jump') {
-      // Jump animation
-      Animated.sequence([
+      runAnimalAnim(
+        Animated.sequence([
         Animated.parallel([
           Animated.timing(animalY, {
             toValue: -80,
             duration: 300,
             easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(animalScale, {
             toValue: 1.2,
             duration: 300,
             easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
         Animated.parallel([
@@ -206,46 +247,46 @@ export const TapToAnimateGame: React.FC<Props> = ({
             toValue: 0,
             duration: 300,
             easing: Easing.in(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(animalScale, {
             toValue: 1,
             duration: 300,
             easing: Easing.in(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
-      ]).start(() => {
-        setIsAnimating(false);
-      });
+      ]),
+        onAnimDone,
+      );
     } else if (animType === 'dance') {
-      // Dance animation (wiggle and bounce)
-      Animated.sequence([
+      runAnimalAnim(
+        Animated.sequence([
         Animated.parallel([
           Animated.sequence([
             Animated.timing(animalRotation, {
               toValue: -15,
               duration: 150,
               easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(animalRotation, {
               toValue: 15,
               duration: 150,
               easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(animalRotation, {
               toValue: -15,
               duration: 150,
               easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(animalRotation, {
               toValue: 0,
               duration: 150,
               easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]),
           Animated.sequence([
@@ -253,35 +294,37 @@ export const TapToAnimateGame: React.FC<Props> = ({
               toValue: 1.15,
               duration: 200,
               easing: Easing.out(Easing.quad),
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(animalBounce, {
               toValue: 1,
               duration: 200,
               easing: Easing.in(Easing.quad),
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]),
         ]),
-      ]).start(() => {
-        setIsAnimating(false);
-        animalRotation.setValue(0);
-      });
+      ]),
+        () => {
+          trySetAnimatedValue(animalRotation, 0);
+          onAnimDone();
+        },
+      );
     } else if (animType === 'laugh') {
-      // Laugh animation (bounce and scale)
-      Animated.sequence([
+      runAnimalAnim(
+        Animated.sequence([
         Animated.parallel([
           Animated.timing(animalScale, {
             toValue: 1.3,
             duration: 200,
             easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(animalBounce, {
             toValue: 1.1,
             duration: 200,
             easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
         Animated.parallel([
@@ -289,13 +332,13 @@ export const TapToAnimateGame: React.FC<Props> = ({
             toValue: 1,
             duration: 200,
             easing: Easing.in(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(animalBounce, {
             toValue: 1,
             duration: 200,
             easing: Easing.in(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
         Animated.parallel([
@@ -303,13 +346,13 @@ export const TapToAnimateGame: React.FC<Props> = ({
             toValue: 1.2,
             duration: 150,
             easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(animalBounce, {
             toValue: 1.05,
             duration: 150,
             easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
         Animated.parallel([
@@ -317,20 +360,30 @@ export const TapToAnimateGame: React.FC<Props> = ({
             toValue: 1,
             duration: 150,
             easing: Easing.in(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(animalBounce, {
             toValue: 1,
             duration: 150,
             easing: Easing.in(Easing.quad),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
-      ]).start(() => {
-        setIsAnimating(false);
-      });
+      ]),
+        onAnimDone,
+      );
     }
-  }, [isAnimating]);
+  }, [
+    isAnimating,
+    animalY,
+    animalScale,
+    animalRotation,
+    animalBounce,
+    sparkleScale,
+    sparkleRotation,
+    runAnimalAnim,
+    stopActiveAnimalAnim,
+  ]);
 
   const handleAnimalTap = () => {
     if (isAnimating || roundComplete) return;
@@ -402,7 +455,9 @@ export const TapToAnimateGame: React.FC<Props> = ({
         <View style={styles.header}>
           <Pressable
             onPress={() => {
+              stopActiveAnimalAnim();
               clearScheduledSpeech();
+              stopTTS();
               stopAllSpeech();
               cleanupSounds();
               onBack();
@@ -447,10 +502,7 @@ export const TapToAnimateGame: React.FC<Props> = ({
                   styles.animalCircle,
                   {
                     shadowColor: currentAnimal.glow,
-                    shadowOpacity: animalGlow.interpolate({
-                      inputRange: [0.5, 1],
-                      outputRange: [0.4, 0.8],
-                    }),
+                    shadowOpacity: isAnimating ? 0.85 : 0.55,
                     shadowRadius: 30,
                     shadowOffset: { width: 0, height: 0 },
                     elevation: 15,

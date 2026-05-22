@@ -201,19 +201,19 @@ const SlowThenFastGame: React.FC<{ onBack?: () => void; onComplete?: () => void 
           toValue: 10,
           duration: 50,
           easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(shakeAnim, {
           toValue: -10,
           duration: 50,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(shakeAnim, {
           toValue: 0,
           duration: 50,
           easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 
@@ -248,13 +248,13 @@ const SlowThenFastGame: React.FC<{ onBack?: () => void; onComplete?: () => void 
           toValue: 1.2,
           duration: 120,
           easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(scaleAnim, {
           toValue: 1,
           duration: 120,
           easing: Easing.in(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 

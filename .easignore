@@ -4,7 +4,9 @@ node_modules/
 .expo-shared/
 dist/
 web-build/
-android/
+android/.gradle/
+android/build/
+android/app/build/
 ios/
 tts-service/
 farm-module/

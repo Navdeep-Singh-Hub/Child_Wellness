@@ -2,13 +2,17 @@
  * Game 4: Follow Loose Path — trace along a wide curved path; 80% progress → success.
  */
 import React, { useMemo, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
+import { View, Text, StyleSheet, LayoutChangeEvent, Platform } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedProps, withRepeat, withTiming } from 'react-native-reanimated';
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 import { GameContainerGrip } from './GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
+
+// Aligns touch input with the visible fingertip on Android, where the digitizer
+// reports the contact centroid (a few px below where the user sees their finger).
+const TOUCH_Y_OFFSET = Platform.OS === 'android' ? 14 : 0;
 
 const PATH_WIDTH = 70;
 const PROGRESS_THRESHOLD = 0.8;
@@ -100,7 +104,7 @@ export function FollowLoosePathGame({
     .runOnJS(true)
     .onStart((e) => {
       setPathError('');
-      const startT = closestProgress({ x: e.x, y: e.y }, pathPoints, TRACE_TOLERANCE);
+      const startT = closestProgress({ x: e.x, y: e.y - TOUCH_Y_OFFSET }, pathPoints, TRACE_TOLERANCE);
       if (startT === null || startT > START_T_THRESHOLD) {
         hasStartedTracingRef.current = false;
         progressRef.current = 0;
@@ -116,7 +120,7 @@ export function FollowLoosePathGame({
     .onUpdate((e) => {
       if (isCompletingRef.current) return;
       if (!hasStartedTracingRef.current) return;
-      const t = closestProgress({ x: e.x, y: e.y }, pathPoints, TRACE_TOLERANCE);
+      const t = closestProgress({ x: e.x, y: e.y - TOUCH_Y_OFFSET }, pathPoints, TRACE_TOLERANCE);
       if (t === null && progressRef.current > 0) {
         progressRef.current = 0;
         setProgress(0);

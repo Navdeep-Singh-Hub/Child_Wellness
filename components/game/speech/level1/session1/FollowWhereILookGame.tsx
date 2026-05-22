@@ -3,7 +3,8 @@ import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { speak as speakTTS, clearScheduledSpeech, DEFAULT_TTS_RATE } from '@/utils/tts';
+import { NATIVE_EFFECT } from '@/utils/animation';
+import { speak as speakTTS, clearScheduledSpeech, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -132,7 +133,7 @@ export const FollowWhereILookGame: React.FC<Props> = ({
       toValue: eyeOffset,
       duration: 400,
       easing: Easing.out(Easing.quad),
-      useNativeDriver: false,
+      useNativeDriver: NATIVE_EFFECT,
     }).start();
 
     // Show gaze line
@@ -141,13 +142,13 @@ export const FollowWhereILookGame: React.FC<Props> = ({
         toValue: 0.6,
         duration: 300,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: false,
+        useNativeDriver: NATIVE_EFFECT,
       }),
       Animated.timing(gazeLineScale, {
         toValue: 1,
         duration: 400,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: false,
+        useNativeDriver: NATIVE_EFFECT,
       }),
     ]).start();
 
@@ -174,13 +175,13 @@ export const FollowWhereILookGame: React.FC<Props> = ({
         toValue: 1,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: NATIVE_EFFECT,
       }),
       Animated.timing(objectOpacity, {
         toValue: 1,
         duration: 300,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: NATIVE_EFFECT,
       }),
     ]).start();
 
@@ -191,13 +192,13 @@ export const FollowWhereILookGame: React.FC<Props> = ({
           toValue: 1.1,
           duration: 600,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: NATIVE_EFFECT,
         }),
         Animated.timing(objectBounce, {
           toValue: 1,
           duration: 600,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: NATIVE_EFFECT,
         }),
       ])
     ).start();
@@ -224,19 +225,19 @@ export const FollowWhereILookGame: React.FC<Props> = ({
         toValue: 1.5,
         duration: 300,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: NATIVE_EFFECT,
       }),
       Animated.timing(objectOpacity, {
         toValue: 0,
         duration: 300,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: NATIVE_EFFECT,
       }),
       Animated.timing(avatarScale, {
         toValue: 1.2,
         duration: 200,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: NATIVE_EFFECT,
       }),
     ]).start(() => {
       avatarScale.setValue(1);
@@ -400,55 +401,61 @@ export const FollowWhereILookGame: React.FC<Props> = ({
 
           {/* Gaze line from avatar to object */}
           {isLooking && (
-            <Animated.View
+            <View
               style={[
                 styles.gazeLine,
                 {
                   left: SCREEN_WIDTH / 2,
                   top: SCREEN_HEIGHT * 0.35,
-                  width: currentDirection === 'left' 
-                    ? SCREEN_WIDTH * 0.3 
-                    : SCREEN_WIDTH * 0.3,
+                  width: SCREEN_WIDTH * 0.3,
                   transform: [
-                    { 
-                      translateX: currentDirection === 'left' 
-                        ? -SCREEN_WIDTH * 0.3 
-                        : SCREEN_WIDTH * 0.3 
+                    {
+                      translateX:
+                        currentDirection === 'left' ? -SCREEN_WIDTH * 0.3 : SCREEN_WIDTH * 0.3,
                     },
-                    { scaleX: gazeLineScale },
                   ],
-                  opacity: gazeLineOpacity,
                 },
               ]}
             >
-              <View style={styles.gazeLineInner} />
-            </Animated.View>
+              <Animated.View
+                style={[
+                  styles.gazeLineInner,
+                  {
+                    opacity: gazeLineOpacity,
+                    transform: [{ scaleX: gazeLineScale }],
+                  },
+                ]}
+              />
+            </View>
           )}
 
           {/* Object on left or right side */}
           {objectVisible && (
-            <Animated.View
+            <View
               style={[
                 styles.objectContainer,
                 {
                   left: objectX - OBJECT_SIZE / 2,
                   top: objectY - OBJECT_SIZE / 2,
-                  transform: [
-                    { scale: Animated.multiply(objectScale, objectBounce) },
-                  ],
-                  opacity: objectOpacity,
                 },
               ]}
             >
-              <Pressable onPress={handleObjectTap} hitSlop={30} style={styles.objectPressable}>
-                <LinearGradient
-                  colors={[currentObj.color + 'CC', currentObj.color]}
-                  style={styles.object}
-                >
-                  <Text style={styles.objectEmoji}>{currentObj.emoji}</Text>
-                </LinearGradient>
-              </Pressable>
-            </Animated.View>
+              <Animated.View
+                style={{
+                  transform: [{ scale: Animated.multiply(objectScale, objectBounce) }],
+                  opacity: objectOpacity,
+                }}
+              >
+                <Pressable onPress={handleObjectTap} hitSlop={30} style={styles.objectPressable}>
+                  <LinearGradient
+                    colors={[currentObj.color + 'CC', currentObj.color]}
+                    style={styles.object}
+                  >
+                    <Text style={styles.objectEmoji}>{currentObj.emoji}</Text>
+                  </LinearGradient>
+                </Pressable>
+              </Animated.View>
+            </View>
           )}
 
           {/* Feedback Message */}

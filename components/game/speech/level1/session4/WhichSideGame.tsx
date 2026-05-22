@@ -173,7 +173,7 @@ export const WhichSideGame: React.FC<Props> = ({
       toValue: 0.7,
       duration: 300,
       easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     Animated.loop(
@@ -230,13 +230,13 @@ export const WhichSideGame: React.FC<Props> = ({
           toValue: 1.3,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.spring(tappedScale, {
           toValue: 1,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 
@@ -262,13 +262,13 @@ export const WhichSideGame: React.FC<Props> = ({
           toValue: 0.9,
           duration: 100,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(tappedScale, {
           toValue: 1,
           duration: 100,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
     }

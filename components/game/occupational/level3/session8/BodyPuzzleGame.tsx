@@ -250,12 +250,12 @@ const BodyPuzzleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             Animated.timing(partPositions.current[part].scale, {
               toValue: 1.3,
               duration: 200,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(partPositions.current[part].scale, {
               toValue: 1,
               duration: 200,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]),
         ]).start();
@@ -317,7 +317,7 @@ const BodyPuzzleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Animated.timing(partPositions.current[part].scale, {
             toValue: 1,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
         

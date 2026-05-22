@@ -72,6 +72,76 @@ import { SlowTaskWithPopUpDistractionGame } from '@/components/game/speech/level
 import { SoundDistractionChallengeGame } from '@/components/game/speech/level1/session10/SoundDistractionChallengeGame';
 import { TapTheTargetIgnoreDistractionGame } from '@/components/game/speech/level1/session10/TapTheTargetIgnoreDistractionGame';
 
+// Speech Therapy Level 3 Session 1 — Voice Activation & Vocal Play
+import { EchoCaveGame } from '@/components/game/speech/level3/session1/EchoCaveGame';
+import { SoundPaintGame } from '@/components/game/speech/level3/session1/SoundPaintGame';
+import { VoiceMatchLightGame } from '@/components/game/speech/level3/session1/VoiceMatchLightGame';
+import { VoiceRocketGame } from '@/components/game/speech/level3/session1/VoiceRocketGame';
+import { WakeTheMonsterGame } from '@/components/game/speech/level3/session1/WakeTheMonsterGame';
+
+// Speech Therapy Level 3 Session 2 — Vowel Sounds
+import { HappyEeeSmileGame } from '@/components/game/speech/level3/session2/HappyEeeSmileGame';
+import { LongSoundTrainGame } from '@/components/game/speech/level3/session2/LongSoundTrainGame';
+import { OpenMouthAaaGame } from '@/components/game/speech/level3/session2/OpenMouthAaaGame';
+import { RoundOooFishGame } from '@/components/game/speech/level3/session2/RoundOooFishGame';
+import { VowelSwitchGame } from '@/components/game/speech/level3/session2/VowelSwitchGame';
+
+// Speech Therapy Level 3 Session 3 — Bilabial Speech Sounds (M, B, P)
+import { BallBounceBuhGame } from '@/components/game/speech/level3/session3/BallBounceBuhGame';
+import { BubblePopPuhGame } from '@/components/game/speech/level3/session3/BubblePopPuhGame';
+import { LipPowerRaceGame } from '@/components/game/speech/level3/session3/LipPowerRaceGame';
+import { MamaDrumGame } from '@/components/game/speech/level3/session3/MamaDrumGame';
+import { SoundCatchGame } from '@/components/game/speech/level3/session3/SoundCatchGame';
+
+// Speech Therapy Level 3 Session 4 — Consonant + Vowel Syllables
+import { BabyCallsMamaGame } from '@/components/game/speech/level3/session4/BabyCallsMamaGame';
+import { CopyTalkingRobotGame } from '@/components/game/speech/level3/session4/CopyTalkingRobotGame';
+import { FeedThePandaGame } from '@/components/game/speech/level3/session4/FeedThePandaGame';
+import { SyllableBalloonsGame } from '@/components/game/speech/level3/session4/SyllableBalloonsGame';
+import { SyllableBridgeGame } from '@/components/game/speech/level3/session4/SyllableBridgeGame';
+
+// Speech Therapy Level 3 Session 5 — Animal & Environmental Sounds
+import { AnimalSoundMatchGame } from '@/components/game/speech/level3/session5/AnimalSoundMatchGame';
+import { CarEngineRaceGame } from '@/components/game/speech/level3/session5/CarEngineRaceGame';
+import { CowSoundFarmGame } from '@/components/game/speech/level3/session5/CowSoundFarmGame';
+import { SnakeHissGame } from '@/components/game/speech/level3/session5/SnakeHissGame';
+import { TrainChooChooGame } from '@/components/game/speech/level3/session5/TrainChooChooGame';
+
+// Speech Therapy Level 3 Session 6 — Sound Imitation Sequences
+import { CopyOneSoundGame } from '@/components/game/speech/level3/session6/CopyOneSoundGame';
+import { CopyTwoSoundsGame } from '@/components/game/speech/level3/session6/CopyTwoSoundsGame';
+import { RhythmRepeatGame } from '@/components/game/speech/level3/session6/RhythmRepeatGame';
+import { SoundPatternLightsGame } from '@/components/game/speech/level3/session6/SoundPatternLightsGame';
+import { TalkingRobotSaysGame } from '@/components/game/speech/level3/session6/TalkingRobotSaysGame';
+
+// Speech Therapy Level 3 Session 7 — First Meaningful Words
+import { CallMamaGame } from '@/components/game/speech/level3/session7/CallMamaGame';
+import { SayBallGame } from '@/components/game/speech/level3/session7/SayBallGame';
+import { SayMoreGame } from '@/components/game/speech/level3/session7/SayMoreGame';
+import { SnackRequestGame } from '@/components/game/speech/level3/session7/SnackRequestGame';
+import { ToyVoiceUnlockGame } from '@/components/game/speech/level3/session7/ToyVoiceUnlockGame';
+
+// Speech Therapy Level 3 Session 8 — Listen & Repeat
+import { FastOrSlowGame } from '@/components/game/speech/level3/session8/FastOrSlowGame';
+import { HearAndSayGame } from '@/components/game/speech/level3/session8/HearAndSayGame';
+import { MatchMyMouthGame } from '@/components/game/speech/level3/session8/MatchMyMouthGame';
+import { RepeatTheBeatGame } from '@/components/game/speech/level3/session8/RepeatTheBeatGame';
+import { TalkingMirrorGame } from '@/components/game/speech/level3/session8/TalkingMirrorGame';
+
+// Speech Therapy Level 3 Session 9 — Two-Part Verbal Sequences
+import { FollowRepeatGame } from '@/components/game/speech/level3/session9/FollowRepeatGame';
+import { OpenSpeakGame } from '@/components/game/speech/level3/session9/OpenSpeakGame';
+import { SayThenTapGame } from '@/components/game/speech/level3/session9/SayThenTapGame';
+import { SpeechPathwayGame } from '@/components/game/speech/level3/session9/SpeechPathwayGame';
+import { TwoWordComboGame } from '@/components/game/speech/level3/session9/TwoWordComboGame';
+
+// Speech Therapy Level 3 Session 10 — Early Fluent Speech Foundations
+import { ConversationAvatarGame } from '@/components/game/speech/level3/session10/ConversationAvatarGame';
+import { FastSlowTalkingGame } from '@/components/game/speech/level3/session10/FastSlowTalkingGame';
+import { PhraseBuilderGame } from '@/components/game/speech/level3/session10/PhraseBuilderGame';
+import { SmoothTalkingTrainGame } from '@/components/game/speech/level3/session10/SmoothTalkingTrainGame';
+import { TalkingAdventureGame } from '@/components/game/speech/level3/session10/TalkingAdventureGame';
+
 // Speech Therapy Level 2 Session 1
 import { JawAwarenessCrocodileGame } from '@/components/game/speech/level2/session1/JawAwarenessCrocodileGame';
 import { JawPushChallengeGame } from '@/components/game/speech/level2/session1/JawPushChallengeGame';
@@ -479,20 +549,20 @@ import FaceSymmetryDrawGame from '@/components/game/occupational/level2/session1
 import HalfShapeCompleteGame from '@/components/game/occupational/level2/session10/HalfShapeCompleteGame';
 import MirrorLineDrawGame from '@/components/game/occupational/level2/session10/MirrorLineDrawGame';
 import MirrorMazeGame from '@/components/game/occupational/level2/session10/MirrorMazeGame';
+import { GAME_MENU_STAGGER_MS, PRESS_SCALE_AMOUNT, SPRING_CONFIG } from '@/constants/therapyProgressAnimations';
+import { advanceTherapyProgress, fetchTherapyProgress, getSubscriptionStatus, type SubscriptionStatus, type TherapyProgress } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { GAME_MENU_STAGGER_MS, PRESS_SCALE_AMOUNT, SPRING_CONFIG } from '@/constants/therapyProgressAnimations';
 import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
-  FadeInDown,
-  FadeInUp,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
+    FadeInDown,
+    FadeInUp,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { advanceTherapyProgress, fetchTherapyProgress, getSubscriptionStatus, type SubscriptionStatus, type TherapyProgress } from '@/utils/api';
 
 type GameKey =
   | 'menu'
@@ -546,6 +616,56 @@ type GameKey =
   | 'sound-distraction-challenge'
   | 'slow-task-with-pop-up-distraction'
   | 'sequence-with-distraction'
+  | 'wake-the-monster'
+  | 'voice-rocket'
+  | 'sound-paint'
+  | 'echo-cave'
+  | 'voice-match-light'
+  | 'open-mouth-aaa'
+  | 'happy-eee-smile'
+  | 'round-ooo-fish'
+  | 'long-sound-train'
+  | 'vowel-switch'
+  | 'mama-drum'
+  | 'bubble-pop-puh'
+  | 'ball-bounce-buh'
+  | 'sound-catch'
+  | 'lip-power-race'
+  | 'syllable-bridge'
+  | 'feed-the-panda'
+  | 'baby-calls-mama'
+  | 'syllable-balloons'
+  | 'copy-talking-robot'
+  | 'cow-sound-farm'
+  | 'car-engine-race'
+  | 'snake-hiss'
+  | 'train-choo-choo'
+  | 'animal-sound-match'
+  | 'copy-one-sound'
+  | 'copy-two-sounds'
+  | 'rhythm-repeat'
+  | 'sound-pattern-lights'
+  | 'talking-robot-says'
+  | 'say-more'
+  | 'call-mama'
+  | 'say-ball'
+  | 'snack-request'
+  | 'toy-voice-unlock'
+  | 'hear-and-say'
+  | 'talking-mirror'
+  | 'match-my-mouth'
+  | 'repeat-the-beat'
+  | 'fast-or-slow'
+  | 'say-then-tap'
+  | 'open-speak'
+  | 'two-word-combo'
+  | 'follow-repeat'
+  | 'speech-pathway'
+  | 'smooth-talking-train'
+  | 'phrase-builder'
+  | 'talking-adventure'
+  | 'fast-slow-talking'
+  | 'conversation-avatar'
   | 'jaw-awareness-crocodile'
   | 'jaw-swing-adventure'
   | 'jaw-push-challenge'
@@ -1007,38 +1127,6 @@ export default function SessionGamesScreen() {
   // Special Education: 10 sections (Explorer, Matcher, Builder, etc.), 10 sessions each, 5 games per session
   if (therapyId === 'special-education') {
     return <SpecialEducationNavigator />;
-  }
-
-  // Speech Level 2 currently relies on web-first camera/DOM pipelines.
-  // Gate it on native to avoid runtime breakage until native detectors are fully implemented.
-  const isSpeechLevel2OnNative = Platform.OS !== 'web' && therapyId === 'speech' && levelNumber === 2;
-  if (isSpeechLevel2OnNative) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View>
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={20} color="#334155" />
-              <Text style={styles.backText}>Back</Text>
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Session Games</Text>
-          </View>
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateTitle}>Coming Soon on Android/iOS</Text>
-            <Text style={styles.emptyStateText}>
-              Speech Level 2 camera games are being finalized for native devices. You can continue with Speech Level 1 or other therapies right now.
-            </Text>
-            <TouchableOpacity
-              style={{ marginTop: 16, paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#2563EB', borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }}
-              onPress={() => router.replace({ pathname: '/(tabs)/TherapyProgress' })}
-            >
-              <Ionicons name="grid" size={18} color="#FFFFFF" />
-              <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Back to Therapy Progress</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </SafeAreaView>
-    );
   }
 
   // Function to get the next game in sequence
@@ -2077,6 +2165,126 @@ export default function SessionGamesScreen() {
   const isSuccessReplayAvailable =
     therapyId === 'speech' && levelNumber === 2 && sessionNumber === 10;
 
+  // Speech Therapy Level 3 Session 1 — Voice Activation & Vocal Play
+  const isWakeTheMonsterAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 1;
+  const isVoiceRocketAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 1;
+  const isSoundPaintAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 1;
+  const isEchoCaveAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 1;
+  const isVoiceMatchLightAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 1;
+
+  // Speech Therapy Level 3 Session 2 — Vowel Sounds
+  const isOpenMouthAaaAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 2;
+  const isHappyEeeSmileAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 2;
+  const isRoundOooFishAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 2;
+  const isLongSoundTrainAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 2;
+  const isVowelSwitchAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 2;
+
+  // Speech Therapy Level 3 Session 3 — Bilabial Speech Sounds
+  const isMamaDrumAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 3;
+  const isBubblePopPuhAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 3;
+  const isBallBounceBuhAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 3;
+  const isSoundCatchAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 3;
+  const isLipPowerRaceAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 3;
+
+  // Speech Therapy Level 3 Session 4 — Consonant + Vowel Syllables
+  const isSyllableBridgeAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 4;
+  const isFeedThePandaAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 4;
+  const isBabyCallsMamaAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 4;
+  const isSyllableBalloonsAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 4;
+  const isCopyTalkingRobotAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 4;
+
+  // Speech Therapy Level 3 Session 5 — Animal & Environmental Sounds
+  const isCowSoundFarmAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 5;
+  const isCarEngineRaceAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 5;
+  const isSnakeHissAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 5;
+  const isTrainChooChooAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 5;
+  const isAnimalSoundMatchAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 5;
+
+  // Speech Therapy Level 3 Session 6 — Sound Imitation Sequences
+  const isCopyOneSoundAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 6;
+  const isCopyTwoSoundsAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 6;
+  const isRhythmRepeatAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 6;
+  const isSoundPatternLightsAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 6;
+  const isTalkingRobotSaysAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 6;
+
+  // Speech Therapy Level 3 Session 7 — First Meaningful Words
+  const isSayMoreAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 7;
+  const isCallMamaAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 7;
+  const isSayBallAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 7;
+  const isSnackRequestAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 7;
+  const isToyVoiceUnlockAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 7;
+
+  // Speech Therapy Level 3 Session 8 — Listen & Repeat
+  const isHearAndSayAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 8;
+  const isTalkingMirrorAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 8;
+  const isMatchMyMouthAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 8;
+  const isRepeatTheBeatAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 8;
+  const isFastOrSlowAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 8;
+
+  // Speech Therapy Level 3 Session 9 — Two-Part Verbal Sequences
+  const isSayThenTapAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 9;
+  const isOpenSpeakAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 9;
+  const isTwoWordComboAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 9;
+  const isFollowRepeatAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 9;
+  const isSpeechPathwayAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 9;
+
+  // Speech Therapy Level 3 Session 10 — Early Fluent Speech Foundations
+  const isSmoothTalkingTrainAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
+  const isPhraseBuilderAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
+  const isTalkingAdventureAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
+  const isFastSlowTalkingAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
+  const isConversationAvatarAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
+
   const GAMES: GameInfo[] = [
     {
       id: 'follow-ball',
@@ -2944,6 +3152,416 @@ export default function SessionGamesScreen() {
       description: 'Copy the movement and watch your success animation!',
       color: '#E91E63',
       available: isSuccessReplayAvailable,
+    },
+    // Speech Therapy Level 3 Session 1 — Voice Activation & Vocal Play
+    {
+      id: 'wake-the-monster',
+      title: 'Wake the Monster',
+      emoji: '👾',
+      description: 'Say “aaa” to wake the sleeping monster! Build voice initiation.',
+      color: '#8B5CF6',
+      available: isWakeTheMonsterAvailable,
+    },
+    {
+      id: 'voice-rocket',
+      title: 'Voice Rocket',
+      emoji: '🚀',
+      description: 'Louder voice makes the rocket rise! Build vocal intensity.',
+      color: '#0EA5E9',
+      available: isVoiceRocketAvailable,
+    },
+    {
+      id: 'sound-paint',
+      title: 'Sound Paint',
+      emoji: '🎨',
+      description: 'Your voice paints colors on the screen! Cause-and-effect speech play.',
+      color: '#F97316',
+      available: isSoundPaintAvailable,
+    },
+    {
+      id: 'echo-cave',
+      title: 'Echo Cave',
+      emoji: '🕳️',
+      description: 'Make a sound — the cave echoes it back! Explore your voice.',
+      color: '#14B8A6',
+      available: isEchoCaveAvailable,
+    },
+    {
+      id: 'voice-match-light',
+      title: 'Voice Match Light',
+      emoji: '💡',
+      description: 'Hold your voice to keep the light glowing! Build sustained phonation.',
+      color: '#EAB308',
+      available: isVoiceMatchLightAvailable,
+    },
+    // Speech Therapy Level 3 Session 2 — Vowel Sounds
+    {
+      id: 'open-mouth-aaa',
+      title: 'Open Mouth "Aaa"',
+      emoji: '😮',
+      description: 'Open wide and say “Aaa”! Build vowel A and mouth shaping.',
+      color: '#F59E0B',
+      available: isOpenMouthAaaAvailable,
+    },
+    {
+      id: 'happy-eee-smile',
+      title: 'Happy "Eee" Smile',
+      emoji: '😁',
+      description: 'Smile and say “Eee”! Build lip spreading and vowel E.',
+      color: '#EC4899',
+      available: isHappyEeeSmileAvailable,
+    },
+    {
+      id: 'round-ooo-fish',
+      title: 'Round "Ooo" Fish',
+      emoji: '🐠',
+      description: 'Round your lips — say “Ooo” to feed the fish! Lip rounding + vowel O.',
+      color: '#0EA5E9',
+      available: isRoundOooFishAvailable,
+    },
+    {
+      id: 'long-sound-train',
+      title: 'Long Sound Train',
+      emoji: '🚂',
+      description: 'Hold a vowel sound to move the train to the station! Breath + phonation.',
+      color: '#10B981',
+      available: isLongSoundTrainAvailable,
+    },
+    {
+      id: 'vowel-switch',
+      title: 'Vowel Switch',
+      emoji: '🔄',
+      description: 'Switch between “Aaa” and “Ooo”! Build oral transitions.',
+      color: '#8B5CF6',
+      available: isVowelSwitchAvailable,
+    },
+    // Speech Therapy Level 3 Session 3 — Bilabial Speech Sounds
+    {
+      id: 'mama-drum',
+      title: 'Mama Drum',
+      emoji: '🥁',
+      description: 'Say “ma ma ma” to beat the drum! Bilabial repetition with M.',
+      color: '#EAB308',
+      available: isMamaDrumAvailable,
+    },
+    {
+      id: 'bubble-pop-puh',
+      title: 'Bubble Pop "Puh"',
+      emoji: '🫧',
+      description: 'Say “puh” to pop bubbles! Build air burst and bilabial P.',
+      color: '#38BDF8',
+      available: isBubblePopPuhAvailable,
+    },
+    {
+      id: 'ball-bounce-buh',
+      title: 'Ball Bounce "Buh"',
+      emoji: '⚽',
+      description: 'Say “buh” to bounce the ball! Voiced bilabial B.',
+      color: '#F97316',
+      available: isBallBounceBuhAvailable,
+    },
+    {
+      id: 'sound-catch',
+      title: 'Sound Catch',
+      emoji: '👂',
+      description: 'Hear “mmm”, then repeat it! Auditory imitation.',
+      color: '#A855F7',
+      available: isSoundCatchAvailable,
+    },
+    {
+      id: 'lip-power-race',
+      title: 'Lip Power Race',
+      emoji: '🏁',
+      description: 'Race through M, P, and B sounds! Speech coordination.',
+      color: '#EF4444',
+      available: isLipPowerRaceAvailable,
+    },
+    // Speech Therapy Level 3 Session 4 — Consonant + Vowel Syllables
+    {
+      id: 'syllable-bridge',
+      title: 'Syllable Bridge',
+      emoji: '🌉',
+      description: 'Say “ma” to add bridge planks! Build CV syllables.',
+      color: '#3B82F6',
+      available: isSyllableBridgeAvailable,
+    },
+    {
+      id: 'feed-the-panda',
+      title: 'Feed the Panda',
+      emoji: '🐼',
+      description: 'Say “pa pa pa” to feed the panda! Syllable repetition.',
+      color: '#10B981',
+      available: isFeedThePandaAvailable,
+    },
+    {
+      id: 'baby-calls-mama',
+      title: 'Baby Calls Mama',
+      emoji: '👶',
+      description: 'Say “Mama” to call for Mama! Functional speech.',
+      color: '#F43F5E',
+      available: isBabyCallsMamaAvailable,
+    },
+    {
+      id: 'syllable-balloons',
+      title: 'Syllable Balloons',
+      emoji: '🎈',
+      description: 'Say ma, pa, moo, pee, ba to inflate each balloon! Timing & syllables.',
+      color: '#F59E0B',
+      available: isSyllableBalloonsAvailable,
+    },
+    {
+      id: 'copy-talking-robot',
+      title: 'Copy the Talking Robot',
+      emoji: '🤖',
+      description: 'Listen to the robot, then repeat each syllable! Auditory-motor mapping.',
+      color: '#6366F1',
+      available: isCopyTalkingRobotAvailable,
+    },
+    // Speech Therapy Level 3 Session 5 — Animal & Environmental Sounds
+    {
+      id: 'cow-sound-farm',
+      title: 'Cow Sound Farm',
+      emoji: '🐄',
+      description: 'Say “moo” for the cows! Fun vocal imitation.',
+      color: '#22C55E',
+      available: isCowSoundFarmAvailable,
+    },
+    {
+      id: 'car-engine-race',
+      title: 'Car Engine Race',
+      emoji: '🚗',
+      description: 'Say “vroom” to race the car! Sustained playful sound.',
+      color: '#EF4444',
+      available: isCarEngineRaceAvailable,
+    },
+    {
+      id: 'snake-hiss',
+      title: 'Snake Hiss',
+      emoji: '🐍',
+      description: 'Say “ssss” to grow the snake! Fricative sound practice.',
+      color: '#84CC16',
+      available: isSnakeHissAvailable,
+    },
+    {
+      id: 'train-choo-choo',
+      title: 'Train Choo-Choo',
+      emoji: '🚂',
+      description: 'Say “choo choo” to move the train! Sound sequencing.',
+      color: '#3B82F6',
+      available: isTrainChooChooAvailable,
+    },
+    {
+      id: 'animal-sound-match',
+      title: 'Animal Sound Match',
+      emoji: '🐾',
+      description: 'Listen, pick the animal, then say the sound! Listening + speech.',
+      color: '#F59E0B',
+      available: isAnimalSoundMatchAvailable,
+    },
+    // Speech Therapy Level 3 Session 6 — Sound Imitation Sequences
+    {
+      id: 'copy-one-sound',
+      title: 'Copy 1 Sound',
+      emoji: '👂',
+      description: 'Hear one sound, then repeat it! Immediate imitation.',
+      color: '#8B5CF6',
+      available: isCopyOneSoundAvailable,
+    },
+    {
+      id: 'copy-two-sounds',
+      title: 'Copy 2 Sounds',
+      emoji: '🔁',
+      description: 'Listen to two sounds in a row, then copy both! Sequencing.',
+      color: '#EC4899',
+      available: isCopyTwoSoundsAvailable,
+    },
+    {
+      id: 'rhythm-repeat',
+      title: 'Rhythm Repeat',
+      emoji: '🥁',
+      description: 'Match the speech rhythm — say sounds on the beat! Timing.',
+      color: '#F97316',
+      available: isRhythmRepeatAvailable,
+    },
+    {
+      id: 'sound-pattern-lights',
+      title: 'Sound Pattern Lights',
+      emoji: '💡',
+      description: 'Watch the lights, hear the pattern, then repeat the sound order! Working memory.',
+      color: '#14B8A6',
+      available: isSoundPatternLightsAvailable,
+    },
+    {
+      id: 'talking-robot-says',
+      title: 'Talking Robot Says',
+      emoji: '🤖',
+      description: 'Copy the robot’s silly sound combinations! Flexibility.',
+      color: '#6366F1',
+      available: isTalkingRobotSaysAvailable,
+    },
+    // Speech Therapy Level 3 Session 7 — First Meaningful Words
+    {
+      id: 'say-more',
+      title: 'Say "More"',
+      emoji: '➕',
+      description: 'Say “more” to fill your bowl! Functional communication.',
+      color: '#F59E0B',
+      available: isSayMoreAvailable,
+    },
+    {
+      id: 'call-mama',
+      title: 'Call Mama',
+      emoji: '👩',
+      description: 'Say “Mama” to reveal Mom! Emotional speech.',
+      color: '#EC4899',
+      available: isCallMamaAvailable,
+    },
+    {
+      id: 'say-ball',
+      title: 'Say "Ball"',
+      emoji: '⚽',
+      description: 'Say “ball” to bounce and play! Word association.',
+      color: '#3B82F6',
+      available: isSayBallAvailable,
+    },
+    {
+      id: 'snack-request',
+      title: 'Snack Request',
+      emoji: '🍎',
+      description: 'Say food words to get snacks! Requesting.',
+      color: '#F97316',
+      available: isSnackRequestAvailable,
+    },
+    {
+      id: 'toy-voice-unlock',
+      title: 'Toy Voice Unlock',
+      emoji: '🧸',
+      description: 'Say each toy name to unlock the shelf! Motivation speech.',
+      color: '#8B5CF6',
+      available: isToyVoiceUnlockAvailable,
+    },
+    // Speech Therapy Level 3 Session 8 — Listen & Repeat
+    {
+      id: 'hear-and-say',
+      title: 'Hear & Say',
+      emoji: '👂',
+      description: 'Listen to a word, then repeat it! Auditory processing.',
+      color: '#0EA5E9',
+      available: isHearAndSayAvailable,
+    },
+    {
+      id: 'talking-mirror',
+      title: 'Talking Mirror',
+      emoji: '🪞',
+      description: 'Watch the avatar say a word, then copy in the mirror! Visual imitation.',
+      color: '#A855F7',
+      available: isTalkingMirrorAvailable,
+    },
+    {
+      id: 'match-my-mouth',
+      title: 'Match My Mouth',
+      emoji: '👄',
+      description: 'Copy the mouth shape and the sound together! Articulation.',
+      color: '#F97316',
+      available: isMatchMyMouthAvailable,
+    },
+    {
+      id: 'repeat-the-beat',
+      title: 'Repeat the Beat',
+      emoji: '🥁',
+      description: 'Repeat rhythmic syllables on the beat! Prosody.',
+      color: '#EC4899',
+      available: isRepeatTheBeatAvailable,
+    },
+    {
+      id: 'fast-or-slow',
+      title: 'Fast or Slow?',
+      emoji: '⏱️',
+      description: 'Copy words at slow and fast speeds! Speech control.',
+      color: '#10B981',
+      available: isFastOrSlowAvailable,
+    },
+    // Speech Therapy Level 3 Session 9 — Two-Part Verbal Sequences
+    {
+      id: 'say-then-tap',
+      title: 'Say Then Tap',
+      emoji: '🗣️',
+      description: 'Say the word, then tap the matching picture! Dual-task speech.',
+      color: '#6366F1',
+      available: isSayThenTapAvailable,
+    },
+    {
+      id: 'open-speak',
+      title: 'Open + Speak',
+      emoji: '😮',
+      description: 'Open your mouth wide, then say “Ma”! Sequencing.',
+      color: '#F59E0B',
+      available: isOpenSpeakAvailable,
+    },
+    {
+      id: 'two-word-combo',
+      title: 'Two Word Combo',
+      emoji: '💬',
+      description: 'Say early phrases like “more juice”! Two-word combos.',
+      color: '#22C55E',
+      available: isTwoWordComboAvailable,
+    },
+    {
+      id: 'follow-repeat',
+      title: 'Follow & Repeat',
+      emoji: '🧠',
+      description: 'Listen to a 2-step phrase, then repeat each part! Memory.',
+      color: '#EC4899',
+      available: isFollowRepeatAvailable,
+    },
+    {
+      id: 'speech-pathway',
+      title: 'Speech Pathway',
+      emoji: '🗺️',
+      description: 'Complete open → sound → sound → tap in order! Planning.',
+      color: '#8B5CF6',
+      available: isSpeechPathwayAvailable,
+    },
+    // Speech Therapy Level 3 Session 10 — Early Fluent Speech Foundations
+    {
+      id: 'smooth-talking-train',
+      title: 'Smooth Talking Train',
+      emoji: '🚂',
+      description: 'Say syllables in a row to move the train! Connected speech.',
+      color: '#2563EB',
+      available: isSmoothTalkingTrainAvailable,
+    },
+    {
+      id: 'phrase-builder',
+      title: 'Phrase Builder',
+      emoji: '🧱',
+      description: 'Build short phrases word by word! Expressive language.',
+      color: '#22C55E',
+      available: isPhraseBuilderAvailable,
+    },
+    {
+      id: 'talking-adventure',
+      title: 'Talking Adventure',
+      emoji: '📖',
+      description: 'Speak to continue the story! Functional speech.',
+      color: '#F59E0B',
+      available: isTalkingAdventureAvailable,
+    },
+    {
+      id: 'fast-slow-talking',
+      title: 'Fast-Slow Talking',
+      emoji: '⏱️',
+      description: 'Practice slow and fast smooth phrases! Speech control.',
+      color: '#0EA5E9',
+      available: isFastSlowTalkingAvailable,
+    },
+    {
+      id: 'conversation-avatar',
+      title: 'Conversation Avatar',
+      emoji: '🤖',
+      description: 'Answer the avatar’s simple questions! Interactive speech.',
+      color: '#A855F7',
+      available: isConversationAvatarAvailable,
     },
     // Level 2 Session 3: Trace Zig-Zag games (OT)
     {
@@ -5663,6 +6281,176 @@ export default function SessionGamesScreen() {
 
   if (currentGame === 'sequence-with-distraction') {
     return <SequenceWithDistractionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 1 — Voice Activation & Vocal Play
+  if (currentGame === 'wake-the-monster') {
+    return <WakeTheMonsterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'voice-rocket') {
+    return <VoiceRocketGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'sound-paint') {
+    return <SoundPaintGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'echo-cave') {
+    return <EchoCaveGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'voice-match-light') {
+    return <VoiceMatchLightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 2 — Vowel Sounds
+  if (currentGame === 'open-mouth-aaa') {
+    return <OpenMouthAaaGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'happy-eee-smile') {
+    return <HappyEeeSmileGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'round-ooo-fish') {
+    return <RoundOooFishGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'long-sound-train') {
+    return <LongSoundTrainGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'vowel-switch') {
+    return <VowelSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 3 — Bilabial Speech Sounds
+  if (currentGame === 'mama-drum') {
+    return <MamaDrumGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'bubble-pop-puh') {
+    return <BubblePopPuhGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'ball-bounce-buh') {
+    return <BallBounceBuhGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'sound-catch') {
+    return <SoundCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'lip-power-race') {
+    return <LipPowerRaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 4 — Consonant + Vowel Syllables
+  if (currentGame === 'syllable-bridge') {
+    return <SyllableBridgeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'feed-the-panda') {
+    return <FeedThePandaGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'baby-calls-mama') {
+    return <BabyCallsMamaGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'syllable-balloons') {
+    return <SyllableBalloonsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'copy-talking-robot') {
+    return <CopyTalkingRobotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 5 — Animal & Environmental Sounds
+  if (currentGame === 'cow-sound-farm') {
+    return <CowSoundFarmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'car-engine-race') {
+    return <CarEngineRaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'snake-hiss') {
+    return <SnakeHissGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'train-choo-choo') {
+    return <TrainChooChooGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'animal-sound-match') {
+    return <AnimalSoundMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 6 — Sound Imitation Sequences
+  if (currentGame === 'copy-one-sound') {
+    return <CopyOneSoundGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'copy-two-sounds') {
+    return <CopyTwoSoundsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'rhythm-repeat') {
+    return <RhythmRepeatGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'sound-pattern-lights') {
+    return <SoundPatternLightsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-robot-says') {
+    return <TalkingRobotSaysGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 7 — First Meaningful Words
+  if (currentGame === 'say-more') {
+    return <SayMoreGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'call-mama') {
+    return <CallMamaGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'say-ball') {
+    return <SayBallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'snack-request') {
+    return <SnackRequestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'toy-voice-unlock') {
+    return <ToyVoiceUnlockGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 8 — Listen & Repeat
+  if (currentGame === 'hear-and-say') {
+    return <HearAndSayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-mirror') {
+    return <TalkingMirrorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'match-my-mouth') {
+    return <MatchMyMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'repeat-the-beat') {
+    return <RepeatTheBeatGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'fast-or-slow') {
+    return <FastOrSlowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 9 — Two-Part Verbal Sequences
+  if (currentGame === 'say-then-tap') {
+    return <SayThenTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'open-speak') {
+    return <OpenSpeakGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'two-word-combo') {
+    return <TwoWordComboGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'follow-repeat') {
+    return <FollowRepeatGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-pathway') {
+    return <SpeechPathwayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 10 — Early Fluent Speech Foundations
+  if (currentGame === 'smooth-talking-train') {
+    return <SmoothTalkingTrainGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'phrase-builder') {
+    return <PhraseBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-adventure') {
+    return <TalkingAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'fast-slow-talking') {
+    return <FastSlowTalkingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'conversation-avatar') {
+    return <ConversationAvatarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jaw-awareness-crocodile') {

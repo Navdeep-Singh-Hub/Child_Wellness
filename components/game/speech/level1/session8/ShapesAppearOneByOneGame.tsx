@@ -25,6 +25,7 @@ type Props = {
 };
 
 const SHAPE_SIZE = 100;
+const TAP_HIT_SLOP = 28;
 const APPEAR_INTERVAL_MS = 2000; // 2 seconds between shapes
 const TAP_DURATION_MS = 4000; // How long shapes are tappable after all appear
 
@@ -491,6 +492,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
                 key={shape.id}
                 onPress={() => handleShapeTap(shape.id)}
                 disabled={!canTap || shape.tapped || isProcessing}
+                hitSlop={TAP_HIT_SLOP}
                 style={[
                   styles.shapeContainer,
                   {
@@ -500,6 +502,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
                 ]}
               >
                 <Animated.View
+                  pointerEvents="none"
                   style={[
                     styles.shape,
                     {
@@ -525,7 +528,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
           })}
 
           {/* Progress Stats */}
-          <View style={styles.statsContainer}>
+          <View style={styles.statsContainer} pointerEvents="none">
             <Text style={styles.statsText}>
               Round {rounds + 1} / {requiredRounds}
             </Text>
@@ -615,6 +618,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: SHAPE_SIZE,
     height: SHAPE_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
   },
   shape: {
     width: SHAPE_SIZE,

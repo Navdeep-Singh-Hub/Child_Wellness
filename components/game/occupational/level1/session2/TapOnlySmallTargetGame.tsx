@@ -189,13 +189,13 @@ const TapOnlySmallTargetGame: React.FC<{ onBack?: () => void; onComplete?: () =>
               toValue: 1.3,
               duration: 120,
               easing: Easing.out(Easing.ease),
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(shape.scale, {
               toValue: 0,
               duration: 150,
               easing: Easing.in(Easing.ease),
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]),
           Animated.timing(shape.glowOpacity, {
@@ -230,25 +230,25 @@ const TapOnlySmallTargetGame: React.FC<{ onBack?: () => void; onComplete?: () =>
             toValue: 10,
             duration: 50,
             easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(shape.shakeAnim, {
             toValue: -10,
             duration: 50,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(shape.shakeAnim, {
             toValue: 10,
             duration: 50,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(shape.shakeAnim, {
             toValue: 0,
             duration: 50,
             easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
 

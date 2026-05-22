@@ -26,6 +26,7 @@ type Props = {
 
 const OBJECT_SIZE = 120;
 const RING_SIZE = 200;
+const TAP_HIT_SLOP = 28;
 const MOVEMENT_DURATION_MS = 5500; // 5.5 seconds to reach target (slightly longer for better anticipation)
 const WAIT_DURATION_MS = 600; // Brief pause before ring appears
 const RING_DURATION_MS = 3500; // How long ring is available (increased for better response time)
@@ -248,17 +249,17 @@ export const WatchAndWaitGame: React.FC<Props> = ({
         toValue: 1,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(statusCircleOpacity, {
         toValue: 1,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(statusTextOpacity, {
         toValue: 1,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -270,13 +271,13 @@ export const WatchAndWaitGame: React.FC<Props> = ({
         toValue: 1,
         duration: 500,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.spring(objectScale, {
         toValue: 1,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -286,7 +287,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
         toValue: 1,
         duration: 2500,
         easing: Easing.linear,
-        useNativeDriver: true,
+        useNativeDriver: false,
       })
     );
     rotationAnimationRef.current.start();
@@ -300,12 +301,12 @@ export const WatchAndWaitGame: React.FC<Props> = ({
         Animated.timing(statusCircleOpacity, {
           toValue: 0,
           duration: 250,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(statusTextOpacity, {
           toValue: 0,
           duration: 250,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 
@@ -313,7 +314,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
       Animated.timing(trailOpacity, {
         toValue: 0.4,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }).start();
 
       // Move object slowly to target position (right side, center vertically)
@@ -382,17 +383,17 @@ export const WatchAndWaitGame: React.FC<Props> = ({
             toValue: 1,
             tension: 50,
             friction: 7,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(statusCircleOpacity, {
             toValue: 1,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(statusTextOpacity, {
             toValue: 1,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
 
@@ -402,13 +403,13 @@ export const WatchAndWaitGame: React.FC<Props> = ({
             toValue: 1,
             tension: 40,
             friction: 6,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(ringOpacity, {
             toValue: 0.95,
             duration: 500,
             easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
 
@@ -419,13 +420,13 @@ export const WatchAndWaitGame: React.FC<Props> = ({
               toValue: 1.2,
               duration: 700,
               easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(ringPulse, {
               toValue: 1,
               duration: 700,
               easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ])
         );
@@ -453,27 +454,27 @@ export const WatchAndWaitGame: React.FC<Props> = ({
             Animated.timing(ringOpacity, {
               toValue: 0,
               duration: 400,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(objectOpacity, {
               toValue: 0,
               duration: 400,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(statusCircleOpacity, {
               toValue: 0,
               duration: 400,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(statusTextOpacity, {
               toValue: 0,
               duration: 400,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(trailOpacity, {
               toValue: 0,
               duration: 400,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]).start(() => {
             setRounds(prev => {
@@ -525,24 +526,24 @@ export const WatchAndWaitGame: React.FC<Props> = ({
             Animated.timing(objectScale, {
               toValue: 1.5,
               duration: 250,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(ringScale, {
               toValue: 1.4,
               duration: 250,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]),
           Animated.parallel([
             Animated.timing(objectScale, {
               toValue: 1,
               duration: 250,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(ringScale, {
               toValue: 1,
               duration: 250,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]),
         ]),
@@ -551,12 +552,12 @@ export const WatchAndWaitGame: React.FC<Props> = ({
             toValue: 1,
             tension: 50,
             friction: 7,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(celebrationOpacity, {
             toValue: 1,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
       ]).start();
@@ -567,12 +568,12 @@ export const WatchAndWaitGame: React.FC<Props> = ({
           Animated.timing(celebrationScale, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(celebrationOpacity, {
             toValue: 0,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
       }, 1500);
@@ -588,27 +589,27 @@ export const WatchAndWaitGame: React.FC<Props> = ({
         Animated.timing(ringOpacity, {
           toValue: 0,
           duration: 400,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(objectOpacity, {
           toValue: 0,
           duration: 400,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(statusCircleOpacity, {
           toValue: 0,
           duration: 400,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(statusTextOpacity, {
           toValue: 0,
           duration: 400,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(trailOpacity, {
           toValue: 0,
           duration: 400,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start(() => {
         setRounds(prev => {
@@ -631,24 +632,24 @@ export const WatchAndWaitGame: React.FC<Props> = ({
           Animated.timing(objectScale, {
             toValue: 0.85,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(objectRotation, {
             toValue: 0.1,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
         Animated.parallel([
           Animated.timing(objectScale, {
             toValue: 1,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(objectRotation, {
             toValue: 0,
             duration: 150,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
       ]).start();
@@ -756,7 +757,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
           </View>
         </View>
 
-        <View style={styles.playArea}>
+        <View style={styles.playArea} pointerEvents="box-none">
           {/* Status Indicator */}
           <View style={styles.statusContainer}>
             <Animated.View
@@ -803,6 +804,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
             <Pressable
               onPress={handleTap}
               disabled={!canTap || isProcessing}
+              hitSlop={TAP_HIT_SLOP}
               style={[
                 styles.ringContainer,
                 {
@@ -812,6 +814,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
               ]}
             >
               <Animated.View
+                pointerEvents="none"
                 style={[
                   styles.ring,
                   {
@@ -847,11 +850,14 @@ export const WatchAndWaitGame: React.FC<Props> = ({
 
           {/* Moving Object */}
           <Animated.View
+            pointerEvents="box-none"
             style={[
               styles.objectContainer,
               {
-                left: objectX,
-                top: objectY,
+                transform: [
+                  { translateX: objectX },
+                  { translateY: objectY },
+                ],
                 opacity: objectOpacity,
               },
             ]}
@@ -860,8 +866,10 @@ export const WatchAndWaitGame: React.FC<Props> = ({
               onPress={handleTap}
               disabled={isProcessing && phase !== 'ready'}
               style={styles.objectPressable}
+              hitSlop={TAP_HIT_SLOP}
             >
               <Animated.View
+                pointerEvents="none"
                 style={[
                   styles.object,
                   {
@@ -913,7 +921,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
           </Animated.View>
 
           {/* Progress Stats */}
-          <View style={styles.statsContainer}>
+          <View style={styles.statsContainer} pointerEvents="none">
             <Text style={styles.progressText}>
               Round {rounds + 1} / {requiredRounds}
             </Text>
@@ -1066,8 +1074,11 @@ const styles = StyleSheet.create({
   },
   objectContainer: {
     position: 'absolute',
+    left: 0,
+    top: 0,
     width: OBJECT_SIZE,
     height: OBJECT_SIZE,
+    zIndex: 12,
   },
   objectPressable: {
     width: OBJECT_SIZE,

@@ -225,13 +225,13 @@ const TapTheBigOneGame: React.FC<{ onBack?: () => void; onComplete?: () => void 
               toValue: 1.3,
               duration: 120,
               easing: Easing.out(Easing.ease),
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(circle.scale, {
               toValue: 0,
               duration: 150,
               easing: Easing.in(Easing.ease),
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]),
           Animated.timing(circle.glowOpacity, {
@@ -266,25 +266,25 @@ const TapTheBigOneGame: React.FC<{ onBack?: () => void; onComplete?: () => void 
             toValue: 10,
             duration: 50,
             easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(circle.shakeAnim, {
             toValue: -10,
             duration: 50,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(circle.shakeAnim, {
             toValue: 10,
             duration: 50,
             easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(circle.shakeAnim, {
             toValue: 0,
             duration: 50,
             easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
 

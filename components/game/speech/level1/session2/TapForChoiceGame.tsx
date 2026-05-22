@@ -3,7 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createGlowLoop } from '@/utils/animatedGlowLoop';
 import {
     Animated,
     Dimensions,
@@ -112,13 +113,19 @@ export const TapForChoiceGame: React.FC<Props> = ({
 
   const currentPair = CHOICE_PAIRS[currentPairIndex];
 
+  const leftGlowLoop = useMemo(() => createGlowLoop(leftGlow), [leftGlow]);
+  const rightGlowLoop = useMemo(() => createGlowLoop(rightGlow), [rightGlow]);
+
   useEffect(() => {
-    startGlowAnimation();
+    leftGlowLoop.start();
+    rightGlowLoop.start();
     speak('Tap what you like!');
     return () => {
+      leftGlowLoop.stop();
+      rightGlowLoop.stop();
       clearScheduledSpeech();
     };
-  }, []);
+  }, [leftGlowLoop, rightGlowLoop]);
 
   useEffect(() => {
     if (choices >= requiredChoices && !gameFinished) {
@@ -126,44 +133,6 @@ export const TapForChoiceGame: React.FC<Props> = ({
       setShowRoundSuccess(false);
     }
   }, [choices, requiredChoices, gameFinished]);
-
-  const startGlowAnimation = () => {
-    // Left item glow
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(leftGlow, {
-          toValue: 1,
-          duration: 1500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(leftGlow, {
-          toValue: 0.5,
-          duration: 1500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ])
-    ).start();
-
-    // Right item glow
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(rightGlow, {
-          toValue: 1,
-          duration: 1500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(rightGlow, {
-          toValue: 0.5,
-          duration: 1500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ])
-    ).start();
-  };
 
   const createSparkles = (count: number) => {
     const newSparkles = [];
@@ -241,13 +210,13 @@ export const TapForChoiceGame: React.FC<Props> = ({
           toValue: 1.3,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(rotationAnim, {
           toValue: 15,
           duration: 200,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.parallel([
@@ -255,20 +224,20 @@ export const TapForChoiceGame: React.FC<Props> = ({
           toValue: 1,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(rotationAnim, {
           toValue: -15,
           duration: 200,
           easing: Easing.in(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.timing(rotationAnim, {
         toValue: 0,
         duration: 200,
         easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 

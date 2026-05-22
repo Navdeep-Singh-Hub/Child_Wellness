@@ -110,12 +110,12 @@ const CatchTheBallGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         toValue: 1,
         tension: 50,
         friction: 7,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(ballOpacity, {
         toValue: 1,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -166,18 +166,18 @@ const CatchTheBallGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Animated.timing(ballScale, {
           toValue: 1.5,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(ballScale, {
           toValue: 0,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.timing(ballOpacity, {
         toValue: 0,
         duration: 400,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -214,7 +214,7 @@ const CatchTheBallGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       Animated.timing(ballOpacity, {
         toValue: 0,
         duration: 500,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start(() => {
       if (round < TOTAL_ROUNDS) {

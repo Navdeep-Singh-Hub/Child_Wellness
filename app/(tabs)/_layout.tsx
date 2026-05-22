@@ -2,8 +2,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, usePathname, useRouter } from "expo-router";
 import React from "react";
-import { Animated, Dimensions, Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Animated, Alert, Dimensions, Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ConnectivityQuickBar from "@/components/ConnectivityQuickBar";
+import { openKioskSettings } from "@/utils/kioskAdmin";
 import RequireCompleteProfile from "./RequireCompleteProfile";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -70,9 +72,7 @@ function SlideOutMenu() {
 
   const navigateTo = (route: string) => {
     setOpen(false);
-    setTimeout(() => {
-      router.navigate(route as any);
-    }, 100);
+    router.navigate(route as any);
   };
 
   return (
@@ -162,6 +162,98 @@ function SlideOutMenu() {
             </View>
 
             <View style={{ paddingTop: 12 }}>
+              {Platform.OS === "android" && (
+                <View
+                  style={{
+                    paddingHorizontal: 20,
+                    paddingBottom: 12,
+                    marginBottom: 8,
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#E5E7EB",
+                  }}
+                >
+                  <Text style={{ fontSize: 12, fontWeight: "800", color: "#64748B", marginBottom: 10 }}>
+                    Network (Wi‑Fi, Bluetooth, mobile)
+                  </Text>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                    <TouchableOpacity
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderRadius: 999,
+                        backgroundColor: "#EFF6FF",
+                        borderWidth: 1,
+                        borderColor: "#BFDBFE",
+                      }}
+                      onPress={async () => {
+                        setOpen(false);
+                        const ok = await openKioskSettings("wifi");
+                        if (!ok) {
+                          Alert.alert(
+                            "Network shortcuts unavailable",
+                            "Install the custom Android build (EAS preview APK). Expo Go does not include this.",
+                          );
+                        }
+                      }}
+                    >
+                      <Ionicons name="wifi" size={18} color="#1D4ED8" />
+                      <Text style={{ marginLeft: 6, fontWeight: "800", color: "#1E3A8A", fontSize: 13 }}>Wi‑Fi</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderRadius: 999,
+                        backgroundColor: "#EFF6FF",
+                        borderWidth: 1,
+                        borderColor: "#BFDBFE",
+                      }}
+                      onPress={async () => {
+                        setOpen(false);
+                        const ok = await openKioskSettings("bluetooth");
+                        if (!ok) {
+                          Alert.alert(
+                            "Network shortcuts unavailable",
+                            "Install the custom Android build (EAS preview APK). Expo Go does not include this.",
+                          );
+                        }
+                      }}
+                    >
+                      <Ionicons name="bluetooth" size={18} color="#1D4ED8" />
+                      <Text style={{ marginLeft: 6, fontWeight: "800", color: "#1E3A8A", fontSize: 13 }}>Bluetooth</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderRadius: 999,
+                        backgroundColor: "#EFF6FF",
+                        borderWidth: 1,
+                        borderColor: "#BFDBFE",
+                      }}
+                      onPress={async () => {
+                        setOpen(false);
+                        const ok = await openKioskSettings("mobile_network");
+                        if (!ok) {
+                          Alert.alert(
+                            "Network shortcuts unavailable",
+                            "Install the custom Android build (EAS preview APK). Expo Go does not include this.",
+                          );
+                        }
+                      }}
+                    >
+                      <Ionicons name="cellular" size={18} color="#1D4ED8" />
+                      <Text style={{ marginLeft: 6, fontWeight: "800", color: "#1E3A8A", fontSize: 13 }}>Mobile</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
               {menuItems.map((item) => {
                 const normalizedPathname = (pathname || '').toLowerCase();
                 const normalizedRoute = (item.route || '').toLowerCase();
@@ -186,9 +278,7 @@ function SlideOutMenu() {
                     onPress={() => {
                       if (isAction && item.title === "Add Tile") {
                         setOpen(false);
-                        setTimeout(() => {
-                          router.navigate(item.route as any);
-                        }, 100);
+                        router.navigate(item.route as any);
                       } else {
                         navigateTo(item.route);
                       }
@@ -248,7 +338,10 @@ export default function Layout() {
   const showGlobalMenu = !(pathname?.includes('AACgrid') || pathname?.includes('/AACgrid'));
   return (
     <RequireCompleteProfile>
-      <Stack screenOptions={{ headerShown: false }} />
+      <View style={{ flex: 1 }}>
+        <Stack screenOptions={{ headerShown: false }} />
+        <ConnectivityQuickBar />
+      </View>
       {showGlobalMenu ? <SlideOutMenu /> : null}
     </RequireCompleteProfile>
   );

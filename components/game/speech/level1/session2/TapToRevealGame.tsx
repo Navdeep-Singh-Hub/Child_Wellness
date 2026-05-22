@@ -3,7 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createGlowLoop } from '@/utils/animatedGlowLoop';
 import {
     Animated,
     Dimensions,
@@ -79,32 +80,24 @@ export const TapToRevealGame: React.FC<Props> = ({
   const sparkleRotation = useRef(new Animated.Value(0)).current;
   const cloudPulse = useRef(new Animated.Value(1)).current;
 
+  const cloudPulseLoop = useMemo(
+    () => createGlowLoop(cloudPulse, { min: 1, max: 1.05, duration: 1000, useNativeDriver: true }),
+    [cloudPulse],
+  );
+  const objectBounceLoop = useMemo(
+    () => createGlowLoop(objectBounce, { min: 1, max: 1.12, duration: 700, useNativeDriver: true }),
+    [objectBounce],
+  );
+
   useEffect(() => {
-    startCloudPulse();
+    cloudPulseLoop.start();
     speak('Tap to see what\'s hiding!');
     return () => {
+      cloudPulseLoop.stop();
+      objectBounceLoop.stop();
       clearScheduledSpeech();
     };
-  }, []);
-
-  const startCloudPulse = () => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(cloudPulse, {
-          toValue: 1.05,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(cloudPulse, {
-          toValue: 1,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  };
+  }, [cloudPulseLoop, objectBounceLoop]);
 
   const revealObject = useCallback(() => {
     if (isRevealing) return;
@@ -201,23 +194,7 @@ export const TapToRevealGame: React.FC<Props> = ({
         }),
       ]).start();
 
-      // Continuous bounce animation
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(objectBounce, {
-            toValue: 1.12,
-            duration: 700,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(objectBounce, {
-            toValue: 1,
-            duration: 700,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
+      objectBounceLoop.start();
 
       // Show success animation instead of TTS
       setShowRoundSuccess(true);

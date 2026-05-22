@@ -2,18 +2,25 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { speak as speakTTS, clearScheduledSpeech, DEFAULT_TTS_RATE } from '@/utils/tts';
+import { NATIVE_EFFECT, NATIVE_MOVE } from '@/utils/animation';
+import {
+  speak as speakTTS,
+  clearScheduledSpeech,
+  DEFAULT_TTS_RATE,
+  stopTTS,
+} from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Dimensions,
-    Easing,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    View,
+  Animated,
+  Easing,
+  type GestureResponderEvent,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
 } from 'react-native';
 
 type Props = {
@@ -22,20 +29,22 @@ type Props = {
   requiredTaps?: number;
 };
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const OBJECT_SIZE = 80;
+const TAP_HIT_PADDING = Platform.select({ web: 36, default: 52 })!;
 
-// Speed levels: slow → medium (never too fast)
-const SPEED_LEVELS = [
-  { duration: 3000, label: 'Slow' },      // Level 0: Very slow
-  { duration: 2200, label: 'Medium' },   // Level 1: Slightly faster
-  { duration: 1800, label: 'Faster' },    // Level 2: Medium-fast (max speed)
-];
+const SPEED_LEVELS = Platform.select({
+  web: [
+    { duration: 3000, label: 'Slow' },
+    { duration: 2200, label: 'Medium' },
+    { duration: 1800, label: 'Faster' },
+  ],
+  default: [
+    { duration: 3500, label: 'Slow' },
+    { duration: 2600, label: 'Medium' },
+    { duration: 2000, label: 'Faster' },
+  ],
+})!;
 
-// Use shared TTS utility (speech-to-speech on web, expo-speech on native)
-// Imported from @/utils/tts
-
-// Wrapper function for backward compatibility
 function speak(text: string, rate = DEFAULT_TTS_RATE) {
   speakTTS(text, rate);
 }
@@ -43,205 +52,235 @@ function speak(text: string, rate = DEFAULT_TTS_RATE) {
 export const SlowToFastGame: React.FC<Props> = ({
   onBack,
   onComplete,
-  requiredTaps = 9, // 3 speed levels × 3 taps each
+  requiredTaps = 9,
 }) => {
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const [hits, setHits] = useState(0);
   const [speedLevel, setSpeedLevel] = useState(0);
   const [missFeedback, setMissFeedback] = useState(false);
   const [showReinforcement, setShowReinforcement] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
-  const [showCongratulations, setShowCongratulations] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
   const [showRoundSuccess, setShowRoundSuccess] = useState(false);
 
-  const position = useRef(new Animated.ValueXY({ x: SCREEN_WIDTH / 2, y: SCREEN_HEIGHT / 2 }))
-    .current;
+  const objectX = useRef(new Animated.Value(0)).current;
+  const objectY = useRef(new Animated.Value(0)).current;
   const objectScale = useRef(new Animated.Value(1)).current;
   const objectOpacity = useRef(new Animated.Value(1)).current;
-  const motionLoop = useRef<Animated.CompositeAnimation | null>(null);
+  const motionAnim = useRef<Animated.CompositeAnimation | null>(null);
+  const motionGenerationRef = useRef(0);
+  const objectPositionRef = useRef({ x: 0, y: 0 });
+  const speedLevelRef = useRef(0);
+  const isMovingRef = useRef(false);
+  const gameFinishedRef = useRef(false);
+  const tapLockedRef = useRef(false);
+
+  useEffect(() => {
+    gameFinishedRef.current = gameFinished;
+  }, [gameFinished]);
+
+  useEffect(() => {
+    speedLevelRef.current = speedLevel;
+  }, [speedLevel]);
+
+  useEffect(() => {
+    const idX = objectX.addListener(({ value }) => {
+      objectPositionRef.current.x = value;
+    });
+    const idY = objectY.addListener(({ value }) => {
+      objectPositionRef.current.y = value;
+    });
+    return () => {
+      objectX.removeListener(idX);
+      objectY.removeListener(idY);
+    };
+  }, [objectX, objectY]);
 
   const randomPointOnScreen = useCallback(() => {
-    // Generate points across the screen, avoiding edges and footer area
     const margin = 60;
-    const topMargin = 100; // More space at top
-    const bottomMargin = 180; // Avoid footer area
+    const topMargin = 100;
+    const bottomMargin = 180;
     return {
-      x: margin + Math.random() * (SCREEN_WIDTH - margin * 2),
-      y: topMargin + Math.random() * (SCREEN_HEIGHT - topMargin - bottomMargin),
+      x: margin + Math.random() * Math.max(1, SCREEN_WIDTH - margin * 2),
+      y: topMargin + Math.random() * Math.max(1, SCREEN_HEIGHT - topMargin - bottomMargin),
     };
-  }, []);
+  }, [SCREEN_WIDTH, SCREEN_HEIGHT]);
 
-  useEffect(() => {
-    // Start with object at a random position on screen
-    const startPos = randomPointOnScreen();
-    position.setValue(startPos);
-    startObjectMotion();
-    // Speak initial instruction
-    speak('Tap the object as it moves!');
-    return () => {
-      motionLoop.current?.stop();
-      clearScheduledSpeech();
-    };
-  }, [randomPointOnScreen]);
-
-  // Show congratulations when game finishes
-  useEffect(() => {
-    console.log('🎮 SlowToFastGame: gameFinished effect triggered', { 
-      gameFinished, 
-      showCongratulations,
-      hits,
-      requiredTaps 
-    });
-    if (gameFinished && !showCongratulations) {
-      console.log('🎮 SlowToFastGame: ✅ Setting showCongratulations to true');
-      setShowCongratulations(true);
-    } else if (gameFinished && showCongratulations) {
-      console.log('🎮 SlowToFastGame: ✅ Already showing congratulations');
-    }
-  }, [gameFinished, showCongratulations, hits, requiredTaps]);
-
-  // Update speed when level changes
-  useEffect(() => {
-    if (motionLoop.current) {
-      motionLoop.current.stop();
-      startObjectMotion();
-    }
-  }, [speedLevel, randomPointOnScreen]);
+  const stopMotion = useCallback(() => {
+    motionGenerationRef.current += 1;
+    motionAnim.current?.stop();
+    motionAnim.current = null;
+    objectX.stopAnimation();
+    objectY.stopAnimation();
+  }, [objectX, objectY]);
 
   const startObjectMotion = useCallback(() => {
-    motionLoop.current?.stop();
+    if (gameFinishedRef.current) return;
+
+    stopMotion();
+    const generation = motionGenerationRef.current;
     const start = randomPointOnScreen();
-    position.setValue(start);
+    objectX.setValue(start.x);
+    objectY.setValue(start.y);
+    objectPositionRef.current = { x: start.x, y: start.y };
+    isMovingRef.current = true;
     setIsMoving(true);
 
-    const currentSpeed = SPEED_LEVELS[Math.min(speedLevel, SPEED_LEVELS.length - 1)];
-    const mid = randomPointOnScreen();
-    const end = randomPointOnScreen();
+    const runStep = () => {
+      if (
+        gameFinishedRef.current ||
+        generation !== motionGenerationRef.current ||
+        !isMovingRef.current
+      ) {
+        return;
+      }
 
-    const sequence = Animated.sequence([
-      Animated.timing(position, {
-        toValue: mid,
-        duration: currentSpeed.duration,
-        easing: Easing.inOut(Easing.quad),
-        useNativeDriver: false,
-      }),
-      Animated.timing(position, {
-        toValue: end,
-        duration: currentSpeed.duration,
-        easing: Easing.inOut(Easing.quad),
-        useNativeDriver: false,
-      }),
-    ]);
+      const level = Math.min(speedLevelRef.current, SPEED_LEVELS.length - 1);
+      const duration = SPEED_LEVELS[level].duration;
+      const target = randomPointOnScreen();
 
-    motionLoop.current = Animated.loop(sequence);
-    motionLoop.current.start();
-  }, [speedLevel, randomPointOnScreen, position]);
+      motionAnim.current = Animated.parallel([
+        Animated.timing(objectX, {
+          toValue: target.x,
+          duration,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: NATIVE_MOVE,
+        }),
+        Animated.timing(objectY, {
+          toValue: target.y,
+          duration,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: NATIVE_MOVE,
+        }),
+      ]);
 
+      motionAnim.current.start(({ finished }) => {
+        if (
+          finished &&
+          !gameFinishedRef.current &&
+          generation === motionGenerationRef.current &&
+          isMovingRef.current
+        ) {
+          runStep();
+        }
+      });
+    };
 
-  const handleTap = () => {
-    // Always count as hit if object is visible and moving
-    if (isMoving) {
-      onHit();
+    runStep();
+  }, [randomPointOnScreen, stopMotion, objectX, objectY]);
+
+  useEffect(() => {
+    startObjectMotion();
+    speak('Tap the object as it moves!');
+    return () => {
+      stopMotion();
+      clearScheduledSpeech();
+    };
+  }, [startObjectMotion, stopMotion]);
+
+  useEffect(() => {
+    if (speedLevel > 0 && isMovingRef.current && !gameFinishedRef.current) {
+      startObjectMotion();
     }
-  };
+  }, [speedLevel, startObjectMotion]);
 
-  const onHit = () => {
-    if (!isMoving) return;
+  const onHit = useCallback(() => {
+    if (!isMovingRef.current || tapLockedRef.current || gameFinishedRef.current) return;
+
+    tapLockedRef.current = true;
+    isMovingRef.current = false;
+    setIsMoving(false);
+    stopMotion();
+
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
-    setIsMoving(false);
-    motionLoop.current?.stop();
 
-    // Pop animation
     Animated.parallel([
       Animated.timing(objectScale, {
         toValue: 1.5,
         duration: 200,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: NATIVE_EFFECT,
       }),
       Animated.timing(objectOpacity, {
         toValue: 0,
         duration: 200,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: NATIVE_EFFECT,
       }),
     ]).start(() => {
-      const nextHits = hits + 1;
-      setHits(nextHits);
+      setHits((prev) => {
+        const nextHits = prev + 1;
 
-      // Show success animation on every tap (like CatchTheBouncingStar)
-      setShowRoundSuccess(true);
-      setTimeout(() => {
-        setShowRoundSuccess(false);
-      }, 2500);
+        setShowRoundSuccess(true);
+        setTimeout(() => setShowRoundSuccess(false), 2500);
 
-      // Speed up after every 3 taps (if not at max speed)
-      if (nextHits > 0 && nextHits % 3 === 0) {
-        setShowReinforcement(true);
-        setTimeout(() => {
-          setShowReinforcement(false);
-        }, 2500);
+        if (nextHits > 0 && nextHits % 3 === 0) {
+          setShowReinforcement(true);
+          setTimeout(() => setShowReinforcement(false), 2500);
 
-        if (speedLevel < SPEED_LEVELS.length - 1) {
-          const newSpeedLevel = speedLevel + 1;
-          setSpeedLevel(newSpeedLevel);
+          if (speedLevelRef.current < SPEED_LEVELS.length - 1) {
+            const newLevel = speedLevelRef.current + 1;
+            speedLevelRef.current = newLevel;
+            setSpeedLevel(newLevel);
+          }
         }
-      }
 
-      if (nextHits >= requiredTaps) {
-        console.log('🎮 SlowToFastGame: ✅ GAME COMPLETE!', { nextHits, requiredTaps });
-        // Stop animations and set states
-        setIsMoving(false);
-        motionLoop.current?.stop();
-        // Hide animation before finishing game
+        if (nextHits >= requiredTaps) {
+          setTimeout(() => {
+            setShowRoundSuccess(false);
+            stopMotion();
+            setGameFinished(true);
+            tapLockedRef.current = false;
+          }, 2500);
+          return nextHits;
+        }
+
         setTimeout(() => {
-          setShowRoundSuccess(false);
-          console.log('🎮 SlowToFastGame: About to set gameFinished to true');
-          setGameFinished(true);
-          console.log('🎮 SlowToFastGame: ✅ Set gameFinished to true');
-        }, 2500);
-        return;
-      }
+          objectScale.setValue(1);
+          objectOpacity.setValue(1);
+          tapLockedRef.current = false;
+          isMovingRef.current = true;
+          setIsMoving(true);
+          startObjectMotion();
+        }, 600);
 
-      // Respawn after short delay
-      setTimeout(() => {
-        objectScale.setValue(1);
-        objectOpacity.setValue(1);
-        setIsMoving(true);
-        startObjectMotion();
-      }, 600);
+        return nextHits;
+      });
     });
-  };
+  }, [requiredTaps, startObjectMotion, stopMotion, objectScale, objectOpacity]);
 
-  const onMiss = () => {
-    setMissFeedback(true);
-    setTimeout(() => setMissFeedback(false), 500);
-    try {
-      Haptics.selectionAsync();
-    } catch {}
-  };
+  const handlePlayAreaPress = useCallback(
+    (event: GestureResponderEvent) => {
+      if (gameFinished || tapLockedRef.current || !isMovingRef.current) return;
 
-  const currentSpeed = SPEED_LEVELS[Math.min(speedLevel, SPEED_LEVELS.length - 1)];
-  const progressDots = Array.from({ length: Math.ceil(requiredTaps / 3) }, (_, i) => 
-    Math.floor(hits / 3) > i
+      const { locationX, locationY } = event.nativeEvent;
+      const centerX = objectPositionRef.current.x + OBJECT_SIZE / 2;
+      const centerY = objectPositionRef.current.y + OBJECT_SIZE / 2;
+      const hitRadius = OBJECT_SIZE / 2 + TAP_HIT_PADDING;
+
+      if (Math.hypot(locationX - centerX, locationY - centerY) <= hitRadius) {
+        onHit();
+      } else {
+        setMissFeedback(true);
+        setTimeout(() => setMissFeedback(false), 500);
+        try {
+          Haptics.selectionAsync();
+        } catch {}
+      }
+    },
+    [gameFinished, onHit],
   );
 
-  // Debug logging - log on every render
-  console.log('🎮 SlowToFastGame: 🔄 RENDER', {
-    showCongratulations,
-    gameFinished,
-    hits,
-    requiredTaps,
-    shouldShowCongrats: showCongratulations && gameFinished,
-  });
+  const currentSpeed = SPEED_LEVELS[Math.min(speedLevel, SPEED_LEVELS.length - 1)];
+  const progressDots = Array.from({ length: Math.ceil(requiredTaps / 3) }, (_, i) =>
+    Math.floor(hits / 3) > i,
+  );
 
-  // Show completion screen when game finishes
   if (gameFinished) {
     const accuracyPct = hits >= requiredTaps ? 100 : Math.round((hits / requiredTaps) * 100);
     const xpAwarded = hits * 10;
-    console.log('🎮 SlowToFastGame: 🎉 RENDERING Completion Screen NOW!');
     return (
       <CongratulationsScreen
         message="Super Eyes!"
@@ -270,6 +309,7 @@ export const SlowToFastGame: React.FC<Props> = ({
         <Pressable
           onPress={() => {
             clearScheduledSpeech();
+            stopTTS();
             onBack();
           }}
           style={styles.backButton}
@@ -280,44 +320,48 @@ export const SlowToFastGame: React.FC<Props> = ({
         </Pressable>
         <View style={styles.headerText}>
           <Text style={styles.title}>Slow → Fast Game</Text>
-          <Text style={styles.subtitle}>Tap the object as it moves! Speed: {currentSpeed.label}</Text>
+          <Text style={styles.subtitle}>
+            Tap the object as it moves! Speed: {currentSpeed.label}
+          </Text>
         </View>
       </View>
 
-      <View style={styles.playArea}>
+      <Pressable style={styles.playArea} onPress={handlePlayAreaPress}>
         <Animated.View
+          pointerEvents="none"
           style={[
             styles.object,
             {
               width: OBJECT_SIZE,
               height: OBJECT_SIZE,
               borderRadius: OBJECT_SIZE / 2,
-              transform: [
-                { translateX: Animated.subtract(position.x, OBJECT_SIZE / 2) },
-                { translateY: Animated.subtract(position.y, OBJECT_SIZE / 2) },
-                { scale: objectScale },
-              ],
-              opacity: objectOpacity,
+              transform: [{ translateX: objectX }, { translateY: objectY }],
             },
           ]}
         >
-          <Pressable style={styles.objectPressable} onPress={handleTap} hitSlop={40}>
+          <Animated.View
+            style={{
+              flex: 1,
+              transform: [{ scale: objectScale }],
+              opacity: objectOpacity,
+            }}
+          >
             <Text style={styles.objectEmoji}>⭐</Text>
-          </Pressable>
+          </Animated.View>
         </Animated.View>
 
         {missFeedback && (
-          <View style={styles.missBadge}>
+          <View style={styles.missBadge} pointerEvents="none">
             <Text style={styles.missText}>Try again!</Text>
           </View>
         )}
 
         {showReinforcement && (
-          <View style={styles.reinforcementBadge}>
+          <View style={styles.reinforcementBadge} pointerEvents="none">
             <Text style={styles.reinforcementText}>Super eyes! ✨</Text>
           </View>
         )}
-      </View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>Speed discrimination • Visual attention duration</Text>
@@ -334,11 +378,7 @@ export const SlowToFastGame: React.FC<Props> = ({
         </Text>
       </View>
 
-      {/* Round Success Animation */}
-      <RoundSuccessAnimation
-        visible={showRoundSuccess}
-        stars={3}
-      />
+      <RoundSuccessAnimation visible={showRoundSuccess} stars={3} />
     </SafeAreaView>
   );
 };
@@ -386,7 +426,6 @@ const styles = StyleSheet.create({
   playArea: {
     flex: 1,
     position: 'relative',
-    overflow: 'visible',
   },
   object: {
     position: 'absolute',
@@ -400,12 +439,6 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
     elevation: 10,
-    zIndex: 1000,
-  },
-  objectPressable: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   objectEmoji: {
     fontSize: 36,
@@ -413,6 +446,7 @@ const styles = StyleSheet.create({
   missBadge: {
     position: 'absolute',
     bottom: 24,
+    alignSelf: 'center',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 12,
@@ -476,4 +510,3 @@ const styles = StyleSheet.create({
     color: '#0F172A',
   },
 });
-

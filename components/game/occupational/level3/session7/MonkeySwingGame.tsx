@@ -118,7 +118,7 @@ const MonkeySwingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               toValue: 0,
               damping: 10,
               stiffness: 100,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]).start();
         }
@@ -139,7 +139,7 @@ const MonkeySwingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       toValue: 1,
       tension: 50,
       friction: 7,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     speakTTS('Monkey ko liana pe swing karao! Do baar swing karo!', 0.8 );
@@ -158,7 +158,7 @@ const MonkeySwingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Animated.timing(monkeyScale, {
           toValue: 1.3,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(monkeyX, {
           toValue: SWING_END_X_PCT,
@@ -169,7 +169,7 @@ const MonkeySwingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       Animated.timing(monkeyScale, {
         toValue: 1,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 

@@ -2,6 +2,7 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import ResultCard from '@/components/game/ResultCard';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
+import { NATIVE_EFFECT, NATIVE_MOVE } from '@/utils/animation';
 import { speak as speakTTS, clearScheduledSpeech, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -10,6 +11,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
     Easing,
+    type GestureResponderEvent,
     Platform,
     Pressable,
     SafeAreaView,
@@ -27,7 +29,13 @@ type Props = {
 };
 
 const STAR_SIZE = 100;
-const BOUNCE_SPEED = 2000; // Duration for one bounce cycle
+/** Extra radius so taps register while the star is moving (native transform touch lag) */
+const TAP_HIT_PADDING = Platform.select({ web: 36, default: 52 })!;
+/** Slower on native — layout `left`/`top` + stacked loops caused jank/crashes on tablets */
+const BOUNCE_DURATION_MS = Platform.select({
+  web: { min: 1500, range: 1000 },
+  default: { min: 2600, range: 1400 },
+})!;
 
 // Use shared TTS utility (speech-to-speech on web, expo-speech on native)
 // Imported from @/utils/tts
@@ -66,103 +74,134 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
   const bounceAnim = useRef<Animated.CompositeAnimation | null>(null);
   const rotationAnim = useRef<Animated.CompositeAnimation | null>(null);
   const glowAnim = useRef<Animated.CompositeAnimation | null>(null);
+  const gameFinishedRef = useRef(false);
+  const bounceGenerationRef = useRef(0);
+  const starPositionRef = useRef({ x: 0, y: 0 });
+  const tapLockedRef = useRef(false);
+
+  useEffect(() => {
+    gameFinishedRef.current = gameFinished;
+  }, [gameFinished]);
+
+  useEffect(() => {
+    const idX = starX.addListener(({ value }) => {
+      starPositionRef.current.x = value;
+    });
+    const idY = starY.addListener(({ value }) => {
+      starPositionRef.current.y = value;
+    });
+    return () => {
+      starX.removeListener(idX);
+      starY.removeListener(idY);
+    };
+  }, [starX, starY]);
 
   const getRandomPosition = useCallback(() => {
     const margin = STAR_SIZE / 2 + 40;
+    const maxX = Math.max(margin + 1, SCREEN_WIDTH - margin * 2);
+    const maxY = Math.max(80, SCREEN_HEIGHT - 300);
     return {
-      x: margin + Math.random() * (SCREEN_WIDTH - margin * 2),
-      y: 150 + Math.random() * (SCREEN_HEIGHT - 300),
+      x: margin + Math.random() * maxX,
+      y: 80 + Math.random() * maxY,
     };
   }, [SCREEN_WIDTH, SCREEN_HEIGHT]);
 
+  const stopAllAnimations = useCallback(() => {
+    bounceGenerationRef.current += 1;
+    bounceAnim.current?.stop();
+    rotationAnim.current?.stop();
+    glowAnim.current?.stop();
+    bounceAnim.current = null;
+    rotationAnim.current = null;
+    glowAnim.current = null;
+    starX.stopAnimation();
+    starY.stopAnimation();
+    starRotation.stopAnimation();
+    starGlow.stopAnimation();
+  }, [starX, starY, starRotation, starGlow]);
+
   const startBounce = useCallback(() => {
+    stopAllAnimations();
+    const generation = bounceGenerationRef.current;
+
     const margin = STAR_SIZE / 2 + 20;
     const startPos = getRandomPosition();
     starX.setValue(startPos.x);
     starY.setValue(startPos.y);
+    starPositionRef.current = { x: startPos.x, y: startPos.y };
+    starRotation.setValue(0);
+    starGlow.setValue(0.5);
 
-    // Random end position for bounce
-    const endX = margin + Math.random() * (SCREEN_WIDTH - margin * 2);
-    const endY = 150 + Math.random() * (SCREEN_HEIGHT - 200);
-
-    // Continuous rotation
     rotationAnim.current = Animated.loop(
       Animated.timing(starRotation, {
         toValue: 1,
-        duration: 2000,
+        duration: 3000,
         easing: Easing.linear,
-        useNativeDriver: false,
-      })
+        useNativeDriver: NATIVE_EFFECT,
+      }),
     );
     rotationAnim.current.start();
 
-    // Pulsing glow
     glowAnim.current = Animated.loop(
       Animated.sequence([
         Animated.timing(starGlow, {
           toValue: 1,
-          duration: 1000,
+          duration: 1200,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: NATIVE_EFFECT,
         }),
         Animated.timing(starGlow, {
           toValue: 0.5,
-          duration: 1000,
+          duration: 1200,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: NATIVE_EFFECT,
         }),
-      ])
+      ]),
     );
     glowAnim.current.start();
 
-    // Bounce animation - move to end position, then bounce back
-    const bounceDuration = 2000 + Math.random() * 1000;
-    
-    const createBounce = (fromX: number, fromY: number, toX: number, toY: number, duration: number) => {
-      return Animated.parallel([
+    const runBounceStep = () => {
+      if (gameFinishedRef.current || generation !== bounceGenerationRef.current) {
+        return;
+      }
+
+      const nextX = margin + Math.random() * Math.max(1, SCREEN_WIDTH - margin * 2);
+      const nextY = 80 + Math.random() * Math.max(1, SCREEN_HEIGHT - 200);
+      const duration = BOUNCE_DURATION_MS.min + Math.random() * BOUNCE_DURATION_MS.range;
+
+      bounceAnim.current = Animated.parallel([
         Animated.timing(starX, {
-          toValue: toX,
+          toValue: nextX,
           duration,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: NATIVE_MOVE,
         }),
         Animated.timing(starY, {
-          toValue: toY,
+          toValue: nextY,
           duration,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: NATIVE_MOVE,
         }),
       ]);
-    };
 
-    const animateSequence = (fromX: number, fromY: number) => {
-      if (gameFinished) return;
-
-      const nextX = margin + Math.random() * (SCREEN_WIDTH - margin * 2);
-      const nextY = 150 + Math.random() * (SCREEN_HEIGHT - 200);
-      const duration = 1500 + Math.random() * 1000;
-
-      bounceAnim.current = createBounce(fromX, fromY, nextX, nextY, duration);
-      bounceAnim.current.start(() => {
-        if (!gameFinished) {
-          animateSequence(nextX, nextY);
+      bounceAnim.current.start(({ finished }) => {
+        if (finished && !gameFinishedRef.current && generation === bounceGenerationRef.current) {
+          runBounceStep();
         }
       });
     };
 
-    animateSequence(startPos.x, startPos.y);
-  }, [SCREEN_WIDTH, SCREEN_HEIGHT, getRandomPosition, gameFinished]);
+    runBounceStep();
+  }, [SCREEN_WIDTH, SCREEN_HEIGHT, getRandomPosition, stopAllAnimations, starX, starY]);
 
   useEffect(() => {
     startBounce();
     speak('Catch the bouncing star! Tap it when you see it!');
     return () => {
-      bounceAnim.current?.stop();
-      rotationAnim.current?.stop();
-      glowAnim.current?.stop();
+      stopAllAnimations();
       clearScheduledSpeech();
     };
-  }, []);
+  }, [startBounce, stopAllAnimations]);
 
   useEffect(() => {
     if (hits >= requiredTaps && !gameFinished) {
@@ -185,7 +224,9 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
     };
     
     console.log('🎮 CatchTheBouncingStar: Setting states', { stats });
-    
+
+    stopAllAnimations();
+
     // Set all states first
     setFinalStats(stats);
     setGameFinished(true);
@@ -219,39 +260,40 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
       console.error('Failed to save game:', e);
     }
     // Don't call onComplete here - let congratulations screen handle it
-  }, [hits, requiredTaps, gameFinished]);
+  }, [hits, requiredTaps, gameFinished, stopAllAnimations]);
 
   const handleStarTap = useCallback(() => {
-    // Activate TTS on first user interaction (web browser requirement)
     if (!userInteracted) {
       setUserInteracted(true);
-      // Shared TTS utility handles activation automatically
       speak('Catch the bouncing star! Tap it when you see it!');
     }
-    if (gameFinished) return;
+    if (gameFinished || tapLockedRef.current) return;
+    tapLockedRef.current = true;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    stopAllAnimations();
+
     setHits((prev) => prev + 1);
     setRound((prev) => prev + 1);
     setShowFeedback(true);
     setFeedbackMessage('🌟 Great catch!');
-    // Show success animation instead of TTS
     setShowRoundSuccess(true);
 
-    // Pop animation
+    const nextHits = hits + 1;
+
     Animated.sequence([
       Animated.parallel([
         Animated.timing(starScale, {
           toValue: 1.5,
           duration: 150,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: false,
+          useNativeDriver: NATIVE_EFFECT,
         }),
         Animated.timing(starGlow, {
           toValue: 1.5,
           duration: 150,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: false,
+          useNativeDriver: NATIVE_EFFECT,
         }),
       ]),
       Animated.parallel([
@@ -259,33 +301,49 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
           toValue: 0,
           duration: 200,
           easing: Easing.in(Easing.quad),
-          useNativeDriver: false,
+          useNativeDriver: NATIVE_EFFECT,
         }),
         Animated.timing(starGlow, {
           toValue: 0,
           duration: 200,
           easing: Easing.in(Easing.quad),
-          useNativeDriver: false,
+          useNativeDriver: NATIVE_EFFECT,
         }),
       ]),
     ]).start(() => {
-      if (hits + 1 < requiredTaps) {
-        // Reset and continue after animation
+      if (nextHits < requiredTaps) {
         setTimeout(() => {
           setShowRoundSuccess(false);
           setShowFeedback(false);
           starScale.setValue(1);
           starGlow.setValue(0.5);
+          tapLockedRef.current = false;
           startBounce();
-        }, 2500);
+        }, 1200);
       } else {
-        // Last tap - hide animation before finishing game
         setTimeout(() => {
           setShowRoundSuccess(false);
-        }, 2500);
+          tapLockedRef.current = false;
+        }, 1200);
       }
     });
-  }, [gameFinished, hits, requiredTaps, startBounce]);
+  }, [gameFinished, hits, requiredTaps, startBounce, stopAllAnimations, starScale, starGlow, userInteracted]);
+
+  const handlePlayAreaPress = useCallback(
+    (event: GestureResponderEvent) => {
+      if (gameFinished || tapLockedRef.current) return;
+
+      const { locationX, locationY } = event.nativeEvent;
+      const centerX = starPositionRef.current.x + STAR_SIZE / 2;
+      const centerY = starPositionRef.current.y + STAR_SIZE / 2;
+      const hitRadius = STAR_SIZE / 2 + TAP_HIT_PADDING;
+
+      if (Math.hypot(locationX - centerX, locationY - centerY) <= hitRadius) {
+        handleStarTap();
+      }
+    },
+    [gameFinished, handleStarTap],
+  );
 
   // Debug logging
   useEffect(() => {
@@ -358,29 +416,20 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
           </View>
         </View>
 
-        <View style={styles.playArea}>
+        <Pressable style={styles.playArea} onPress={handlePlayAreaPress}>
           <Animated.View
+            pointerEvents="none"
             style={[
               styles.starContainer,
-              {
-                left: starX,
-                top: starY,
-                transform: [
-                  { scale: starScale },
-                  { rotate: rotation },
-                ],
-              },
+              { transform: [{ translateX: starX }, { translateY: starY }] },
             ]}
           >
-            <Pressable onPress={handleStarTap} hitSlop={20} style={styles.starPressable}>
-              <Animated.View
-                style={[
-                  styles.starGlow,
-                  {
-                    opacity: glowOpacity,
-                  },
-                ]}
-              >
+            <Animated.View
+              style={{
+                transform: [{ scale: starScale }, { rotate: rotation }],
+              }}
+            >
+              <Animated.View style={[styles.starGlow, { opacity: glowOpacity }]}>
                 <LinearGradient
                   colors={['#FCD34D', '#FBBF24', '#F59E0B']}
                   style={styles.star}
@@ -388,21 +437,21 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
                   <Text style={styles.starEmoji}>⭐</Text>
                 </LinearGradient>
               </Animated.View>
-            </Pressable>
+            </Animated.View>
           </Animated.View>
 
           {showFeedback && (
-            <View style={styles.feedbackContainer}>
+            <View pointerEvents="none" style={styles.feedbackContainer}>
               <Text style={styles.feedbackText}>{feedbackMessage}</Text>
             </View>
           )}
 
           {!showFeedback && (
-            <View style={styles.instructionBadge}>
+            <View pointerEvents="none" style={styles.instructionBadge}>
               <Text style={styles.instructionText}>✨ Tap the bouncing star!</Text>
             </View>
           )}
-        </View>
+        </Pressable>
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
@@ -479,20 +528,18 @@ const styles = StyleSheet.create({
   playArea: {
     flex: 1,
     position: 'relative',
-    overflow: 'visible',
+    overflow: 'hidden',
   },
   starContainer: {
     position: 'absolute',
+    left: 0,
+    top: 0,
     width: STAR_SIZE,
     height: STAR_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100,
     elevation: 10,
-  },
-  starPressable: {
-    width: STAR_SIZE,
-    height: STAR_SIZE,
   },
   starGlow: {
     width: STAR_SIZE,

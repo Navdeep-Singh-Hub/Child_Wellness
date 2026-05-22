@@ -1,53 +1,50 @@
 import { CATEGORIES, CATEGORY_STYLES, COMMON_WORDS, tileImages, type Category, type Tile } from '@/constants/aac';
 import { addCustomTile, API_BASE_URL, getCustomTiles, getFavorites, toggleFavorite, type CustomTile } from '@/utils/api';
+import { openKioskSettings } from '@/utils/kioskAdmin';
 import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
+import { Image as ExpoImage } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import * as Speech from 'expo-speech';
+import React, { memo, startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Toast from 'react-native-toast-message';
 
 
 
 import {
-  Alert,
-  Easing,
-  FlatList,
-  Image,
-  InteractionManager,
-  LayoutAnimation,
-  Modal,
-  Platform,
-  Pressable,
-  Animated as RNAnimated,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  UIManager,
-  useWindowDimensions,
-  View
+    ActivityIndicator,
+    Alert,
+    Easing,
+    FlatList,
+    Image,
+    Modal,
+    Platform,
+    Pressable,
+    Animated as RNAnimated,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    useWindowDimensions,
+    View,
 } from 'react-native';
 
 import Animated, {
-  cancelAnimation,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withSpring,
-  withTiming,
+    cancelAnimation,
+    Easing as ReanimatedEasing,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withSequence,
+    withSpring,
+    withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 const MENU_WIDTH = 280;
 const CLOSED_OFFSET = MENU_WIDTH + 16;
@@ -106,9 +103,7 @@ function GridMenu({ inline = false, selectedLang = 'en-US' }: { inline?: boolean
 
   const navigateTo = (route: string) => {
     setOpen(false);
-    setTimeout(() => {
-      router.navigate(route as any);
-    }, 100);
+    router.navigate(route as any);
   };
 
   return (
@@ -198,6 +193,98 @@ function GridMenu({ inline = false, selectedLang = 'en-US' }: { inline?: boolean
             </View>
 
             <View style={{ paddingTop: 12 }}>
+              {Platform.OS === 'android' && (
+                <View
+                  style={{
+                    paddingHorizontal: 20,
+                    paddingBottom: 12,
+                    marginBottom: 8,
+                    borderBottomWidth: 1,
+                    borderBottomColor: '#E5E7EB',
+                  }}
+                >
+                  <Text style={{ fontSize: 12, fontWeight: '800', color: '#64748B', marginBottom: 10 }}>
+                    {t('networkSection', selectedLang)}
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    <TouchableOpacity
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderRadius: 999,
+                        backgroundColor: '#EFF6FF',
+                        borderWidth: 1,
+                        borderColor: '#BFDBFE',
+                      }}
+                      onPress={async () => {
+                        setOpen(false);
+                        const ok = await openKioskSettings('wifi');
+                        if (!ok) {
+                          Alert.alert(
+                            'Network shortcuts unavailable',
+                            'Install the custom Android build (EAS preview APK). Expo Go does not include this.',
+                          );
+                        }
+                      }}
+                    >
+                      <Ionicons name="wifi" size={18} color="#1D4ED8" />
+                      <Text style={{ marginLeft: 6, fontWeight: '800', color: '#1E3A8A', fontSize: 13 }}>Wi‑Fi</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderRadius: 999,
+                        backgroundColor: '#EFF6FF',
+                        borderWidth: 1,
+                        borderColor: '#BFDBFE',
+                      }}
+                      onPress={async () => {
+                        setOpen(false);
+                        const ok = await openKioskSettings('bluetooth');
+                        if (!ok) {
+                          Alert.alert(
+                            'Network shortcuts unavailable',
+                            'Install the custom Android build (EAS preview APK). Expo Go does not include this.',
+                          );
+                        }
+                      }}
+                    >
+                      <Ionicons name="bluetooth" size={18} color="#1D4ED8" />
+                      <Text style={{ marginLeft: 6, fontWeight: '800', color: '#1E3A8A', fontSize: 13 }}>Bluetooth</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderRadius: 999,
+                        backgroundColor: '#EFF6FF',
+                        borderWidth: 1,
+                        borderColor: '#BFDBFE',
+                      }}
+                      onPress={async () => {
+                        setOpen(false);
+                        const ok = await openKioskSettings('mobile_network');
+                        if (!ok) {
+                          Alert.alert(
+                            'Network shortcuts unavailable',
+                            'Install the custom Android build (EAS preview APK). Expo Go does not include this.',
+                          );
+                        }
+                      }}
+                    >
+                      <Ionicons name="cellular" size={18} color="#1D4ED8" />
+                      <Text style={{ marginLeft: 6, fontWeight: '800', color: '#1E3A8A', fontSize: 13 }}>Mobile</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
               {menuItems.map((item, index) => {
                 // Improved active detection: check multiple pathname variations
                 const normalizedPathname = (pathname || '').toLowerCase();
@@ -339,9 +426,11 @@ const UI_TRANSLATIONS: Record<LangKey, Record<string, string>> = {
     deleteConfirm: 'Delete',
     goBack: 'Go back to Home',
     openMenu: 'Open menu',
+    networkSection: 'Wi‑Fi & network',
     common: 'Common',
     searchWords: 'Search words…',
     buildSentence: 'Build a sentence…',
+    loadingTiles: 'Loading tiles…',
     transport: 'Transport',
     food: 'Food',
     jobs: 'Jobs',
@@ -821,6 +910,7 @@ const LANG_MATCH: Record<LangKey, (v: Speech.Voice) => boolean> = {
 };
 
 let _voicesCache: Speech.Voice[] | null = null;
+const _voiceIdByLang: Partial<Record<LangKey, string>> = {};
 
 async function loadVoices(): Promise<Speech.Voice[]> {
   if (_voicesCache) return _voicesCache;
@@ -908,18 +998,42 @@ function normalizeForSpeech(text: string, lang: LangKey): string {
   return text;
 }
 
-async function speakSmart(text: string, lang: LangKey, rateOverride?: number, skipStop?: boolean) {
+async function ensureVoiceId(lang: LangKey): Promise<string | undefined> {
+  if (_voiceIdByLang[lang]) return _voiceIdByLang[lang];
+  const voice = await pickVoice(lang);
+  if (voice?.identifier) _voiceIdByLang[lang] = voice.identifier;
+  return _voiceIdByLang[lang];
+}
+
+const ALL_LANGS: LangKey[] = ['en-US', 'hi-IN', 'pa-IN', 'ta-IN', 'te-IN'];
+
+async function warmAllVoiceIds(): Promise<void> {
+  await loadVoices();
+  for (const lang of ALL_LANGS) {
+    await ensureVoiceId(lang);
+  }
+}
+
+function speakSmart(text: string, lang: LangKey, rateOverride?: number, skipStop?: boolean) {
   const normalizedText = normalizeForSpeech(text, lang);
   const rate = typeof rateOverride === 'number' ? rateOverride : DEFAULT_SPEECH_RATE;
   const opts = skipStop ? { skipStop: true } : undefined;
 
-  try {
-    await speakTTS(normalizedText, rate, lang, opts);
+  if (Platform.OS !== 'web') {
+    const voiceId = _voiceIdByLang[lang];
+    Speech.speak(normalizedText, {
+      language: lang,
+      rate,
+      pitch: 1.02,
+      ...(voiceId ? { voice: voiceId } : {}),
+    });
+    if (!voiceId) void ensureVoiceId(lang);
     return;
-  } catch (error) {
-    console.warn('[AAC] Shared TTS failed, using expo-speech with language voice:', error);
   }
-  await speakTTS(normalizedText, rate, lang, opts);
+
+  void speakTTS(normalizedText, rate, lang, opts).catch((error) => {
+    console.warn('[AAC] TTS failed:', error);
+  });
 }
 
 
@@ -941,24 +1055,14 @@ function runHaptic(action: () => Promise<void>) {
   }
 }
 
-// ---------- TTS scheduler: run speech AFTER animations ----------
-// On native, InteractionManager.runAfterInteractions can wait too long (e.g. FlatList/layout
-// keep "interactions" active), so TTS never fires. Use setTimeout only on native.
-function scheduleSpeak(text: string, lang: LangKey, delayMs = 30, rate?: number, skipStop?: boolean) {
-  const run = () => {
-    setTimeout(() => {
-      speakSmart(text, lang, rate, skipStop);
-    }, Math.max(0, delayMs));
-  };
-  if (Platform.OS !== 'web') {
-    run();
+// ---------- TTS scheduler (optional delay for stretched phrases) ----------
+function scheduleSpeak(text: string, lang: LangKey, delayMs = 0, rate?: number, skipStop?: boolean) {
+  const fire = () => speakSmart(text, lang, rate, skipStop);
+  if (delayMs <= 0) {
+    fire();
     return;
   }
-  try {
-    InteractionManager.runAfterInteractions(run);
-  } catch {
-    run();
-  }
+  setTimeout(fire, delayMs);
 }
 
 // --- speak sentence by small chunks/words for kid-friendly pacing
@@ -998,79 +1102,36 @@ function normImageUrl(u?: string): string | undefined {
 }
 
 // ---------- UI pieces ----------
-function SectionHeader({ id, title }: { id: Category['id']; title: string }) {
+const SectionHeader = memo(function SectionHeader({ id, title }: { id: Category['id']; title: string }) {
   const style = CATEGORY_STYLES[id];
-
-  // 👇 RN legacy Animated for underline bounce (lightweight)
-  const underline = useRef(new RNAnimated.Value(0)).current;
-  const bounce = useRef(new RNAnimated.Value(0)).current;
-
-  useEffect(() => {
-    underline.setValue(0);
-    bounce.setValue(0);
-
-    RNAnimated.parallel([
-      RNAnimated.timing(underline, {
-        toValue: 1,
-        duration: 550,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      }),
-      RNAnimated.sequence([
-        RNAnimated.timing(bounce, {
-          toValue: 1,
-          duration: 280,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-        RNAnimated.timing(bounce, {
-          toValue: 0,
-          duration: 180,
-          easing: Easing.in(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
-  }, [id]);
-
   return (
     <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <RNAnimated.Text
-          style={{
-            fontSize: 22,
-            fontWeight: '800',
-            color: style.text,
-            transform: [
-              { translateY: bounce.interpolate({ inputRange: [0, 1], outputRange: [0, -6] }) },
-            ],
-          }}
-        >
-          {style.headerEmoji}
-        </RNAnimated.Text>
-
+        <Text style={{ fontSize: 22, fontWeight: '800', color: style.text }}>{style.headerEmoji}</Text>
         <Text style={{ fontSize: 22, fontWeight: '800', color: style.text }}>{title}</Text>
       </View>
-
-      <RNAnimated.View
+      <View
         style={{
           height: 4,
           backgroundColor: style.accent,
           borderRadius: 999,
           marginTop: 8,
-          width: underline.interpolate({
-            inputRange: [0, 1],
-            outputRange: ['0%', '55%'],
-          }) as any,
+          width: '55%',
         }}
       />
     </View>
   );
-}
+});
 
-
-function AnimatedCommonChip({ t, onPress, selectedLang = 'en-US' }: { t: Tile; onPress: (t: Tile) => void; selectedLang?: LangKey }) {
-  // Get translated label, fallback to original label for custom tiles
+const AnimatedCommonChip = memo(function AnimatedCommonChip({
+  t,
+  onPress,
+  selectedLang = 'en-US',
+}: {
+  t: Tile;
+  onPress: (tile: Tile) => void;
+  selectedLang?: LangKey;
+}) {
   const displayLabel = tWord(t.id, selectedLang) !== t.id ? tWord(t.id, selectedLang) : t.label;
   const scale = useSharedValue(1);
   const springCfg = { stiffness: 230, damping: 22, mass: 1 };
@@ -1084,19 +1145,18 @@ function AnimatedCommonChip({ t, onPress, selectedLang = 'en-US' }: { t: Tile; o
     scale.value = withSpring(1.0, springCfg);
   };
 
-  const style = useAnimatedStyle(() => ({
+  const chipStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
 
   return (
     <AnimatedPressable
       onPress={() => {
-        // micro pop, then call press after animation
-        scale.value = withTiming(1.015, { duration: 85 }, (finished) => {
-          if (finished) scale.value = withSpring(1.0, springCfg, (ok) => {
-            if (ok) runOnJS(onPress)(t);
-          });
-        });
+        onPress(t);
+        scale.value = withSequence(
+          withTiming(1.015, { duration: 85 }),
+          withSpring(1.0, springCfg),
+        );
       }}
       onPressIn={onDown}
       onPressOut={onUp}
@@ -1111,7 +1171,7 @@ function AnimatedCommonChip({ t, onPress, selectedLang = 'en-US' }: { t: Tile; o
           borderWidth: 1,
           borderColor: '#E5E7EB',
         },
-        style,
+        chipStyle,
         shadow.s,
       ]}
       accessibilityRole="button"
@@ -1119,11 +1179,11 @@ function AnimatedCommonChip({ t, onPress, selectedLang = 'en-US' }: { t: Tile; o
       <Text style={{ fontWeight: '700', color: '#111827' }}>{displayLabel}</Text>
     </AnimatedPressable>
   );
-}
+});
 
 
 
-function TileCard({
+const TileCard = memo(function TileCard({
   t, index, onPress, accent, isFav, onToggleFav, isMyTile, onEditTile, onDeleteTile, selectedLang = 'en-US'
 }: {
   t: Tile;
@@ -1141,7 +1201,7 @@ function TileCard({
   const displayLabel = tWord(t.id, selectedLang) !== t.id ? tWord(t.id, selectedLang) : t.label;
   // Reanimated shared values
   const scale = useSharedValue(1);
-  const appear = useSharedValue(0); // mount fade/scale
+  const appear = useSharedValue(1);
   const burst = useSharedValue(0); // tap expansion
   const highlight = useSharedValue(0); // glow intensity
 
@@ -1180,35 +1240,6 @@ function TileCard({
     transform: [{ rotate: `${(heartScale.value - 1) * 60}deg` }],
   }));
 
-  // 8 sparkle particles
-  const P = 8;
-  const particleStyle = (i: number) =>
-    useAnimatedStyle(() => {
-      const angle = (i / P) * Math.PI * 2;
-      const r = 4 + heartBurst.value * 18;
-      return {
-        transform: [
-          { translateX: Math.cos(angle) * r },
-          { translateY: Math.sin(angle) * r },
-          { scale: 0.4 + heartBurst.value * 0.9 },
-        ],
-        opacity: heartBurst.value === 0 ? 0 : 1 - heartBurst.value,
-        backgroundColor: accent,
-      };
-    });
-
-  // mount animation (fade in + slight scale)
-  React.useEffect(() => {
-    const delay = index * 25;
-    appear.value = 0;
-    const run = () => {
-      appear.value = withTiming(1, { duration: 260 });
-      scale.value = withTiming(1, { duration: 260 });
-    };
-    const id = setTimeout(run, delay);
-    return () => clearTimeout(id);
-  }, [index]);
-
   // physics config tuned for tiny, crisp pop
   const springCfg = { stiffness: 260, damping: 24, mass: 1 };
 
@@ -1225,29 +1256,7 @@ function TileCard({
 
   // pop then JS handler AFTER animation (no lag)
   const handlePress = () => {
-    cancelAnimation(scale);
-    cancelAnimation(burst);
-    cancelAnimation(highlight);
-
-    burst.value = 0;
-    highlight.value = 0;
-
-    burst.value = withSequence(
-      withTiming(0.26, { duration: 140, easing: Easing.out(Easing.cubic) }),
-      withSpring(0, { damping: 14, stiffness: 160 })
-    );
-
-    highlight.value = withSequence(
-      withTiming(1, { duration: 120, easing: Easing.out(Easing.cubic) }),
-      withTiming(0, { duration: 320, easing: Easing.inOut(Easing.cubic) })
-    );
-
-    // ensure base scale returns smoothly
-    scale.value = withSpring(1, springCfg);
-
-    setTimeout(() => {
-      onPress(t);
-    }, 150);
+    onPress(t);
   };
 
   const cardStyle = useAnimatedStyle(() => ({
@@ -1285,9 +1294,21 @@ function TileCard({
 
         {/* Image fills entire tile */}
         {t.imageUrl ? (
-          <Image source={{ uri: normImageUrl(t.imageUrl) }} resizeMode="cover" style={styles.fullImage} />
+          <ExpoImage
+            source={{ uri: normImageUrl(t.imageUrl) }}
+            style={styles.fullImage}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={0}
+          />
         ) : t.imageKey && tileImages[t.imageKey] ? (
-          <Image source={tileImages[t.imageKey]} resizeMode="cover" style={styles.fullImage} />
+          <ExpoImage
+            source={tileImages[t.imageKey]}
+            style={styles.fullImage}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={0}
+          />
         ) : (
           <View style={styles.emojiWrap}>
             <Text style={styles.emojiText}>{t.emoji || '🟦'}</Text>
@@ -1329,21 +1350,6 @@ function TileCard({
             minWidth: 36, minHeight: 34,
             ...shadow.s,
           }}>
-            {/* Sparkles (centered) */}
-            <View
-              pointerEvents="none"
-              style={[StyleSheet.absoluteFillObject, { alignItems: 'center', justifyContent: 'center' }]}
-            >
-              <View style={{ width: 0, height: 0 }}>
-                {Array.from({ length: P }).map((_, i) => (
-                  <Animated.View
-                    key={i}
-                    style={[{ position: 'absolute', width: 6, height: 6, borderRadius: 99 }, particleStyle(i)]}
-                  />
-                ))}
-              </View>
-            </View>
-
             {/* Heart icon */}
             <Animated.View style={heartIconStyle}>
               <Ionicons
@@ -1368,7 +1374,136 @@ function TileCard({
       </View>
     </AnimatedPressable>
   );
-}
+});
+
+const GridLoadingOverlay = memo(function GridLoadingOverlay({
+  visible,
+  title,
+  emoji,
+  accent,
+  textColor,
+  bg,
+  loadingLabel,
+}: {
+  visible: boolean;
+  title: string;
+  emoji: string;
+  accent: string;
+  textColor: string;
+  bg: string;
+  loadingLabel: string;
+}) {
+  if (!visible) return null;
+  return (
+    <View style={[styles.gridLoadingOverlay, { backgroundColor: bg + 'E6' }]}>
+      <View style={[styles.gridLoadingCard, shadow.m, { borderColor: accent + '55' }]}>
+        <ActivityIndicator size="large" color={accent} />
+        <Text style={styles.gridLoadingEmoji}>{emoji}</Text>
+        <Text style={[styles.gridLoadingTitle, { color: textColor }]}>{title}</Text>
+        <Text style={[styles.gridLoadingSub, { color: accent }]}>{loadingLabel}</Text>
+      </View>
+    </View>
+  );
+});
+
+const SentenceStrip = memo(function SentenceStrip({
+  utterance,
+  selectedLang,
+  accent,
+  chipBg,
+  textColor,
+  placeholder,
+  onSpeak,
+  onClear,
+}: {
+  utterance: string[];
+  selectedLang: LangKey;
+  accent: string;
+  chipBg: string;
+  textColor: string;
+  placeholder: string;
+  onSpeak: () => void;
+  onClear: () => void;
+}) {
+  return (
+    <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
+      <View
+        style={[
+          {
+            minHeight: 60,
+            borderWidth: 2,
+            borderRadius: 16,
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            backgroundColor: '#FFFFFF',
+            borderColor: accent + '55',
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+          },
+          shadow.s,
+        ]}
+      >
+        <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
+          {utterance.length === 0 ? (
+            <Text style={{ color: accent, fontWeight: '600' }}>{placeholder}</Text>
+          ) : (
+            utterance.map((tileId, i) => (
+              <View
+                key={`${tileId}-${i}`}
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  backgroundColor: chipBg,
+                  borderRadius: 12,
+                  marginRight: 6,
+                  marginBottom: 6,
+                }}
+              >
+                <Text style={{ color: textColor, fontWeight: '700' }}>{tWord(tileId, selectedLang)}</Text>
+              </View>
+            ))
+          )}
+        </View>
+        <View style={{ flexDirection: 'row', columnGap: 8, marginLeft: 8 }}>
+          <TouchableOpacity
+            onPress={onSpeak}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Speak sentence"
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              backgroundColor: accent,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Ionicons name="volume-high-outline" size={22} color="#FFFFFF" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={onClear}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Clear sentence"
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 14,
+              backgroundColor: '#F3F4F6',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: 1,
+              borderColor: '#E5E7EB',
+            }}
+          >
+            <Ionicons name="trash-outline" size={20} color="#111827" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+});
 
 function NiceAlert({ message }: { message: string | null }) {
   if (!message) return null;
@@ -1418,6 +1553,22 @@ export default function AACGrid() {
   const [query, setQuery] = useState('');
   const [utterance, setUtterance] = useState<string[]>([]);
   const [activeCat, setActiveCat] = useState<Category['id']>('transport');
+  const [highlightedCat, setHighlightedCat] = useState<Category['id']>('transport');
+  const [gridLoading, setGridLoading] = useState(false);
+  const [loadingPreview, setLoadingPreview] = useState<{
+    title: string;
+    emoji: string;
+    accent: string;
+    textColor: string;
+    bg: string;
+  } | null>(null);
+  const gridListRef = useRef<FlatList<Tile>>(null);
+  const customTileIdsRef = useRef<Set<string>>(new Set());
+  const allCategoriesRef = useRef<Category[]>([]);
+  const gridLoadingSinceRef = useRef(0);
+  const gridLoadingRef = useRef(false);
+  const gridSwitchGenRef = useRef(0);
+  const loadingHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [selectedLang, setSelectedLang] = useState<LangKey>('en-US');
   const [speechRate, setSpeechRate] = useState<number>(DEFAULT_SPEECH_RATE);
   // UI controls for speech speed/mode
@@ -1469,10 +1620,15 @@ export default function AACGrid() {
   const FAV_CATEGORY_ID = 'favorites' as const;
   const MY_CATEGORY_ID = 'mytiles' as const;
 
-  // Auto-fit columns (target ~100px for smaller tiles)
+  // Auto-fit columns — 200px target ≈ 2× previous tile/image size (was 100px)
   const { width } = useWindowDimensions();
-  const horizontalPadding = 16 * 2, gap = 8, target = 100;
-  const cols = Math.max(2, Math.min(6, Math.floor((width - horizontalPadding + gap) / (target + gap))));
+  const horizontalPadding = 16 * 2;
+  const gap = 12;
+  const target = 200;
+  const cols = Math.max(
+    2,
+    Math.min(3, Math.floor((width - horizontalPadding + gap) / (target + gap))),
+  );
 
   // Helper function to get translated category title
   const getCategoryTitle = (categoryId: Category['id'], lang: LangKey): string => {
@@ -1522,11 +1678,30 @@ export default function AACGrid() {
     ];
   }, [favorites, customTiles, selectedLang]);
 
-  const category = useMemo(() => allCategories.find(c => c.id === activeCat) ?? allCategories[0], [activeCat, allCategories]);
+  allCategoriesRef.current = allCategories;
 
   useEffect(() => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-  }, [activeCat, cols, selectedLang, width]);
+    gridLoadingRef.current = gridLoading;
+  }, [gridLoading]);
+
+  useEffect(() => {
+    if (!gridLoading) setHighlightedCat(activeCat);
+  }, [activeCat, gridLoading]);
+
+  const category = useMemo(
+    () => allCategories.find(c => c.id === activeCat) ?? allCategories[0],
+    [activeCat, allCategories],
+  );
+
+  const filteredTiles = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const base = category.tiles;
+    return q ? base.filter((tile) => tile.label.toLowerCase().includes(q)) : base;
+  }, [query, category.tiles]);
+
+  useEffect(() => {
+    customTileIdsRef.current = new Set(customTiles.map((ct) => ct.id));
+  }, [customTiles]);
 
   // Cleanup audio on unmount (web only)
   // TTS is now handled by shared utility (initialized in root layout)
@@ -1663,8 +1838,6 @@ export default function AACGrid() {
     }
   }
 
-  const isMyTile = (t: Tile) => customTiles.some(ct => ct.id === t.id);
-
   async function uploadOrKeep(url?: string): Promise<string | undefined> {
     if (url && /^https?:\/\//i.test(url)) return url;
     if (pickedUri) return await uploadPickedImage();
@@ -1748,7 +1921,7 @@ export default function AACGrid() {
     }
   }
 
-  // Detect available voices and dim radios accordingly
+  // Pre-cache voices so TTS starts immediately on tap
   useEffect(() => {
     (async () => {
       const voices = await loadVoices();
@@ -1757,6 +1930,7 @@ export default function AACGrid() {
         next[lk] = !!(voices.find(v => v.language?.toLowerCase() === lk.toLowerCase()) || voices.find(LANG_MATCH[lk]));
       });
       setAvailable(next);
+      void warmAllVoiceIds();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1766,26 +1940,125 @@ export default function AACGrid() {
     return q ? COMMON_WORDS.filter(t => t.label.toLowerCase().includes(q)) : COMMON_WORDS;
   }, [query]);
 
-  const filteredTiles = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const base = category.tiles;
-    return q ? base.filter(t => t.label.toLowerCase().includes(q)) : base;
-  }, [query, category]);
+  const appendWord = useCallback(
+    (tile: Tile) => {
+      const say = tWord(tile.id, selectedLang);
+      if (speechMode === 'stretched') {
+        speakStretched(say, selectedLang, 420, speechRate);
+      } else {
+        speakSmart(say, selectedLang, speechRate);
+      }
+      void Haptics.selectionAsync().catch(() => {});
+      startTransition(() => {
+        setUtterance((s) => [...s, tile.id]);
+      });
+    },
+    [selectedLang, speechRate, speechMode],
+  );
 
-  // ======= Updated: do NOT await speech; schedule after animation =======
-  const onTile = (t: Tile) => {
-    runHaptic(() => Haptics.selectionAsync());
-    setUtterance(s => [...s, t.id]);
-    const say = tWord(t.id, selectedLang);
+  const onTile = appendWord;
 
-    if (speechMode === 'stretched') {
-      // speak small phrase chunk with more gap
-      speakStretched(say, selectedLang, 420, speechRate);
-    } else {
-      // normal or slow -> single chunk but with adjusted rate
-      scheduleSpeak(say, selectedLang, 10, speechRate);
+  const isMyTile = useCallback(
+    (tile: Tile) => customTileIdsRef.current.has(tile.id),
+    [],
+  );
+
+  const handleToggleFav = useCallback(
+    async (tileId: string) => {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      try {
+        const { favorites: favList } = await toggleFavorite(tileId);
+        setFavorites(new Set(favList));
+      } catch {
+        Alert.alert(t('failed', selectedLang), t('couldNotUpdateFavorites', selectedLang));
+      }
+    },
+    [selectedLang],
+  );
+
+  const hideGridLoading = useCallback(() => {
+    if (loadingHideTimerRef.current) {
+      clearTimeout(loadingHideTimerRef.current);
+      loadingHideTimerRef.current = null;
     }
-  };
+    setGridLoading(false);
+    setLoadingPreview(null);
+  }, []);
+
+  const scheduleHideGridLoading = useCallback(() => {
+    if (!gridLoadingRef.current) return;
+    if (loadingHideTimerRef.current) clearTimeout(loadingHideTimerRef.current);
+    const minVisibleMs = 400;
+    const elapsed = Date.now() - gridLoadingSinceRef.current;
+    const delay = Math.max(0, minVisibleMs - elapsed);
+    loadingHideTimerRef.current = setTimeout(() => {
+      loadingHideTimerRef.current = null;
+      hideGridLoading();
+    }, delay);
+  }, [hideGridLoading]);
+
+  const selectCategory = useCallback(
+    (id: Category['id']) => {
+      if (id === activeCat) return;
+      const gen = ++gridSwitchGenRef.current;
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+
+      const style = CATEGORY_STYLES[id];
+      const cat = allCategoriesRef.current.find((c) => c.id === id);
+      gridLoadingSinceRef.current = Date.now();
+
+      if (loadingHideTimerRef.current) {
+        clearTimeout(loadingHideTimerRef.current);
+      }
+
+      // Show loading for the tab user tapped (Food) before heavy grid re-render
+      setHighlightedCat(id);
+      setLoadingPreview({
+        title: cat?.title ?? id,
+        emoji: style.headerEmoji,
+        accent: style.accent,
+        textColor: style.text,
+        bg: style.bg,
+      });
+      setGridLoading(true);
+
+      // Paint loading first, then swap category data on next frame
+      setTimeout(() => {
+        if (gridSwitchGenRef.current !== gen) return;
+        setActiveCat(id);
+        gridListRef.current?.scrollToOffset({ offset: 0, animated: false });
+      }, 0);
+
+      loadingHideTimerRef.current = setTimeout(() => {
+        if (gridSwitchGenRef.current === gen) hideGridLoading();
+      }, 1500);
+    },
+    [activeCat, hideGridLoading],
+  );
+
+  const onGridContentReady = useCallback(() => {
+    scheduleHideGridLoading();
+  }, [scheduleHideGridLoading]);
+
+  const renderGridTile = useCallback(
+    ({ item, index }: { item: Tile; index: number }) => (
+      <View style={{ flex: 1, overflow: 'visible', position: 'relative' }}>
+        <TileCard
+          t={item}
+          index={index}
+          onPress={onTile}
+          accent={CATEGORY_STYLES[activeCat].accent}
+          isFav={favorites.has(item.id)}
+          onToggleFav={handleToggleFav}
+          isMyTile={isMyTile(item)}
+          onEditTile={onEditTile}
+          onDeleteTile={confirmDelete}
+          selectedLang={selectedLang}
+        />
+      </View>
+    ),
+    [activeCat, favorites, onTile, handleToggleFav, isMyTile, onEditTile, confirmDelete, selectedLang],
+  );
 
   const onSpeakSentence = () => {
     if (!utterance.length) return;
@@ -1797,11 +2070,14 @@ export default function AACGrid() {
       speakStretched(say, selectedLang, 420, speechRate);
     } else {
       // normal sentence (single speak) - speechRate will be used
-      scheduleSpeak(say, selectedLang, 10, speechRate);
+      scheduleSpeak(say, selectedLang, 0, speechRate);
     }
   };
 
   const theme = CATEGORY_STYLES[activeCat];
+  const headerCat = gridLoading ? highlightedCat : activeCat;
+  const headerCategory =
+    allCategories.find((c) => c.id === headerCat) ?? category;
   const addBtnBottom = (insets.bottom || 12) + Platform.select({ ios: 76, android: 84, default: 82 });
 
   return (
@@ -1897,83 +2173,16 @@ export default function AACGrid() {
       </View>
 
 
-      {/* Sentence strip */}
-      <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
-        <View
-          style={[
-            {
-              minHeight: 60,
-              borderWidth: 2,
-              borderRadius: 16,
-              paddingHorizontal: 12,
-              paddingVertical: 10,
-              backgroundColor: '#FFFFFF',
-              borderColor: theme.accent + '55',
-              flexDirection: 'row',
-              alignItems: 'flex-start',
-            },
-            shadow.s,
-          ]}
-        >
-          <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
-            {utterance.length === 0 ? (
-              <Text style={{ color: theme.accent, fontWeight: '600' }}>{t('buildSentence', selectedLang)}</Text>
-            ) : (
-              utterance.map((tileId, i) => (
-                <View
-                  key={`${tileId}-${i}`}
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    backgroundColor: theme.chip,
-                    borderRadius: 12,
-                    marginRight: 6,
-                    marginBottom: 6,
-                  }}
-                >
-                  <Text style={{ color: theme.text, fontWeight: '700' }}>{tWord(tileId, selectedLang)}</Text>
-                </View>
-              ))
-            )}
-          </View>
-          <View style={{ flexDirection: 'row', columnGap: 8, marginLeft: 8 }}>
-            <TouchableOpacity
-              onPress={onSpeakSentence}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel="Speak sentence"
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 14,
-                backgroundColor: theme.accent,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Ionicons name="volume-high-outline" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setUtterance([])}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel="Clear sentence"
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 14,
-                backgroundColor: '#F3F4F6',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderWidth: 1,
-                borderColor: '#E5E7EB',
-              }}
-            >
-              <Ionicons name="trash-outline" size={20} color="#111827" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <SentenceStrip
+        utterance={utterance}
+        selectedLang={selectedLang}
+        accent={theme.accent}
+        chipBg={theme.chip}
+        textColor={theme.text}
+        placeholder={t('buildSentence', selectedLang)}
+        onSpeak={onSpeakSentence}
+        onClear={() => setUtterance([])}
+      />
 
       {/* Category chips (responsive wrap) */}
       <View style={{ marginTop: 10 }}>
@@ -1985,15 +2194,24 @@ export default function AACGrid() {
           contentContainerStyle={{ paddingHorizontal: 16, columnGap: 8, backgroundColor: theme.bg }}
         >
           {allCategories.map((item) => {
-            const active = item.id === activeCat;
+            const active = item.id === highlightedCat;
+            const chipStyle = CATEGORY_STYLES[item.id];
             return (
               <TouchableOpacity
                 key={item.id}
-                onPress={() => setActiveCat(item.id)}
-                style={[{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: active ? theme.text : theme.chip }, shadow.xs]}
-                activeOpacity={0.9}
+                onPress={() => selectCategory(item.id)}
+                style={[
+                  {
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 999,
+                    backgroundColor: active ? chipStyle.text : chipStyle.chip,
+                  },
+                  shadow.xs,
+                ]}
+                activeOpacity={0.85}
               >
-                <Text style={{ color: active ? '#fff' : theme.text, fontWeight: '800' }}>{item.title}</Text>
+                <Text style={{ color: active ? '#fff' : chipStyle.text, fontWeight: '800' }}>{item.title}</Text>
               </TouchableOpacity>
             );
           })}
@@ -2002,78 +2220,64 @@ export default function AACGrid() {
 
       {/* Common words lane */}
       <View style={{ marginTop: 10 }}>
-        <Text style={{ paddingHorizontal: 16, color: '#6B7280', marginBottom: 6, fontWeight: '600' }}>{t('common', selectedLang)}</Text>
+        <Text style={{ paddingHorizontal: 16, color: '#6B7280', marginBottom: 6, fontWeight: '600' }}>
+          {t('common', selectedLang)}
+        </Text>
         <FlatList
-          data={COMMON_WORDS}
+          data={filteredCommon}
           keyExtractor={(t) => t.id}
           horizontal
           showsHorizontalScrollIndicator={false}
           bounces={false}
           overScrollMode="never"
+          initialNumToRender={12}
+          windowSize={3}
+          removeClippedSubviews={false}
           contentContainerStyle={{ paddingHorizontal: 16, columnGap: 10, backgroundColor: theme.bg }}
           renderItem={({ item }) => (
-            <AnimatedCommonChip
-              t={item}
-              onPress={(tile) => {
-                runHaptic(() => Haptics.selectionAsync());
-                setUtterance(s => [...s, tile.id]);
-                scheduleSpeak(tWord(tile.id, selectedLang), selectedLang, 10, speechRate);
-              }}
-              selectedLang={selectedLang}
-            />
+            <AnimatedCommonChip t={item} onPress={appendWord} selectedLang={selectedLang} />
           )}
         />
       </View>
 
-      {/* Section title */}
-      <SectionHeader id={activeCat} title={category.title} />
+      <SectionHeader id={headerCat} title={headerCategory.title} />
 
-      {/* Grid */}
-      <FlatList
-        style={{ flex: 1, marginTop: 6, paddingHorizontal: 16, backgroundColor: theme.bg }}
-        data={filteredTiles}
-        key={`auto-cols-${cols}-${category.id}`}
-        numColumns={cols}
-        keyExtractor={(t) => t.id}
-        columnWrapperStyle={cols > 1 ? { columnGap: 8, overflow: 'visible', position: 'relative' } : undefined}
-        contentContainerStyle={{
-          paddingBottom: 28,
-          rowGap: 8,
-        }}
-        initialNumToRender={12}
-        maxToRenderPerBatch={12}
-        windowSize={5}
-        removeClippedSubviews
-        bounces={false}
-        overScrollMode="never"
-        updateCellsBatchingPeriod={40}
-        showsVerticalScrollIndicator={false}
-        nestedScrollEnabled={true}
-        renderItem={({ item, index }) => (
-          <View style={{ flex: 1, overflow: 'visible', position: 'relative' }}>
-            <TileCard
-              t={item}
-              index={index}
-              onPress={onTile}
-              accent={CATEGORY_STYLES[activeCat].accent}
-              isFav={favorites.has(item.id)}
-              onToggleFav={async (id) => {
-                runHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light));
-                try {
-                  const { favorites: favList } = await toggleFavorite(id);
-                  setFavorites(new Set(favList));
-                } catch (e) {
-                  Alert.alert(t('failed', selectedLang), t('couldNotUpdateFavorites', selectedLang));
-                }
-              }}
-              isMyTile={isMyTile(item)}
-              onEditTile={onEditTile}
-              onDeleteTile={confirmDelete}
-              selectedLang={selectedLang}
-            />
-          </View>
-        )}
-      />
+      <View style={[styles.gridHost, { backgroundColor: theme.bg }]}>
+        {gridLoading && loadingPreview ? (
+          <GridLoadingOverlay
+            visible
+            title={loadingPreview.title}
+            emoji={loadingPreview.emoji}
+            accent={loadingPreview.accent}
+            textColor={loadingPreview.textColor}
+            bg={loadingPreview.bg}
+            loadingLabel={t('loadingTiles', selectedLang)}
+          />
+        ) : null}
+        <FlatList
+          ref={gridListRef}
+          style={{ flex: 1, marginTop: 6, paddingHorizontal: 16, opacity: gridLoading ? 0.2 : 1 }}
+          pointerEvents={gridLoading ? 'none' : 'auto'}
+          data={filteredTiles}
+          key={`grid-cols-${cols}`}
+          numColumns={cols}
+          keyExtractor={(tile) => tile.id}
+          extraData={`${activeCat}-${favorites.size}`}
+          columnWrapperStyle={cols > 1 ? { columnGap: gap, overflow: 'visible' } : undefined}
+          contentContainerStyle={{ paddingBottom: 28, rowGap: gap }}
+          initialNumToRender={10}
+          maxToRenderPerBatch={8}
+          windowSize={3}
+          removeClippedSubviews={Platform.OS === 'android'}
+          bounces={false}
+          overScrollMode="never"
+          updateCellsBatchingPeriod={16}
+          showsVerticalScrollIndicator={!gridLoading}
+          nestedScrollEnabled
+          onContentSizeChange={onGridContentReady}
+          renderItem={renderGridTile}
+        />
+      </View>
 
       {/* Language menu (modal sheet) */}
       {langMenuOpen && (
@@ -2433,21 +2637,57 @@ const styles = StyleSheet.create({
   primaryBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12 },
   secondaryBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, backgroundColor: '#E5E7EB' },
 
+  gridHost: {
+    flex: 1,
+    position: 'relative',
+  },
+  gridLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 100,
+    elevation: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  gridLoadingCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 28,
+    paddingHorizontal: 32,
+    borderRadius: 20,
+    borderWidth: 2,
+    backgroundColor: '#FFFFFF',
+    minWidth: 200,
+  },
+  gridLoadingEmoji: {
+    fontSize: 36,
+    marginTop: 4,
+  },
+  gridLoadingTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  gridLoadingSub: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
   // radio chips
   radioItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1.5, gap: 8 },
   radioOuter: { width: 18, height: 18, borderRadius: 999, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   radioInner: { width: 10, height: 10, borderRadius: 999 },
 
-  // card - images fill entire tile
+  // card - images fill entire tile (size driven by grid column count + aspectRatio)
   card: {
     aspectRatio: 1,
-    borderRadius: 12,
+    borderRadius: 16,
     position: 'relative',
     overflow: 'visible',
   },
   cardInner: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1.5,
     borderColor: '#E5E7EB',
@@ -2476,20 +2716,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'absolute',
   },
-  emojiText: { fontSize: 48 },
+  emojiText: { fontSize: 96 },
   overlayLabelWrap: {
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 12,
+    bottom: 16,
     alignItems: 'center',
     zIndex: 2,
   },
   labelBadge: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
     shadowColor: '#000',
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -2501,7 +2741,7 @@ const styles = StyleSheet.create({
   overlayLabelText: {
     fontWeight: '700',
     color: '#111827',
-    fontSize: 11,
+    fontSize: 14,
     letterSpacing: 0.2,
   },
   bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 4, zIndex: 3 },

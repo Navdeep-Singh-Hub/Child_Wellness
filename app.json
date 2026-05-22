@@ -24,7 +24,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your camera for jaw awareness exercises. All processing happens locally on your device."
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your camera for jaw awareness exercises. All processing happens locally on your device.",
+        "NSMicrophoneUsageDescription": "$(PRODUCT_NAME) needs access to your microphone for voice activation speech therapy games. Audio is processed on your device."
       }
     },
     "android": {

@@ -4,7 +4,8 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createGlowLoop } from '@/utils/animatedGlowLoop';
 import {
     Animated,
     Dimensions,
@@ -267,33 +268,18 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
   const playBell = useSoundEffect(activeInstruments[1].soundUrl);
   const playHorn = useSoundEffect(activeInstruments[2].soundUrl);
 
+  const instrumentGlowLoop = useMemo(() => createGlowLoop(instrumentGlow), [instrumentGlow]);
+
   useEffect(() => {
-    startGlowAnimation();
+    instrumentGlowLoop.start();
     const instrument = activeInstruments[currentInstrument];
     speak(`Tap the ${instrument.name}!`);
     return () => {
+      instrumentGlowLoop.stop();
       clearScheduledSpeech();
     };
-  }, []);
-
-  const startGlowAnimation = () => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(instrumentGlow, {
-          toValue: 1,
-          duration: 1500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(instrumentGlow, {
-          toValue: 0.5,
-          duration: 1500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ])
-    ).start();
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only intro speech
+  }, [instrumentGlowLoop]);
 
   const playSound = useCallback(async (instrumentIndex: number) => {
     if (isPlaying) return;
@@ -339,13 +325,13 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
           toValue: 1.2,
           duration: 150,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(instrumentRotation, {
           toValue: 10,
           duration: 100,
           easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.parallel([
@@ -353,20 +339,20 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
           toValue: 1,
           tension: 50,
           friction: 7,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(instrumentRotation, {
           toValue: -10,
           duration: 100,
           easing: Easing.in(Easing.quad),
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
       Animated.timing(instrumentRotation, {
         toValue: 0,
         duration: 100,
         easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -378,13 +364,13 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
         toValue: 2.5,
         duration: 800,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(soundWaveOpacity, {
         toValue: 0,
         duration: 800,
         easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 

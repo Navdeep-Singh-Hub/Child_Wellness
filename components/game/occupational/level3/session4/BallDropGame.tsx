@@ -86,7 +86,7 @@ const BallDropGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       toValue: 1,
       tension: 50,
       friction: 7,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
 
     if (Platform.OS === 'web') {
@@ -114,18 +114,18 @@ const BallDropGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       Animated.timing(ballRotation, {
         toValue: 360,
         duration: 500,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.sequence([
         Animated.timing(ballScale, {
           toValue: 1.2,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(ballScale, {
           toValue: 1,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     ]).start();

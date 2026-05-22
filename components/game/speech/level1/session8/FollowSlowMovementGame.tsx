@@ -25,6 +25,7 @@ type Props = {
 };
 
 const OBJECT_SIZE = 130;
+const TAP_HIT_SLOP = 28;
 const MOVEMENT_DURATION_MS = 6000; // 6 seconds slow movement
 const TAP_DURATION_MS = 3000; // How long object is tappable after stopping
 
@@ -221,12 +222,12 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
       Animated.timing(objectOpacity, {
         toValue: 1,
         duration: 500,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(trailOpacity, {
         toValue: 0.3,
         duration: 500,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
 
@@ -236,7 +237,7 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
         toValue: 1,
         duration: 3000,
         easing: Easing.linear,
-        useNativeDriver: true,
+        useNativeDriver: false,
       })
     );
     rotationAnimationRef.current.start();
@@ -391,12 +392,12 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
             toValue: 1,
             tension: 50,
             friction: 7,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(stopIndicatorOpacity, {
             toValue: 1,
             duration: 300,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]).start();
 
@@ -407,13 +408,13 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
               toValue: 1.15,
               duration: 700,
               easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(pulseScale, {
               toValue: 1,
               duration: 700,
               easing: Easing.inOut(Easing.ease),
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ])
         );
@@ -434,17 +435,17 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
             Animated.timing(objectOpacity, {
               toValue: 0,
               duration: 300,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(stopIndicatorOpacity, {
               toValue: 0,
               duration: 300,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
             Animated.timing(trailOpacity, {
               toValue: 0,
               duration: 300,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }),
           ]).start(() => {
             setRounds(prev => {
@@ -495,24 +496,24 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
           Animated.timing(objectScale, {
             toValue: 1.4,
             duration: 250,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(pulseScale, {
             toValue: 1.4,
             duration: 250,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
         Animated.parallel([
           Animated.timing(objectScale, {
             toValue: 1,
             duration: 250,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(pulseScale, {
             toValue: 1,
             duration: 250,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
       ]).start();
@@ -528,17 +529,17 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
         Animated.timing(objectOpacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(stopIndicatorOpacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(trailOpacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start(() => {
         setRounds(prev => {
@@ -560,12 +561,12 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
         Animated.timing(objectScale, {
           toValue: 0.9,
           duration: 100,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(objectScale, {
           toValue: 1,
           duration: 100,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]).start();
 
@@ -668,7 +669,7 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
           </View>
         </View>
 
-        <View style={styles.playArea}>
+        <View style={styles.playArea} pointerEvents="box-none">
           {/* Stop Indicator - Always at center */}
           {phase === 'stopped' && (
             <Animated.View
@@ -688,34 +689,47 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
             </Animated.View>
           )}
 
-          {/* Moving Object */}
-          <Pressable
-            onPress={handleObjectTap}
-            disabled={isProcessing && phase !== 'stopped'}
-            style={styles.objectContainer}
+          {/* Moving Object — translateX/Y on wrapper so tap follows the ball (Android) */}
+          <Animated.View
+            pointerEvents="box-none"
+            style={[
+              styles.objectContainer,
+              {
+                transform: [
+                  { translateX: objectX },
+                  { translateY: objectY },
+                ],
+              },
+            ]}
           >
-            <Animated.View
-              style={[
-                styles.object,
-                {
-                  left: objectX,
-                  top: objectY,
-                  transform: [
-                    { scale: phase === 'stopped' ? objectPulseScale : objectScale },
-                    { rotate: rotation },
-                  ],
-                  opacity: objectOpacity,
-                },
-              ]}
+            <Pressable
+              onPress={handleObjectTap}
+              disabled={isProcessing && phase !== 'stopped'}
+              style={styles.objectPressable}
+              hitSlop={TAP_HIT_SLOP}
             >
-              <LinearGradient
-                colors={object.color as [string, string, ...string[]]}
-                style={styles.objectGradient}
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.object,
+                  {
+                    transform: [
+                      { scale: phase === 'stopped' ? objectPulseScale : objectScale },
+                      { rotate: rotation },
+                    ],
+                    opacity: objectOpacity,
+                  },
+                ]}
               >
-                <Text style={styles.objectEmoji}>{object.emoji}</Text>
-              </LinearGradient>
-            </Animated.View>
-          </Pressable>
+                <LinearGradient
+                  colors={object.color as [string, string, ...string[]]}
+                  style={styles.objectGradient}
+                >
+                  <Text style={styles.objectEmoji}>{object.emoji}</Text>
+                </LinearGradient>
+              </Animated.View>
+            </Pressable>
+          </Animated.View>
 
           {/* Trail Effect - Follows object position (only show during movement) */}
           {phase === 'moving' && (
@@ -732,7 +746,7 @@ export const FollowSlowMovementGame: React.FC<Props> = ({
           )}
 
           {/* Progress Stats */}
-          <View style={styles.statsContainer}>
+          <View style={styles.statsContainer} pointerEvents="none">
             <Text style={styles.statsText}>
               Round {rounds + 1} / {requiredRounds}
             </Text>
@@ -841,8 +855,17 @@ const styles = StyleSheet.create({
   },
   objectContainer: {
     position: 'absolute',
+    left: 0,
+    top: 0,
     width: OBJECT_SIZE,
     height: OBJECT_SIZE,
+    zIndex: 12,
+  },
+  objectPressable: {
+    width: OBJECT_SIZE,
+    height: OBJECT_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   object: {
     width: OBJECT_SIZE,
