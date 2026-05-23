@@ -7,6 +7,7 @@ import {
     SPRING_CONFIG,
     THERAPY_STAGGER_MS,
 } from '@/constants/therapyProgressAnimations';
+import { SPEECH_LEVEL } from '@/constants/speechLevels';
 import {
     advanceTherapyProgress,
     fetchTherapyProgress,
@@ -91,6 +92,21 @@ const THERAPIES = [
 ];
 
 type ViewMode = 'therapies' | 'levels' | 'sessions';
+
+function speechLevelSubtitle(levelNumber: number): string | null {
+  switch (levelNumber) {
+    case SPEECH_LEVEL.attention:
+      return 'Attention & following';
+    case SPEECH_LEVEL.actionImitation:
+      return 'Imitation, body & words';
+    case SPEECH_LEVEL.jaw:
+      return 'Jaw & mouth opening';
+    case SPEECH_LEVEL.voice:
+      return 'Voice & speech sounds';
+    default:
+      return null;
+  }
+}
 
 /** TEMPORARY: `true` = no "Checking access…", no paywall — screen opens and loads data immediately. Set `false` to restore gating. */
 const SKIP_THERAPY_ACCESS_GATE = true;
@@ -499,6 +515,8 @@ function LevelCard({
 }) {
   const unlocked = lvl.levelNumber <= currentLevel;
   const isCurrent = lvl.levelNumber === currentLevel;
+  const speechSubtitle =
+    therapyMeta.id === 'speech' ? speechLevelSubtitle(lvl.levelNumber) : null;
   const press = useSharedValue(0);
   const pulse = useSharedValue(0);
 
@@ -544,7 +562,9 @@ function LevelCard({
               end={{ x: 1, y: 1 }}
             >
               <Text style={styles.levelTitleLight}>Level {lvl.levelNumber}</Text>
-              <Text style={styles.levelSubtitleLight}>10 sessions</Text>
+              <Text style={styles.levelSubtitleLight}>
+                {speechSubtitle ?? '10 sessions'}
+              </Text>
               <View style={styles.playButton}>
                 <Text style={styles.playButtonText}>Play</Text>
                 <Ionicons name="play" size={14} color="#fff" />
@@ -554,7 +574,9 @@ function LevelCard({
             <View style={[styles.levelCard, styles.levelCardLocked]}>
               <Ionicons name="lock-closed" size={20} color="#9CA3AF" style={{ marginBottom: 6 }} />
               <Text style={[styles.levelTitle, styles.lockedText]}>Level {lvl.levelNumber}</Text>
-              <Text style={[styles.levelSubtitle, styles.lockedText]}>10 sessions</Text>
+              <Text style={[styles.levelSubtitle, styles.lockedText]}>
+                {speechSubtitle ?? '10 sessions'}
+              </Text>
               <Text style={styles.lockedLabel}>Locked</Text>
             </View>
           )}

@@ -75,7 +75,8 @@
       [
         "react-native-vision-camera",
         {
-          "cameraPermissionText": "$(PRODUCT_NAME) needs access to your camera for jaw awareness exercises. All processing happens locally on your device."
+          "cameraPermissionText": "$(PRODUCT_NAME) needs access to your camera for jaw awareness exercises. All processing happens locally on your device.",
+          "enableFrameProcessors": true
         }
       ],
       [

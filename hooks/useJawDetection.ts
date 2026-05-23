@@ -245,10 +245,6 @@ export function useJawDetection(
     };
   }
 
-  if (!isActive) {
-    return NATIVE_JAW_IDLE;
-  }
-
   const [isOpen, setIsOpen] = useState(false);
   const [ratio, setRatio] = useState(0);
   const [isDetecting, setIsDetecting] = useState(false);
@@ -347,6 +343,7 @@ export function useJawDetection(
   }, [handleFaces]);
 
   useEffect(() => {
+    if (!isActive) return;
     if (!Camera?.requestCameraPermission) return;
     let cancelled = false;
     (async () => {
@@ -367,7 +364,7 @@ export function useJawDetection(
     return () => {
       cancelled = true;
     };
-  }, [updateError]);
+  }, [isActive, updateError]);
 
   useEffect(() => {
     return () => {
@@ -385,8 +382,6 @@ export function useJawDetection(
       );
     } else if (!device) {
       updateError('Front camera not found on this device.');
-    } else if (!detectFaces) {
-      updateError('Face detection module not loaded. Rebuild the dev client.');
     } else if (!permissionGranted && !error) {
       updateError(undefined);
     }

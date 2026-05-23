@@ -72,6 +72,77 @@ import { SlowTaskWithPopUpDistractionGame } from '@/components/game/speech/level
 import { SoundDistractionChallengeGame } from '@/components/game/speech/level1/session10/SoundDistractionChallengeGame';
 import { TapTheTargetIgnoreDistractionGame } from '@/components/game/speech/level1/session10/TapTheTargetIgnoreDistractionGame';
 
+// Speech Therapy Level 2 — Action Imitation Session 1
+import { CopyTheClapGame } from '@/components/game/speech/action-imitation/session1/CopyTheClapGame';
+import { DanceFreezeGame } from '@/components/game/speech/action-imitation/session1/DanceFreezeGame';
+import { FollowMyMoveGame } from '@/components/game/speech/action-imitation/session1/FollowMyMoveGame';
+import { JumpLikeMeGame } from '@/components/game/speech/action-imitation/session1/JumpLikeMeGame';
+import { SillyActionMatchGame } from '@/components/game/speech/action-imitation/session1/SillyActionMatchGame';
+import { SPEECH_LEVEL } from '@/constants/speechLevels';
+
+// Speech Therapy Level 2 — Body Parts & Self Awareness Session 2
+import { BodyPuzzleGame as SpeechBodyPuzzleGame } from '@/components/game/speech/body-parts/session2/BodyPuzzleGame';
+import { DressTheCharacterGame } from '@/components/game/speech/body-parts/session2/DressTheCharacterGame';
+import { SimonSaysBodyGame } from '@/components/game/speech/body-parts/session2/SimonSaysBodyGame';
+import { TouchTheNoseGame } from '@/components/game/speech/body-parts/session2/TouchTheNoseGame';
+import { WhatHelpsYouSeeGame } from '@/components/game/speech/body-parts/session2/WhatHelpsYouSeeGame';
+
+// Speech Therapy Level 2 — Objects, Animals & Vocabulary Session 3
+import { AlphabetHuntGame } from '@/components/game/speech/vocabulary/session3/AlphabetHuntGame';
+import { FindTheAnimalGame } from '@/components/game/speech/vocabulary/session3/FindTheAnimalGame';
+import { FruitBasketGame } from '@/components/game/speech/vocabulary/session3/FruitBasketGame';
+import { VegetableFarmGame } from '@/components/game/speech/vocabulary/session3/VegetableFarmGame';
+import { VehicleGarageGame } from '@/components/game/speech/vocabulary/session3/VehicleGarageGame';
+
+// Speech Therapy Level 2 — Categories & Attributes Session 4
+import { BigVsSmallGame } from '@/components/game/speech/categories/session4/BigVsSmallGame';
+import { ColorMatchTrainGame } from '@/components/game/speech/categories/session4/ColorMatchTrainGame';
+import { PickTheDifferentOneGame } from '@/components/game/speech/categories/session4/PickTheDifferentOneGame';
+import { SameCategoryGame } from '@/components/game/speech/categories/session4/SameCategoryGame';
+import { SoftOrHardGame } from '@/components/game/speech/categories/session4/SoftOrHardGame';
+
+// Speech Therapy Level 2 — Positions & Prepositions Session 5
+import { BehindTheTreeGame } from '@/components/game/speech/positions/session5/BehindTheTreeGame';
+import { LeftOrRightGame } from '@/components/game/speech/positions/session5/LeftOrRightGame';
+import { NearOrFarGame } from '@/components/game/speech/positions/session5/NearOrFarGame';
+import { PutTeddyInTheBoxGame } from '@/components/game/speech/positions/session5/PutTeddyInTheBoxGame';
+import { UnderTheTableGame } from '@/components/game/speech/positions/session5/UnderTheTableGame';
+
+// Speech Therapy Level 2 — Actions, Verbs & Functions Session 6
+import { MatchTheActionGame } from '@/components/game/speech/actions/session6/MatchTheActionGame';
+import { ToolMatchGame } from '@/components/game/speech/actions/session6/ToolMatchGame';
+import { WhatDoWeEatWithGame } from '@/components/game/speech/actions/session6/WhatDoWeEatWithGame';
+import { WhatDoesADoctorDoGame } from '@/components/game/speech/actions/session6/WhatDoesADoctorDoGame';
+import { WhoIsRunningGame } from '@/components/game/speech/actions/session6/WhoIsRunningGame';
+
+// Speech Therapy Level 2 — Places, People & Community Session 7
+import { BoyOrGirlGame } from '@/components/game/speech/community/session7/BoyOrGirlGame';
+import { CommunityHelpersGame } from '@/components/game/speech/community/session7/CommunityHelpersGame';
+import { FamilyMatchGame } from '@/components/game/speech/community/session7/FamilyMatchGame';
+import { FindTheKitchenGame } from '@/components/game/speech/community/session7/FindTheKitchenGame';
+import { WhereDoesTeacherWorkGame } from '@/components/game/speech/community/session7/WhereDoesTeacherWorkGame';
+
+// Speech Therapy Level 2 — Descriptions & Reasoning Session 8
+import { FindByFunctionGame } from '@/components/game/speech/descriptions/session8/FindByFunctionGame';
+import { GuessTheObjectGame } from '@/components/game/speech/descriptions/session8/GuessTheObjectGame';
+import { HiddenPartPuzzleGame } from '@/components/game/speech/descriptions/session8/HiddenPartPuzzleGame';
+import { MysteryBagGame } from '@/components/game/speech/descriptions/session8/MysteryBagGame';
+import { WhatAmIDescribingGame } from '@/components/game/speech/descriptions/session8/WhatAmIDescribingGame';
+
+// Speech Therapy Level 2 — Sequences, Missing Items & Logic Session 9
+import { CompleteThePatternGame } from '@/components/game/speech/sequences/session9/CompleteThePatternGame';
+import { FindTheHiddenToyGame } from '@/components/game/speech/sequences/session9/FindTheHiddenToyGame';
+import { FirstMiddleLastGame } from '@/components/game/speech/sequences/session9/FirstMiddleLastGame';
+import { StoryOrderCardsGame } from '@/components/game/speech/sequences/session9/StoryOrderCardsGame';
+import { WhatIsMissingGame } from '@/components/game/speech/sequences/session9/WhatIsMissingGame';
+
+// Speech Therapy Level 2 — Advanced Comprehension Concepts Session 10
+import { BelongsOrNotGame } from '@/components/game/speech/comprehension/session10/BelongsOrNotGame';
+import { Follow2StepDirectionsGame } from '@/components/game/speech/comprehension/session10/Follow2StepDirectionsGame';
+import { PronounMatchGame } from '@/components/game/speech/comprehension/session10/PronounMatchGame';
+import { SingularOrPluralGame } from '@/components/game/speech/comprehension/session10/SingularOrPluralGame';
+import { SmartListenerChallengeGame } from '@/components/game/speech/comprehension/session10/SmartListenerChallengeGame';
+
 // Speech Therapy Level 3 Session 1 — Voice Activation & Vocal Play
 import { EchoCaveGame } from '@/components/game/speech/level3/session1/EchoCaveGame';
 import { SoundPaintGame } from '@/components/game/speech/level3/session1/SoundPaintGame';
@@ -143,11 +214,11 @@ import { SmoothTalkingTrainGame } from '@/components/game/speech/level3/session1
 import { TalkingAdventureGame } from '@/components/game/speech/level3/session10/TalkingAdventureGame';
 
 // Speech Therapy Level 2 Session 1
-import { JawAwarenessCrocodileGame } from '@/components/game/speech/level2/session1/JawAwarenessCrocodileGame';
-import { JawPushChallengeGame } from '@/components/game/speech/level2/session1/JawPushChallengeGame';
-import { JawRhythmTapGame } from '@/components/game/speech/level2/session1/JawRhythmTapGame';
-import { JawStrengthBuilderGame } from '@/components/game/speech/level2/session1/JawStrengthBuilderGame';
-import { JawSwingAdventureGame } from '@/components/game/speech/level2/session1/JawSwingAdventureGame';
+import { BigMouthLionGame } from '@/components/game/speech/level2/session1/BigMouthLionGame';
+import { FreezeMouthGame } from '@/components/game/speech/level2/session1/FreezeMouthGame';
+import { HungryCrocodileGame } from '@/components/game/speech/level2/session1/HungryCrocodileGame';
+import { JawElevatorGame } from '@/components/game/speech/level2/session1/JawElevatorGame';
+import { OpenCloseRhythmGame } from '@/components/game/speech/level2/session1/OpenCloseRhythmGame';
 
 // Speech Therapy Level 2 Session 2 (Curved path / mouth tracing)
 import { BallRollCurvedTrackGame } from '@/components/game/speech/level2/session2/BallRollCurvedTrackGame';
@@ -666,11 +737,61 @@ type GameKey =
   | 'talking-adventure'
   | 'fast-slow-talking'
   | 'conversation-avatar'
-  | 'jaw-awareness-crocodile'
-  | 'jaw-swing-adventure'
-  | 'jaw-push-challenge'
-  | 'jaw-rhythm-tap'
-  | 'jaw-strength-builder'
+  | 'copy-the-clap'
+  | 'jump-like-me'
+  | 'dance-freeze'
+  | 'silly-action-match'
+  | 'follow-my-move'
+  | 'touch-the-nose'
+  | 'speech-body-puzzle'
+  | 'what-helps-you-see'
+  | 'dress-the-character'
+  | 'simon-says-body'
+  | 'find-the-animal'
+  | 'fruit-basket'
+  | 'vehicle-garage'
+  | 'alphabet-hunt'
+  | 'vegetable-farm'
+  | 'same-category'
+  | 'pick-the-different-one'
+  | 'big-vs-small'
+  | 'soft-or-hard'
+  | 'color-match-train'
+  | 'put-teddy-in-box'
+  | 'under-the-table'
+  | 'left-or-right'
+  | 'near-or-far'
+  | 'behind-the-tree'
+  | 'who-is-running'
+  | 'what-do-we-eat-with'
+  | 'match-the-action'
+  | 'what-does-a-doctor-do'
+  | 'tool-match'
+  | 'find-the-kitchen'
+  | 'where-does-teacher-work'
+  | 'family-match'
+  | 'boy-or-girl'
+  | 'community-helpers'
+  | 'guess-the-object'
+  | 'hidden-part-puzzle'
+  | 'what-am-i-describing'
+  | 'find-by-function'
+  | 'mystery-bag'
+  | 'story-order-cards'
+  | 'what-is-missing'
+  | 'complete-the-pattern'
+  | 'first-middle-last'
+  | 'find-the-hidden-toy'
+  | 'follow-2-step-directions'
+  | 'belongs-or-not'
+  | 'singular-or-plural'
+  | 'pronoun-match'
+  | 'smart-listener-challenge'
+  | 'hungry-crocodile'
+  | 'big-mouth-lion'
+  | 'jaw-elevator'
+  | 'freeze-mouth'
+  | 'open-close-rhythm'
   | 'rainbow-curve-trace-speech'
   | 'ice-cream-lick'
   | 'touch-the-star'
@@ -1692,29 +1813,149 @@ export default function SessionGamesScreen() {
   const isSequenceWithDistractionAvailable =
     therapyId === 'speech' && levelNumber === 1 && sessionNumber === 10;
 
-  // Level 2 Session 1 games - Speech Therapy (Jaw Awareness Games)
-  const isJawAwarenessCrocodileAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 1;
-  const isJawSwingAdventureAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 1;
-  const isJawPushChallengeAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 1;
-  const isJawRhythmTapAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 1;
-  const isJawStrengthBuilderAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 1;
+  // Level 2 Session 1 — Speech Therapy (Action Imitation)
+  const isCopyTheClapAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 1;
+  const isJumpLikeMeAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 1;
+  const isDanceFreezeAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 1;
+  const isSillyActionMatchAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 1;
+  const isFollowMyMoveAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 1;
+
+  // Level 2 Session 2 — Speech Therapy (Body Parts & Self Awareness)
+  const isTouchTheNoseAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 2;
+  const isBodyPuzzleSpeechAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 2;
+  const isWhatHelpsYouSeeAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 2;
+  const isDressTheCharacterAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 2;
+  const isSimonSaysBodyAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 2;
+
+  // Level 2 Session 3 — Speech Therapy (Objects, Animals & Vocabulary)
+  const isFindTheAnimalAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 3;
+  const isFruitBasketAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 3;
+  const isVehicleGarageAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 3;
+  const isAlphabetHuntAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 3;
+  const isVegetableFarmAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 3;
+
+  // Level 2 Session 4 — Speech Therapy (Categories & Attributes)
+  const isSameCategoryAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 4;
+  const isPickTheDifferentOneAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 4;
+  const isBigVsSmallAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 4;
+  const isSoftOrHardAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 4;
+  const isColorMatchTrainAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 4;
+
+  // Level 2 Session 5 — Speech Therapy (Positions & Prepositions)
+  const isPutTeddyInBoxAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 5;
+  const isUnderTheTableAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 5;
+  const isLeftOrRightAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 5;
+  const isNearOrFarAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 5;
+  const isBehindTheTreeAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 5;
+
+  // Level 2 Session 6 — Speech Therapy (Actions, Verbs & Functions)
+  const isWhoIsRunningAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 6;
+  const isWhatDoWeEatWithAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 6;
+  const isMatchTheActionAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 6;
+  const isWhatDoesADoctorDoAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 6;
+  const isToolMatchAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 6;
+
+  // Level 2 Session 7 — Speech Therapy (Places, People & Community)
+  const isFindTheKitchenAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 7;
+  const isWhereDoesTeacherWorkAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 7;
+  const isFamilyMatchAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 7;
+  const isBoyOrGirlAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 7;
+  const isCommunityHelpersAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 7;
+
+  // Level 2 Session 8 — Speech Therapy (Descriptions & Reasoning)
+  const isGuessTheObjectAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 8;
+  const isHiddenPartPuzzleAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 8;
+  const isWhatAmIDescribingAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 8;
+  const isFindByFunctionAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 8;
+  const isMysteryBagAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 8;
+
+  // Level 2 Session 9 — Speech Therapy (Sequences, Missing Items & Logic)
+  const isStoryOrderCardsAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 9;
+  const isWhatIsMissingAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 9;
+  const isCompleteThePatternAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 9;
+  const isFirstMiddleLastAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 9;
+  const isFindTheHiddenToyAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 9;
+
+  // Level 2 Session 10 — Speech Therapy (Advanced Comprehension Concepts)
+  const isFollow2StepDirectionsAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 10;
+  const isBelongsOrNotAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 10;
+  const isSingularOrPluralAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 10;
+  const isPronounMatchAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 10;
+  const isSmartListenerChallengeAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 10;
+
+  // Level 3 Session 1 games - Speech Therapy (Jaw Awareness Games)
+  const isHungryCrocodileAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 1;
+  const isBigMouthLionAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 1;
+  const isJawElevatorAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 1;
+  const isFreezeMouthAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 1;
+  const isOpenCloseRhythmAvailable =
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 1;
 
   // Level 2 Session 2 games - Speech Therapy (Curved path / mouth tracing)
   const isPaintCurvedSnakeAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 2;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 2;
   const isRainbowCurveTraceSpeechAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 2;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 2;
   const isTraceSmilingMouthAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 2;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 2;
   const isBallRollCurvedTrackAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 2;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 2;
   const isDriveCarCurvyRoadAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 2;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 2;
 
   // Level 2 Session 1 games - Occupational Therapy (Trace Straight Line)
   const isTrainTrackLineAvailable =
@@ -2071,219 +2312,219 @@ export default function SessionGamesScreen() {
 
   // Level 2 Session 3 games - Speech Therapy (Airflow Games)
   const isBlowTheBubbleAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 3;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 3;
   const isMoveTheFeatherAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 3;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 3;
   const isWindmillSpinAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 3;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 3;
   const isBlowOutTheCandleAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 3;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 3;
   const isBalloonInflateAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 3;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 3;
 
   // Speech Therapy Level 2 Session 4: Tongue Elevation Games
   const isIceCreamLickAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 4;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 4;
   const isTouchTheStarAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 4;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 4;
   const isTongueElevatorAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 4;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 4;
   const isRoofTapAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 4;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 4;
   const isSmileAndLiftAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 4;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 4;
 
   // Level 2 Session 5 games - Speech Therapy (Tongue Lateralization)
   const isPaintTheWallAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 5;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 5;
   const isCookieSweepAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 5;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 5;
   const isCatchTheDotAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 5;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 5;
   const isSideLightsSpeechAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 5;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 5;
   const isMirrorMatchAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 5;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 5;
 
   // Level 2 Session 6 games - Speech Therapy (Bilabial Strength)
   const isBalloonPumpAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 6;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 6;
   const isBubblePressAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 6;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 6;
   const isMamaCallAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 6;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 6;
   const isDrumLipsAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 6;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 6;
   const isBoxPushAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 6;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 6;
 
   // Level 2 Session 7 games - Speech Therapy (Lip Rounding)
   const isFishMouthAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 7;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 7;
   const isTunnelBlowAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 7;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 7;
   const isOShapeMatchAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 7;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 7;
   const isOUSwitchAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 7;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 7;
   const isMirrorRoundAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 7;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 7;
 
   // Level 2 Session 8 games - Speech Therapy (Breath Control)
   const isBallFloatAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 8;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 8;
   const isCloudPushAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 8;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 8;
   const isTrainSteamAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 8;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 8;
   const isBreathMeterAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 8;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 8;
   const isStopGoBreathingAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 8;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 8;
 
   // Level 2 Session 9 games - Speech Therapy (Simple Oral Sequences)
   const isTrafficMouthAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 9;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 9;
   const isRobotSequenceAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 9;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 9;
   const isPatternMatchAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 9;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 9;
   const isCopyTheBeatAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 9;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 9;
   const isSequenceBuilderAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 9;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 9;
 
   // Level 2 Session 10 games - Speech Therapy (Foundational Imitation)
   const isFaceToFaceAvatarAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 10;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
   const isHighlightZonesAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 10;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
   const isOneStepImitationAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 10;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
   const isTwoStepImitationAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 10;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
   const isSuccessReplayAvailable =
-    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 10;
+    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
 
   // Speech Therapy Level 3 Session 1 — Voice Activation & Vocal Play
   const isWakeTheMonsterAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 1;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 1;
   const isVoiceRocketAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 1;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 1;
   const isSoundPaintAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 1;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 1;
   const isEchoCaveAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 1;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 1;
   const isVoiceMatchLightAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 1;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 1;
 
   // Speech Therapy Level 3 Session 2 — Vowel Sounds
   const isOpenMouthAaaAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 2;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 2;
   const isHappyEeeSmileAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 2;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 2;
   const isRoundOooFishAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 2;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 2;
   const isLongSoundTrainAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 2;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 2;
   const isVowelSwitchAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 2;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 2;
 
   // Speech Therapy Level 3 Session 3 — Bilabial Speech Sounds
   const isMamaDrumAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 3;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 3;
   const isBubblePopPuhAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 3;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 3;
   const isBallBounceBuhAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 3;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 3;
   const isSoundCatchAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 3;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 3;
   const isLipPowerRaceAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 3;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 3;
 
   // Speech Therapy Level 3 Session 4 — Consonant + Vowel Syllables
   const isSyllableBridgeAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 4;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 4;
   const isFeedThePandaAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 4;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 4;
   const isBabyCallsMamaAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 4;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 4;
   const isSyllableBalloonsAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 4;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 4;
   const isCopyTalkingRobotAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 4;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 4;
 
   // Speech Therapy Level 3 Session 5 — Animal & Environmental Sounds
   const isCowSoundFarmAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 5;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 5;
   const isCarEngineRaceAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 5;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 5;
   const isSnakeHissAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 5;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 5;
   const isTrainChooChooAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 5;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 5;
   const isAnimalSoundMatchAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 5;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 5;
 
   // Speech Therapy Level 3 Session 6 — Sound Imitation Sequences
   const isCopyOneSoundAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 6;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 6;
   const isCopyTwoSoundsAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 6;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 6;
   const isRhythmRepeatAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 6;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 6;
   const isSoundPatternLightsAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 6;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 6;
   const isTalkingRobotSaysAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 6;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 6;
 
   // Speech Therapy Level 3 Session 7 — First Meaningful Words
   const isSayMoreAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 7;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 7;
   const isCallMamaAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 7;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 7;
   const isSayBallAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 7;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 7;
   const isSnackRequestAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 7;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 7;
   const isToyVoiceUnlockAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 7;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 7;
 
   // Speech Therapy Level 3 Session 8 — Listen & Repeat
   const isHearAndSayAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 8;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 8;
   const isTalkingMirrorAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 8;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 8;
   const isMatchMyMouthAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 8;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 8;
   const isRepeatTheBeatAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 8;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 8;
   const isFastOrSlowAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 8;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 8;
 
   // Speech Therapy Level 3 Session 9 — Two-Part Verbal Sequences
   const isSayThenTapAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 9;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 9;
   const isOpenSpeakAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 9;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 9;
   const isTwoWordComboAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 9;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 9;
   const isFollowRepeatAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 9;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 9;
   const isSpeechPathwayAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 9;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 9;
 
   // Speech Therapy Level 3 Session 10 — Early Fluent Speech Foundations
   const isSmoothTalkingTrainAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 10;
   const isPhraseBuilderAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 10;
   const isTalkingAdventureAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 10;
   const isFastSlowTalkingAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 10;
   const isConversationAvatarAvailable =
-    therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
+    therapyId === 'speech' && levelNumber === 4 && sessionNumber === 10;
 
   const GAMES: GameInfo[] = [
     {
@@ -4204,44 +4445,444 @@ export default function SessionGamesScreen() {
       available: isSequenceWithDistractionAvailable,
     },
     {
-      id: 'jaw-awareness-crocodile',
-      title: 'Jaw Awareness Crocodile',
+      id: 'copy-the-clap',
+      title: 'Copy the Clap',
+      emoji: '👏',
+      description: 'Avatar claps — tap Clap to copy. Action imitation.',
+      color: '#D97706',
+      available: isCopyTheClapAvailable,
+    },
+    {
+      id: 'jump-like-me',
+      title: 'Jump Like Me',
+      emoji: '🦘',
+      description: 'Match the character jump. Gross motor imitation.',
+      color: '#2563EB',
+      available: isJumpLikeMeAvailable,
+    },
+    {
+      id: 'dance-freeze',
+      title: 'Dance Freeze',
+      emoji: '💃',
+      description: 'Copy the dance pose when the music stops. Body imitation.',
+      color: '#DB2777',
+      available: isDanceFreezeAvailable,
+    },
+    {
+      id: 'silly-action-match',
+      title: 'Silly Action Match',
+      emoji: '🤪',
+      description: 'Match the funny movement. Attention + imitation.',
+      color: '#7C3AED',
+      available: isSillyActionMatchAvailable,
+    },
+    {
+      id: 'follow-my-move',
+      title: 'Follow My Move',
+      emoji: '🧠',
+      description: 'Repeat the action sequence in order. Motor planning.',
+      color: '#059669',
+      available: isFollowMyMoveAvailable,
+    },
+    {
+      id: 'touch-the-nose',
+      title: 'Touch the Nose',
+      emoji: '👃',
+      description: 'Tap the correct body part when asked. Body awareness.',
+      color: '#EA580C',
+      available: isTouchTheNoseAvailable,
+    },
+    {
+      id: 'speech-body-puzzle',
+      title: 'Body Puzzle',
+      emoji: '🧩',
+      description: 'Place head, arm, and leg on the figure. Recognition.',
+      color: '#4F46E5',
+      available: isBodyPuzzleSpeechAvailable,
+    },
+    {
+      id: 'what-helps-you-see',
+      title: 'What Helps You See?',
+      emoji: '👀',
+      description: 'Pick which body part does each job. Function understanding.',
+      color: '#0D9488',
+      available: isWhatHelpsYouSeeAvailable,
+    },
+    {
+      id: 'dress-the-character',
+      title: 'Dress the Character',
+      emoji: '👕',
+      description: 'Put hat, shirt, and pants on the right places. Body mapping.',
+      color: '#CA8A04',
+      available: isDressTheCharacterAvailable,
+    },
+    {
+      id: 'simon-says-body',
+      title: 'Simon Says Body',
+      emoji: '👂',
+      description: 'Follow Simon Says body rules. Receptive language.',
+      color: '#DC2626',
+      available: isSimonSaysBodyAvailable,
+    },
+    {
+      id: 'find-the-animal',
+      title: 'Find the Animal',
+      emoji: '🐕',
+      description: 'Tap the animal you hear named. Vocabulary.',
+      color: '#16A34A',
+      available: isFindTheAnimalAvailable,
+    },
+    {
+      id: 'fruit-basket',
+      title: 'Fruit Basket',
+      emoji: '🍎',
+      description: 'Sort fruits into the basket. Categorization.',
+      color: '#D97706',
+      available: isFruitBasketAvailable,
+    },
+    {
+      id: 'vehicle-garage',
+      title: 'Vehicle Garage',
+      emoji: '🚗',
+      description: 'Park each vehicle in its garage. Object recognition.',
+      color: '#2563EB',
+      available: isVehicleGarageAvailable,
+    },
+    {
+      id: 'alphabet-hunt',
+      title: 'Alphabet Hunt',
+      emoji: '🔤',
+      description: 'Find the letter you hear. Symbol recognition.',
+      color: '#7C3AED',
+      available: isAlphabetHuntAvailable,
+    },
+    {
+      id: 'vegetable-farm',
+      title: 'Vegetable Farm',
+      emoji: '🥕',
+      description: 'Pick the vegetable named aloud. Listening.',
+      color: '#C2410C',
+      available: isVegetableFarmAvailable,
+    },
+    {
+      id: 'same-category',
+      title: 'Same Category',
+      emoji: '🗂️',
+      description: 'Tap everything in the same group. Categorization.',
+      color: '#0284C7',
+      available: isSameCategoryAvailable,
+    },
+    {
+      id: 'pick-the-different-one',
+      title: 'Pick the Different One',
+      emoji: '🔍',
+      description: 'Find the item that does not belong. Comparison.',
+      color: '#DB2777',
+      available: isPickTheDifferentOneAvailable,
+    },
+    {
+      id: 'big-vs-small',
+      title: 'Big vs Small',
+      emoji: '📏',
+      description: 'Tap all big or all small things. Size attributes.',
+      color: '#CA8A04',
+      available: isBigVsSmallAvailable,
+    },
+    {
+      id: 'soft-or-hard',
+      title: 'Soft or Hard?',
+      emoji: '🧸',
+      description: 'Sort soft and hard things. Descriptive concepts.',
+      color: '#9333EA',
+      available: isSoftOrHardAvailable,
+    },
+    {
+      id: 'color-match-train',
+      title: 'Color Match Train',
+      emoji: '🚂',
+      description: 'Load the train with matching colors. Visual attributes.',
+      color: '#DC2626',
+      available: isColorMatchTrainAvailable,
+    },
+    {
+      id: 'put-teddy-in-box',
+      title: 'Put Teddy In the Box',
+      emoji: '🧸',
+      description: 'Drag the toy into the box. In and out.',
+      color: '#D97706',
+      available: isPutTeddyInBoxAvailable,
+    },
+    {
+      id: 'under-the-table',
+      title: 'Under the Table',
+      emoji: '🪑',
+      description: 'Place the object under the table. Spatial understanding.',
+      color: '#4F46E5',
+      available: isUnderTheTableAvailable,
+    },
+    {
+      id: 'left-or-right',
+      title: 'Left or Right?',
+      emoji: '↔️',
+      description: 'Tap the item on the correct side. Direction concepts.',
+      color: '#16A34A',
+      available: isLeftOrRightAvailable,
+    },
+    {
+      id: 'near-or-far',
+      title: 'Near or Far',
+      emoji: '🔭',
+      description: 'Choose what is close or far away. Spatial reasoning.',
+      color: '#DB2777',
+      available: isNearOrFarAvailable,
+    },
+    {
+      id: 'behind-the-tree',
+      title: 'Behind the Tree',
+      emoji: '🌳',
+      description: 'Hide the friend behind the tree. Prepositions.',
+      color: '#059669',
+      available: isBehindTheTreeAvailable,
+    },
+    {
+      id: 'who-is-running',
+      title: 'Who Is Running?',
+      emoji: '🏃',
+      description: 'Tap who is doing the action. Verb identification.',
+      color: '#EA580C',
+      available: isWhoIsRunningAvailable,
+    },
+    {
+      id: 'what-do-we-eat-with',
+      title: 'What Do We Eat With?',
+      emoji: '🥄',
+      description: 'Choose the spoon for eating. Object function.',
+      color: '#CA8A04',
+      available: isWhatDoWeEatWithAvailable,
+    },
+    {
+      id: 'match-the-action',
+      title: 'Match the Action',
+      emoji: '🎯',
+      description: 'Match the verb word to the picture. Verb comprehension.',
+      color: '#0284C7',
+      available: isMatchTheActionAvailable,
+    },
+    {
+      id: 'what-does-a-doctor-do',
+      title: 'What Does a Doctor Do?',
+      emoji: '👨‍⚕️',
+      description: 'Match the helper to what they do. Functional reasoning.',
+      color: '#7C3AED',
+      available: isWhatDoesADoctorDoAvailable,
+    },
+    {
+      id: 'tool-match',
+      title: 'Tool Match',
+      emoji: '🔧',
+      description: 'Match the tool with what it is used for. Problem solving.',
+      color: '#475569',
+      available: isToolMatchAvailable,
+    },
+    {
+      id: 'find-the-kitchen',
+      title: 'Find the Kitchen',
+      emoji: '🍳',
+      description: 'Tap the right room in the house. Room identification.',
+      color: '#C2410C',
+      available: isFindTheKitchenAvailable,
+    },
+    {
+      id: 'where-does-teacher-work',
+      title: 'Where Does Teacher Work?',
+      emoji: '🏫',
+      description: 'Match the person to where they work. Community understanding.',
+      color: '#2563EB',
+      available: isWhereDoesTeacherWorkAvailable,
+    },
+    {
+      id: 'family-match',
+      title: 'Family Match',
+      emoji: '👨‍👩‍👧',
+      description: 'Find the family member you hear. Social recognition.',
+      color: '#DB2777',
+      available: isFamilyMatchAvailable,
+    },
+    {
+      id: 'boy-or-girl',
+      title: 'Boy or Girl?',
+      emoji: '👦',
+      description: 'Tap the boy or girl you hear. Visual discrimination.',
+      color: '#4F46E5',
+      available: isBoyOrGirlAvailable,
+    },
+    {
+      id: 'community-helpers',
+      title: 'Community Helpers',
+      emoji: '👮',
+      description: 'Match the helper to their job. Social understanding.',
+      color: '#059669',
+      available: isCommunityHelpersAvailable,
+    },
+    {
+      id: 'guess-the-object',
+      title: 'Guess the Object',
+      emoji: '🔮',
+      description: 'Read the clues and pick the object. Listening comprehension.',
+      color: '#7C3AED',
+      available: isGuessTheObjectAvailable,
+    },
+    {
+      id: 'hidden-part-puzzle',
+      title: 'Hidden Part Puzzle',
+      emoji: '🧩',
+      description: 'Guess the whole object from a hidden part. Visual reasoning.',
+      color: '#0284C7',
+      available: isHiddenPartPuzzleAvailable,
+    },
+    {
+      id: 'what-am-i-describing',
+      title: 'What Am I Describing?',
+      emoji: '💬',
+      description: 'Match the words to the right picture. Language processing.',
+      color: '#CA8A04',
+      available: isWhatAmIDescribingAvailable,
+    },
+    {
+      id: 'find-by-function',
+      title: 'Find by Function',
+      emoji: '✂️',
+      description: 'Used for cutting? Pick scissors. Functional comprehension.',
+      color: '#EA580C',
+      available: isFindByFunctionAvailable,
+    },
+    {
+      id: 'mystery-bag',
+      title: 'Mystery Bag',
+      emoji: '🎒',
+      description: 'Tap the bag for clues, then guess inside. Inferencing.',
+      color: '#475569',
+      available: isMysteryBagAvailable,
+    },
+    {
+      id: 'story-order-cards',
+      title: 'Story Order Cards',
+      emoji: '📖',
+      description: 'Tap the story steps in order. Sequencing.',
+      color: '#7C3AED',
+      available: isStoryOrderCardsAvailable,
+    },
+    {
+      id: 'what-is-missing',
+      title: 'What Is Missing?',
+      emoji: '❓',
+      description: 'Find the item for the empty spot. Visual memory.',
+      color: '#0284C7',
+      available: isWhatIsMissingAvailable,
+    },
+    {
+      id: 'complete-the-pattern',
+      title: 'Complete the Pattern',
+      emoji: '🔁',
+      description: 'What comes next in the pattern? Logic.',
+      color: '#16A34A',
+      available: isCompleteThePatternAvailable,
+    },
+    {
+      id: 'first-middle-last',
+      title: 'First-Middle-Last',
+      emoji: '1️⃣',
+      description: 'Tap first, middle, or last. Order concepts.',
+      color: '#DB2777',
+      available: isFirstMiddleLastAvailable,
+    },
+    {
+      id: 'find-the-hidden-toy',
+      title: 'Find the Hidden Toy',
+      emoji: '🧸',
+      description: 'Follow clues, then find the toy. Multi-step reasoning.',
+      color: '#EA580C',
+      available: isFindTheHiddenToyAvailable,
+    },
+    {
+      id: 'follow-2-step-directions',
+      title: 'Follow 2-Step Directions',
+      emoji: '👂',
+      description: 'Put the ball under the chair. Multi-step processing.',
+      color: '#2563EB',
+      available: isFollow2StepDirectionsAvailable,
+    },
+    {
+      id: 'belongs-or-not',
+      title: 'Belongs or Not?',
+      emoji: '🗂️',
+      description: 'Does it fit in the group? Advanced categorization.',
+      color: '#7C3AED',
+      available: isBelongsOrNotAvailable,
+    },
+    {
+      id: 'singular-or-plural',
+      title: 'Singular or Plural',
+      emoji: '1️⃣',
+      description: 'Tap one or many. Language concepts.',
+      color: '#CA8A04',
+      available: isSingularOrPluralAvailable,
+    },
+    {
+      id: 'pronoun-match',
+      title: 'Pronoun Match',
+      emoji: '💬',
+      description: 'Match he, she, or they to the picture. Pronoun understanding.',
+      color: '#DB2777',
+      available: isPronounMatchAvailable,
+    },
+    {
+      id: 'smart-listener-challenge',
+      title: 'Smart Listener Challenge',
+      emoji: '🎧',
+      description: 'Mixed listening tasks in one game. Integrated comprehension.',
+      color: '#EA580C',
+      available: isSmartListenerChallengeAvailable,
+    },
+    {
+      id: 'hungry-crocodile',
+      title: 'Hungry Crocodile',
       emoji: '🐊',
-      description: 'Copy the crocodile! Open and close your mouth to match. Build jaw awareness and control.',
+      description: 'Open and close your mouth to feed the crocodile. Jaw awareness.',
       color: '#22C55E',
-      available: isJawAwarenessCrocodileAvailable,
+      available: isHungryCrocodileAvailable,
     },
     {
-      id: 'jaw-swing-adventure',
-      title: 'Jaw Swing Adventure',
-      emoji: '🦸',
-      description: 'Move your jaw left and right to control the character! Build lateral jaw movement.',
-      color: '#FCD34D',
-      available: isJawSwingAdventureAvailable,
+      id: 'big-mouth-lion',
+      title: 'Big Mouth Lion',
+      emoji: '🦁',
+      description: 'Open wide for the roaring lion. Mouth opening.',
+      color: '#EAB308',
+      available: isBigMouthLionAvailable,
     },
     {
-      id: 'jaw-push-challenge',
-      title: 'Jaw Push Challenge',
-      emoji: '🚀',
-      description: 'Push your jaw forward to collect objects! Build jaw protrusion strength.',
-      color: '#0EA5E9',
-      available: isJawPushChallengeAvailable,
+      id: 'jaw-elevator',
+      title: 'Jaw Elevator',
+      emoji: '🛗',
+      description: 'Open your mouth to lift the elevator. Controlled opening.',
+      color: '#6366F1',
+      available: isJawElevatorAvailable,
     },
     {
-      id: 'jaw-rhythm-tap',
-      title: 'Jaw Rhythm Tap',
-      emoji: '🎵',
-      description: 'Tap to open and close your jaw in rhythm! Build coordination and timing.',
+      id: 'freeze-mouth',
+      title: 'Freeze Mouth',
+      emoji: '🧊',
+      description: 'Hold your mouth open when you see FREEZE. Jaw endurance.',
+      color: '#06B6D4',
+      available: isFreezeMouthAvailable,
+    },
+    {
+      id: 'open-close-rhythm',
+      title: 'Open-Close Rhythm',
+      emoji: '🥁',
+      description: 'Match the open/close beat. Timing and coordination.',
       color: '#A855F7',
-      available: isJawRhythmTapAvailable,
-    },
-    {
-      id: 'jaw-strength-builder',
-      title: 'Jaw Strength Builder',
-      emoji: '🏗️',
-      description: 'Hold your jaw open or closed to build structures! Build jaw strength and endurance.',
-      color: '#F59E0B',
-      available: isJawStrengthBuilderAvailable,
+      available: isOpenCloseRhythmAvailable,
     },
     // Speech Level 2 Session 2: Curved path / mouth tracing
     {
@@ -6453,24 +7094,174 @@ export default function SessionGamesScreen() {
     return <ConversationAvatarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  if (currentGame === 'jaw-awareness-crocodile') {
-    return <JawAwarenessCrocodileGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  if (currentGame === 'copy-the-clap') {
+    return <CopyTheClapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'jump-like-me') {
+    return <JumpLikeMeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'dance-freeze') {
+    return <DanceFreezeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'silly-action-match') {
+    return <SillyActionMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'follow-my-move') {
+    return <FollowMyMoveGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'touch-the-nose') {
+    return <TouchTheNoseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-body-puzzle') {
+    return <SpeechBodyPuzzleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'what-helps-you-see') {
+    return <WhatHelpsYouSeeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'dress-the-character') {
+    return <DressTheCharacterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'simon-says-body') {
+    return <SimonSaysBodyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'find-the-animal') {
+    return <FindTheAnimalGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'fruit-basket') {
+    return <FruitBasketGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'vehicle-garage') {
+    return <VehicleGarageGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'alphabet-hunt') {
+    return <AlphabetHuntGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'vegetable-farm') {
+    return <VegetableFarmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'same-category') {
+    return <SameCategoryGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'pick-the-different-one') {
+    return <PickTheDifferentOneGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'big-vs-small') {
+    return <BigVsSmallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'soft-or-hard') {
+    return <SoftOrHardGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'color-match-train') {
+    return <ColorMatchTrainGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'put-teddy-in-box') {
+    return <PutTeddyInTheBoxGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'under-the-table') {
+    return <UnderTheTableGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'left-or-right') {
+    return <LeftOrRightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'near-or-far') {
+    return <NearOrFarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'behind-the-tree') {
+    return <BehindTheTreeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'who-is-running') {
+    return <WhoIsRunningGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'what-do-we-eat-with') {
+    return <WhatDoWeEatWithGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'match-the-action') {
+    return <MatchTheActionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'what-does-a-doctor-do') {
+    return <WhatDoesADoctorDoGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'tool-match') {
+    return <ToolMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'find-the-kitchen') {
+    return <FindTheKitchenGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'where-does-teacher-work') {
+    return <WhereDoesTeacherWorkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'family-match') {
+    return <FamilyMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'boy-or-girl') {
+    return <BoyOrGirlGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'community-helpers') {
+    return <CommunityHelpersGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'guess-the-object') {
+    return <GuessTheObjectGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'hidden-part-puzzle') {
+    return <HiddenPartPuzzleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'what-am-i-describing') {
+    return <WhatAmIDescribingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'find-by-function') {
+    return <FindByFunctionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mystery-bag') {
+    return <MysteryBagGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'story-order-cards') {
+    return <StoryOrderCardsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'what-is-missing') {
+    return <WhatIsMissingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'complete-the-pattern') {
+    return <CompleteThePatternGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'first-middle-last') {
+    return <FirstMiddleLastGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'find-the-hidden-toy') {
+    return <FindTheHiddenToyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'follow-2-step-directions') {
+    return <Follow2StepDirectionsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'belongs-or-not') {
+    return <BelongsOrNotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'singular-or-plural') {
+    return <SingularOrPluralGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'pronoun-match') {
+    return <PronounMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'smart-listener-challenge') {
+    return <SmartListenerChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'hungry-crocodile') {
+    return <HungryCrocodileGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  if (currentGame === 'jaw-swing-adventure') {
-    return <JawSwingAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  if (currentGame === 'big-mouth-lion') {
+    return <BigMouthLionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  if (currentGame === 'jaw-push-challenge') {
-    return <JawPushChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  if (currentGame === 'jaw-elevator') {
+    return <JawElevatorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  if (currentGame === 'jaw-rhythm-tap') {
-    return <JawRhythmTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  if (currentGame === 'freeze-mouth') {
+    return <FreezeMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  if (currentGame === 'jaw-strength-builder') {
-    return <JawStrengthBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  if (currentGame === 'open-close-rhythm') {
+    return <OpenCloseRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Speech Level 2 Session 2: Curved path / mouth tracing
