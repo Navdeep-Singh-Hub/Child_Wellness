@@ -377,6 +377,7 @@ const ArrowSequenceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             return (
               <Animated.View
                 key={arrow.id}
+                pointerEvents="none"
                 style={[
                   styles.arrowContainer,
                   {

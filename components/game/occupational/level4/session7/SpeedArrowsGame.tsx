@@ -377,6 +377,7 @@ const SpeedArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <View style={styles.gameArea}>
         {showArrow && (
           <Animated.View
+            pointerEvents="none"
             style={[
               styles.arrowContainer,
               {

@@ -331,7 +331,7 @@ const HandToHandPassGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </View>
 
         {ballPosition === 'moving' && (
-          <Animated.View style={[styles.ball, ballStyle]}>
+          <Animated.View pointerEvents="none" style={[styles.ball, ballStyle]}>
             <Text style={styles.ballEmojiLarge}>⚽</Text>
           </Animated.View>
         )}

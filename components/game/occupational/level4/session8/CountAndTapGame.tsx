@@ -321,6 +321,7 @@ const CountAndTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <View style={styles.gameArea}>
         {currentNumber !== null && (
           <Animated.View
+            pointerEvents="none"
             style={[
               styles.numberContainer,
               { transform: [{ scale: numberScale }] },

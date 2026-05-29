@@ -340,6 +340,7 @@ const PingPongTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <View style={styles.gameArea}>
         {ballSide && (
           <Animated.View
+            pointerEvents="none"
             style={[
               styles.ball,
               {

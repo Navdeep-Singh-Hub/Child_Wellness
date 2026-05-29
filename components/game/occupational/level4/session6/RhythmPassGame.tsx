@@ -336,7 +336,7 @@ const RhythmPassGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         }}
       >
         {waitingForBeat && (
-          <Animated.View style={[styles.beatIndicator, beatStyle]}>
+          <Animated.View pointerEvents="none" style={[styles.beatIndicator, beatStyle]}>
             <Text style={styles.beatText}>🎵 BEAT! 🎵</Text>
           </Animated.View>
         )}
@@ -377,7 +377,7 @@ const RhythmPassGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           </TouchableOpacity>
         </View>
 
-        <Animated.View style={[styles.ball, ballStyle]}>
+        <Animated.View pointerEvents="none" style={[styles.ball, ballStyle]}>
           <Text style={styles.ballEmojiLarge}>⚽</Text>
         </Animated.View>
       </View>

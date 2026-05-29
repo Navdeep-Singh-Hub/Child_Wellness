@@ -296,7 +296,7 @@ const ArrowTouchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       <View style={styles.gameArea}>
         {showArrow && (
-          <Animated.View style={[styles.arrowContainer, arrowStyle]}>
+          <Animated.View pointerEvents="none" style={[styles.arrowContainer, arrowStyle]}>
             <Text style={styles.arrowEmoji}>{getArrowEmoji(arrowDirection)}</Text>
             <Text style={styles.arrowLabel}>
               {arrowDirection.toUpperCase()}

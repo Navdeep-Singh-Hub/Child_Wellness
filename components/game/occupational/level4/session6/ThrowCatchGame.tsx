@@ -353,7 +353,7 @@ const ThrowCatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </View>
 
         {(ballState === 'throwing' || ballState === 'catching') && (
-          <Animated.View style={[styles.ball, ballStyle]}>
+          <Animated.View pointerEvents="none" style={[styles.ball, ballStyle]}>
             <Text style={styles.ballEmojiLarge}>⚽</Text>
           </Animated.View>
         )}
