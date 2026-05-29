@@ -345,6 +345,14 @@ export function useJawDetection(
   useEffect(() => {
     if (!isActive) return;
     if (!Camera?.requestCameraPermission) return;
+
+    const existing = Camera.getCameraPermissionStatus?.();
+    if (existing === 'denied' || existing === 'restricted') {
+      setPermissionGranted(false);
+      updateError('Camera permission is required for this game. Enable it in Settings.');
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       try {
@@ -387,12 +395,14 @@ export function useJawDetection(
     }
   }, [device, detectFaces, permissionGranted, error, updateError]);
 
+  // Always invoke useFrameProcessor (never behind permissionGranted) — conditional hooks crash on HMR.
   const frameProcessor =
-    useFrameProcessor && detectFaces && handleFacesOnJS && runAsync
+    useFrameProcessor && runAsync
       ? useFrameProcessor(
           (frame: any) => {
             'worklet';
             if (!isActive) return;
+            if (!detectFaces || !handleFacesOnJS) return;
             runAsync(frame, () => {
               'worklet';
               try {
@@ -403,7 +413,7 @@ export function useJawDetection(
               }
             });
           },
-          [detectFaces, handleFacesOnJS, isActive]
+          [detectFaces, handleFacesOnJS, isActive, runAsync],
         )
       : null;
 

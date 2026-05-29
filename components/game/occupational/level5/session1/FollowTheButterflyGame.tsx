@@ -2,7 +2,7 @@ import GameInfoScreen from '@/components/game/GameInfoScreen';
 import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
-import { speak as speakTTS } from '@/utils/tts';
+import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -280,10 +280,10 @@ const FollowTheButterflyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
             screenHeight.current = e.nativeEvent.layout.height;
           }}
         >
-          <Animated.View style={[styles.butterfly, butterflyStyle]}>
+          <Animated.View style={[styles.butterfly, butterflyStyle]} pointerEvents="none">
             <Text style={styles.butterflyEmoji}>🦋</Text>
           </Animated.View>
-          <Animated.View style={[styles.finger, fingerStyle]}>
+          <Animated.View style={[styles.finger, fingerStyle]} pointerEvents="none">
             <Text style={styles.fingerEmoji}>👆</Text>
           </Animated.View>
         </View>

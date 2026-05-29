@@ -21,10 +21,7 @@ export function CopyTheClapGame({ onBack, onComplete }: Props) {
   const [phase, setPhase] = useState<Phase>('demo');
   const [claps, setClaps] = useState(0);
 
-  useEffect(() => {
-    speakAction('Copy the clap! Watch me clap, then tap Clap two times!');
-    return () => clearActionSpeech();
-  }, []);
+  useEffect(() => () => clearActionSpeech(), []);
 
   useEffect(() => {
     if (!canPlay) return;
@@ -66,6 +63,16 @@ export function CopyTheClapGame({ onBack, onComplete }: Props) {
         rounds={session.rounds}
         canPlay={canPlay}
         onStart={() => setCanPlay(true)}
+        startEmoji="👏"
+        startTitle="Copy the clap!"
+        instructionSteps={[
+          'Watch your friend clap first.',
+          'When it is your turn, tap Clap two times.',
+          'Match the rhythm — have fun copying!',
+        ]}
+        onSpeakStart={() =>
+          speakAction('Copy the clap! Watch me clap, then tap Clap two times!')
+        }
         phaseHint={hint}
         avatarEmoji="🧒"
         avatarAnimating={phase === 'demo'}

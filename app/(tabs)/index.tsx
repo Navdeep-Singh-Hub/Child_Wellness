@@ -31,7 +31,12 @@ import {
   TextInput,
   View
 } from 'react-native';
-import { openKioskSettings, releaseKioskDeviceOwner, type KioskSettingsTarget } from '@/utils/kioskAdmin';
+import {
+  openKioskSettings,
+  releaseKioskDeviceOwner,
+  SHOW_KIOSK_NETWORK_SHORTCUTS,
+  type KioskSettingsTarget,
+} from '@/utils/kioskAdmin';
 
 // --- Types ---
 type IoniconName = keyof typeof Ionicons.glyphMap;
@@ -552,7 +557,10 @@ export default function Index() {
             <View style={styles.adminModalCard}>
               <Text style={styles.adminModalTitle}>Admin Access</Text>
               <Text style={styles.adminModalText}>
-                Enter PIN for display or full system settings. Wi‑Fi, Bluetooth, and mobile network are always available from the bar at the bottom of the screen.
+                Enter PIN for display or full system settings.
+                {SHOW_KIOSK_NETWORK_SHORTCUTS
+                  ? ' Wi‑Fi, Bluetooth, and mobile network are available from the bar at the bottom of the screen.'
+                  : ''}
               </Text>
               <TextInput
                 value={adminPin}
@@ -586,8 +594,10 @@ export default function Index() {
             <View style={styles.adminModalCard}>
               <Text style={styles.adminModalTitle}>Kiosk Admin</Text>
               <Text style={styles.adminModalText}>
-                Opening settings temporarily exits lock mode. Kiosk mode resumes when you return to the app. Use the
-                Wi‑Fi / Bluetooth / Mobile bar at the bottom of the screen anytime.
+                Opening settings temporarily exits lock mode. Kiosk mode resumes when you return to the app.
+                {SHOW_KIOSK_NETWORK_SHORTCUTS
+                  ? ' Use the Wi‑Fi / Bluetooth / Mobile bar at the bottom of the screen anytime.'
+                  : ''}
               </Text>
               <Pressable style={styles.adminMenuButton} onPress={() => handleOpenAdminSetting('display')}>
                 <Ionicons name="sunny" size={20} color="#2563EB" />

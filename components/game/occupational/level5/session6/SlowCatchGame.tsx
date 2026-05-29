@@ -6,8 +6,10 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { isTapNearTarget } from '@/components/game/occupational/level5/shared/movingTargetTouch';
 import {
     Dimensions,
+    GestureResponderEvent,
     Pressable,
     SafeAreaView,
     StyleSheet,
@@ -96,10 +98,7 @@ const SlowCatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     resetBallRef.current = resetBall;
   }, [resetBall]);
 
-  const handleBallTap = useCallback(() => {
-    if (done) return;
-    
-    // Success!
+  const onCatchSuccess = useCallback(() => {
     if (animationRef.current) {
       clearInterval(animationRef.current);
       animationRef.current = null;
@@ -129,8 +128,18 @@ const SlowCatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    speakTTS('Slow and steady!', 0.9, 'en-US' );
-  }, [done, ballScale]);
+    speakTTS('Slow and steady!', 0.9, 'en-US');
+  }, [ballScale]);
+
+  const handleGameTap = useCallback(
+    (event: GestureResponderEvent) => {
+      if (done) return;
+      if (isTapNearTarget(event, ballX.value, ballY.value, BALL_SIZE, TOLERANCE)) {
+        onCatchSuccess();
+      }
+    },
+    [done, ballX, ballY, onCatchSuccess],
+  );
 
   const endGame = useCallback(async (finalScore: number) => {
     const total = TOTAL_ROUNDS;
@@ -267,19 +276,18 @@ const SlowCatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </Text>
       </View>
 
-      <View
+      <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
         }}
+        onPress={handleGameTap}
       >
-        <Pressable onPress={handleBallTap}>
-          <Animated.View style={[styles.ball, ballStyle]}>
-            <Text style={styles.ballEmoji}>⚽</Text>
-          </Animated.View>
-        </Pressable>
-      </View>
+        <Animated.View style={[styles.ball, ballStyle]} pointerEvents="none">
+          <Text style={styles.ballEmoji}>⚽</Text>
+        </Animated.View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>

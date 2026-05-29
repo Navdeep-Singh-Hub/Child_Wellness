@@ -197,7 +197,7 @@ const SideEyeTrackGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           screenHeight.current = e.nativeEvent.layout.height;
         }}
       >
-        <Animated.View style={[styles.dot, dotStyle]}>
+        <Animated.View style={[styles.dot, dotStyle]} pointerEvents="none">
           <Text style={styles.dotEmoji}>⚫</Text>
         </Animated.View>
       </View>

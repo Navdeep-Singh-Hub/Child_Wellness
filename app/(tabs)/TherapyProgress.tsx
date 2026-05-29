@@ -103,6 +103,12 @@ function speechLevelSubtitle(levelNumber: number): string | null {
       return 'Jaw & mouth opening';
     case SPEECH_LEVEL.voice:
       return 'Voice & speech sounds';
+    case SPEECH_LEVEL.lipClosure:
+      return 'Pre-oral & mouth skills';
+    case SPEECH_LEVEL.speechMotor:
+      return 'Speech motor readiness';
+    case SPEECH_LEVEL.oralMotorCoordination:
+      return 'Oral motor coordination';
     default:
       return null;
   }

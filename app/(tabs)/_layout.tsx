@@ -5,7 +5,7 @@ import React from "react";
 import { Animated, Alert, Dimensions, Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ConnectivityQuickBar from "@/components/ConnectivityQuickBar";
-import { openKioskSettings } from "@/utils/kioskAdmin";
+import { openKioskSettings, SHOW_KIOSK_NETWORK_SHORTCUTS } from "@/utils/kioskAdmin";
 import RequireCompleteProfile from "./RequireCompleteProfile";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -162,7 +162,7 @@ function SlideOutMenu() {
             </View>
 
             <View style={{ paddingTop: 12 }}>
-              {Platform.OS === "android" && (
+              {Platform.OS === "android" && SHOW_KIOSK_NETWORK_SHORTCUTS && (
                 <View
                   style={{
                     paddingHorizontal: 20,

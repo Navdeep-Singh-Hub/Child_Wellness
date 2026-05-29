@@ -143,6 +143,214 @@ import { PronounMatchGame } from '@/components/game/speech/comprehension/session
 import { SingularOrPluralGame } from '@/components/game/speech/comprehension/session10/SingularOrPluralGame';
 import { SmartListenerChallengeGame } from '@/components/game/speech/comprehension/session10/SmartListenerChallengeGame';
 
+// Speech Therapy Level 5 Session 1 — Air Awareness & Airflow Cause-Effect
+import { AirPainterGame } from '@/components/game/speech/breath-awareness/session1/AirPainterGame';
+import { BubbleWakeupGame } from '@/components/game/speech/breath-awareness/session1/BubbleWakeupGame';
+import { CloudPuffGame } from '@/components/game/speech/breath-awareness/session1/CloudPuffGame';
+import { MagicFeatherGame } from '@/components/game/speech/breath-awareness/session1/MagicFeatherGame';
+import { WindmillFriendGame } from '@/components/game/speech/breath-awareness/session1/WindmillFriendGame';
+
+// Speech Therapy Level 5 Session 2 — Mouth Movement Imitation
+import { CopyHappyMouthGame } from '@/components/game/speech/mouth-imitation/session2/CopyHappyMouthGame';
+import { FunnyMonsterMouthGame } from '@/components/game/speech/mouth-imitation/session2/FunnyMonsterMouthGame';
+import { MirrorMouthMatchGame } from '@/components/game/speech/mouth-imitation/session2/MirrorMouthMatchGame';
+import { OpenCloseDanceGame } from '@/components/game/speech/mouth-imitation/session2/OpenCloseDanceGame';
+import { SillyFaceCopyGame } from '@/components/game/speech/mouth-imitation/session2/SillyFaceCopyGame';
+
+// Speech Therapy Level 5 Session 3 — Breath Activation & Start–Stop Air
+import { BalloonBreathGame } from '@/components/game/speech/breath-activation/session3/BalloonBreathGame';
+import { MagicAirSwitchGame } from '@/components/game/speech/breath-activation/session3/MagicAirSwitchGame';
+import { StartStopCloudGame } from '@/components/game/speech/breath-activation/session3/StartStopCloudGame';
+import { WakeFeatherGame } from '@/components/game/speech/breath-activation/session3/WakeFeatherGame';
+import { WindmillFreezeGame } from '@/components/game/speech/breath-activation/session3/WindmillFreezeGame';
+
+// Speech Therapy Level 5 Session 4 — Lip Awareness & Lip Sensory Mapping
+import { FunnyFishLipsGame } from '@/components/game/speech/lip-awareness/session4/FunnyFishLipsGame';
+import { HappyLipsMirrorGame } from '@/components/game/speech/lip-awareness/session4/HappyLipsMirrorGame';
+import { LipExplorerAdventureGame } from '@/components/game/speech/lip-awareness/session4/LipExplorerAdventureGame';
+import { LipTapFriendGame } from '@/components/game/speech/lip-awareness/session4/LipTapFriendGame';
+import { MagicLipGlowGame } from '@/components/game/speech/lip-awareness/session4/MagicLipGlowGame';
+
+// Speech Therapy Level 5 Session 5 — Jaw Awareness & Open–Close Basics
+import { FunnyJawAdventureGame } from '@/components/game/speech/jaw-awareness/session5/FunnyJawAdventureGame';
+import { JawHungryCrocodileGame } from '@/components/game/speech/jaw-awareness/session5/JawHungryCrocodileGame';
+import { JawOpenCloseDanceGame } from '@/components/game/speech/jaw-awareness/session5/JawOpenCloseDanceGame';
+import { MouthElevatorGame } from '@/components/game/speech/jaw-awareness/session5/MouthElevatorGame';
+import { SleepyLionMouthGame } from '@/components/game/speech/jaw-awareness/session5/SleepyLionMouthGame';
+
+// Speech Therapy Level 5 Session 6 — Facial Imitation & Mirror Play
+import { FaceAdventureCopyGame } from '@/components/game/speech/facial-imitation/session6/FaceAdventureCopyGame';
+import { FunnyFaceMirrorGame } from '@/components/game/speech/facial-imitation/session6/FunnyFaceMirrorGame';
+import { HappySadCopyGame } from '@/components/game/speech/facial-imitation/session6/HappySadCopyGame';
+import { MirrorDanceFacesGame } from '@/components/game/speech/facial-imitation/session6/MirrorDanceFacesGame';
+import { MonsterFaceMatchGame } from '@/components/game/speech/facial-imitation/session6/MonsterFaceMatchGame';
+
+// Speech Therapy Level 5 Session 7 — Oral Sensory Tolerance
+import { BubbleNoseTicklesGame } from '@/components/game/speech/oral-sensory-tolerance/session7/BubbleNoseTicklesGame';
+import { CalmMouthAdventureGame } from '@/components/game/speech/oral-sensory-tolerance/session7/CalmMouthAdventureGame';
+import { FunnyMouthExplorerGame } from '@/components/game/speech/oral-sensory-tolerance/session7/FunnyMouthExplorerGame';
+import { MagicFaceBreezeGame } from '@/components/game/speech/oral-sensory-tolerance/session7/MagicFaceBreezeGame';
+import { SoftSensoryMonsterGame } from '@/components/game/speech/oral-sensory-tolerance/session7/SoftSensoryMonsterGame';
+
+// Speech Therapy Level 5 Session 8 — Lip Airflow Control System
+import { FindMouthPartGame } from '@/components/game/speech/mouth-attention/session8/FindMouthPartGame';
+import { FollowFunnyMouthGame } from '@/components/game/speech/mouth-attention/session8/FollowFunnyMouthGame';
+import { MagicMouthSpotlightGame } from '@/components/game/speech/mouth-attention/session8/MagicMouthSpotlightGame';
+import { MouthTreasureHuntGame } from '@/components/game/speech/mouth-attention/session8/MouthTreasureHuntGame';
+import { WhereDidItGoMouthGame } from '@/components/game/speech/mouth-attention/session8/WhereDidItGoMouthGame';
+
+// Speech Therapy Level 5 Session 9 — Tongue Awareness & Internal Mapping
+import { FriendlyTongueExplorerGame } from '@/components/game/speech/tongue-awareness/session9/FriendlyTongueExplorerGame';
+import { HungryTongueMonsterGame } from '@/components/game/speech/tongue-awareness/session9/HungryTongueMonsterGame';
+import { MagicTongueMirrorGame } from '@/components/game/speech/tongue-awareness/session9/MagicTongueMirrorGame';
+import { TongueHideSeekGame } from '@/components/game/speech/tongue-awareness/session9/TongueHideSeekGame';
+import { TongueTreasureAdventureGame } from '@/components/game/speech/tongue-awareness/session9/TongueTreasureAdventureGame';
+
+// Speech Therapy Level 5 Session 10 — Basic Oral Imitation Integration
+import { AirMouthPlayGame } from '@/components/game/speech/oral-imitation-integration/session10/AirMouthPlayGame';
+import { CopyMyMouthFriendGame } from '@/components/game/speech/oral-imitation-integration/session10/CopyMyMouthFriendGame';
+import { FunnyMouthAdventureGame } from '@/components/game/speech/oral-imitation-integration/session10/FunnyMouthAdventureGame';
+import { MouthHeroAdventureGame } from '@/components/game/speech/oral-imitation-integration/session10/MouthHeroAdventureGame';
+import { OralMirrorPartyGame } from '@/components/game/speech/oral-imitation-integration/session10/OralMirrorPartyGame';
+
+// Speech Therapy Level 6 Session 1 — Oral Imitation (Speech Motor Readiness)
+import { MirrorSpeechPlayGame } from '@/components/game/speech/speech-oral-imitation/session1/MirrorSpeechPlayGame';
+import { MouthPatternMatchGame } from '@/components/game/speech/speech-oral-imitation/session1/MouthPatternMatchGame';
+import { SpeechHeroWarmupGame } from '@/components/game/speech/speech-oral-imitation/session1/SpeechHeroWarmupGame';
+import { SpeechMouthCopyGame } from '@/components/game/speech/speech-oral-imitation/session1/SpeechMouthCopyGame';
+import { TalkingRobotFaceGame } from '@/components/game/speech/speech-oral-imitation/session1/TalkingRobotFaceGame';
+
+// Speech Therapy Level 6 Session 2 — Sound Initiation
+import { FunnyVoiceEchoGame } from '@/components/game/speech/sound-initiation/session2/FunnyVoiceEchoGame';
+import { MagicVoiceBalloonGame } from '@/components/game/speech/sound-initiation/session2/MagicVoiceBalloonGame';
+import { SoundHeroStarterGame } from '@/components/game/speech/sound-initiation/session2/SoundHeroStarterGame';
+import { TalkingRobotStartGame } from '@/components/game/speech/sound-initiation/session2/TalkingRobotStartGame';
+import { WakeSleepingStarGame } from '@/components/game/speech/sound-initiation/session2/WakeSleepingStarGame';
+
+// Speech Therapy Level 7 Session 1 — Lip + Jaw Coordination
+import { FunnyMouthTeamworkGame } from '@/components/game/speech/lip-jaw-coordination/session1/FunnyMouthTeamworkGame';
+import { MagicMouthSwitchGame } from '@/components/game/speech/lip-jaw-coordination/session1/MagicMouthSwitchGame';
+import { MouthCoordinationHeroGame } from '@/components/game/speech/lip-jaw-coordination/session1/MouthCoordinationHeroGame';
+import { RobotMouthBuilderGame } from '@/components/game/speech/lip-jaw-coordination/session1/RobotMouthBuilderGame';
+import { TalkingFaceRhythmGame } from '@/components/game/speech/lip-jaw-coordination/session1/TalkingFaceRhythmGame';
+
+// Speech Therapy Level 7 Session 2 — Tongue + Jaw Coordination
+import { FunnyMonsterTongueMovesGame } from '@/components/game/speech/tongue-jaw-coordination/session2/FunnyMonsterTongueMovesGame';
+import { MagicMouthTunnelGame } from '@/components/game/speech/tongue-jaw-coordination/session2/MagicMouthTunnelGame';
+import { TalkingTongueRhythmGame } from '@/components/game/speech/tongue-jaw-coordination/session2/TalkingTongueRhythmGame';
+import { TongueCoordinationHeroGame } from '@/components/game/speech/tongue-jaw-coordination/session2/TongueCoordinationHeroGame';
+import { TongueExplorerTeamworkGame } from '@/components/game/speech/tongue-jaw-coordination/session2/TongueExplorerTeamworkGame';
+
+// Speech Therapy Level 7 Session 3 — Tongue + Lips Coordination
+import { FunnyTongueLipsTeamGame } from '@/components/game/speech/tongue-lip-coordination/session3/FunnyTongueLipsTeamGame';
+import { MagicLipTongueSwitchGame } from '@/components/game/speech/tongue-lip-coordination/session3/MagicLipTongueSwitchGame';
+import { MonsterMouthMixUpGame } from '@/components/game/speech/tongue-lip-coordination/session3/MonsterMouthMixUpGame';
+import { TalkingFaceCoordinationGame } from '@/components/game/speech/tongue-lip-coordination/session3/TalkingFaceCoordinationGame';
+import { TongueLipsHeroGame } from '@/components/game/speech/tongue-lip-coordination/session3/TongueLipsHeroGame';
+
+// Speech Therapy Level 7 Session 4 — Breath + Lips Coordination
+import { BreathLipsHeroGame } from '@/components/game/speech/breath-lip-coordination/session4/BreathLipsHeroGame';
+import { FunnyBalloonBreathsGame } from '@/components/game/speech/breath-lip-coordination/session4/FunnyBalloonBreathsGame';
+import { MagicWindLipsGame } from '@/components/game/speech/breath-lip-coordination/session4/MagicWindLipsGame';
+import { RobotWindMouthGame } from '@/components/game/speech/breath-lip-coordination/session4/RobotWindMouthGame';
+import { WindRhythmAdventureGame } from '@/components/game/speech/breath-lip-coordination/session4/WindRhythmAdventureGame';
+
+// Speech Therapy Level 7 Session 5 — Breath + Jaw Coordination
+import { BreathJawHeroGame } from '@/components/game/speech/breath-jaw-coordination/session5/BreathJawHeroGame';
+import { BreathingTrainRhythmGame } from '@/components/game/speech/breath-jaw-coordination/session5/BreathingTrainRhythmGame';
+import { FunnyDragonBreathsGame } from '@/components/game/speech/breath-jaw-coordination/session5/FunnyDragonBreathsGame';
+import { MagicWindMouthGame } from '@/components/game/speech/breath-jaw-coordination/session5/MagicWindMouthGame';
+import { RobotAirMouthSwitchGame } from '@/components/game/speech/breath-jaw-coordination/session5/RobotAirMouthSwitchGame';
+
+// Speech Therapy Level 7 Session 6 — Multi-Step Coordination
+import { CoordinationHeroQuestGame } from '@/components/game/speech/multi-step-coordination/session6/CoordinationHeroQuestGame';
+import { FunnyMonsterComboMovesGame } from '@/components/game/speech/multi-step-coordination/session6/FunnyMonsterComboMovesGame';
+import { MagicMouthStepsGame } from '@/components/game/speech/multi-step-coordination/session6/MagicMouthStepsGame';
+import { RobotMouthBuilderSequenceGame } from '@/components/game/speech/multi-step-coordination/session6/RobotMouthBuilderSequenceGame';
+import { TalkingAdventureRhythmGame } from '@/components/game/speech/multi-step-coordination/session6/TalkingAdventureRhythmGame';
+
+// Speech Therapy Level 7 Session 7 — Oral Sequencing
+import { FunnyMonsterStepsGame } from '@/components/game/speech/oral-sequencing/session7/FunnyMonsterStepsGame';
+import { MagicMouthSequenceGame } from '@/components/game/speech/oral-sequencing/session7/MagicMouthSequenceGame';
+import { RobotMemoryMouthGame } from '@/components/game/speech/oral-sequencing/session7/RobotMemoryMouthGame';
+import { SequenceHeroAdventureGame } from '@/components/game/speech/oral-sequencing/session7/SequenceHeroAdventureGame';
+import { TalkingRhythmSequenceGame } from '@/components/game/speech/oral-sequencing/session7/TalkingRhythmSequenceGame';
+
+// Speech Therapy Level 7 Session 8 — Timing Control
+import { FunnyTimingMonsterGame } from '@/components/game/speech/timing-control/session8/FunnyTimingMonsterGame';
+import { MagicMouthBeatGame } from '@/components/game/speech/timing-control/session8/MagicMouthBeatGame';
+import { RobotPauseGoGame } from '@/components/game/speech/timing-control/session8/RobotPauseGoGame';
+import { TalkingRhythmRoadGame } from '@/components/game/speech/timing-control/session8/TalkingRhythmRoadGame';
+import { TimingHeroChallengeGame } from '@/components/game/speech/timing-control/session8/TimingHeroChallengeGame';
+// Speech Therapy Level 7 Session 9 — Motor Planning
+import { FunnyMonsterMissionGame } from '@/components/game/speech/motor-planning/session9/FunnyMonsterMissionGame';
+import { MagicMouthPlannerGame } from '@/components/game/speech/motor-planning/session9/MagicMouthPlannerGame';
+import { MotorPlanningHeroGame } from '@/components/game/speech/motor-planning/session9/MotorPlanningHeroGame';
+import { RobotCopyChallengeGame } from '@/components/game/speech/motor-planning/session9/RobotCopyChallengeGame';
+import { TalkingPathAdventureGame } from '@/components/game/speech/motor-planning/session9/TalkingPathAdventureGame';
+// Speech Therapy Level 7 Session 10 — Functional Coordination
+import { CoordinationHeroGraduationGame } from '@/components/game/speech/functional-coordination/session10/CoordinationHeroGraduationGame';
+import { FunnyTalkingMonsterGame } from '@/components/game/speech/functional-coordination/session10/FunnyTalkingMonsterGame';
+import { MagicMouthTeamworkGame } from '@/components/game/speech/functional-coordination/session10/MagicMouthTeamworkGame';
+import { RobotMouthAdventureGame } from '@/components/game/speech/functional-coordination/session10/RobotMouthAdventureGame';
+import { TalkingRhythmQuestGame } from '@/components/game/speech/functional-coordination/session10/TalkingRhythmQuestGame';
+
+// Speech Therapy Level 6 Session 10 — Speech Readiness Completion
+import { LittleSpeakerCelebrationGame } from '@/components/game/speech/speech-readiness-completion/session10/LittleSpeakerCelebrationGame';
+import { MagicMouthMissionGame } from '@/components/game/speech/speech-readiness-completion/session10/MagicMouthMissionGame';
+import { SpeechAdventurePartyGame } from '@/components/game/speech/speech-readiness-completion/session10/SpeechAdventurePartyGame';
+import { SpeechHeroGraduationGame } from '@/components/game/speech/speech-readiness-completion/session10/SpeechHeroGraduationGame';
+import { TalkingFriendChallengeGame } from '@/components/game/speech/speech-readiness-completion/session10/TalkingFriendChallengeGame';
+
+// Speech Therapy Level 6 Session 9 — Functional Vocal Intent
+import { HelpCharacterSpeakGame } from '@/components/game/speech/functional-vocal-intent/session9/HelpCharacterSpeakGame';
+import { LittleCommunicatorHeroGame } from '@/components/game/speech/functional-vocal-intent/session9/LittleCommunicatorHeroGame';
+import { MagicSoundRequestGame } from '@/components/game/speech/functional-vocal-intent/session9/MagicSoundRequestGame';
+import { TalkingFriendTurnTakingGame } from '@/components/game/speech/functional-vocal-intent/session9/TalkingFriendTurnTakingGame';
+import { VoiceChoiceAdventureGame } from '@/components/game/speech/functional-vocal-intent/session9/VoiceChoiceAdventureGame';
+
+// Speech Therapy Level 6 Session 7 — Sound Stability
+import { MagicVoiceRiverGame } from '@/components/game/speech/sound-stability/session7/MagicVoiceRiverGame';
+import { RobotPowerVoiceGame } from '@/components/game/speech/sound-stability/session7/RobotPowerVoiceGame';
+import { SpeechStabilityHeroGame } from '@/components/game/speech/sound-stability/session7/SpeechStabilityHeroGame';
+import { TalkingBalloonHoldGame } from '@/components/game/speech/sound-stability/session7/TalkingBalloonHoldGame';
+import { VoiceTrainJourneyGame } from '@/components/game/speech/sound-stability/session7/VoiceTrainJourneyGame';
+
+// Speech Therapy Level 6 Session 8 — Early Syllable Control
+import { LittleSpeakerHeroGame } from '@/components/game/speech/early-syllable-control/session8/LittleSpeakerHeroGame';
+import { RobotSpeechStepsGame } from '@/components/game/speech/early-syllable-control/session8/RobotSpeechStepsGame';
+import { SpeechTrainBuilderGame } from '@/components/game/speech/early-syllable-control/session8/SpeechTrainBuilderGame';
+import { SyllablePopPartyGame } from '@/components/game/speech/early-syllable-control/session8/SyllablePopPartyGame';
+import { TalkingAnimalSyllablesGame } from '@/components/game/speech/early-syllable-control/session8/TalkingAnimalSyllablesGame';
+
+// Speech Therapy Level 6 Session 6 — Motor Speech Timing
+import { MagicMouthMetronomeGame } from '@/components/game/speech/motor-speech-timing/session6/MagicMouthMetronomeGame';
+import { SpeechBeatRobotGame } from '@/components/game/speech/motor-speech-timing/session6/SpeechBeatRobotGame';
+import { SpeechRhythmHeroGame } from '@/components/game/speech/motor-speech-timing/session6/SpeechRhythmHeroGame';
+import { TalkingDrumRhythmGame } from '@/components/game/speech/motor-speech-timing/session6/TalkingDrumRhythmGame';
+import { TalkingTrainTimingGame } from '@/components/game/speech/motor-speech-timing/session6/TalkingTrainTimingGame';
+
+// Speech Therapy Level 6 Session 5 — Bilabial Sequencing
+import { MamaDrumBeatGame } from '@/components/game/speech/bilabial-sequencing/session5/MamaDrumBeatGame';
+import { MiniSpeakerHeroGame } from '@/components/game/speech/bilabial-sequencing/session5/MiniSpeakerHeroGame';
+import { PopBalloonRaceGame } from '@/components/game/speech/bilabial-sequencing/session5/PopBalloonRaceGame';
+import { SpeechTrainRhythmGame } from '@/components/game/speech/bilabial-sequencing/session5/SpeechTrainRhythmGame';
+import { TalkingRobotBeatsGame } from '@/components/game/speech/bilabial-sequencing/session5/TalkingRobotBeatsGame';
+
+// Speech Therapy Level 6 Session 4 — CV Preparation
+import { MagicSoundBuilderGame } from '@/components/game/speech/cv-preparation/session4/MagicSoundBuilderGame';
+import { MiniTalkingHeroGame } from '@/components/game/speech/cv-preparation/session4/MiniTalkingHeroGame';
+import { RobotSaysPlayGame } from '@/components/game/speech/cv-preparation/session4/RobotSaysPlayGame';
+import { SpeechPatternTrainGame } from '@/components/game/speech/cv-preparation/session4/SpeechPatternTrainGame';
+import { TalkingAnimalMouthsGame } from '@/components/game/speech/cv-preparation/session4/TalkingAnimalMouthsGame';
+
+// Speech Therapy Level 6 Session 3 — Vowel Shaping
+import { MagicMouthShapesGame } from '@/components/game/speech/vowel-shaping/session3/MagicMouthShapesGame';
+import { MirrorVowelFaceGame } from '@/components/game/speech/vowel-shaping/session3/MirrorVowelFaceGame';
+import { SpeechShapeAdventureGame } from '@/components/game/speech/vowel-shaping/session3/SpeechShapeAdventureGame';
+import { TalkingAnimalVowelsGame } from '@/components/game/speech/vowel-shaping/session3/TalkingAnimalVowelsGame';
+import { VowelBalloonBuilderGame } from '@/components/game/speech/vowel-shaping/session3/VowelBalloonBuilderGame';
+
 // Speech Therapy Level 3 Session 1 — Voice Activation & Vocal Play
 import { EchoCaveGame } from '@/components/game/speech/level3/session1/EchoCaveGame';
 import { SoundPaintGame } from '@/components/game/speech/level3/session1/SoundPaintGame';
@@ -787,6 +995,191 @@ type GameKey =
   | 'singular-or-plural'
   | 'pronoun-match'
   | 'smart-listener-challenge'
+  | 'magic-feather'
+  | 'cloud-puff'
+  | 'bubble-wakeup'
+  | 'windmill-friend'
+  | 'air-painter'
+  | 'copy-happy-mouth'
+  | 'funny-monster-mouth'
+  | 'mirror-mouth-match'
+  | 'open-close-dance'
+  | 'silly-face-copy'
+  | 'hold-balloon'
+  | 'magic-seal'
+  | 'freeze-smile'
+  | 'quiet-mouse'
+  | 'lip-statue'
+  | 'wake-feather'
+  | 'start-stop-cloud'
+  | 'windmill-freeze'
+  | 'balloon-breath'
+  | 'magic-air-switch'
+  | 'lip-fish-mouth'
+  | 'tunnel-air'
+  | 'round-portal'
+  | 'bubble-cannon'
+  | 'moon-mouth'
+  | 'happy-lips-mirror'
+  | 'lip-tap-friend'
+  | 'magic-lip-glow'
+  | 'funny-fish-lips'
+  | 'lip-explorer-adventure'
+  | 'smile-bridge'
+  | 'cheese-camera'
+  | 'rainbow-smile'
+  | 'eee-train'
+  | 'lip-mirror-match'
+  | 'jaw-hungry-crocodile'
+  | 'sleepy-lion-mouth'
+  | 'mouth-elevator'
+  | 'jaw-open-close-dance'
+  | 'funny-jaw-adventure'
+  | 'o-e-switch'
+  | 'lip-talking-robot'
+  | 'shape-rhythm'
+  | 'lip-fast-mouth'
+  | 'lip-dance'
+  | 'funny-face-mirror'
+  | 'happy-sad-copy'
+  | 'monster-face-match'
+  | 'mirror-dance-faces'
+  | 'face-adventure-copy'
+  | 'hold-wall'
+  | 'lip-push-battle'
+  | 'wind-resistance'
+  | 'lip-resistance-freeze'
+  | 'strong-mouth-hero'
+  | 'magic-face-breeze'
+  | 'bubble-nose-tickles'
+  | 'funny-mouth-explorer'
+  | 'soft-sensory-monster'
+  | 'calm-mouth-adventure'
+  | 'find-mouth-part'
+  | 'magic-mouth-spotlight'
+  | 'follow-funny-mouth'
+  | 'where-did-it-go-mouth'
+  | 'mouth-treasure-hunt'
+  | 'friendly-tongue-explorer'
+  | 'tongue-hide-seek'
+  | 'magic-tongue-mirror'
+  | 'hungry-tongue-monster'
+  | 'tongue-treasure-adventure'
+  | 'copy-my-mouth-friend'
+  | 'funny-mouth-adventure'
+  | 'air-mouth-play'
+  | 'oral-mirror-party'
+  | 'mouth-hero-adventure'
+  | 'speech-mouth-copy'
+  | 'talking-robot-face'
+  | 'mouth-pattern-match'
+  | 'mirror-speech-play'
+  | 'speech-hero-warmup'
+  | 'wake-sleeping-star'
+  | 'talking-robot-start'
+  | 'magic-voice-balloon'
+  | 'funny-voice-echo'
+  | 'sound-hero-starter'
+  | 'magic-mouth-shapes'
+  | 'talking-animal-vowels'
+  | 'mirror-vowel-face'
+  | 'vowel-balloon-builder'
+  | 'speech-shape-adventure'
+  | 'magic-sound-builder'
+  | 'talking-animal-mouths'
+  | 'robot-says-play'
+  | 'speech-pattern-train'
+  | 'mini-talking-hero'
+  | 'mama-drum-beat'
+  | 'pop-balloon-race'
+  | 'talking-robot-beats'
+  | 'speech-train-rhythm'
+  | 'mini-speaker-hero'
+  | 'talking-drum-rhythm'
+  | 'speech-beat-robot'
+  | 'magic-mouth-metronome'
+  | 'talking-train-timing'
+  | 'speech-rhythm-hero'
+  | 'magic-voice-river'
+  | 'talking-balloon-hold'
+  | 'robot-power-voice'
+  | 'voice-train-journey'
+  | 'speech-stability-hero'
+  | 'syllable-pop-party'
+  | 'talking-animal-syllables'
+  | 'robot-speech-steps'
+  | 'speech-train-builder'
+  | 'little-speaker-hero'
+  | 'magic-sound-request'
+  | 'talking-friend-turn-taking'
+  | 'voice-choice-adventure'
+  | 'help-character-speak'
+  | 'little-communicator-hero'
+  | 'speech-adventure-party'
+  | 'talking-friend-challenge'
+  | 'magic-mouth-mission'
+  | 'little-speaker-celebration'
+  | 'speech-hero-graduation'
+  | 'funny-mouth-teamwork'
+  | 'robot-mouth-builder'
+  | 'magic-mouth-switch'
+  | 'talking-face-rhythm'
+  | 'mouth-coordination-hero'
+  | 'tongue-explorer-teamwork'
+  | 'funny-monster-tongue-moves'
+  | 'magic-mouth-tunnel'
+  | 'talking-tongue-rhythm'
+  | 'tongue-coordination-hero'
+  | 'funny-tongue-lips-team'
+  | 'monster-mouth-mixup'
+  | 'magic-lip-tongue-switch'
+  | 'talking-face-coordination'
+  | 'tongue-lips-hero'
+  | 'magic-wind-lips'
+  | 'funny-balloon-breaths'
+  | 'robot-wind-mouth'
+  | 'wind-rhythm-adventure'
+  | 'breath-lips-hero'
+  | 'magic-wind-mouth'
+  | 'funny-dragon-breaths'
+  | 'robot-air-mouth-switch'
+  | 'breathing-train-rhythm'
+  | 'breath-jaw-hero'
+  | 'magic-mouth-steps'
+  | 'funny-monster-combo-moves'
+  | 'robot-mouth-builder-sequence'
+  | 'talking-adventure-rhythm'
+  | 'coordination-hero-quest'
+  | 'magic-mouth-sequence'
+  | 'funny-monster-steps'
+  | 'robot-memory-mouth'
+  | 'talking-rhythm-sequence'
+  | 'sequence-hero-adventure'
+  | 'magic-mouth-beat'
+  | 'funny-timing-monster'
+  | 'robot-pause-go'
+  | 'talking-rhythm-road'
+  | 'timing-hero-challenge'
+  | 'magic-mouth-planner'
+  | 'funny-monster-mission'
+  | 'robot-copy-challenge'
+  | 'talking-path-adventure'
+  | 'motor-planning-hero'
+  | 'magic-mouth-teamwork'
+  | 'funny-talking-monster'
+  | 'robot-mouth-adventure'
+  | 'talking-rhythm-quest'
+  | 'coordination-hero-graduation'
+  | 'lip-rhythm-mouth'
+  | 'lip-copy-avatar'
+  | 'lip-mouth-memory'
+  | 'lip-beat-builder'
+  | 'lip-orchestra'
+  | 'lip-talking-path'
+  | 'lip-sound-builder'
+  | 'lip-mouth-adventure'
+  | 'lip-smooth-switch'
+  | 'lip-speech-prep-master'
   | 'hungry-crocodile'
   | 'big-mouth-lion'
   | 'jaw-elevator'
@@ -1932,6 +2325,364 @@ export default function SessionGamesScreen() {
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 10;
   const isSmartListenerChallengeAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 10;
+
+  // Level 5 Session 1 — Air Awareness (mic only)
+  const isMagicFeatherAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 1;
+  const isCloudPuffAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 1;
+  const isBubbleWakeupAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 1;
+  const isWindmillFriendAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 1;
+  const isAirPainterAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 1;
+
+  // Level 5 Session 2 — Mouth Movement Imitation (no camera)
+  const isCopyHappyMouthAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 2;
+  const isFunnyMonsterMouthAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 2;
+  const isMirrorMouthMatchAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 2;
+  const isOpenCloseDanceAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 2;
+  const isSillyFaceCopyAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 2;
+
+  // Level 5 Session 3 — Breath Activation (mic only)
+  const isWakeFeatherAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 3;
+  const isStartStopCloudAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 3;
+  const isWindmillFreezeAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 3;
+  const isBalloonBreathAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 3;
+  const isMagicAirSwitchAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 3;
+
+  // Level 5 Session 4 — Lip Awareness (tap / copy, no camera)
+  const isHappyLipsMirrorAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 4;
+  const isLipTapFriendAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 4;
+  const isMagicLipGlowAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 4;
+  const isFunnyFishLipsAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 4;
+  const isLipExplorerAdventureAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 4;
+
+  // Level 5 Session 5 — Jaw Awareness (tap / copy, no camera)
+  const isJawHungryCrocodileAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 5;
+  const isSleepyLionMouthAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 5;
+  const isMouthElevatorAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 5;
+  const isJawOpenCloseDanceAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 5;
+  const isFunnyJawAdventureAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 5;
+
+  // Level 5 Session 6 — Facial Imitation (tap / copy, no camera)
+  const isFunnyFaceMirrorAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 6;
+  const isHappySadCopyAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 6;
+  const isMonsterFaceMatchAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 6;
+  const isMirrorDanceFacesAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 6;
+  const isFaceAdventureCopyAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 6;
+
+  // Level 5 Session 7 — Oral Sensory Tolerance (tap / watch, no camera, no mic)
+  const isMagicFaceBreezeAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 7;
+  const isBubbleNoseTicklesAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 7;
+  const isFunnyMouthExplorerAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 7;
+  const isSoftSensoryMonsterAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 7;
+  const isCalmMouthAdventureAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 7;
+
+  // Level 5 Session 8 — Mouth Attention Shifting (tap / watch, no camera, no mic)
+  const isFindMouthPartAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 8;
+  const isMagicMouthSpotlightAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 8;
+  const isFollowFunnyMouthAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 8;
+  const isWhereDidItGoMouthAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 8;
+  const isMouthTreasureHuntAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 8;
+
+  // Level 5 Session 9 — Tongue Awareness & Internal Mapping (tap / watch, no camera, no mic)
+  const isFriendlyTongueExplorerAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 9;
+  const isTongueHideSeekAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 9;
+  const isMagicTongueMirrorAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 9;
+  const isHungryTongueMonsterAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 9;
+  const isTongueTreasureAdventureAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 9;
+
+  // Level 5 Session 10 — Basic Oral Imitation Integration (tap / watch, no camera, no mic scoring)
+  const isCopyMyMouthFriendAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 10;
+  const isFunnyMouthAdventureAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 10;
+  const isAirMouthPlayAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 10;
+  const isOralMirrorPartyAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 10;
+  const isMouthHeroAdventureAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 10;
+
+  // Level 6 Session 1 — Oral Imitation (Speech Motor Readiness)
+  const isSpeechMouthCopyAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 1;
+  const isTalkingRobotFaceAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 1;
+  const isMouthPatternMatchAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 1;
+  const isMirrorSpeechPlayAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 1;
+  const isSpeechHeroWarmupAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 1;
+
+  // Level 6 Session 2 — Sound Initiation (mic amplitude, no speech recognition)
+  const isWakeSleepingStarAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 2;
+  const isTalkingRobotStartAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 2;
+  const isMagicVoiceBalloonAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 2;
+  const isFunnyVoiceEchoAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 2;
+  const isSoundHeroStarterAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 2;
+
+  // Level 6 Session 3 — Vowel Shaping (watch-copy, optional voice encouragement)
+  const isMagicMouthShapesAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 3;
+  const isTalkingAnimalVowelsAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 3;
+  const isMirrorVowelFaceAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 3;
+  const isVowelBalloonBuilderAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 3;
+  const isSpeechShapeAdventureAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 3;
+
+  // Level 6 Session 4 — CV Preparation (watch-copy, optional voice, no STT)
+  const isMagicSoundBuilderAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 4;
+  const isTalkingAnimalMouthsAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 4;
+  const isRobotSaysPlayAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 4;
+  const isSpeechPatternTrainAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 4;
+  const isMiniTalkingHeroAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 4;
+
+  // Level 6 Session 5 — Bilabial Sequencing (repeated bilabial rhythm, no STT)
+  const isMamaDrumBeatAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 5;
+  const isPopBalloonRaceAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 5;
+  const isTalkingRobotBeatsAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 5;
+  const isSpeechTrainRhythmAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 5;
+  const isMiniSpeakerHeroAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 5;
+
+  // Level 6 Session 6 — Motor Speech Timing (rhythm pacing, no STT)
+  const isTalkingDrumRhythmAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 6;
+  const isSpeechBeatRobotAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 6;
+  const isMagicMouthMetronomeAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 6;
+  const isTalkingTrainTimingAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 6;
+  const isSpeechRhythmHeroAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 6;
+
+  // Level 6 Session 7 — Sound Stability (sustained sound, mic amplitude, no STT)
+  const isMagicVoiceRiverAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 7;
+  const isTalkingBalloonHoldAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 7;
+  const isRobotPowerVoiceAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 7;
+  const isVoiceTrainJourneyAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 7;
+  const isSpeechStabilityHeroAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 7;
+
+  // Level 6 Session 8 — Early Syllable Control (simple syllable attempts, no STT)
+  const isSyllablePopPartyAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 8;
+  const isTalkingAnimalSyllablesAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 8;
+  const isRobotSpeechStepsAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 8;
+  const isSpeechTrainBuilderAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 8;
+  const isLittleSpeakerHeroAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 8;
+
+  // Level 6 Session 9 — Functional Vocal Intent (mic amplitude, turn-taking, no STT)
+  const isMagicSoundRequestAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 9;
+  const isTalkingFriendTurnTakingAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 9;
+  const isVoiceChoiceAdventureAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 9;
+  const isHelpCharacterSpeakAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 9;
+  const isLittleCommunicatorHeroAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 9;
+
+  // Level 6 Session 10 — Speech Readiness Completion (Level 6 capstone)
+  const isSpeechAdventurePartyAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 10;
+  const isTalkingFriendChallengeAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 10;
+  const isMagicMouthMissionAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 10;
+  const isLittleSpeakerCelebrationAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 10;
+  const isSpeechHeroGraduationAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 10;
+
+  // Level 7 Session 1 — Lip + Jaw Coordination (watch-copy tap, no STT)
+  const isFunnyMouthTeamworkAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 1;
+  const isRobotMouthBuilderAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 1;
+  const isMagicMouthSwitchAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 1;
+  const isTalkingFaceRhythmAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 1;
+  const isMouthCoordinationHeroAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 1;
+
+  // Level 7 Session 2 — Tongue + Jaw Coordination (watch-copy tap, no STT)
+  const isTongueExplorerTeamworkAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 2;
+  const isFunnyMonsterTongueMovesAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 2;
+  const isMagicMouthTunnelAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 2;
+  const isTalkingTongueRhythmAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 2;
+  const isTongueCoordinationHeroAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 2;
+
+  // Level 7 Session 3 — Tongue + Lips Coordination (watch-copy tap, no STT)
+  const isFunnyTongueLipsTeamAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 3;
+  const isMonsterMouthMixUpAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 3;
+  const isMagicLipTongueSwitchAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 3;
+  const isTalkingFaceCoordinationAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 3;
+  const isTongueLipsHeroAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 3;
+
+  // Level 7 Session 4 — Breath + Lips Coordination (watch-copy + airflow, no STT)
+  const isMagicWindLipsAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 4;
+  const isFunnyBalloonBreathsAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 4;
+  const isRobotWindMouthAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 4;
+  const isWindRhythmAdventureAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 4;
+  const isBreathLipsHeroAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 4;
+
+  // Level 7 Session 5 — Breath + Jaw Coordination (watch-copy + airflow, no STT)
+  const isMagicWindMouthAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 5;
+  const isFunnyDragonBreathsAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 5;
+  const isRobotAirMouthSwitchAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 5;
+  const isBreathingTrainRhythmAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 5;
+  const isBreathJawHeroAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 5;
+
+  // Level 7 Session 6 — Multi-Step Coordination (watch-copy sequencing, no STT)
+  const isMagicMouthStepsAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 6;
+  const isFunnyMonsterComboMovesAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 6;
+  const isRobotMouthBuilderSequenceAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 6;
+  const isTalkingAdventureRhythmAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 6;
+  const isCoordinationHeroQuestAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 6;
+
+  // Level 7 Session 7 — Oral Sequencing (watch-copy sequence order, no STT)
+  const isMagicMouthSequenceAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 7;
+  const isFunnyMonsterStepsAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 7;
+  const isRobotMemoryMouthAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 7;
+  const isTalkingRhythmSequenceAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 7;
+  const isSequenceHeroAdventureAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 7;
+
+  // Level 7 Session 8 — Timing Control (watch-copy pacing, no STT)
+  const isMagicMouthBeatAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 8;
+  const isFunnyTimingMonsterAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 8;
+  const isRobotPauseGoAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 8;
+  const isTalkingRhythmRoadAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 8;
+  const isTimingHeroChallengeAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 8;
+  // Level 7 Session 9 — Motor Planning (watch, prepare, copy; no correctness scoring)
+  const isMagicMouthPlannerAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 9;
+  const isFunnyMonsterMissionAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 9;
+  const isRobotCopyChallengeAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 9;
+  const isTalkingPathAdventureAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 9;
+  const isMotorPlanningHeroAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 9;
+  // Level 7 Session 10 — Functional Coordination (integrated oral systems, no fail states)
+  const isMagicMouthTeamworkAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 10;
+  const isFunnyTalkingMonsterAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 10;
+  const isRobotMouthAdventureAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 10;
+  const isTalkingRhythmQuestAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 10;
+  const isCoordinationHeroGraduationAvailable =
+    therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 10;
 
   // Level 3 Session 1 games - Speech Therapy (Jaw Awareness Games)
   const isHungryCrocodileAvailable =
@@ -4845,6 +5596,1206 @@ export default function SessionGamesScreen() {
       available: isSmartListenerChallengeAvailable,
     },
     {
+      id: 'magic-feather',
+      title: 'Magic Feather',
+      emoji: '🪶',
+      description: 'Soft breath gently moves the feather. Any try counts!',
+      color: '#38BDF8',
+      available: isMagicFeatherAvailable,
+    },
+    {
+      id: 'cloud-puff',
+      title: 'Cloud Puff',
+      emoji: '☁️',
+      description: 'Your breath pushes the cloud. Watch the sun appear.',
+      color: '#94A3B8',
+      available: isCloudPuffAvailable,
+    },
+    {
+      id: 'bubble-wakeup',
+      title: 'Bubble Wake-Up',
+      emoji: '🫧',
+      description: 'Wake sleepy bubbles with gentle air. Friendly faces appear.',
+      color: '#22D3EE',
+      available: isBubbleWakeupAvailable,
+    },
+    {
+      id: 'windmill-friend',
+      title: 'Windmill Friend',
+      emoji: '🌬️',
+      description: 'Breath spins the windmill slowly. No pressure — just play.',
+      color: '#EAB308',
+      available: isWindmillFriendAvailable,
+    },
+    {
+      id: 'air-painter',
+      title: 'Air Painter',
+      emoji: '🎨',
+      description: 'Breath paints colors on the canvas. Rainbow celebration!',
+      color: '#A855F7',
+      available: isAirPainterAvailable,
+    },
+    {
+      id: 'copy-happy-mouth',
+      title: 'Copy Happy Mouth',
+      emoji: '😊',
+      description: 'Watch open and close, then copy. Every try gets stars!',
+      color: '#EA580C',
+      available: isCopyHappyMouthAvailable,
+    },
+    {
+      id: 'funny-monster-mouth',
+      title: 'Funny Monster Mouth',
+      emoji: '👾',
+      description: 'Copy silly monster mouths. The monster laughs with you!',
+      color: '#059669',
+      available: isFunnyMonsterMouthAvailable,
+    },
+    {
+      id: 'mirror-mouth-match',
+      title: 'Mirror Mouth Match',
+      emoji: '🪞',
+      description: 'Slow mirror avatar — copy open, close, and smile.',
+      color: '#7C3AED',
+      available: isMirrorMouthMatchAvailable,
+    },
+    {
+      id: 'open-close-dance',
+      title: 'Open–Close Dance',
+      emoji: '💃',
+      description: 'Rhythmic open-close mouth dance. Very slow, no pressure.',
+      color: '#DB2777',
+      available: isOpenCloseDanceAvailable,
+    },
+    {
+      id: 'silly-face-copy',
+      title: 'Silly Face Copy',
+      emoji: '🎉',
+      description: 'Open, smile, and silly mouths — confetti celebration!',
+      color: '#D97706',
+      available: isSillyFaceCopyAvailable,
+    },
+    {
+      id: 'wake-feather',
+      title: 'Wake the Feather',
+      emoji: '🪶',
+      description: 'Start air to wake the feather, stop to let it rest softly.',
+      color: '#0284C7',
+      available: isWakeFeatherAvailable,
+    },
+    {
+      id: 'start-stop-cloud',
+      title: 'Start–Stop Cloud',
+      emoji: '☁️',
+      description: 'Cloud moves while air is on, pauses when you stop.',
+      color: '#64748B',
+      available: isStartStopCloudAvailable,
+    },
+    {
+      id: 'windmill-freeze',
+      title: 'Windmill Freeze',
+      emoji: '🌬️',
+      description: 'Windmill spins with air, slows when you stop. No punishment!',
+      color: '#CA8A04',
+      available: isWindmillFreezeAvailable,
+    },
+    {
+      id: 'balloon-breath',
+      title: 'Balloon Breath',
+      emoji: '🎈',
+      description: 'Inflate with breath, pause on stop. Balloon floats happily!',
+      color: '#DB2777',
+      available: isBalloonBreathAvailable,
+    },
+    {
+      id: 'magic-air-switch',
+      title: 'Magic Air Switch',
+      emoji: '🔮',
+      description: 'Breath powers the glow. Stop — magic fades slowly.',
+      color: '#7C3AED',
+      available: isMagicAirSwitchAvailable,
+    },
+    {
+      id: 'happy-lips-mirror',
+      title: 'Happy Lips Mirror',
+      emoji: '🪞',
+      description: 'Watch big, small, closed, and funny lips — copy playfully!',
+      color: '#E11D48',
+      available: isHappyLipsMirrorAvailable,
+    },
+    {
+      id: 'lip-tap-friend',
+      title: 'Lip Tap Friend',
+      emoji: '👄',
+      description: 'Tap the glowing lips! Your friend giggles every time.',
+      color: '#059669',
+      available: isLipTapFriendAvailable,
+    },
+    {
+      id: 'magic-lip-glow',
+      title: 'Magic Lip Glow',
+      emoji: '✨',
+      description: 'Tap lips for soft magical glows. Different taps, different sparkles.',
+      color: '#7C3AED',
+      available: isMagicLipGlowAvailable,
+    },
+    {
+      id: 'funny-fish-lips',
+      title: 'Funny Fish Lips',
+      emoji: '🐡',
+      description: 'Fish shows silly lip shapes. Copy and watch it swim!',
+      color: '#0284C7',
+      available: isFunnyFishLipsAvailable,
+    },
+    {
+      id: 'lip-explorer-adventure',
+      title: 'Lip Explorer Adventure',
+      emoji: '🗺️',
+      description: 'Tap, copy, and watch lips — treasure celebration!',
+      color: '#B45309',
+      available: isLipExplorerAdventureAvailable,
+    },
+    {
+      id: 'jaw-hungry-crocodile',
+      title: 'Hungry Crocodile',
+      emoji: '🐊',
+      description: 'Open wide like the croc, then tap food in. Happy munch!',
+      color: '#059669',
+      available: isJawHungryCrocodileAvailable,
+    },
+    {
+      id: 'sleepy-lion-mouth',
+      title: 'Sleepy Lion Mouth',
+      emoji: '🦁',
+      description: 'Awake open, big yawn, sleepy close. Lion smiles!',
+      color: '#CA8A04',
+      available: isSleepyLionMouthAvailable,
+    },
+    {
+      id: 'mouth-elevator',
+      title: 'Mouth Elevator',
+      emoji: '🛗',
+      description: 'Open lifts the elevator, close stops it. Playful pacing!',
+      color: '#4F46E5',
+      available: isMouthElevatorAvailable,
+    },
+    {
+      id: 'jaw-open-close-dance',
+      title: 'Open–Close Dance',
+      emoji: '💃',
+      description: 'Slow jaw dance: open, close, open. Dance stars reward!',
+      color: '#DB2777',
+      available: isJawOpenCloseDanceAvailable,
+    },
+    {
+      id: 'funny-jaw-adventure',
+      title: 'Funny Jaw Adventure',
+      emoji: '🗺️',
+      description: 'Watch, copy open, copy close — treasure celebration!',
+      color: '#16A34A',
+      available: isFunnyJawAdventureAvailable,
+    },
+    {
+      id: 'funny-face-mirror',
+      title: 'Funny Face Mirror',
+      emoji: '🪞',
+      description: 'Silly mirror faces — big smile, open, small, surprised. Avatar laughs!',
+      color: '#EA580C',
+      available: isFunnyFaceMirrorAvailable,
+    },
+    {
+      id: 'happy-sad-copy',
+      title: 'Happy–Sad Copy',
+      emoji: '😄',
+      description: 'Gentle happy, surprised, and sleepy faces. Stars reward!',
+      color: '#0284C7',
+      available: isHappySadCopyAvailable,
+    },
+    {
+      id: 'monster-face-match',
+      title: 'Monster Face Match',
+      emoji: '👾',
+      description: 'Friendly monster shows big silly faces. Monster dance!',
+      color: '#7C3AED',
+      available: isMonsterFaceMatchAvailable,
+    },
+    {
+      id: 'mirror-dance-faces',
+      title: 'Mirror Dance Faces',
+      emoji: '💃',
+      description: 'Slow face dance: smile, open, funny. No timing pressure!',
+      color: '#DB2777',
+      available: isMirrorDanceFacesAvailable,
+    },
+    {
+      id: 'face-adventure-copy',
+      title: 'Face Adventure Copy',
+      emoji: '🗺️',
+      description: 'Watch, copy, tap the star — treasure celebration!',
+      color: '#16A34A',
+      available: isFaceAdventureCopyAvailable,
+    },
+    {
+      id: 'magic-face-breeze',
+      title: 'Magic Face Breeze',
+      emoji: '🌬️',
+      description: 'Tap gentle sparkles near the face. Watching counts too.',
+      color: '#7C3AED',
+      available: isMagicFaceBreezeAvailable,
+    },
+    {
+      id: 'bubble-nose-tickles',
+      title: 'Bubble Nose Tickles',
+      emoji: '🫧',
+      description: 'Funny bubbles float softly. Tap a bubble to make it smile.',
+      color: '#0EA5E9',
+      available: isBubbleNoseTicklesAvailable,
+    },
+    {
+      id: 'funny-mouth-explorer',
+      title: 'Funny Mouth Explorer',
+      emoji: '👄',
+      description: 'Tap friendly mouth pictures (lips, tongue, teeth). Safe and playful.',
+      color: '#DB2777',
+      available: isFunnyMouthExplorerAvailable,
+    },
+    {
+      id: 'soft-sensory-monster',
+      title: 'Soft Sensory Monster',
+      emoji: '🧸',
+      description: 'Tap the friendly monster gently for a calm hug. No pressure.',
+      color: '#22C55E',
+      available: isSoftSensoryMonsterAvailable,
+    },
+    {
+      id: 'calm-mouth-adventure',
+      title: 'Calm Mouth Adventure',
+      emoji: '🌿',
+      description: 'Tap gentle sensory objects. Slow, predictable, and safe.',
+      color: '#16A34A',
+      available: isCalmMouthAdventureAvailable,
+    },
+    {
+      id: 'find-mouth-part',
+      title: 'Find the Mouth Part',
+      emoji: '👄',
+      description: 'Find lips, tongue, and mouth with calm glowing prompts. Any attempt counts.',
+      color: '#0284C7',
+      available: isFindMouthPartAvailable,
+    },
+    {
+      id: 'magic-mouth-spotlight',
+      title: 'Magic Mouth Spotlight',
+      emoji: '✨',
+      description: 'Follow a slow spotlight across mouth areas and tap gently.',
+      color: '#7C3AED',
+      available: isMagicMouthSpotlightAvailable,
+    },
+    {
+      id: 'follow-funny-mouth',
+      title: 'Follow the Funny Mouth',
+      emoji: '😄',
+      description: 'Watch playful mouth changes and shift attention without pressure.',
+      color: '#EA580C',
+      available: isFollowFunnyMouthAvailable,
+    },
+    {
+      id: 'where-did-it-go-mouth',
+      title: 'Where Did It Go? Mouth Explorer',
+      emoji: '🧭',
+      description: 'Find where the object hides near mouth areas. Tap to explore.',
+      color: '#16A34A',
+      available: isWhereDidItGoMouthAvailable,
+    },
+    {
+      id: 'mouth-treasure-hunt',
+      title: 'Mouth Treasure Hunt',
+      emoji: '🗺️',
+      description: 'Mini adventure for tapping prompts and shifting oral attention.',
+      color: '#CA8A04',
+      available: isMouthTreasureHuntAvailable,
+    },
+    {
+      id: 'friendly-tongue-explorer',
+      title: 'Friendly Tongue Explorer',
+      emoji: '👅',
+      description: 'Meet your tongue with a friendly character. Tap mouth areas — every try counts.',
+      color: '#DB2777',
+      available: isFriendlyTongueExplorerAvailable,
+    },
+    {
+      id: 'tongue-hide-seek',
+      title: 'Tongue Hide & Seek',
+      emoji: '🔍',
+      description: 'A funny tongue peeks out. Tap when you notice it — no fail state.',
+      color: '#CA8A04',
+      available: isTongueHideSeekAvailable,
+    },
+    {
+      id: 'magic-tongue-mirror',
+      title: 'Magic Tongue Mirror',
+      emoji: '🪞',
+      description: 'Watch playful tongue faces and copy if you want. Parent Good try counts too.',
+      color: '#6366F1',
+      available: isMagicTongueMirrorAvailable,
+    },
+    {
+      id: 'hungry-tongue-monster',
+      title: 'Hungry Tongue Monster',
+      emoji: '👾',
+      description: 'Silly monster tongue catches treats. Tap to play and celebrate.',
+      color: '#16A34A',
+      available: isHungryTongueMonsterAvailable,
+    },
+    {
+      id: 'tongue-treasure-adventure',
+      title: 'Tongue Treasure Adventure',
+      emoji: '🗺️',
+      description: 'Mini adventure: tap, watch, and copy playful tongue actions.',
+      color: '#0EA5E9',
+      available: isTongueTreasureAdventureAvailable,
+    },
+    {
+      id: 'copy-my-mouth-friend',
+      title: 'Copy My Mouth Friend',
+      emoji: '🧸',
+      description: 'Friendly face shows open, close, smile — copy or tap I tried. No scoring.',
+      color: '#EC4899',
+      available: isCopyMyMouthFriendAvailable,
+    },
+    {
+      id: 'funny-mouth-adventure',
+      title: 'Funny Mouth Adventure',
+      emoji: '🎈',
+      description: 'Watch, copy, and tap through a mini oral adventure.',
+      color: '#F59E0B',
+      available: isFunnyMouthAdventureAvailable,
+    },
+    {
+      id: 'air-mouth-play',
+      title: 'Air + Mouth Play',
+      emoji: '🌬️',
+      description: 'Soft blow animation + mouth watch. Tap to try — no microphone pressure.',
+      color: '#0284C7',
+      available: isAirMouthPlayAvailable,
+    },
+    {
+      id: 'oral-mirror-party',
+      title: 'Oral Mirror Party',
+      emoji: '🎉',
+      description: 'Slow mirror sequence: smile, open, tongue, funny face. Party stars for tries.',
+      color: '#7C3AED',
+      available: isOralMirrorPartyAvailable,
+    },
+    {
+      id: 'mouth-hero-adventure',
+      title: 'Mouth Hero Adventure',
+      emoji: '🦸',
+      description: 'Integration hero play: air, lips, jaw, face, tongue — no fail state.',
+      color: '#EA580C',
+      available: isMouthHeroAdventureAvailable,
+    },
+    {
+      id: 'speech-mouth-copy',
+      title: 'Speech Mouth Copy',
+      emoji: '🗣️',
+      description: 'Copy speech mouth shapes: open, closed, round, smile. Stars for every try.',
+      color: '#2563EB',
+      available: isSpeechMouthCopyAvailable,
+    },
+    {
+      id: 'talking-robot-face',
+      title: 'Talking Robot Face',
+      emoji: '🤖',
+      description: 'Robot shows OOO, EEE, open, closed — slow copy, robot dance rewards.',
+      color: '#4F46E5',
+      available: isTalkingRobotFaceAvailable,
+    },
+    {
+      id: 'mouth-pattern-match',
+      title: 'Mouth Pattern Match',
+      emoji: '🔁',
+      description: 'Short sequences like open→closed. Progress stars, no wrong answers.',
+      color: '#CA8A04',
+      available: isMouthPatternMatchAvailable,
+    },
+    {
+      id: 'mirror-speech-play',
+      title: 'Mirror Speech Play',
+      emoji: '🪞',
+      description: 'Speech-style mirror imitation. Optional soft hints on web — tap always counts.',
+      color: '#7C3AED',
+      available: isMirrorSpeechPlayAvailable,
+    },
+    {
+      id: 'speech-hero-warmup',
+      title: 'Speech Hero Warm-Up',
+      emoji: '🦸',
+      description: 'Level 6 integration: watch, copy, tap — hero celebration, no fail.',
+      color: '#EA580C',
+      available: isSpeechHeroWarmupAvailable,
+    },
+    {
+      id: 'wake-sleeping-star',
+      title: 'Wake the Sleeping Star',
+      emoji: '⭐',
+      description: 'Any sound wakes the star. Longer sounds glow brighter. Sparkles, no fail.',
+      color: '#A78BFA',
+      available: isWakeSleepingStarAvailable,
+    },
+    {
+      id: 'talking-robot-start',
+      title: 'Talking Robot Start',
+      emoji: '🤖',
+      description: 'Robot waits quietly — any vocal attempt gets a playful reply.',
+      color: '#4F46E5',
+      available: isTalkingRobotStartAvailable,
+    },
+    {
+      id: 'magic-voice-balloon',
+      title: 'Magic Voice Balloon',
+      emoji: '🎈',
+      description: 'Sounds inflate the balloon. Longer sounds grow it bigger.',
+      color: '#EC4899',
+      available: isMagicVoiceBalloonAvailable,
+    },
+    {
+      id: 'funny-voice-echo',
+      title: 'Funny Voice Echo',
+      emoji: '😄',
+      description: 'Funny character sound, then child echoes with any sound.',
+      color: '#16A34A',
+      available: isFunnyVoiceEchoAvailable,
+    },
+    {
+      id: 'sound-hero-starter',
+      title: 'Sound Hero Starter',
+      emoji: '🦸',
+      description: 'Sound initiation mini challenge — hero celebration, no fail.',
+      color: '#EA580C',
+      available: isSoundHeroStarterAvailable,
+    },
+    {
+      id: 'magic-mouth-shapes',
+      title: 'Magic Mouth Shapes',
+      emoji: '✨',
+      description: 'AAA open, OOO round, EEE smile — copy with your mouth. Stars for every try.',
+      color: '#A855F7',
+      available: isMagicMouthShapesAvailable,
+    },
+    {
+      id: 'talking-animal-vowels',
+      title: 'Talking Animal Vowels',
+      emoji: '🦁',
+      description: 'Animals show OOO, EEE, AAA — playful copy, animal dance reward.',
+      color: '#16A34A',
+      available: isTalkingAnimalVowelsAvailable,
+    },
+    {
+      id: 'mirror-vowel-face',
+      title: 'Mirror Vowel Face',
+      emoji: '🪞',
+      description: 'Mirror AAA, OOO, EEE — soft posture hints, sparkle celebration.',
+      color: '#7C3AED',
+      available: isMirrorVowelFaceAvailable,
+    },
+    {
+      id: 'vowel-balloon-builder',
+      title: 'Vowel Balloon Builder',
+      emoji: '🎈',
+      description: 'Vowel shape tries inflate a balloon — celebration when it grows.',
+      color: '#EC4899',
+      available: isVowelBalloonBuilderAvailable,
+    },
+    {
+      id: 'speech-shape-adventure',
+      title: 'Speech Shape Adventure',
+      emoji: '🗺️',
+      description: 'Watch, copy, optional sound — AAA OOO EEE hero adventure, no fail.',
+      color: '#EA580C',
+      available: isSpeechShapeAdventureAvailable,
+    },
+    {
+      id: 'magic-sound-builder',
+      title: 'Magic Sound Builder',
+      emoji: '✨',
+      description: 'MA, PA, BA patterns — mouth movement or any sound counts, sparkles every try.',
+      color: '#059669',
+      available: isMagicSoundBuilderAvailable,
+    },
+    {
+      id: 'talking-animal-mouths',
+      title: 'Talking Animal Mouths',
+      emoji: '🦁',
+      description: 'Animals show ma, pa, moo — playful copy, animal celebration.',
+      color: '#16A34A',
+      available: isTalkingAnimalMouthsAvailable,
+    },
+    {
+      id: 'robot-says-play',
+      title: 'Robot Says Ma–Pa Play',
+      emoji: '🤖',
+      description: 'Open mouth, close lips, vocal try — slow robot dance reward.',
+      color: '#4F46E5',
+      available: isRobotSaysPlayAvailable,
+    },
+    {
+      id: 'speech-pattern-train',
+      title: 'Speech Pattern Train',
+      emoji: '🚂',
+      description: 'MA→MA, PA→PA, MOO→MA — repeat patterns, train celebration.',
+      color: '#D97706',
+      available: isSpeechPatternTrainAvailable,
+    },
+    {
+      id: 'mini-talking-hero',
+      title: 'Mini Talking Hero',
+      emoji: '🦸',
+      description: 'Watch, copy, optional sound — CV hero mini challenge, no fail.',
+      color: '#EA580C',
+      available: isMiniTalkingHeroAvailable,
+    },
+    {
+      id: 'mama-drum-beat',
+      title: 'Mama Drum Beat',
+      emoji: '🥁',
+      description: 'MA MA, PA PA, BA BA rhythm — repeat any way, drum celebration.',
+      color: '#DB2777',
+      available: isMamaDrumBeatAvailable,
+    },
+    {
+      id: 'pop-balloon-race',
+      title: 'Pop Pop Balloon Race',
+      emoji: '🎈',
+      description: 'Each repeat pops a balloon — mouth or sound tries count.',
+      color: '#E11D48',
+      available: isPopBalloonRaceAvailable,
+    },
+    {
+      id: 'talking-robot-beats',
+      title: 'Talking Robot Beats',
+      emoji: '🤖',
+      description: 'MA MA, PA PA, MMM — slow robot beats, dance reward.',
+      color: '#4F46E5',
+      available: isTalkingRobotBeatsAvailable,
+    },
+    {
+      id: 'speech-train-rhythm',
+      title: 'Speech Train Rhythm',
+      emoji: '🚂',
+      description: 'MA→MA, PA→PA — train moves with each repeat, party animation.',
+      color: '#CA8A04',
+      available: isSpeechTrainRhythmAvailable,
+    },
+    {
+      id: 'mini-speaker-hero',
+      title: 'Mini Speaker Hero',
+      emoji: '🦸',
+      description: 'MA PA BA MMM mini challenge — watch, repeat, hero celebration.',
+      color: '#7C3AED',
+      available: isMiniSpeakerHeroAvailable,
+    },
+    {
+      id: 'talking-drum-rhythm',
+      title: 'Talking Drum Rhythm',
+      emoji: '🥁',
+      description: 'MA … MA, PA … PA — slow drum beats, loose timing, drum celebration.',
+      color: '#C2410C',
+      available: isTalkingDrumRhythmAvailable,
+    },
+    {
+      id: 'speech-beat-robot',
+      title: 'Speech Beat Robot',
+      emoji: '🤖',
+      description: 'Slow speaking rhythm — copy with robot, approximate beat counts.',
+      color: '#4F46E5',
+      available: isSpeechBeatRobotAvailable,
+    },
+    {
+      id: 'magic-mouth-metronome',
+      title: 'Magic Mouth Metronome',
+      emoji: '✨',
+      description: 'Slow visual tick — mouth or voice on beat, magic stars reward.',
+      color: '#A855F7',
+      available: isMagicMouthMetronomeAvailable,
+    },
+    {
+      id: 'talking-train-timing',
+      title: 'Talking Train Timing',
+      emoji: '🚂',
+      description: 'MA … MA, PA … PA, OO … OO — train moves with each rhythm try.',
+      color: '#CA8A04',
+      available: isTalkingTrainTimingAvailable,
+    },
+    {
+      id: 'speech-rhythm-hero',
+      title: 'Speech Rhythm Hero',
+      emoji: '🦸',
+      description: 'Repeat rhythm, mouth timing, optional vocal — hero celebration, no fail.',
+      color: '#7C3AED',
+      available: isSpeechRhythmHeroAvailable,
+    },
+    {
+      id: 'magic-voice-river',
+      title: 'Magic Voice River',
+      emoji: '🌊',
+      description: 'Hold any sound — river glows longer with you. Weak sound still counts.',
+      color: '#0284C7',
+      available: isMagicVoiceRiverAvailable,
+    },
+    {
+      id: 'talking-balloon-hold',
+      title: 'Talking Balloon Hold',
+      emoji: '🎈',
+      description: 'Sound inflates the balloon — stopping is okay, balloon floats happily.',
+      color: '#E11D48',
+      available: isTalkingBalloonHoldAvailable,
+    },
+    {
+      id: 'robot-power-voice',
+      title: 'Robot Power Voice',
+      emoji: '🤖',
+      description: 'Hold sound to power up the robot — stable effort glows more.',
+      color: '#4F46E5',
+      available: isRobotPowerVoiceAvailable,
+    },
+    {
+      id: 'voice-train-journey',
+      title: 'Voice Train Journey',
+      emoji: '🚂',
+      description: 'Train moves while sound is active — short attempts still count.',
+      color: '#16A34A',
+      available: isVoiceTrainJourneyAvailable,
+    },
+    {
+      id: 'speech-stability-hero',
+      title: 'Speech Stability Hero',
+      emoji: '🦸',
+      description: 'Hold sound, watch glow, repeat — integrates stability, no fail.',
+      color: '#7C3AED',
+      available: isSpeechStabilityHeroAvailable,
+    },
+    {
+      id: 'syllable-pop-party',
+      title: 'Syllable Pop Party',
+      emoji: '🎈',
+      description: 'MA, PA, BA — any syllable try pops balloons, celebration every time.',
+      color: '#E11D48',
+      available: isSyllablePopPartyAvailable,
+    },
+    {
+      id: 'talking-animal-syllables',
+      title: 'Talking Animal Syllables',
+      emoji: '🦁',
+      description: 'MOO, BEE, MA from animals — playful copy, animal dance reward.',
+      color: '#16A34A',
+      available: isTalkingAnimalSyllablesAvailable,
+    },
+    {
+      id: 'robot-speech-steps',
+      title: 'Robot Speech Steps',
+      emoji: '🤖',
+      description: 'MA, PA, OO in slow steps — speech chunk confidence, robot celebration.',
+      color: '#4F46E5',
+      available: isRobotSpeechStepsAvailable,
+    },
+    {
+      id: 'speech-train-builder',
+      title: 'Speech Train Builder',
+      emoji: '🚂',
+      description: 'Syllable tries move the train — mouth or voice participation counts.',
+      color: '#CA8A04',
+      available: isSpeechTrainBuilderAvailable,
+    },
+    {
+      id: 'little-speaker-hero',
+      title: 'Little Speaker Hero',
+      emoji: '🦸',
+      description: 'MA PA BA OO AAA mini challenge — watch, chunk try, hero celebration.',
+      color: '#7C3AED',
+      available: isLittleSpeakerHeroAvailable,
+    },
+    {
+      id: 'magic-sound-request',
+      title: 'Magic Sound Request',
+      emoji: '✨',
+      description: 'Character waits — any sound brings a gift. Sound = action, sparkles reward.',
+      color: '#0D9488',
+      available: isMagicSoundRequestAvailable,
+    },
+    {
+      id: 'talking-friend-turn-taking',
+      title: 'Talking Friend Turn-Taking',
+      emoji: '🐻',
+      description: 'Friend makes a sound, you respond — any sound counts, friend celebration.',
+      color: '#16A34A',
+      available: isTalkingFriendTurnTakingAvailable,
+    },
+    {
+      id: 'voice-choice-adventure',
+      title: 'Voice Choice Adventure',
+      emoji: '🗺️',
+      description: 'Any sound lights a magic path — character reacts, no correctness needed.',
+      color: '#A855F7',
+      available: isVoiceChoiceAdventureAvailable,
+    },
+    {
+      id: 'help-character-speak',
+      title: 'Help the Character Speak',
+      emoji: '🦊',
+      description: 'Character pauses — your sound continues the adventure, celebration.',
+      color: '#EA580C',
+      available: isHelpCharacterSpeakAvailable,
+    },
+    {
+      id: 'little-communicator-hero',
+      title: 'Little Communicator Hero',
+      emoji: '🦸',
+      description: 'Turn-taking mini challenge — make sound, get response, hero celebration.',
+      color: '#7C3AED',
+      available: isLittleCommunicatorHeroAvailable,
+    },
+    {
+      id: 'speech-adventure-party',
+      title: 'Speech Adventure Party',
+      emoji: '🎈',
+      description: 'Mini adventure — mouth, sound, rhythm play. Celebration party reward.',
+      color: '#DB2777',
+      available: isSpeechAdventurePartyAvailable,
+    },
+    {
+      id: 'talking-friend-challenge',
+      title: 'Talking Friend Challenge',
+      emoji: '🐼',
+      description: 'Friend models mouth — you copy or sound. Friend celebration!',
+      color: '#0284C7',
+      available: isTalkingFriendChallengeAvailable,
+    },
+    {
+      id: 'magic-mouth-mission',
+      title: 'Magic Mouth Mission',
+      emoji: '🪄',
+      description: 'OOO EEE AAA MA PA — watch mouth, try playfully, magic celebration.',
+      color: '#7C3AED',
+      available: isMagicMouthMissionAvailable,
+    },
+    {
+      id: 'little-speaker-celebration',
+      title: 'Little Speaker Celebration',
+      emoji: '🎤',
+      description: 'High encouragement — any participation gets speaker party stars.',
+      color: '#EA580C',
+      available: isLittleSpeakerCelebrationAvailable,
+    },
+    {
+      id: 'speech-hero-graduation',
+      title: 'Speech Hero Graduation',
+      emoji: '🎓',
+      description: 'Level 6 finale — imitation, sound, vowels, timing, syllables, voice hero!',
+      color: '#4F46E5',
+      available: isSpeechHeroGraduationAvailable,
+    },
+    {
+      id: 'funny-mouth-teamwork',
+      title: 'Funny Mouth Teamwork',
+      emoji: '🤪',
+      description: 'Lips wide + jaw open, then close together — sparkles for every try.',
+      color: '#D97706',
+      available: isFunnyMouthTeamworkAvailable,
+    },
+    {
+      id: 'robot-mouth-builder',
+      title: 'Robot Mouth Builder',
+      emoji: '🤖',
+      description: 'Round lips + open jaw, smile + open — robot celebration!',
+      color: '#4F46E5',
+      available: isRobotMouthBuilderAvailable,
+    },
+    {
+      id: 'magic-mouth-switch',
+      title: 'Magic Mouth Switch',
+      emoji: '🪄',
+      description: 'Slow OPEN ↔ CLOSED and ROUND ↔ SMILE switches — magic stars.',
+      color: '#7C3AED',
+      available: isMagicMouthSwitchAvailable,
+    },
+    {
+      id: 'talking-face-rhythm',
+      title: 'Talking Face Rhythm',
+      emoji: '😊',
+      description: 'Slow face rhythm — lips and jaw move together, face dance reward.',
+      color: '#059669',
+      available: isTalkingFaceRhythmAvailable,
+    },
+    {
+      id: 'mouth-coordination-hero',
+      title: 'Mouth Coordination Hero',
+      emoji: '🦸',
+      description: 'Watch, copy, repeat — lip + jaw hero challenge, no fail.',
+      color: '#7C3AED',
+      available: isMouthCoordinationHeroAvailable,
+    },
+    {
+      id: 'tongue-explorer-teamwork',
+      title: 'Tongue Explorer Teamwork',
+      emoji: '🧭',
+      description: 'Open + tongue out, tongue up, close + rest — sparkles for every try.',
+      color: '#0284C7',
+      available: isTongueExplorerTeamworkAvailable,
+    },
+    {
+      id: 'funny-monster-tongue-moves',
+      title: 'Funny Monster Tongue Moves',
+      emoji: '👾',
+      description: 'Monster models tongue out/in and open — monster dance rewards.',
+      color: '#16A34A',
+      available: isFunnyMonsterTongueMovesAvailable,
+    },
+    {
+      id: 'magic-mouth-tunnel',
+      title: 'Magic Mouth Tunnel',
+      emoji: '🪄',
+      description: 'Slow switches OPEN → tongue out and OPEN → closed — magic stars.',
+      color: '#7C3AED',
+      available: isMagicMouthTunnelAvailable,
+    },
+    {
+      id: 'talking-tongue-rhythm',
+      title: 'Talking Tongue Rhythm',
+      emoji: '🥁',
+      description: 'Slow rhythm with tongue + jaw moves — rhythm celebration.',
+      color: '#059669',
+      available: isTalkingTongueRhythmAvailable,
+    },
+    {
+      id: 'tongue-coordination-hero',
+      title: 'Tongue Coordination Hero',
+      emoji: '🦸',
+      description: 'Watch, copy tongue move, repeat — no fail hero challenge.',
+      color: '#7C3AED',
+      available: isTongueCoordinationHeroAvailable,
+    },
+    {
+      id: 'funny-tongue-lips-team',
+      title: 'Funny Tongue Lips Team',
+      emoji: '🤝',
+      description: 'Round lips + tongue out, smile + tongue visible, close + rest — all tries count.',
+      color: '#0EA5E9',
+      available: isFunnyTongueLipsTeamAvailable,
+    },
+    {
+      id: 'monster-mouth-mixup',
+      title: 'Monster Mouth Mix-Up',
+      emoji: '👾',
+      description: 'Copy monster tongue and lip moves with high tolerance and instant rewards.',
+      color: '#22C55E',
+      available: isMonsterMouthMixUpAvailable,
+    },
+    {
+      id: 'magic-lip-tongue-switch',
+      title: 'Magic Lip Tongue Switch',
+      emoji: '🪄',
+      description: 'Slow switches: ROUND → tongue out, SMILE → CLOSED, tongue visible → ROUND.',
+      color: '#7C3AED',
+      available: isMagicLipTongueSwitchAvailable,
+    },
+    {
+      id: 'talking-face-coordination',
+      title: 'Talking Face Coordination',
+      emoji: '😊',
+      description: 'Friendly rhythm play for tongue + lips timing with calm pacing.',
+      color: '#10B981',
+      available: isTalkingFaceCoordinationAvailable,
+    },
+    {
+      id: 'tongue-lips-hero',
+      title: 'Tongue Lips Hero',
+      emoji: '🦸',
+      description: 'Watch, copy, repeat playful mouth coordination — no fail state.',
+      color: '#8B5CF6',
+      available: isTongueLipsHeroAvailable,
+    },
+    {
+      id: 'magic-wind-lips',
+      title: 'Magic Wind Lips',
+      emoji: '💨',
+      description: 'Round, open, smile lips with soft air — all attempts count.',
+      color: '#0284C7',
+      available: isMagicWindLipsAvailable,
+    },
+    {
+      id: 'funny-balloon-breaths',
+      title: 'Funny Balloon Breaths',
+      emoji: '🎈',
+      description: 'Balloon reacts to weak blow, hum air, lip move, or both.',
+      color: '#DB2777',
+      available: isFunnyBalloonBreathsAvailable,
+    },
+    {
+      id: 'robot-wind-mouth',
+      title: 'Robot Wind Mouth',
+      emoji: '🤖',
+      description: 'Slow switches ROUND → BLOW, OPEN → AIR, STOP → START.',
+      color: '#4F46E5',
+      available: isRobotWindMouthAvailable,
+    },
+    {
+      id: 'wind-rhythm-adventure',
+      title: 'Wind Rhythm Adventure',
+      emoji: '🥁',
+      description: 'Practice blow-pause-blow rhythm with calm pacing.',
+      color: '#059669',
+      available: isWindRhythmAdventureAvailable,
+    },
+    {
+      id: 'breath-lips-hero',
+      title: 'Breath Lips Hero',
+      emoji: '🦸',
+      description: 'Watch mouth, attempt airflow, copy timing — no fail hero challenge.',
+      color: '#7C3AED',
+      available: isBreathLipsHeroAvailable,
+    },
+    {
+      id: 'magic-wind-mouth',
+      title: 'Magic Wind Mouth',
+      emoji: '💨',
+      description: 'Open mouth + soft blow, close + stop, open + airflow — all attempts count.',
+      color: '#0284C7',
+      available: isMagicWindMouthAvailable,
+    },
+    {
+      id: 'funny-dragon-breaths',
+      title: 'Funny Dragon Breaths',
+      emoji: '🐉',
+      description: 'Dragon reacts to air attempt, mouth opening, or both.',
+      color: '#EA580C',
+      available: isFunnyDragonBreathsAvailable,
+    },
+    {
+      id: 'robot-air-mouth-switch',
+      title: 'Robot Air Mouth Switch',
+      emoji: '🤖',
+      description: 'Slow switches OPEN → AIR, CLOSE → STOP with high tolerance.',
+      color: '#4F46E5',
+      available: isRobotAirMouthSwitchAvailable,
+    },
+    {
+      id: 'breathing-train-rhythm',
+      title: 'Breathing Train Rhythm',
+      emoji: '🚂',
+      description: 'Train rhythm: blow, pause, blow with mouth open-close timing.',
+      color: '#059669',
+      available: isBreathingTrainRhythmAvailable,
+    },
+    {
+      id: 'breath-jaw-hero',
+      title: 'Breath Jaw Hero',
+      emoji: '🦸',
+      description: 'Watch mouth, attempt airflow, copy timing — no fail hero challenge.',
+      color: '#7C3AED',
+      available: isBreathJawHeroAvailable,
+    },
+    {
+      id: 'magic-mouth-steps',
+      title: 'Magic Mouth Steps',
+      emoji: '🪄',
+      description: 'Simple oral sequences: OPEN→SMILE, ROUND→OPEN, OPEN→CLOSE.',
+      color: '#0284C7',
+      available: isMagicMouthStepsAvailable,
+    },
+    {
+      id: 'funny-monster-combo-moves',
+      title: 'Funny Monster Combo Moves',
+      emoji: '👾',
+      description: 'Practice multi-step combos with high tolerance and instant rewards.',
+      color: '#16A34A',
+      available: isFunnyMonsterComboMovesAvailable,
+    },
+    {
+      id: 'robot-mouth-builder-sequence',
+      title: 'Robot Mouth Builder',
+      emoji: '🤖',
+      description: 'Slow sequence building: OPEN→CLOSE, OPEN→ROUND, OPEN→TONGUE.',
+      color: '#4F46E5',
+      available: isRobotMouthBuilderSequenceAvailable,
+    },
+    {
+      id: 'talking-adventure-rhythm',
+      title: 'Talking Adventure Rhythm',
+      emoji: '🥁',
+      description: 'Movement-pause-movement timing with calm predictable pacing.',
+      color: '#059669',
+      available: isTalkingAdventureRhythmAvailable,
+    },
+    {
+      id: 'coordination-hero-quest',
+      title: 'Coordination Hero Quest',
+      emoji: '🦸',
+      description: 'Watch sequence, copy movement, repeat playfully — no fail.',
+      color: '#7C3AED',
+      available: isCoordinationHeroQuestAvailable,
+    },
+    {
+      id: 'magic-mouth-sequence',
+      title: 'Magic Mouth Sequence',
+      emoji: '✨',
+      description: 'Learn movement order with OPEN-SMILE-CLOSE and similar chains.',
+      color: '#0284C7',
+      available: isMagicMouthSequenceAvailable,
+    },
+    {
+      id: 'funny-monster-steps',
+      title: 'Funny Monster Steps',
+      emoji: '👾',
+      description: 'Practice oral sequence imitation with playful monster steps.',
+      color: '#16A34A',
+      available: isFunnyMonsterStepsAvailable,
+    },
+    {
+      id: 'robot-memory-mouth',
+      title: 'Robot Memory Mouth',
+      emoji: '🤖',
+      description: 'Short memory chains with slow predictable pacing.',
+      color: '#4F46E5',
+      available: isRobotMemoryMouthAvailable,
+    },
+    {
+      id: 'talking-rhythm-sequence',
+      title: 'Talking Rhythm Sequence',
+      emoji: '🥁',
+      description: 'Movement-pause-movement timing with sequencing support.',
+      color: '#059669',
+      available: isTalkingRhythmSequenceAvailable,
+    },
+    {
+      id: 'sequence-hero-adventure',
+      title: 'Sequence Hero Adventure',
+      emoji: '🦸',
+      description: 'Watch sequence, copy movement, repeat playfully — no fail.',
+      color: '#7C3AED',
+      available: isSequenceHeroAdventureAvailable,
+    },
+    {
+      id: 'magic-mouth-beat',
+      title: 'Magic Mouth Beat',
+      emoji: '⏱️',
+      description: 'Learn OPEN-pause-CLOSE and gentle pacing with soft timing.',
+      color: '#0284C7',
+      available: isMagicMouthBeatAvailable,
+    },
+    {
+      id: 'funny-timing-monster',
+      title: 'Funny Timing Monster',
+      emoji: '👾',
+      description: 'Practice move-stop timing with high-tolerance participation.',
+      color: '#16A34A',
+      available: isFunnyTimingMonsterAvailable,
+    },
+    {
+      id: 'robot-pause-go',
+      title: 'Robot Pause & Go',
+      emoji: '🤖',
+      description: 'GO-STOP-GO start-stop control with slow predictable pacing.',
+      color: '#4F46E5',
+      available: isRobotPauseGoAvailable,
+    },
+    {
+      id: 'talking-rhythm-road',
+      title: 'Talking Rhythm Road',
+      emoji: '🥁',
+      description: 'Movement-pause-movement rhythm play for oral pacing awareness.',
+      color: '#059669',
+      available: isTalkingRhythmRoadAvailable,
+    },
+    {
+      id: 'timing-hero-challenge',
+      title: 'Timing Hero Challenge',
+      emoji: '🦸',
+      description: 'Integrate timing, order, and oral movement with no fail state.',
+      color: '#7C3AED',
+      available: isTimingHeroChallengeAvailable,
+    },
+    {
+      id: 'magic-mouth-planner',
+      title: 'Magic Mouth Planner',
+      emoji: '✨',
+      description: 'WATCH → PREPARE → COPY planning practice; every try gets rewards.',
+      color: '#0284C7',
+      available: isMagicMouthPlannerAvailable,
+    },
+    {
+      id: 'funny-monster-mission',
+      title: 'Funny Monster Mission',
+      emoji: '👾',
+      description: 'Open, round, smile, blow sequence preparation with gentle pacing.',
+      color: '#9333EA',
+      available: isFunnyMonsterMissionAvailable,
+    },
+    {
+      id: 'robot-copy-challenge',
+      title: 'Robot Copy Challenge',
+      emoji: '🤖',
+      description: 'Watch robot first, pause, then copy for movement anticipation.',
+      color: '#0E7490',
+      available: isRobotCopyChallengeAvailable,
+    },
+    {
+      id: 'talking-path-adventure',
+      title: 'Talking Path Adventure',
+      emoji: '🛤️',
+      description: 'Movement-pause-movement timing and transition readiness.',
+      color: '#CA8A04',
+      available: isTalkingPathAdventureAvailable,
+    },
+    {
+      id: 'motor-planning-hero',
+      title: 'Motor Planning Hero',
+      emoji: '🦸',
+      description: 'Combine timing, jaw, lips, tongue, airflow, and planning with no fail.',
+      color: '#7C3AED',
+      available: isMotorPlanningHeroAvailable,
+    },
+    {
+      id: 'magic-mouth-teamwork',
+      title: 'Magic Mouth Teamwork',
+      emoji: '✨',
+      description: 'Integrate OPEN, ROUND, BLOW and smile-close chains with soft pacing.',
+      color: '#0284C7',
+      available: isMagicMouthTeamworkAvailable,
+    },
+    {
+      id: 'funny-talking-monster',
+      title: 'Funny Talking Monster',
+      emoji: '👾',
+      description: 'Coordinated oral movement play with tongue, breath, and pause chains.',
+      color: '#9333EA',
+      available: isFunnyTalkingMonsterAvailable,
+    },
+    {
+      id: 'robot-mouth-adventure',
+      title: 'Robot Mouth Adventure',
+      emoji: '🤖',
+      description: 'Watch, prepare, copy sequence adventures with predictable timing.',
+      color: '#0E7490',
+      available: isRobotMouthAdventureAvailable,
+    },
+    {
+      id: 'talking-rhythm-quest',
+      title: 'Talking Rhythm Quest',
+      emoji: '🥁',
+      description: 'Movement-pause-movement integration for airflow and timing confidence.',
+      color: '#CA8A04',
+      available: isTalkingRhythmQuestAvailable,
+    },
+    {
+      id: 'coordination-hero-graduation',
+      title: 'Coordination Hero Graduation',
+      emoji: '🎓',
+      description: 'Final integration of jaw, lips, tongue, airflow, timing, and sequencing.',
+      color: '#7C3AED',
+      available: isCoordinationHeroGraduationAvailable,
+    },
+    {
       id: 'hungry-crocodile',
       title: 'Hungry Crocodile',
       emoji: '🐊',
@@ -7243,6 +9194,456 @@ export default function SessionGamesScreen() {
   }
   if (currentGame === 'smart-listener-challenge') {
     return <SmartListenerChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-feather') {
+    return <MagicFeatherGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'cloud-puff') {
+    return <CloudPuffGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'bubble-wakeup') {
+    return <BubbleWakeupGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'windmill-friend') {
+    return <WindmillFriendGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'air-painter') {
+    return <AirPainterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'copy-happy-mouth') {
+    return <CopyHappyMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-monster-mouth') {
+    return <FunnyMonsterMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mirror-mouth-match') {
+    return <MirrorMouthMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'open-close-dance') {
+    return <OpenCloseDanceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'silly-face-copy') {
+    return <SillyFaceCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'wake-feather') {
+    return <WakeFeatherGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'start-stop-cloud') {
+    return <StartStopCloudGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'windmill-freeze') {
+    return <WindmillFreezeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'balloon-breath') {
+    return <BalloonBreathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-air-switch') {
+    return <MagicAirSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'happy-lips-mirror') {
+    return <HappyLipsMirrorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'lip-tap-friend') {
+    return <LipTapFriendGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-lip-glow') {
+    return <MagicLipGlowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-fish-lips') {
+    return <FunnyFishLipsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'lip-explorer-adventure') {
+    return <LipExplorerAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'jaw-hungry-crocodile') {
+    return <JawHungryCrocodileGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'sleepy-lion-mouth') {
+    return <SleepyLionMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mouth-elevator') {
+    return <MouthElevatorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'jaw-open-close-dance') {
+    return <JawOpenCloseDanceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-jaw-adventure') {
+    return <FunnyJawAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-face-mirror') {
+    return <FunnyFaceMirrorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'happy-sad-copy') {
+    return <HappySadCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'monster-face-match') {
+    return <MonsterFaceMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mirror-dance-faces') {
+    return <MirrorDanceFacesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'face-adventure-copy') {
+    return <FaceAdventureCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-face-breeze') {
+    return <MagicFaceBreezeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'bubble-nose-tickles') {
+    return <BubbleNoseTicklesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-mouth-explorer') {
+    return <FunnyMouthExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'soft-sensory-monster') {
+    return <SoftSensoryMonsterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'calm-mouth-adventure') {
+    return <CalmMouthAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'find-mouth-part') {
+    return <FindMouthPartGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-spotlight') {
+    return <MagicMouthSpotlightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'follow-funny-mouth') {
+    return <FollowFunnyMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'where-did-it-go-mouth') {
+    return <WhereDidItGoMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mouth-treasure-hunt') {
+    return <MouthTreasureHuntGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'friendly-tongue-explorer') {
+    return <FriendlyTongueExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'tongue-hide-seek') {
+    return <TongueHideSeekGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-tongue-mirror') {
+    return <MagicTongueMirrorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'hungry-tongue-monster') {
+    return <HungryTongueMonsterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'tongue-treasure-adventure') {
+    return <TongueTreasureAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'copy-my-mouth-friend') {
+    return <CopyMyMouthFriendGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-mouth-adventure') {
+    return <FunnyMouthAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'air-mouth-play') {
+    return <AirMouthPlayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'oral-mirror-party') {
+    return <OralMirrorPartyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mouth-hero-adventure') {
+    return <MouthHeroAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-mouth-copy') {
+    return <SpeechMouthCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-robot-face') {
+    return <TalkingRobotFaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mouth-pattern-match') {
+    return <MouthPatternMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mirror-speech-play') {
+    return <MirrorSpeechPlayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-hero-warmup') {
+    return <SpeechHeroWarmupGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'wake-sleeping-star') {
+    return <WakeSleepingStarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-robot-start') {
+    return <TalkingRobotStartGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-voice-balloon') {
+    return <MagicVoiceBalloonGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-voice-echo') {
+    return <FunnyVoiceEchoGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'sound-hero-starter') {
+    return <SoundHeroStarterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-shapes') {
+    return <MagicMouthShapesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-animal-vowels') {
+    return <TalkingAnimalVowelsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mirror-vowel-face') {
+    return <MirrorVowelFaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'vowel-balloon-builder') {
+    return <VowelBalloonBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-shape-adventure') {
+    return <SpeechShapeAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-sound-builder') {
+    return <MagicSoundBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-animal-mouths') {
+    return <TalkingAnimalMouthsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-says-play') {
+    return <RobotSaysPlayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-pattern-train') {
+    return <SpeechPatternTrainGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mini-talking-hero') {
+    return <MiniTalkingHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mama-drum-beat') {
+    return <MamaDrumBeatGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'pop-balloon-race') {
+    return <PopBalloonRaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-robot-beats') {
+    return <TalkingRobotBeatsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-train-rhythm') {
+    return <SpeechTrainRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mini-speaker-hero') {
+    return <MiniSpeakerHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-drum-rhythm') {
+    return <TalkingDrumRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-beat-robot') {
+    return <SpeechBeatRobotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-metronome') {
+    return <MagicMouthMetronomeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-train-timing') {
+    return <TalkingTrainTimingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-rhythm-hero') {
+    return <SpeechRhythmHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-voice-river') {
+    return <MagicVoiceRiverGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-balloon-hold') {
+    return <TalkingBalloonHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-power-voice') {
+    return <RobotPowerVoiceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'voice-train-journey') {
+    return <VoiceTrainJourneyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-stability-hero') {
+    return <SpeechStabilityHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'syllable-pop-party') {
+    return <SyllablePopPartyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-animal-syllables') {
+    return <TalkingAnimalSyllablesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-speech-steps') {
+    return <RobotSpeechStepsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-train-builder') {
+    return <SpeechTrainBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'little-speaker-hero') {
+    return <LittleSpeakerHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-sound-request') {
+    return <MagicSoundRequestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-friend-turn-taking') {
+    return <TalkingFriendTurnTakingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'voice-choice-adventure') {
+    return <VoiceChoiceAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'help-character-speak') {
+    return <HelpCharacterSpeakGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'little-communicator-hero') {
+    return <LittleCommunicatorHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-adventure-party') {
+    return <SpeechAdventurePartyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-friend-challenge') {
+    return <TalkingFriendChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-mission') {
+    return <MagicMouthMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'little-speaker-celebration') {
+    return <LittleSpeakerCelebrationGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-hero-graduation') {
+    return <SpeechHeroGraduationGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-mouth-teamwork') {
+    return <FunnyMouthTeamworkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-mouth-builder') {
+    return <RobotMouthBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-switch') {
+    return <MagicMouthSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-face-rhythm') {
+    return <TalkingFaceRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mouth-coordination-hero') {
+    return <MouthCoordinationHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'tongue-explorer-teamwork') {
+    return <TongueExplorerTeamworkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-monster-tongue-moves') {
+    return <FunnyMonsterTongueMovesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-tunnel') {
+    return <MagicMouthTunnelGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-tongue-rhythm') {
+    return <TalkingTongueRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'tongue-coordination-hero') {
+    return <TongueCoordinationHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-tongue-lips-team') {
+    return <FunnyTongueLipsTeamGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'monster-mouth-mixup') {
+    return <MonsterMouthMixUpGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-lip-tongue-switch') {
+    return <MagicLipTongueSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-face-coordination') {
+    return <TalkingFaceCoordinationGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'tongue-lips-hero') {
+    return <TongueLipsHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-wind-lips') {
+    return <MagicWindLipsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-balloon-breaths') {
+    return <FunnyBalloonBreathsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-wind-mouth') {
+    return <RobotWindMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'wind-rhythm-adventure') {
+    return <WindRhythmAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'breath-lips-hero') {
+    return <BreathLipsHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-wind-mouth') {
+    return <MagicWindMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-dragon-breaths') {
+    return <FunnyDragonBreathsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-air-mouth-switch') {
+    return <RobotAirMouthSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'breathing-train-rhythm') {
+    return <BreathingTrainRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'breath-jaw-hero') {
+    return <BreathJawHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-steps') {
+    return <MagicMouthStepsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-monster-combo-moves') {
+    return <FunnyMonsterComboMovesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-mouth-builder-sequence') {
+    return <RobotMouthBuilderSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-adventure-rhythm') {
+    return <TalkingAdventureRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'coordination-hero-quest') {
+    return <CoordinationHeroQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-sequence') {
+    return <MagicMouthSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-monster-steps') {
+    return <FunnyMonsterStepsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-memory-mouth') {
+    return <RobotMemoryMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-rhythm-sequence') {
+    return <TalkingRhythmSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'sequence-hero-adventure') {
+    return <SequenceHeroAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-beat') {
+    return <MagicMouthBeatGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-timing-monster') {
+    return <FunnyTimingMonsterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-pause-go') {
+    return <RobotPauseGoGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-rhythm-road') {
+    return <TalkingRhythmRoadGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'timing-hero-challenge') {
+    return <TimingHeroChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-planner') {
+    return <MagicMouthPlannerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-monster-mission') {
+    return <FunnyMonsterMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-copy-challenge') {
+    return <RobotCopyChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-path-adventure') {
+    return <TalkingPathAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'motor-planning-hero') {
+    return <MotorPlanningHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-teamwork') {
+    return <MagicMouthTeamworkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-talking-monster') {
+    return <FunnyTalkingMonsterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-mouth-adventure') {
+    return <RobotMouthAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-rhythm-quest') {
+    return <TalkingRhythmQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'coordination-hero-graduation') {
+    return <CoordinationHeroGraduationGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
   if (currentGame === 'hungry-crocodile') {
     return <HungryCrocodileGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;

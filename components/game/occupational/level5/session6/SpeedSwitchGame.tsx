@@ -6,8 +6,10 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { isTapNearTarget } from '@/components/game/occupational/level5/shared/movingTargetTouch';
 import {
     Dimensions,
+    GestureResponderEvent,
     Pressable,
     SafeAreaView,
     StyleSheet,
@@ -284,19 +286,21 @@ const SpeedSwitchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </Text>
       </View>
 
-      <View
+      <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
         }}
+        onPress={handleGameTap}
       >
-        <Pressable onPress={handleBallTap}>
-          <Animated.View style={[styles.ball, ballStyle, { backgroundColor: isFast ? '#EF4444' : '#10B981' }]}>
-            <Text style={styles.ballEmoji}>⚽</Text>
-          </Animated.View>
-        </Pressable>
-      </View>
+        <Animated.View
+          style={[styles.ball, ballStyle, { backgroundColor: isFast ? '#EF4444' : '#10B981' }]}
+          pointerEvents="none"
+        >
+          <Text style={styles.ballEmoji}>⚽</Text>
+        </Animated.View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>

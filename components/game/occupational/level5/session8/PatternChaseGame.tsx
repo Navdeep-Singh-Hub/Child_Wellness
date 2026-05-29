@@ -120,11 +120,11 @@ const PatternChaseGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     showPatternStep();
   }, []);
 
-  const handleTap = useCallback((event: { nativeEvent: { pageX: number; pageY: number } }) => {
+  const handleTap = useCallback((event: { nativeEvent: { locationX: number; locationY: number } }) => {
     if (done || showPattern || objects.length === 0 || pattern.length === 0) return;
     
-    const tapX = event.nativeEvent.pageX;
-    const tapY = event.nativeEvent.pageY;
+    const tapX = event.nativeEvent.locationX;
+    const tapY = event.nativeEvent.locationY;
     
     for (const obj of objects) {
       const distance = Math.sqrt(
@@ -295,16 +295,17 @@ const PatternChaseGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </Text>
       </View>
 
-      <View
+      <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
         }}
-        onTouchEnd={handleTap}
+        onPress={handleTap}
       >
         {objects.map((obj) => (
           <View
+            pointerEvents="none"
             key={obj.id}
             style={[
               styles.object,
@@ -319,7 +320,7 @@ const PatternChaseGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             <Text style={styles.objectEmoji}>{obj.emoji}</Text>
           </View>
         ))}
-      </View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>

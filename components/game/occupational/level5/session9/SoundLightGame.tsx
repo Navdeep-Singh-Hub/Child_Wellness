@@ -81,11 +81,11 @@ const SoundLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }, 2000);
   }, [lightX, lightY, lightOpacity, lightScale]);
 
-  const handleTap = useCallback((event: { nativeEvent: { pageX: number; pageY: number } }) => {
+  const handleTap = useCallback((event: { nativeEvent: { locationX: number; locationY: number } }) => {
     if (done || !targetColor || !lightColor || !soundPlayed) return;
     
-    const tapX = event.nativeEvent.pageX;
-    const tapY = event.nativeEvent.pageY;
+    const tapX = event.nativeEvent.locationX;
+    const tapY = event.nativeEvent.locationY;
     
     const distance = Math.sqrt(
       Math.pow(tapX - lightX.value, 2) + Math.pow(tapY - lightY.value, 2)
@@ -250,20 +250,23 @@ const SoundLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </Text>
       </View>
 
-      <View
+      <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
         }}
-        onTouchEnd={handleTap}
+        onPress={handleTap}
       >
         {lightColor && (
-          <Animated.View style={[styles.light, lightStyle, { backgroundColor: lightColor.color }]}>
+          <Animated.View
+            style={[styles.light, lightStyle, { backgroundColor: lightColor.color }]}
+            pointerEvents="none"
+          >
             <Text style={styles.lightEmoji}>{lightColor.emoji}</Text>
           </Animated.View>
         )}
-      </View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>

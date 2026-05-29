@@ -2,7 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { openKioskSettings, type KioskSettingsTarget } from '@/utils/kioskAdmin';
+import {
+  openKioskSettings,
+  SHOW_KIOSK_NETWORK_SHORTCUTS,
+  type KioskSettingsTarget,
+} from '@/utils/kioskAdmin';
 
 /** Extra lift when device reports 0 insets (common in immersive / kiosk). */
 const ANDROID_MIN_BOTTOM_INSET = 28;
@@ -28,7 +32,7 @@ export default function ConnectivityQuickBar() {
     }
   }, []);
 
-  if (Platform.OS !== 'android') {
+  if (!SHOW_KIOSK_NETWORK_SHORTCUTS || Platform.OS !== 'android') {
     return null;
   }
 

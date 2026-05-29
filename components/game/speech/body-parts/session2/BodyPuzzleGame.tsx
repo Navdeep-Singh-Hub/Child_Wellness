@@ -7,6 +7,11 @@ import {
   speakBody,
   useBodyPartsSession,
 } from '@/components/game/speech/body-parts/shared/bodyPartsShared';
+import { BodyFigure } from '@/components/game/speech/body-parts/shared/BodyFigure';
+import {
+  slotStyleFor,
+  useBodyFigureLayout,
+} from '@/components/game/speech/body-parts/shared/bodyFigureLayout';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -14,16 +19,10 @@ type Props = { onBack: () => void; onComplete?: () => void };
 
 type PieceId = 'head' | 'arm' | 'leg';
 
-const PIECES: { id: PieceId; emoji: string; label: string; slot: string }[] = [
-  { id: 'head', emoji: '🙂', label: 'Head', slot: 'top' },
-  { id: 'arm', emoji: '💪', label: 'Arm', slot: 'side' },
-  { id: 'leg', emoji: '🦵', label: 'Leg', slot: 'bottom' },
-];
-
-const SLOTS: { id: string; label: string; emoji: string; accepts: PieceId }[] = [
-  { id: 'top', label: 'Head spot', emoji: '⭕', accepts: 'head' },
-  { id: 'side', label: 'Arm spot', emoji: '⭕', accepts: 'arm' },
-  { id: 'bottom', label: 'Leg spot', emoji: '⭕', accepts: 'leg' },
+const PIECES: { id: PieceId; emoji: string; label: string; slot: 'head' | 'arm' | 'leg' }[] = [
+  { id: 'head', emoji: '🙂', label: 'Head', slot: 'head' },
+  { id: 'arm', emoji: '💪', label: 'Arm', slot: 'arm' },
+  { id: 'leg', emoji: '🦵', label: 'Leg', slot: 'leg' },
 ];
 
 export function BodyPuzzleGame({ onBack, onComplete }: Props) {
@@ -31,11 +30,9 @@ export function BodyPuzzleGame({ onBack, onComplete }: Props) {
   const [canPlay, setCanPlay] = useState(false);
   const [selected, setSelected] = useState<PieceId | null>(null);
   const [placed, setPlaced] = useState<Set<PieceId>>(new Set());
+  const layout = useBodyFigureLayout();
 
-  useEffect(() => {
-    speakBody('Build the body! Tap a piece, then tap where it goes.');
-    return () => clearBodySpeech();
-  }, []);
+  useEffect(() => () => clearBodySpeech(), []);
 
   useEffect(() => {
     if (!canPlay) return;
@@ -61,6 +58,8 @@ export function BodyPuzzleGame({ onBack, onComplete }: Props) {
     }
   };
 
+  const slotTextSize = Math.round(layout.slotSize * 0.48);
+
   return (
     <>
       <BodyPartsShell
@@ -74,48 +73,63 @@ export function BodyPuzzleGame({ onBack, onComplete }: Props) {
         rounds={session.rounds}
         canPlay={canPlay}
         onStart={() => setCanPlay(true)}
+        startEmoji="🧒"
+        startTitle="Build the body!"
+        instructionSteps={[
+          'Tap Head, Arm, or Leg at the bottom.',
+          'Tap the matching circle on the person.',
+          'Place all three parts to finish the round.',
+        ]}
+        onSpeakStart={() =>
+          speakBody('Build the body! Tap a piece, then tap where it goes on the person.')
+        }
         phaseHint={
           selected
             ? `Tap the spot for ${PIECES.find((p) => p.id === selected)?.label}`
             : `Placed ${placed.size} / ${PIECES.length}`
         }
       >
-        <View style={styles.figure}>
-          <Text style={styles.bodyEmoji}>🧍</Text>
-          {SLOTS.map((s) => (
-            <Pressable
-              key={s.id}
-              style={[
-                styles.slot,
-                s.id === 'top' && styles.slotTop,
-                s.id === 'side' && styles.slotSide,
-                s.id === 'bottom' && styles.slotBottom,
-                placed.has(s.accepts) && styles.slotDone,
-              ]}
-              onPress={() => onSlot(s.accepts)}
-            >
-              <Text style={styles.slotText}>
-                {placed.has(s.accepts) ? PIECES.find((p) => p.id === s.accepts)?.emoji : s.emoji}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        <View style={styles.pieces}>
-          {PIECES.map((p) => (
-            <Pressable
-              key={p.id}
-              style={[
-                styles.piece,
-                selected === p.id && styles.pieceOn,
-                placed.has(p.id) && styles.pieceDone,
-              ]}
-              disabled={placed.has(p.id)}
-              onPress={() => setSelected(p.id)}
-            >
-              <Text style={styles.pieceEmoji}>{p.emoji}</Text>
-              <Text style={styles.pieceLabel}>{p.label}</Text>
-            </Pressable>
-          ))}
+        <View style={styles.playColumn}>
+          <BodyFigure layout={layout} style={styles.figureMargin}>
+            {PIECES.map((p) => (
+              <Pressable
+                key={p.id}
+                style={[
+                  styles.slot,
+                  {
+                    width: layout.slotSize,
+                    height: layout.slotSize,
+                    borderRadius: layout.slotHalf,
+                    ...slotStyleFor(p.slot, layout),
+                  },
+                  placed.has(p.id) && styles.slotDone,
+                ]}
+                accessibilityLabel={`${p.label} spot`}
+                onPress={() => onSlot(p.id)}
+              >
+                <Text style={[styles.slotText, { fontSize: slotTextSize }]}>
+                  {placed.has(p.id) ? p.emoji : '⭕'}
+                </Text>
+              </Pressable>
+            ))}
+          </BodyFigure>
+          <View style={styles.pieces}>
+            {PIECES.map((p) => (
+              <Pressable
+                key={p.id}
+                style={[
+                  styles.piece,
+                  selected === p.id && styles.pieceOn,
+                  placed.has(p.id) && styles.pieceDone,
+                ]}
+                disabled={placed.has(p.id)}
+                onPress={() => setSelected(p.id)}
+              >
+                <Text style={styles.pieceEmoji}>{p.emoji}</Text>
+                <Text style={styles.pieceLabel}>{p.label}</Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
       </BodyPartsShell>
       <BodyPartsOverlays
@@ -130,35 +144,35 @@ export function BodyPuzzleGame({ onBack, onComplete }: Props) {
 }
 
 const styles = StyleSheet.create({
-  figure: { alignItems: 'center', minHeight: 200, marginBottom: 12 },
-  bodyEmoji: { fontSize: 100 },
+  playColumn: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
+  figureMargin: { marginBottom: 12 },
   slot: {
     position: 'absolute',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: '#4F46E5',
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    zIndex: 2,
   },
-  slotTop: { top: 0 },
-  slotSide: { top: 80, right: 40 },
-  slotBottom: { bottom: 0 },
   slotDone: { borderStyle: 'solid', backgroundColor: '#C7D2FE' },
-  slotText: { fontSize: 28 },
-  pieces: { flexDirection: 'row', justifyContent: 'center', gap: 10 },
+  slotText: { fontWeight: '800' },
+  pieces: { flexDirection: 'row', justifyContent: 'center', gap: 10, flexWrap: 'wrap' },
   piece: {
     padding: 12,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.85)',
+    backgroundColor: 'rgba(255,255,255,0.9)',
     alignItems: 'center',
-    minWidth: 80,
+    minWidth: 88,
   },
   pieceOn: { borderWidth: 2, borderColor: '#4F46E5' },
   pieceDone: { opacity: 0.35 },
-  pieceEmoji: { fontSize: 32 },
-  pieceLabel: { fontWeight: '800', marginTop: 4 },
+  pieceEmoji: { fontSize: 36 },
+  pieceLabel: { fontWeight: '800', fontSize: 17, marginTop: 6, color: '#0F172A' },
 });

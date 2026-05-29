@@ -6,14 +6,16 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { isTapNearTarget } from '@/components/game/occupational/level5/shared/movingTargetTouch';
 import {
     Dimensions,
+    GestureResponderEvent,
+    Pressable,
     SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
-    Pressable,
 } from 'react-native';
 import Animated, {
     useAnimatedStyle,
@@ -130,6 +132,16 @@ const MovingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     speakTTS('Great timing!', 0.9, 'en-US' );
   }, [done, dot, generateDot]);
+
+  const handleGameTap = useCallback(
+    (event: GestureResponderEvent) => {
+      if (done || !dot) return;
+      if (isTapNearTarget(event, dot.x, dot.y, DOT_SIZE, TOLERANCE)) {
+        handleDotHit();
+      }
+    },
+    [done, dot, handleDotHit],
+  );
 
   const endGame = useCallback(async (finalScore: number) => {
     const total = TOTAL_ROUNDS;
@@ -259,16 +271,17 @@ const MovingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </Text>
       </View>
 
-      <View
+      <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
         }}
+        onPress={handleGameTap}
       >
         {dot && (
-          <Pressable
-            onPress={handleDotHit}
+          <View
+            pointerEvents="none"
             style={[
               styles.dot,
               {
@@ -279,9 +292,9 @@ const MovingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             ]}
           >
             <Text style={styles.dotEmoji}>⚫</Text>
-          </Pressable>
+          </View>
         )}
-      </View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>

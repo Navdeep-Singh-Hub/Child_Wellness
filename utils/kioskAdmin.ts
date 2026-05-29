@@ -1,5 +1,8 @@
 import { NativeModules, Platform } from 'react-native';
 
+/** Set true to restore Wi‑Fi / Bluetooth / Mobile shortcuts (bottom bar + slide menus). */
+export const SHOW_KIOSK_NETWORK_SHORTCUTS = false;
+
 export type KioskSettingsTarget =
   | 'settings'
   | 'wifi'

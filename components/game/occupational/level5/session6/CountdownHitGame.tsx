@@ -75,11 +75,11 @@ const CountdownHitGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     countdownTimerRef.current = countdownInterval;
   }, [targetX, targetY, targetOpacity, targetScale]);
 
-  const handleTap = useCallback((event: { nativeEvent: { pageX: number; pageY: number } }) => {
+  const handleTap = useCallback((event: { nativeEvent: { locationX: number; locationY: number } }) => {
     if (done || !targetVisible) return;
     
-    const tapX = event.nativeEvent.pageX;
-    const tapY = event.nativeEvent.pageY;
+    const tapX = event.nativeEvent.locationX;
+    const tapY = event.nativeEvent.locationY;
     
     const distance = Math.sqrt(
       Math.pow(tapX - targetX.value, 2) + Math.pow(tapY - targetY.value, 2)
@@ -240,18 +240,18 @@ const CountdownHitGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </View>
       </View>
 
-      <View
+      <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
         }}
-        onTouchEnd={handleTap}
+        onPress={handleTap}
       >
-        <Animated.View style={[styles.target, targetStyle]}>
+        <Animated.View style={[styles.target, targetStyle]} pointerEvents="none">
           <Text style={styles.targetEmoji}>🎯</Text>
         </Animated.View>
-      </View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>

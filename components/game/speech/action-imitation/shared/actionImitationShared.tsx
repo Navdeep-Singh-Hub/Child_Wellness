@@ -6,21 +6,10 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { clearScheduledSpeech, DEFAULT_TTS_RATE, speak as speakTTS, stopTTS } from '@/utils/tts';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { SpeechLevel2Shell, speechLevel2ButtonStyles } from '@/components/game/speech/level2-shared/SpeechLevel2Shell';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  Animated,
-  Easing,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 
 export const DEFAULT_ACTION_ROUNDS = 3;
 
@@ -153,28 +142,18 @@ type ShellProps = {
   avatarEmoji: string;
   avatarAnimating?: boolean;
   children: React.ReactNode;
+  startEmoji?: string;
+  startTitle?: string;
+  startHint?: string;
+  instructionSteps?: string[];
+  onSpeakStart?: () => void;
 };
 
-export function ActionGameShell({
-  title,
-  subtitle,
-  skills,
-  gradient,
-  accent,
-  onBack,
-  round,
-  rounds,
-  canPlay,
-  onStart,
-  phaseHint,
-  avatarEmoji,
-  avatarAnimating = false,
-  children,
-}: ShellProps) {
+function ActionAvatarRow({ emoji, animating }: { emoji: string; animating: boolean }) {
   const bounce = useRef(new Animated.Value(1)).current;
 
   React.useEffect(() => {
-    if (!avatarAnimating) {
+    if (!animating) {
       bounce.setValue(1);
       return;
     }
@@ -186,68 +165,39 @@ export function ActionGameShell({
     );
     loop.start();
     return () => loop.stop();
-  }, [avatarAnimating, bounce]);
+  }, [animating, bounce]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <LinearGradient colors={gradient} style={styles.flex}>
-        <View style={[styles.header, { borderBottomColor: accent }]}>
-          <TouchableOpacity
-            onPress={() => {
-              clearActionSpeech();
-              onBack();
-            }}
-            style={[styles.backBtn, { backgroundColor: `${accent}22` }]}
-          >
-            <Ionicons name="arrow-back" size={22} color="#0F172A" />
-            <Text style={styles.backText}>Back</Text>
-          </TouchableOpacity>
-          <View style={styles.headerText}>
-            <Text style={styles.title}>{title}</Text>
-            <Text style={styles.subtitle}>{subtitle}</Text>
-          </View>
-        </View>
+    <View style={styles.avatarRow}>
+      <Animated.Text style={[styles.avatarEmoji, { transform: [{ scale: bounce }] }]}>{emoji}</Animated.Text>
+      <Text style={styles.avatarLabel}>Your friend</Text>
+    </View>
+  );
+}
 
-        {!canPlay ? (
-          <View style={styles.startWrap}>
-            <Text style={styles.startEmoji}>🎭</Text>
-            <Text style={styles.startTitle}>Ready to copy?</Text>
-            <Text style={styles.startHint}>Watch the friend, then do the same action!</Text>
-            <Pressable style={[styles.startBtn, { backgroundColor: accent }]} onPress={onStart}>
-              <Text style={styles.startBtnText}>Start</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <>
-            <View style={[styles.hintBar, { backgroundColor: `${accent}33` }]}>
-              <Text style={styles.hintText}>{phaseHint}</Text>
-            </View>
-            <View style={styles.avatarRow}>
-              <Animated.Text style={[styles.avatarEmoji, { transform: [{ scale: bounce }] }]}>
-                {avatarEmoji}
-              </Animated.Text>
-              <Text style={styles.avatarLabel}>Friend</Text>
-            </View>
-            <View style={styles.playArea}>{children}</View>
-          </>
-        )}
-
-        <View style={styles.footer}>
-          <Text style={styles.skills}>{skills}</Text>
-          <View style={styles.dotsRow}>
-            {Array.from({ length: rounds }).map((_, i) => (
-              <View
-                key={i}
-                style={[styles.dot, { borderColor: accent }, i < round && { backgroundColor: accent }]}
-              />
-            ))}
-          </View>
-          <Text style={styles.progressText}>
-            Round {Math.min(round, rounds)} / {rounds}
-          </Text>
-        </View>
-      </LinearGradient>
-    </SafeAreaView>
+export function ActionGameShell({
+  avatarEmoji,
+  avatarAnimating = false,
+  startEmoji = '🎭',
+  startTitle = 'Ready to copy?',
+  startHint = 'Watch your friend first, then copy the same move. There is no rush!',
+  instructionSteps,
+  onSpeakStart,
+  ...rest
+}: ShellProps) {
+  return (
+    <SpeechLevel2Shell
+      {...rest}
+      onClearSpeech={clearActionSpeech}
+      startEmoji={startEmoji}
+      startTitle={startTitle}
+      startHint={startHint}
+      instructionSteps={instructionSteps}
+      onSpeakStart={onSpeakStart}
+      playHeaderExtra={
+        rest.canPlay ? <ActionAvatarRow emoji={avatarEmoji} animating={avatarAnimating} /> : undefined
+      }
+    />
   );
 }
 
@@ -276,55 +226,23 @@ export function ActionChoiceButton({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  flex: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderBottomWidth: 2,
-  },
-  backBtn: { flexDirection: 'row', alignItems: 'center', padding: 8, borderRadius: 10 },
-  backText: { marginLeft: 4, fontWeight: '700', color: '#0F172A', fontSize: 15 },
-  headerText: { marginLeft: 10, flex: 1 },
-  title: { fontSize: 20, fontWeight: '900', color: '#0F172A' },
-  subtitle: { fontSize: 13, color: '#64748B', marginTop: 2 },
-  startWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  startEmoji: { fontSize: 56, marginBottom: 12 },
-  startTitle: { fontSize: 22, fontWeight: '900', color: '#0F172A' },
-  startHint: { fontSize: 15, color: '#475569', textAlign: 'center', marginTop: 8, lineHeight: 22 },
-  startBtn: { marginTop: 24, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 14 },
-  startBtnText: { color: '#fff', fontWeight: '900', fontSize: 18 },
-  hintBar: { marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 10 },
-  hintText: { fontSize: 15, fontWeight: '800', color: '#0F172A', textAlign: 'center' },
-  avatarRow: { alignItems: 'center', paddingVertical: 8 },
-  avatarEmoji: { fontSize: 72 },
-  avatarLabel: { fontSize: 13, fontWeight: '700', color: '#64748B', marginTop: 4 },
-  playArea: { flex: 1, padding: 12, justifyContent: 'center' },
-  footer: {
-    paddingHorizontal: 16,
-    paddingBottom: Platform.OS === 'web' ? 16 : 24,
-    alignItems: 'center',
-  },
-  skills: { fontSize: 12, color: '#475569', textAlign: 'center', marginBottom: 8 },
-  dotsRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
-  dot: { width: 14, height: 14, borderRadius: 7, borderWidth: 2, backgroundColor: 'transparent' },
-  progressText: { fontSize: 14, fontWeight: '800', color: '#0F172A' },
+  avatarRow: { alignItems: 'center', paddingVertical: 6 },
+  avatarEmoji: { fontSize: 80 },
+  avatarLabel: { fontSize: 16, fontWeight: '800', color: '#334155', marginTop: 4 },
   choiceBtn: {
     flex: 1,
-    minHeight: 100,
+    minHeight: 108,
     margin: 6,
-    padding: 14,
+    padding: 16,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.75)',
+    backgroundColor: '#FFFFFF',
     borderWidth: 2,
-    borderColor: '#E2E8F0',
+    borderColor: '#CBD5E1',
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 2,
   },
-  choiceEmoji: { fontSize: 40, marginBottom: 6 },
-  choiceLabel: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  choiceLabelOn: { color: '#fff' },
+  choiceEmoji: { fontSize: speechLevel2ButtonStyles.emoji.fontSize, marginBottom: 8 },
+  choiceLabel: speechLevel2ButtonStyles.label,
+  choiceLabelOn: speechLevel2ButtonStyles.labelOn,
 });

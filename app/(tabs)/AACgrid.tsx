@@ -1,6 +1,6 @@
 import { CATEGORIES, CATEGORY_STYLES, COMMON_WORDS, tileImages, type Category, type Tile } from '@/constants/aac';
 import { addCustomTile, API_BASE_URL, getCustomTiles, getFavorites, toggleFavorite, type CustomTile } from '@/utils/api';
-import { openKioskSettings } from '@/utils/kioskAdmin';
+import { openKioskSettings, SHOW_KIOSK_NETWORK_SHORTCUTS } from '@/utils/kioskAdmin';
 import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
@@ -193,7 +193,7 @@ function GridMenu({ inline = false, selectedLang = 'en-US' }: { inline?: boolean
             </View>
 
             <View style={{ paddingTop: 12 }}>
-              {Platform.OS === 'android' && (
+              {Platform.OS === 'android' && SHOW_KIOSK_NETWORK_SHORTCUTS && (
                 <View
                   style={{
                     paddingHorizontal: 20,

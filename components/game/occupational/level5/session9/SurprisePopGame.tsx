@@ -76,11 +76,11 @@ const SurprisePopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }, delay);
   }, [showPop]);
 
-  const handleTap = useCallback((event: { nativeEvent: { pageX: number; pageY: number } }) => {
+  const handleTap = useCallback((event: { nativeEvent: { locationX: number; locationY: number } }) => {
     if (done || !popActive) return;
     
-    const tapX = event.nativeEvent.pageX;
-    const tapY = event.nativeEvent.pageY;
+    const tapX = event.nativeEvent.locationX;
+    const tapY = event.nativeEvent.locationY;
     
     const distance = Math.sqrt(
       Math.pow(tapX - popX.value, 2) + Math.pow(tapY - popY.value, 2)
@@ -237,18 +237,18 @@ const SurprisePopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </Text>
       </View>
 
-      <View
+      <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
         }}
-        onTouchEnd={handleTap}
+        onPress={handleTap}
       >
-        <Animated.View style={[styles.pop, popStyle]}>
+        <Animated.View style={[styles.pop, popStyle]} pointerEvents="none">
           <Text style={styles.popEmoji}>💥</Text>
         </Animated.View>
-      </View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>

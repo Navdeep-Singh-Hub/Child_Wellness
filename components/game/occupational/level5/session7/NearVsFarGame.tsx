@@ -69,11 +69,11 @@ const NearVsFarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setTargets(newTargets);
   }, []);
 
-  const handleTap = useCallback((event: { nativeEvent: { pageX: number; pageY: number } }) => {
+  const handleTap = useCallback((event: { nativeEvent: { locationX: number; locationY: number } }) => {
     if (done || targets.length === 0) return;
     
-    const tapX = event.nativeEvent.pageX;
-    const tapY = event.nativeEvent.pageY;
+    const tapX = event.nativeEvent.locationX;
+    const tapY = event.nativeEvent.locationY;
     
     for (const target of targets) {
       const size = target.isNear ? NEAR_SIZE : FAR_SIZE;
@@ -232,13 +232,13 @@ const NearVsFarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </Text>
       </View>
 
-      <View
+      <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
         }}
-        onTouchEnd={handleTap}
+        onPress={handleTap}
       >
         {targets.map((target) => {
           const size = target.isNear ? NEAR_SIZE : FAR_SIZE;
@@ -266,7 +266,7 @@ const NearVsFarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </View>
           );
         })}
-      </View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>

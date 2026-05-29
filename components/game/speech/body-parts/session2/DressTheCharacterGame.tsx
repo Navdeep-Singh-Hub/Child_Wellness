@@ -7,6 +7,11 @@ import {
   speakBody,
   useBodyPartsSession,
 } from '@/components/game/speech/body-parts/shared/bodyPartsShared';
+import { BodyFigure } from '@/components/game/speech/body-parts/shared/BodyFigure';
+import {
+  slotStyleFor,
+  useBodyFigureLayout,
+} from '@/components/game/speech/body-parts/shared/bodyFigureLayout';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -14,16 +19,15 @@ type Props = { onBack: () => void; onComplete?: () => void };
 
 type ClothId = 'hat' | 'shirt' | 'pants';
 
-const CLOTHES: { id: ClothId; emoji: string; label: string; zone: string }[] = [
-  { id: 'hat', emoji: '🧢', label: 'Hat', zone: 'head' },
-  { id: 'shirt', emoji: '👕', label: 'Shirt', zone: 'body' },
-  { id: 'pants', emoji: '👖', label: 'Pants', zone: 'legs' },
-];
-
-const ZONES: { id: string; label: string; accepts: ClothId }[] = [
-  { id: 'head', label: 'Head', accepts: 'hat' },
-  { id: 'body', label: 'Body', accepts: 'shirt' },
-  { id: 'legs', label: 'Legs', accepts: 'pants' },
+const CLOTHES: {
+  id: ClothId;
+  emoji: string;
+  label: string;
+  slot: 'head' | 'torso' | 'leg';
+}[] = [
+  { id: 'hat', emoji: '🧢', label: 'Hat', slot: 'head' },
+  { id: 'shirt', emoji: '👕', label: 'Shirt', slot: 'torso' },
+  { id: 'pants', emoji: '👖', label: 'Pants', slot: 'leg' },
 ];
 
 export function DressTheCharacterGame({ onBack, onComplete }: Props) {
@@ -31,11 +35,9 @@ export function DressTheCharacterGame({ onBack, onComplete }: Props) {
   const [canPlay, setCanPlay] = useState(false);
   const [selected, setSelected] = useState<ClothId | null>(null);
   const [dressed, setDressed] = useState<Set<ClothId>>(new Set());
+  const layout = useBodyFigureLayout();
 
-  useEffect(() => {
-    speakBody('Dress the character! Tap clothes, then tap the right place.');
-    return () => clearBodySpeech();
-  }, []);
+  useEffect(() => () => clearBodySpeech(), []);
 
   useEffect(() => {
     if (!canPlay) return;
@@ -61,6 +63,10 @@ export function DressTheCharacterGame({ onBack, onComplete }: Props) {
     }
   };
 
+  const zoneSize = Math.max(58, Math.round(layout.slotSize * 0.95));
+  const zoneHalf = zoneSize / 2;
+  const zoneEmojiSize = Math.round(zoneSize * 0.5);
+
   return (
     <>
       <BodyPartsShell
@@ -74,42 +80,59 @@ export function DressTheCharacterGame({ onBack, onComplete }: Props) {
         rounds={session.rounds}
         canPlay={canPlay}
         onStart={() => setCanPlay(true)}
+        startEmoji="🧒"
+        startTitle="Dress the character!"
+        instructionSteps={[
+          'Tap Hat, Shirt, or Pants at the bottom.',
+          'Tap the matching spot on the big person.',
+          'Dress all three areas to finish the round.',
+        ]}
+        onSpeakStart={() =>
+          speakBody('Dress the character! Tap clothes, then tap the right place on the body.')
+        }
         phaseHint={selected ? 'Tap where it goes on the body' : `Dressed ${dressed.size} / 3`}
       >
-        <View style={styles.charWrap}>
-          <Text style={styles.char}>🧒</Text>
-          {ZONES.map((z) => (
-            <Pressable
-              key={z.id}
-              style={[
-                styles.zone,
-                z.id === 'head' && styles.zoneHead,
-                z.id === 'body' && styles.zoneBody,
-                z.id === 'legs' && styles.zoneLegs,
-                dressed.has(z.accepts) && styles.zoneDone,
-              ]}
-              onPress={() => onZone(z.accepts)}
-            >
-              <Text style={styles.zoneEmoji}>
-                {dressed.has(z.accepts)
-                  ? CLOTHES.find((c) => c.id === z.accepts)?.emoji
-                  : '➕'}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        <View style={styles.clothes}>
-          {CLOTHES.map((c) => (
-            <Pressable
-              key={c.id}
-              style={[styles.cloth, selected === c.id && styles.clothOn, dressed.has(c.id) && styles.clothDone]}
-              disabled={dressed.has(c.id)}
-              onPress={() => setSelected(c.id)}
-            >
-              <Text style={styles.clothEmoji}>{c.emoji}</Text>
-              <Text style={styles.clothLabel}>{c.label}</Text>
-            </Pressable>
-          ))}
+        <View style={styles.playColumn}>
+          <BodyFigure layout={layout} style={styles.figureMargin}>
+            {CLOTHES.map((c) => (
+              <Pressable
+                key={c.id}
+                style={[
+                  styles.zone,
+                  {
+                    width: zoneSize,
+                    height: zoneSize,
+                    borderRadius: 14,
+                    ...slotStyleFor(c.slot, { ...layout, slotHalf: zoneHalf, slotSize: zoneSize }),
+                  },
+                  dressed.has(c.id) && styles.zoneDone,
+                ]}
+                accessibilityLabel={c.label}
+                onPress={() => onZone(c.id)}
+              >
+                <Text style={[styles.zoneEmoji, { fontSize: zoneEmojiSize }]}>
+                  {dressed.has(c.id) ? c.emoji : '➕'}
+                </Text>
+              </Pressable>
+            ))}
+          </BodyFigure>
+          <View style={styles.clothes}>
+            {CLOTHES.map((c) => (
+              <Pressable
+                key={c.id}
+                style={[
+                  styles.cloth,
+                  selected === c.id && styles.clothOn,
+                  dressed.has(c.id) && styles.clothDone,
+                ]}
+                disabled={dressed.has(c.id)}
+                onPress={() => setSelected(c.id)}
+              >
+                <Text style={styles.clothEmoji}>{c.emoji}</Text>
+                <Text style={styles.clothLabel}>{c.label}</Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
       </BodyPartsShell>
       <BodyPartsOverlays
@@ -124,29 +147,41 @@ export function DressTheCharacterGame({ onBack, onComplete }: Props) {
 }
 
 const styles = StyleSheet.create({
-  charWrap: { alignItems: 'center', minHeight: 220 },
-  char: { fontSize: 110 },
+  playColumn: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
+  figureMargin: { marginBottom: 12 },
   zone: {
     position: 'absolute',
-    width: 52,
-    height: 52,
-    borderRadius: 12,
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: '#CA8A04',
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.75)',
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    zIndex: 2,
   },
-  zoneHead: { top: 8 },
-  zoneBody: { top: 90 },
-  zoneLegs: { bottom: 20 },
   zoneDone: { borderStyle: 'solid', backgroundColor: '#FEF08A' },
-  zoneEmoji: { fontSize: 26 },
-  clothes: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginTop: 8 },
-  cloth: { padding: 14, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center' },
+  zoneEmoji: { fontWeight: '800' },
+  clothes: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    flexWrap: 'wrap',
+    marginTop: 4,
+  },
+  cloth: {
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    alignItems: 'center',
+    minWidth: 88,
+  },
   clothOn: { borderWidth: 2, borderColor: '#CA8A04' },
   clothDone: { opacity: 0.35 },
-  clothEmoji: { fontSize: 36 },
-  clothLabel: { fontWeight: '800', marginTop: 4 },
+  clothEmoji: { fontSize: 38 },
+  clothLabel: { fontWeight: '800', fontSize: 17, marginTop: 6, color: '#0F172A' },
 });

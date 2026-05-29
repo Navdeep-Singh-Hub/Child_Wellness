@@ -6,8 +6,10 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { isTapNearTarget } from '@/components/game/occupational/level5/shared/movingTargetTouch';
 import {
     Dimensions,
+    GestureResponderEvent,
     Pressable,
     SafeAreaView,
     StyleSheet,
@@ -79,10 +81,17 @@ const CatchTheBallGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     animationRef.current = interval as unknown as number;
   }, []);
 
-  const handleBallTap = useCallback(() => {
-    if (done) return;
-    
-    // Success!
+  const resetBall = useCallback(() => {
+    ballX.value = withSpring(Math.random() * (screenWidth.current - BALL_SIZE) + BALL_SIZE / 2);
+    ballY.value = withSpring(Math.random() * (screenHeight.current - BALL_SIZE - 200) + BALL_SIZE / 2 + 100);
+
+    directionX.current = Math.random() > 0.5 ? 1 : -1;
+    directionY.current = Math.random() > 0.5 ? 1 : -1;
+    speedX.current = 1.5 + Math.random() * 1;
+    speedY.current = 1.5 + Math.random() * 1;
+  }, [ballX, ballY]);
+
+  const onCatchSuccess = useCallback(() => {
     ballScale.value = withSpring(1.5, {}, () => {
       ballScale.value = withSpring(1);
     });
@@ -105,22 +114,18 @@ const CatchTheBallGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    speakTTS('Great catch!', 0.9, 'en-US' );
-  }, [done, ballScale, resetBall]);
+    speakTTS('Great catch!', 0.9, 'en-US');
+  }, [ballScale, resetBall]);
 
-  const resetBall = useCallback(() => {
-    // Random starting position
-    ballX.value = withSpring(Math.random() * (screenWidth.current - BALL_SIZE) + BALL_SIZE / 2);
-    ballY.value = withSpring(Math.random() * (screenHeight.current - BALL_SIZE - 200) + BALL_SIZE / 2 + 100);
-    
-    // Random direction
-    directionX.current = Math.random() > 0.5 ? 1 : -1;
-    directionY.current = Math.random() > 0.5 ? 1 : -1;
-    
-    // Slightly random speed
-    speedX.current = 1.5 + Math.random() * 1;
-    speedY.current = 1.5 + Math.random() * 1;
-  }, [ballX, ballY]);
+  const handleGameTap = useCallback(
+    (event: GestureResponderEvent) => {
+      if (done) return;
+      if (isTapNearTarget(event, ballX.value, ballY.value, BALL_SIZE, TOLERANCE)) {
+        onCatchSuccess();
+      }
+    },
+    [done, ballX, ballY, onCatchSuccess],
+  );
 
   const endGame = useCallback(async (finalScore: number) => {
     const total = TOTAL_ROUNDS;
@@ -253,19 +258,18 @@ const CatchTheBallGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </Text>
       </View>
 
-      <View
+      <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
         }}
+        onPress={handleGameTap}
       >
-        <Pressable onPress={handleBallTap}>
-          <Animated.View style={[styles.ball, ballStyle]}>
-            <Text style={styles.ballEmoji}>⚽</Text>
-          </Animated.View>
-        </Pressable>
-      </View>
+        <Animated.View style={[styles.ball, ballStyle]} pointerEvents="none">
+          <Text style={styles.ballEmoji}>⚽</Text>
+        </Animated.View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>

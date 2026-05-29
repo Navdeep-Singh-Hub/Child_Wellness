@@ -57,11 +57,11 @@ const GoStopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }, 2000);
   }, []);
 
-  const handleTap = useCallback((event: { nativeEvent: { pageX: number; pageY: number } }) => {
+  const handleTap = useCallback((event: { nativeEvent: { locationX: number; locationY: number } }) => {
     if (done) return;
     
-    const tapX = event.nativeEvent.pageX;
-    const tapY = event.nativeEvent.pageY;
+    const tapX = event.nativeEvent.locationX;
+    const tapY = event.nativeEvent.locationY;
     const centerX = screenWidth.current / 2;
     const centerY = screenHeight.current / 2;
     
@@ -231,27 +231,27 @@ const GoStopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </Text>
       </View>
 
-      <View
+      <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
         }}
-        onTouchEnd={handleTap}
+        onPress={handleTap}
       >
         {showGo && (
-          <View style={[styles.button, styles.goButton]}>
+          <View pointerEvents="none" style={[styles.button, styles.goButton]}>
             <Text style={styles.buttonEmoji}>🟢</Text>
             <Text style={styles.buttonText}>GO</Text>
           </View>
         )}
         {showStop && (
-          <View style={[styles.button, styles.stopButton]}>
+          <View pointerEvents="none" style={[styles.button, styles.stopButton]}>
             <Text style={styles.buttonEmoji}>🔴</Text>
             <Text style={styles.buttonText}>STOP</Text>
           </View>
         )}
-      </View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>

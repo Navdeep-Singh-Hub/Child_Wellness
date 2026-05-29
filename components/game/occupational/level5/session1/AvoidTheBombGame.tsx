@@ -116,11 +116,11 @@ const AvoidTheBombGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     animationRef.current = interval as unknown as number;
   }, []);
 
-  const handleTap = useCallback((event: { nativeEvent: { pageX: number; pageY: number } }) => {
+  const handleTap = useCallback((event: { nativeEvent: { locationX: number; locationY: number } }) => {
     if (done) return;
     
-    const tapX = event.nativeEvent.pageX;
-    const tapY = event.nativeEvent.pageY;
+    const tapX = event.nativeEvent.locationX;
+    const tapY = event.nativeEvent.locationY;
     
     // Check if tapped a bomb
     for (const bomb of bombs) {
@@ -302,17 +302,18 @@ const AvoidTheBombGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </Text>
       </View>
 
-      <View
+      <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
         }}
-        onTouchEnd={handleTap}
+        onPress={handleTap}
       >
         {targets.map((target) => (
           <View
             key={target.id}
+            pointerEvents="none"
             style={[
               styles.target,
               {
@@ -328,6 +329,7 @@ const AvoidTheBombGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         {bombs.map((bomb) => (
           <View
             key={bomb.id}
+            pointerEvents="none"
             style={[
               styles.bomb,
               {
@@ -340,7 +342,7 @@ const AvoidTheBombGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             <Text style={styles.bombEmoji}>💣</Text>
           </View>
         ))}
-      </View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>

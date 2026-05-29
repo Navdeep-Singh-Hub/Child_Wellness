@@ -25,10 +25,7 @@ export function TouchTheNoseGame({ onBack, onComplete }: Props) {
   const [canPlay, setCanPlay] = useState(false);
   const [targetId, setTargetId] = useState<(typeof PARTS)[number]['id']>('nose');
 
-  useEffect(() => {
-    speakBody('Touch the body part I say!');
-    return () => clearBodySpeech();
-  }, []);
+  useEffect(() => () => clearBodySpeech(), []);
 
   useEffect(() => {
     if (!canPlay) return;
@@ -62,6 +59,14 @@ export function TouchTheNoseGame({ onBack, onComplete }: Props) {
         rounds={session.rounds}
         canPlay={canPlay}
         onStart={() => setCanPlay(true)}
+        startEmoji="👃"
+        startTitle="Touch the body part!"
+        instructionSteps={[
+          'Listen for which body part to find.',
+          'Tap the matching picture on the screen.',
+          'Get it right to move to the next round!',
+        ]}
+        onSpeakStart={() => speakBody('Touch the body part I say!')}
         phaseHint={`Touch your ${target.label.toLowerCase()}!`}
       >
         <Text style={styles.face}>🧒</Text>

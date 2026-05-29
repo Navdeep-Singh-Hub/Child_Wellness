@@ -74,11 +74,11 @@ const ZigZagFollowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     animationRef.current = interval as unknown as number;
   }, []);
 
-  const handleTap = useCallback((event: { nativeEvent: { pageX: number; pageY: number } }) => {
+  const handleTap = useCallback((event: { nativeEvent: { locationX: number; locationY: number } }) => {
     if (done) return;
     
-    const tapX = event.nativeEvent.pageX;
-    const tapY = event.nativeEvent.pageY;
+    const tapX = event.nativeEvent.locationX;
+    const tapY = event.nativeEvent.locationY;
     
     const distance = Math.sqrt(
       Math.pow(tapX - objectX.value, 2) + Math.pow(tapY - objectY.value, 2)
@@ -247,18 +247,18 @@ const ZigZagFollowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </Text>
       </View>
 
-      <View
+      <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
         }}
-        onTouchEnd={handleTap}
+        onPress={handleTap}
       >
-        <Animated.View style={[styles.object, objectStyle]}>
+        <Animated.View style={[styles.object, objectStyle]} pointerEvents="none">
           <Text style={styles.objectEmoji}>🔵</Text>
         </Animated.View>
-      </View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>

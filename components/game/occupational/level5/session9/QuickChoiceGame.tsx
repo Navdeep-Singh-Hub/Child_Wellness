@@ -111,11 +111,11 @@ const QuickChoiceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }, 100);
   }, [round, score]);
 
-  const handleTap = useCallback((event: { nativeEvent: { pageX: number; pageY: number } }) => {
+  const handleTap = useCallback((event: { nativeEvent: { locationX: number; locationY: number } }) => {
     if (done || options.length === 0 || timeLeft <= 0) return;
     
-    const tapX = event.nativeEvent.pageX;
-    const tapY = event.nativeEvent.pageY;
+    const tapX = event.nativeEvent.locationX;
+    const tapY = event.nativeEvent.locationY;
     
     for (const option of options) {
       const distance = Math.sqrt(
@@ -292,16 +292,17 @@ const QuickChoiceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </Text>
       </View>
 
-      <View
+      <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
         }}
-        onTouchEnd={handleTap}
+        onPress={handleTap}
       >
         {options.map((option) => (
           <View
+            pointerEvents="none"
             key={option.id}
             style={[
               styles.option,
@@ -318,7 +319,7 @@ const QuickChoiceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             <Text style={styles.optionEmoji}>{option.emoji}</Text>
           </View>
         ))}
-      </View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>

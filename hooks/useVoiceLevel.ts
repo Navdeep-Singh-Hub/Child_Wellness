@@ -27,12 +27,13 @@ function smooth(prev: number, next: number) {
   return prev * (1 - SMOOTHING) + next * SMOOTHING;
 }
 
-/** Map dBFS (~-55…-8) to 0–1 */
-function meteringToLevel(db: number) {
+/** Map dBFS to 0–1 (breath uses wider quiet range) */
+function meteringToLevel(db: number, breath = false) {
   if (!Number.isFinite(db) || db <= -160) return 0;
-  const minDb = -55;
-  const maxDb = -8;
-  return clamp01((db - minDb) / (maxDb - minDb));
+  const minDb = breath ? -62 : -55;
+  const maxDb = breath ? -10 : -8;
+  const raw = clamp01((db - minDb) / (maxDb - minDb));
+  return breath ? clamp01(raw * 1.35) : raw;
 }
 
 function applyMetering(
@@ -40,8 +41,9 @@ function applyMetering(
   sensitivity: number,
   levelRef: { current: number },
   setLevel: (n: number) => void,
+  breath = false,
 ) {
-  const normalized = meteringToLevel(db) * sensitivity;
+  const normalized = meteringToLevel(db, breath) * sensitivity;
   levelRef.current = smooth(levelRef.current, clamp01(normalized));
   setLevel(levelRef.current);
 }
@@ -51,6 +53,10 @@ export type VoiceLevelStatus = 'idle' | 'requesting' | 'active' | 'denied' | 'er
 export interface UseVoiceLevelOptions {
   enabled?: boolean;
   sensitivity?: number;
+  /** Softer mapping + time-domain RMS; disables noise suppression on web (better for breath) */
+  variant?: 'default' | 'breath';
+  /** When false, call start() from a button click (required for browser mic permission) */
+  autoStart?: boolean;
 }
 
 export interface UseVoiceLevelResult {
@@ -63,7 +69,9 @@ export interface UseVoiceLevelResult {
 }
 
 export function useVoiceLevel(options: UseVoiceLevelOptions = {}): UseVoiceLevelResult {
-  const { enabled = true, sensitivity = 1.2 } = options;
+  const variant = options.variant ?? 'default';
+  const isBreath = variant === 'breath';
+  const { enabled = true, sensitivity = isBreath ? 2.1 : 1.2, autoStart = true } = options;
 
   const [level, setLevel] = useState(0);
   const [status, setStatus] = useState<VoiceLevelStatus>('idle');
@@ -142,9 +150,9 @@ export function useVoiceLevel(options: UseVoiceLevelOptions = {}): UseVoiceLevel
     (st: RecordingStatus) => {
       if (!st.isRecording) return;
       const db = typeof st.metering === 'number' ? st.metering : -160;
-      applyMetering(db, sensitivity, levelRef, setLevel);
+      applyMetering(db, sensitivity, levelRef, setLevel, isBreath);
     },
-    [sensitivity],
+    [sensitivity, isBreath],
   );
 
   const startWeb = useCallback(async (): Promise<boolean> => {
@@ -155,11 +163,17 @@ export function useVoiceLevel(options: UseVoiceLevelOptions = {}): UseVoiceLevel
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
+        audio: isBreath
+          ? {
+              echoCancellation: false,
+              noiseSuppression: false,
+              autoGainControl: false,
+            }
+          : {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
       });
       streamRef.current = stream;
       const Ctx =
@@ -175,21 +189,33 @@ export function useVoiceLevel(options: UseVoiceLevelOptions = {}): UseVoiceLevel
       if (ctx.state === 'suspended') await ctx.resume();
 
       const analyser = ctx.createAnalyser();
-      analyser.fftSize = 512;
-      analyser.smoothingTimeConstant = 0.4;
+      analyser.fftSize = isBreath ? 2048 : 512;
+      analyser.smoothingTimeConstant = isBreath ? 0.22 : 0.4;
       analyserRef.current = analyser;
-      dataRef.current = new Uint8Array(analyser.frequencyBinCount);
+      dataRef.current = new Uint8Array(analyser.fftSize);
 
       const source = ctx.createMediaStreamSource(stream);
       source.connect(analyser);
 
       const tick = () => {
         if (!analyserRef.current || !dataRef.current) return;
-        analyserRef.current.getByteFrequencyData(dataRef.current);
-        let sum = 0;
-        for (let i = 0; i < dataRef.current.length; i++) sum += dataRef.current[i];
-        const avg = sum / dataRef.current.length / 255;
-        const boosted = clamp01(avg * sensitivity * 2.2);
+        let boosted = 0;
+        if (isBreath) {
+          analyserRef.current.getByteTimeDomainData(dataRef.current);
+          let sumSq = 0;
+          for (let i = 0; i < dataRef.current.length; i++) {
+            const v = (dataRef.current[i] - 128) / 128;
+            sumSq += v * v;
+          }
+          const rms = Math.sqrt(sumSq / dataRef.current.length);
+          boosted = clamp01(rms * sensitivity * 4.2);
+        } else {
+          analyserRef.current.getByteFrequencyData(dataRef.current);
+          let sum = 0;
+          for (let i = 0; i < dataRef.current.length; i++) sum += dataRef.current[i];
+          const avg = sum / dataRef.current.length / 255;
+          boosted = clamp01(avg * sensitivity * 2.2);
+        }
         levelRef.current = smooth(levelRef.current, boosted);
         setLevel(levelRef.current);
         rafRef.current = requestAnimationFrame(tick);
@@ -204,7 +230,7 @@ export function useVoiceLevel(options: UseVoiceLevelOptions = {}): UseVoiceLevel
       setStatus('denied');
       return false;
     }
-  }, [sensitivity]);
+  }, [sensitivity, isBreath]);
 
   const tryCreateRecording = useCallback(
     async (gen: number, withMetering: boolean): Promise<ExpoAudio.Recording | null> => {
@@ -278,7 +304,7 @@ export function useVoiceLevel(options: UseVoiceLevelOptions = {}): UseVoiceLevel
             const st = await rec.getStatusAsync();
             if (!st.isRecording) return;
             const db = typeof st.metering === 'number' ? st.metering : -160;
-            applyMetering(db, sensitivity, levelRef, setLevel);
+            applyMetering(db, sensitivity, levelRef, setLevel, isBreath);
           } catch {
             /* ignore */
           }
@@ -296,7 +322,7 @@ export function useVoiceLevel(options: UseVoiceLevelOptions = {}): UseVoiceLevel
         return false;
       }
     },
-    [sensitivity, stopNative, tryCreateRecording],
+    [sensitivity, isBreath, stopNative, tryCreateRecording],
   );
 
   const start = useCallback(async (): Promise<boolean> => {
@@ -327,16 +353,24 @@ export function useVoiceLevel(options: UseVoiceLevelOptions = {}): UseVoiceLevel
       return;
     }
 
+    if (!autoStart) {
+      return () => {
+        startGenRef.current += 1;
+        void stop();
+      };
+    }
+
+    const delay = Platform.OS === 'web' ? 100 : 900;
     const t = setTimeout(() => {
       void start();
-    }, 900);
+    }, delay);
 
     return () => {
       clearTimeout(t);
       startGenRef.current += 1;
       void stop();
     };
-  }, [enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [enabled, autoStart]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { level, status, error, start, stop, calibrateBaseline };
 }

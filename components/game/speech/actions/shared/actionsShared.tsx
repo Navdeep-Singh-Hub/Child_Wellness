@@ -6,19 +6,14 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { clearScheduledSpeech, DEFAULT_TTS_RATE, speak as speakTTS, stopTTS } from '@/utils/tts';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { speechLevel2ButtonStyles } from '@/components/game/speech/level2-shared/SpeechLevel2Shell';
+import {
+  type Level2BaseShellProps,
+  renderLevel2Shell,
+} from '@/components/game/speech/level2-shared/level2ShellProps';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 export const DEFAULT_ACTION_ROUNDS = 3;
 
@@ -136,89 +131,15 @@ export function ActionsOverlays({
   );
 }
 
-type ShellProps = {
-  title: string;
-  subtitle: string;
-  skills: string;
-  gradient: [string, string];
-  accent: string;
-  onBack: () => void;
-  round: number;
-  rounds: number;
-  canPlay: boolean;
-  onStart: () => void;
-  phaseHint: string;
-  children: React.ReactNode;
-};
-
-export function ActionsShell({
-  title,
-  subtitle,
-  skills,
-  gradient,
-  accent,
-  onBack,
-  round,
-  rounds,
-  canPlay,
-  onStart,
-  phaseHint,
-  children,
-}: ShellProps) {
-  return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <LinearGradient colors={gradient} style={styles.flex}>
-        <View style={[styles.header, { borderBottomColor: accent }]}>
-          <TouchableOpacity
-            onPress={() => {
-              clearActionSpeech();
-              onBack();
-            }}
-            style={[styles.backBtn, { backgroundColor: `${accent}22` }]}
-          >
-            <Ionicons name="arrow-back" size={22} color="#0F172A" />
-            <Text style={styles.backText}>Back</Text>
-          </TouchableOpacity>
-          <View style={styles.headerText}>
-            <Text style={styles.title}>{title}</Text>
-            <Text style={styles.subtitle}>{subtitle}</Text>
-          </View>
-        </View>
-
-        {!canPlay ? (
-          <View style={styles.startWrap}>
-            <Text style={styles.startEmoji}>🏃</Text>
-            <Text style={styles.startTitle}>What are they doing?</Text>
-            <Text style={styles.startHint}>Learn actions, verbs, and what objects are for.</Text>
-            <Pressable style={[styles.startBtn, { backgroundColor: accent }]} onPress={onStart}>
-              <Text style={styles.startBtnText}>Start</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <>
-            <View style={[styles.hintBar, { backgroundColor: `${accent}33` }]}>
-              <Text style={styles.hintText}>{phaseHint}</Text>
-            </View>
-            <View style={styles.playArea}>{children}</View>
-          </>
-        )}
-
-        <View style={styles.footer}>
-          <Text style={styles.skills}>{skills}</Text>
-          <View style={styles.dotsRow}>
-            {Array.from({ length: rounds }).map((_, i) => (
-              <View
-                key={i}
-                style={[styles.dot, { borderColor: accent }, i < round && { backgroundColor: accent }]}
-              />
-            ))}
-          </View>
-          <Text style={styles.progressText}>
-            Round {Math.min(round, rounds)} / {rounds}
-          </Text>
-        </View>
-      </LinearGradient>
-    </SafeAreaView>
+export function ActionsShell(props: Level2BaseShellProps) {
+  return renderLevel2Shell(
+    clearActionSpeech,
+    {
+      startEmoji: '🏃',
+      startTitle: 'What are they doing?',
+      startHint: 'Learn actions, verbs, and what objects are for.',
+    },
+    props,
   );
 }
 
@@ -253,54 +174,22 @@ export function ActionChoiceTile({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  flex: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderBottomWidth: 2,
-  },
-  backBtn: { flexDirection: 'row', alignItems: 'center', padding: 8, borderRadius: 10 },
-  backText: { marginLeft: 4, fontWeight: '700', color: '#0F172A', fontSize: 15 },
-  headerText: { marginLeft: 10, flex: 1 },
-  title: { fontSize: 20, fontWeight: '900', color: '#0F172A' },
-  subtitle: { fontSize: 13, color: '#64748B', marginTop: 2 },
-  startWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  startEmoji: { fontSize: 56, marginBottom: 12 },
-  startTitle: { fontSize: 22, fontWeight: '900', color: '#0F172A' },
-  startHint: { fontSize: 15, color: '#475569', textAlign: 'center', marginTop: 8, lineHeight: 22 },
-  startBtn: { marginTop: 24, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 14 },
-  startBtnText: { color: '#fff', fontWeight: '900', fontSize: 18 },
-  hintBar: { marginHorizontal: 12, marginTop: 8, padding: 10, borderRadius: 10 },
-  hintText: { fontSize: 15, fontWeight: '800', color: '#0F172A', textAlign: 'center' },
-  playArea: { flex: 1, padding: 12 },
-  footer: {
-    paddingHorizontal: 16,
-    paddingBottom: Platform.OS === 'web' ? 16 : 24,
-    alignItems: 'center',
-  },
-  skills: { fontSize: 12, color: '#475569', textAlign: 'center', marginBottom: 8 },
-  dotsRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
-  dot: { width: 14, height: 14, borderRadius: 7, borderWidth: 2, backgroundColor: 'transparent' },
-  progressText: { fontSize: 14, fontWeight: '800', color: '#0F172A' },
   choiceTile: {
     flex: 1,
     minWidth: '42%',
     maxWidth: '48%',
     margin: 5,
-    minHeight: 100,
-    padding: 12,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.85)',
+    minHeight: 108,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
     borderWidth: 2,
-    borderColor: '#E2E8F0',
+    borderColor: '#CBD5E1',
     alignItems: 'center',
     justifyContent: 'center',
+    elevation: 2,
   },
   choiceDimmed: { opacity: 0.35 },
-  choiceEmoji: { fontSize: 44 },
-  choiceLabel: { fontSize: 13, fontWeight: '800', marginTop: 6, textAlign: 'center' },
+  choiceEmoji: { fontSize: speechLevel2ButtonStyles.emoji.fontSize },
+  choiceLabel: { ...speechLevel2ButtonStyles.label, marginTop: 6, textAlign: 'center' },
 });

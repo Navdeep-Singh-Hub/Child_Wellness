@@ -64,11 +64,11 @@ const FlashTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }, FLASH_DURATION);
   }, [flashX, flashY, flashOpacity, flashScale]);
 
-  const handleTap = useCallback((event: { nativeEvent: { pageX: number; pageY: number } }) => {
+  const handleTap = useCallback((event: { nativeEvent: { locationX: number; locationY: number } }) => {
     if (done || !flashActive) return;
     
-    const tapX = event.nativeEvent.pageX;
-    const tapY = event.nativeEvent.pageY;
+    const tapX = event.nativeEvent.locationX;
+    const tapY = event.nativeEvent.locationY;
     
     const distance = Math.sqrt(
       Math.pow(tapX - flashX.value, 2) + Math.pow(tapY - flashY.value, 2)
@@ -229,18 +229,18 @@ const FlashTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </Text>
       </View>
 
-      <View
+      <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
         }}
-        onTouchEnd={handleTap}
+        onPress={handleTap}
       >
-        <Animated.View style={[styles.flash, flashStyle]}>
+        <Animated.View style={[styles.flash, flashStyle]} pointerEvents="none">
           <Text style={styles.flashEmoji}>💡</Text>
         </Animated.View>
-      </View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>

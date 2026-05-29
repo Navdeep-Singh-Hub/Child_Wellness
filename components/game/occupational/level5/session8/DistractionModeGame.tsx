@@ -86,11 +86,11 @@ const DistractionModeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setObjects(newObjects);
   }, []);
 
-  const handleTap = useCallback((event: { nativeEvent: { pageX: number; pageY: number } }) => {
+  const handleTap = useCallback((event: { nativeEvent: { locationX: number; locationY: number } }) => {
     if (done || objects.length === 0) return;
     
-    const tapX = event.nativeEvent.pageX;
-    const tapY = event.nativeEvent.pageY;
+    const tapX = event.nativeEvent.locationX;
+    const tapY = event.nativeEvent.locationY;
     
     for (const obj of objects) {
       const size = obj.isTarget ? TARGET_SIZE : DISTRACTION_SIZE;
@@ -248,13 +248,13 @@ const DistractionModeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </Text>
       </View>
 
-      <View
+      <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
         }}
-        onTouchEnd={handleTap}
+        onPress={handleTap}
       >
         {objects.map((obj) => {
           const size = obj.isTarget ? TARGET_SIZE : DISTRACTION_SIZE;
@@ -282,7 +282,7 @@ const DistractionModeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </View>
           );
         })}
-      </View>
+      </Pressable>
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>
