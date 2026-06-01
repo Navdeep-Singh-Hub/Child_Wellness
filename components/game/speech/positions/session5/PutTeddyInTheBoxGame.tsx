@@ -13,9 +13,9 @@ import { StyleSheet, Text, View } from 'react-native';
 type Props = { onBack: () => void; onComplete?: () => void };
 
 const ROUNDS = [
-  { item: '🧸', box: '📦', say: 'Put teddy in the box!' },
-  { item: '🐱', box: '🧺', say: 'Put the kitten in the basket!' },
-  { item: '🚗', box: '🏠', say: 'Drive the car into the garage!' },
+  { item: '🧸', itemImageKey: 'teddy' as const, box: '📦', zoneImageKey: 'box' as const, say: 'Put teddy in the box!' },
+  { item: '🐱', itemImageKey: 'cat' as const, box: '🧺', zoneImageKey: 'crate' as const, say: 'Put the kitten in the basket!' },
+  { item: '🚗', itemImageKey: 'car' as const, box: '🏠', zoneImageKey: 'car-in-garage' as const, say: 'Drive the car into the garage!' },
 ] as const;
 
 export function PutTeddyInTheBoxGame({ onBack, onComplete }: Props) {
@@ -54,8 +54,10 @@ export function PutTeddyInTheBoxGame({ onBack, onComplete }: Props) {
           <DragIntoZone
             key={`${session.round}-${round.item}`}
             itemEmoji={round.item}
+            itemImageKey={round.itemImageKey}
             zoneLabel="IN"
             zoneEmoji={round.box}
+            zoneImageKey={round.zoneImageKey}
             accent="#D97706"
             onSuccess={() => {
               setDone(true);

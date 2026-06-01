@@ -15,29 +15,29 @@ type Props = { onBack: () => void; onComplete?: () => void };
 
 const ROUNDS = [
   {
-    tool: { id: 'hammer', emoji: '🔨', label: 'Hammer' },
+    tool: { id: 'hammer', emoji: '🔨', imageKey: 'hammer' as const, label: 'Hammer' },
     uses: [
-      { id: 'nail', emoji: '🔩', label: 'Hit a nail', correct: true },
+      { id: 'nail', emoji: '🔩', imageKey: 'nail' as const, label: 'Hit a nail', correct: true },
       { id: 'hair', emoji: '💇', label: 'Cut hair', correct: false },
-      { id: 'soup', emoji: '🥣', label: 'Eat soup', correct: false },
-      { id: 'book', emoji: '📖', label: 'Read a book', correct: false },
+      { id: 'soup', emoji: '🥣', imageKey: 'action-eating' as const, label: 'Eat soup', correct: false },
+      { id: 'book', emoji: '📖', imageKey: 'action-reading' as const, label: 'Read a book', correct: false },
     ],
   },
   {
-    tool: { id: 'scissors', emoji: '✂️', label: 'Scissors' },
+    tool: { id: 'scissors', emoji: '✂️', imageKey: 'scissors' as const, label: 'Scissors' },
     uses: [
-      { id: 'paper', emoji: '📄', label: 'Cut paper', correct: true },
+      { id: 'paper', emoji: '📄', imageKey: 'paper' as const, label: 'Cut paper', correct: true },
       { id: 'swim', emoji: '🏊', label: 'Go swimming', correct: false },
       { id: 'phone', emoji: '📞', label: 'Make a call', correct: false },
-      { id: 'sleep', emoji: '🛏️', label: 'Go to bed', correct: false },
+      { id: 'sleep', emoji: '🛏️', imageKey: 'action-sleeping' as const, label: 'Go to bed', correct: false },
     ],
   },
   {
-    tool: { id: 'brush', emoji: '🖌️', label: 'Paint brush' },
+    tool: { id: 'brush', emoji: '🖌️', imageKey: 'paint-brush' as const, label: 'Paint brush' },
     uses: [
-      { id: 'paint', emoji: '🎨', label: 'Paint a picture', correct: true },
-      { id: 'drive', emoji: '🚗', label: 'Drive a car', correct: false },
-      { id: 'cook', emoji: '🍳', label: 'Fry an egg', correct: false },
+      { id: 'paint', emoji: '🎨', imageKey: 'paint-pallete' as const, label: 'Paint a picture', correct: true },
+      { id: 'drive', emoji: '🚗', imageKey: 'action-driving' as const, label: 'Drive a car', correct: false },
+      { id: 'cook', emoji: '🍳', imageKey: 'egg' as const, label: 'Fry an egg', correct: false },
       { id: 'climb', emoji: '🧗', label: 'Climb a tree', correct: false },
     ],
   },
@@ -93,6 +93,7 @@ export function ToolMatchGame({ onBack, onComplete }: Props) {
           <ActionChoiceTile
             label={round.tool.label}
             emoji={round.tool.emoji}
+            imageKey={round.tool.imageKey}
             accent="#475569"
             selected={toolPicked}
             onPress={() => {
@@ -108,6 +109,8 @@ export function ToolMatchGame({ onBack, onComplete }: Props) {
               key={u.id}
               label={u.label}
               emoji={u.emoji}
+              imageKey={'imageKey' in u ? u.imageKey : undefined}
+              actionId={u.id}
               accent="#475569"
               onPress={() => onUse(u.correct)}
             />

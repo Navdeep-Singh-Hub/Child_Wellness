@@ -8,6 +8,7 @@ import {
   speakCommunity,
   useCommunitySession,
 } from '@/components/game/speech/community/shared/communityShared';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -17,33 +18,36 @@ const ROUNDS = [
   {
     person: 'Teacher',
     personEmoji: '👩‍🏫',
+    personImageKey: 'teacher' as const,
     prompt: 'Where does a teacher work?',
     places: [
-      { id: 'school', emoji: '🏫', label: 'School', correct: true },
-      { id: 'hospital', emoji: '🏥', label: 'Hospital', correct: false },
-      { id: 'farm', emoji: '🚜', label: 'Farm', correct: false },
+      { id: 'school', emoji: '🏫', imageKey: 'place-school' as const, label: 'School', correct: true },
+      { id: 'hospital', emoji: '🏥', imageKey: 'place-hospital' as const, label: 'Hospital', correct: false },
+      { id: 'farm', emoji: '🚜', imageKey: 'place-farm' as const, label: 'Farm', correct: false },
       { id: 'store', emoji: '🏪', label: 'Store', correct: false },
     ],
   },
   {
     person: 'Doctor',
     personEmoji: '👨‍⚕️',
+    personImageKey: 'doctor' as const,
     prompt: 'Where does a doctor work?',
     places: [
-      { id: 'school', emoji: '🏫', label: 'School', correct: false },
-      { id: 'hospital', emoji: '🏥', label: 'Hospital', correct: true },
-      { id: 'park', emoji: '🏞️', label: 'Park', correct: false },
-      { id: 'beach', emoji: '🏖️', label: 'Beach', correct: false },
+      { id: 'school', emoji: '🏫', imageKey: 'place-school' as const, label: 'School', correct: false },
+      { id: 'hospital', emoji: '🏥', imageKey: 'place-hospital' as const, label: 'Hospital', correct: true },
+      { id: 'park', emoji: '🏞️', imageKey: 'place-park' as const, label: 'Park', correct: false },
+      { id: 'beach', emoji: '🏖️', imageKey: 'place-beach' as const, label: 'Beach', correct: false },
     ],
   },
   {
     person: 'Firefighter',
     personEmoji: '👨‍🚒',
+    personImageKey: 'fire-fighter' as const,
     prompt: 'Where does a firefighter work?',
     places: [
-      { id: 'station', emoji: '🚒', label: 'Fire station', correct: true },
-      { id: 'library', emoji: '📚', label: 'Library', correct: false },
-      { id: 'zoo', emoji: '🦁', label: 'Zoo', correct: false },
+      { id: 'station', emoji: '🚒', imageKey: 'fire-truck' as const, label: 'Fire station', correct: true },
+      { id: 'library', emoji: '📚', imageKey: 'book-stack' as const, label: 'Library', correct: false },
+      { id: 'zoo', emoji: '🦁', imageKey: 'place-zoo' as const, label: 'Zoo', correct: false },
       { id: 'kitchen', emoji: '🍳', label: 'Kitchen', correct: false },
     ],
   },
@@ -102,7 +106,7 @@ export function WhereDoesTeacherWorkGame({ onBack, onComplete }: Props) {
             speakCommunity('Now tap where they work!');
           }}
         >
-          <Text style={styles.personEmoji}>{round.personEmoji}</Text>
+          <Level2Picture imageKey={round.personImageKey} emoji={round.personEmoji} size={52} />
           <Text style={styles.personLabel}>{round.person}</Text>
         </Pressable>
         <View style={styles.grid}>
@@ -111,6 +115,7 @@ export function WhereDoesTeacherWorkGame({ onBack, onComplete }: Props) {
               key={p.id}
               label={p.label}
               emoji={p.emoji}
+              imageKey={p.imageKey}
               accent="#2563EB"
               onPress={() => onPlace(p.correct)}
             />

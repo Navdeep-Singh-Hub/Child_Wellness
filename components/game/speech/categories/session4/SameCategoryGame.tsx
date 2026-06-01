@@ -8,40 +8,49 @@ import {
   speakCategory,
   useCategoriesSession,
 } from '@/components/game/speech/categories/shared/categoriesShared';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 type Props = { onBack: () => void; onComplete?: () => void };
 
-const ROUNDS = [
+type CategoryItem = {
+  id: string;
+  label: string;
+  emoji: string;
+  match: boolean;
+  imageKey?: Level2ImageKey;
+};
+
+const ROUNDS: { name: string; items: CategoryItem[] }[] = [
   {
     name: 'Animals',
     items: [
-      { id: 'dog', label: 'Dog', emoji: '🐕', match: true },
-      { id: 'cat', label: 'Cat', emoji: '🐱', match: true },
-      { id: 'apple', label: 'Apple', emoji: '🍎', match: false },
-      { id: 'car', label: 'Car', emoji: '🚗', match: false },
+      { id: 'dog', label: 'Dog', emoji: '🐕', match: true, imageKey: 'dog' },
+      { id: 'cat', label: 'Cat', emoji: '🐱', match: true, imageKey: 'cat' },
+      { id: 'apple', label: 'Apple', emoji: '🍎', match: false, imageKey: 'apple' },
+      { id: 'car', label: 'Car', emoji: '🚗', match: false, imageKey: 'car' },
     ],
   },
   {
     name: 'Food',
     items: [
-      { id: 'bread', label: 'Bread', emoji: '🍞', match: true },
-      { id: 'milk', label: 'Milk', emoji: '🥛', match: true },
-      { id: 'tree', label: 'Tree', emoji: '🌳', match: false },
-      { id: 'ball', label: 'Ball', emoji: '⚽', match: false },
+      { id: 'bread', label: 'Bread', emoji: '🍞', match: true, imageKey: 'bread' },
+      { id: 'egg', label: 'Egg', emoji: '🥚', match: true, imageKey: 'egg' },
+      { id: 'tree', label: 'Tree', emoji: '🌳', match: false, imageKey: 'tree' },
+      { id: 'ball', label: 'Ball', emoji: '⚽', match: false, imageKey: 'volleyball' },
     ],
   },
   {
     name: 'Clothes',
     items: [
-      { id: 'shirt', label: 'Shirt', emoji: '👕', match: true },
-      { id: 'hat', label: 'Hat', emoji: '🧢', match: true },
-      { id: 'fish', label: 'Fish', emoji: '🐟', match: false },
-      { id: 'cup', label: 'Cup', emoji: '☕', match: false },
+      { id: 'shirt', label: 'Shirt', emoji: '👕', match: true, imageKey: 'clothing-shirt' },
+      { id: 'hat', label: 'Hat', emoji: '🧢', match: true, imageKey: 'clothing-hat' },
+      { id: 'fish', label: 'Fish', emoji: '🐟', match: false, imageKey: 'fish' },
+      { id: 'cup', label: 'Cup', emoji: '☕', match: false, imageKey: 'cup' },
     ],
   },
-] as const;
+];
 
 export function SameCategoryGame({ onBack, onComplete }: Props) {
   const session = useCategoriesSession('same-category', DEFAULT_CATEGORY_ROUNDS);
@@ -63,7 +72,7 @@ export function SameCategoryGame({ onBack, onComplete }: Props) {
   const need = round.items.filter((i) => i.match);
   const left = need.filter((i) => !matched.has(i.id)).length;
 
-  const onTap = (item: (typeof round.items)[number]) => {
+  const onTap = (item: CategoryItem) => {
     if (item.match) {
       if (matched.has(item.id)) return;
       hapticCategorySuccess();
@@ -100,6 +109,7 @@ export function SameCategoryGame({ onBack, onComplete }: Props) {
               key={item.id}
               label={item.label}
               emoji={item.emoji}
+              imageKey={item.imageKey}
               accent="#0284C7"
               dimmed={matched.has(item.id)}
               onPress={() => onTap(item)}

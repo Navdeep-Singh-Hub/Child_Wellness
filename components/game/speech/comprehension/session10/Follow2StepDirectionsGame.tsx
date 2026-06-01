@@ -7,15 +7,40 @@ import {
   speakComprehension,
   useComprehensionSession,
 } from '@/components/game/speech/comprehension/shared/comprehensionShared';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 type Props = { onBack: () => void; onComplete?: () => void };
 
 const ROUNDS = [
-  { item: '⚽', itemLabel: 'ball', furniture: '🪑', zone: 'under', say: 'Put the ball under the chair.' },
-  { item: '🧸', itemLabel: 'teddy', furniture: '🛏️', zone: 'on', say: 'Put teddy on the bed.' },
-  { item: '📚', itemLabel: 'book', furniture: '📦', zone: 'in', say: 'Put the book in the box.' },
+  {
+    item: '⚽',
+    itemImageKey: 'ball-big' as const,
+    itemLabel: 'ball',
+    furniture: '🪑',
+    furnitureImageKey: 'chair' as const,
+    zone: 'under',
+    say: 'Put the ball under the chair.',
+  },
+  {
+    item: '🧸',
+    itemImageKey: 'teddy' as const,
+    itemLabel: 'teddy',
+    furniture: '🛏️',
+    furnitureImageKey: 'bed' as const,
+    zone: 'on',
+    say: 'Put teddy on the bed.',
+  },
+  {
+    item: '📚',
+    itemImageKey: 'book' as const,
+    itemLabel: 'book',
+    furniture: '📦',
+    furnitureImageKey: 'box' as const,
+    zone: 'in',
+    say: 'Put the book in the box.',
+  },
 ];
 
 export function Follow2StepDirectionsGame({ onBack, onComplete }: Props) {
@@ -65,13 +90,13 @@ export function Follow2StepDirectionsGame({ onBack, onComplete }: Props) {
       >
         <Text style={styles.direction}>{round.say}</Text>
         <View style={styles.scene}>
-          <Text style={styles.furniture}>{round.furniture}</Text>
+          <Level2Picture imageKey={round.furnitureImageKey} emoji={round.furniture} size={64} />
           <Pressable
             style={[styles.zone, step >= 1 && styles.zoneActive, placed && styles.zoneDone]}
             onPress={onZone}
           >
             <Text style={styles.zoneLabel}>{round.zone.toUpperCase()}</Text>
-            {placed ? <Text style={styles.placed}>{round.item}</Text> : null}
+            {placed ? <Level2Picture imageKey={round.itemImageKey} emoji={round.item} size={32} /> : null}
           </Pressable>
         </View>
         {!placed ? (
@@ -82,7 +107,7 @@ export function Follow2StepDirectionsGame({ onBack, onComplete }: Props) {
               speakComprehension(`Good! Now put it ${round.zone}.`);
             }}
           >
-            <Text style={styles.itemEmoji}>{round.item}</Text>
+            <Level2Picture imageKey={round.itemImageKey} emoji={round.item} size={48} />
           </Pressable>
         ) : null}
       </ComprehensionShell>

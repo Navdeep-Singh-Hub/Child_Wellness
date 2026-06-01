@@ -8,6 +8,7 @@ import {
   speakAction,
   useActionsSession,
 } from '@/components/game/speech/actions/shared/actionsShared';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -17,30 +18,33 @@ const ROUNDS = [
   {
     helper: 'Doctor',
     helperEmoji: '👨‍⚕️',
+    helperImageKey: 'doctor' as const,
     actions: [
-      { id: 'help', emoji: '🩹', label: 'Helps you feel better', correct: true },
-      { id: 'fly', emoji: '✈️', label: 'Flies a plane', correct: false },
-      { id: 'bake', emoji: '🍞', label: 'Bakes bread', correct: false },
+      { id: 'help', emoji: '🩹', imageKey: 'bandage' as const, label: 'Helps you feel better', correct: true },
+      { id: 'fly', emoji: '✈️', imageKey: 'action-flying' as const, label: 'Flies a plane', correct: false },
+      { id: 'bake', emoji: '🍞', imageKey: 'action-cooking' as const, label: 'Bakes bread', correct: false },
       { id: 'fix', emoji: '🔧', label: 'Fixes cars', correct: false },
     ],
   },
   {
     helper: 'Firefighter',
     helperEmoji: '👨‍🚒',
+    helperImageKey: 'fire-fighter' as const,
     actions: [
-      { id: 'teach', emoji: '📚', label: 'Teaches math', correct: false },
-      { id: 'fire', emoji: '🚒', label: 'Puts out fires', correct: true },
+      { id: 'teach', emoji: '📚', imageKey: 'teacher' as const, label: 'Teaches math', correct: false },
+      { id: 'fire', emoji: '🚒', imageKey: 'fire-flame' as const, label: 'Puts out fires', correct: true },
       { id: 'hair', emoji: '💇', label: 'Cuts hair', correct: false },
-      { id: 'farm', emoji: '🌾', label: 'Grows crops', correct: false },
+      { id: 'farm', emoji: '🌾', imageKey: 'place-farm' as const, label: 'Grows crops', correct: false },
     ],
   },
   {
     helper: 'Teacher',
     helperEmoji: '👩‍🏫',
+    helperImageKey: 'teacher' as const,
     actions: [
-      { id: 'learn', emoji: '📖', label: 'Helps you learn', correct: true },
+      { id: 'learn', emoji: '📖', imageKey: 'book' as const, label: 'Helps you learn', correct: true },
       { id: 'fish', emoji: '🎣', label: 'Catches fish', correct: false },
-      { id: 'paint', emoji: '🏠', label: 'Paints houses', correct: false },
+      { id: 'paint', emoji: '🏠', imageKey: 'action-painting' as const, label: 'Paints houses', correct: false },
       { id: 'mail', emoji: '📬', label: 'Delivers mail', correct: false },
     ],
   },
@@ -99,7 +103,7 @@ export function WhatDoesADoctorDoGame({ onBack, onComplete }: Props) {
             speakAction(`${round.helper}! What do they do?`);
           }}
         >
-          <Text style={styles.helperEmoji}>{round.helperEmoji}</Text>
+          <Level2Picture imageKey={round.helperImageKey} emoji={round.helperEmoji} size={56} />
           <Text style={styles.helperLabel}>{round.helper}</Text>
         </Pressable>
         <View style={styles.grid}>
@@ -108,6 +112,8 @@ export function WhatDoesADoctorDoGame({ onBack, onComplete }: Props) {
               key={a.id}
               label={a.label}
               emoji={a.emoji}
+              actionId={a.id}
+              imageKey={'imageKey' in a ? a.imageKey : undefined}
               accent="#7C3AED"
               onPress={() => onAction(a.correct)}
             />

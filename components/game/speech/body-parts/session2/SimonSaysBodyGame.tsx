@@ -15,11 +15,11 @@ type Props = { onBack: () => void; onComplete?: () => void };
 
 type PartId = 'head' | 'shoulders' | 'knees' | 'toes';
 
-const PARTS: { id: PartId; label: string; emoji: string }[] = [
-  { id: 'head', label: 'Head', emoji: '🙂' },
-  { id: 'shoulders', label: 'Shoulders', emoji: '💪' },
-  { id: 'knees', label: 'Knees', emoji: '🦵' },
-  { id: 'toes', label: 'Toes', emoji: '🦶' },
+const PARTS: { id: PartId; label: string; emoji: string; imageKey: 'body-head' | 'body-shoulders' | 'body-knee' | 'body-toes' }[] = [
+  { id: 'head', label: 'Head', emoji: '🙂', imageKey: 'body-head' },
+  { id: 'shoulders', label: 'Shoulders', emoji: '💪', imageKey: 'body-shoulders' },
+  { id: 'knees', label: 'Knees', emoji: '🦵', imageKey: 'body-knee' },
+  { id: 'toes', label: 'Toes', emoji: '🦶', imageKey: 'body-toes' },
 ];
 
 const ROUNDS_CMD: { simon: boolean; part: PartId; say: string }[] = [
@@ -87,6 +87,7 @@ export function SimonSaysBodyGame({ onBack, onComplete }: Props) {
               key={p.id}
               label={p.label}
               emoji={p.emoji}
+              imageKey={p.imageKey}
               accent="#DC2626"
               onPress={() => onPick(p.id)}
             />

@@ -7,6 +7,8 @@ import {
   speakVocab,
   useVocabularySession,
 } from '@/components/game/speech/vocabulary/shared/vocabularyShared';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -14,10 +16,10 @@ type Props = { onBack: () => void; onComplete?: () => void };
 
 type VehicleId = 'car' | 'bus' | 'plane';
 
-const VEHICLES: { id: VehicleId; emoji: string; label: string; garage: string }[] = [
-  { id: 'car', emoji: '🚗', label: 'Car', garage: '🏠' },
-  { id: 'bus', emoji: '🚌', label: 'Bus', garage: '🛖' },
-  { id: 'plane', emoji: '✈️', label: 'Plane', garage: '🛫' },
+const VEHICLES: { id: VehicleId; emoji: string; label: string; garage: string; imageKey: Level2ImageKey; garageImageKey?: Level2ImageKey }[] = [
+  { id: 'car', emoji: '🚗', label: 'Car', garage: '🏠', imageKey: 'car', garageImageKey: 'car-in-garage' },
+  { id: 'bus', emoji: '🚌', label: 'Bus', garage: '🛖', imageKey: 'bus', garageImageKey: 'school-bus' },
+  { id: 'plane', emoji: '✈️', label: 'Plane', garage: '🛫', imageKey: 'plane' },
 ];
 
 export function VehicleGarageGame({ onBack, onComplete }: Props) {
@@ -85,7 +87,7 @@ export function VehicleGarageGame({ onBack, onComplete }: Props) {
               disabled={parked.has(v.id)}
               onPress={() => setSelected(v.id)}
             >
-              <Text style={styles.emoji}>{v.emoji}</Text>
+              <Level2Picture imageKey={v.imageKey} emoji={v.emoji} size={36} />
               <Text style={styles.label}>{v.label}</Text>
             </Pressable>
           ))}
@@ -97,7 +99,13 @@ export function VehicleGarageGame({ onBack, onComplete }: Props) {
               style={[styles.garage, parked.has(v.id) && styles.garageDone]}
               onPress={() => onGarage(v.id)}
             >
-              <Text style={styles.garageEmoji}>{parked.has(v.id) ? v.emoji : v.garage}</Text>
+              {parked.has(v.id) ? (
+                <Level2Picture imageKey={v.imageKey} emoji={v.emoji} size={32} />
+              ) : v.garageImageKey ? (
+                <Level2Picture imageKey={v.garageImageKey} emoji={v.garage} size={32} />
+              ) : (
+                <Text style={styles.garageEmoji}>{v.garage}</Text>
+              )}
             </Pressable>
           ))}
         </View>
@@ -124,7 +132,6 @@ const styles = StyleSheet.create({
   },
   vehicleOn: { borderWidth: 2, borderColor: '#2563EB' },
   vehicleDone: { opacity: 0.35 },
-  emoji: { fontSize: 36 },
   label: { fontWeight: '800', marginTop: 4 },
   garages: { flexDirection: 'row', justifyContent: 'center', gap: 12 },
   garage: {

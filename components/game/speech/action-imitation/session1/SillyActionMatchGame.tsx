@@ -14,9 +14,10 @@ import { StyleSheet, View } from 'react-native';
 type Props = { onBack: () => void; onComplete?: () => void };
 
 const SILLY = [
-  { id: 'wiggle', emoji: '🪩', label: 'Wiggle' },
-  { id: 'spin', emoji: '🌀', label: 'Spin' },
-  { id: 'hop', emoji: '🐸', label: 'Hop' },
+  { id: 'wiggle', emoji: '🪩', label: 'Wiggle', imageKey: 'avatar-child-wiggle' as const },
+  { id: 'spin', emoji: '🌀', label: 'Spin', imageKey: 'avatar-child-spin' as const },
+  { id: 'hop', emoji: '🐸', label: 'Hop', imageKey: 'avatar-child-hop' as const },
+  { id: 'clap', emoji: '👏', label: 'Clap', imageKey: 'avatar-child-clap' as const },
 ] as const;
 
 export function SillyActionMatchGame({ onBack, onComplete }: Props) {
@@ -71,6 +72,7 @@ export function SillyActionMatchGame({ onBack, onComplete }: Props) {
         onStart={() => setCanPlay(true)}
         phaseHint={showChoices ? 'Pick the matching silly move!' : `Watch: ${target.label}!`}
         avatarEmoji={target.emoji}
+        avatarImageKey={target.imageKey}
         avatarAnimating={!showChoices}
       >
         <View style={styles.grid}>
@@ -79,6 +81,7 @@ export function SillyActionMatchGame({ onBack, onComplete }: Props) {
               key={s.id}
               label={s.label}
               emoji={s.emoji}
+              imageKey={s.imageKey}
               accent="#7C3AED"
               selected={showChoices && s.id === targetId}
               onPress={() => onPick(s.id)}

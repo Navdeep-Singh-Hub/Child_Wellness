@@ -8,6 +8,7 @@ import {
   speakCategory,
   useCategoriesSession,
 } from '@/components/game/speech/categories/shared/categoriesShared';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -15,11 +16,11 @@ type Props = { onBack: () => void; onComplete?: () => void };
 
 type Size = 'big' | 'small';
 
-const ITEMS: { id: string; label: string; emoji: string; size: Size }[] = [
-  { id: 'elephant', label: 'Elephant', emoji: '🐘', size: 'big' },
-  { id: 'ant', label: 'Ant', emoji: '🐜', size: 'small' },
-  { id: 'house', label: 'House', emoji: '🏠', size: 'big' },
-  { id: 'bee', label: 'Bee', emoji: '🐝', size: 'small' },
+const ITEMS: { id: string; label: string; emoji: string; size: Size; imageKey: Level2ImageKey }[] = [
+  { id: 'elephant', label: 'Elephant', emoji: '🐘', size: 'big', imageKey: 'elephant' },
+  { id: 'ant', label: 'Ant', emoji: '🐜', size: 'small', imageKey: 'ant' },
+  { id: 'house', label: 'House', emoji: '🏠', size: 'big', imageKey: 'house' },
+  { id: 'bee', label: 'Bee', emoji: '🐝', size: 'small', imageKey: 'bee' },
 ];
 
 export function BigVsSmallGame({ onBack, onComplete }: Props) {
@@ -74,6 +75,7 @@ export function BigVsSmallGame({ onBack, onComplete }: Props) {
               key={item.id}
               label={item.label}
               emoji={item.emoji}
+              imageKey={item.imageKey}
               accent="#CA8A04"
               dimmed={sorted.has(item.id)}
               onPress={() => {

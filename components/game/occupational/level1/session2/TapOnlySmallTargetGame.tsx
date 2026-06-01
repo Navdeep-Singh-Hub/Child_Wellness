@@ -24,7 +24,8 @@ const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_fli
 const TOTAL_ROUNDS = 8;
 const LARGE_SIZE = 180; // Large shape size
 const SMALL_SIZE = 80; // Small shape size (much smaller)
-const GLOW_DURATION_MS = 1500; // Small shape glows for 1.5 seconds
+const GLOW_DURATION_MS = 2200; // Small shape glow — longer hint for kids
+const NEXT_ROUND_DELAY_MS = 150; // Pause before next pair appears
 
 type Shape = {
   id: 'large' | 'small';
@@ -77,6 +78,7 @@ const TapOnlySmallTargetGame: React.FC<{ onBack?: () => void; onComplete?: () =>
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [showCongratulations, setShowCongratulations] = useState(false);
   const [roundActive, setRoundActive] = useState(false);
   const [shapes, setShapes] = useState<Shape[]>([]);
 
@@ -170,6 +172,37 @@ const TapOnlySmallTargetGame: React.FC<{ onBack?: () => void; onComplete?: () =>
     ]).start();
   }, [generateShapePositions]);
 
+  const endGame = useCallback(
+    async (finalScore: number) => {
+      const total = TOTAL_ROUNDS;
+      const xp = finalScore * 15;
+      const accuracy = (finalScore / total) * 100;
+
+      setFinalStats({ correct: finalScore, total, xp });
+      setDone(true);
+      setShowCongratulations(true);
+
+      speakTTS('Amazing work! You completed the game!', 0.78);
+
+      try {
+        await recordGame(xp);
+        const result = await logGameAndAward({
+          type: 'tapOnlySmall',
+          correct: finalScore,
+          total,
+          accuracy,
+          xpAwarded: xp,
+          skillTags: ['selective-targeting', 'inhibition', 'visual-discrimination'],
+        });
+        setLogTimestamp(result?.last?.at ?? null);
+        router.setParams({ refreshStats: Date.now().toString() });
+      } catch (e) {
+        console.error('Failed to log tap only small game:', e);
+      }
+    },
+    [router],
+  );
+
   // Handle shape tap
   const handleShapeTap = useCallback(
     async (shapeId: 'large' | 'small') => {
@@ -181,48 +214,44 @@ const TapOnlySmallTargetGame: React.FC<{ onBack?: () => void; onComplete?: () =>
       const isCorrect = shapeId === 'small';
 
       if (isCorrect) {
-        // Correct tap - success animation
         setRoundActive(false);
+        const newScore = score + 1;
+
         Animated.parallel([
           Animated.sequence([
             Animated.timing(shape.scale, {
-              toValue: 1.3,
-              duration: 120,
+              toValue: 1.25,
+              duration: 80,
               easing: Easing.out(Easing.ease),
               useNativeDriver: false,
             }),
             Animated.timing(shape.scale, {
               toValue: 0,
-              duration: 150,
+              duration: 100,
               easing: Easing.in(Easing.ease),
               useNativeDriver: false,
             }),
           ]),
           Animated.timing(shape.glowOpacity, {
             toValue: 0,
-            duration: 200,
+            duration: 120,
             useNativeDriver: false,
           }),
-        ]).start();
+        ]).start(() => {
+          playSuccess().catch(() => {});
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
-        try {
-          await playSuccess();
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch {}
+          setScore(newScore);
 
-        setScore((s) => s + 1);
-
-        // Next round or finish
-        if (round >= TOTAL_ROUNDS) {
-          endGame(score + 1);
-        } else {
-          setTimeout(() => {
-            setRound((r) => r + 1);
+          if (round >= TOTAL_ROUNDS) {
+            endGame(newScore);
+          } else {
             setTimeout(() => {
+              setRound((r) => r + 1);
               startRound();
-            }, 400);
-          }, 600);
-        }
+            }, NEXT_ROUND_DELAY_MS);
+          }
+        });
       } else {
         // Wrong tap - shake animation
         Animated.sequence([
@@ -259,47 +288,13 @@ const TapOnlySmallTargetGame: React.FC<{ onBack?: () => void; onComplete?: () =>
         } catch {}
       }
     },
-    [roundActive, done, shapes, round, score, playSuccess, playError, startRound],
-  );
-
-  // End game
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 15; // 15 XP per correct tap
-      const accuracy = (finalScore / total) * 100;
-
-      // Set all states together FIRST (like CatchTheBouncingStar)
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'tapOnlySmall',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['selective-targeting', 'inhibition', 'visual-discrimination'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log tap only small game:', e);
-      }
-    },
-    [router],
+    [roundActive, done, shapes, round, score, playSuccess, playError, startRound, endGame],
   );
 
   // Initialize first round
   useEffect(() => {
     try {
-      speakTTS('Watch for the small shape to glow, then tap only the small one!', { rate: 0.78 });
+      speakTTS('Watch for the small shape to glow, then tap only the small one!', 0.78);
     } catch {}
     startRound();
   }, []);

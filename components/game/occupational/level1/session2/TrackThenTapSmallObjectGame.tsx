@@ -5,13 +5,12 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
     Pressable,
     SafeAreaView,
-    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -81,6 +80,12 @@ const OBJECT_COLORS: Record<ObjectType, string> = {
   star: '#F59E0B',
 };
 
+const OBJECT_LABELS: Record<ObjectType, string> = {
+  bee: 'busy bee',
+  dot: 'dot',
+  star: 'star',
+};
+
 const TrackThenTapSmallObjectGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const playSuccess = useSoundEffect(SUCCESS_SOUND);
@@ -96,6 +101,31 @@ const TrackThenTapSmallObjectGame: React.FC<{ onBack?: () => void; onComplete?: 
   const [objectType, setObjectType] = useState<ObjectType>('bee');
   const [hasStopped, setHasStopped] = useState(false);
   const [missed, setMissed] = useState(false);
+  const [sparkleKey, setSparkleKey] = useState(0);
+
+  const roundRef = useRef(round);
+  const scoreRef = useRef(score);
+  const hasStoppedRef = useRef(hasStopped);
+  const missedRef = useRef(missed);
+  const doneRef = useRef(done);
+  const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startRoundRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+  useEffect(() => {
+    hasStoppedRef.current = hasStopped;
+  }, [hasStopped]);
+  useEffect(() => {
+    missedRef.current = missed;
+  }, [missed]);
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
 
   // Animation values
   const x = useSharedValue(0);
@@ -129,139 +159,26 @@ const TrackThenTapSmallObjectGame: React.FC<{ onBack?: () => void; onComplete?: 
     return { startX, startY, endX, endY };
   }, []);
 
-  // Start a new round
-  const startRound = useCallback(() => {
-    setRoundActive(true);
-    setHasStopped(false);
-    setMissed(false);
-    opacity.value = 1;
-    scale.value = 1;
-
-    // Random object type
-    const types: ObjectType[] = ['bee', 'dot', 'star'];
-    const randomType = types[Math.floor(Math.random() * types.length)];
-    setObjectType(randomType);
-
-    const path = generatePath();
-
-    // Start position
-    x.value = path.startX;
-    y.value = path.startY;
-
-    // Move to end position slowly
-    x.value = withTiming(
-      path.endX,
-      {
-        duration: MOVE_DURATION_MS,
-        easing: Easing.inOut(Easing.ease),
-      },
-      () => {
-        // When movement completes, object stops
-        runOnJS(setHasStopped)(true);
-        runOnJS(setRoundActive)(false);
-
-        // Pulse animation when stopped (indicates it's ready to tap)
-        pulseScale.value = withSequence(
-          withTiming(1.2, { duration: 300, easing: Easing.out(Easing.ease) }),
-          withTiming(1, { duration: 300, easing: Easing.in(Easing.ease) }),
-        );
-
-        // After stop duration, mark as missed if not tapped
-        setTimeout(() => {
-          runOnJS(handleTimeout)();
-        }, STOP_DURATION_MS);
-      },
-    );
-    y.value = withTiming(path.endY, {
-      duration: MOVE_DURATION_MS,
-      easing: Easing.inOut(Easing.ease),
-    });
-  }, [x, y, opacity, scale, pulseScale, generatePath]);
-
-  // Handle timeout (object stopped but not tapped)
-  const handleTimeout = useCallback(() => {
-    if (!hasStopped || done) return;
-    setMissed(true);
-    setRoundActive(false);
-
-    // Fade out animation
-    opacity.value = withTiming(0, { duration: 400 });
-    scale.value = withTiming(0.5, { duration: 400 });
-
-    try {
-      playMiss();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      speakTTS('Follow it and tap when it stops!', 0.78 );
-    } catch {}
-
-    // Next round or finish
-    setTimeout(() => {
-      if (round >= TOTAL_ROUNDS) {
-        endGame(score);
-      } else {
-        setRound((r) => r + 1);
-        setTimeout(() => {
-          startRound();
-        }, 800);
-      }
-    }, 600);
-  }, [hasStopped, done, round, score, opacity, scale, playMiss, startRound]);
-
-  // Handle object tap
-  const handleTap = useCallback(async () => {
-    if (!hasStopped || done || missed) return;
-
-    // Record tap position for sparkle
-    sparkleX.value = x.value;
-    sparkleY.value = y.value;
-
-    // Success animation
-    scale.value = withSequence(
-      withTiming(1.5, { duration: 150, easing: Easing.out(Easing.ease) }),
-      withTiming(0, { duration: 200, easing: Easing.in(Easing.ease) }, () => {
-        runOnJS(setScore)((s) => s + 1);
-        runOnJS(setRoundActive)(false);
-
-        if (round >= TOTAL_ROUNDS) {
-          runOnJS(endGame)(score + 1);
-        } else {
-          runOnJS(setRound)((r) => r + 1);
-          setTimeout(() => {
-            runOnJS(startRound)();
-          }, 600);
-        }
-      }),
-    );
-
-    opacity.value = withTiming(0, { duration: 200 });
-
-    try {
-      await playSuccess();
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
-
-    // Show sparkle burst
-    setTimeout(() => {
-      scale.value = 1;
-      opacity.value = 1;
-    }, 400);
-  }, [hasStopped, done, missed, round, score, x, y, scale, opacity, sparkleX, sparkleY, playSuccess, startRound]);
+  const clearStopTimer = useCallback(() => {
+    if (stopTimerRef.current) {
+      clearTimeout(stopTimerRef.current);
+      stopTimerRef.current = null;
+    }
+  }, []);
 
   // End game
   const endGame = useCallback(
     async (finalScore: number) => {
       const total = TOTAL_ROUNDS;
-      const xp = finalScore * 14; // 14 XP per successful tap
+      const xp = finalScore * 14;
       const accuracy = (finalScore / total) * 100;
 
-      // Set all states together FIRST (like CatchTheBouncingStar)
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
       setShowCongratulations(true);
-      
+
       speakTTS('Amazing work! You completed the game!', 0.78);
 
-      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -277,18 +194,147 @@ const TrackThenTapSmallObjectGame: React.FC<{ onBack?: () => void; onComplete?: 
       } catch (e) {
         console.error('Failed to log track then tap game:', e);
       }
-
-      speakTTS('Great tracking and tapping!', 0.78 );
     },
     [router],
   );
 
-  // Initialize first round
+  const scheduleStopTimer = useCallback(() => {
+    clearStopTimer();
+    stopTimerRef.current = setTimeout(() => {
+      if (!hasStoppedRef.current || doneRef.current || missedRef.current) return;
+
+      setMissed(true);
+      setRoundActive(false);
+
+      opacity.value = withTiming(0, { duration: 400 });
+      scale.value = withTiming(0.5, { duration: 400 });
+
+      try {
+        playMiss();
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        speakTTS('Follow it and tap when it stops!', 0.78);
+      } catch {}
+
+      setTimeout(() => {
+        const currentRound = roundRef.current;
+        const currentScore = scoreRef.current;
+        if (currentRound >= TOTAL_ROUNDS) {
+          endGame(currentScore);
+        } else {
+          setRound((r) => r + 1);
+          setTimeout(() => {
+            startRoundRef.current();
+          }, 800);
+        }
+      }, 600);
+    }, STOP_DURATION_MS);
+  }, [clearStopTimer, opacity, scale, playMiss, endGame]);
+
+  const onObjectStopped = useCallback(() => {
+    setHasStopped(true);
+    setRoundActive(false);
+    pulseScale.value = withSequence(
+      withTiming(1.2, { duration: 300, easing: Easing.out(Easing.ease) }),
+      withTiming(1, { duration: 300, easing: Easing.in(Easing.ease) }),
+    );
+    scheduleStopTimer();
+  }, [pulseScale, scheduleStopTimer]);
+
+  const onHitAnimationDone = useCallback(() => {
+    const nextScore = scoreRef.current + 1;
+    setScore(nextScore);
+    setRoundActive(false);
+    setSparkleKey(Date.now());
+
+    if (roundRef.current >= TOTAL_ROUNDS) {
+      endGame(nextScore);
+    } else {
+      setRound((r) => r + 1);
+      setTimeout(() => {
+        startRoundRef.current();
+      }, 600);
+    }
+  }, [endGame]);
+
+  // Start a new round
+  const startRound = useCallback(() => {
+    clearStopTimer();
+    setRoundActive(true);
+    setHasStopped(false);
+    setMissed(false);
+    opacity.value = 1;
+    scale.value = 1;
+    pulseScale.value = 1;
+
+    const types: ObjectType[] = ['bee', 'dot', 'star'];
+    const randomType = types[Math.floor(Math.random() * types.length)];
+    setObjectType(randomType);
+
+    const path = generatePath();
+
+    x.value = path.startX;
+    y.value = path.startY;
+
+    x.value = withTiming(
+      path.endX,
+      {
+        duration: MOVE_DURATION_MS,
+        easing: Easing.inOut(Easing.ease),
+      },
+      (finished) => {
+        if (finished) {
+          runOnJS(onObjectStopped)();
+        }
+      },
+    );
+    y.value = withTiming(path.endY, {
+      duration: MOVE_DURATION_MS,
+      easing: Easing.inOut(Easing.ease),
+    });
+  }, [x, y, opacity, scale, pulseScale, generatePath, clearStopTimer, onObjectStopped]);
+
+  // Handle object tap
+  const handleTap = useCallback(() => {
+    if (!hasStoppedRef.current || doneRef.current || missedRef.current) return;
+
+    clearStopTimer();
+    sparkleX.value = x.value;
+    sparkleY.value = y.value;
+
+    scale.value = withSequence(
+      withTiming(1.5, { duration: 150, easing: Easing.out(Easing.ease) }),
+      withTiming(0, { duration: 200, easing: Easing.in(Easing.ease) }, (finished) => {
+        if (finished) {
+          runOnJS(onHitAnimationDone)();
+        }
+      }),
+    );
+
+    opacity.value = withTiming(0, { duration: 200 });
+
+    playSuccess().catch(() => {});
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+
+    setTimeout(() => {
+      scale.value = 1;
+      opacity.value = 1;
+    }, 400);
+  }, [x, y, scale, opacity, sparkleX, sparkleY, clearStopTimer, onHitAnimationDone, playSuccess]);
+
+  useEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  // Initialize first round (mount only)
   useEffect(() => {
     try {
-      speakTTS('Follow the object with your eyes. When it stops, tap it quickly!', { rate: 0.78 });
+      speakTTS('Follow the object with your eyes. When it stops, tap it quickly!', 0.78);
     } catch {}
-    startRound();
+    startRoundRef.current();
+    return () => {
+      clearStopTimer();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
   }, []);
 
   const handleBack = useCallback(() => {
@@ -352,7 +398,7 @@ const TrackThenTapSmallObjectGame: React.FC<{ onBack?: () => void; onComplete?: 
           Round {round}/{TOTAL_ROUNDS} • 🎯 Score: {score}
         </Text>
         <Text style={styles.helper}>
-          Follow the {objectType} with your eyes. When it stops, tap it quickly!
+          Follow the {OBJECT_LABELS[objectType]} with your eyes. When it stops, tap it quickly!
         </Text>
       </View>
 
@@ -384,11 +430,14 @@ const TrackThenTapSmallObjectGame: React.FC<{ onBack?: () => void; onComplete?: 
           </Animated.View>
 
           {/* Sparkle burst on tap */}
-          {score > 0 && (
-            <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
-              <SparkleBurst />
-            </Animated.View>
-          )}
+          <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
+            <SparkleBurst
+              visible={sparkleKey > 0}
+              color={OBJECT_COLORS[objectType]}
+              count={12}
+              size={8}
+            />
+          </Animated.View>
 
           {/* Instruction overlay when stopped */}
           {hasStopped && !missed && (

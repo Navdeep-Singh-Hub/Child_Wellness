@@ -8,6 +8,7 @@ import {
   speakCommunity,
   useCommunitySession,
 } from '@/components/game/speech/community/shared/communityShared';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -17,31 +18,34 @@ const ROUNDS = [
   {
     helper: 'Police Officer',
     helperEmoji: '👮',
+    helperImageKey: 'police-officer' as const,
     jobs: [
-      { id: 'protect', emoji: '🚔', label: 'Keeps us safe', correct: true },
-      { id: 'teach', emoji: '📚', label: 'Teaches school', correct: false },
-      { id: 'cook', emoji: '👨‍🍳', label: 'Cooks food', correct: false },
-      { id: 'fly', emoji: '✈️', label: 'Flies planes', correct: false },
+      { id: 'protect', emoji: '🚔', imageKey: 'police-officer' as const, label: 'Keeps us safe', correct: true },
+      { id: 'teach', emoji: '📚', imageKey: 'teacher' as const, label: 'Teaches school', correct: false },
+      { id: 'cook', emoji: '👨‍🍳', imageKey: 'action-cooking' as const, label: 'Cooks food', correct: false },
+      { id: 'fly', emoji: '✈️', imageKey: 'action-flying' as const, label: 'Flies planes', correct: false },
     ],
   },
   {
     helper: 'Mail Carrier',
     helperEmoji: '📬',
+    helperImageKey: 'mailcarrier' as const,
     jobs: [
-      { id: 'mail', emoji: '✉️', label: 'Brings letters', correct: true },
+      { id: 'mail', emoji: '✉️', imageKey: 'envelope' as const, label: 'Brings letters', correct: true },
       { id: 'fix', emoji: '🔧', label: 'Fixes teeth', correct: false },
-      { id: 'sing', emoji: '🎤', label: 'Sings songs', correct: false },
+      { id: 'sing', emoji: '🎤', imageKey: 'action-singing' as const, label: 'Sings songs', correct: false },
       { id: 'plant', emoji: '🌱', label: 'Plants trees', correct: false },
     ],
   },
   {
     helper: 'Librarian',
     helperEmoji: '📖',
+    helperImageKey: 'librarian' as const,
     jobs: [
-      { id: 'books', emoji: '📚', label: 'Helps with books', correct: true },
-      { id: 'fire', emoji: '🔥', label: 'Fights fires', correct: false },
-      { id: 'bus', emoji: '🚌', label: 'Drives a bus', correct: false },
-      { id: 'paint', emoji: '🎨', label: 'Paints houses', correct: false },
+      { id: 'books', emoji: '📚', imageKey: 'bookshelf' as const, label: 'Helps with books', correct: true },
+      { id: 'fire', emoji: '🔥', imageKey: 'fire-flame' as const, label: 'Fights fires', correct: false },
+      { id: 'bus', emoji: '🚌', imageKey: 'action-driving' as const, label: 'Drives a bus', correct: false },
+      { id: 'paint', emoji: '🎨', imageKey: 'action-painting' as const, label: 'Paints houses', correct: false },
     ],
   },
 ];
@@ -99,7 +103,7 @@ export function CommunityHelpersGame({ onBack, onComplete }: Props) {
             speakCommunity('What is their job?');
           }}
         >
-          <Text style={styles.helperEmoji}>{round.helperEmoji}</Text>
+          <Level2Picture imageKey={round.helperImageKey} emoji={round.helperEmoji} size={52} />
           <Text style={styles.helperLabel}>{round.helper}</Text>
         </Pressable>
         <View style={styles.grid}>
@@ -108,6 +112,7 @@ export function CommunityHelpersGame({ onBack, onComplete }: Props) {
               key={j.id}
               label={j.label}
               emoji={j.emoji}
+              imageKey={j.imageKey}
               accent="#059669"
               onPress={() => onJob(j.correct)}
             />

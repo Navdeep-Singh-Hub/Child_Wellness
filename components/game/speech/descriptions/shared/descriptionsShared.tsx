@@ -6,14 +6,15 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { clearScheduledSpeech, DEFAULT_TTS_RATE, speak as speakTTS, stopTTS } from '@/utils/tts';
-import { speechLevel2ButtonStyles } from '@/components/game/speech/level2-shared/SpeechLevel2Shell';
+import { Level2ChoiceTile } from '@/components/game/speech/level2-shared/Level2ChoiceTile';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import {
   type Level2BaseShellProps,
   renderLevel2Shell,
 } from '@/components/game/speech/level2-shared/level2ShellProps';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 export const DEFAULT_DESCRIPTION_ROUNDS = 3;
 
@@ -158,19 +159,24 @@ export function ClueCard({ clues, accent }: { clues: string[]; accent: string })
 export function DescriptionChoiceTile({
   label,
   emoji,
+  imageKey,
   accent,
   onPress,
 }: {
   label: string;
-  emoji: string;
+  emoji?: string;
+  imageKey?: Level2ImageKey;
   accent: string;
   onPress: () => void;
 }) {
   return (
-    <Pressable style={styles.choiceTile} onPress={onPress}>
-      <Text style={styles.choiceEmoji}>{emoji}</Text>
-      <Text style={[styles.choiceLabel, { color: accent }]}>{label}</Text>
-    </Pressable>
+    <Level2ChoiceTile
+      label={label}
+      emoji={emoji}
+      imageKey={imageKey}
+      accent={accent}
+      onPress={onPress}
+    />
   );
 }
 
@@ -183,21 +189,4 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   clueLine: { fontSize: 17, fontWeight: '700', color: '#0F172A', lineHeight: 24, marginBottom: 4 },
-  choiceTile: {
-    flex: 1,
-    minWidth: '42%',
-    maxWidth: '48%',
-    margin: 5,
-    minHeight: 100,
-    padding: 14,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#CBD5E1',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 2,
-  },
-  choiceEmoji: { fontSize: 40 },
-  choiceLabel: { fontSize: 13, fontWeight: '800', marginTop: 6, textAlign: 'center' },
 });

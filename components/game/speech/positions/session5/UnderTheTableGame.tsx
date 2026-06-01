@@ -8,15 +8,16 @@ import {
   speakPosition,
   usePositionsSession,
 } from '@/components/game/speech/positions/shared/positionsShared';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 type Props = { onBack: () => void; onComplete?: () => void };
 
 const ROUNDS = [
-  { item: '⚽', itemLabel: 'Ball', table: '🪑' },
-  { item: '🐕', itemLabel: 'Puppy', table: '🍽️' },
-  { item: '📚', itemLabel: 'Books', table: '🛋️' },
+  { item: '⚽', itemImageKey: 'ball-big' as const, itemLabel: 'Ball', table: '🪑', tableImageKey: 'dining-table' as const },
+  { item: '🐕', itemImageKey: 'dog' as const, itemLabel: 'Puppy', table: '🍽️', tableImageKey: 'dining-table' as const },
+  { item: '📚', itemImageKey: 'books-many' as const, itemLabel: 'Books', table: '🛋️', tableImageKey: 'sofa' as const },
 ] as const;
 
 export function UnderTheTableGame({ onBack, onComplete }: Props) {
@@ -65,7 +66,7 @@ export function UnderTheTableGame({ onBack, onComplete }: Props) {
         phaseHint={placed ? 'Perfect spot!' : selected ? 'Tap UNDER' : 'Tap the object'}
       >
         <View style={styles.scene}>
-          <Text style={styles.table}>{round.table}</Text>
+          <Level2Picture imageKey={round.tableImageKey} emoji={round.table} size={72} />
           <Text style={styles.tableLabel}>Table</Text>
           <PositionZone
             label="UNDER"
@@ -75,6 +76,7 @@ export function UnderTheTableGame({ onBack, onComplete }: Props) {
             done={placed}
             style={styles.underZone}
             emoji={placed ? round.item : '⬇️'}
+            imageKey={placed ? round.itemImageKey : undefined}
           />
           {!placed ? (
             <Pressable
@@ -84,7 +86,7 @@ export function UnderTheTableGame({ onBack, onComplete }: Props) {
                 speakPosition('Now tap under!');
               }}
             >
-              <Text style={styles.itemEmoji}>{round.item}</Text>
+              <Level2Picture imageKey={round.itemImageKey} emoji={round.item} size={48} />
             </Pressable>
           ) : null}
         </View>

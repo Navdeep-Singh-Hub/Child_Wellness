@@ -14,9 +14,21 @@ import { StyleSheet, Text, View } from 'react-native';
 type Props = { onBack: () => void; onComplete?: () => void };
 
 const ROUNDS = [
-  { answer: 'left' as const, left: { emoji: '🍎', label: 'Apple' }, right: { emoji: '🚗', label: 'Car' } },
-  { answer: 'right' as const, left: { emoji: '🐕', label: 'Dog' }, right: { emoji: '🎈', label: 'Balloon' } },
-  { answer: 'left' as const, left: { emoji: '⭐', label: 'Star' }, right: { emoji: '🌳', label: 'Tree' } },
+  {
+    answer: 'left' as const,
+    left: { emoji: '🍎', label: 'Apple', imageKey: 'apple' as const },
+    right: { emoji: '🚗', label: 'Car', imageKey: 'car' as const },
+  },
+  {
+    answer: 'right' as const,
+    left: { emoji: '🐕', label: 'Dog', imageKey: 'dog' as const },
+    right: { emoji: '🎈', label: 'Balloon', imageKey: 'ballon' as const },
+  },
+  {
+    answer: 'left' as const,
+    left: { emoji: '⭐', label: 'Star', imageKey: 'star' as const },
+    right: { emoji: '🌳', label: 'Tree', imageKey: 'tree' as const },
+  },
 ];
 
 export function LeftOrRightGame({ onBack, onComplete }: Props) {
@@ -64,12 +76,14 @@ export function LeftOrRightGame({ onBack, onComplete }: Props) {
           <PositionChoiceTile
             label={`← ${round.left.label}`}
             emoji={round.left.emoji}
+            imageKey={round.left.imageKey}
             accent="#16A34A"
             onPress={() => onPick('left')}
           />
           <PositionChoiceTile
             label={`${round.right.label} →`}
             emoji={round.right.emoji}
+            imageKey={round.right.imageKey}
             accent="#16A34A"
             onPress={() => onPick('right')}
           />

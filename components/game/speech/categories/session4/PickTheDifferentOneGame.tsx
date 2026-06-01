@@ -8,26 +8,35 @@ import {
   speakCategory,
   useCategoriesSession,
 } from '@/components/game/speech/categories/shared/categoriesShared';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 type Props = { onBack: () => void; onComplete?: () => void };
 
-const ROUNDS = [
+type OddItem = {
+  id: string;
+  label: string;
+  emoji: string;
+  odd: boolean;
+  imageKey?: Level2ImageKey;
+};
+
+const ROUNDS: { items: OddItem[] }[] = [
   {
     items: [
-      { id: 'a', label: 'Apple', emoji: '🍎', odd: false },
-      { id: 'b', label: 'Banana', emoji: '🍌', odd: false },
-      { id: 'c', label: 'Grapes', emoji: '🍇', odd: false },
-      { id: 'x', label: 'Car', emoji: '🚗', odd: true },
+      { id: 'a', label: 'Apple', emoji: '🍎', odd: false, imageKey: 'apple' },
+      { id: 'b', label: 'Banana', emoji: '🍌', odd: false, imageKey: 'banana' },
+      { id: 'c', label: 'Grapes', emoji: '🍇', odd: false, imageKey: 'grapes' },
+      { id: 'x', label: 'Car', emoji: '🚗', odd: true, imageKey: 'car' },
     ],
   },
   {
     items: [
-      { id: 'd', label: 'Dog', emoji: '🐕', odd: false },
-      { id: 'e', label: 'Cat', emoji: '🐱', odd: false },
-      { id: 'f', label: 'Cow', emoji: '🐄', odd: false },
-      { id: 'y', label: 'Shoe', emoji: '👟', odd: true },
+      { id: 'd', label: 'Dog', emoji: '🐕', odd: false, imageKey: 'dog' },
+      { id: 'e', label: 'Cat', emoji: '🐱', odd: false, imageKey: 'cat' },
+      { id: 'f', label: 'Cow', emoji: '🐄', odd: false, imageKey: 'cow' },
+      { id: 'y', label: 'Shoe', emoji: '👟', odd: true, imageKey: 'shoe' },
     ],
   },
   {
@@ -35,10 +44,10 @@ const ROUNDS = [
       { id: 'g', label: 'Red', emoji: '🔴', odd: false },
       { id: 'h', label: 'Blue', emoji: '🔵', odd: false },
       { id: 'i', label: 'Green', emoji: '🟢', odd: false },
-      { id: 'z', label: 'Star', emoji: '⭐', odd: true },
+      { id: 'z', label: 'Star', emoji: '⭐', odd: true, imageKey: 'star' },
     ],
   },
-] as const;
+];
 
 export function PickTheDifferentOneGame({ onBack, onComplete }: Props) {
   const session = useCategoriesSession('pick-the-different-one', DEFAULT_CATEGORY_ROUNDS);
@@ -76,6 +85,7 @@ export function PickTheDifferentOneGame({ onBack, onComplete }: Props) {
               key={item.id}
               label={item.label}
               emoji={item.emoji}
+              imageKey={item.imageKey}
               accent="#DB2777"
               onPress={() => {
                 if (item.odd) {

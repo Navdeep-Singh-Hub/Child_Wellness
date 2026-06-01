@@ -18,27 +18,27 @@ const ROUNDS = [
     target: 'first' as const,
     prompt: 'Tap FIRST!',
     positions: [
-      { id: 'first', emoji: '🥇', label: 'First', slot: 'first' as const },
-      { id: 'middle', emoji: '2️⃣', label: 'Middle', slot: 'middle' as const },
-      { id: 'last', emoji: '🏁', label: 'Last', slot: 'last' as const },
+      { id: 'first', emoji: '🥇', imageKey: 'medal-first' as const, label: 'First', slot: 'first' as const },
+      { id: 'middle', emoji: '2️⃣', imageKey: 'number-2' as const, label: 'Middle', slot: 'middle' as const },
+      { id: 'last', emoji: '🏁', imageKey: 'finish-flag' as const, label: 'Last', slot: 'last' as const },
     ],
   },
   {
     target: 'middle' as const,
     prompt: 'Tap MIDDLE!',
     positions: [
-      { id: 'first', emoji: '🌅', label: 'Morning', slot: 'first' as const },
-      { id: 'middle', emoji: '☀️', label: 'Noon', slot: 'middle' as const },
-      { id: 'last', emoji: '🌙', label: 'Night', slot: 'last' as const },
+      { id: 'first', emoji: '🌅', imageKey: 'sunrise' as const, label: 'Morning', slot: 'first' as const },
+      { id: 'middle', emoji: '☀️', imageKey: 'sun-noon' as const, label: 'Noon', slot: 'middle' as const },
+      { id: 'last', emoji: '🌙', imageKey: 'moon-night' as const, label: 'Night', slot: 'last' as const },
     ],
   },
   {
     target: 'last' as const,
     prompt: 'Tap LAST!',
     positions: [
-      { id: 'first', emoji: '1️⃣', label: 'One', slot: 'first' as const },
-      { id: 'middle', emoji: '2️⃣', label: 'Two', slot: 'middle' as const },
-      { id: 'last', emoji: '3️⃣', label: 'Three', slot: 'last' as const },
+      { id: 'first', emoji: '1️⃣', imageKey: 'number-1' as const, label: 'One', slot: 'first' as const },
+      { id: 'middle', emoji: '2️⃣', imageKey: 'number-2' as const, label: 'Two', slot: 'middle' as const },
+      { id: 'last', emoji: '3️⃣', imageKey: 'number-3' as const, label: 'Three', slot: 'last' as const },
     ],
   },
 ];
@@ -89,6 +89,7 @@ export function FirstMiddleLastGame({ onBack, onComplete }: Props) {
               key={p.id}
               label={p.label}
               emoji={p.emoji}
+              imageKey={p.imageKey}
               accent="#DB2777"
               onPress={() => onPick(p.slot)}
             />

@@ -6,6 +6,7 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { gradientStopsFromHex } from '@/utils/gradientColors';
 import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -80,6 +81,11 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [targetPosition, setTargetPosition] = useState({ x: 50, y: 50 }); // percentage
   const [showCongratulations, setShowCongratulations] = useState(false);
+  const [sparkleKey, setSparkleKey] = useState(0);
+
+  const scoreRef = useRef(score);
+  const currentSizeRef = useRef(currentSize);
+  const doneRef = useRef(done);
 
   // Animation values
   const scale = useSharedValue(1);
@@ -89,29 +95,31 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const COLORS = ['#3B82F6', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6', '#F472B6', '#06B6D4', '#EC4899'];
 
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+  useEffect(() => {
+    currentSizeRef.current = currentSize;
+  }, [currentSize]);
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
+
   // Generate random position for target - ensures target stays within bounds
   const generateRandomPosition = useCallback(() => {
-    // Calculate safe margin as percentage based on target size
-    // We need margin = (target radius + padding) as percentage
-    // Since we translate by -currentSize/2, we need at least currentSize/2 + padding margin
-    // Using a conservative approach: ensure at least 25% margin from edges
-    // This accounts for the largest target size (180px) and ensures it never goes outside
-    const minMargin = 25; // Minimum 25% margin from edges
-    
-    // For larger targets, increase margin proportionally
-    const sizeBasedMargin = Math.max(minMargin, (currentSize / 4) + 15); // Scale margin with size
-    const safeMargin = Math.min(sizeBasedMargin, 35); // Cap at 35% to keep target visible
-    
-    // Generate position within safe bounds
+    const size = currentSizeRef.current;
+    const minMargin = 25;
+    const sizeBasedMargin = Math.max(minMargin, size / 4 + 15);
+    const safeMargin = Math.min(sizeBasedMargin, 35);
+
     const x = safeMargin + Math.random() * (100 - safeMargin * 2);
     const y = safeMargin + Math.random() * (100 - safeMargin * 2);
-    
-    // Additional safety: clamp to 20-80% range to ensure target is always fully visible
-    const clampedX = Math.max(20, Math.min(80, x));
-    const clampedY = Math.max(20, Math.min(80, y));
-    
-    return { x: clampedX, y: clampedY };
-  }, [currentSize]);
+
+    return {
+      x: Math.max(20, Math.min(80, x)),
+      y: Math.max(20, Math.min(80, y)),
+    };
+  }, []);
 
   // Spawn new target
   const spawnTarget = useCallback(() => {
@@ -159,44 +167,47 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     [router],
   );
 
-  // Handle target tap
-  const handleTap = useCallback(async () => {
-    if (done) return;
+  const onTapAnimationDone = useCallback(() => {
+    const nextScore = scoreRef.current + 1;
+    setScore(nextScore);
+    setMissCount(0);
+    setSparkleKey(Date.now());
 
-    // Record tap position for sparkle
+    if (nextScore >= TOTAL_TARGETS) {
+      endGame(nextScore);
+      return;
+    }
+
+    const nextSize = Math.max(MIN_SIZE, currentSizeRef.current - SIZE_DECREASE);
+    currentSizeRef.current = nextSize;
+    setCurrentSize(nextSize);
+    // Let React apply new size before animating the next target in
+    requestAnimationFrame(() => {
+      spawnTarget();
+    });
+  }, [endGame, spawnTarget]);
+
+  // Handle target tap
+  const handleTap = useCallback(() => {
+    if (doneRef.current) return;
+
     sparkleX.value = targetPosition.x;
     sparkleY.value = targetPosition.y;
 
-    // Pop animation
     scale.value = withSequence(
       withTiming(1.3, { duration: 120, easing: Easing.out(Easing.ease) }),
-      withTiming(0, { duration: 200, easing: Easing.in(Easing.ease) }, () => {
-        runOnJS(setScore)((s) => s + 1);
-        runOnJS(setMissCount)(0); // Reset miss count on success
-
-        if (score + 1 >= TOTAL_TARGETS) {
-          runOnJS(endGame)(score + 1);
-        } else {
-          // Decrease size for next target (progressive difficulty)
-          runOnJS(setCurrentSize)((s) => Math.max(MIN_SIZE, s - SIZE_DECREASE));
-          runOnJS(spawnTarget)();
+      withTiming(0, { duration: 200, easing: Easing.in(Easing.ease) }, (finished) => {
+        if (finished) {
+          runOnJS(onTapAnimationDone)();
         }
       }),
     );
 
     opacity.value = withTiming(0, { duration: 200 });
 
-    try {
-      await playPop();
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
-
-    // Show sparkle burst
-    setTimeout(() => {
-      scale.value = 1;
-      opacity.value = 1;
-    }, 400);
-  }, [done, score, targetPosition, scale, opacity, sparkleX, sparkleY, playPop, spawnTarget, endGame]);
+    playPop().catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+  }, [targetPosition, scale, opacity, sparkleX, sparkleY, playPop, onTapAnimationDone]);
 
   // Handle miss (tap outside target)
   const handleMiss = useCallback(() => {
@@ -223,7 +234,7 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initialize first target
   useEffect(() => {
     try {
-      speakTTS('Tap the target! It gets smaller each time. If you struggle, it grows bigger to help you.', { rate: 0.78 });
+      speakTTS('Tap the target! It gets smaller each time. If you struggle, it grows bigger to help you.', 0.78);
     } catch {}
     spawnTarget();
     
@@ -336,7 +347,8 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               {
                 left: `${targetPosition.x}%`,
                 top: `${targetPosition.y}%`,
-                transform: [{ translateX: -currentSize / 2 }, { translateY: -currentSize / 2 }],
+                marginLeft: -currentSize / 2,
+                marginTop: -currentSize / 2,
               },
               targetStyle,
             ]}
@@ -346,7 +358,7 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               style={styles.targetPressable}
             >
               <LinearGradient
-                colors={[currentColor, `${currentColor}DD`, `${currentColor}AA`]}
+                colors={gradientStopsFromHex(currentColor)}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[
@@ -364,12 +376,14 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           </Animated.View>
         </Pressable>
 
-        {/* Sparkle burst on tap */}
-        {score > 0 && (
-          <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
-            <SparkleBurst />
-          </Animated.View>
-        )}
+        <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
+          <SparkleBurst
+            visible={sparkleKey > 0}
+            color={currentColor}
+            count={12}
+            size={8}
+          />
+        </Animated.View>
       </View>
 
       <View style={styles.footerBox}>

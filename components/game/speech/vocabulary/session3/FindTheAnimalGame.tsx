@@ -14,10 +14,12 @@ import { StyleSheet, View } from 'react-native';
 type Props = { onBack: () => void; onComplete?: () => void };
 
 const ANIMALS = [
-  { id: 'dog', label: 'Dog', emoji: '🐕' },
-  { id: 'cat', label: 'Cat', emoji: '🐱' },
-  { id: 'cow', label: 'Cow', emoji: '🐄' },
-  { id: 'bird', label: 'Bird', emoji: '🐦' },
+  { id: 'dog', label: 'Dog', emoji: '🐕', imageKey: 'dog' as const },
+  { id: 'cat', label: 'Cat', emoji: '🐱', imageKey: 'cat' as const },
+  { id: 'cow', label: 'Cow', emoji: '🐄', imageKey: 'cow' as const },
+  { id: 'bird', label: 'Bird', emoji: '🐦', imageKey: 'bird' as const },
+  { id: 'horse', label: 'Horse', emoji: '🐴', imageKey: 'horse' as const },
+  { id: 'lion', label: 'Lion', emoji: '🦁', imageKey: 'lion' as const },
 ] as const;
 
 export function FindTheAnimalGame({ onBack, onComplete }: Props) {
@@ -60,6 +62,7 @@ export function FindTheAnimalGame({ onBack, onComplete }: Props) {
               key={a.id}
               label={a.label}
               emoji={a.emoji}
+              imageKey={a.imageKey}
               accent="#16A34A"
               onPress={() => {
                 if (a.id === targetId) {

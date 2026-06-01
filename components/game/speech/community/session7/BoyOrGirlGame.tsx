@@ -19,23 +19,23 @@ const ROUNDS = [
     prompt: 'Tap the boy!',
     choices: [
       { id: 'boy', emoji: '👦', label: 'Boy', correct: true },
-      { id: 'girl', emoji: '👧', label: 'Girl', correct: false },
+      { id: 'girl', emoji: '👧', imageKey: 'girl' as const, label: 'Girl', correct: false },
     ],
   },
   {
     answer: 'girl' as const,
     prompt: 'Tap the girl!',
     choices: [
-      { id: 'boy', emoji: '👦', label: 'Boy', correct: false },
-      { id: 'girl', emoji: '👧', label: 'Girl', correct: true },
+      { id: 'boy', emoji: '👦', imageKey: 'boy' as const, label: 'Boy', correct: false },
+      { id: 'girl', emoji: '👧', imageKey: 'girl' as const, label: 'Girl', correct: true },
     ],
   },
   {
     answer: 'boy' as const,
     prompt: 'Who is the boy?',
     choices: [
-      { id: 'boy', emoji: '🧒', label: 'Boy', correct: true },
-      { id: 'girl', emoji: '👧', label: 'Girl', correct: false },
+      { id: 'boy', emoji: '🧒', imageKey: 'boy' as const, label: 'Boy', correct: true },
+      { id: 'girl', emoji: '👧', imageKey: 'girl' as const, label: 'Girl', correct: false },
     ],
   },
 ];
@@ -86,6 +86,7 @@ export function BoyOrGirlGame({ onBack, onComplete }: Props) {
               key={c.id}
               label={c.label}
               emoji={c.emoji}
+              imageKey={c.imageKey}
               accent="#4F46E5"
               onPress={() => onPick(c.correct)}
             />

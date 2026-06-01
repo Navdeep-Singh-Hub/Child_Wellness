@@ -8,6 +8,7 @@ import {
   speakCategory,
   useCategoriesSession,
 } from '@/components/game/speech/categories/shared/categoriesShared';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -15,16 +16,24 @@ type Props = { onBack: () => void; onComplete?: () => void };
 
 type ColorId = 'red' | 'blue' | 'yellow';
 
-const ROUNDS: { color: ColorId; name: string; train: string; items: { id: string; label: string; emoji: string; color: ColorId }[] }[] = [
+type TrainItem = {
+  id: string;
+  label: string;
+  emoji: string;
+  color: ColorId;
+  imageKey?: Level2ImageKey;
+};
+
+const ROUNDS: { color: ColorId; name: string; train: string; items: TrainItem[] }[] = [
   {
     color: 'red',
     name: 'red',
     train: '🚂',
     items: [
-      { id: 'r1', label: 'Apple', emoji: '🍎', color: 'red' },
-      { id: 'r2', label: 'Balloon', emoji: '🎈', color: 'red' },
+      { id: 'r1', label: 'Apple', emoji: '🍎', color: 'red', imageKey: 'apple' },
+      { id: 'r2', label: 'Balloon', emoji: '🎈', color: 'red', imageKey: 'ballon' },
       { id: 'b1', label: 'Sky', emoji: '🌊', color: 'blue' },
-      { id: 'y1', label: 'Sun', emoji: '☀️', color: 'yellow' },
+      { id: 'y1', label: 'Sun', emoji: '☀️', color: 'yellow', imageKey: 'sun' },
     ],
   },
   {
@@ -32,10 +41,10 @@ const ROUNDS: { color: ColorId; name: string; train: string; items: { id: string
     name: 'blue',
     train: '🚃',
     items: [
-      { id: 'b2', label: 'Fish', emoji: '🐟', color: 'blue' },
-      { id: 'b3', label: 'Ball', emoji: '🔵', color: 'blue' },
-      { id: 'r3', label: 'Heart', emoji: '❤️', color: 'red' },
-      { id: 'y2', label: 'Banana', emoji: '🍌', color: 'yellow' },
+      { id: 'b2', label: 'Fish', emoji: '🐟', color: 'blue', imageKey: 'fish' },
+      { id: 'b3', label: 'Ball', emoji: '🔵', color: 'blue', imageKey: 'volleyball' },
+      { id: 'r3', label: 'Heart', emoji: '❤️', color: 'red', imageKey: 'heart' },
+      { id: 'y2', label: 'Banana', emoji: '🍌', color: 'yellow', imageKey: 'banana' },
     ],
   },
   {
@@ -43,10 +52,10 @@ const ROUNDS: { color: ColorId; name: string; train: string; items: { id: string
     name: 'yellow',
     train: '🚋',
     items: [
-      { id: 'y3', label: 'Star', emoji: '⭐', color: 'yellow' },
+      { id: 'y3', label: 'Star', emoji: '⭐', color: 'yellow', imageKey: 'star' },
       { id: 'y4', label: 'Duck', emoji: '🦆', color: 'yellow' },
-      { id: 'r4', label: 'Car', emoji: '🚗', color: 'red' },
-      { id: 'b4', label: 'Jeans', emoji: '👖', color: 'blue' },
+      { id: 'r4', label: 'Car', emoji: '🚗', color: 'red', imageKey: 'car' },
+      { id: 'b4', label: 'Jeans', emoji: '👖', color: 'blue', imageKey: 'clothing-pants' },
     ],
   },
 ];
@@ -93,6 +102,7 @@ export function ColorMatchTrainGame({ onBack, onComplete }: Props) {
               key={item.id}
               label={item.label}
               emoji={item.emoji}
+              imageKey={item.imageKey}
               accent="#DC2626"
               dimmed={onTrain.has(item.id)}
               onPress={() => {

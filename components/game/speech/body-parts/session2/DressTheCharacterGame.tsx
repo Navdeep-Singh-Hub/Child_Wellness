@@ -12,6 +12,8 @@ import {
   slotStyleFor,
   useBodyFigureLayout,
 } from '@/components/game/speech/body-parts/shared/bodyFigureLayout';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -24,10 +26,11 @@ const CLOTHES: {
   emoji: string;
   label: string;
   slot: 'head' | 'torso' | 'leg';
+  imageKey: Level2ImageKey;
 }[] = [
-  { id: 'hat', emoji: '🧢', label: 'Hat', slot: 'head' },
-  { id: 'shirt', emoji: '👕', label: 'Shirt', slot: 'torso' },
-  { id: 'pants', emoji: '👖', label: 'Pants', slot: 'leg' },
+  { id: 'hat', emoji: '🧢', label: 'Hat', slot: 'head', imageKey: 'clothing-hat' },
+  { id: 'shirt', emoji: '👕', label: 'Shirt', slot: 'torso', imageKey: 'clothing-shirt' },
+  { id: 'pants', emoji: '👖', label: 'Pants', slot: 'leg', imageKey: 'clothing-pants' },
 ];
 
 export function DressTheCharacterGame({ onBack, onComplete }: Props) {
@@ -110,9 +113,11 @@ export function DressTheCharacterGame({ onBack, onComplete }: Props) {
                 accessibilityLabel={c.label}
                 onPress={() => onZone(c.id)}
               >
-                <Text style={[styles.zoneEmoji, { fontSize: zoneEmojiSize }]}>
-                  {dressed.has(c.id) ? c.emoji : '➕'}
-                </Text>
+                {dressed.has(c.id) ? (
+                  <Level2Picture imageKey={c.imageKey} emoji={c.emoji} size={zoneEmojiSize} />
+                ) : (
+                  <Text style={[styles.zoneEmoji, { fontSize: zoneEmojiSize }]}>➕</Text>
+                )}
               </Pressable>
             ))}
           </BodyFigure>
@@ -128,7 +133,7 @@ export function DressTheCharacterGame({ onBack, onComplete }: Props) {
                 disabled={dressed.has(c.id)}
                 onPress={() => setSelected(c.id)}
               >
-                <Text style={styles.clothEmoji}>{c.emoji}</Text>
+                <Level2Picture imageKey={c.imageKey} emoji={c.emoji} size={38} />
                 <Text style={styles.clothLabel}>{c.label}</Text>
               </Pressable>
             ))}
@@ -182,6 +187,5 @@ const styles = StyleSheet.create({
   },
   clothOn: { borderWidth: 2, borderColor: '#CA8A04' },
   clothDone: { opacity: 0.35 },
-  clothEmoji: { fontSize: 38 },
   clothLabel: { fontWeight: '800', fontSize: 17, marginTop: 6, color: '#0F172A' },
 });

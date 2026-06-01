@@ -12,6 +12,8 @@ import {
   slotStyleFor,
   useBodyFigureLayout,
 } from '@/components/game/speech/body-parts/shared/bodyFigureLayout';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -19,10 +21,10 @@ type Props = { onBack: () => void; onComplete?: () => void };
 
 type PieceId = 'head' | 'arm' | 'leg';
 
-const PIECES: { id: PieceId; emoji: string; label: string; slot: 'head' | 'arm' | 'leg' }[] = [
-  { id: 'head', emoji: '🙂', label: 'Head', slot: 'head' },
-  { id: 'arm', emoji: '💪', label: 'Arm', slot: 'arm' },
-  { id: 'leg', emoji: '🦵', label: 'Leg', slot: 'leg' },
+const PIECES: { id: PieceId; emoji: string; label: string; slot: 'head' | 'arm' | 'leg'; imageKey: Level2ImageKey }[] = [
+  { id: 'head', emoji: '🙂', label: 'Head', slot: 'head', imageKey: 'body-head' },
+  { id: 'arm', emoji: '💪', label: 'Arm', slot: 'arm', imageKey: 'body-arm' },
+  { id: 'leg', emoji: '🦵', label: 'Leg', slot: 'leg', imageKey: 'body-legs' },
 ];
 
 export function BodyPuzzleGame({ onBack, onComplete }: Props) {
@@ -107,9 +109,11 @@ export function BodyPuzzleGame({ onBack, onComplete }: Props) {
                 accessibilityLabel={`${p.label} spot`}
                 onPress={() => onSlot(p.id)}
               >
-                <Text style={[styles.slotText, { fontSize: slotTextSize }]}>
-                  {placed.has(p.id) ? p.emoji : '⭕'}
-                </Text>
+                {placed.has(p.id) ? (
+                  <Level2Picture imageKey={p.imageKey} emoji={p.emoji} size={slotTextSize} />
+                ) : (
+                  <Text style={[styles.slotText, { fontSize: slotTextSize }]}>⭕</Text>
+                )}
               </Pressable>
             ))}
           </BodyFigure>
@@ -125,7 +129,7 @@ export function BodyPuzzleGame({ onBack, onComplete }: Props) {
                 disabled={placed.has(p.id)}
                 onPress={() => setSelected(p.id)}
               >
-                <Text style={styles.pieceEmoji}>{p.emoji}</Text>
+                <Level2Picture imageKey={p.imageKey} emoji={p.emoji} size={36} />
                 <Text style={styles.pieceLabel}>{p.label}</Text>
               </Pressable>
             ))}
@@ -173,6 +177,5 @@ const styles = StyleSheet.create({
   },
   pieceOn: { borderWidth: 2, borderColor: '#4F46E5' },
   pieceDone: { opacity: 0.35 },
-  pieceEmoji: { fontSize: 36 },
   pieceLabel: { fontWeight: '800', fontSize: 17, marginTop: 6, color: '#0F172A' },
 });

@@ -17,28 +17,28 @@ const ROUNDS = [
   {
     verb: 'Drink',
     pictures: [
-      { id: 'drink', emoji: '🥤', label: 'Drinking', match: true },
-      { id: 'sleep', emoji: '😴', label: 'Sleeping', match: false },
-      { id: 'kick', emoji: '⚽', label: 'Kicking', match: false },
-      { id: 'paint', emoji: '🎨', label: 'Painting', match: false },
+      { id: 'drink', emoji: '🥤', imageKey: 'action-drinking' as const, label: 'Drinking', match: true },
+      { id: 'sleep', emoji: '😴', imageKey: 'action-sleeping' as const, label: 'Sleeping', match: false },
+      { id: 'kick', emoji: '⚽', imageKey: 'action-kicking' as const, label: 'Kicking', match: false },
+      { id: 'paint', emoji: '🎨', imageKey: 'action-painting' as const, label: 'Painting', match: false },
     ],
   },
   {
     verb: 'Write',
     pictures: [
-      { id: 'run', emoji: '🏃', label: 'Running', match: false },
-      { id: 'write', emoji: '✍️', label: 'Writing', match: true },
-      { id: 'swim', emoji: '🏊', label: 'Swimming', match: false },
-      { id: 'eat', emoji: '🍎', label: 'Eating', match: false },
+      { id: 'run', emoji: '🏃', imageKey: 'action-running' as const, label: 'Running', match: false },
+      { id: 'write', emoji: '✍️', imageKey: 'action-writing' as const, label: 'Writing', match: true },
+      { id: 'kick', emoji: '⚽', label: 'Kicking', match: false },
+      { id: 'eat', emoji: '🍎', imageKey: 'action-eating' as const, label: 'Eating', match: false },
     ],
   },
   {
     verb: 'Clap',
     pictures: [
-      { id: 'clap', emoji: '👏', label: 'Clapping', match: true },
-      { id: 'drive', emoji: '🚗', label: 'Driving', match: false },
-      { id: 'cry', emoji: '😢', label: 'Crying', match: false },
-      { id: 'build', emoji: '🧱', label: 'Building', match: false },
+      { id: 'clap', emoji: '👏', imageKey: 'action-clapping' as const, label: 'Clapping', match: true },
+      { id: 'drive', emoji: '🚗', imageKey: 'action-driving' as const, label: 'Driving', match: false },
+      { id: 'cry', emoji: '😢', imageKey: 'action-crying' as const, label: 'Crying', match: false },
+      { id: 'build', emoji: '🧱', imageKey: 'action-building' as const, label: 'Building', match: false },
     ],
   },
 ];
@@ -104,6 +104,7 @@ export function MatchTheActionGame({ onBack, onComplete }: Props) {
               key={p.id}
               label={p.label}
               emoji={p.emoji}
+              actionId={p.id}
               accent="#0284C7"
               onPress={() => onPicture(p.match)}
             />

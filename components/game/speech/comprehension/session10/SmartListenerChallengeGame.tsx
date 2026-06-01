@@ -26,10 +26,10 @@ const ROUNDS: Task[] = [
     prompt: 'Tap the BIG ball',
     speak: 'Smart listener! Tap the BIG ball.',
     choices: [
-      { id: 'big', emoji: '⚽', label: 'Big ball', correct: true },
-      { id: 'small', emoji: '🏐', label: 'Small ball', correct: false },
-      { id: 'box', emoji: '📦', label: 'Box', correct: false },
-      { id: 'star', emoji: '⭐', label: 'Star', correct: false },
+      { id: 'big', emoji: '⚽', imageKey: 'ball-big' as const, label: 'Big ball', correct: true },
+      { id: 'small', emoji: '🏐', imageKey: 'ball-small' as const, label: 'Small ball', correct: false },
+      { id: 'box', emoji: '📦', imageKey: 'box' as const, label: 'Box', correct: false },
+      { id: 'star', emoji: '⭐', imageKey: 'star' as const, label: 'Star', correct: false },
     ],
   },
   {
@@ -37,10 +37,10 @@ const ROUNDS: Task[] = [
     prompt: 'Tap something that is NOT food',
     speak: 'Tap something that is NOT food.',
     choices: [
-      { id: 'apple', emoji: '🍎', label: 'Apple', correct: false },
-      { id: 'car', emoji: '🚗', label: 'Car', correct: true },
-      { id: 'bread', emoji: '🍞', label: 'Bread', correct: false },
-      { id: 'milk', emoji: '🥛', label: 'Milk', correct: false },
+      { id: 'apple', emoji: '🍎', imageKey: 'apple' as const, label: 'Apple', correct: false },
+      { id: 'car', emoji: '🚗', imageKey: 'car' as const, label: 'Car', correct: true },
+      { id: 'bread', emoji: '🍞', imageKey: 'bread' as const, label: 'Bread', correct: false },
+      { id: 'milk', emoji: '🥛', imageKey: 'milk' as const, label: 'Milk', correct: false },
     ],
   },
   {
@@ -48,10 +48,10 @@ const ROUNDS: Task[] = [
     prompt: 'They are playing — tap THEY',
     speak: 'They are playing. Tap THEY.',
     choices: [
-      { id: 'he', emoji: '👦', label: 'He', correct: false },
-      { id: 'she', emoji: '👧', label: 'She', correct: false },
-      { id: 'they', emoji: '👫', label: 'They', correct: true },
-      { id: 'it', emoji: '🧸', label: 'It', correct: false },
+      { id: 'he', emoji: '👦', imageKey: 'boy' as const, label: 'He', correct: false },
+      { id: 'she', emoji: '👧', imageKey: 'girl' as const, label: 'She', correct: false },
+      { id: 'they', emoji: '👫', imageKey: 'friends-two-kids' as const, label: 'They', correct: true },
+      { id: 'it', emoji: '🧸', imageKey: 'teddy' as const, label: 'It', correct: false },
     ],
   },
 ];
@@ -103,6 +103,7 @@ export function SmartListenerChallengeGame({ onBack, onComplete }: Props) {
               key={c.id}
               label={c.label}
               emoji={c.emoji}
+              imageKey={c.imageKey}
               accent="#EA580C"
               onPress={() => onPick(c.correct)}
             />

@@ -6,14 +6,15 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { clearScheduledSpeech, DEFAULT_TTS_RATE, speak as speakTTS, stopTTS } from '@/utils/tts';
-import { speechLevel2ButtonStyles } from '@/components/game/speech/level2-shared/SpeechLevel2Shell';
 import {
   type Level2BaseShellProps,
   renderLevel2Shell,
 } from '@/components/game/speech/level2-shared/level2ShellProps';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Level2ChoiceTile } from '@/components/game/speech/level2-shared/Level2ChoiceTile';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
+import { View } from 'react-native';
 
 export const DEFAULT_VOCAB_ROUNDS = 3;
 
@@ -146,45 +147,26 @@ export function VocabularyShell(props: Level2BaseShellProps) {
 export function VocabTile({
   label,
   emoji,
+  imageKey,
   accent,
   small,
   onPress,
 }: {
   label: string;
-  emoji: string;
+  emoji?: string;
+  imageKey?: Level2ImageKey;
   accent: string;
   small?: boolean;
   onPress: () => void;
 }) {
   return (
-    <Pressable
-      style={[styles.tile, small && styles.tileSmall]}
+    <Level2ChoiceTile
+      label={label}
+      emoji={emoji}
+      imageKey={imageKey}
+      accent={accent}
+      small={small}
       onPress={onPress}
-    >
-      <Text style={[styles.tileEmoji, small && styles.tileEmojiSmall]}>{emoji}</Text>
-      <Text style={[styles.tileLabel, { color: accent }]}>{label}</Text>
-    </Pressable>
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  tile: {
-    flex: 1,
-    minWidth: '42%',
-    maxWidth: '48%',
-    margin: 5,
-    minHeight: 100,
-    padding: 14,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#CBD5E1',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 2,
-  },
-  tileSmall: { minHeight: 80, minWidth: '28%', maxWidth: '32%' },
-  tileEmoji: { fontSize: speechLevel2ButtonStyles.emoji.fontSize },
-  tileEmojiSmall: { fontSize: 34 },
-  tileLabel: { ...speechLevel2ButtonStyles.label, marginTop: 6 },
-});

@@ -20,10 +20,10 @@ const ROUNDS = [
     clues: ['It is a fruit.', 'It can be red or green.', 'It grows on a tree.'],
     speakClues: 'I am a fruit. I can be red or green. I grow on a tree.',
     choices: [
-      { id: 'apple', emoji: '🍎', label: 'Apple', correct: true },
-      { id: 'car', emoji: '🚗', label: 'Car', correct: false },
-      { id: 'shoe', emoji: '👟', label: 'Shoe', correct: false },
-      { id: 'sun', emoji: '☀️', label: 'Sun', correct: false },
+      { id: 'apple', emoji: '🍎', imageKey: 'apple' as const, label: 'Apple', correct: true },
+      { id: 'car', emoji: '🚗', imageKey: 'car' as const, label: 'Car', correct: false },
+      { id: 'shoe', emoji: '👟', imageKey: 'shoe' as const, label: 'Shoe', correct: false },
+      { id: 'sun', emoji: '☀️', imageKey: 'sun' as const, label: 'Sun', correct: false },
     ],
   },
   {
@@ -31,10 +31,10 @@ const ROUNDS = [
     clues: ['It is a pet.', 'It says woof.', 'It has a tail.'],
     speakClues: 'I am a pet. I say woof. I have a tail.',
     choices: [
-      { id: 'fish', emoji: '🐟', label: 'Fish', correct: false },
-      { id: 'dog', emoji: '🐕', label: 'Dog', correct: true },
-      { id: 'book', emoji: '📖', label: 'Book', correct: false },
-      { id: 'tree', emoji: '🌳', label: 'Tree', correct: false },
+      { id: 'fish', emoji: '🐟', imageKey: 'fish' as const, label: 'Fish', correct: false },
+      { id: 'dog', emoji: '🐕', imageKey: 'dog' as const, label: 'Dog', correct: true },
+      { id: 'book', emoji: '📖', imageKey: 'book' as const, label: 'Book', correct: false },
+      { id: 'tree', emoji: '🌳', imageKey: 'tree' as const, label: 'Tree', correct: false },
     ],
   },
   {
@@ -42,9 +42,9 @@ const ROUNDS = [
     clues: ['You use it in rain.', 'It opens up.', 'It keeps you dry.'],
     speakClues: 'You use me in rain. I open up. I keep you dry.',
     choices: [
-      { id: 'hat', emoji: '🎩', label: 'Hat', correct: false },
+      { id: 'hat', emoji: '🎩', imageKey: 'hat-top-hat' as const, label: 'Hat', correct: false },
       { id: 'ball', emoji: '⚽', label: 'Ball', correct: false },
-      { id: 'umbrella', emoji: '☂️', label: 'Umbrella', correct: true },
+      { id: 'umbrella', emoji: '☂️', imageKey: 'umbrella' as const, label: 'Umbrella', correct: true },
       { id: 'cup', emoji: '☕', label: 'Cup', correct: false },
     ],
   },
@@ -97,6 +97,7 @@ export function GuessTheObjectGame({ onBack, onComplete }: Props) {
               key={c.id}
               label={c.label}
               emoji={c.emoji}
+              imageKey={c.imageKey}
               accent="#7C3AED"
               onPress={() => onPick(c.correct)}
             />

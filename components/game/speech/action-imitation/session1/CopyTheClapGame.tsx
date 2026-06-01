@@ -74,11 +74,12 @@ export function CopyTheClapGame({ onBack, onComplete }: Props) {
           speakAction('Copy the clap! Watch me clap, then tap Clap two times!')
         }
         phaseHint={hint}
-        avatarEmoji="🧒"
+        avatarEmoji="👏"
+        avatarImageKey="action-clapping"
         avatarAnimating={phase === 'demo'}
       >
         <View style={styles.row}>
-          <ActionChoiceButton label="Clap" emoji="👏" accent="#D97706" onPress={onClap} />
+          <ActionChoiceButton label="Clap" emoji="👏" actionId="clap" accent="#D97706" onPress={onClap} />
         </View>
         {phase === 'demo' && <Text style={styles.demoHands}>👏 👏</Text>}
       </ActionGameShell>

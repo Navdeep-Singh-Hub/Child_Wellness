@@ -25,23 +25,23 @@ const ROUNDS = [
     ],
   },
   {
-    verb: 'jumping',
-    prompt: 'Who is jumping?',
+    verb: 'kicking',
+    prompt: 'Who is kicking?',
     choices: [
       { id: 'sit', emoji: '🪑', label: 'Sitting', correct: false },
-      { id: 'jump', emoji: '🤸', label: 'Jumping', correct: true },
-      { id: 'wave', emoji: '👋', label: 'Waving', correct: false },
-      { id: 'draw', emoji: '✏️', label: 'Drawing', correct: false },
+      { id: 'kick', emoji: '⚽', label: 'Kicking', correct: true },
+      { id: 'clap', emoji: '👏', label: 'Clapping', correct: false },
+      { id: 'draw', emoji: '✏️', imageKey: 'action-drawing' as const, label: 'Drawing', correct: false },
     ],
   },
   {
-    verb: 'swimming',
-    prompt: 'Who is swimming?',
+    verb: 'flying',
+    prompt: 'Who is flying?',
     choices: [
-      { id: 'swim', emoji: '🏊', label: 'Swimming', correct: true },
-      { id: 'fly', emoji: '✈️', label: 'Flying', correct: false },
+      { id: 'fly', emoji: '✈️', label: 'Flying', correct: true },
       { id: 'cook', emoji: '👨‍🍳', label: 'Cooking', correct: false },
       { id: 'sing', emoji: '🎤', label: 'Singing', correct: false },
+      { id: 'sleep', emoji: '😴', label: 'Sleeping', correct: false },
     ],
   },
 ];
@@ -92,6 +92,7 @@ export function WhoIsRunningGame({ onBack, onComplete }: Props) {
               key={c.id}
               label={c.label}
               emoji={c.emoji}
+              actionId={c.id}
               accent="#EA580C"
               onPress={() => onPick(c.correct)}
             />

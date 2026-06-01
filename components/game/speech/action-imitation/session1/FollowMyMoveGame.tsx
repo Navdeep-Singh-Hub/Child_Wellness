@@ -14,17 +14,17 @@ import { StyleSheet, Text, View } from 'react-native';
 type Props = { onBack: () => void; onComplete?: () => void };
 
 const MOVES = [
-  { id: 'clap', emoji: '👏', label: 'Clap' },
-  { id: 'jump', emoji: '⬆️', label: 'Jump' },
-  { id: 'wave', emoji: '👋', label: 'Wave' },
+  { id: 'clap', emoji: '👏', label: 'Clap', imageKey: 'action-clapping' as const },
+  { id: 'run', emoji: '🏃', label: 'Run', imageKey: 'action-running' as const },
+  { id: 'sit', emoji: '🪑', label: 'Sit', imageKey: 'action-sitting' as const },
 ] as const;
 
 type MoveId = (typeof MOVES)[number]['id'];
 
 const SEQUENCES: MoveId[][] = [
-  ['clap', 'jump'],
-  ['wave', 'clap'],
-  ['jump', 'wave'],
+  ['clap', 'run'],
+  ['sit', 'clap'],
+  ['run', 'sit'],
 ];
 
 export function FollowMyMoveGame({ onBack, onComplete }: Props) {
@@ -107,6 +107,7 @@ export function FollowMyMoveGame({ onBack, onComplete }: Props) {
             : `Repeat! Step ${playerIndex + 1} of ${sequence.length}`
         }
         avatarEmoji={demoMove?.emoji ?? '🧒'}
+        avatarImageKey={demoMove && 'imageKey' in demoMove ? demoMove.imageKey : undefined}
         avatarAnimating={phase === 'demo' && demoIndex >= 0}
       >
         {phase === 'repeat' && (
@@ -120,6 +121,8 @@ export function FollowMyMoveGame({ onBack, onComplete }: Props) {
               key={m.id}
               label={m.label}
               emoji={m.emoji}
+              actionId={m.id}
+              imageKey={m.imageKey}
               accent="#059669"
               onPress={() => onMove(m.id)}
             />

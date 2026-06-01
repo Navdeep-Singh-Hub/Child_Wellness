@@ -6,7 +6,9 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { clearScheduledSpeech, DEFAULT_TTS_RATE, speak as speakTTS, stopTTS } from '@/utils/tts';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
 import { speechLevel2ButtonStyles } from '@/components/game/speech/level2-shared/SpeechLevel2Shell';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import {
   type Level2BaseShellProps,
   renderLevel2Shell,
@@ -146,12 +148,14 @@ export function PositionsShell(props: Level2BaseShellProps) {
 export function PositionChoiceTile({
   label,
   emoji,
+  imageKey,
   accent,
   onPress,
   selected,
 }: {
   label: string;
-  emoji: string;
+  emoji?: string;
+  imageKey?: Level2ImageKey;
   accent: string;
   onPress: () => void;
   selected?: boolean;
@@ -161,7 +165,7 @@ export function PositionChoiceTile({
       style={[styles.choiceTile, selected && { borderColor: accent, borderWidth: 3 }]}
       onPress={onPress}
     >
-      <Text style={styles.choiceEmoji}>{emoji}</Text>
+      <Level2Picture imageKey={imageKey} emoji={emoji} size={speechLevel2ButtonStyles.emoji.fontSize} />
       <Text style={[styles.choiceLabel, { color: accent }]}>{label}</Text>
     </Pressable>
   );
@@ -170,6 +174,7 @@ export function PositionChoiceTile({
 export function PositionZone({
   label,
   emoji,
+  imageKey,
   accent,
   onPress,
   active,
@@ -178,6 +183,7 @@ export function PositionZone({
 }: {
   label: string;
   emoji?: string;
+  imageKey?: Level2ImageKey;
   accent: string;
   onPress: () => void;
   active?: boolean;
@@ -195,7 +201,9 @@ export function PositionZone({
       ]}
       onPress={onPress}
     >
-      {emoji ? <Text style={styles.zoneEmoji}>{emoji}</Text> : null}
+      {(imageKey || emoji) ? (
+        <Level2Picture imageKey={imageKey} emoji={emoji} size={32} />
+      ) : null}
       <Text style={[styles.zoneLabel, { color: accent }]}>{label}</Text>
     </Pressable>
   );
@@ -212,17 +220,21 @@ function rectsOverlap(a: LayoutRectangle, b: LayoutRectangle) {
 /** Drag an item into a drop zone (measures layout on release). */
 export function DragIntoZone({
   itemEmoji,
+  itemImageKey,
   zoneLabel,
   zoneEmoji,
+  zoneImageKey,
   accent,
   startX = 24,
   startY = 100,
   onSuccess,
   hintOut = 'Drag teddy into the box!',
 }: {
-  itemEmoji: string;
+  itemEmoji?: string;
+  itemImageKey?: Level2ImageKey;
   zoneLabel: string;
-  zoneEmoji: string;
+  zoneEmoji?: string;
+  zoneImageKey?: Level2ImageKey;
   accent: string;
   startX?: number;
   startY?: number;
@@ -277,9 +289,11 @@ export function DragIntoZone({
           zoneLayout.current = e.nativeEvent.layout;
         }}
       >
-        <Text style={styles.dropZoneEmoji}>{zoneEmoji}</Text>
+        <Level2Picture imageKey={zoneImageKey} emoji={zoneEmoji} size={48} />
         <Text style={[styles.dropZoneLabel, { color: accent }]}>{zoneLabel}</Text>
-        {inBox ? <Text style={styles.inBoxEmoji}>{itemEmoji}</Text> : null}
+        {inBox ? (
+          <Level2Picture imageKey={itemImageKey} emoji={itemEmoji} size={36} imageStyle={styles.inBoxPicture} />
+        ) : null}
       </View>
       {!inBox ? (
         <View
@@ -290,11 +304,11 @@ export function DragIntoZone({
             itemSize.current = { width, height };
           }}
         >
-          <Text style={styles.draggableEmoji}>{itemEmoji}</Text>
+          <Level2Picture imageKey={itemImageKey} emoji={itemEmoji} size={44} />
         </View>
       ) : null}
       {!inBox ? (
-        <Text style={styles.dragHint}>👆 Drag {itemEmoji} into the box</Text>
+        <Text style={styles.dragHint}>👆 Drag {itemEmoji ?? 'it'} into the box</Text>
       ) : null}
     </View>
   );
@@ -315,7 +329,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  choiceEmoji: { fontSize: speechLevel2ButtonStyles.emoji.fontSize },
   choiceLabel: { ...speechLevel2ButtonStyles.label, marginTop: 6 },
   zone: {
     minWidth: 100,
@@ -330,7 +343,6 @@ const styles = StyleSheet.create({
   },
   zoneActive: { borderStyle: 'solid', backgroundColor: 'rgba(255,255,255,0.95)' },
   zoneDone: { borderStyle: 'solid', backgroundColor: '#DCFCE7' },
-  zoneEmoji: { fontSize: 32 },
   zoneLabel: { fontSize: 12, fontWeight: '800', marginTop: 4 },
   scene: { flex: 1, minHeight: 260, position: 'relative' },
   dropZone: {
@@ -346,9 +358,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dropZoneEmoji: { fontSize: 48 },
   dropZoneLabel: { fontSize: 13, fontWeight: '800', marginTop: 4 },
-  inBoxEmoji: { fontSize: 36, marginTop: 6 },
+  inBoxPicture: { marginTop: 6 },
   draggable: {
     position: 'absolute',
     width: 72,
@@ -365,6 +376,5 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
   },
-  draggableEmoji: { fontSize: 44 },
   dragHint: { position: 'absolute', bottom: 8, left: 0, right: 0, textAlign: 'center', fontSize: 14, fontWeight: '700', color: '#475569' },
 });

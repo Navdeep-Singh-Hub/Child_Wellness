@@ -8,6 +8,7 @@ import {
   speakCategory,
   useCategoriesSession,
 } from '@/components/game/speech/categories/shared/categoriesShared';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -15,11 +16,11 @@ type Props = { onBack: () => void; onComplete?: () => void };
 
 type Texture = 'soft' | 'hard';
 
-const ITEMS: { id: string; label: string; emoji: string; texture: Texture }[] = [
-  { id: 'pillow', label: 'Pillow', emoji: '🛏️', texture: 'soft' },
-  { id: 'teddy', label: 'Teddy', emoji: '🧸', texture: 'soft' },
-  { id: 'rock', label: 'Rock', emoji: '🪨', texture: 'hard' },
-  { id: 'block', label: 'Block', emoji: '🧱', texture: 'hard' },
+const ITEMS: { id: string; label: string; emoji: string; texture: Texture; imageKey: Level2ImageKey }[] = [
+  { id: 'pillow', label: 'Pillow', emoji: '🛏️', texture: 'soft', imageKey: 'pillow' },
+  { id: 'teddy', label: 'Teddy', emoji: '🧸', texture: 'soft', imageKey: 'teddy' },
+  { id: 'rock', label: 'Rock', emoji: '🪨', texture: 'hard', imageKey: 'rock' },
+  { id: 'block', label: 'Block', emoji: '🧱', texture: 'hard', imageKey: 'brick' },
 ];
 
 export function SoftOrHardGame({ onBack, onComplete }: Props) {
@@ -71,6 +72,7 @@ export function SoftOrHardGame({ onBack, onComplete }: Props) {
               key={item.id}
               label={item.label}
               emoji={item.emoji}
+              imageKey={item.imageKey}
               accent="#9333EA"
               dimmed={sorted.has(item.id)}
               onPress={() => {

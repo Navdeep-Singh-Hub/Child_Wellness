@@ -60,10 +60,11 @@ export function JumpLikeMeGame({ onBack, onComplete }: Props) {
         onStart={() => setCanPlay(true)}
         phaseHint={phase === 'demo' ? '⬆️ Friend is jumping!' : `⬆️ Your turn! (${hits}/2)`}
         avatarEmoji="🦘"
+        avatarImageKey="avatar-child-jump"
         avatarAnimating={phase === 'demo'}
       >
         <View style={styles.row}>
-          <ActionChoiceButton label="Jump" emoji="⬆️" accent="#2563EB" onPress={onJump} />
+          <ActionChoiceButton label="Jump" emoji="⬆️" imageKey="avatar-child-jump" accent="#2563EB" onPress={onJump} />
         </View>
       </ActionGameShell>
       <ActionGameOverlays

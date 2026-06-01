@@ -8,15 +8,16 @@ import {
   speakPosition,
   usePositionsSession,
 } from '@/components/game/speech/positions/shared/positionsShared';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 type Props = { onBack: () => void; onComplete?: () => void };
 
 const ROUNDS = [
-  { item: '🐻', itemLabel: 'Bear', tree: '🌳' },
-  { item: '🐰', itemLabel: 'Bunny', tree: '🌲' },
-  { item: '🦊', itemLabel: 'Fox', tree: '🌴' },
+  { item: '🐻', itemLabel: 'Bear', tree: '🌳', treeImageKey: 'tree' as const },
+  { item: '🐰', itemLabel: 'Bunny', tree: '🌲', treeImageKey: 'tree' as const },
+  { item: '🦊', itemLabel: 'Fox', tree: '🌴', treeImageKey: 'tree-palm' as const },
 ] as const;
 
 export function BehindTheTreeGame({ onBack, onComplete }: Props) {
@@ -75,7 +76,7 @@ export function BehindTheTreeGame({ onBack, onComplete }: Props) {
               style={styles.behindZone}
               emoji={hidden ? round.item : '👀'}
             />
-            <Text style={styles.tree}>{round.tree}</Text>
+            <Level2Picture imageKey={round.treeImageKey} emoji={round.tree} size={88} />
           </View>
           {!hidden ? (
             <Pressable

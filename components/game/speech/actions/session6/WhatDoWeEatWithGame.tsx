@@ -15,19 +15,19 @@ type Props = { onBack: () => void; onComplete?: () => void };
 
 const ROUNDS = [
   { food: '🥣', foodLabel: 'soup', answer: 'spoon', items: [
-    { id: 'spoon', emoji: '🥄', label: 'Spoon', correct: true },
-    { id: 'hammer', emoji: '🔨', label: 'Hammer', correct: false },
-    { id: 'brush', emoji: '🖌️', label: 'Brush', correct: false },
+    { id: 'spoon', emoji: '🥄', imageKey: 'spoon' as const, label: 'Spoon', correct: true },
+    { id: 'hammer', emoji: '🔨', imageKey: 'hammer' as const, label: 'Hammer', correct: false },
+    { id: 'brush', emoji: '🖌️', imageKey: 'paint-brush' as const, label: 'Brush', correct: false },
     { id: 'ball', emoji: '⚽', label: 'Ball', correct: false },
   ]},
   { food: '🍚', foodLabel: 'rice', answer: 'spoon', items: [
-    { id: 'spoon', emoji: '🥄', label: 'Spoon', correct: true },
-    { id: 'scissors', emoji: '✂️', label: 'Scissors', correct: false },
+    { id: 'spoon', emoji: '🥄', imageKey: 'spoon' as const, label: 'Spoon', correct: true },
+    { id: 'scissors', emoji: '✂️', imageKey: 'scissors' as const, label: 'Scissors', correct: false },
     { id: 'key', emoji: '🔑', label: 'Key', correct: false },
     { id: 'phone', emoji: '📱', label: 'Phone', correct: false },
   ]},
   { food: '🥣', foodLabel: 'cereal', answer: 'spoon', items: [
-    { id: 'spoon', emoji: '🥄', label: 'Spoon', correct: true },
+    { id: 'spoon', emoji: '🥄', imageKey: 'spoon' as const, label: 'Spoon', correct: true },
     { id: 'ruler', emoji: '📏', label: 'Ruler', correct: false },
     { id: 'umbrella', emoji: '☂️', label: 'Umbrella', correct: false },
     { id: 'guitar', emoji: '🎸', label: 'Guitar', correct: false },
@@ -82,6 +82,7 @@ export function WhatDoWeEatWithGame({ onBack, onComplete }: Props) {
               key={c.id}
               label={c.label}
               emoji={c.emoji}
+              imageKey={c.imageKey}
               accent="#CA8A04"
               onPress={() => onPick(c.correct)}
             />

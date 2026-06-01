@@ -8,6 +8,7 @@ import {
   speakComprehension,
   useComprehensionSession,
 } from '@/components/game/speech/comprehension/shared/comprehensionShared';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -16,19 +17,19 @@ type Props = { onBack: () => void; onComplete?: () => void };
 const ROUNDS = [
   {
     group: 'Fruits',
-    item: { emoji: '🍎', label: 'Apple' },
+    item: { emoji: '🍎', imageKey: 'apple' as const, label: 'Apple' },
     belongs: true,
     say: 'Does an apple belong with fruits?',
   },
   {
     group: 'Fruits',
-    item: { emoji: '🚗', label: 'Car' },
+    item: { emoji: '🚗', imageKey: 'car' as const, label: 'Car' },
     belongs: false,
     say: 'Does a car belong with fruits?',
   },
   {
     group: 'Animals',
-    item: { emoji: '🐕', label: 'Dog' },
+    item: { emoji: '🐕', imageKey: 'dog' as const, label: 'Dog' },
     belongs: true,
     say: 'Does a dog belong with animals?',
   },
@@ -75,7 +76,7 @@ export function BelongsOrNotGame({ onBack, onComplete }: Props) {
         phaseHint={`Group: ${round.group}`}
       >
         <Text style={styles.group}>{round.group}</Text>
-        <Text style={styles.item}>{round.item.emoji}</Text>
+        <Level2Picture imageKey={round.item.imageKey} emoji={round.item.emoji} size={64} />
         <Text style={styles.itemLabel}>{round.item.label}</Text>
         <View style={styles.row}>
           <ComprehensionChoiceTile
@@ -105,7 +106,6 @@ export function BelongsOrNotGame({ onBack, onComplete }: Props) {
 
 const styles = StyleSheet.create({
   group: { textAlign: 'center', fontSize: 20, fontWeight: '900', color: '#7C3AED', marginBottom: 8 },
-  item: { textAlign: 'center', fontSize: 64 },
   itemLabel: { textAlign: 'center', fontSize: 16, fontWeight: '800', color: '#0F172A', marginBottom: 12 },
   row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
 });

@@ -1,5 +1,6 @@
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
+import { SESSION3_PACING } from '@/components/game/occupational/level1/session3/session3Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -22,9 +23,17 @@ import {
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
-const SLOW_BLINK_INTERVAL = 1500; // 1.5 seconds - slow
-const FAST_BLINK_INTERVAL = 400; // 0.4 seconds - fast
-const TAPS_TO_SWITCH = 5; // After 5 taps, switch speed
+const {
+  slowBlinkInterval: SLOW_BLINK_INTERVAL,
+  fastBlinkInterval: FAST_BLINK_INTERVAL,
+  slowGlowHoldMs: SLOW_GLOW_HOLD_MS,
+  fastGlowHoldMs: FAST_GLOW_HOLD_MS,
+  glowRiseSlowMs: GLOW_RISE_SLOW_MS,
+  glowRiseFastMs: GLOW_RISE_FAST_MS,
+  glowFallSlowMs: GLOW_FALL_SLOW_MS,
+  glowFallFastMs: GLOW_FALL_FAST_MS,
+} = SESSION3_PACING.slowThenFast;
+const TAPS_TO_SWITCH = 5;
 const TOTAL_TAPS_REQUIRED = 20; // Total taps to complete game
 const CIRCLE_SIZE = 180;
 
@@ -91,7 +100,7 @@ const SlowThenFastGame: React.FC<{ onBack?: () => void; onComplete?: () => void 
   // Initial instruction - only once
   useEffect(() => {
     try {
-      speakTTS(`Tap when the circle lights up. After ${TAPS_TO_SWITCH} taps, the speed will switch!`, { rate: 0.78 });
+      speakTTS(`Tap when the circle lights up. After ${TAPS_TO_SWITCH} taps, the speed will switch!`, 0.78);
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
@@ -99,26 +108,31 @@ const SlowThenFastGame: React.FC<{ onBack?: () => void; onComplete?: () => void 
   useEffect(() => {
     if (done) return;
 
+    const isSlow = speedMode === 'slow';
+    const riseMs = isSlow ? GLOW_RISE_SLOW_MS : GLOW_RISE_FAST_MS;
+    const fallMs = isSlow ? GLOW_FALL_SLOW_MS : GLOW_FALL_FAST_MS;
+    const holdMs = isSlow ? SLOW_GLOW_HOLD_MS : FAST_GLOW_HOLD_MS;
+    const cycleMs = riseMs + holdMs + fallMs + 250;
+
     const blinkLoop = () => {
-      // Turn on (light up)
       setIsLit(true);
       setMissed(false);
       Animated.sequence([
         Animated.timing(glowAnim, {
           toValue: 1,
-          duration: speedMode === 'slow' ? 200 : 100,
+          duration: riseMs,
           easing: Easing.out(Easing.ease),
           useNativeDriver: false,
         }),
         Animated.timing(glowAnim, {
           toValue: 0.7,
-          duration: currentBlinkInterval - (speedMode === 'slow' ? 600 : 300),
+          duration: holdMs,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
         }),
         Animated.timing(glowAnim, {
           toValue: 0,
-          duration: speedMode === 'slow' ? 200 : 100,
+          duration: fallMs,
           easing: Easing.in(Easing.ease),
           useNativeDriver: false,
         }),
@@ -127,9 +141,8 @@ const SlowThenFastGame: React.FC<{ onBack?: () => void; onComplete?: () => void 
       });
     };
 
-    // Start blinking
     blinkLoop();
-    const interval = setInterval(blinkLoop, currentBlinkInterval);
+    const interval = setInterval(blinkLoop, Math.max(currentBlinkInterval, cycleMs));
 
     return () => clearInterval(interval);
   }, [currentBlinkInterval, speedMode, done, glowAnim]);

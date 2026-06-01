@@ -18,9 +18,9 @@ const ROUNDS = [
     target: 'mom',
     prompt: 'Find Mom!',
     members: [
-      { id: 'mom', emoji: '👩', label: 'Mom', correct: true },
-      { id: 'dad', emoji: '👨', label: 'Dad', correct: false },
-      { id: 'sis', emoji: '👧', label: 'Sister', correct: false },
+      { id: 'mom', emoji: '👩', imageKey: 'mom' as const, label: 'Mom', correct: true },
+      { id: 'dad', emoji: '👨', imageKey: 'dad' as const, label: 'Dad', correct: false },
+      { id: 'sis', emoji: '👧', imageKey: 'sister' as const, label: 'Sister', correct: false },
       { id: 'dog', emoji: '🐕', label: 'Dog', correct: false },
     ],
   },
@@ -28,19 +28,19 @@ const ROUNDS = [
     target: 'dad',
     prompt: 'Find Dad!',
     members: [
-      { id: 'grandma', emoji: '👵', label: 'Grandma', correct: false },
-      { id: 'dad', emoji: '👨', label: 'Dad', correct: true },
-      { id: 'bro', emoji: '👦', label: 'Brother', correct: false },
-      { id: 'baby', emoji: '👶', label: 'Baby', correct: false },
+      { id: 'grandma', emoji: '👵', imageKey: 'grandma' as const, label: 'Grandma', correct: false },
+      { id: 'dad', emoji: '👨', imageKey: 'dad' as const, label: 'Dad', correct: true },
+      { id: 'bro', emoji: '👦', imageKey: 'brother' as const, label: 'Brother', correct: false },
+      { id: 'baby', emoji: '👶', imageKey: 'baby' as const, label: 'Baby', correct: false },
     ],
   },
   {
     target: 'grandma',
     prompt: 'Find Grandma!',
     members: [
-      { id: 'mom', emoji: '👩', label: 'Mom', correct: false },
-      { id: 'grandma', emoji: '👵', label: 'Grandma', correct: true },
-      { id: 'grandpa', emoji: '👴', label: 'Grandpa', correct: false },
+      { id: 'mom', emoji: '👩', imageKey: 'mom' as const, label: 'Mom', correct: false },
+      { id: 'grandma', emoji: '👵', imageKey: 'grandma' as const, label: 'Grandma', correct: true },
+      { id: 'grandpa', emoji: '👴', imageKey: 'grandpa' as const, label: 'Grandpa', correct: false },
       { id: 'cat', emoji: '🐱', label: 'Cat', correct: false },
     ],
   },
@@ -93,6 +93,7 @@ export function FamilyMatchGame({ onBack, onComplete }: Props) {
               key={m.id}
               label={m.label}
               emoji={m.emoji}
+              imageKey={m.imageKey}
               accent="#DB2777"
               onPress={() => onPick(m.correct, m.label)}
             />

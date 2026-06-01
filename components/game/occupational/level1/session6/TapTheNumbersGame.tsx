@@ -1,4 +1,5 @@
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import ResultCard from '@/components/game/ResultCard';
 import { SparkleBurst } from '@/components/game/FX';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -29,7 +30,24 @@ const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
 const TOTAL_ROUNDS = 8;
 const CIRCLE_SIZE = 100;
-const SEQUENCE = [1, 2, 3];
+const NUMBERS_POOL = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+function formatSequenceSpeech(seq: number[]): string {
+  if (seq.length === 0) return '';
+  if (seq.length === 1) return String(seq[0]);
+  return `${seq.slice(0, -1).join(', then ')}, then ${seq[seq.length - 1]}`;
+}
+
+function generateNumberSequence(): { sequence: number[]; slots: number[] } {
+  const pool = [...NUMBERS_POOL];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const sequence = pool.slice(0, 3);
+  const slots = [...sequence].sort(() => Math.random() - 0.5);
+  return { sequence, slots };
+}
 
 const useSoundEffect = (uri: string) => {
   const soundRef = useRef<ExpoAudio.Sound | null>(null);
@@ -75,6 +93,8 @@ const TapTheNumbersGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [roundActive, setRoundActive] = useState(true);
+  const [sequence, setSequence] = useState<number[]>([1, 2, 3]);
+  const [slotNumbers, setSlotNumbers] = useState<number[]>([1, 2, 3]);
   const [currentSequenceIndex, setCurrentSequenceIndex] = useState(0);
   const [isShaking, setIsShaking] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
@@ -88,6 +108,9 @@ const TapTheNumbersGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const circle3X = useSharedValue(0);
   const sparkleX = useSharedValue(0);
   const sparkleY = useSharedValue(0);
+
+  const circleScales = [circle1Scale, circle2Scale, circle3Scale];
+  const circleShakes = [circle1X, circle2X, circle3X];
 
   // End game function (defined before use)
   const endGame = useCallback(
@@ -124,96 +147,100 @@ const TapTheNumbersGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     [router],
   );
 
+  const setupRound = useCallback(
+    (speakHint: boolean) => {
+      const { sequence: nextSequence, slots } = generateNumberSequence();
+      setSequence(nextSequence);
+      setSlotNumbers(slots);
+      setCurrentSequenceIndex(0);
+      setRoundActive(true);
+      if (speakHint) {
+        try {
+          speakTTS(`Tap the numbers in order: ${formatSequenceSpeech(nextSequence)}!`, 0.78);
+        } catch {}
+      }
+    },
+    [],
+  );
+
   // Handle tap
-  const handleTap = useCallback(async (number: number) => {
-    if (!roundActive || done || isShaking) return;
+  const handleTap = useCallback(
+    async (number: number, slotIndex: number) => {
+      if (!roundActive || done || isShaking) return;
 
-    const expectedNumber = SEQUENCE[currentSequenceIndex];
+      const expectedNumber = sequence[currentSequenceIndex];
 
-    if (number === expectedNumber) {
-      // Correct tap!
-      const scaleAnim = number === 1 ? circle1Scale : number === 2 ? circle2Scale : circle3Scale;
-      scaleAnim.value = withSequence(
-        withTiming(1.3, { duration: 150, easing: Easing.out(Easing.ease) }),
-        withTiming(1, { duration: 150, easing: Easing.in(Easing.ease) }),
-      );
+      if (number === expectedNumber) {
+        circleScales[slotIndex].value = withSequence(
+          withTiming(1.3, { duration: 150, easing: Easing.out(Easing.ease) }),
+          withTiming(1, { duration: 150, easing: Easing.in(Easing.ease) }),
+        );
 
-      const newIndex = currentSequenceIndex + 1;
+        const newIndex = currentSequenceIndex + 1;
 
-      if (newIndex >= SEQUENCE.length) {
-        // Sequence complete!
-        sparkleX.value = 50;
-        sparkleY.value = 50;
+        if (newIndex >= sequence.length) {
+          sparkleX.value = 50;
+          sparkleY.value = 50;
 
-        setScore((s) => {
-          const newScore = s + 1;
-          if (newScore >= TOTAL_ROUNDS) {
-            setTimeout(() => {
-              endGame(newScore);
-            }, 1000);
-          } else {
-            setTimeout(() => {
-              setRound((r) => r + 1);
-              setCurrentSequenceIndex(0);
-              setRoundActive(true);
-            }, 1500);
-          }
-          return newScore;
-        });
+          setScore((s) => {
+            const newScore = s + 1;
+            if (newScore >= TOTAL_ROUNDS) {
+              setTimeout(() => {
+                endGame(newScore);
+              }, 1000);
+            } else {
+              setTimeout(() => {
+                setRound((r) => r + 1);
+              }, 800);
+            }
+            return newScore;
+          });
 
-        try {
-          playSuccess();
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          speakTTS('Perfect sequence!', 0.78 );
-        } catch {}
+          try {
+            playSuccess();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            speakTTS('Perfect sequence!', 0.78);
+          } catch {}
+        } else {
+          setCurrentSequenceIndex(newIndex);
+          try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          } catch {}
+        }
       } else {
-        setCurrentSequenceIndex(newIndex);
+        setIsShaking(true);
+        circleShakes[slotIndex].value = withSequence(
+          withTiming(-10, { duration: 50 }),
+          withTiming(10, { duration: 50 }),
+          withTiming(-10, { duration: 50 }),
+          withTiming(10, { duration: 50 }),
+          withTiming(0, { duration: 50 }),
+        );
+
+        setCurrentSequenceIndex(0);
+
         try {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          playError();
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          speakTTS(`Try again! Tap ${formatSequenceSpeech(sequence)}.`, 0.78);
         } catch {}
+
+        setTimeout(() => {
+          setIsShaking(false);
+        }, 500);
       }
-    } else {
-      // Wrong tap - shake!
-      setIsShaking(true);
-      const shakeAnim = number === 1 ? circle1X : number === 2 ? circle2X : circle3X;
-      shakeAnim.value = withSequence(
-        withTiming(-10, { duration: 50 }),
-        withTiming(10, { duration: 50 }),
-        withTiming(-10, { duration: 50 }),
-        withTiming(10, { duration: 50 }),
-        withTiming(0, { duration: 50 }),
-      );
+    },
+    [roundActive, done, isShaking, currentSequenceIndex, sequence, playSuccess, playError, endGame, circleScales, circleShakes],
+  );
 
-      // Reset sequence
-      setCurrentSequenceIndex(0);
-
-      try {
-        playError();
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        speakTTS('Try again! Tap 1, then 2, then 3.', { rate: 0.78 });
-      } catch {}
-
-      setTimeout(() => {
-        setIsShaking(false);
-      }, 500);
-    }
-  }, [roundActive, done, isShaking, currentSequenceIndex, playSuccess, playError, endGame]);
-
-  // Reset sequence when round changes
   useEffect(() => {
-    if (!done && roundActive) {
-      if (round === 1 || currentSequenceIndex === 0) {
-        try {
-          speakTTS('Tap the numbers in order: 1, then 2, then 3!', { rate: 0.78 });
-        } catch {}
-      }
-      setCurrentSequenceIndex(0);
-    }
+    if (done) return;
+    setupRound(true);
     return () => {
       stopAllSpeech();
       cleanupSounds();
     };
-  }, [round, done, roundActive]);
+  }, [round, done, setupRound]);
 
   const handleBack = useCallback(() => {
     stopAllSpeech();
@@ -249,7 +276,8 @@ const TapTheNumbersGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }));
 
   // Get expected number for highlighting
-  const expectedNumber = SEQUENCE[currentSequenceIndex];
+  const expectedNumber = sequence[currentSequenceIndex];
+  const sequenceHint = formatSequenceSpeech(sequence);
 
   // Result screen
   if (done && finalStats) {
@@ -285,13 +313,12 @@ const TapTheNumbersGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 onBack?.();
               }}
               onPlayAgain={() => {
-                setRound(1);
                 setScore(0);
                 setDone(false);
                 setFinalStats(null);
                 setLogTimestamp(null);
-                setCurrentSequenceIndex(0);
-                setRoundActive(true);
+                setShowCongratulations(false);
+                setRound(1);
                 circle1Scale.value = 1;
                 circle2Scale.value = 1;
                 circle3Scale.value = 1;
@@ -319,65 +346,34 @@ const TapTheNumbersGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Round {round}/{TOTAL_ROUNDS} • 🔢 Score: {score}
         </Text>
         <Text style={styles.helper}>
-          Tap the numbers in order: 1, then 2, then 3!
+          Tap in order: {sequenceHint}
         </Text>
       </View>
 
       <View style={styles.playArea}>
         <View style={styles.circlesContainer}>
-          {/* Circle 1 */}
-          <Animated.View style={[styles.circleContainer, circle1Style]}>
-            <Pressable
-              onPress={() => handleTap(1)}
-              style={[
-                styles.circle,
-                {
-                  backgroundColor: expectedNumber === 1 ? '#22C55E' : '#3B82F6',
-                  borderColor: expectedNumber === 1 ? '#16A34A' : '#2563EB',
-                  borderWidth: expectedNumber === 1 ? 4 : 2,
-                },
-              ]}
-              disabled={!roundActive || done || isShaking}
-            >
-              <Text style={styles.circleNumber}>1</Text>
-            </Pressable>
-          </Animated.View>
-
-          {/* Circle 2 */}
-          <Animated.View style={[styles.circleContainer, circle2Style]}>
-            <Pressable
-              onPress={() => handleTap(2)}
-              style={[
-                styles.circle,
-                {
-                  backgroundColor: expectedNumber === 2 ? '#22C55E' : '#3B82F6',
-                  borderColor: expectedNumber === 2 ? '#16A34A' : '#2563EB',
-                  borderWidth: expectedNumber === 2 ? 4 : 2,
-                },
-              ]}
-              disabled={!roundActive || done || isShaking}
-            >
-              <Text style={styles.circleNumber}>2</Text>
-            </Pressable>
-          </Animated.View>
-
-          {/* Circle 3 */}
-          <Animated.View style={[styles.circleContainer, circle3Style]}>
-            <Pressable
-              onPress={() => handleTap(3)}
-              style={[
-                styles.circle,
-                {
-                  backgroundColor: expectedNumber === 3 ? '#22C55E' : '#3B82F6',
-                  borderColor: expectedNumber === 3 ? '#16A34A' : '#2563EB',
-                  borderWidth: expectedNumber === 3 ? 4 : 2,
-                },
-              ]}
-              disabled={!roundActive || done || isShaking}
-            >
-              <Text style={styles.circleNumber}>3</Text>
-            </Pressable>
-          </Animated.View>
+          {slotNumbers.map((num, slotIndex) => {
+            const circleStyle = slotIndex === 0 ? circle1Style : slotIndex === 1 ? circle2Style : circle3Style;
+            const isNext = num === expectedNumber;
+            return (
+              <Animated.View key={`slot-${slotIndex}-${num}`} style={[styles.circleContainer, circleStyle]}>
+                <Pressable
+                  onPress={() => handleTap(num, slotIndex)}
+                  style={[
+                    styles.circle,
+                    {
+                      backgroundColor: isNext ? '#22C55E' : '#3B82F6',
+                      borderColor: isNext ? '#16A34A' : '#2563EB',
+                      borderWidth: isNext ? 4 : 2,
+                    },
+                  ]}
+                  disabled={!roundActive || done || isShaking}
+                >
+                  <Text style={styles.circleNumber}>{num}</Text>
+                </Pressable>
+              </Animated.View>
+            );
+          })}
         </View>
 
         {/* Progress indicator */}
@@ -386,9 +382,9 @@ const TapTheNumbersGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             Tap {expectedNumber} next
           </Text>
           <View style={styles.progressDots}>
-            {SEQUENCE.map((num, idx) => (
+            {sequence.map((num, idx) => (
               <View
-                key={num}
+                key={`progress-${idx}-${num}`}
                 style={[
                   styles.progressDot,
                   {
@@ -413,7 +409,7 @@ const TapTheNumbersGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Skills: early sequencing • number-order foundation • working memory
         </Text>
         <Text style={styles.footerSub}>
-          Tap 1, then 2, then 3 in order! This is the most fundamental OT sequencing game.
+          Each round uses a new number order. Tap the highlighted number first, then the rest in order.
         </Text>
       </View>
     </SafeAreaView>

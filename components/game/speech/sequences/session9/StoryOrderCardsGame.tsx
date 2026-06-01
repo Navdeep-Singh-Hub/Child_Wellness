@@ -13,31 +13,33 @@ import { StyleSheet, View } from 'react-native';
 
 type Props = { onBack: () => void; onComplete?: () => void };
 
-type Card = { id: string; emoji: string; label: string; order: number };
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
+
+type Card = { id: string; emoji: string; label: string; order: number; imageKey?: Level2ImageKey };
 
 const ROUNDS: { title: string; cards: Card[] }[] = [
   {
     title: 'Plant a flower',
     cards: [
-      { id: 'seed', emoji: '🌱', label: 'Plant seed', order: 1 },
-      { id: 'water', emoji: '💧', label: 'Water', order: 2 },
-      { id: 'flower', emoji: '🌸', label: 'Flower', order: 3 },
+      { id: 'seed', emoji: '🌱', imageKey: 'plant-seed', label: 'Plant seed', order: 1 },
+      { id: 'water', emoji: '💧', imageKey: 'watering-can', label: 'Water', order: 2 },
+      { id: 'flower', emoji: '🌸', imageKey: 'flower-bloom', label: 'Flower', order: 3 },
     ],
   },
   {
     title: 'Make a sandwich',
     cards: [
-      { id: 'bread', emoji: '🍞', label: 'Bread', order: 1 },
-      { id: 'fill', emoji: '🧀', label: 'Fillings', order: 2 },
-      { id: 'eat', emoji: '🥪', label: 'Eat', order: 3 },
+      { id: 'bread', emoji: '🍞', imageKey: 'bread-loaf', label: 'Bread', order: 1 },
+      { id: 'fill', emoji: '🧀', imageKey: 'sandwich-fillings', label: 'Fillings', order: 2 },
+      { id: 'eat', emoji: '🥪', imageKey: 'sandwich', label: 'Eat', order: 3 },
     ],
   },
   {
     title: 'Get ready for bed',
     cards: [
-      { id: 'bath', emoji: '🛁', label: 'Bath', order: 1 },
-      { id: 'pjs', emoji: '👕', label: 'Pajamas', order: 2 },
-      { id: 'sleep', emoji: '😴', label: 'Sleep', order: 3 },
+      { id: 'bath', emoji: '🛁', imageKey: 'bath-tub', label: 'Bath', order: 1 },
+      { id: 'pjs', emoji: '👕', imageKey: 'pajamas', label: 'Pajamas', order: 2 },
+      { id: 'sleep', emoji: '😴', imageKey: 'sleeping-child', label: 'Sleep', order: 3 },
     ],
   },
 ];
@@ -102,6 +104,7 @@ export function StoryOrderCardsGame({ onBack, onComplete }: Props) {
               key={c.id}
               label={c.label}
               emoji={c.emoji}
+              imageKey={c.imageKey}
               accent="#7C3AED"
               dimmed={picked.has(c.id)}
               orderNum={picked.has(c.id) ? c.order : undefined}

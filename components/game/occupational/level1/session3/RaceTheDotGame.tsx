@@ -1,5 +1,6 @@
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
+import { SESSION3_PACING } from '@/components/game/occupational/level1/session3/session3Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -29,11 +30,13 @@ import Animated, {
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const GOAL_SOUND = 'https://actions.google.com/sounds/v1/cartoon/pop.ogg';
 const TOTAL_ROUNDS = 10;
-const SLOW_SPEED = 30; // pixels per tap (10% per tap - 30/300 = 10%)
-const FAST_SPEED = 30; // pixels per tap (10% per tap - 30/300 = 10%)
-const GOAL_DISTANCE = 300; // pixels to reach goal
-const SLOW_ROUNDS = 5; // First 5 rounds are slow
-const FAST_ROUNDS = 5; // Last 5 rounds are fast
+const {
+  goalDistance: GOAL_DISTANCE,
+  slowSpeedPerTap: SLOW_SPEED,
+  fastSpeedPerTap: FAST_SPEED,
+  slowRounds: SLOW_ROUNDS,
+  nextRoundDelayMs: NEXT_ROUND_DELAY_MS,
+} = SESSION3_PACING.raceDot;
 
 const useSoundEffect = (uri: string) => {
   const soundRef = useRef<ExpoAudio.Sound | null>(null);
@@ -94,6 +97,17 @@ const RaceTheDotGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
   const sparkleY = useSharedValue(0);
   const goalScale = useSharedValue(1);
 
+  const roundRef = useRef(round);
+  const scoreRef = useRef(score);
+  const startRoundRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+
   // Determine if current round is fast mode
   useEffect(() => {
     setIsFastMode(round > SLOW_ROUNDS);
@@ -121,8 +135,58 @@ const RaceTheDotGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
     setShowGoal(true);
   }, [isFastMode, pathProgress, dotScale, dotOpacity, dotX, dotY, goalScale]);
 
+  const endGame = useCallback(
+    async (finalScore: number) => {
+      const total = TOTAL_ROUNDS;
+      const xp = finalScore * 15;
+      const accuracy = (finalScore / total) * 100;
+
+      setFinalStats({ correct: finalScore, total, xp });
+      setDone(true);
+      setShowCongratulations(true);
+
+      speakTTS('Amazing work! You completed the game!', 0.78);
+
+      try {
+        await recordGame(xp);
+        const result = await logGameAndAward({
+          type: 'raceTheDot',
+          correct: finalScore,
+          total,
+          accuracy,
+          xpAwarded: xp,
+          skillTags: ['visual-tracking', 'speed-modulation', 'motor-planning', 'timing'],
+        });
+        setLogTimestamp(result?.last?.at ?? null);
+        router.setParams({ refreshStats: Date.now().toString() });
+      } catch (e) {
+        console.error('Failed to log race the dot game:', e);
+      }
+    },
+    [router],
+  );
+
+  const onRoundGoalReached = useCallback(() => {
+    const nextScore = scoreRef.current + 1;
+    setScore(nextScore);
+    setRoundActive(false);
+
+    if (roundRef.current >= TOTAL_ROUNDS) {
+      endGame(nextScore);
+    } else {
+      setRound((r) => r + 1);
+      setTimeout(() => {
+        startRoundRef.current();
+      }, NEXT_ROUND_DELAY_MS);
+    }
+  }, [endGame]);
+
+  useEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
   // Handle tap - move dot forward
-  const handleTap = useCallback(async () => {
+  const handleTap = useCallback(() => {
     if (!roundActive || done) return;
 
     const speed = isFastMode ? FAST_SPEED : SLOW_SPEED;
@@ -164,68 +228,22 @@ const RaceTheDotGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
       // Success animation
       dotScale.value = withSequence(
         withTiming(1.5, { duration: 200, easing: Easing.out(Easing.ease) }),
-        withTiming(0, { duration: 300, easing: Easing.in(Easing.ease) }, () => {
-          runOnJS(setScore)((s) => s + 1);
-          runOnJS(setRoundActive)(false);
-
-          if (round >= TOTAL_ROUNDS) {
-            runOnJS(endGame)(score + 1);
-          } else {
-            runOnJS(setRound)((r) => r + 1);
-            setTimeout(() => {
-              runOnJS(startRound)();
-            }, 1000);
+        withTiming(0, { duration: 300, easing: Easing.in(Easing.ease) }, (finished) => {
+          if (finished) {
+            runOnJS(onRoundGoalReached)();
           }
         }),
       );
 
       dotOpacity.value = withTiming(0, { duration: 300 });
 
-      try {
-        await playGoal();
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
+      playGoal().catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } else {
-      try {
-        await playSuccess();
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch {}
+      playSuccess().catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
-  }, [roundActive, done, dotPosition, isFastMode, round, score, pathProgress, dotScale, dotOpacity, dotX, dotY, sparkleX, sparkleY, playSuccess, playGoal, startRound]);
-
-  // End game
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 15; // 15 XP per successful round
-      const accuracy = (finalScore / total) * 100;
-
-      // Set all states together FIRST (like CatchTheBouncingStar)
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'raceTheDot',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['visual-tracking', 'speed-modulation', 'motor-planning', 'timing'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log race the dot game:', e);
-      }
-    },
-    [router],
-  );
+  }, [roundActive, done, dotPosition, isFastMode, pathProgress, dotScale, dotOpacity, dotX, dotY, sparkleX, sparkleY, playSuccess, playGoal, onRoundGoalReached]);
 
   // Initialize first round
   useEffect(() => {

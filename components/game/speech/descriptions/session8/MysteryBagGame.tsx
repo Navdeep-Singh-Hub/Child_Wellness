@@ -18,19 +18,19 @@ const ROUNDS = [
     clues: ['It is cold.', 'You eat it.', 'It can be chocolate.'],
     speak: 'In the bag: cold, you eat it, can be chocolate.',
     choices: [
-      { id: 'ice', emoji: '🍦', label: 'Ice cream', correct: true },
-      { id: 'sock', emoji: '🧦', label: 'Sock', correct: false },
-      { id: 'rock', emoji: '🪨', label: 'Rock', correct: false },
-      { id: 'bell', emoji: '🔔', label: 'Bell', correct: false },
+      { id: 'ice', emoji: '🍦', imageKey: 'ice-cream' as const, label: 'Ice cream', correct: true },
+      { id: 'sock', emoji: '🧦', imageKey: 'sock' as const, label: 'Sock', correct: false },
+      { id: 'rock', emoji: '🪨', imageKey: 'rock' as const, label: 'Rock', correct: false },
+      { id: 'bell', emoji: '🔔', imageKey: 'bell' as const, label: 'Bell', correct: false },
     ],
   },
   {
     clues: ['You wear it on your head.', 'It can shade the sun.', 'It is not shoes.'],
     speak: 'In the bag: on your head, shades the sun, not shoes.',
     choices: [
-      { id: 'hat', emoji: '🧢', label: 'Hat', correct: true },
-      { id: 'glove', emoji: '🧤', label: 'Glove', correct: false },
-      { id: 'plate', emoji: '🍽️', label: 'Plate', correct: false },
+      { id: 'hat', emoji: '🧢', imageKey: 'hat-cap' as const, label: 'Hat', correct: true },
+      { id: 'glove', emoji: '🧤', imageKey: 'glove' as const, label: 'Glove', correct: false },
+      { id: 'plate', emoji: '🍽️', imageKey: 'plate' as const, label: 'Plate', correct: false },
       { id: 'duck', emoji: '🦆', label: 'Duck', correct: false },
     ],
   },
@@ -38,10 +38,10 @@ const ROUNDS = [
     clues: ['It tells time.', 'It has numbers.', 'You look at your wrist.'],
     speak: 'In the bag: tells time, has numbers, on your wrist.',
     choices: [
-      { id: 'watch', emoji: '⌚', label: 'Watch', correct: true },
-      { id: 'candle', emoji: '🕯️', label: 'Candle', correct: false },
-      { id: 'pillow', emoji: '🛏️', label: 'Pillow', correct: false },
-      { id: 'leaf', emoji: '🍃', label: 'Leaf', correct: false },
+      { id: 'watch', emoji: '⌚', imageKey: 'watch' as const, label: 'Watch', correct: true },
+      { id: 'candle', emoji: '🕯️', imageKey: 'candle' as const, label: 'Candle', correct: false },
+      { id: 'pillow', emoji: '🛏️', imageKey: 'pillow' as const, label: 'Pillow', correct: false },
+      { id: 'leaf', emoji: '🍃', imageKey: 'leaf' as const, label: 'Leaf', correct: false },
     ],
   },
 ];
@@ -127,6 +127,7 @@ export function MysteryBagGame({ onBack, onComplete }: Props) {
               key={c.id}
               label={c.label}
               emoji={c.emoji}
+              imageKey={c.imageKey}
               accent="#475569"
               onPress={() => onPick(c.correct)}
             />

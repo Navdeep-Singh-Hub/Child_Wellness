@@ -18,10 +18,10 @@ const ROUNDS = [
     functionText: 'Used for cutting',
     speak: 'What is used for cutting?',
     choices: [
-      { id: 'scissors', emoji: '✂️', label: 'Scissors', correct: true },
-      { id: 'spoon', emoji: '🥄', label: 'Spoon', correct: false },
+      { id: 'scissors', emoji: '✂️', imageKey: 'scissors' as const, label: 'Scissors', correct: true },
+      { id: 'spoon', emoji: '🥄', imageKey: 'spoon' as const, label: 'Spoon', correct: false },
       { id: 'ball', emoji: '⚽', label: 'Ball', correct: false },
-      { id: 'hat', emoji: '🎩', label: 'Hat', correct: false },
+      { id: 'hat', emoji: '🎩', imageKey: 'hat-top-hat' as const, label: 'Hat', correct: false },
     ],
   },
   {
@@ -29,7 +29,7 @@ const ROUNDS = [
     speak: 'What is used for writing?',
     choices: [
       { id: 'pencil', emoji: '✏️', label: 'Pencil', correct: true },
-      { id: 'fork', emoji: '🍴', label: 'Fork', correct: false },
+      { id: 'fork', emoji: '🍴', imageKey: 'fork' as const, label: 'Fork', correct: false },
       { id: 'shoe', emoji: '👟', label: 'Shoe', correct: false },
       { id: 'clock', emoji: '⏰', label: 'Clock', correct: false },
     ],
@@ -38,9 +38,9 @@ const ROUNDS = [
     functionText: 'Used for brushing teeth',
     speak: 'What is used for brushing teeth?',
     choices: [
-      { id: 'toothbrush', emoji: '🪥', label: 'Toothbrush', correct: true },
-      { id: 'comb', emoji: '💇', label: 'Comb', correct: false },
-      { id: 'pan', emoji: '🍳', label: 'Pan', correct: false },
+      { id: 'toothbrush', emoji: '🪥', imageKey: 'toothbrush' as const, label: 'Toothbrush', correct: true },
+      { id: 'comb', emoji: '💇', imageKey: 'comb' as const, label: 'Comb', correct: false },
+      { id: 'pan', emoji: '🍳', imageKey: 'pan' as const, label: 'Pan', correct: false },
       { id: 'key', emoji: '🔑', label: 'Key', correct: false },
     ],
   },
@@ -93,6 +93,7 @@ export function FindByFunctionGame({ onBack, onComplete }: Props) {
               key={c.id}
               label={c.label}
               emoji={c.emoji}
+              imageKey={c.imageKey}
               accent="#EA580C"
               onPress={() => onPick(c.correct)}
             />

@@ -77,6 +77,7 @@ const TapWhenStarIsSmallestGame: React.FC<{ onBack?: () => void; onComplete?: ()
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [showCongratulations, setShowCongratulations] = useState(false);
   const [roundActive, setRoundActive] = useState(false);
   const [lastResult, setLastResult] = useState<'hit' | 'miss' | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);

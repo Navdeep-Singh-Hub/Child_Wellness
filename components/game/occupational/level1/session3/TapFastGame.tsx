@@ -1,5 +1,6 @@
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
+import { SESSION3_PACING } from '@/components/game/occupational/level1/session3/session3Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -21,11 +22,14 @@ import {
 } from 'react-native';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
-const BLINK_INTERVAL = 600; // 0.6 seconds - rapid blinking
-const LIT_DURATION = 300; // How long circle stays lit (orange)
-const TOTAL_TAPS_REQUIRED = 15; // Total taps to complete game
+const {
+  blinkInterval: BLINK_INTERVAL,
+  litDuration: LIT_DURATION,
+  glowRiseMs: GLOW_RISE_MS,
+  glowFallMs: GLOW_FALL_MS,
+} = SESSION3_PACING.tapFast;
+const TOTAL_TAPS_REQUIRED = 15;
 const CIRCLE_SIZE = 180;
-const RESPONSE_WINDOW = 500; // 500ms window to tap after blink
 
 const useSoundEffect = (uri: string) => {
   const soundRef = useRef<ExpoAudio.Sound | null>(null);
@@ -80,7 +84,7 @@ const TapFastGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = 
   // Initial instruction - only once
   useEffect(() => {
     try {
-      speakTTS('Watch the circle! When it turns orange and says TAP, tap it quickly!', { rate: 0.78 });
+      speakTTS('Watch the circle! When it turns orange and says TAP, tap it quickly!', 0.78);
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
@@ -98,19 +102,19 @@ const TapFastGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = 
       Animated.sequence([
         Animated.timing(glowAnim, {
           toValue: 1,
-          duration: 50,
+          duration: GLOW_RISE_MS,
           easing: Easing.out(Easing.ease),
           useNativeDriver: false,
         }),
         Animated.timing(glowAnim, {
           toValue: 0.8,
-          duration: LIT_DURATION - 100,
+          duration: LIT_DURATION,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
         }),
         Animated.timing(glowAnim, {
           toValue: 0,
-          duration: 50,
+          duration: GLOW_FALL_MS,
           easing: Easing.in(Easing.ease),
           useNativeDriver: false,
         }),
@@ -119,9 +123,9 @@ const TapFastGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = 
       });
     };
 
-    // Start rapid blinking
+    const cycleMs = GLOW_RISE_MS + LIT_DURATION + GLOW_FALL_MS + 300;
     blinkLoop();
-    const interval = setInterval(blinkLoop, BLINK_INTERVAL);
+    const interval = setInterval(blinkLoop, Math.max(BLINK_INTERVAL, cycleMs));
 
     return () => clearInterval(interval);
   }, [done, glowAnim]);

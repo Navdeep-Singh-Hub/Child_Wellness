@@ -18,9 +18,9 @@ const ROUNDS = [
     shown: ['🍎', '🍌', '❓', '🍇'],
     missing: { id: 'orange', emoji: '🍊', label: 'Orange' },
     choices: [
-      { id: 'orange', emoji: '🍊', label: 'Orange', correct: true },
-      { id: 'car', emoji: '🚗', label: 'Car', correct: false },
-      { id: 'hat', emoji: '🎩', label: 'Hat', correct: false },
+      { id: 'orange', emoji: '🍊', imageKey: 'orange' as const, label: 'Orange', correct: true },
+      { id: 'car', emoji: '🚗', imageKey: 'car' as const, label: 'Car', correct: false },
+      { id: 'hat', emoji: '🎩', imageKey: 'hat-top-hat' as const, label: 'Hat', correct: false },
       { id: 'fish', emoji: '🐟', label: 'Fish', correct: false },
     ],
   },
@@ -28,8 +28,8 @@ const ROUNDS = [
     shown: ['🐕', '🐱', '❓', '🐰'],
     missing: { id: 'cow', emoji: '🐄', label: 'Cow' },
     choices: [
-      { id: 'bird', emoji: '🐦', label: 'Bird', correct: false },
-      { id: 'cow', emoji: '🐄', label: 'Cow', correct: true },
+      { id: 'bird', emoji: '🐦', imageKey: 'bird' as const, label: 'Bird', correct: false },
+      { id: 'cow', emoji: '🐄', imageKey: 'cow' as const, label: 'Cow', correct: true },
       { id: 'tree', emoji: '🌳', label: 'Tree', correct: false },
       { id: 'cup', emoji: '☕', label: 'Cup', correct: false },
     ],
@@ -38,10 +38,10 @@ const ROUNDS = [
     shown: ['🔴', '🔵', '❓', '🟢'],
     missing: { id: 'yellow', emoji: '🟡', label: 'Yellow' },
     choices: [
-      { id: 'yellow', emoji: '🟡', label: 'Yellow', correct: true },
-      { id: 'star', emoji: '⭐', label: 'Star', correct: false },
-      { id: 'moon', emoji: '🌙', label: 'Moon', correct: false },
-      { id: 'shoe', emoji: '👟', label: 'Shoe', correct: false },
+      { id: 'yellow', emoji: '🟡', imageKey: 'sun' as const, label: 'Yellow', correct: true },
+      { id: 'star', emoji: '⭐', imageKey: 'star' as const, label: 'Star', correct: false },
+      { id: 'moon', emoji: '🌙', imageKey: 'moon' as const, label: 'Moon', correct: false },
+      { id: 'shoe', emoji: '👟', imageKey: 'shoe' as const, label: 'Shoe', correct: false },
     ],
   },
 ];
@@ -99,6 +99,7 @@ export function WhatIsMissingGame({ onBack, onComplete }: Props) {
               key={c.id}
               label={c.label}
               emoji={c.emoji}
+              imageKey={c.imageKey}
               accent="#0284C7"
               onPress={() => onPick(c.correct)}
             />

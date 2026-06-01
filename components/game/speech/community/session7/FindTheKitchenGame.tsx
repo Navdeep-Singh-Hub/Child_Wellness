@@ -18,30 +18,30 @@ const ROUNDS = [
     room: 'kitchen',
     prompt: 'Find the kitchen!',
     choices: [
-      { id: 'kitchen', emoji: '🍳', label: 'Kitchen', correct: true },
-      { id: 'bed', emoji: '🛏️', label: 'Bedroom', correct: false },
-      { id: 'bath', emoji: '🛁', label: 'Bathroom', correct: false },
-      { id: 'yard', emoji: '🌳', label: 'Backyard', correct: false },
+      { id: 'kitchen', emoji: '🍳', imageKey: 'room-kitchen' as const, label: 'Kitchen', correct: true },
+      { id: 'bed', emoji: '🛏️', imageKey: 'room-bedroom' as const, label: 'Bedroom', correct: false },
+      { id: 'bath', emoji: '🛁', imageKey: 'room-bathroom' as const, label: 'Bathroom', correct: false },
+      { id: 'library', emoji: '📚', imageKey: 'place-library' as const, label: 'Library', correct: false },
     ],
   },
   {
     room: 'bathroom',
     prompt: 'Find the bathroom!',
     choices: [
-      { id: 'living', emoji: '🛋️', label: 'Living room', correct: false },
-      { id: 'bath', emoji: '🛁', label: 'Bathroom', correct: true },
-      { id: 'kitchen', emoji: '🍳', label: 'Kitchen', correct: false },
-      { id: 'garage', emoji: '🚗', label: 'Garage', correct: false },
+      { id: 'living', emoji: '🛋️', imageKey: 'room-living' as const, label: 'Living room', correct: false },
+      { id: 'bath', emoji: '🛁', imageKey: 'room-bathroom' as const, label: 'Bathroom', correct: true },
+      { id: 'kitchen', emoji: '🍳', imageKey: 'room-kitchen' as const, label: 'Kitchen', correct: false },
+      { id: 'station', emoji: '🚒', imageKey: 'place-fire-station' as const, label: 'Fire station', correct: false },
     ],
   },
   {
     room: 'bedroom',
     prompt: 'Find the bedroom!',
     choices: [
-      { id: 'bed', emoji: '🛏️', label: 'Bedroom', correct: true },
-      { id: 'kitchen', emoji: '🍳', label: 'Kitchen', correct: false },
-      { id: 'office', emoji: '💼', label: 'Office', correct: false },
-      { id: 'park', emoji: '🏞️', label: 'Park', correct: false },
+      { id: 'bed', emoji: '🛏️', imageKey: 'room-bedroom' as const, label: 'Bedroom', correct: true },
+      { id: 'kitchen', emoji: '🍳', imageKey: 'room-kitchen' as const, label: 'Kitchen', correct: false },
+      { id: 'garage', emoji: '🚗', imageKey: 'room-garage' as const, label: 'Garage', correct: false },
+      { id: 'office', emoji: '💼', imageKey: 'room-office' as const, label: 'Office', correct: false },
     ],
   },
 ];
@@ -92,6 +92,7 @@ export function FindTheKitchenGame({ onBack, onComplete }: Props) {
               key={c.id}
               label={c.label}
               emoji={c.emoji}
+              imageKey={c.imageKey}
               accent="#C2410C"
               onPress={() => onPick(c.correct)}
             />

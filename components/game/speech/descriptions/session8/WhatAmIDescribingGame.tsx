@@ -18,30 +18,30 @@ const ROUNDS = [
     description: 'It is yellow, curved, and monkeys love it.',
     speak: 'I am yellow and curved. Monkeys love me.',
     choices: [
-      { id: 'banana', emoji: '🍌', label: 'Banana', correct: true },
-      { id: 'carrot', emoji: '🥕', label: 'Carrot', correct: false },
-      { id: 'cheese', emoji: '🧀', label: 'Cheese', correct: false },
-      { id: 'star', emoji: '⭐', label: 'Star', correct: false },
+      { id: 'banana', emoji: '🍌', imageKey: 'banana' as const, label: 'Banana', correct: true },
+      { id: 'carrot', emoji: '🥕', imageKey: 'carrot' as const, label: 'Carrot', correct: false },
+      { id: 'cheese', emoji: '🧀', imageKey: 'cheese' as const, label: 'Cheese', correct: false },
+      { id: 'star', emoji: '⭐', imageKey: 'star' as const, label: 'Star', correct: false },
     ],
   },
   {
     description: 'It has four wheels and takes you places.',
     speak: 'I have four wheels and take you places.',
     choices: [
-      { id: 'bike', emoji: '🚲', label: 'Bike', correct: false },
-      { id: 'car', emoji: '🚗', label: 'Car', correct: true },
-      { id: 'boat', emoji: '⛵', label: 'Boat', correct: false },
-      { id: 'plane', emoji: '✈️', label: 'Plane', correct: false },
+      { id: 'bike', emoji: '🚲', imageKey: 'bike' as const, label: 'Bike', correct: false },
+      { id: 'car', emoji: '🚗', imageKey: 'car' as const, label: 'Car', correct: true },
+      { id: 'boat', emoji: '⛵', imageKey: 'boat' as const, label: 'Boat', correct: false },
+      { id: 'plane', emoji: '✈️', imageKey: 'plane' as const, label: 'Plane', correct: false },
     ],
   },
   {
     description: 'It lives in water and swims with fins.',
     speak: 'I live in water and swim with fins.',
     choices: [
-      { id: 'bird', emoji: '🐦', label: 'Bird', correct: false },
-      { id: 'fish', emoji: '🐟', label: 'Fish', correct: true },
-      { id: 'cow', emoji: '🐄', label: 'Cow', correct: false },
-      { id: 'bee', emoji: '🐝', label: 'Bee', correct: false },
+      { id: 'bird', emoji: '🐦', imageKey: 'bird' as const, label: 'Bird', correct: false },
+      { id: 'fish', emoji: '🐟', imageKey: 'fish' as const, label: 'Fish', correct: true },
+      { id: 'cow', emoji: '🐄', imageKey: 'cow' as const, label: 'Cow', correct: false },
+      { id: 'bee', emoji: '🐝', imageKey: 'bee' as const, label: 'Bee', correct: false },
     ],
   },
 ];
@@ -107,6 +107,7 @@ export function WhatAmIDescribingGame({ onBack, onComplete }: Props) {
               key={c.id}
               label={c.label}
               emoji={c.emoji}
+              imageKey={c.imageKey}
               accent="#CA8A04"
               onPress={() => onPick(c.correct)}
             />

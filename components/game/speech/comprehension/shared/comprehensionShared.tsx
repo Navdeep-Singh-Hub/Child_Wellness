@@ -6,7 +6,8 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { clearScheduledSpeech, DEFAULT_TTS_RATE, speak as speakTTS, stopTTS } from '@/utils/tts';
-import { speechLevel2ButtonStyles } from '@/components/game/speech/level2-shared/SpeechLevel2Shell';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import {
   type Level2BaseShellProps,
   renderLevel2Shell,
@@ -146,13 +147,15 @@ export function ComprehensionShell(props: Level2BaseShellProps) {
 export function ComprehensionChoiceTile({
   label,
   emoji,
+  imageKey,
   accent,
   onPress,
   selected,
   wide,
 }: {
   label: string;
-  emoji: string;
+  emoji?: string;
+  imageKey?: Level2ImageKey;
   accent: string;
   onPress: () => void;
   selected?: boolean;
@@ -167,7 +170,7 @@ export function ComprehensionChoiceTile({
       ]}
       onPress={onPress}
     >
-      <Text style={styles.choiceEmoji}>{emoji}</Text>
+      <Level2Picture imageKey={imageKey} emoji={emoji} size={40} />
       <Text style={[styles.choiceLabel, { color: accent }]}>{label}</Text>
     </Pressable>
   );
@@ -189,6 +192,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   choiceWide: { minWidth: '88%', maxWidth: '95%' },
-  choiceEmoji: { fontSize: 40 },
   choiceLabel: { fontSize: 13, fontWeight: '800', marginTop: 6, textAlign: 'center' },
 });

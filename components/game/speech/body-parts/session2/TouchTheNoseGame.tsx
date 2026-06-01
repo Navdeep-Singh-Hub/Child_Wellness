@@ -14,10 +14,10 @@ import { StyleSheet, Text, View } from 'react-native';
 type Props = { onBack: () => void; onComplete?: () => void };
 
 const PARTS = [
-  { id: 'nose', label: 'Nose', emoji: '👃' },
-  { id: 'eyes', label: 'Eyes', emoji: '👀' },
-  { id: 'mouth', label: 'Mouth', emoji: '👄' },
-  { id: 'ears', label: 'Ears', emoji: '👂' },
+  { id: 'nose', label: 'Nose', emoji: '👃', imageKey: 'body-nose' as const },
+  { id: 'eyes', label: 'Eyes', emoji: '👀', imageKey: 'body-eyes' as const },
+  { id: 'mouth', label: 'Mouth', emoji: '👄', imageKey: 'body-mouth' as const },
+  { id: 'ears', label: 'Ears', emoji: '👂', imageKey: 'body-ears' as const },
 ] as const;
 
 export function TouchTheNoseGame({ onBack, onComplete }: Props) {
@@ -76,6 +76,7 @@ export function TouchTheNoseGame({ onBack, onComplete }: Props) {
               key={p.id}
               label={p.label}
               emoji={p.emoji}
+              imageKey={p.imageKey}
               accent="#EA580C"
               onPress={() => onPick(p.id)}
             />

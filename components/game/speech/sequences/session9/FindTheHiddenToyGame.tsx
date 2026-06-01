@@ -7,39 +7,41 @@ import {
   speakSequence,
   useSequencesSession,
 } from '@/components/game/speech/sequences/shared/sequencesShared';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 type Props = { onBack: () => void; onComplete?: () => void };
 
-type Spot = { id: string; emoji: string; label: string; correct: boolean };
+type Spot = { id: string; emoji: string; label: string; correct: boolean; imageKey?: Level2ImageKey };
 
 const ROUNDS: { clues: string[]; spots: Spot[] }[] = [
   {
     clues: ['Not on the chair.', 'It is under something soft.', 'Look under the bed!'],
     spots: [
-      { id: 'chair', emoji: '🪑', label: 'On chair', correct: false },
-      { id: 'table', emoji: '🪑', label: 'On table', correct: false },
-      { id: 'bed', emoji: '🛏️', label: 'Under bed', correct: true },
-      { id: 'tree', emoji: '🌳', label: 'Outside', correct: false },
+      { id: 'chair', emoji: '🪑', label: 'On chair', imageKey: 'chair', correct: false },
+      { id: 'table', emoji: '🪑', label: 'On table', imageKey: 'dining-table', correct: false },
+      { id: 'bed', emoji: '🛏️', label: 'Under bed', imageKey: 'bed', correct: true },
+      { id: 'tree', emoji: '🌳', label: 'Outside', imageKey: 'tree', correct: false },
     ],
   },
   {
     clues: ['It is in the kitchen.', 'Near something cold.', 'Look in the fridge!'],
     spots: [
-      { id: 'bath', emoji: '🛁', label: 'Bathroom', correct: false },
-      { id: 'bed', emoji: '🛏️', label: 'Bedroom', correct: false },
-      { id: 'fridge', emoji: '🧊', label: 'In fridge', correct: true },
-      { id: 'yard', emoji: '🌳', label: 'Yard', correct: false },
+      { id: 'bath', emoji: '🛁', label: 'Bathroom', imageKey: 'room-bathroom', correct: false },
+      { id: 'bed', emoji: '🛏️', label: 'Bedroom', imageKey: 'room-bedroom', correct: false },
+      { id: 'fridge', emoji: '🧊', label: 'In fridge', imageKey: 'fridge', correct: true },
+      { id: 'yard', emoji: '🌳', label: 'Yard', imageKey: 'room-backyard', correct: false },
     ],
   },
   {
     clues: ['It is behind something.', 'In the living room.', 'Behind the sofa!'],
     spots: [
-      { id: 'door', emoji: '🚪', label: 'By door', correct: false },
-      { id: 'sofa', emoji: '🛋️', label: 'Behind sofa', correct: true },
-      { id: 'roof', emoji: '🏠', label: 'On roof', correct: false },
-      { id: 'car', emoji: '🚗', label: 'In car', correct: false },
+      { id: 'door', emoji: '🚪', label: 'By door', imageKey: 'door', correct: false },
+      { id: 'sofa', emoji: '🛋️', label: 'Behind sofa', imageKey: 'sofa', correct: true },
+      { id: 'roof', emoji: '🏠', label: 'On roof', imageKey: 'roof', correct: false },
+      { id: 'car', emoji: '🚗', label: 'In car', imageKey: 'car', correct: false },
     ],
   },
 ];
@@ -121,7 +123,7 @@ export function FindTheHiddenToyGame({ onBack, onComplete }: Props) {
         <View style={styles.grid}>
           {round.spots.map((s) => (
             <Pressable key={s.id} style={styles.spot} onPress={() => onSpot(s.correct)}>
-              <Text style={styles.spotEmoji}>{s.emoji}</Text>
+              <Level2Picture imageKey={s.imageKey} emoji={s.emoji} size={36} />
               <Text style={styles.spotLabel}>{s.label}</Text>
             </Pressable>
           ))}

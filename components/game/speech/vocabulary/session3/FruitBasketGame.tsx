@@ -15,11 +15,11 @@ type Props = { onBack: () => void; onComplete?: () => void };
 
 type ItemId = 'apple' | 'banana' | 'ball' | 'car';
 
-const ITEMS: { id: ItemId; label: string; emoji: string; fruit: boolean }[] = [
-  { id: 'apple', label: 'Apple', emoji: '🍎', fruit: true },
-  { id: 'banana', label: 'Banana', emoji: '🍌', fruit: true },
-  { id: 'ball', label: 'Ball', emoji: '⚽', fruit: false },
-  { id: 'car', label: 'Car', emoji: '🚗', fruit: false },
+const ITEMS: { id: ItemId; label: string; emoji: string; fruit: boolean; imageKey?: 'apple' | 'banana' | 'volleyball' | 'car' }[] = [
+  { id: 'apple', label: 'Apple', emoji: '🍎', fruit: true, imageKey: 'apple' },
+  { id: 'banana', label: 'Banana', emoji: '🍌', fruit: true, imageKey: 'banana' },
+  { id: 'ball', label: 'Ball', emoji: '⚽', fruit: false, imageKey: 'volleyball' },
+  { id: 'car', label: 'Car', emoji: '🚗', fruit: false, imageKey: 'car' },
 ];
 
 export function FruitBasketGame({ onBack, onComplete }: Props) {
@@ -77,6 +77,7 @@ export function FruitBasketGame({ onBack, onComplete }: Props) {
               key={item.id}
               label={item.label}
               emoji={item.emoji}
+              imageKey={item.imageKey}
               accent="#D97706"
               onPress={() => {
                 if (item.fruit && !sorted.has(item.id)) onFruit(item);

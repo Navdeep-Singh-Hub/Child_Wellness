@@ -8,29 +8,47 @@ import {
   speakBody,
   useBodyPartsSession,
 } from '@/components/game/speech/body-parts/shared/bodyPartsShared';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 type Props = { onBack: () => void; onComplete?: () => void };
 
+type BodyOption = { id: string; label: string; emoji: string; imageKey?: Level2ImageKey };
+
+const BODY_KEYS: Record<string, Level2ImageKey> = {
+  eyes: 'body-eyes',
+  ears: 'body-ears',
+  nose: 'body-nose',
+  hands: 'body-hands',
+  mouth: 'body-mouth',
+  feet: 'body-feet',
+  knee: 'body-knee',
+  hair: 'body-hair',
+};
+
+function withImageKey(o: { id: string; label: string; emoji: string }): BodyOption {
+  return { ...o, imageKey: BODY_KEYS[o.id] };
+}
+
 const QUESTIONS = [
   { q: 'What helps you see?', answer: 'eyes', options: [
-    { id: 'eyes', label: 'Eyes', emoji: '👀' },
-    { id: 'ears', label: 'Ears', emoji: '👂' },
-    { id: 'nose', label: 'Nose', emoji: '👃' },
-    { id: 'hands', label: 'Hands', emoji: '✋' },
+    withImageKey({ id: 'eyes', label: 'Eyes', emoji: '👀' }),
+    withImageKey({ id: 'ears', label: 'Ears', emoji: '👂' }),
+    withImageKey({ id: 'nose', label: 'Nose', emoji: '👃' }),
+    withImageKey({ id: 'hands', label: 'Hands', emoji: '✋' }),
   ]},
   { q: 'What helps you hear?', answer: 'ears', options: [
-    { id: 'mouth', label: 'Mouth', emoji: '👄' },
-    { id: 'ears', label: 'Ears', emoji: '👂' },
-    { id: 'feet', label: 'Feet', emoji: '🦶' },
-    { id: 'eyes', label: 'Eyes', emoji: '👀' },
+    withImageKey({ id: 'mouth', label: 'Mouth', emoji: '👄' }),
+    withImageKey({ id: 'ears', label: 'Ears', emoji: '👂' }),
+    withImageKey({ id: 'feet', label: 'Feet', emoji: '🦶' }),
+    withImageKey({ id: 'eyes', label: 'Eyes', emoji: '👀' }),
   ]},
   { q: 'What helps you smell?', answer: 'nose', options: [
-    { id: 'nose', label: 'Nose', emoji: '👃' },
-    { id: 'eyes', label: 'Eyes', emoji: '👀' },
-    { id: 'knee', label: 'Knee', emoji: '🦵' },
-    { id: 'hair', label: 'Hair', emoji: '💇' },
+    withImageKey({ id: 'nose', label: 'Nose', emoji: '👃' }),
+    withImageKey({ id: 'eyes', label: 'Eyes', emoji: '👀' }),
+    withImageKey({ id: 'knee', label: 'Knee', emoji: '🦵' }),
+    withImageKey({ id: 'hair', label: 'Hair', emoji: '💇' }),
   ]},
 ] as const;
 
@@ -81,6 +99,7 @@ export function WhatHelpsYouSeeGame({ onBack, onComplete }: Props) {
               key={o.id}
               label={o.label}
               emoji={o.emoji}
+              imageKey={o.imageKey}
               accent="#0D9488"
               onPress={() => onPick(o.id)}
             />

@@ -8,6 +8,7 @@ import {
   speakComprehension,
   useComprehensionSession,
 } from '@/components/game/speech/comprehension/shared/comprehensionShared';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -16,35 +17,38 @@ type Props = { onBack: () => void; onComplete?: () => void };
 const ROUNDS = [
   {
     picture: '👦',
+    pictureImageKey: 'boy' as const,
     label: 'Boy',
     answer: 'he' as const,
     speak: 'He is playing. Match HE.',
     choices: [
-      { id: 'he', emoji: '👦', label: 'He', pronoun: 'he' as const },
-      { id: 'she', emoji: '👧', label: 'She', pronoun: 'she' as const },
-      { id: 'they', emoji: '👫', label: 'They', pronoun: 'they' as const },
+      { id: 'he', emoji: '👦', imageKey: 'boy' as const, label: 'He', pronoun: 'he' as const },
+      { id: 'she', emoji: '👧', imageKey: 'girl' as const, label: 'She', pronoun: 'she' as const },
+      { id: 'they', emoji: '👫', imageKey: 'friends-two-kids' as const, label: 'They', pronoun: 'they' as const },
     ],
   },
   {
     picture: '👧',
+    pictureImageKey: 'girl' as const,
     label: 'Girl',
     answer: 'she' as const,
     speak: 'She is happy. Match SHE.',
     choices: [
-      { id: 'he', emoji: '👦', label: 'He', pronoun: 'he' as const },
-      { id: 'she', emoji: '👧', label: 'She', pronoun: 'she' as const },
-      { id: 'they', emoji: '👫', label: 'They', pronoun: 'they' as const },
+      { id: 'he', emoji: '👦', imageKey: 'boy' as const, label: 'He', pronoun: 'he' as const },
+      { id: 'she', emoji: '👧', imageKey: 'girl' as const, label: 'She', pronoun: 'she' as const },
+      { id: 'they', emoji: '👫', imageKey: 'friends-two-kids' as const, label: 'They', pronoun: 'they' as const },
     ],
   },
   {
     picture: '👫',
+    pictureImageKey: 'friends-two-kids' as const,
     label: 'Friends',
     answer: 'they' as const,
     speak: 'They are together. Match THEY.',
     choices: [
-      { id: 'he', emoji: '👦', label: 'He', pronoun: 'he' as const },
-      { id: 'she', emoji: '👧', label: 'She', pronoun: 'she' as const },
-      { id: 'they', emoji: '👫', label: 'They', pronoun: 'they' as const },
+      { id: 'he', emoji: '👦', imageKey: 'boy' as const, label: 'He', pronoun: 'he' as const },
+      { id: 'she', emoji: '👧', imageKey: 'girl' as const, label: 'She', pronoun: 'she' as const },
+      { id: 'they', emoji: '👫', imageKey: 'friends-two-kids' as const, label: 'They', pronoun: 'they' as const },
     ],
   },
 ];
@@ -102,7 +106,7 @@ export function PronounMatchGame({ onBack, onComplete }: Props) {
             speakComprehension('Now pick the pronoun!');
           }}
         >
-          <Text style={styles.pic}>{round.picture}</Text>
+          <Level2Picture imageKey={round.pictureImageKey} emoji={round.picture} size={64} />
           <Text style={styles.picLabel}>{round.label}</Text>
         </Pressable>
         <View style={styles.row}>
@@ -111,6 +115,7 @@ export function PronounMatchGame({ onBack, onComplete }: Props) {
               key={c.id}
               label={c.label}
               emoji={c.emoji}
+              imageKey={c.imageKey}
               accent="#DB2777"
               onPress={() => onPronoun(c.pronoun)}
             />

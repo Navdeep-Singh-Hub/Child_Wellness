@@ -6,6 +6,7 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { gradientStopsFromHex } from '@/utils/gradientColors';
 import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -269,7 +270,7 @@ const SmallCircleTapGame: React.FC<{ onBack?: () => void; onComplete?: () => voi
             style={styles.circlePressable}
           >
             <LinearGradient
-              colors={[color, `${color}DD`, `${color}AA`]}
+              colors={gradientStopsFromHex(color)}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.circle}

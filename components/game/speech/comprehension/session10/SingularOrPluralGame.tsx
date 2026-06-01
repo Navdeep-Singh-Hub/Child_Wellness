@@ -19,8 +19,8 @@ const ROUNDS = [
     speak: 'Tap one cat. Not many cats.',
     answer: 'singular',
     choices: [
-      { id: 'one', emoji: '🐱', label: 'One cat', kind: 'singular' as const },
-      { id: 'many', emoji: '🐱🐱🐱', label: 'Many cats', kind: 'plural' as const },
+      { id: 'one', emoji: '🐱', imageKey: 'cats-one' as const, label: 'One cat', kind: 'singular' as const },
+      { id: 'many', emoji: '🐱🐱🐱', imageKey: 'cats-many' as const, label: 'Many cats', kind: 'plural' as const },
     ],
   },
   {
@@ -28,8 +28,8 @@ const ROUNDS = [
     speak: 'Tap many dogs. More than one.',
     answer: 'plural',
     choices: [
-      { id: 'one', emoji: '🐕', label: 'One dog', kind: 'singular' as const },
-      { id: 'many', emoji: '🐕🐕🐕', label: 'Many dogs', kind: 'plural' as const },
+      { id: 'one', emoji: '🐕', imageKey: 'dogs-one' as const, label: 'One dog', kind: 'singular' as const },
+      { id: 'many', emoji: '🐕🐕🐕', imageKey: 'dogs-many' as const, label: 'Many dogs', kind: 'plural' as const },
     ],
   },
   {
@@ -37,8 +37,8 @@ const ROUNDS = [
     speak: 'Tap one book.',
     answer: 'singular',
     choices: [
-      { id: 'one', emoji: '📖', label: 'One book', kind: 'singular' as const },
-      { id: 'many', emoji: '📚', label: 'Many books', kind: 'plural' as const },
+      { id: 'one', emoji: '📖', imageKey: 'books-one' as const, label: 'One book', kind: 'singular' as const },
+      { id: 'many', emoji: '📚', imageKey: 'books-many' as const, label: 'Many books', kind: 'plural' as const },
     ],
   },
 ];
@@ -89,6 +89,7 @@ export function SingularOrPluralGame({ onBack, onComplete }: Props) {
               key={c.id}
               label={c.label}
               emoji={c.emoji}
+              imageKey={c.imageKey}
               accent="#CA8A04"
               onPress={() => onPick(c.kind)}
             />

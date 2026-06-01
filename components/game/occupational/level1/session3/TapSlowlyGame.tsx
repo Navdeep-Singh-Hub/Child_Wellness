@@ -1,5 +1,6 @@
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
+import { SESSION3_PACING } from '@/components/game/occupational/level1/session3/session3Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -22,10 +23,15 @@ import {
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
-const INITIAL_BLINK_INTERVAL = 1500; // 1.5 seconds
-const MIN_BLINK_INTERVAL = 800; // Fastest speed (0.8 seconds)
-const SPEED_INCREASE = 100; // Decrease interval by 100ms each time
-const CORRECT_TAPS_FOR_SPEED_UP = 4; // After 4 correct taps, speed increases
+const {
+  initialBlinkInterval: INITIAL_BLINK_INTERVAL,
+  minBlinkInterval: MIN_BLINK_INTERVAL,
+  speedDecreasePerStep: SPEED_INCREASE,
+  tapsBeforeSpeedUp: CORRECT_TAPS_FOR_SPEED_UP,
+  glowRiseMs: GLOW_RISE_MS,
+  glowHoldMs: GLOW_HOLD_MS,
+  glowFallMs: GLOW_FALL_MS,
+} = SESSION3_PACING.tapSlowly;
 const TOTAL_TAPS_REQUIRED = 15; // Total taps to complete game
 const CIRCLE_SIZE = 180;
 
@@ -86,7 +92,7 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
   // Initial instruction - only once
   useEffect(() => {
     try {
-      speakTTS('Wait for the circle to light up, then tap! Tap only when it\'s glowing.', { rate: 0.78 });
+      speakTTS('Wait for the circle to light up, then tap! Tap only when it\'s glowing.', 0.78);
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
@@ -95,6 +101,11 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
   useEffect(() => {
     if (done) return;
 
+    const holdDuration = Math.min(
+      GLOW_HOLD_MS,
+      Math.max(1500, blinkInterval - GLOW_RISE_MS - GLOW_FALL_MS),
+    );
+
     const blinkLoop = () => {
       // Turn on (light up)
       setIsLit(true);
@@ -102,19 +113,19 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
       Animated.sequence([
         Animated.timing(glowAnim, {
           toValue: 1,
-          duration: 200,
+          duration: GLOW_RISE_MS,
           easing: Easing.out(Easing.ease),
           useNativeDriver: false,
         }),
         Animated.timing(glowAnim, {
           toValue: 0.7,
-          duration: blinkInterval - 600,
+          duration: holdDuration,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
         }),
         Animated.timing(glowAnim, {
           toValue: 0,
-          duration: 200,
+          duration: GLOW_FALL_MS,
           easing: Easing.in(Easing.ease),
           useNativeDriver: false,
         }),
@@ -125,7 +136,8 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
 
     // Start blinking
     blinkLoop();
-    const interval = setInterval(blinkLoop, blinkInterval);
+    const cycleMs = GLOW_RISE_MS + holdDuration + GLOW_FALL_MS + 250;
+    const interval = setInterval(blinkLoop, Math.max(blinkInterval, cycleMs));
 
     return () => clearInterval(interval);
   }, [blinkInterval, done, glowAnim]);

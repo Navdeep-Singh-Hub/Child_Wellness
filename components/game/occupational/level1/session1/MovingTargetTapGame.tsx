@@ -1,23 +1,25 @@
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import { isTapNearTarget } from '@/components/game/occupational/shared/movingTargetTouch';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
-    Dimensions,
     Easing,
+    LayoutChangeEvent,
     Platform,
     Pressable,
     SafeAreaView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
+    type GestureResponderEvent,
 } from 'react-native';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
@@ -25,6 +27,8 @@ const MISS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flic
 
 const TOTAL_ROUNDS = 8;
 const BALLOON_SIZE = 120;
+const BALLOON_HIT_PADDING = 12;
+const TAP_TOLERANCE = 40;
 const ROUND_DURATION_MS = 5000; // slow movement (5s)
 
 const useSoundEffect = (uri: string) => {
@@ -77,21 +81,47 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
 
   const currentAnimRef = useRef<Animated.CompositeAnimation | null>(null);
   const hitThisRoundRef = useRef(false);
+  const xPosRef = useRef(0);
+  const xListenerRef = useRef<string | null>(null);
+  const roundActiveRef = useRef(false);
+  const hasStartedRef = useRef(false);
+  const handleMissRef = useRef<() => void>(() => {});
+
+  const [playAreaLayout, setPlayAreaLayout] = useState<{ width: number; height: number } | null>(null);
 
   const playPop = useSoundEffect(SUCCESS_SOUND);
   const playMiss = useSoundEffect(MISS_SOUND);
 
+  useEffect(() => {
+    roundActiveRef.current = roundActive;
+  }, [roundActive]);
+
+  const removeXListener = useCallback(() => {
+    if (xListenerRef.current) {
+      xAnim.removeListener(xListenerRef.current);
+      xListenerRef.current = null;
+    }
+  }, [xAnim]);
+
   const startRound = useCallback(() => {
-    const { width } = Dimensions.get('window');
+    if (!playAreaLayout) return;
+
     const startX = -BALLOON_SIZE;
-    const endX = width - BALLOON_SIZE / 2;
+    const endX = playAreaLayout.width - BALLOON_SIZE / 2;
 
     hitThisRoundRef.current = false;
     setRoundActive(true);
+    roundActiveRef.current = true;
     setBalloonPopped(false);
     scaleAnim.setValue(1);
 
+    removeXListener();
+    xPosRef.current = startX;
     xAnim.setValue(startX);
+
+    xListenerRef.current = xAnim.addListener(({ value }) => {
+      xPosRef.current = value;
+    });
 
     const anim = Animated.timing(xAnim, {
       toValue: endX,
@@ -103,50 +133,52 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
     currentAnimRef.current = anim;
 
     anim.start(({ finished }) => {
+      removeXListener();
       if (finished && !hitThisRoundRef.current) {
-        // child didn’t tap in time – miss
-        handleMiss();
+        handleMissRef.current();
       }
     });
-  }, [xAnim, scaleAnim]);
+  }, [xAnim, scaleAnim, playAreaLayout, removeXListener]);
 
   useEffect(() => {
-    let mounted = true;
-    
-    const initializeGame = async () => {
+    const speakIntro = async () => {
       try {
-        // Wait for TTS to initialize and start speaking
         await speakTTS('Watch the slow balloon and tap it before it reaches the other side!', 0.78);
-        // Add a small delay to ensure TTS has started speaking before game begins
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        if (mounted) {
-          startRound();
-        }
       } catch (error) {
         console.warn('TTS initialization error:', error);
-        // Even if TTS fails, start the game after a short delay
-        if (mounted) {
-          setTimeout(() => {
-            if (mounted) startRound();
-          }, 500);
-        }
       }
     };
 
-    initializeGame();
+    speakIntro();
 
     return () => {
-      mounted = false;
-      currentAnimRef.current?.stop();
-      // Cleanup: Stop speech when component unmounts
       try {
         stopTTS();
-      } catch (e) {
+      } catch {
         // Ignore errors
       }
     };
-  }, [startRound]);
+  }, []);
+
+  useEffect(() => {
+    if (!playAreaLayout || hasStartedRef.current) return;
+
+    const timer = setTimeout(() => {
+      hasStartedRef.current = true;
+      startRound();
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [playAreaLayout, startRound]);
+
+  useEffect(() => {
+    return () => {
+      currentAnimRef.current?.stop();
+      removeXListener();
+    };
+  }, [removeXListener]);
 
   const endGame = useCallback(
     async (finalHits: number) => {
@@ -201,13 +233,15 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
   );
 
   const handleHit = async () => {
-    if (!roundActive || hitThisRoundRef.current || done) return;
+    if (!roundActiveRef.current || hitThisRoundRef.current || done) return;
 
     hitThisRoundRef.current = true;
     setRoundActive(false);
+    roundActiveRef.current = false;
     setBalloonPopped(true);
 
     currentAnimRef.current?.stop();
+    removeXListener();
 
     // pop animation
     Animated.sequence([
@@ -236,6 +270,7 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
   const handleMiss = async () => {
     if (hitThisRoundRef.current || done) return;
     setRoundActive(false);
+    roundActiveRef.current = false;
 
     Animated.sequence([
       Animated.timing(scaleAnim, {
@@ -332,16 +367,18 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
         </Text>
       </View>
 
-      <View style={styles.playArea}>
+      <Pressable
+        style={styles.playArea}
+        onLayout={handlePlayAreaLayout}
+        onPress={handlePlayAreaPress}
+        disabled={!roundActive || done}
+      >
         <LinearGradient
           colors={['#F0FDF4', '#DCFCE7', '#BBF7D0']}
           style={StyleSheet.absoluteFillObject}
         />
-        <Animated.View style={[styles.balloonWrapper, balloonStyle]}>
-          <Pressable
-            onPress={handleHit}
-            style={styles.balloonHitArea}
-          >
+        <Animated.View pointerEvents="none" style={[styles.balloonWrapper, balloonStyle]}>
+          <View style={styles.balloonHitArea}>
             <LinearGradient
               colors={['#F97316', '#EA580C', '#DC2626']}
               style={styles.balloon}
@@ -349,9 +386,9 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
               <Text style={{ fontSize: 52 }}>🎈</Text>
               <View style={styles.balloonGlow} />
             </LinearGradient>
-          </Pressable>
+          </View>
         </Animated.View>
-      </View>
+      </Pressable>
 
       <View style={styles.footerBox}>
         <LinearGradient

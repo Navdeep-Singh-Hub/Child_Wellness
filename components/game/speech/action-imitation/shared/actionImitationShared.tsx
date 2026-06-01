@@ -6,6 +6,9 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { clearScheduledSpeech, DEFAULT_TTS_RATE, speak as speakTTS, stopTTS } from '@/utils/tts';
+import { actionImageKey } from '@/components/game/speech/level2-shared/level2ActionImages';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import { SpeechLevel2Shell, speechLevel2ButtonStyles } from '@/components/game/speech/level2-shared/SpeechLevel2Shell';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useRef, useState } from 'react';
@@ -139,7 +142,8 @@ type ShellProps = {
   canPlay: boolean;
   onStart: () => void;
   phaseHint: string;
-  avatarEmoji: string;
+  avatarEmoji?: string;
+  avatarImageKey?: Level2ImageKey;
   avatarAnimating?: boolean;
   children: React.ReactNode;
   startEmoji?: string;
@@ -149,7 +153,15 @@ type ShellProps = {
   onSpeakStart?: () => void;
 };
 
-function ActionAvatarRow({ emoji, animating }: { emoji: string; animating: boolean }) {
+function ActionAvatarRow({
+  emoji,
+  imageKey,
+  animating,
+}: {
+  emoji?: string;
+  imageKey?: Level2ImageKey;
+  animating: boolean;
+}) {
   const bounce = useRef(new Animated.Value(1)).current;
 
   React.useEffect(() => {
@@ -169,7 +181,9 @@ function ActionAvatarRow({ emoji, animating }: { emoji: string; animating: boole
 
   return (
     <View style={styles.avatarRow}>
-      <Animated.Text style={[styles.avatarEmoji, { transform: [{ scale: bounce }] }]}>{emoji}</Animated.Text>
+      <Animated.View style={{ transform: [{ scale: bounce }] }}>
+        <Level2Picture imageKey={imageKey ?? 'avatar-child-neutral'} emoji={emoji ?? '🧒'} size={80} />
+      </Animated.View>
       <Text style={styles.avatarLabel}>Your friend</Text>
     </View>
   );
@@ -177,6 +191,7 @@ function ActionAvatarRow({ emoji, animating }: { emoji: string; animating: boole
 
 export function ActionGameShell({
   avatarEmoji,
+  avatarImageKey,
   avatarAnimating = false,
   startEmoji = '🎭',
   startTitle = 'Ready to copy?',
@@ -195,7 +210,9 @@ export function ActionGameShell({
       instructionSteps={instructionSteps}
       onSpeakStart={onSpeakStart}
       playHeaderExtra={
-        rest.canPlay ? <ActionAvatarRow emoji={avatarEmoji} animating={avatarAnimating} /> : undefined
+        rest.canPlay ? (
+          <ActionAvatarRow emoji={avatarEmoji} imageKey={avatarImageKey} animating={avatarAnimating} />
+        ) : undefined
       }
     />
   );
@@ -204,22 +221,29 @@ export function ActionGameShell({
 export function ActionChoiceButton({
   label,
   emoji,
+  imageKey,
+  actionId,
   accent,
   selected,
   onPress,
 }: {
   label: string;
-  emoji: string;
+  emoji?: string;
+  imageKey?: Level2ImageKey;
+  /** Resolves to assets/speech/level2/actions/ when imageKey is omitted. */
+  actionId?: string;
   accent: string;
   selected?: boolean;
   onPress: () => void;
 }) {
+  const resolvedKey = imageKey ?? (actionId ? actionImageKey(actionId) : undefined);
+
   return (
     <Pressable
       style={[styles.choiceBtn, selected && { backgroundColor: accent, borderColor: accent }]}
       onPress={onPress}
     >
-      <Text style={styles.choiceEmoji}>{emoji}</Text>
+      <Level2Picture imageKey={resolvedKey} emoji={emoji} size={speechLevel2ButtonStyles.emoji.fontSize} />
       <Text style={[styles.choiceLabel, selected && styles.choiceLabelOn]}>{label}</Text>
     </Pressable>
   );

@@ -8,16 +8,17 @@ import {
   speakVocab,
   useVocabularySession,
 } from '@/components/game/speech/vocabulary/shared/vocabularyShared';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 type Props = { onBack: () => void; onComplete?: () => void };
 
 const VEGGIES = [
-  { id: 'carrot', label: 'Carrot', emoji: '🥕' },
-  { id: 'corn', label: 'Corn', emoji: '🌽' },
-  { id: 'tomato', label: 'Tomato', emoji: '🍅' },
-  { id: 'broccoli', label: 'Broccoli', emoji: '🥦' },
+  { id: 'carrot', label: 'Carrot', emoji: '🥕', imageKey: 'carrot' as const },
+  { id: 'corn', label: 'Corn', emoji: '🌽', imageKey: 'corn' as const },
+  { id: 'tomato', label: 'Tomato', emoji: '🍅', imageKey: 'tomato' as const },
+  { id: 'broccoli', label: 'Broccoli', emoji: '🥦', imageKey: 'brocoli' as const },
 ] as const;
 
 export function VegetableFarmGame({ onBack, onComplete }: Props) {
@@ -54,13 +55,18 @@ export function VegetableFarmGame({ onBack, onComplete }: Props) {
         onStart={() => setCanPlay(true)}
         phaseHint={`Pick the ${target.label.toLowerCase()}!`}
       >
-        <Text style={styles.farm}>🌾 Farm 🌾</Text>
+        <View style={styles.farmRow}>
+          <Level2Picture imageKey="place-farm" emoji="🌾" size={40} />
+          <Text style={styles.farm}>Farm</Text>
+          <Level2Picture imageKey="place-farm" emoji="🌾" size={40} />
+        </View>
         <View style={styles.grid}>
           {VEGGIES.map((v) => (
             <VocabTile
               key={v.id}
               label={v.label}
               emoji={v.emoji}
+              imageKey={v.imageKey}
               accent="#C2410C"
               onPress={() => {
                 if (v.id === targetId) {
@@ -87,6 +93,7 @@ export function VegetableFarmGame({ onBack, onComplete }: Props) {
 }
 
 const styles = StyleSheet.create({
-  farm: { textAlign: 'center', fontSize: 22, fontWeight: '900', marginBottom: 8 },
+  farmRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 },
+  farm: { fontSize: 22, fontWeight: '900', color: '#C2410C' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
 });

@@ -6,7 +6,8 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { clearScheduledSpeech, DEFAULT_TTS_RATE, speak as speakTTS, stopTTS } from '@/utils/tts';
-import { speechLevel2ButtonStyles } from '@/components/game/speech/level2-shared/SpeechLevel2Shell';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import {
   type Level2BaseShellProps,
   renderLevel2Shell,
@@ -146,6 +147,7 @@ export function SequencesShell(props: Level2BaseShellProps) {
 export function SequenceChoiceTile({
   label,
   emoji,
+  imageKey,
   accent,
   onPress,
   selected,
@@ -153,7 +155,8 @@ export function SequenceChoiceTile({
   dimmed,
 }: {
   label: string;
-  emoji: string;
+  emoji?: string;
+  imageKey?: Level2ImageKey;
   accent: string;
   onPress: () => void;
   selected?: boolean;
@@ -174,7 +177,7 @@ export function SequenceChoiceTile({
           <Text style={styles.orderBadgeText}>{orderNum}</Text>
         </View>
       ) : null}
-      <Text style={styles.choiceEmoji}>{emoji}</Text>
+      <Level2Picture imageKey={imageKey} emoji={emoji} size={36} />
       <Text style={[styles.choiceLabel, { color: accent }]}>{label}</Text>
     </Pressable>
   );
@@ -196,7 +199,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   choiceDimmed: { opacity: 0.4 },
-  choiceEmoji: { fontSize: 36 },
   choiceLabel: { fontSize: 11, fontWeight: '800', marginTop: 4, textAlign: 'center' },
   orderBadge: {
     position: 'absolute',

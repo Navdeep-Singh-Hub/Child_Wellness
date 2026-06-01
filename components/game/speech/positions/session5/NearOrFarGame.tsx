@@ -7,15 +7,39 @@ import {
   speakPosition,
   usePositionsSession,
 } from '@/components/game/speech/positions/shared/positionsShared';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 type Props = { onBack: () => void; onComplete?: () => void };
 
 const ROUNDS = [
-  { answer: 'near' as const, near: '🐦', far: '🦅', nearLabel: 'Bird', farLabel: 'Eagle' },
-  { answer: 'far' as const, near: '🐱', far: '🐯', nearLabel: 'Kitten', farLabel: 'Tiger' },
-  { answer: 'near' as const, near: '🌸', far: '🌲', nearLabel: 'Flower', farLabel: 'Forest' },
+  {
+    answer: 'near' as const,
+    near: '🐦',
+    nearImageKey: 'bird' as const,
+    far: '🦅',
+    nearLabel: 'Bird',
+    farLabel: 'Eagle',
+  },
+  {
+    answer: 'far' as const,
+    near: '🐱',
+    nearImageKey: 'cat' as const,
+    far: '🐯',
+    farImageKey: 'tiger' as const,
+    nearLabel: 'Kitten',
+    farLabel: 'Tiger',
+  },
+  {
+    answer: 'near' as const,
+    near: '🌸',
+    nearImageKey: 'flower' as const,
+    far: '🌲',
+    farImageKey: 'forest-trees' as const,
+    nearLabel: 'Flower',
+    farLabel: 'Forest',
+  },
 ];
 
 export function NearOrFarGame({ onBack, onComplete }: Props) {
@@ -60,11 +84,11 @@ export function NearOrFarGame({ onBack, onComplete }: Props) {
       >
         <View style={styles.scene}>
           <Pressable style={styles.nearBtn} onPress={() => onPick('near')}>
-            <Text style={styles.nearEmoji}>{round.near}</Text>
+            <Level2Picture imageKey={round.nearImageKey} emoji={round.near} size={72} />
             <Text style={styles.nearLabel}>{round.nearLabel} — NEAR</Text>
           </Pressable>
           <Pressable style={styles.farBtn} onPress={() => onPick('far')}>
-            <Text style={styles.farEmoji}>{round.far}</Text>
+            <Level2Picture imageKey={round.farImageKey} emoji={round.far} size={36} />
             <Text style={styles.farLabel}>{round.farLabel} — FAR</Text>
           </Pressable>
         </View>

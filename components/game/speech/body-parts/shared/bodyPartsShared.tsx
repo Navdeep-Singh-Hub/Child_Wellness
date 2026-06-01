@@ -6,14 +6,15 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { clearScheduledSpeech, DEFAULT_TTS_RATE, speak as speakTTS, stopTTS } from '@/utils/tts';
-import { speechLevel2ButtonStyles } from '@/components/game/speech/level2-shared/SpeechLevel2Shell';
+import { Level2ChoiceTile } from '@/components/game/speech/level2-shared/Level2ChoiceTile';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import {
   type Level2BaseShellProps,
   renderLevel2Shell,
 } from '@/components/game/speech/level2-shared/level2ShellProps';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 export const DEFAULT_BODY_ROUNDS = 3;
 
@@ -146,46 +147,28 @@ export function BodyPartsShell(props: Level2BaseShellProps) {
 export function BodyPartButton({
   label,
   emoji,
+  imageKey,
   accent,
   selected,
   onPress,
 }: {
   label: string;
-  emoji: string;
+  emoji?: string;
+  imageKey?: Level2ImageKey;
   accent: string;
   selected?: boolean;
   onPress: () => void;
 }) {
   return (
-    <Pressable
-      style={[styles.partBtn, selected && { backgroundColor: accent, borderColor: accent }]}
+    <Level2ChoiceTile
+      label={label}
+      emoji={emoji}
+      imageKey={imageKey}
+      accent={accent}
+      selected={selected}
       onPress={onPress}
-    >
-      <Text style={styles.partEmoji}>{emoji}</Text>
-      <Text style={[styles.partLabel, selected && styles.partLabelOn]}>{label}</Text>
-    </Pressable>
+    />
   );
 }
 
-const styles = StyleSheet.create({
-  partBtn: {
-    flex: 1,
-    minHeight: 96,
-    margin: 5,
-    padding: 12,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#CBD5E1',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#0F172A',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  partEmoji: { fontSize: speechLevel2ButtonStyles.emoji.fontSize, marginBottom: 6 },
-  partLabel: speechLevel2ButtonStyles.label,
-  partLabelOn: speechLevel2ButtonStyles.labelOn,
-});
+const styles = StyleSheet.create({});

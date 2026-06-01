@@ -6,7 +6,10 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { clearScheduledSpeech, DEFAULT_TTS_RATE, speak as speakTTS, stopTTS } from '@/utils/tts';
+import { actionImageKey } from '@/components/game/speech/level2-shared/level2ActionImages';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
 import { speechLevel2ButtonStyles } from '@/components/game/speech/level2-shared/SpeechLevel2Shell';
+import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import {
   type Level2BaseShellProps,
   renderLevel2Shell,
@@ -146,18 +149,25 @@ export function ActionsShell(props: Level2BaseShellProps) {
 export function ActionChoiceTile({
   label,
   emoji,
+  imageKey,
+  actionId,
   accent,
   onPress,
   selected,
   dimmed,
 }: {
   label: string;
-  emoji: string;
+  emoji?: string;
+  imageKey?: Level2ImageKey;
+  /** Resolves to assets/speech/level2/actions/ when imageKey is omitted. */
+  actionId?: string;
   accent: string;
   onPress: () => void;
   selected?: boolean;
   dimmed?: boolean;
 }) {
+  const resolvedKey = imageKey ?? (actionId ? actionImageKey(actionId) : undefined);
+
   return (
     <Pressable
       style={[
@@ -167,7 +177,7 @@ export function ActionChoiceTile({
       ]}
       onPress={onPress}
     >
-      <Text style={styles.choiceEmoji}>{emoji}</Text>
+      <Level2Picture imageKey={resolvedKey} emoji={emoji} size={speechLevel2ButtonStyles.emoji.fontSize} />
       <Text style={[styles.choiceLabel, { color: accent }]}>{label}</Text>
     </Pressable>
   );
@@ -190,6 +200,5 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   choiceDimmed: { opacity: 0.35 },
-  choiceEmoji: { fontSize: speechLevel2ButtonStyles.emoji.fontSize },
   choiceLabel: { ...speechLevel2ButtonStyles.label, marginTop: 6, textAlign: 'center' },
 });

@@ -18,8 +18,8 @@ const ROUNDS = [
     pattern: ['🔴', '🔵', '🔴', '🔵', '❓'],
     answer: 'red',
     choices: [
-      { id: 'red', emoji: '🔴', label: 'Red', correct: true },
-      { id: 'blue', emoji: '🔵', label: 'Blue', correct: false },
+      { id: 'red', emoji: '🔴', imageKey: 'apple' as const, label: 'Red', correct: true },
+      { id: 'blue', emoji: '🔵', imageKey: 'ball-small' as const, label: 'Blue', correct: false },
       { id: 'green', emoji: '🟢', label: 'Green', correct: false },
       { id: 'yellow', emoji: '🟡', label: 'Yellow', correct: false },
     ],
@@ -28,8 +28,8 @@ const ROUNDS = [
     pattern: ['⭐', '🌙', '⭐', '🌙', '❓'],
     answer: 'star',
     choices: [
-      { id: 'sun', emoji: '☀️', label: 'Sun', correct: false },
-      { id: 'star', emoji: '⭐', label: 'Star', correct: true },
+      { id: 'sun', emoji: '☀️', imageKey: 'sun' as const, label: 'Sun', correct: false },
+      { id: 'star', emoji: '⭐', imageKey: 'star' as const, label: 'Star', correct: true },
       { id: 'cloud', emoji: '☁️', label: 'Cloud', correct: false },
       { id: 'rain', emoji: '🌧️', label: 'Rain', correct: false },
     ],
@@ -38,10 +38,10 @@ const ROUNDS = [
     pattern: ['🐱', '🐶', '🐱', '🐶', '❓'],
     answer: 'cat',
     choices: [
-      { id: 'cat', emoji: '🐱', label: 'Cat', correct: true },
-      { id: 'dog', emoji: '🐶', label: 'Dog', correct: false },
-      { id: 'bird', emoji: '🐦', label: 'Bird', correct: false },
-      { id: 'fish', emoji: '🐟', label: 'Fish', correct: false },
+      { id: 'cat', emoji: '🐱', imageKey: 'cat' as const, label: 'Cat', correct: true },
+      { id: 'dog', emoji: '🐶', imageKey: 'dog' as const, label: 'Dog', correct: false },
+      { id: 'bird', emoji: '🐦', imageKey: 'bird' as const, label: 'Bird', correct: false },
+      { id: 'fish', emoji: '🐟', imageKey: 'fish' as const, label: 'Fish', correct: false },
     ],
   },
 ];
@@ -99,6 +99,7 @@ export function CompleteThePatternGame({ onBack, onComplete }: Props) {
               key={c.id}
               label={c.label}
               emoji={c.emoji}
+              imageKey={c.imageKey}
               accent="#16A34A"
               onPress={() => onPick(c.correct)}
             />

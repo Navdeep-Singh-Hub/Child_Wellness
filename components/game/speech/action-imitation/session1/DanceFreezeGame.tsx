@@ -14,9 +14,9 @@ import { StyleSheet, View } from 'react-native';
 type Props = { onBack: () => void; onComplete?: () => void };
 
 const POSES = [
-  { id: 'star', emoji: '⭐', label: 'Star' },
-  { id: 'tree', emoji: '🌳', label: 'Tree' },
-  { id: 'freeze', emoji: '🧊', label: 'Freeze' },
+  { id: 'star', emoji: '⭐', label: 'Star', imageKey: 'avatar-child-star-pose' as const },
+  { id: 'tree', emoji: '🌳', label: 'Tree', imageKey: 'avatar-child-tree-pose' as const },
+  { id: 'freeze', emoji: '🧊', label: 'Freeze', imageKey: 'avatar-child-freeze-pose' as const },
 ] as const;
 
 export function DanceFreezeGame({ onBack, onComplete }: Props) {
@@ -78,6 +78,7 @@ export function DanceFreezeGame({ onBack, onComplete }: Props) {
               : 'Pick the same pose!'
         }
         avatarEmoji={phase === 'dance' ? '💃' : target.emoji}
+        avatarImageKey={phase === 'dance' ? 'avatar-child-dance' : target.imageKey}
         avatarAnimating={phase === 'dance'}
       >
         <View style={styles.grid}>
@@ -86,6 +87,7 @@ export function DanceFreezeGame({ onBack, onComplete }: Props) {
               key={p.id}
               label={p.label}
               emoji={p.emoji}
+              imageKey={p.imageKey}
               accent="#DB2777"
               onPress={() => onPick(p.id)}
             />
