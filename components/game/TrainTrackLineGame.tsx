@@ -20,8 +20,14 @@ import Animated, {
     useSharedValue,
     withSpring
 } from 'react-native-reanimated';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
+import { MotionBackground } from '@/components/ui/MotionBackground';
 import { SparkleBurst } from './FX';
 import ResultCard from './ResultCard';
+import {
+  STRAIGHT_LINE_NEXT_ROUND_MS,
+  useStraightLineTraceGestureFlags,
+} from './straightLineTraceInteraction';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const RESET_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
@@ -77,6 +83,11 @@ const TrainTrackLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isHorizontal, setIsHorizontal] = useState(true);
 
+  const { isDraggingRef, resetDrag, beginDrag, canInteract } = useStraightLineTraceGestureFlags(
+    roundActive,
+    done,
+  );
+
   const trainX = useSharedValue(15);
   const trainY = useSharedValue(50);
   const trainScale = useSharedValue(1);
@@ -125,37 +136,15 @@ const TrainTrackLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   );
 
   const panGesture = Gesture.Pan()
-    .onStart((e) => {
-      if (!roundActive || done) return;
-      
-      // Check if touch started on the train - only allow dragging if started on train
-      const touchX = (e.x / screenWidth.current) * 100;
-      const touchY = (e.y / screenHeight.current) * 100;
-      
-      // Calculate distance from touch point to train center
-      const trainCenterX = trainX.value;
-      const trainCenterY = trainY.value;
-      
-      // Convert TRAIN_SIZE from pixels to percentage for comparison
-      const trainSizePercentX = (TRAIN_SIZE / screenWidth.current) * 100;
-      const trainSizePercentY = (TRAIN_SIZE / screenHeight.current) * 100;
-      const trainRadiusX = trainSizePercentX / 2;
-      const trainRadiusY = trainSizePercentY / 2;
-      
-      // Check if touch is within train bounds (circular/rectangular area)
-      const distX = Math.abs(touchX - trainCenterX);
-      const distY = Math.abs(touchY - trainCenterY);
-      const isOnTrain = distX <= trainRadiusX && distY <= trainRadiusY;
-      
-      if (!isOnTrain) {
-        return; // Don't start dragging if not on train
-      }
-      
+    .onStart(() => {
+      if (!canInteract()) return;
+
+      beginDrag();
       setIsDragging(true);
       trainScale.value = withSpring(1.2, { damping: 10, stiffness: 200 });
     })
     .onUpdate((e) => {
-      if (!roundActive || done || !isDragging) return; // Only update if dragging started on train
+      if (!canInteract() || !isDraggingRef.current) return;
       const newX = (e.x / screenWidth.current) * 100;
       const newY = (e.y / screenHeight.current) * 100;
       
@@ -168,7 +157,8 @@ const TrainTrackLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       }
     })
     .onEnd(() => {
-      if (!roundActive || done) return;
+      if (!canInteract()) return;
+      resetDrag();
       setIsDragging(false);
       trainScale.value = withSpring(1, { damping: 10, stiffness: 200 });
 
@@ -189,10 +179,7 @@ const TrainTrackLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           } else {
             setTimeout(() => {
               setRound((r) => r + 1);
-              trainX.value = withSpring(startX.value, { damping: 10, stiffness: 100 });
-              trainY.value = withSpring(startY.value, { damping: 10, stiffness: 100 });
-              setRoundActive(true);
-            }, 1500);
+            }, STRAIGHT_LINE_NEXT_ROUND_MS);
           }
           return newScore;
         });
@@ -214,6 +201,10 @@ const TrainTrackLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    resetDrag();
+    setIsDragging(false);
+    setRoundActive(true);
+
     const horizontal = Math.random() > 0.5;
     setIsHorizontal(horizontal);
     
@@ -348,6 +339,7 @@ const TrainTrackLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <MotionBackground variant="ocean" />
       <TouchableOpacity onPress={handleBack} style={styles.backChip}>
         <Text style={styles.backChipText}>← Back</Text>
       </TouchableOpacity>
@@ -375,13 +367,13 @@ const TrainTrackLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             
             <Animated.View style={[styles.stationContainer, stationStyle]}>
               <View style={styles.station}>
-                <Text style={styles.stationEmoji}>🏁</Text>
+                <Level2Picture imageKey="finish-flag" emoji="🏁" size={44} />
               </View>
             </Animated.View>
 
             <Animated.View style={[styles.trainContainer, trainStyle]}>
               <View style={styles.train}>
-                <Text style={styles.trainEmoji}>🚂</Text>
+                <Level2Picture imageKey="train-engine" emoji="🚂" size={TRAIN_SIZE - 8} />
               </View>
             </Animated.View>
 

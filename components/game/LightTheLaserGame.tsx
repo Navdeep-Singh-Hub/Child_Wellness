@@ -20,8 +20,14 @@ import Animated, {
     useSharedValue,
     withTiming
 } from 'react-native-reanimated';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
+import { MotionBackground } from '@/components/ui/MotionBackground';
 import { SparkleBurst } from './FX';
 import ResultCard from './ResultCard';
+import {
+  STRAIGHT_LINE_NEXT_ROUND_MS,
+  useStraightLineTraceGestureFlags,
+} from './straightLineTraceInteraction';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const RESET_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
@@ -78,6 +84,11 @@ const LightTheLaserGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [isHorizontal, setIsHorizontal] = useState(true);
   const [progress, setProgress] = useState(0);
 
+  const { isDraggingRef, resetDrag, beginDrag, canInteract } = useStraightLineTraceGestureFlags(
+    roundActive,
+    done,
+  );
+
   const fingerX = useSharedValue(15);
   const fingerY = useSharedValue(50);
   const laserOpacity = useSharedValue(0);
@@ -128,38 +139,16 @@ const LightTheLaserGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   );
 
   const panGesture = Gesture.Pan()
-    .onStart((e) => {
-      if (!roundActive || done) return;
-      
-      // Check if touch started on the finger - only allow dragging if started on finger
-      const touchX = (e.x / screenWidth.current) * 100;
-      const touchY = (e.y / screenHeight.current) * 100;
-      
-      // Calculate distance from touch point to finger center
-      const fingerCenterX = fingerX.value;
-      const fingerCenterY = fingerY.value;
-      
-      // Convert FINGER_SIZE from pixels to percentage for comparison
-      const fingerSizePercentX = (FINGER_SIZE / screenWidth.current) * 100;
-      const fingerSizePercentY = (FINGER_SIZE / screenHeight.current) * 100;
-      const fingerRadiusX = fingerSizePercentX / 2;
-      const fingerRadiusY = fingerSizePercentY / 2;
-      
-      // Check if touch is within finger bounds
-      const distX = Math.abs(touchX - fingerCenterX);
-      const distY = Math.abs(touchY - fingerCenterY);
-      const isOnFinger = distX <= fingerRadiusX && distY <= fingerRadiusY;
-      
-      if (!isOnFinger) {
-        return; // Don't start tracing if not on finger
-      }
-      
+    .onStart(() => {
+      if (!canInteract()) return;
+
+      beginDrag();
       setIsTracing(true);
       pathPoints.current = [];
       laserOpacity.value = withTiming(1, { duration: 200 });
     })
     .onUpdate((e) => {
-      if (!roundActive || done || !isTracing) return; // Only update if tracing started on finger
+      if (!canInteract() || !isDraggingRef.current) return;
       const newX = (e.x / screenWidth.current) * 100;
       const newY = (e.y / screenHeight.current) * 100;
       
@@ -196,7 +185,8 @@ const LightTheLaserGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       }
     })
     .onEnd(() => {
-      if (!roundActive || done) return;
+      if (!canInteract()) return;
+      resetDrag();
       setIsTracing(false);
       
       const distance = Math.sqrt(
@@ -216,13 +206,7 @@ const LightTheLaserGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           } else {
             setTimeout(() => {
               setRound((r) => r + 1);
-              setProgress(0);
-              laserOpacity.value = 0;
-              laserLength.value = 0;
-              fingerX.value = startX.value;
-              fingerY.value = startY.value;
-              setRoundActive(true);
-            }, 1500);
+            }, STRAIGHT_LINE_NEXT_ROUND_MS);
           }
           return newScore;
         });
@@ -247,6 +231,10 @@ const LightTheLaserGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    resetDrag();
+    setIsTracing(false);
+    setRoundActive(true);
+
     const horizontal = Math.random() > 0.5;
     setIsHorizontal(horizontal);
     
@@ -421,6 +409,7 @@ const LightTheLaserGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <MotionBackground variant="indigo" />
       <TouchableOpacity onPress={handleBack} style={styles.backChip}>
         <Text style={styles.backChipText}>← Back</Text>
       </TouchableOpacity>
@@ -446,7 +435,7 @@ const LightTheLaserGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           <Animated.View style={styles.gestureArea}>
             <Animated.View style={[styles.target, targetStyle]}>
               <View style={styles.targetCircle}>
-                <Text style={styles.targetEmoji}>🎯</Text>
+                <Level2Picture imageKey="finish-flag" emoji="🎯" size={40} />
               </View>
             </Animated.View>
 

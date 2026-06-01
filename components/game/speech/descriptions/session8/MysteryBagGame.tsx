@@ -8,6 +8,7 @@ import {
   speakDescription,
   useDescriptionsSession,
 } from '@/components/game/speech/descriptions/shared/descriptionsShared';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -109,7 +110,7 @@ export function MysteryBagGame({ onBack, onComplete }: Props) {
         }
       >
         <Pressable style={styles.bagWrap} onPress={revealClue}>
-          <Text style={styles.bag}>🎒</Text>
+          <Level2Picture imageKey="scene-mystery-bag" emoji="🎒" size={88} />
           <Text style={styles.bagLabel}>Mystery bag — tap for clue</Text>
         </Pressable>
         {clueIndex > 0 ? (
@@ -147,7 +148,6 @@ export function MysteryBagGame({ onBack, onComplete }: Props) {
 
 const styles = StyleSheet.create({
   bagWrap: { alignItems: 'center', marginBottom: 8 },
-  bag: { fontSize: 72 },
   bagLabel: { fontSize: 14, fontWeight: '800', color: '#475569', marginTop: 4 },
   cluesShown: {
     marginBottom: 10,

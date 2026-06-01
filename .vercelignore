@@ -1,0 +1,13 @@
+# Shrink upload + build context (web export does not need native trees)
+android/
+ios/
+backend/
+agent-tools/
+agent-transcripts/
+mcps/
+.expo/
+dist/
+*.log
+debug.log
+**/*ChatGPT*
+**/*Gemini_Generated*

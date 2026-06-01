@@ -15,7 +15,7 @@ type Props = { onBack: () => void; onComplete?: () => void };
 const ROUNDS = [
   { item: '🧸', itemImageKey: 'teddy' as const, box: '📦', zoneImageKey: 'box' as const, say: 'Put teddy in the box!' },
   { item: '🐱', itemImageKey: 'cat' as const, box: '🧺', zoneImageKey: 'crate' as const, say: 'Put the kitten in the basket!' },
-  { item: '🚗', itemImageKey: 'car' as const, box: '🏠', zoneImageKey: 'car-in-garage' as const, say: 'Drive the car into the garage!' },
+  { item: '🚗', itemImageKey: 'car' as const, box: '🏠', zoneImageKey: 'garage-car' as const, say: 'Drive the car into the garage!' },
 ] as const;
 
 export function PutTeddyInTheBoxGame({ onBack, onComplete }: Props) {

@@ -1,7 +1,7 @@
 /** Auto-generated from assets/speech/level2 — run `node scripts/genLevel2Assets.js` after adding images. */
 import type { ImageSourcePropType } from 'react-native';
 
-export type Level2ImageKey = 'action-building' | 'action-clapping' | 'action-cooking' | 'action-crying' | 'action-drawing' | 'action-drinking' | 'action-driving' | 'action-eating' | 'action-flying' | 'action-kicking' | 'action-painting' | 'action-reading' | 'action-running' | 'action-singing' | 'action-sitting' | 'action-sleeping' | 'action-writing' | 'ant' | 'apple' | 'avatar-child-clap' | 'avatar-child-dance' | 'avatar-child-freeze-pose' | 'avatar-child-hop' | 'avatar-child-jump' | 'avatar-child-neutral' | 'avatar-child-spin' | 'avatar-child-star-pose' | 'avatar-child-tree-pose' | 'avatar-child-wiggle' | 'baby' | 'ball-big' | 'ball-small' | 'ballon' | 'banana' | 'bandage' | 'bath-tub' | 'bed' | 'bee' | 'bell' | 'bike' | 'bird' | 'boat' | 'body-arm' | 'body-ears' | 'body-eyes' | 'body-feet' | 'body-hair' | 'body-hands' | 'body-head' | 'body-knee' | 'body-legs' | 'body-mouth' | 'body-nose' | 'body-shoulders' | 'body-toes' | 'book' | 'book-stack' | 'books-many' | 'books-one' | 'bookshelf' | 'box' | 'boy' | 'bread' | 'bread-loaf' | 'brick' | 'brocoli' | 'brother' | 'bus' | 'candle' | 'car' | 'car-in-garage' | 'carrot' | 'cat' | 'cats-many' | 'cats-one' | 'chair' | 'cheese' | 'clothing-hat' | 'clothing-pants' | 'clothing-shirt' | 'comb' | 'corn' | 'cow' | 'crate' | 'cup' | 'dad' | 'dining-table' | 'doctor' | 'dog' | 'dogs-many' | 'dogs-one' | 'door' | 'egg' | 'elephant' | 'envelope' | 'finish-flag' | 'fire-fighter' | 'fire-flame' | 'fire-truck' | 'fish' | 'flower' | 'flower-bloom' | 'forest-trees' | 'fork' | 'fridge' | 'friends-two-kids' | 'girl' | 'glove' | 'grandma' | 'grandpa' | 'grapes' | 'guitar' | 'hammer' | 'hat-cap' | 'hat-top-hat' | 'heart' | 'horse' | 'house' | 'ice-cream' | 'key' | 'leaf' | 'librarian' | 'lion' | 'mailcarrier' | 'medal-first' | 'milk' | 'mom' | 'moon' | 'moon-night' | 'nail' | 'number-1' | 'number-2' | 'number-3' | 'orange' | 'paint-brush' | 'paint-pallete' | 'pajamas' | 'pan' | 'paper' | 'phone' | 'pillow' | 'place-beach' | 'place-farm' | 'place-fire-station' | 'place-hospital' | 'place-library' | 'place-park' | 'place-school' | 'place-zoo' | 'plane' | 'plant-seed' | 'plate' | 'police-officer' | 'rock' | 'roof' | 'room-backyard' | 'room-bathroom' | 'room-bedroom' | 'room-garage' | 'room-kitchen' | 'room-living' | 'room-office' | 'ruler' | 'sandwich' | 'sandwich-fillings' | 'school-bus' | 'scissors' | 'shoe' | 'sister' | 'sleeping-child' | 'sock' | 'sofa' | 'spoon' | 'star' | 'sun' | 'sun-noon' | 'sunrise' | 'teacher' | 'teddy' | 'tiger' | 'tomato' | 'toothbrush' | 'tree' | 'tree-palm' | 'umbrella' | 'volleyball' | 'watch' | 'watering-can';
+export type Level2ImageKey = 'action-building' | 'action-clapping' | 'action-cooking' | 'action-crying' | 'action-drawing' | 'action-drinking' | 'action-driving' | 'action-eating' | 'action-flying' | 'action-kicking' | 'action-painting' | 'action-reading' | 'action-running' | 'action-singing' | 'action-sitting' | 'action-sleeping' | 'action-writing' | 'ant' | 'apple' | 'avatar-child-clap' | 'avatar-child-dance' | 'avatar-child-freeze-pose' | 'avatar-child-hop' | 'avatar-child-jump' | 'avatar-child-neutral' | 'avatar-child-spin' | 'avatar-child-star-pose' | 'avatar-child-tree-pose' | 'avatar-child-wiggle' | 'baby' | 'ball-big' | 'ball-small' | 'ballon' | 'banana' | 'bandage' | 'bath-tub' | 'bed' | 'bee' | 'bell' | 'bike' | 'bird' | 'boat' | 'body-arm' | 'body-ears' | 'body-eyes' | 'body-feet' | 'body-hair' | 'body-hands' | 'body-head' | 'body-knee' | 'body-legs' | 'body-mouth' | 'body-nose' | 'body-shoulders' | 'body-toes' | 'book' | 'book-stack' | 'books-many' | 'books-one' | 'bookshelf' | 'box' | 'boy' | 'bread' | 'bread-loaf' | 'brick' | 'brocoli' | 'brother' | 'bus' | 'candle' | 'car' | 'car-in-garage' | 'carrot' | 'cat' | 'cats-many' | 'cats-one' | 'chair' | 'cheese' | 'clothing-hat' | 'clothing-pants' | 'clothing-shirt' | 'comb' | 'corn' | 'cow' | 'crate' | 'cup' | 'dad' | 'dining-table' | 'doctor' | 'dog' | 'dogs-many' | 'dogs-one' | 'door' | 'egg' | 'elephant' | 'envelope' | 'finish-flag' | 'fire-fighter' | 'fire-flame' | 'fire-truck' | 'fish' | 'flower' | 'flower-bloom' | 'forest-trees' | 'fork' | 'fridge' | 'friends-two-kids' | 'garage-bus' | 'garage-car' | 'garage-plane' | 'girl' | 'glove' | 'grandma' | 'grandpa' | 'grapes' | 'guitar' | 'hammer' | 'hat-cap' | 'hat-top-hat' | 'heart' | 'horse' | 'house' | 'ice-cream' | 'key' | 'leaf' | 'letter-a' | 'letter-b' | 'letter-c' | 'letter-d' | 'letter-k' | 'letter-m' | 'letter-p' | 'letter-r' | 'letter-s' | 'letter-t' | 'letter-w' | 'letter-z' | 'librarian' | 'lion' | 'mailcarrier' | 'medal-first' | 'milk' | 'mom' | 'moon' | 'moon-night' | 'nail' | 'number-1' | 'number-2' | 'number-3' | 'orange' | 'paint-brush' | 'paint-pallete' | 'pajamas' | 'pan' | 'paper' | 'phone' | 'pillow' | 'place-beach' | 'place-farm' | 'place-fire-station' | 'place-hospital' | 'place-library' | 'place-park' | 'place-school' | 'place-zoo' | 'plane' | 'plant-seed' | 'plate' | 'police-officer' | 'rock' | 'roof' | 'room-backyard' | 'room-bathroom' | 'room-bedroom' | 'room-garage' | 'room-kitchen' | 'room-living' | 'room-office' | 'ruler' | 'sandwich' | 'sandwich-fillings' | 'scene-fruit-basket' | 'scene-mystery-bag' | 'school-bus' | 'scissors' | 'shoe' | 'sister' | 'sleeping-child' | 'sock' | 'sofa' | 'spoon' | 'star' | 'sun' | 'sun-noon' | 'sunrise' | 'teacher' | 'teddy' | 'tiger' | 'tomato' | 'toothbrush' | 'train-car-blue' | 'train-car-red' | 'train-car-yellow' | 'train-engine' | 'tree' | 'tree-palm' | 'ui-arrow-down' | 'ui-question-slot' | 'umbrella' | 'volleyball' | 'watch' | 'watering-can';
 
 export const LEVEL2_IMAGES: Record<Level2ImageKey, ImageSourcePropType> = {
   'action-building': require('@/assets/speech/level2/actions/action-building.png'),
@@ -110,6 +110,9 @@ export const LEVEL2_IMAGES: Record<Level2ImageKey, ImageSourcePropType> = {
   'fork': require('@/assets/speech/level2/objects/fork.png'),
   'fridge': require('@/assets/speech/level2/objects/fridge.png'),
   'friends-two-kids': require('@/assets/speech/level2/characters/friends-two-kids.png'),
+  'garage-bus': require('@/assets/speech/level2/scenes/garage-bus.png'),
+  'garage-car': require('@/assets/speech/level2/scenes/garage-car.png'),
+  'garage-plane': require('@/assets/speech/level2/scenes/garage-plane.png'),
   'girl': require('@/assets/speech/level2/characters/girl.png'),
   'glove': require('@/assets/speech/level2/objects/glove.png'),
   'grandma': require('@/assets/speech/level2/characters/grandma.png'),
@@ -125,6 +128,18 @@ export const LEVEL2_IMAGES: Record<Level2ImageKey, ImageSourcePropType> = {
   'ice-cream': require('@/assets/speech/level2/food/ice-cream.png'),
   'key': require('@/assets/speech/level2/objects/key.png'),
   'leaf': require('@/assets/speech/level2/objects/leaf.png'),
+  'letter-a': require('@/assets/speech/level2/scenes/letter-a.png'),
+  'letter-b': require('@/assets/speech/level2/scenes/letter-b.png'),
+  'letter-c': require('@/assets/speech/level2/scenes/letter-c.png'),
+  'letter-d': require('@/assets/speech/level2/scenes/letter-d.png'),
+  'letter-k': require('@/assets/speech/level2/scenes/letter-k.png'),
+  'letter-m': require('@/assets/speech/level2/scenes/letter-m.png'),
+  'letter-p': require('@/assets/speech/level2/scenes/letter-p.png'),
+  'letter-r': require('@/assets/speech/level2/scenes/letter-r.png'),
+  'letter-s': require('@/assets/speech/level2/scenes/letter-s.png'),
+  'letter-t': require('@/assets/speech/level2/scenes/letter-t.png'),
+  'letter-w': require('@/assets/speech/level2/scenes/letter-w.png'),
+  'letter-z': require('@/assets/speech/level2/scenes/letter-z.png'),
   'librarian': require('@/assets/speech/level2/characters/librarian.png'),
   'lion': require('@/assets/speech/level2/animals/lion.png'),
   'mailcarrier': require('@/assets/speech/level2/characters/mailcarrier.png'),
@@ -169,6 +184,8 @@ export const LEVEL2_IMAGES: Record<Level2ImageKey, ImageSourcePropType> = {
   'ruler': require('@/assets/speech/level2/objects/ruler.png'),
   'sandwich': require('@/assets/speech/level2/food/sandwich.png'),
   'sandwich-fillings': require('@/assets/speech/level2/food/sandwich-fillings.png'),
+  'scene-fruit-basket': require('@/assets/speech/level2/scenes/scene-fruit-basket.png'),
+  'scene-mystery-bag': require('@/assets/speech/level2/scenes/scene-mystery-bag.png'),
   'school-bus': require('@/assets/speech/level2/objects/school-bus.png'),
   'scissors': require('@/assets/speech/level2/objects/scissors.png'),
   'shoe': require('@/assets/speech/level2/objects/shoe.png'),
@@ -186,8 +203,14 @@ export const LEVEL2_IMAGES: Record<Level2ImageKey, ImageSourcePropType> = {
   'tiger': require('@/assets/speech/level2/animals/tiger.png'),
   'tomato': require('@/assets/speech/level2/food/tomato.png'),
   'toothbrush': require('@/assets/speech/level2/objects/toothbrush.png'),
+  'train-car-blue': require('@/assets/speech/level2/scenes/train-car-blue.png'),
+  'train-car-red': require('@/assets/speech/level2/scenes/train-car-red.png'),
+  'train-car-yellow': require('@/assets/speech/level2/scenes/train-car-yellow.png'),
+  'train-engine': require('@/assets/speech/level2/scenes/train-engine.png'),
   'tree': require('@/assets/speech/level2/objects/tree.png'),
   'tree-palm': require('@/assets/speech/level2/objects/tree-palm.png'),
+  'ui-arrow-down': require('@/assets/speech/level2/ui/ui-arrow-down.png'),
+  'ui-question-slot': require('@/assets/speech/level2/ui/ui-question-slot.png'),
   'umbrella': require('@/assets/speech/level2/objects/umbrella.png'),
   'volleyball': require('@/assets/speech/level2/objects/volleyball.png'),
   'watch': require('@/assets/speech/level2/objects/watch.png'),
@@ -197,3 +220,12 @@ export const LEVEL2_IMAGES: Record<Level2ImageKey, ImageSourcePropType> = {
 export function getLevel2Image(key: Level2ImageKey): ImageSourcePropType {
   return LEVEL2_IMAGES[key];
 }
+
+/** Scene backgrounds / props (assets/speech/level2/scenes) */
+export type Level2SceneImageKey = 'garage-bus' | 'garage-car' | 'garage-plane' | 'letter-a' | 'letter-b' | 'letter-c' | 'letter-d' | 'letter-k' | 'letter-m' | 'letter-p' | 'letter-r' | 'letter-s' | 'letter-t' | 'letter-w' | 'letter-z' | 'scene-fruit-basket' | 'scene-mystery-bag' | 'train-car-blue' | 'train-car-red' | 'train-car-yellow' | 'train-engine';
+
+/** UI chrome (assets/speech/level2/ui) */
+export type Level2UiImageKey = 'ui-arrow-down' | 'ui-question-slot';
+
+export const LEVEL2_SCENE_IMAGE_KEYS = ['garage-bus', 'garage-car', 'garage-plane', 'letter-a', 'letter-b', 'letter-c', 'letter-d', 'letter-k', 'letter-m', 'letter-p', 'letter-r', 'letter-s', 'letter-t', 'letter-w', 'letter-z', 'scene-fruit-basket', 'scene-mystery-bag', 'train-car-blue', 'train-car-red', 'train-car-yellow', 'train-engine'] as const;
+export const LEVEL2_UI_IMAGE_KEYS = ['ui-arrow-down', 'ui-question-slot'] as const;

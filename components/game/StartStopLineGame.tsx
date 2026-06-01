@@ -20,8 +20,13 @@ import Animated, {
     useSharedValue,
     withSpring
 } from 'react-native-reanimated';
+import { MotionBackground } from '@/components/ui/MotionBackground';
 import { SparkleBurst } from './FX';
 import ResultCard from './ResultCard';
+import {
+  STRAIGHT_LINE_NEXT_ROUND_MS,
+  useStraightLineTraceGestureFlags,
+} from './straightLineTraceInteraction';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const RESET_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
@@ -79,6 +84,11 @@ const StartStopLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [progress, setProgress] = useState(0);
   const [showRedAlert, setShowRedAlert] = useState(false);
 
+  const { isDraggingRef, resetDrag, beginDrag, canInteract } = useStraightLineTraceGestureFlags(
+    roundActive,
+    done,
+  );
+
   const dotX = useSharedValue(15);
   const dotY = useSharedValue(50);
   const dotScale = useSharedValue(1);
@@ -128,39 +138,17 @@ const StartStopLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   );
 
   const panGesture = Gesture.Pan()
-    .onStart((e) => {
-      if (!roundActive || done) return;
-      
-      // Check if touch started on the dot - only allow dragging if started on dot
-      const touchX = (e.x / screenWidth.current) * 100;
-      const touchY = (e.y / screenHeight.current) * 100;
-      
-      // Calculate distance from touch point to dot center
-      const dotCenterX = dotX.value;
-      const dotCenterY = dotY.value;
-      
-      // Convert DOT_SIZE from pixels to percentage for comparison
-      const dotSizePercentX = (DOT_SIZE / screenWidth.current) * 100;
-      const dotSizePercentY = (DOT_SIZE / screenHeight.current) * 100;
-      const dotRadiusX = dotSizePercentX / 2;
-      const dotRadiusY = dotSizePercentY / 2;
-      
-      // Check if touch is within dot bounds
-      const distX = Math.abs(touchX - dotCenterX);
-      const distY = Math.abs(touchY - dotCenterY);
-      const isOnDot = distX <= dotRadiusX && distY <= dotRadiusY;
-      
-      if (!isOnDot) {
-        return; // Don't start dragging if not on dot
-      }
-      
+    .onStart(() => {
+      if (!canInteract()) return;
+
+      beginDrag();
       setIsDragging(true);
       setShowRedAlert(false);
       alertOpacity.value = 0;
       dotScale.value = withSpring(1.2, { damping: 10, stiffness: 200 });
     })
     .onUpdate((e) => {
-      if (!roundActive || done || !isDragging) return; // Only update if dragging started on dot
+      if (!canInteract() || !isDraggingRef.current) return;
       const newX = (e.x / screenWidth.current) * 100;
       const newY = (e.y / screenHeight.current) * 100;
       
@@ -207,7 +195,8 @@ const StartStopLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       }
     })
     .onEnd(() => {
-      if (!roundActive || done) return;
+      if (!canInteract()) return;
+      resetDrag();
       setIsDragging(false);
       setShowRedAlert(false);
       alertOpacity.value = 0;
@@ -230,11 +219,7 @@ const StartStopLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           } else {
             setTimeout(() => {
               setRound((r) => r + 1);
-              setProgress(0);
-              dotX.value = startX.value;
-              dotY.value = startY.value;
-              setRoundActive(true);
-            }, 1500);
+            }, STRAIGHT_LINE_NEXT_ROUND_MS);
           }
           return newScore;
         });
@@ -257,6 +242,10 @@ const StartStopLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    resetDrag();
+    setIsDragging(false);
+    setRoundActive(true);
+
     const horizontal = Math.random() > 0.5;
     setIsHorizontal(horizontal);
     
@@ -403,6 +392,7 @@ const StartStopLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <MotionBackground variant="sunset" />
       <TouchableOpacity onPress={handleBack} style={styles.backChip}>
         <Text style={styles.backChipText}>← Back</Text>
       </TouchableOpacity>

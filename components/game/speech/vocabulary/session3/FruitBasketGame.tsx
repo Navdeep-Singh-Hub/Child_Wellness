@@ -8,6 +8,7 @@ import {
   speakVocab,
   useVocabularySession,
 } from '@/components/game/speech/vocabulary/shared/vocabularyShared';
+import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -68,7 +69,7 @@ export function FruitBasketGame({ onBack, onComplete }: Props) {
         phaseHint={`Fruits left: ${fruitsLeft} — tap each fruit`}
       >
         <View style={styles.basket}>
-          <Text style={styles.basketEmoji}>🧺</Text>
+          <Level2Picture imageKey="scene-fruit-basket" emoji="🧺" size={72} />
           <Text style={styles.basketLabel}>Fruit basket ({sorted.size}/2)</Text>
         </View>
         <View style={styles.grid}>
@@ -110,7 +111,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  basketEmoji: { fontSize: 48 },
-  basketLabel: { fontWeight: '800', color: '#92400E' },
+  basketLabel: { fontWeight: '800', color: '#92400E', marginTop: 4 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
 });

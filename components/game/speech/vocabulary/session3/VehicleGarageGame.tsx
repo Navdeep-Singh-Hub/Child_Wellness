@@ -17,9 +17,9 @@ type Props = { onBack: () => void; onComplete?: () => void };
 type VehicleId = 'car' | 'bus' | 'plane';
 
 const VEHICLES: { id: VehicleId; emoji: string; label: string; garage: string; imageKey: Level2ImageKey; garageImageKey?: Level2ImageKey }[] = [
-  { id: 'car', emoji: '🚗', label: 'Car', garage: '🏠', imageKey: 'car', garageImageKey: 'car-in-garage' },
-  { id: 'bus', emoji: '🚌', label: 'Bus', garage: '🛖', imageKey: 'bus', garageImageKey: 'school-bus' },
-  { id: 'plane', emoji: '✈️', label: 'Plane', garage: '🛫', imageKey: 'plane' },
+  { id: 'car', emoji: '🚗', label: 'Car', garage: '🏠', imageKey: 'car', garageImageKey: 'garage-car' },
+  { id: 'bus', emoji: '🚌', label: 'Bus', garage: '🛖', imageKey: 'bus', garageImageKey: 'garage-bus' },
+  { id: 'plane', emoji: '✈️', label: 'Plane', garage: '🛫', imageKey: 'plane', garageImageKey: 'garage-plane' },
 ];
 
 export function VehicleGarageGame({ onBack, onComplete }: Props) {

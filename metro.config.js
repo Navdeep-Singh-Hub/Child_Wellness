@@ -4,6 +4,18 @@ const path = require('path');
  
 const config = getDefaultConfig(__dirname);
 
+// Lower parallelism during `expo export` to reduce peak RAM (Vercel / CI OOM)
+config.maxWorkers = process.env.CI ? 2 : Math.max(2, require('os').cpus().length - 1);
+
+const WEB_NATIVE_STUBS = new Set([
+  'react-native-vision-camera',
+  'react-native-vision-camera-face-detector',
+  'react-native-worklets-core',
+  'react-native-razorpay',
+  '@mediapipe/tasks-vision',
+  '@tensorflow/tfjs',
+]);
+
 // Exclude onnxruntime-web from Metro bundling
 // It will be loaded from CDN in the HTML instead
 // This is necessary because onnxruntime-web uses dynamic imports that Metro can't handle
@@ -11,6 +23,13 @@ const originalResolveRequest = config.resolver.resolveRequest;
 config.resolver = {
   ...config.resolver,
   resolveRequest: (context, moduleName, platform) => {
+    if (platform === 'web' && WEB_NATIVE_STUBS.has(moduleName)) {
+      return {
+        filePath: path.resolve(__dirname, 'utils/webNativeStub.js'),
+        type: 'sourceFile',
+      };
+    }
+
     // Exclude onnxruntime-web from bundling - it will be loaded from CDN
     if (moduleName === 'onnxruntime-web' || moduleName.startsWith('onnxruntime-web/')) {
       // Return a stub that will use the global window.ort loaded from CDN

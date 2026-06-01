@@ -20,8 +20,13 @@ import Animated, {
     useSharedValue,
     withSpring
 } from 'react-native-reanimated';
+import { MotionBackground } from '@/components/ui/MotionBackground';
 import { SparkleBurst } from './FX';
 import ResultCard from './ResultCard';
+import {
+  STRAIGHT_LINE_NEXT_ROUND_MS,
+  useStraightLineTraceGestureFlags,
+} from './straightLineTraceInteraction';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const RESET_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
@@ -79,6 +84,11 @@ const RainDropSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [progress, setProgress] = useState(0);
   const [showRedAlert, setShowRedAlert] = useState(false);
 
+  const { isDraggingRef, resetDrag, beginDrag, canInteract } = useStraightLineTraceGestureFlags(
+    roundActive,
+    done,
+  );
+
   const dropX = useSharedValue(15);
   const dropY = useSharedValue(50);
   const dropScale = useSharedValue(1);
@@ -128,39 +138,17 @@ const RainDropSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   );
 
   const panGesture = Gesture.Pan()
-    .onStart((e) => {
-      if (!roundActive || done) return;
-      
-      // Check if touch started on the drop - only allow dragging if started on drop
-      const touchX = (e.x / screenWidth.current) * 100;
-      const touchY = (e.y / screenHeight.current) * 100;
-      
-      // Calculate distance from touch point to drop center
-      const dropCenterX = dropX.value;
-      const dropCenterY = dropY.value;
-      
-      // Convert DROP_SIZE from pixels to percentage for comparison
-      const dropSizePercentX = (DROP_SIZE / screenWidth.current) * 100;
-      const dropSizePercentY = (DROP_SIZE / screenHeight.current) * 100;
-      const dropRadiusX = dropSizePercentX / 2;
-      const dropRadiusY = dropSizePercentY / 2;
-      
-      // Check if touch is within drop bounds
-      const distX = Math.abs(touchX - dropCenterX);
-      const distY = Math.abs(touchY - dropCenterY);
-      const isOnDrop = distX <= dropRadiusX && distY <= dropRadiusY;
-      
-      if (!isOnDrop) {
-        return; // Don't start sliding if not on drop
-      }
-      
+    .onStart(() => {
+      if (!canInteract()) return;
+
+      beginDrag();
       setIsSliding(true);
       setShowRedAlert(false);
       alertOpacity.value = 0;
       dropScale.value = withSpring(1.2, { damping: 10, stiffness: 200 });
     })
     .onUpdate((e) => {
-      if (!roundActive || done || !isSliding) return; // Only update if sliding started on drop
+      if (!canInteract() || !isDraggingRef.current) return;
       const newX = (e.x / screenWidth.current) * 100;
       const newY = (e.y / screenHeight.current) * 100;
       
@@ -207,7 +195,8 @@ const RainDropSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       }
     })
     .onEnd(() => {
-      if (!roundActive || done) return;
+      if (!canInteract()) return;
+      resetDrag();
       setIsSliding(false);
       setShowRedAlert(false);
       alertOpacity.value = 0;
@@ -230,11 +219,7 @@ const RainDropSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           } else {
             setTimeout(() => {
               setRound((r) => r + 1);
-              setProgress(0);
-              dropX.value = startX.value;
-              dropY.value = startY.value;
-              setRoundActive(true);
-            }, 1500);
+            }, STRAIGHT_LINE_NEXT_ROUND_MS);
           }
           return newScore;
         });
@@ -257,6 +242,10 @@ const RainDropSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    resetDrag();
+    setIsSliding(false);
+    setRoundActive(true);
+
     const horizontal = Math.random() > 0.5;
     setIsHorizontal(horizontal);
     
@@ -394,6 +383,7 @@ const RainDropSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <MotionBackground variant="ocean" />
       <TouchableOpacity onPress={handleBack} style={styles.backChip}>
         <Text style={styles.backChipText}>← Back</Text>
       </TouchableOpacity>

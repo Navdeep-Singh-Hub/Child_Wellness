@@ -20,8 +20,13 @@ import Animated, {
     useSharedValue,
     withTiming
 } from 'react-native-reanimated';
+import { MotionBackground } from '@/components/ui/MotionBackground';
 import { SparkleBurst } from './FX';
 import ResultCard from './ResultCard';
+import {
+  STRAIGHT_LINE_NEXT_ROUND_MS,
+  useStraightLineTraceGestureFlags,
+} from './straightLineTraceInteraction';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const RESET_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
@@ -75,6 +80,11 @@ const RoadRollerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [roundActive, setRoundActive] = useState(true);
   const [isRolling, setIsRolling] = useState(false);
+
+  const { isDraggingRef, resetDrag, beginDrag, canInteract } = useStraightLineTraceGestureFlags(
+    roundActive,
+    done,
+  );
   const [isHorizontal, setIsHorizontal] = useState(true);
   const [progress, setProgress] = useState(0);
   const [showRedAlert, setShowRedAlert] = useState(false);
@@ -131,31 +141,9 @@ const RoadRollerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const panGesture = Gesture.Pan()
     .onStart((e) => {
-      if (!roundActive || done) return;
-      
-      // Check if touch started on the roller - only allow dragging if started on roller
-      const touchX = (e.x / screenWidth.current) * 100;
-      const touchY = (e.y / screenHeight.current) * 100;
-      
-      // Calculate distance from touch point to roller center
-      const rollerCenterX = rollerX.value;
-      const rollerCenterY = rollerY.value;
-      
-      // Convert ROLLER_SIZE from pixels to percentage for comparison
-      const rollerSizePercentX = (ROLLER_SIZE / screenWidth.current) * 100;
-      const rollerSizePercentY = (ROLLER_SIZE / screenHeight.current) * 100;
-      const rollerRadiusX = rollerSizePercentX / 2;
-      const rollerRadiusY = rollerSizePercentY / 2;
-      
-      // Check if touch is within roller bounds
-      const distX = Math.abs(touchX - rollerCenterX);
-      const distY = Math.abs(touchY - rollerCenterY);
-      const isOnRoller = distX <= rollerRadiusX && distY <= rollerRadiusY;
-      
-      if (!isOnRoller) {
-        return; // Don't start rolling if not on roller
-      }
-      
+      if (!canInteract()) return;
+
+      beginDrag();
       setIsRolling(true);
       setShowRedAlert(false);
       alertOpacity.value = 0;
@@ -165,7 +153,7 @@ const RoadRollerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       lastY.current = startScreenY;
     })
     .onUpdate((e) => {
-      if (!roundActive || done || !isRolling) return; // Only update if rolling started on roller
+      if (!canInteract() || !isDraggingRef.current) return;
       const newX = (e.x / screenWidth.current) * 100;
       const newY = (e.y / screenHeight.current) * 100;
       
@@ -227,7 +215,8 @@ const RoadRollerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       lastY.current = rollerY.value;
     })
     .onEnd(() => {
-      if (!roundActive || done) return;
+      if (!canInteract()) return;
+      resetDrag();
       setIsRolling(false);
       setShowRedAlert(false);
       alertOpacity.value = 0;
@@ -249,12 +238,7 @@ const RoadRollerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           } else {
             setTimeout(() => {
               setRound((r) => r + 1);
-              setProgress(0);
-              rollerRotation.value = 0;
-              rollerX.value = startX.value;
-              rollerY.value = startY.value;
-              setRoundActive(true);
-            }, 1500);
+            }, STRAIGHT_LINE_NEXT_ROUND_MS);
           }
           return newScore;
         });
@@ -278,6 +262,10 @@ const RoadRollerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     });
 
   useEffect(() => {
+    resetDrag();
+    setIsRolling(false);
+    setRoundActive(true);
+
     const horizontal = Math.random() > 0.5;
     setIsHorizontal(horizontal);
     
@@ -419,6 +407,7 @@ const RoadRollerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <MotionBackground variant="mint" />
       <TouchableOpacity onPress={handleBack} style={styles.backChip}>
         <Text style={styles.backChipText}>← Back</Text>
       </TouchableOpacity>
