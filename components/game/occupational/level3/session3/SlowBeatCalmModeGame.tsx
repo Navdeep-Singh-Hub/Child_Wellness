@@ -36,13 +36,34 @@ const SlowBeatCalmModeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
   const drumScale = useRef(new Animated.Value(1)).current;
   const beatTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tapWindowRef = useRef<NodeJS.Timeout | null>(null);
+  const hasTappedRef = useRef(false);
+  const canTapRef = useRef(false);
+  const doneRef = useRef(false);
+  const roundRef = useRef(1);
+
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
+
+  const clearTapTimer = useCallback(() => {
+    if (tapWindowRef.current) {
+      clearTimeout(tapWindowRef.current);
+      tapWindowRef.current = null;
+    }
+  }, []);
 
   const playBeat = useCallback(() => {
-    if (done || hasTapped) return;
-    
+    if (doneRef.current) return;
+
+    clearTapTimer();
     setIsDrumPlaying(true);
-    setCanTap(true);
+    setCanTap(false);
+    canTapRef.current = false;
     setHasTapped(false);
+    hasTappedRef.current = false;
     
     // Play drum sound (softer for calm mode)
     playSound('drum', 0.6, 0.9);
@@ -64,60 +85,20 @@ const SlowBeatCalmModeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
     // Stop sound after duration
     setTimeout(() => {
       setIsDrumPlaying(false);
-    }, SOUND_DURATION);
+      setCanTap(true);
+      canTapRef.current = true;
 
-    // Generous tap window for calm mode
-    tapWindowRef.current = setTimeout(() => {
-      setCanTap(false);
-      if (!hasTapped) {
-        // Missed tap - gentle feedback
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-      }
-      // Move to next round
-      setTimeout(() => {
-        if (round < TOTAL_ROUNDS) {
-          setRound((r) => r + 1);
-          setHasTapped(false);
-        } else {
-          endGame();
+      tapWindowRef.current = setTimeout(() => {
+        setCanTap(false);
+        canTapRef.current = false;
+        if (!hasTappedRef.current) {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+          speakTTS('Tap gently when you are ready.', 0.7).catch(() => {});
+          setTimeout(() => playBeat(), 1000);
         }
-      }, 1000);
-    }, TAP_WINDOW) as unknown as NodeJS.Timeout;
-  }, [round, done, hasTapped, drumScale]);
-
-  const handleTap = useCallback(() => {
-    if (!canTap || hasTapped || done) return;
-
-    setHasTapped(true);
-    setCanTap(false);
-    setScore((s) => s + 1);
-    
-    // Gentle haptic feedback
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    
-    // Clear tap window
-    if (tapWindowRef.current) {
-      clearTimeout(tapWindowRef.current);
-      tapWindowRef.current = null;
-    }
-
-    // Move to next round
-    setTimeout(() => {
-      if (round < TOTAL_ROUNDS) {
-        setRound((r) => r + 1);
-        setHasTapped(false);
-      } else {
-        endGame();
-      }
-    }, 1000);
-  }, [canTap, hasTapped, done, round]);
-
-  const startRound = useCallback(() => {
-    if (done) return;
-    setTimeout(() => {
-      playBeat();
-    }, 1000); // Longer delay for calm mode
-  }, [done, playBeat]);
+      }, TAP_WINDOW) as unknown as NodeJS.Timeout;
+    }, SOUND_DURATION);
+  }, [clearTapTimer, drumScale]);
 
   const endGame = useCallback(async () => {
     const total = TOTAL_ROUNDS;
@@ -126,15 +107,14 @@ const SlowBeatCalmModeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
 
     setFinalStats({ correct: score, total, xp });
     setDone(true);
+    doneRef.current = true;
     setCanTap(false);
+    canTapRef.current = false;
+    clearTapTimer();
 
     if (beatTimeoutRef.current) {
       clearTimeout(beatTimeoutRef.current);
       beatTimeoutRef.current = null;
-    }
-    if (tapWindowRef.current) {
-      clearTimeout(tapWindowRef.current);
-      tapWindowRef.current = null;
     }
 
     try {
@@ -150,7 +130,37 @@ const SlowBeatCalmModeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
     } catch (error) {
       console.error('Failed to log game:', error);
     }
-  }, [score, router]);
+  }, [score, router, clearTapTimer]);
+
+  const handleTap = useCallback(() => {
+    if (!canTapRef.current || hasTappedRef.current || doneRef.current) return;
+
+    hasTappedRef.current = true;
+    setHasTapped(true);
+    setCanTap(false);
+    canTapRef.current = false;
+    setScore((s) => s + 1);
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    clearTapTimer();
+
+    setTimeout(() => {
+      if (roundRef.current < TOTAL_ROUNDS) {
+        setRound((r) => r + 1);
+        setHasTapped(false);
+        hasTappedRef.current = false;
+      } else {
+        endGame();
+      }
+    }, 1000);
+  }, [clearTapTimer, endGame]);
+
+  const startRound = useCallback(() => {
+    if (doneRef.current) return;
+    setTimeout(() => {
+      playBeat();
+    }, 1000);
+  }, [playBeat]);
 
   useEffect(() => {
     if (!showInfo && !done && round <= TOTAL_ROUNDS) {
@@ -278,6 +288,7 @@ const SlowBeatCalmModeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
             onPress={handleTap}
             activeOpacity={0.8}
             disabled={!canTap}
+            pointerEvents={canTap ? 'auto' : 'none'}
           >
             <Animated.View
               style={[

@@ -158,7 +158,7 @@ const ParkingShapesGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return dist < MATCH_TOLERANCE && rotationMatch;
   }, [currentConfig]);
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (!roundActive || done || !currentConfig) return;
       setIsDragging(true);

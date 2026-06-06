@@ -49,7 +49,7 @@ const ObstaclePassGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const screenWidth = useRef(SCREEN_WIDTH);
   const screenHeight = useRef(SCREEN_HEIGHT);
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done) return;
       setIsDragging(true);

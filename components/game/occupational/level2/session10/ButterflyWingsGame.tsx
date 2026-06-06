@@ -112,7 +112,7 @@ const ButterflyWingsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     [router],
   );
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart((e) => {
       if (!roundActive || done) return;
       setIsDrawing(true);

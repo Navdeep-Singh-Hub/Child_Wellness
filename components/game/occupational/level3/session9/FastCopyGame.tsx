@@ -1,4 +1,5 @@
 import GameInfoScreen from '@/components/game/GameInfoScreen';
+import PoseConfirmButton from '@/components/game/occupational/level3/session9/PoseConfirmButton';
 import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -20,7 +21,6 @@ import {
 const TOTAL_ROUNDS = 10;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const FAST_POSE_TIME = 1500; // Time to show each pose (ms) - faster!
-const RESPONSE_TIME = 2000; // Time to copy each pose (ms) - faster!
 
 type PoseType = 'hands-up' | 'hands-down' | 'hands-left' | 'hands-right' | 'clap';
 
@@ -49,7 +49,11 @@ const FastCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const poseScale = useRef(new Animated.Value(1)).current;
   const poseOpacity = useRef(new Animated.Value(0)).current;
   const poseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const canCopyRef = useRef(false);
+  const hasCopiedRef = useRef(false);
+  const doneRef = useRef(false);
+  const roundRef = useRef(1);
+  const poseCountRef = useRef(0);
 
   const showNextPose = useCallback(() => {
     if (done) return;
@@ -96,96 +100,10 @@ const FastCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     // Quickly allow copying
     poseTimeoutRef.current = setTimeout(() => {
       setCanCopy(true);
-      speakTTS('Copy!', 1.2, 'en-US' );
-
-      copyTimeoutRef.current = setTimeout(() => {
-        setCanCopy(false);
-        if (!hasCopied) {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-          speakTTS('Faster!', 1.0, 'en-US' );
-        }
-        
-        // Move to next pose or round
-        if (poseCount < posesInRound - 1) {
-          setPoseCount((c) => c + 1);
-          setTimeout(() => {
-            showNextPose();
-          }, 500);
-        } else {
-          // Round complete
-          if (round < TOTAL_ROUNDS) {
-            setRound((r) => r + 1);
-            setPoseCount(0);
-            setShowPose(false);
-            poseOpacity.setValue(0);
-            poseScale.setValue(1);
-          } else {
-            endGame();
-          }
-        }
-      }, RESPONSE_TIME) as unknown as NodeJS.Timeout;
+      canCopyRef.current = true;
+      speakTTS('Copy the pose, then tap the button!', 1.0, 'en-US');
     }, FAST_POSE_TIME) as unknown as NodeJS.Timeout;
-  }, [done, poseScale, poseOpacity, round, hasCopied, poseCount, posesInRound]);
-
-  const handleCopy = useCallback(() => {
-    if (!canCopy || done || !showPose || hasCopied) return;
-
-    setHasCopied(true);
-    setScore((s) => s + 1);
-    
-    if (copyTimeoutRef.current) {
-      clearTimeout(copyTimeoutRef.current);
-      copyTimeoutRef.current = null;
-    }
-    
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    speakTTS('Fast!', 1.2, 'en-US' );
-    
-    // Quick success animation
-    Animated.sequence([
-      Animated.timing(poseScale, {
-        toValue: 1.2,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-      Animated.timing(poseScale, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Move to next pose quickly
-    setTimeout(() => {
-      if (poseCount < posesInRound - 1) {
-        setPoseCount((c) => c + 1);
-        setHasCopied(false);
-        setTimeout(() => {
-          showNextPose();
-        }, 300);
-      } else {
-        // Round complete
-        if (round < TOTAL_ROUNDS) {
-          setRound((r) => r + 1);
-          setPoseCount(0);
-          setShowPose(false);
-          setHasCopied(false);
-          poseOpacity.setValue(0);
-          poseScale.setValue(1);
-        } else {
-          endGame();
-        }
-      }
-    }, 500);
-  }, [canCopy, done, showPose, hasCopied, poseScale, round, poseCount, posesInRound, showNextPose]);
-
-  const startRound = useCallback(() => {
-    if (done) return;
-    setPoseCount(0);
-    setTimeout(() => {
-      showNextPose();
-    }, 500);
-  }, [done, showNextPose]);
+  }, [done, poseScale, poseOpacity]);
 
   const endGame = useCallback(async () => {
     const total = TOTAL_ROUNDS * posesInRound;
@@ -199,10 +117,6 @@ const FastCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     if (poseTimeoutRef.current) {
       clearTimeout(poseTimeoutRef.current);
     }
-    if (copyTimeoutRef.current) {
-      clearTimeout(copyTimeoutRef.current);
-    }
-
     try {
       await logGameAndAward({
         type: 'fast-copy',
@@ -217,6 +131,65 @@ const FastCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       console.error('Failed to log game:', error);
     }
   }, [score, router, posesInRound]);
+
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
+  useEffect(() => {
+    poseCountRef.current = poseCount;
+  }, [poseCount]);
+
+  const handleConfirmPose = useCallback(() => {
+    if (!canCopyRef.current || doneRef.current || hasCopiedRef.current) return;
+
+    hasCopiedRef.current = true;
+    setHasCopied(true);
+    setCanCopy(false);
+    canCopyRef.current = false;
+    setScore((s) => s + 1);
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    speakTTS('Fast!', 1.2, 'en-US');
+
+    Animated.sequence([
+      Animated.timing(poseScale, { toValue: 1.2, duration: 150, useNativeDriver: true }),
+      Animated.timing(poseScale, { toValue: 1, duration: 150, useNativeDriver: true }),
+    ]).start();
+
+    setTimeout(() => {
+      if (poseCountRef.current < posesInRound - 1) {
+        const next = poseCountRef.current + 1;
+        poseCountRef.current = next;
+        setPoseCount(next);
+        setHasCopied(false);
+        hasCopiedRef.current = false;
+        setTimeout(() => showNextPose(), 300);
+      } else if (roundRef.current < TOTAL_ROUNDS) {
+        setRound((r) => r + 1);
+        setPoseCount(0);
+        poseCountRef.current = 0;
+        setShowPose(false);
+        setHasCopied(false);
+        hasCopiedRef.current = false;
+        poseOpacity.setValue(0);
+        poseScale.setValue(1);
+      } else {
+        endGame();
+      }
+    }, 500);
+  }, [poseScale, posesInRound, showNextPose, endGame]);
+
+  const startRound = useCallback(() => {
+    if (doneRef.current) return;
+    setPoseCount(0);
+    poseCountRef.current = 0;
+    setTimeout(() => {
+      showNextPose();
+    }, 500);
+  }, [showNextPose]);
 
   useEffect(() => {
     if (!showInfo && !done && round <= TOTAL_ROUNDS) {
@@ -234,9 +207,6 @@ const FastCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       cleanupSounds();
       if (poseTimeoutRef.current) {
         clearTimeout(poseTimeoutRef.current);
-      }
-      if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
       }
     };
   }, []);
@@ -317,12 +287,7 @@ const FastCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       <View style={styles.gameArea}>
         {showPose && (
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handleCopy}
-            style={styles.tapArea}
-            disabled={!canCopy}
-          >
+          <View style={styles.tapArea}>
             <Animated.View
               style={[
                 styles.poseContainer,
@@ -333,11 +298,10 @@ const FastCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               ]}
             >
               <Text style={styles.poseEmoji}>{POSE_EMOJIS[currentPose]}</Text>
-              {canCopy && (
-                <Text style={styles.fastLabel}>⚡ COPY FAST! ⚡</Text>
-              )}
+              {canCopy && <Text style={styles.fastLabel}>⚡ Do the pose, then tap below! ⚡</Text>}
             </Animated.View>
-          </TouchableOpacity>
+            <PoseConfirmButton visible={canCopy} onPress={handleConfirmPose} color="#F59E0B" />
+          </View>
         )}
 
         {!showPose && (

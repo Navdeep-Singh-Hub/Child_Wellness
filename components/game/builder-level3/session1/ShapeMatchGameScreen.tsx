@@ -50,7 +50,7 @@ function DraggableObject({
     objY.value = obj.y;
   }, [obj.x, obj.y]);
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .enabled(!disabled && !obj.inBox)
     .onStart(() => {
       if (disabled || obj.inBox) return;

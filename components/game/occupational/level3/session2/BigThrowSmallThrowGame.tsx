@@ -119,7 +119,7 @@ const BigThrowSmallThrowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
     transform: [{ translateX: -25 }, { translateY: -25 }],
   }));
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart((evt) => {
       if (done) return;
       setIsDragging(true);

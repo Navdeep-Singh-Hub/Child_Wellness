@@ -154,7 +154,7 @@ const TraceStraightLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
     }
   }, [isHorizontal]);
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart((evt) => {
       if (!roundActive || done) return;
       const { x, y } = evt;

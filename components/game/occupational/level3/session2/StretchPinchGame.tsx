@@ -107,7 +107,7 @@ const StretchPinchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     transform: [{ scale: scale.value }],
   }));
 
-  const pinchGesture = Gesture.Pinch()
+  const pinchGesture = Gesture.Pinch().runOnJS(true)
     .onUpdate((evt) => {
       if (!isActive || done) return;
       const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale.value * evt.scaleChange));

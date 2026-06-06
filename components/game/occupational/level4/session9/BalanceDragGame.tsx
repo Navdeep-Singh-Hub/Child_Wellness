@@ -110,7 +110,7 @@ const BalanceDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   }, [leftY, rightY, resetObjects]);
 
-  const leftPanGesture = Gesture.Pan()
+  const leftPanGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done) return;
       leftScale.value = withSpring(1.2);
@@ -140,7 +140,7 @@ const BalanceDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       checkBalance();
     });
 
-  const rightPanGesture = Gesture.Pan()
+  const rightPanGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done) return;
       rightScale.value = withSpring(1.2);

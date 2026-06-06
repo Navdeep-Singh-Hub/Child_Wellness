@@ -128,7 +128,7 @@ const DragBallToGoalGame: React.FC<{ onBack?: () => void; onComplete?: () => voi
   );
 
   // Pan gesture for dragging
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (!roundActive || done) return;
       setIsDragging(true);

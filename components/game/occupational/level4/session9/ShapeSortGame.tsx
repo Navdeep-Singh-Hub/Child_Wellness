@@ -80,7 +80,7 @@ const ShapeSortGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setSquareInBox(false);
   }, [circleX, circleY, squareX, squareY]);
 
-  const circlePanGesture = Gesture.Pan()
+  const circlePanGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done) return;
       circleScale.value = withSpring(1.2);
@@ -103,7 +103,7 @@ const ShapeSortGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       checkCompletion();
     });
 
-  const squarePanGesture = Gesture.Pan()
+  const squarePanGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done) return;
       squareScale.value = withSpring(1.2);

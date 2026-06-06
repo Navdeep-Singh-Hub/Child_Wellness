@@ -68,7 +68,7 @@ const ZigZagDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setZigzagPath(path);
   }, []);
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done) return;
       setIsDragging(true);

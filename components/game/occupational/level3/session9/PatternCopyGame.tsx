@@ -1,4 +1,5 @@
 import GameInfoScreen from '@/components/game/GameInfoScreen';
+import PoseConfirmButton from '@/components/game/occupational/level3/session9/PoseConfirmButton';
 import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -20,7 +21,6 @@ import {
 const TOTAL_ROUNDS = 10;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const PATTERN_DISPLAY_TIME = 4000; // Time to show pattern (ms)
-const RESPONSE_TIME = 5000; // Time to repeat pattern (ms)
 
 type Movement = 'up' | 'down' | 'left' | 'right' | 'tap';
 
@@ -43,14 +43,23 @@ const PatternCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [pattern, setPattern] = useState<Movement[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [canCopy, setCanCopy] = useState(false);
-  const [userPattern, setUserPattern] = useState<Movement[]>([]);
   const [hasCopied, setHasCopied] = useState(false);
+  const canCopyRef = useRef(false);
+  const hasCopiedRef = useRef(false);
+  const doneRef = useRef(false);
+  const roundRef = useRef(1);
 
   const movementScale = useRef(new Animated.Value(1)).current;
   const movementOpacity = useRef(new Animated.Value(0)).current;
   const patternTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const stepTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
 
   const generatePattern = useCallback((): Movement[] => {
     const movements: Movement[] = ['up', 'down', 'left', 'right', 'tap'];
@@ -68,11 +77,11 @@ const PatternCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     const newPattern = generatePattern();
     setPattern(newPattern);
     setCurrentStep(0);
-    setUserPattern([]);
-    
     setShowPattern(true);
     setCanCopy(false);
+    canCopyRef.current = false;
     setHasCopied(false);
+    hasCopiedRef.current = false;
     movementOpacity.setValue(0);
     movementScale.setValue(0.5);
     
@@ -106,31 +115,14 @@ const PatternCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           } else {
             // Pattern complete, now allow copying
             setCanCopy(true);
+            canCopyRef.current = true;
             if (Platform.OS === 'web') {
               setTimeout(() => {
-                speakTTS('Now repeat the pattern!', 0.8, 'en-US' );
+                speakTTS('Do the pattern, then tap the button!', 0.8, 'en-US');
               }, 300);
             } else {
-              speakTTS('Now repeat the pattern!', 0.8, 'en-US' );
+              speakTTS('Do the pattern, then tap the button!', 0.8, 'en-US');
             }
-
-            copyTimeoutRef.current = setTimeout(() => {
-              setCanCopy(false);
-              if (!hasCopied || userPattern.length !== newPattern.length) {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-                speakTTS('Repeat the pattern!', 0.8, 'en-US' );
-                setTimeout(() => {
-                  if (round < TOTAL_ROUNDS) {
-                    setRound((r) => r + 1);
-                    setShowPattern(false);
-                    movementOpacity.setValue(0);
-                    movementScale.setValue(1);
-                  } else {
-                    endGame();
-                  }
-                }, 1000);
-              }
-            }, RESPONSE_TIME) as unknown as NodeJS.Timeout;
           }
         }, 1000) as unknown as NodeJS.Timeout;
       }
@@ -143,70 +135,7 @@ const PatternCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     patternTimeoutRef.current = setTimeout(() => {
       // Pattern display complete
     }, PATTERN_DISPLAY_TIME) as unknown as NodeJS.Timeout;
-  }, [done, movementScale, movementOpacity, round, hasCopied, userPattern, generatePattern]);
-
-  const handleCopy = useCallback((movement: Movement) => {
-    if (!canCopy || done || !showPattern || hasCopied) return;
-
-    const newUserPattern = [...userPattern, movement];
-    setUserPattern(newUserPattern);
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-
-    // Check if pattern is complete
-    if (newUserPattern.length === pattern.length) {
-      // Check if pattern matches
-      const matches = newUserPattern.every((move, idx) => move === pattern[idx]);
-      
-      if (matches) {
-        setHasCopied(true);
-        setScore((s) => s + 1);
-        
-        if (copyTimeoutRef.current) {
-          clearTimeout(copyTimeoutRef.current);
-          copyTimeoutRef.current = null;
-        }
-        
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        speakTTS('Perfect pattern!', 0.9, 'en-US' );
-        
-        Animated.sequence([
-          Animated.timing(movementScale, {
-            toValue: 1.3,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(movementScale, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-        ]).start();
-
-        setTimeout(() => {
-          if (round < TOTAL_ROUNDS) {
-            setRound((r) => r + 1);
-            setShowPattern(false);
-            movementOpacity.setValue(0);
-            movementScale.setValue(1);
-          } else {
-            endGame();
-          }
-        }, 1000);
-      } else {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-        speakTTS('Pattern did not match! Try again!', 0.8, 'en-US' );
-        setUserPattern([]);
-      }
-    }
-  }, [canCopy, done, showPattern, hasCopied, userPattern, pattern, movementScale, round]);
-
-  const startRound = useCallback(() => {
-    if (done) return;
-    setTimeout(() => {
-      showPatternOnScreen();
-    }, 500);
-  }, [done, showPatternOnScreen]);
+  }, [done, movementScale, movementOpacity, generatePattern]);
 
   const endGame = useCallback(async () => {
     const total = TOTAL_ROUNDS;
@@ -219,9 +148,6 @@ const PatternCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     if (patternTimeoutRef.current) {
       clearTimeout(patternTimeoutRef.current);
-    }
-    if (copyTimeoutRef.current) {
-      clearTimeout(copyTimeoutRef.current);
     }
     if (stepTimeoutRef.current) {
       clearTimeout(stepTimeoutRef.current);
@@ -242,6 +168,43 @@ const PatternCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   }, [score, router]);
 
+  const handleConfirmPattern = useCallback(() => {
+    if (!canCopyRef.current || doneRef.current || hasCopiedRef.current) return;
+
+    hasCopiedRef.current = true;
+    setHasCopied(true);
+    setCanCopy(false);
+    canCopyRef.current = false;
+    setScore((s) => s + 1);
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    speakTTS('Great job!', 0.9, 'en-US');
+
+    Animated.sequence([
+      Animated.timing(movementScale, { toValue: 1.3, duration: 200, useNativeDriver: true }),
+      Animated.timing(movementScale, { toValue: 1, duration: 200, useNativeDriver: true }),
+    ]).start();
+
+    setTimeout(() => {
+      if (roundRef.current < TOTAL_ROUNDS) {
+        setRound((r) => r + 1);
+        setShowPattern(false);
+        hasCopiedRef.current = false;
+        movementOpacity.setValue(0);
+        movementScale.setValue(1);
+      } else {
+        endGame();
+      }
+    }, 800);
+  }, [movementScale, endGame]);
+
+  const startRound = useCallback(() => {
+    if (doneRef.current) return;
+    setTimeout(() => {
+      showPatternOnScreen();
+    }, 500);
+  }, [showPatternOnScreen]);
+
   useEffect(() => {
     if (!showInfo && !done && round <= TOTAL_ROUNDS) {
       startRound();
@@ -258,9 +221,6 @@ const PatternCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       cleanupSounds();
       if (patternTimeoutRef.current) {
         clearTimeout(patternTimeoutRef.current);
-      }
-      if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
       }
       if (stepTimeoutRef.current) {
         clearTimeout(stepTimeoutRef.current);
@@ -307,7 +267,6 @@ const PatternCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             setFinalStats(null);
             setShowPattern(false);
             setHasCopied(false);
-            setUserPattern([]);
             movementOpacity.setValue(0);
             movementScale.setValue(1);
           }}
@@ -318,7 +277,7 @@ const PatternCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const currentMovement = pattern[currentStep] || null;
   const isShowingPattern = showPattern && !canCopy;
-  const progress = canCopy ? `${userPattern.length}/${pattern.length}` : '';
+  const patternReminder = pattern.map((m) => MOVEMENT_EMOJIS[m]).join('  ');
 
   return (
     <SafeAreaView style={styles.container}>
@@ -339,7 +298,7 @@ const PatternCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Round {round}/{TOTAL_ROUNDS} • 🔄 Score: {score}
         </Text>
         <Text style={styles.instruction}>
-          {isShowingPattern ? 'Watch the pattern...' : canCopy ? `Repeat the pattern! ${progress}` : 'Get ready...'}
+          {isShowingPattern ? 'Watch the pattern...' : canCopy ? 'Do the pattern, then tap the button!' : 'Get ready...'}
         </Text>
       </View>
 
@@ -363,24 +322,14 @@ const PatternCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
             {canCopy && (
               <View style={styles.copyControls}>
-                <Text style={styles.copyInstruction}>Tap to repeat pattern:</Text>
-                <View style={styles.movementButtons}>
-                  {(['up', 'down', 'left', 'right', 'tap'] as Movement[]).map((move) => (
-                    <TouchableOpacity
-                      key={move}
-                      style={styles.movementButton}
-                      onPress={() => handleCopy(move)}
-                    >
-                      <Text style={styles.movementButtonEmoji}>{MOVEMENT_EMOJIS[move]}</Text>
-                      <Text style={styles.movementButtonLabel}>{move.toUpperCase()}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                {userPattern.length > 0 && (
-                  <Text style={styles.progressText}>
-                    Your pattern: {userPattern.map(m => MOVEMENT_EMOJIS[m]).join(' ')}
-                  </Text>
-                )}
+                <Text style={styles.copyInstruction}>Remember this pattern:</Text>
+                <Text style={styles.patternReminder}>{patternReminder}</Text>
+                <PoseConfirmButton
+                  visible={canCopy}
+                  label="✓ I did the same pattern!"
+                  onPress={handleConfirmPattern}
+                  color="#6366F1"
+                />
               </View>
             )}
           </View>
@@ -480,7 +429,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#0F172A',
-    marginBottom: 20,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  patternReminder: {
+    fontSize: 48,
+    textAlign: 'center',
+    marginBottom: 8,
   },
   movementButtons: {
     flexDirection: 'row',

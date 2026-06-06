@@ -126,7 +126,7 @@ const BigPathTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return Math.min(100, Math.max(0, (currentDist / totalDist) * 100));
   }, []);
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart((evt) => {
       if (done) return;
       const { x, y } = evt;

@@ -1,4 +1,5 @@
 import GameInfoScreen from '@/components/game/GameInfoScreen';
+import PoseConfirmButton from '@/components/game/occupational/level3/session9/PoseConfirmButton';
 import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -19,8 +20,7 @@ import {
 
 const TOTAL_ROUNDS = 10;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const POSE_DISPLAY_TIME = 3000; // Time to show pose (ms)
-const RESPONSE_TIME = 4000; // Time to copy pose (ms)
+const POSE_DISPLAY_TIME = 3000; // Time to show pose before child can confirm (ms)
 
 type PoseType = 'hands-up' | 'hands-down' | 'hands-left' | 'hands-right' | 'clap';
 
@@ -47,7 +47,20 @@ const CopyPoseGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const poseScale = useRef(new Animated.Value(1)).current;
   const poseOpacity = useRef(new Animated.Value(0)).current;
   const poseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const canCopyRef = useRef(false);
+  const hasCopiedRef = useRef(false);
+  const doneRef = useRef(false);
+  const roundRef = useRef(1);
+
+  useEffect(() => {
+    canCopyRef.current = canCopy;
+  }, [canCopy]);
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
 
   const showPoseOnScreen = useCallback(() => {
     if (done) return;
@@ -94,74 +107,10 @@ const CopyPoseGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         speakTTS(`Copy this pose! ${poseName}!`, 0.8, 'en-US' );
       }
 
-      // Close copy window
-      copyTimeoutRef.current = setTimeout(() => {
-        setCanCopy(false);
-        if (!hasCopied) {
-          // Didn't copy in time
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-          speakTTS('Copy the pose!', 0.8, 'en-US' );
-          setTimeout(() => {
-            if (round < TOTAL_ROUNDS) {
-              setRound((r) => r + 1);
-              setShowPose(false);
-              poseOpacity.setValue(0);
-              poseScale.setValue(1);
-            } else {
-              endGame();
-            }
-          }, 1000);
-        }
-      }, RESPONSE_TIME) as unknown as NodeJS.Timeout;
+      setCanCopy(true);
+      canCopyRef.current = true;
     }, POSE_DISPLAY_TIME) as unknown as NodeJS.Timeout;
-  }, [done, poseScale, poseOpacity, round, hasCopied]);
-
-  const handleCopy = useCallback(() => {
-    if (!canCopy || done || !showPose || hasCopied) return;
-
-    setHasCopied(true);
-    setScore((s) => s + 1);
-    
-    if (copyTimeoutRef.current) {
-      clearTimeout(copyTimeoutRef.current);
-      copyTimeoutRef.current = null;
-    }
-    
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    speakTTS('Perfect copy!', 0.9, 'en-US' );
-    
-    // Success animation
-    Animated.sequence([
-      Animated.timing(poseScale, {
-        toValue: 1.3,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(poseScale, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    setTimeout(() => {
-      if (round < TOTAL_ROUNDS) {
-        setRound((r) => r + 1);
-        setShowPose(false);
-        poseOpacity.setValue(0);
-        poseScale.setValue(1);
-      } else {
-        endGame();
-      }
-    }, 1000);
-  }, [canCopy, done, showPose, hasCopied, poseScale, round]);
-
-  const startRound = useCallback(() => {
-    if (done) return;
-    setTimeout(() => {
-      showPoseOnScreen();
-    }, 500);
-  }, [done, showPoseOnScreen]);
+  }, [done, poseScale, poseOpacity]);
 
   const endGame = useCallback(async () => {
     const total = TOTAL_ROUNDS;
@@ -174,9 +123,6 @@ const CopyPoseGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     if (poseTimeoutRef.current) {
       clearTimeout(poseTimeoutRef.current);
-    }
-    if (copyTimeoutRef.current) {
-      clearTimeout(copyTimeoutRef.current);
     }
 
     try {
@@ -194,6 +140,43 @@ const CopyPoseGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   }, [score, router]);
 
+  const handleConfirmPose = useCallback(() => {
+    if (!canCopyRef.current || doneRef.current || hasCopiedRef.current) return;
+
+    hasCopiedRef.current = true;
+    setHasCopied(true);
+    setCanCopy(false);
+    canCopyRef.current = false;
+    setScore((s) => s + 1);
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    speakTTS('Great job!', 0.9, 'en-US');
+
+    Animated.sequence([
+      Animated.timing(poseScale, { toValue: 1.3, duration: 200, useNativeDriver: true }),
+      Animated.timing(poseScale, { toValue: 1, duration: 200, useNativeDriver: true }),
+    ]).start();
+
+    setTimeout(() => {
+      if (roundRef.current < TOTAL_ROUNDS) {
+        setRound((r) => r + 1);
+        setShowPose(false);
+        hasCopiedRef.current = false;
+        poseOpacity.setValue(0);
+        poseScale.setValue(1);
+      } else {
+        endGame();
+      }
+    }, 800);
+  }, [poseScale, endGame]);
+
+  const startRound = useCallback(() => {
+    if (doneRef.current) return;
+    setTimeout(() => {
+      showPoseOnScreen();
+    }, 500);
+  }, [showPoseOnScreen]);
+
   useEffect(() => {
     if (!showInfo && !done && round <= TOTAL_ROUNDS) {
       startRound();
@@ -210,9 +193,6 @@ const CopyPoseGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       cleanupSounds();
       if (poseTimeoutRef.current) {
         clearTimeout(poseTimeoutRef.current);
-      }
-      if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
       }
     };
   }, []);
@@ -291,12 +271,7 @@ const CopyPoseGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       <View style={styles.gameArea}>
         {showPose && (
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handleCopy}
-            style={styles.tapArea}
-            disabled={!canCopy}
-          >
+          <View style={styles.tapArea}>
             <Animated.View
               style={[
                 styles.poseContainer,
@@ -307,11 +282,10 @@ const CopyPoseGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               ]}
             >
               <Text style={styles.poseEmoji}>{POSE_EMOJIS[currentPose]}</Text>
-              {canCopy && (
-                <Text style={styles.copyLabel}>COPY ME!</Text>
-              )}
+              {canCopy && <Text style={styles.copyLabel}>Do the pose, then tap the button!</Text>}
             </Animated.View>
-          </TouchableOpacity>
+            <PoseConfirmButton visible={canCopy} onPress={handleConfirmPose} />
+          </View>
         )}
 
         {!showPose && (

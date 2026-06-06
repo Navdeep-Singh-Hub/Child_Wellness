@@ -5,24 +5,28 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Dimensions,
-    PanResponder,
-    Platform,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 const TOTAL_ROUNDS = 10;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const FAST_SWIPE_THRESHOLD = 300; // Maximum time for fast swipe (ms)
-const MIN_SWIPE_DISTANCE = 50;
+const RABBIT_BASE_LEFT = SCREEN_WIDTH * 0.1;
+const RABBIT_TOP = SCREEN_HEIGHT * 0.5;
+const MAX_DRAG_X = SCREEN_WIDTH * 0.72;
+const FINISH_DRAG_X = SCREEN_WIDTH * 0.62;
+/** Must reach finish within this time (fast movement) */
+const FAST_MAX_DRAG_MS = 700;
 
 const FastRabbitRunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const router = useRouter();
@@ -32,105 +36,25 @@ const FastRabbitRunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [showRabbit, setShowRabbit] = useState(false);
-  const [hasRun, setHasRun] = useState(false);
 
-  const rabbitX = useRef(new Animated.Value(SCREEN_WIDTH * 0.1)).current;
-  const rabbitY = useRef(new Animated.Value(SCREEN_HEIGHT * 0.5)).current;
-  const swipeStartTime = useRef(0);
-  const swipeStartX = useRef(0);
-  const swipeStartY = useRef(0);
-  const swipeDistance = useRef(0);
+  const rabbitX = useRef(new Animated.Value(0)).current;
+  const dragStartOffset = useRef(0);
+  const currentDragX = useRef(0);
+  const panStartTime = useRef(0);
+  const showRabbitRef = useRef(false);
+  const roundCompleteRef = useRef(false);
+  const doneRef = useRef(false);
+  const roundRef = useRef(1);
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt) => {
-        swipeStartTime.current = Date.now();
-        swipeStartX.current = evt.nativeEvent.pageX;
-        swipeStartY.current = evt.nativeEvent.pageY;
-        swipeDistance.current = 0;
-      },
-      onPanResponderMove: (evt) => {
-        const deltaX = evt.nativeEvent.pageX - swipeStartX.current;
-        const deltaY = evt.nativeEvent.pageY - swipeStartY.current;
-        swipeDistance.current = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        
-        // Move rabbit quickly as user swipes
-        if (swipeDistance.current > 10) {
-          const newX = Math.max(SCREEN_WIDTH * 0.1, Math.min(SCREEN_WIDTH * 0.9, rabbitX._value + deltaX * 0.5));
-          rabbitX.setValue(newX);
-        }
-      },
-      onPanResponderRelease: (evt) => {
-        const swipeTime = Date.now() - swipeStartTime.current;
-        const distance = swipeDistance.current;
-        
-        if (showRabbit && !hasRun && distance >= MIN_SWIPE_DISTANCE) {
-          // Check if swipe was fast (took less than threshold time)
-          if (swipeTime <= FAST_SWIPE_THRESHOLD) {
-            handleSuccess();
-          } else {
-            handleMiss();
-          }
-        }
-      },
-    })
-  ).current;
-
-  const showRabbitObject = useCallback(() => {
-    setShowRabbit(true);
-    setHasRun(false);
-    rabbitX.setValue(SCREEN_WIDTH * 0.1);
-    rabbitY.setValue(SCREEN_HEIGHT * 0.5);
-    
-    if (Platform.OS === 'web') {
-      setTimeout(() => {
-        speakTTS('Run the rabbit fast! Swipe quickly!', 0.8 );
-      }, 300);
-    } else {
-      speakTTS('Run the rabbit fast! Swipe quickly!', 0.8 );
-    }
-  }, [rabbitX, rabbitY]);
-
-  const handleSuccess = useCallback(() => {
-    setHasRun(true);
-    setScore((s) => s + 1);
-    
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    
-    // Animate rabbit to finish line quickly
-    Animated.timing(rabbitX, {
-      toValue: SCREEN_WIDTH * 0.9,
-      duration: 500,
-      useNativeDriver: false,
-    }).start();
-
-    setTimeout(() => {
-      if (round < TOTAL_ROUNDS) {
-        setRound((r) => r + 1);
-        setShowRabbit(false);
-      } else {
-        endGame();
-      }
-    }, 800);
-  }, [round, rabbitX]);
-
-  const handleMiss = useCallback(() => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-    // Reset rabbit position
-    rabbitX.setValue(SCREEN_WIDTH * 0.1);
-    setTimeout(() => {
-      setHasRun(false);
-    }, 500);
-  }, [rabbitX]);
-
-  const startRound = useCallback(() => {
-    if (done) return;
-    setTimeout(() => {
-      showRabbitObject();
-    }, 500);
-  }, [done, showRabbitObject]);
+  useEffect(() => {
+    showRabbitRef.current = showRabbit;
+  }, [showRabbit]);
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
 
   const endGame = useCallback(async () => {
     const total = TOTAL_ROUNDS;
@@ -140,6 +64,7 @@ const FastRabbitRunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setFinalStats({ correct: score, total, xp });
     setDone(true);
     setShowRabbit(false);
+    doneRef.current = true;
 
     try {
       await logGameAndAward({
@@ -156,6 +81,101 @@ const FastRabbitRunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   }, [score, router]);
 
+  const completeRound = useCallback(() => {
+    if (roundCompleteRef.current || !showRabbitRef.current || doneRef.current) return;
+    roundCompleteRef.current = true;
+
+    setScore((s) => s + 1);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+
+    Animated.timing(rabbitX, {
+      toValue: MAX_DRAG_X,
+      duration: 250,
+      useNativeDriver: false,
+    }).start();
+
+    setTimeout(() => {
+      if (roundRef.current < TOTAL_ROUNDS) {
+        setRound((r) => r + 1);
+        setShowRabbit(false);
+        showRabbitRef.current = false;
+        roundCompleteRef.current = false;
+        rabbitX.setValue(0);
+        currentDragX.current = 0;
+      } else {
+        endGame();
+      }
+    }, 700);
+  }, [rabbitX, endGame]);
+
+  const tryFinishFastDrag = useCallback(
+    (dragX: number) => {
+      if (roundCompleteRef.current || !showRabbitRef.current) return;
+      if (dragX < FINISH_DRAG_X) return;
+
+      const elapsed = Date.now() - panStartTime.current;
+      if (elapsed <= FAST_MAX_DRAG_MS) {
+        completeRound();
+      }
+    },
+    [completeRound],
+  );
+
+  const panGesture = Gesture.Pan()
+    .runOnJS(true)
+    .minDistance(12)
+    .onStart(() => {
+      if (!showRabbitRef.current || roundCompleteRef.current || doneRef.current) return;
+      panStartTime.current = Date.now();
+      // @ts-expect-error Animated.Value internal offset
+      dragStartOffset.current = rabbitX._value ?? 0;
+    })
+    .onUpdate((e) => {
+      if (!showRabbitRef.current || roundCompleteRef.current || doneRef.current) return;
+      const next = Math.max(0, Math.min(MAX_DRAG_X, dragStartOffset.current + e.translationX));
+      rabbitX.setValue(next);
+      tryFinishFastDrag(next);
+    })
+    .onEnd((e) => {
+      if (!showRabbitRef.current || roundCompleteRef.current || doneRef.current) return;
+      const next = Math.max(0, Math.min(MAX_DRAG_X, dragStartOffset.current + e.translationX));
+      if (next >= FINISH_DRAG_X && Date.now() - panStartTime.current > FAST_MAX_DRAG_MS) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speakTTS('Drag the rabbit faster!', 0.8).catch(() => {});
+        rabbitX.setValue(0);
+        currentDragX.current = 0;
+        dragStartOffset.current = 0;
+      } else if (next < FINISH_DRAG_X) {
+        rabbitX.setValue(0);
+        currentDragX.current = 0;
+        dragStartOffset.current = 0;
+      }
+    });
+
+  const showRabbitObject = useCallback(() => {
+    setShowRabbit(true);
+    showRabbitRef.current = true;
+    roundCompleteRef.current = false;
+    rabbitX.setValue(0);
+    currentDragX.current = 0;
+    dragStartOffset.current = 0;
+
+    if (Platform.OS === 'web') {
+      setTimeout(() => {
+        speakTTS('Drag the rabbit quickly to the finish line!', 0.8);
+      }, 300);
+    } else {
+      speakTTS('Drag the rabbit quickly to the finish line!', 0.8);
+    }
+  }, [rabbitX]);
+
+  const startRound = useCallback(() => {
+    if (doneRef.current) return;
+    setTimeout(() => {
+      showRabbitObject();
+    }, 500);
+  }, [showRabbitObject]);
+
   useEffect(() => {
     if (!showInfo && !done && round <= TOTAL_ROUNDS) {
       startRound();
@@ -166,25 +186,22 @@ const FastRabbitRunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return () => {
       try {
         stopTTS();
-      } catch (e) {
-        // Ignore errors
+      } catch {
+        // ignore
       }
       cleanupSounds();
     };
   }, []);
 
-  // Show info screen
   if (showInfo) {
     return (
       <GameInfoScreen
         title="Fast Rabbit Run"
         emoji="🐰"
-        description="Run the rabbit with fast swipe"
+        description="Drag the rabbit quickly to the finish line"
         skills={['Speed coordination', 'Energy control']}
         suitableFor="Children who want to develop speed coordination and energy control"
-        onStart={() => {
-          setShowInfo(false);
-        }}
+        onStart={() => setShowInfo(false)}
         onBack={() => {
           stopAllSpeech();
           cleanupSounds();
@@ -194,7 +211,6 @@ const FastRabbitRunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     );
   }
 
-  // Result screen
   if (done && finalStats) {
     return (
       <SafeAreaView style={styles.container}>
@@ -209,12 +225,15 @@ const FastRabbitRunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           }}
           onPlayAgain={() => {
             setRound(1);
+            roundRef.current = 1;
             setScore(0);
             setDone(false);
+            doneRef.current = false;
             setFinalStats(null);
             setShowRabbit(false);
-            setHasRun(false);
-            rabbitX.setValue(SCREEN_WIDTH * 0.1);
+            showRabbitRef.current = false;
+            roundCompleteRef.current = false;
+            rabbitX.setValue(0);
           }}
         />
       </SafeAreaView>
@@ -223,21 +242,18 @@ const FastRabbitRunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
-        style={StyleSheet.absoluteFillObject}
-      />
-      
+      <LinearGradient colors={['#FEF3C7', '#FDE68A', '#FCD34D']} style={StyleSheet.absoluteFillObject} />
+
       <TouchableOpacity
         onPress={() => {
           try {
             stopTTS();
-          } catch (e) {
-            // Ignore errors
+          } catch {
+            // ignore
           }
           stopAllSpeech();
           cleanupSounds();
-          if (onBack) onBack();
+          onBack?.();
         }}
         style={styles.backButton}
       >
@@ -247,53 +263,55 @@ const FastRabbitRunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <View style={styles.header}>
         <Text style={styles.title}>🐰 Fast Rabbit Run</Text>
         <View style={styles.scoreContainer}>
-          <Text style={styles.scoreText}>Round: {round}/{TOTAL_ROUNDS}</Text>
+          <Text style={styles.scoreText}>
+            Round: {round}/{TOTAL_ROUNDS}
+          </Text>
           <Text style={styles.scoreText}>Score: {score}</Text>
         </View>
       </View>
 
-      <View style={styles.gameArea} {...panResponder.panHandlers}>
-        {showRabbit && (
-          <View style={styles.instructionContainer}>
-            <Text style={styles.instructionText}>⚡ Swipe FAST to run rabbit!</Text>
-          </View>
-        )}
-        
-        {showRabbit && (
-          <Animated.View
-            style={[
-              styles.rabbit,
-              {
-                left: rabbitX,
-                top: rabbitY,
-              },
-            ]}
-          >
-            <Text style={styles.rabbitEmoji}>🐰</Text>
-          </Animated.View>
-        )}
-        
-        {!showRabbit && (
-          <View style={styles.waitingContainer}>
-            <Text style={styles.waitingText}>Get ready... 👀</Text>
-          </View>
-        )}
-        
-        {/* Finish line */}
-        {showRabbit && (
-          <View style={[styles.finishLine, { left: SCREEN_WIDTH * 0.85 }]}>
-            <Text style={styles.finishText}>🏁</Text>
-          </View>
-        )}
-      </View>
+      <GestureDetector gesture={panGesture}>
+        <View style={styles.gameArea}>
+          {showRabbit && (
+            <View style={styles.instructionContainer}>
+              <Text style={styles.instructionText}>⚡ Drag fast to the finish line!</Text>
+            </View>
+          )}
+
+          {showRabbit && (
+            <Animated.View
+              style={[
+                styles.rabbit,
+                {
+                  left: RABBIT_BASE_LEFT,
+                  top: RABBIT_TOP,
+                  transform: [{ translateX: rabbitX }],
+                },
+              ]}
+            >
+              <Text style={styles.rabbitEmoji}>🐰</Text>
+            </Animated.View>
+          )}
+
+          {!showRabbit && (
+            <View style={styles.waitingContainer}>
+              <Text style={styles.waitingText}>Get ready... 👀</Text>
+            </View>
+          )}
+
+          {showRabbit && (
+            <View style={[styles.finishLine, { left: SCREEN_WIDTH * 0.85 }]}>
+              <Text style={styles.finishText}>🏁</Text>
+            </View>
+          )}
+        </View>
+      </GestureDetector>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   backButton: {
     position: 'absolute',
     top: 50,
@@ -303,42 +321,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
     elevation: 8,
   },
-  backText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 16,
-  },
-  header: {
-    paddingTop: 100,
-    paddingHorizontal: 24,
-    paddingBottom: 20,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: '#78350F',
-    marginBottom: 16,
-  },
-  scoreContainer: {
-    flexDirection: 'row',
-    gap: 20,
-  },
-  scoreText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#92400E',
-  },
-  gameArea: {
-    flex: 1,
-    position: 'relative',
-  },
+  backText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  header: { paddingTop: 100, paddingHorizontal: 24, paddingBottom: 20, alignItems: 'center' },
+  title: { fontSize: 28, fontWeight: '900', color: '#78350F', marginBottom: 16 },
+  scoreContainer: { flexDirection: 'row', gap: 20 },
+  scoreText: { fontSize: 18, fontWeight: '700', color: '#92400E' },
+  gameArea: { flex: 1, position: 'relative' },
   instructionContainer: {
     position: 'absolute',
     top: 40,
@@ -347,32 +337,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 5,
   },
-  instructionText: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#78350F',
-    textAlign: 'center',
-  },
+  instructionText: { fontSize: 24, fontWeight: '800', color: '#78350F', textAlign: 'center' },
   rabbit: {
     position: 'absolute',
     width: 80,
     height: 80,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 2,
   },
-  rabbitEmoji: {
-    fontSize: 60,
-  },
-  waitingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  waitingText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#92400E',
-  },
+  rabbitEmoji: { fontSize: 60 },
+  waitingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  waitingText: { fontSize: 24, fontWeight: '700', color: '#92400E' },
   finishLine: {
     position: 'absolute',
     top: SCREEN_HEIGHT * 0.4,
@@ -382,14 +358,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  finishText: {
-    fontSize: 30,
-    marginTop: -40,
-  },
+  finishText: { fontSize: 30, marginTop: -40 },
 });
 
 export default FastRabbitRunGame;
-
-
-
-

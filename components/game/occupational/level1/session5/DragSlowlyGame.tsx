@@ -135,7 +135,7 @@ const DragSlowlyGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
   );
 
   // Pan gesture for dragging
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (!roundActive || done) return;
       setIsDragging(true);

@@ -64,7 +64,7 @@ const DoubleDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const rightTargetX = useSharedValue(SCREEN_WIDTH * 0.8);
   const rightTargetY = useSharedValue(SCREEN_HEIGHT * 0.7);
 
-  const leftPanGesture = Gesture.Pan()
+  const leftPanGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done) return;
       setLeftDragging(true);
@@ -88,7 +88,7 @@ const DoubleDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       checkCompletion();
     });
 
-  const rightPanGesture = Gesture.Pan()
+  const rightPanGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done) return;
       setRightDragging(true);

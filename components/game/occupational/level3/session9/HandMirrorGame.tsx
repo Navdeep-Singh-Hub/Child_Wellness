@@ -1,4 +1,5 @@
 import GameInfoScreen from '@/components/game/GameInfoScreen';
+import PoseConfirmButton from '@/components/game/occupational/level3/session9/PoseConfirmButton';
 import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -20,7 +21,6 @@ import {
 const TOTAL_ROUNDS = 10;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const HAND_DISPLAY_TIME = 2500;
-const RESPONSE_TIME = 3000;
 
 type HandSide = 'left' | 'right';
 
@@ -39,7 +39,17 @@ const HandMirrorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const handScale = useRef(new Animated.Value(1)).current;
   const handOpacity = useRef(new Animated.Value(0)).current;
   const handTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const mirrorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const canMirrorRef = useRef(false);
+  const hasMirroredRef = useRef(false);
+  const doneRef = useRef(false);
+  const roundRef = useRef(1);
+
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
 
   const showHandOnScreen = useCallback(() => {
     if (done) return;
@@ -81,71 +91,10 @@ const HandMirrorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         speakTTS(`Screen shows ${side} hand! You raise your ${childSide} hand!`, 0.8, 'en-US' );
       }
 
-      mirrorTimeoutRef.current = setTimeout(() => {
-        setCanMirror(false);
-        if (!hasMirrored) {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-          speakTTS('Mirror the hand!', 0.8, 'en-US' );
-          setTimeout(() => {
-            if (round < TOTAL_ROUNDS) {
-              setRound((r) => r + 1);
-              setShowHand(false);
-              handOpacity.setValue(0);
-              handScale.setValue(1);
-            } else {
-              endGame();
-            }
-          }, 1000);
-        }
-      }, RESPONSE_TIME) as unknown as NodeJS.Timeout;
+      setCanMirror(true);
+      canMirrorRef.current = true;
     }, HAND_DISPLAY_TIME) as unknown as NodeJS.Timeout;
-  }, [done, handScale, handOpacity, round, hasMirrored]);
-
-  const handleMirror = useCallback(() => {
-    if (!canMirror || done || !showHand || hasMirrored) return;
-
-    setHasMirrored(true);
-    setScore((s) => s + 1);
-    
-    if (mirrorTimeoutRef.current) {
-      clearTimeout(mirrorTimeoutRef.current);
-      mirrorTimeoutRef.current = null;
-    }
-    
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    speakTTS('Perfect mirror!', 0.9, 'en-US' );
-    
-    Animated.sequence([
-      Animated.timing(handScale, {
-        toValue: 1.3,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(handScale, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    setTimeout(() => {
-      if (round < TOTAL_ROUNDS) {
-        setRound((r) => r + 1);
-        setShowHand(false);
-        handOpacity.setValue(0);
-        handScale.setValue(1);
-      } else {
-        endGame();
-      }
-    }, 1000);
-  }, [canMirror, done, showHand, hasMirrored, handScale, round]);
-
-  const startRound = useCallback(() => {
-    if (done) return;
-    setTimeout(() => {
-      showHandOnScreen();
-    }, 500);
-  }, [done, showHandOnScreen]);
+  }, [done, handScale, handOpacity]);
 
   const endGame = useCallback(async () => {
     const total = TOTAL_ROUNDS;
@@ -158,9 +107,6 @@ const HandMirrorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     if (handTimeoutRef.current) {
       clearTimeout(handTimeoutRef.current);
-    }
-    if (mirrorTimeoutRef.current) {
-      clearTimeout(mirrorTimeoutRef.current);
     }
 
     try {
@@ -178,6 +124,43 @@ const HandMirrorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   }, [score, router]);
 
+  const handleConfirmMirror = useCallback(() => {
+    if (!canMirrorRef.current || doneRef.current || hasMirroredRef.current) return;
+
+    hasMirroredRef.current = true;
+    setHasMirrored(true);
+    setCanMirror(false);
+    canMirrorRef.current = false;
+    setScore((s) => s + 1);
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    speakTTS('Perfect mirror!', 0.9, 'en-US');
+
+    Animated.sequence([
+      Animated.timing(handScale, { toValue: 1.3, duration: 200, useNativeDriver: true }),
+      Animated.timing(handScale, { toValue: 1, duration: 200, useNativeDriver: true }),
+    ]).start();
+
+    setTimeout(() => {
+      if (roundRef.current < TOTAL_ROUNDS) {
+        setRound((r) => r + 1);
+        setShowHand(false);
+        hasMirroredRef.current = false;
+        handOpacity.setValue(0);
+        handScale.setValue(1);
+      } else {
+        endGame();
+      }
+    }, 800);
+  }, [handScale, endGame]);
+
+  const startRound = useCallback(() => {
+    if (doneRef.current) return;
+    setTimeout(() => {
+      showHandOnScreen();
+    }, 500);
+  }, [showHandOnScreen]);
+
   useEffect(() => {
     if (!showInfo && !done && round <= TOTAL_ROUNDS) {
       startRound();
@@ -194,9 +177,6 @@ const HandMirrorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       cleanupSounds();
       if (handTimeoutRef.current) {
         clearTimeout(handTimeoutRef.current);
-      }
-      if (mirrorTimeoutRef.current) {
-        clearTimeout(mirrorTimeoutRef.current);
       }
     };
   }, []);
@@ -275,12 +255,7 @@ const HandMirrorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       <View style={styles.gameArea}>
         {showHand && (
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handleMirror}
-            style={styles.tapArea}
-            disabled={!canMirror}
-          >
+          <View style={styles.tapArea}>
             <Animated.View
               style={[
                 styles.handContainer,
@@ -290,16 +265,18 @@ const HandMirrorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 },
               ]}
             >
-              <Text style={styles.handEmoji}>
-                {screenHand === 'left' ? '👈' : '👉'}
-              </Text>
+              <Text style={styles.handEmoji}>{screenHand === 'left' ? '👈' : '👉'}</Text>
               {canMirror && (
-                <Text style={styles.mirrorLabel}>
-                  MIRROR: {childSide.toUpperCase()} HAND
-                </Text>
+                <Text style={styles.mirrorLabel}>Raise your {childSide} hand, then tap below!</Text>
               )}
             </Animated.View>
-          </TouchableOpacity>
+            <PoseConfirmButton
+              visible={canMirror}
+              label="✓ I did the mirror pose!"
+              onPress={handleConfirmMirror}
+              color="#8B5CF6"
+            />
+          </View>
         )}
 
         {!showHand && (

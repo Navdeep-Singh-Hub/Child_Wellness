@@ -137,7 +137,7 @@ const PuzzlePieceDragGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
   );
 
   // Pan gesture for dragging
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (!roundActive || done || isMatched) return;
       setIsDragging(true);

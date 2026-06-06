@@ -249,7 +249,7 @@ const PinchToResizeGame: React.FC<{ onBack?: () => void; onComplete?: () => void
   }, [done, objectSize, objectScale, baseScale, feedbackOpacity, checkTargetSize]);
 
   // Pinch gesture (for resizing)
-  const pinchGesture = Gesture.Pinch()
+  const pinchGesture = Gesture.Pinch().runOnJS(true)
     .onUpdate((e) => {
       if (!roundActiveRef.current || done || isTargetReachedRef.current) return;
       

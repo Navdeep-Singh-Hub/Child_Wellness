@@ -142,7 +142,7 @@ const FastMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return dist < MATCH_TOLERANCE;
   }, [outlinePos, currentShape]);
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (!roundActive || done || !currentShape) return;
       setIsDragging(true);

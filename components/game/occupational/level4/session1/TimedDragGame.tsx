@@ -48,7 +48,7 @@ const TimedDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const screenHeight = useRef(SCREEN_HEIGHT);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done || !timerActive) return;
       setIsDragging(true);

@@ -69,7 +69,7 @@ const RopePullGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setRightPulled(false);
   }, [leftX, leftY, rightX, rightY]);
 
-  const leftPanGesture = Gesture.Pan()
+  const leftPanGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done) return;
       leftScale.value = withSpring(1.2);
@@ -96,7 +96,7 @@ const RopePullGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       checkCompletion();
     });
 
-  const rightPanGesture = Gesture.Pan()
+  const rightPanGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done) return;
       rightScale.value = withSpring(1.2);

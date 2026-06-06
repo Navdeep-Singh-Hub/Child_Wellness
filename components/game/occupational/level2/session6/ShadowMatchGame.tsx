@@ -156,7 +156,7 @@ const ShadowMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return dist < MATCH_TOLERANCE;
   }, [currentConfig]);
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (!roundActive || done || !currentConfig) return;
       setIsDragging(true);

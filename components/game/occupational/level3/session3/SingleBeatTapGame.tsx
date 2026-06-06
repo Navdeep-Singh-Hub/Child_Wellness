@@ -18,8 +18,8 @@ import {
 } from 'react-native';
 
 const TOTAL_ROUNDS = 10;
-const BEAT_INTERVAL = 2000; // 2 seconds between beats
 const SOUND_DURATION = 500; // 500ms sound plays
+const TAP_WINDOW = 2500; // time allowed to tap after beat (no auto-advance on miss)
 
 const SingleBeatTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const router = useRouter();
@@ -36,13 +36,34 @@ const SingleBeatTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const drumScale = useRef(new Animated.Value(1)).current;
   const beatTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tapWindowRef = useRef<NodeJS.Timeout | null>(null);
+  const hasTappedRef = useRef(false);
+  const canTapRef = useRef(false);
+  const doneRef = useRef(false);
+  const roundRef = useRef(1);
+
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
+
+  const clearTapTimer = useCallback(() => {
+    if (tapWindowRef.current) {
+      clearTimeout(tapWindowRef.current);
+      tapWindowRef.current = null;
+    }
+  }, []);
 
   const playBeat = useCallback(() => {
-    if (done || hasTapped) return;
-    
+    if (doneRef.current) return;
+
+    clearTapTimer();
     setIsDrumPlaying(true);
-    setCanTap(true);
+    setCanTap(false);
+    canTapRef.current = false;
     setHasTapped(false);
+    hasTappedRef.current = false;
     
     // Play drum sound
     playSound('drum', 0.8, 1.0);
@@ -64,64 +85,21 @@ const SingleBeatTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     // Stop sound after duration
     setTimeout(() => {
       setIsDrumPlaying(false);
-    }, SOUND_DURATION);
+      // Only accept taps after the beat finishes — not during the sound
+      setCanTap(true);
+      canTapRef.current = true;
 
-    // Close tap window after 1 second
-    tapWindowRef.current = setTimeout(() => {
-      setCanTap(false);
-      if (!hasTapped) {
-        // Missed tap
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-      }
-      // Move to next beat or round
-      setTimeout(() => {
-        if (round < TOTAL_ROUNDS) {
-          setRound((r) => r + 1);
-          setHasTapped(false);
-        } else {
-          endGame();
+      tapWindowRef.current = setTimeout(() => {
+        setCanTap(false);
+        canTapRef.current = false;
+        if (!hasTappedRef.current) {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+          speakTTS('Tap the drum when you hear the beat!', 0.8).catch(() => {});
+          setTimeout(() => playBeat(), 700);
         }
-      }, 500);
-    }, 1000) as unknown as NodeJS.Timeout;
-  }, [round, done, hasTapped, drumScale]);
-
-  const handleTap = useCallback(() => {
-    if (!canTap || hasTapped || done) return;
-
-    setHasTapped(true);
-    setCanTap(false);
-    setScore((s) => s + 1);
-    
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    
-    // Clear tap window
-    if (tapWindowRef.current) {
-      clearTimeout(tapWindowRef.current);
-      tapWindowRef.current = null;
-    }
-
-    // Move to next beat or round
-    setTimeout(() => {
-      if (round < TOTAL_ROUNDS) {
-        setRound((r) => r + 1);
-        setHasTapped(false);
-      } else {
-        endGame();
-      }
-    }, 500);
-  }, [canTap, hasTapped, done, round]);
-
-  const startRound = useCallback(() => {
-    if (done) return;
-    setIsPlaying(true);
-    setHasTapped(false);
-    setCanTap(false);
-    
-    // Wait a bit then play beat
-    setTimeout(() => {
-      playBeat();
-    }, 500);
-  }, [done, playBeat]);
+      }, TAP_WINDOW) as unknown as NodeJS.Timeout;
+    }, SOUND_DURATION);
+  }, [clearTapTimer, drumScale]);
 
   const endGame = useCallback(async () => {
     const total = TOTAL_ROUNDS;
@@ -130,17 +108,17 @@ const SingleBeatTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     setFinalStats({ correct: score, total, xp });
     setDone(true);
+    doneRef.current = true;
     setIsPlaying(false);
     setIsDrumPlaying(false);
+    canTapRef.current = false;
+    setCanTap(false);
 
     if (beatTimeoutRef.current) {
       clearTimeout(beatTimeoutRef.current);
       beatTimeoutRef.current = null;
     }
-    if (tapWindowRef.current) {
-      clearTimeout(tapWindowRef.current);
-      tapWindowRef.current = null;
-    }
+    clearTapTimer();
 
     try {
       await logGameAndAward({
@@ -155,7 +133,42 @@ const SingleBeatTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     } catch (error) {
       console.error('Failed to log game:', error);
     }
-  }, [score, router]);
+  }, [score, router, clearTapTimer]);
+
+  const handleTap = useCallback(() => {
+    if (!canTapRef.current || hasTappedRef.current || doneRef.current) return;
+
+    hasTappedRef.current = true;
+    setHasTapped(true);
+    setCanTap(false);
+    canTapRef.current = false;
+    setScore((s) => s + 1);
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    clearTapTimer();
+
+    setTimeout(() => {
+      if (roundRef.current < TOTAL_ROUNDS) {
+        setRound((r) => r + 1);
+        setHasTapped(false);
+        hasTappedRef.current = false;
+      } else {
+        endGame();
+      }
+    }, 500);
+  }, [clearTapTimer, endGame]);
+
+  const startRound = useCallback(() => {
+    if (doneRef.current) return;
+    setIsPlaying(true);
+    setHasTapped(false);
+    setCanTap(false);
+    canTapRef.current = false;
+
+    setTimeout(() => {
+      playBeat();
+    }, 500);
+  }, [playBeat]);
 
   useEffect(() => {
     if (!showInfo && !done && round <= TOTAL_ROUNDS) {
@@ -284,6 +297,7 @@ const SingleBeatTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             onPress={handleTap}
             activeOpacity={0.8}
             disabled={!canTap}
+            pointerEvents={canTap ? 'auto' : 'none'}
           >
             <Animated.View
               style={[

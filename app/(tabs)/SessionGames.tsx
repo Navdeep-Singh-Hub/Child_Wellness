@@ -7019,7 +7019,7 @@ export default function SessionGamesScreen() {
       id: 'speed-match',
       title: 'Speed Match',
       emoji: '⚡🐢',
-      description: 'Screen shows instruction: FAST or SLOW. Match the speed with your swipe! Develops listening and movement sync.',
+      description: 'Top turtle shows fast or slow speed. Drag the bottom turtle to match! Develops listening and movement sync.',
       color: '#3B82F6',
       available: isSpeedMatchAvailable,
     },

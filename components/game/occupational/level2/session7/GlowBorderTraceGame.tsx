@@ -205,7 +205,7 @@ const GlowBorderTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     [router],
   );
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (!roundActive || done) return;
       setIsDragging(true);

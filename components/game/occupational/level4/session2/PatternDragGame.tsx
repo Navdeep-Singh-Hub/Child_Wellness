@@ -58,7 +58,7 @@ const PatternDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setPatternType(randomPattern);
   }, []);
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done) return;
       setIsDragging(true);

@@ -132,7 +132,7 @@ const DiagonalCatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     animationRef.current = requestAnimationFrame(animate);
   }, [objectX, objectY, objectVisible, catcherX, catcherY, done, screenWidth, screenHeight]);
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done) return;
       setIsDragging(true);

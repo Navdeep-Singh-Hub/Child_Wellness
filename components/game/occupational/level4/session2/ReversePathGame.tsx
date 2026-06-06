@@ -55,7 +55,7 @@ const ReversePathGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setPathType(randomType);
   }, []);
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done) return;
       setIsDragging(true);

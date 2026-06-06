@@ -12,7 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
   runOnJS,
@@ -110,6 +110,10 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
   const ballX = useSharedValue(10);
   const ballY = useSharedValue(50);
   const ballPosRef = useRef({ x: 10, y: 50 });
+
+  const updateBallPosRef = React.useCallback((x: number, y: number) => {
+    ballPosRef.current = { x, y };
+  }, []);
   const attentionBarWidth = useSharedValue(50);
   const [sparkleKey, setSparkleKey] = useState(0);
   const [feedbackToast, setFeedbackToast] = useState<'success' | 'early' | 'timeout' | null>(null);
@@ -154,13 +158,13 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
     });
   }, [attentionScore]);
 
+  // Stable runOnJS target — inline arrows in reactions crash native on every frame
   useAnimatedReaction(
     () => ({ x: ballX.value, y: ballY.value }),
     (pos) => {
-      runOnJS(() => {
-        ballPosRef.current = pos;
-      })();
-    }
+      runOnJS(updateBallPosRef)(pos.x, pos.y);
+    },
+    [updateBallPosRef]
   );
 
   const speakIfEnabled = (msg: string) => {
@@ -819,9 +823,8 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
             ballAnimatedStyle,
           ]}
         >
-          <TouchableOpacity
+          <Pressable
             onPress={handleBallTap}
-            activeOpacity={0.9}
             style={[
               styles.ballButton,
               phase === 'glow' && styles.ballGlow,
@@ -846,7 +849,7 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
                 <Text style={styles.sparkleEmoji}>✨</Text>
               </View>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </Animated.View>
 
         {/* Phase hint */}
@@ -886,10 +889,9 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
 
         {/* Start Overlay - shown before first interaction */}
         {showStartOverlay && (
-          <TouchableOpacity
+          <Pressable
             style={styles.startOverlay}
             onPress={handleStartTap}
-            activeOpacity={0.9}
           >
             <LinearGradient
               colors={['rgba(59, 130, 246, 0.95)', 'rgba(37, 99, 235, 0.95)']}
@@ -903,7 +905,7 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
                 </Text>
               </View>
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
 

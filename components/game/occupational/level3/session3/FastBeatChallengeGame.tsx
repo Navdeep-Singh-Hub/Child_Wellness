@@ -39,110 +39,31 @@ const FastBeatChallengeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
   const drumScale = useRef(new Animated.Value(1)).current;
   const beatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const tapWindowRef = useRef<NodeJS.Timeout | null>(null);
+  const canTapRef = useRef(false);
+  const hasTappedThisBeatRef = useRef(false);
+  const doneRef = useRef(false);
+  const roundRef = useRef(1);
+  const beatsDoneRef = useRef(0);
 
-  const playBeat = useCallback(() => {
-    if (done || beatCount >= BEATS_PER_ROUND) return;
-    
-    setIsDrumPlaying(true);
-    setCanTap(true);
-    setHasTappedThisBeat(false);
-    
-    // Play drum sound
-    playSound('drum', 0.8, 1.0);
-    
-    // Animate drum
-    Animated.sequence([
-      Animated.timing(drumScale, {
-        toValue: 1.15,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(drumScale, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
 
-    // Stop sound after duration
-    setTimeout(() => {
-      setIsDrumPlaying(false);
-    }, SOUND_DURATION);
-
-    // Close tap window quickly for fast beats
-    tapWindowRef.current = setTimeout(() => {
-      setCanTap(false);
-      if (!hasTappedThisBeat) {
-        // Missed tap
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-      }
-      
-      // Move to next beat or round
-      setBeatCount((prev) => {
-        const next = prev + 1;
-        if (next >= BEATS_PER_ROUND) {
-          // Round complete
-          setTimeout(() => {
-            if (round < TOTAL_ROUNDS) {
-              setRound((r) => r + 1);
-              setBeatCount(0);
-              setHasTappedThisBeat(false);
-            } else {
-              endGame();
-            }
-          }, 300);
-        }
-        return next;
-      });
-    }, TAP_WINDOW) as unknown as NodeJS.Timeout;
-  }, [round, done, beatCount, hasTappedThisBeat, drumScale]);
-
-  const startBeatSequence = useCallback(() => {
-    if (isPlaying || done) return;
-    
-    setIsPlaying(true);
-    setBeatCount(0);
-    setHasTappedThisBeat(false);
-    
-    // Play first beat immediately
-    playBeat();
-    
-    // Then play at fast intervals
-    beatIntervalRef.current = setInterval(() => {
-      if (beatCount < BEATS_PER_ROUND) {
-        playBeat();
-      } else {
-        if (beatIntervalRef.current) {
-          clearInterval(beatIntervalRef.current);
-          beatIntervalRef.current = null;
-        }
-        setIsPlaying(false);
-      }
-    }, FAST_BEAT_INTERVAL) as unknown as NodeJS.Timeout;
-  }, [isPlaying, done, beatCount, playBeat]);
-
-  const handleTap = useCallback(() => {
-    if (!canTap || hasTappedThisBeat || done) return;
-
-    setHasTappedThisBeat(true);
-    setCanTap(false);
-    setScore((s) => s + 1);
-    
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    
-    // Clear tap window
+  const clearBeatTimers = useCallback(() => {
+    if (beatIntervalRef.current) {
+      clearTimeout(beatIntervalRef.current);
+      beatIntervalRef.current = null;
+    }
     if (tapWindowRef.current) {
       clearTimeout(tapWindowRef.current);
       tapWindowRef.current = null;
     }
-  }, [canTap, hasTappedThisBeat, done]);
+  }, []);
 
-  const startRound = useCallback(() => {
-    if (done) return;
-    setTimeout(() => {
-      startBeatSequence();
-    }, 500);
-  }, [done, startBeatSequence]);
+  const playBeatRef = useRef<() => void>(() => {});
 
   const endGame = useCallback(async () => {
     const total = TOTAL_ROUNDS * BEATS_PER_ROUND;
@@ -151,17 +72,12 @@ const FastBeatChallengeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
 
     setFinalStats({ correct: score, total, xp });
     setDone(true);
+    doneRef.current = true;
     setIsPlaying(false);
     setIsDrumPlaying(false);
-
-    if (beatIntervalRef.current) {
-      clearInterval(beatIntervalRef.current);
-      beatIntervalRef.current = null;
-    }
-    if (tapWindowRef.current) {
-      clearTimeout(tapWindowRef.current);
-      tapWindowRef.current = null;
-    }
+    canTapRef.current = false;
+    setCanTap(false);
+    clearBeatTimers();
 
     try {
       await logGameAndAward({
@@ -176,7 +92,110 @@ const FastBeatChallengeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
     } catch (error) {
       console.error('Failed to log game:', error);
     }
-  }, [score, router]);
+  }, [score, router, clearBeatTimers]);
+
+  const scheduleNextBeat = useCallback(() => {
+    beatIntervalRef.current = setTimeout(() => {
+      playBeatRef.current();
+    }, FAST_BEAT_INTERVAL) as unknown as NodeJS.Timeout;
+  }, []);
+
+  const finishRound = useCallback(() => {
+    clearBeatTimers();
+    setIsPlaying(false);
+    setTimeout(() => {
+      if (roundRef.current < TOTAL_ROUNDS) {
+        setRound((r) => r + 1);
+        setBeatCount(0);
+        beatsDoneRef.current = 0;
+        setHasTappedThisBeat(false);
+        hasTappedThisBeatRef.current = false;
+      } else {
+        endGame();
+      }
+    }, 400);
+  }, [clearBeatTimers, endGame]);
+
+  const playBeat = useCallback(() => {
+    if (doneRef.current || beatsDoneRef.current >= BEATS_PER_ROUND) return;
+
+    clearBeatTimers();
+    setIsDrumPlaying(true);
+    setCanTap(false);
+    canTapRef.current = false;
+    setHasTappedThisBeat(false);
+    hasTappedThisBeatRef.current = false;
+
+    playSound('drum', 0.8, 1.0);
+    Animated.sequence([
+      Animated.timing(drumScale, { toValue: 1.15, duration: 100, useNativeDriver: true }),
+      Animated.timing(drumScale, { toValue: 1, duration: 100, useNativeDriver: true }),
+    ]).start();
+
+    setTimeout(() => {
+      setIsDrumPlaying(false);
+      setCanTap(true);
+      canTapRef.current = true;
+
+      tapWindowRef.current = setTimeout(() => {
+        setCanTap(false);
+        canTapRef.current = false;
+        if (!hasTappedThisBeatRef.current) {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+          speakTTS('Tap on each beat!', 0.8).catch(() => {});
+          playBeatRef.current();
+        }
+      }, TAP_WINDOW) as unknown as NodeJS.Timeout;
+    }, SOUND_DURATION);
+  }, [clearBeatTimers, drumScale]);
+
+  playBeatRef.current = playBeat;
+
+  const handleTap = useCallback(() => {
+    if (!canTapRef.current || hasTappedThisBeatRef.current || doneRef.current) return;
+
+    hasTappedThisBeatRef.current = true;
+    setHasTappedThisBeat(true);
+    setCanTap(false);
+    canTapRef.current = false;
+    setScore((s) => s + 1);
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    if (tapWindowRef.current) {
+      clearTimeout(tapWindowRef.current);
+      tapWindowRef.current = null;
+    }
+
+    beatsDoneRef.current += 1;
+    setBeatCount(beatsDoneRef.current);
+
+    if (beatsDoneRef.current >= BEATS_PER_ROUND) {
+      finishRound();
+    } else {
+      scheduleNextBeat();
+    }
+  }, [scheduleNextBeat, finishRound]);
+
+  const startBeatSequence = useCallback(() => {
+    if (doneRef.current) return;
+    setIsPlaying(true);
+    setBeatCount(0);
+    beatsDoneRef.current = 0;
+    setHasTappedThisBeat(false);
+    hasTappedThisBeatRef.current = false;
+    playBeat();
+  }, [playBeat]);
+
+  const startRound = useCallback(() => {
+    if (doneRef.current) return;
+    setTimeout(() => {
+      startBeatSequence();
+    }, 500);
+  }, [startBeatSequence]);
+
+  useEffect(() => {
+    playBeatRef.current = playBeat;
+  }, [playBeat]);
 
   useEffect(() => {
     if (!showInfo && !done && round <= TOTAL_ROUNDS) {
@@ -306,6 +325,7 @@ const FastBeatChallengeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
             onPress={handleTap}
             activeOpacity={0.8}
             disabled={!canTap}
+            pointerEvents={canTap ? 'auto' : 'none'}
           >
             <Animated.View
               style={[

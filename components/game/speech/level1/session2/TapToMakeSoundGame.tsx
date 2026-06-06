@@ -1,22 +1,24 @@
-import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import {
+  cleanupSounds,
+  playSound as playGameSound,
+  preloadSounds,
+  stopAllSpeech,
+} from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
-import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createGlowLoop } from '@/utils/animatedGlowLoop';
 import {
-    Animated,
-    Dimensions,
-    Easing,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    View,
+  Animated,
+  Easing,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 
@@ -26,14 +28,14 @@ type Props = {
   requiredTaps?: number;
 };
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const INSTRUMENT_SIZE = 160;
-type InstrumentType = 'drum' | 'bell' | 'horn' | 'tambourine' | 'piano';
+type InstrumentType = 'drum' | 'bell' | 'horn';
+type SoundKey = 'drum' | 'bell' | 'beep';
 
 let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
 
 function clearScheduledSpeech() {
-  scheduledSpeechTimers.forEach(t => clearTimeout(t));
+  scheduledSpeechTimers.forEach((t) => clearTimeout(t));
   scheduledSpeechTimers = [];
   try {
     stopTTS();
@@ -49,195 +51,32 @@ function speak(text: string, rate = DEFAULT_TTS_RATE) {
   }
 }
 
-const useSoundEffect = (uri: string | number) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-  const webAudioRef = useRef<HTMLAudioElement | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  const ensureSound = useCallback(async () => {
-    // Skip if no sound URL provided (will use TTS instead)
-    if (!uri || (typeof uri === 'string' && uri.trim() === '')) {
-      return;
-    }
-    
-    if (soundRef.current || isLoaded) return;
-    
-    if (Platform.OS === 'web') {
-      // Use HTML5 Audio API for web
-      // For local assets (require()), we need to get the actual URL
-      try {
-        let audioUrl = '';
-        if (typeof uri === 'string') {
-          audioUrl = uri;
-        } else if (typeof uri === 'number') {
-          // For require() on web, Metro bundler should provide a URL
-          // Try to resolve it - this may need adjustment based on your setup
-          // For now, we'll skip web loading of local files and use TTS fallback
-          console.log('Local sound file on web - will use TTS fallback');
-          return;
-        }
-        
-        if (audioUrl) {
-          const audio = new Audio(audioUrl);
-          audio.volume = 0.9;
-          audio.preload = 'auto';
-          webAudioRef.current = audio;
-          setIsLoaded(true);
-          console.log('Web sound loaded successfully:', uri);
-        }
-      } catch (e) {
-        console.warn('Failed to load web sound:', uri, e);
-      }
-    } else {
-      // Use expo-av for native platforms
-      try {
-        const soundSource = typeof uri === 'string' ? { uri } : uri;
-        const { sound } = await ExpoAudio.Sound.createAsync(
-          soundSource,
-          { 
-            volume: 0.9, 
-            shouldPlay: false,
-            isLooping: false,
-          },
-        );
-        soundRef.current = sound;
-        setIsLoaded(true);
-        console.log('Native sound loaded successfully:', uri);
-      } catch (e) {
-        console.warn('Failed to load native sound:', uri, e);
-      }
-    }
-  }, [uri, isLoaded]);
-
-  // Preload sound on mount
-  useEffect(() => {
-    ensureSound();
-    return () => {
-      if (Platform.OS === 'web') {
-        if (webAudioRef.current) {
-          webAudioRef.current.pause();
-          webAudioRef.current = null;
-        }
-      } else {
-        if (soundRef.current) {
-          soundRef.current.unloadAsync().catch(() => {});
-        }
-      }
-    };
-  }, [ensureSound]);
-
-  const play = useCallback(async () => {
-    try {
-      let played = false;
-      
-      if (Platform.OS === 'web') {
-        // Play using HTML5 Audio API
-        try {
-          let audioUrl = '';
-          if (typeof uri === 'string') {
-            audioUrl = uri;
-          } else if (typeof uri === 'number') {
-            // Local file on web - skip and return false to use TTS fallback
-            console.log('Local sound file on web - using TTS fallback');
-            return false;
-          }
-          
-          if (!audioUrl) {
-            return false;
-          }
-          
-          // Always create a new Audio instance for web to avoid autoplay issues
-          const audio = new Audio(audioUrl);
-          audio.volume = 0.9;
-          
-          // Set up error handler
-          audio.onerror = (e) => {
-            console.error('Audio error:', e, audio.error);
-          };
-          
-          // Play immediately - user interaction should allow this
-          try {
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-              await playPromise;
-              played = true;
-              console.log('Web sound played successfully:', uri);
-            } else {
-              // No promise returned, assume it's playing
-              played = true;
-              console.log('Web sound started (no promise):', uri);
-            }
-          } catch (playError: any) {
-            console.error('Error calling audio.play():', playError);
-            // Try using preloaded audio as fallback
-            if (webAudioRef.current) {
-              try {
-                webAudioRef.current.currentTime = 0;
-                await webAudioRef.current.play();
-                played = true;
-                console.log('Web sound played using preloaded audio:', uri);
-              } catch (e2) {
-                console.error('Preloaded audio play also failed:', e2);
-              }
-            }
-          }
-        } catch (e) {
-          console.error('Web audio creation failed:', e, 'URI:', uri);
-        }
-      } else {
-        // Play using expo-av
-        try {
-          await ensureSound();
-          if (soundRef.current) {
-            await soundRef.current.replayAsync();
-            played = true;
-          } else {
-            console.warn('Sound not loaded yet:', uri);
-          }
-        } catch (e) {
-          console.warn('Native audio play failed:', e);
-        }
-      }
-      
-      return played;
-    } catch (e) {
-      console.warn('Failed to play sound:', uri, e);
-      return false;
-    }
-  }, [ensureSound, uri]);
-
-  return play;
-};
-
-// Sound configuration
-// Using local sound files from assets
 const INSTRUMENTS = [
   {
     type: 'drum' as InstrumentType,
     emoji: '🥁',
     name: 'drum',
-    color: ['#EF4444', '#DC2626'],
+    color: ['#EF4444', '#DC2626'] as [string, string],
     glow: '#FCA5A5',
-    soundUrl: require('@/assets/sounds/session3/drum.mp3'),
+    soundKey: 'drum' as SoundKey,
     soundWord: 'Boom!',
   },
   {
     type: 'bell' as InstrumentType,
     emoji: '🔔',
     name: 'bell',
-    color: ['#FBBF24', '#F59E0B'],
+    color: ['#FBBF24', '#F59E0B'] as [string, string],
     glow: '#FDE68A',
-    soundUrl: require('@/assets/sounds/session3/bell.mp3.mp3'),
+    soundKey: 'bell' as SoundKey,
     soundWord: 'Ding!',
   },
   {
     type: 'horn' as InstrumentType,
     emoji: '📯',
     name: 'horn',
-    color: ['#3B82F6', '#2563EB'],
+    color: ['#3B82F6', '#2563EB'] as [string, string],
     glow: '#93C5FD',
-    // Using beep sound as horn sound if available, otherwise keep empty for TTS fallback
-    soundUrl: require('@/assets/sounds/session3/beep.mp3.mp3'),
+    soundKey: 'beep' as SoundKey,
     soundWord: 'Toot!',
   },
 ];
@@ -260,17 +99,11 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
   const soundWaveScale = useRef(new Animated.Value(0)).current;
   const soundWaveOpacity = useRef(new Animated.Value(0)).current;
 
-  // Use only 2-3 instruments in rotation
-  const activeInstruments = INSTRUMENTS.slice(0, 3);
-  
-  // Create sound effects for each instrument
-  const playDrum = useSoundEffect(activeInstruments[0].soundUrl);
-  const playBell = useSoundEffect(activeInstruments[1].soundUrl);
-  const playHorn = useSoundEffect(activeInstruments[2].soundUrl);
-
+  const activeInstruments = INSTRUMENTS;
   const instrumentGlowLoop = useMemo(() => createGlowLoop(instrumentGlow), [instrumentGlow]);
 
   useEffect(() => {
+    preloadSounds();
     instrumentGlowLoop.start();
     const instrument = activeInstruments[currentInstrument];
     speak(`Tap the ${instrument.name}!`);
@@ -278,140 +111,143 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
       instrumentGlowLoop.stop();
       clearScheduledSpeech();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only intro speech
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount intro only
   }, [instrumentGlowLoop]);
 
-  const playSound = useCallback(async (instrumentIndex: number) => {
-    if (isPlaying) return;
-    
-    setIsPlaying(true);
-    const instrument = activeInstruments[instrumentIndex];
-    
+  const playSoundForInstrument = useCallback(async (soundKey: SoundKey) => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
+      await playGameSound(soundKey, 0.9, 1.0);
+    } catch (e) {
+      console.warn('Error playing sound:', soundKey, e);
+      throw e;
+    }
+  }, []);
 
-    // Play sound FIRST, then visual feedback
-    // Play sound based on instrument type
-    let soundPlayed = false;
-    if (instrument.soundUrl && instrument.soundUrl.trim() !== '') {
+  const handleInstrumentPlay = useCallback(
+    async (instrumentIndex: number) => {
+      if (isPlaying) return;
+
+      setIsPlaying(true);
+      const instrument = activeInstruments[instrumentIndex];
+
       try {
-        if (instrument.type === 'drum') {
-          soundPlayed = await playDrum();
-        } else if (instrument.type === 'bell') {
-          soundPlayed = await playBell();
-        } else if (instrument.type === 'horn') {
-          soundPlayed = await playHorn();
-        }
-      } catch (e) {
-        console.warn('Error playing sound:', e);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      } catch {}
+
+      try {
+        await playSoundForInstrument(instrument.soundKey);
+      } catch {
+        speak(instrument.soundWord);
       }
-    }
 
-    // Only use TTS as fallback if sound file failed to play
-    // The actual sound should play via playDrum/playBell/playHorn above
-    if (!soundPlayed) {
-      // Fallback to TTS only if sound file didn't play
-      speak(instrument.soundWord);
-    }
+      setShowSoundWord(true);
 
-    // Visual feedback
-    setShowSoundWord(true);
-    
-    // Instrument animation
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(instrumentScale, {
-          toValue: 1.2,
-          duration: 150,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: false,
-        }),
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(instrumentScale, {
+            toValue: 1.2,
+            duration: 150,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(instrumentRotation, {
+            toValue: 10,
+            duration: 100,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.parallel([
+          Animated.spring(instrumentScale, {
+            toValue: 1,
+            tension: 50,
+            friction: 7,
+            useNativeDriver: true,
+          }),
+          Animated.timing(instrumentRotation, {
+            toValue: -10,
+            duration: 100,
+            easing: Easing.in(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ]),
         Animated.timing(instrumentRotation, {
-          toValue: 10,
+          toValue: 0,
           duration: 100,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: false,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
         }),
-      ]),
+      ]).start();
+
+      soundWaveScale.setValue(0);
+      soundWaveOpacity.setValue(0.8);
       Animated.parallel([
-        Animated.spring(instrumentScale, {
-          toValue: 1,
-          tension: 50,
-          friction: 7,
-          useNativeDriver: false,
+        Animated.timing(soundWaveScale, {
+          toValue: 2.5,
+          duration: 800,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
         }),
-        Animated.timing(instrumentRotation, {
-          toValue: -10,
-          duration: 100,
-          easing: Easing.in(Easing.quad),
-          useNativeDriver: false,
+        Animated.timing(soundWaveOpacity, {
+          toValue: 0,
+          duration: 800,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
         }),
-      ]),
-      Animated.timing(instrumentRotation, {
-        toValue: 0,
-        duration: 100,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: false,
-      }),
-    ]).start();
+      ]).start();
 
-    // Sound wave animation
-    soundWaveScale.setValue(0);
-    soundWaveOpacity.setValue(0.8);
-    Animated.parallel([
-      Animated.timing(soundWaveScale, {
-        toValue: 2.5,
-        duration: 800,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: false,
-      }),
-      Animated.timing(soundWaveOpacity, {
-        toValue: 0,
-        duration: 800,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: false,
-      }),
-    ]).start();
+      const nextHits = hits + 1;
+      setHits(nextHits);
+      setShowRoundSuccess(true);
 
-    // Don't speak the sound word - let the actual sound play!
-    // The actual sound should play via playDrum/playBell/playHorn above
-
-    const nextHits = hits + 1;
-    setHits(nextHits);
-    // Show success animation
-    setShowRoundSuccess(true);
-
-    setTimeout(() => {
-      setShowRoundSuccess(false);
-      setShowSoundWord(false);
-      setIsPlaying(false);
-    }, 2500);
-
-    // Rotate to next instrument after 2 taps
-    if (nextHits > 0 && nextHits % 2 === 0) {
       setTimeout(() => {
-        const nextInstrument = (currentInstrument + 1) % activeInstruments.length;
-        setCurrentInstrument(nextInstrument);
-        const newInstrument = activeInstruments[nextInstrument];
-        speak(`Tap the ${newInstrument.name}!`);
-      }, 2000);
-    }
+        setShowRoundSuccess(false);
+        setShowSoundWord(false);
+        setIsPlaying(false);
+      }, 2500);
 
-    if (nextHits >= requiredTaps) {
-      setGameFinished(true);
-      setShowRoundSuccess(false);
-    }
-  }, [isPlaying, currentInstrument, hits, requiredTaps, activeInstruments, playDrum, playBell, playHorn, onComplete, onBack]);
+      if (nextHits > 0 && nextHits % 2 === 0) {
+        setTimeout(() => {
+          const nextInstrument = (currentInstrument + 1) % activeInstruments.length;
+          setCurrentInstrument(nextInstrument);
+          const newInstrument = activeInstruments[nextInstrument];
+          speak(`Tap the ${newInstrument.name}!`);
+        }, 2000);
+      }
+
+      if (nextHits >= requiredTaps) {
+        setGameFinished(true);
+        setShowRoundSuccess(false);
+      }
+    },
+    [
+      isPlaying,
+      currentInstrument,
+      hits,
+      requiredTaps,
+      activeInstruments,
+      playSoundForInstrument,
+      instrumentScale,
+      instrumentRotation,
+      soundWaveScale,
+      soundWaveOpacity,
+    ],
+  );
 
   const handleInstrumentTap = () => {
-    playSound(currentInstrument);
+    handleInstrumentPlay(currentInstrument);
   };
 
   const progressDots = Array.from({ length: requiredTaps }, (_, i) => i < hits);
   const instrument = activeInstruments[currentInstrument];
 
-  // Show completion screen with stats when game finishes
+  const glowRingStyle = {
+    opacity: instrumentGlow.interpolate({
+      inputRange: [0.5, 1],
+      outputRange: [0.35, 0.75],
+    }),
+  };
+
   if (gameFinished) {
     const accuracyPct = hits >= requiredTaps ? 100 : Math.round((hits / requiredTaps) * 100);
     const xpAwarded = hits * 10;
@@ -441,10 +277,7 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
-        style={styles.gradient}
-      >
+      <LinearGradient colors={['#FEF3C7', '#FDE68A', '#FCD34D']} style={styles.gradient}>
         <View style={styles.header}>
           <Pressable
             onPress={() => {
@@ -468,7 +301,6 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
         </View>
 
         <View style={styles.playArea}>
-          {/* Sound Wave Rings */}
           <Animated.View
             style={[
               styles.soundWave,
@@ -482,15 +314,25 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
           <Animated.View
             style={[
               styles.soundWave,
+              styles.soundWaveInner,
               {
-                transform: [{ scale: Animated.multiply(soundWaveScale, 0.8) }],
-                opacity: Animated.multiply(soundWaveOpacity, 0.6),
+                transform: [
+                  {
+                    scale: soundWaveScale.interpolate({
+                      inputRange: [0, 2.5],
+                      outputRange: [0, 2],
+                    }),
+                  },
+                ],
+                opacity: soundWaveOpacity.interpolate({
+                  inputRange: [0, 0.8],
+                  outputRange: [0, 0.48],
+                }),
                 borderColor: instrument.glow,
               },
             ]}
           />
 
-          {/* Musical Instrument */}
           <Animated.View
             style={[
               styles.instrumentContainer,
@@ -507,22 +349,14 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
               },
             ]}
           >
+            <Animated.View
+              pointerEvents="none"
+              style={[styles.glowRing, { borderColor: instrument.glow }, glowRingStyle]}
+            />
             <Pressable onPress={handleInstrumentTap} hitSlop={40} style={styles.instrumentPressable}>
               <LinearGradient
                 colors={instrument.color}
-                style={[
-                  styles.instrument,
-                  {
-                    shadowColor: instrument.glow,
-                    shadowOpacity: instrumentGlow.interpolate({
-                      inputRange: [0.5, 1],
-                      outputRange: [0.4, 0.8],
-                    }),
-                    shadowRadius: 30,
-                    shadowOffset: { width: 0, height: 0 },
-                    elevation: 15,
-                  },
-                ]}
+                style={styles.instrument}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               >
@@ -536,7 +370,6 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
             </Pressable>
           </Animated.View>
 
-          {/* Instruction */}
           {hits === 0 && !isPlaying && (
             <View style={styles.instructionBadge}>
               <Text style={styles.instructionText}>👆 Tap the {instrument.name}!</Text>
@@ -562,11 +395,7 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
         </View>
       </LinearGradient>
 
-      {/* Round Success Animation */}
-      <RoundSuccessAnimation
-        visible={showRoundSuccess}
-        stars={3}
-      />
+      <RoundSuccessAnimation visible={showRoundSuccess} stars={3} />
     </SafeAreaView>
   );
 };
@@ -631,9 +460,21 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     zIndex: 1,
   },
+  soundWaveInner: {
+    transform: [{ scale: 0.85 }],
+  },
   instrumentContainer: {
     zIndex: 100,
     elevation: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  glowRing: {
+    position: 'absolute',
+    width: INSTRUMENT_SIZE + 24,
+    height: INSTRUMENT_SIZE + 24,
+    borderRadius: (INSTRUMENT_SIZE + 24) / 2,
+    borderWidth: 4,
   },
   instrumentPressable: {
     width: INSTRUMENT_SIZE,
@@ -647,6 +488,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 5,
     borderColor: 'rgba(255, 255, 255, 0.9)',
+    elevation: 12,
   },
   instrumentEmoji: {
     fontSize: 90,
@@ -723,4 +565,3 @@ const styles = StyleSheet.create({
     color: '#0F172A',
   },
 });
-

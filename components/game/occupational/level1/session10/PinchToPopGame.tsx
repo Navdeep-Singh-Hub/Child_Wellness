@@ -266,7 +266,7 @@ const PinchToPopGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
   }, [done, balloonX, balloonY, balloonScale, balloonOpacity, wiggleRotation, feedbackOpacity]);
 
   // Pinch gesture
-  const pinchGesture = Gesture.Pinch()
+  const pinchGesture = Gesture.Pinch().runOnJS(true)
     .onStart(() => {
       if (!roundActiveRef.current || done || isPoppedRef.current) return;
     })
@@ -295,7 +295,7 @@ const PinchToPopGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
     });
 
   // Single tap gesture (for wrong gesture detection)
-  const tapGesture = Gesture.Tap()
+  const tapGesture = Gesture.Tap().runOnJS(true)
     .onEnd(() => {
       if (!roundActiveRef.current || done || isPoppedRef.current) return;
       runOnJS(handleSingleTap)();

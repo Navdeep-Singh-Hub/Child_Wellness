@@ -38,6 +38,7 @@ const DoubleBeatCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const drumScale = useRef(new Animated.Value(1)).current;
   const beatTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tapWindowRef = useRef<NodeJS.Timeout | null>(null);
+  const checkResultRef = useRef<(taps?: number[]) => void>(() => {});
 
   const playBeats = useCallback(() => {
     if (done) return;
@@ -93,7 +94,7 @@ const DoubleBeatCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         // Close tap window
         tapWindowRef.current = setTimeout(() => {
           setCanTap(false);
-          checkResult();
+          checkResultRef.current();
         }, TAP_WINDOW) as unknown as NodeJS.Timeout;
       }, 300);
     }, BEAT_INTERVAL) as unknown as NodeJS.Timeout;
@@ -112,7 +113,7 @@ const DoubleBeatCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           clearTimeout(tapWindowRef.current);
           tapWindowRef.current = null;
         }
-        checkResult(newTaps);
+        checkResultRef.current(newTaps);
       }
       
       return newTaps;
@@ -123,35 +124,46 @@ const DoubleBeatCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const checkResult = useCallback((taps?: number[]) => {
     const tapsToCheck = taps || userTaps;
-    
+    let success = false;
+
     if (tapsToCheck.length === 2) {
       const interval = tapsToCheck[1] - tapsToCheck[0];
       const expectedInterval = BEAT_INTERVAL;
       const tolerance = BEAT_INTERVAL * 0.5; // 50% tolerance
-      
+
       if (Math.abs(interval - expectedInterval) <= tolerance) {
-        // Correct!
+        success = true;
         setScore((s) => s + 1);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+        speakTTS('Try again — tap twice like the drum!', 0.8).catch(() => {});
       }
     } else {
-      // Not enough taps
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      speakTTS('Tap twice after you hear both beats!', 0.8).catch(() => {});
     }
 
-    // Move to next round
     setTimeout(() => {
-      if (round < TOTAL_ROUNDS) {
-        setRound((r) => r + 1);
+      if (success) {
+        if (round < TOTAL_ROUNDS) {
+          setRound((r) => r + 1);
+          setUserTaps([]);
+          setBeatCount(0);
+        } else {
+          endGame();
+        }
+      } else {
         setUserTaps([]);
         setBeatCount(0);
-      } else {
-        endGame();
+        playBeats();
       }
     }, 1000);
-  }, [userTaps, round]);
+  }, [userTaps, round, playBeats]);
+
+  useEffect(() => {
+    checkResultRef.current = checkResult;
+  }, [checkResult]);
 
   const startRound = useCallback(() => {
     if (done) return;

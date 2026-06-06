@@ -99,7 +99,7 @@ export function Game3Trace({ onBack, onComplete, section, level }: Game3TracePro
 
   const nativeTracePan = useMemo(
     () =>
-      Gesture.Pan()
+      Gesture.Pan().runOnJS(true)
         .enabled(Platform.OS !== 'web' && isTracing)
         .onUpdate((e) => {
           const w = Math.max(traceBoxLayout.width, 1);

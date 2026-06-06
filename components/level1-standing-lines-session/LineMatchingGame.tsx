@@ -72,7 +72,7 @@ export function LineMatchingGame({
   const [dragX, dragY] = [useSharedValue(verticalLine.x), useSharedValue(verticalLine.y1 + LINE_LEN / 2)];
   const [slotX, slotY] = [useSharedValue(slots[0].x), useSharedValue(row2)];
 
-  const pan = Gesture.Pan()
+  const pan = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       runOnJS(setDraggedId)('v');
     })

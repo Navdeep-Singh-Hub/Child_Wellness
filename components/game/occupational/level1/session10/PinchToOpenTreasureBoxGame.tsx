@@ -301,7 +301,7 @@ const PinchToOpenTreasureBoxGame: React.FC<{ onBack?: () => void; onComplete?: (
   }, [done, lock1Scale, lock1Opacity, lock2Scale, lock2Opacity, chestScale, chestRotation, feedbackOpacity]);
 
   // Pinch gesture for lock 1
-  const lock1PinchGesture = Gesture.Pinch()
+  const lock1PinchGesture = Gesture.Pinch().runOnJS(true)
     .onStart(() => {
       if (!roundActiveRef.current || done || isChestOpenRef.current) return;
       lock1PinchActiveRef.current = true;
@@ -328,7 +328,7 @@ const PinchToOpenTreasureBoxGame: React.FC<{ onBack?: () => void; onComplete?: (
     });
 
   // Pinch gesture for lock 2
-  const lock2PinchGesture = Gesture.Pinch()
+  const lock2PinchGesture = Gesture.Pinch().runOnJS(true)
     .onStart(() => {
       if (!roundActiveRef.current || done || isChestOpenRef.current) return;
       lock2PinchActiveRef.current = true;
@@ -355,7 +355,7 @@ const PinchToOpenTreasureBoxGame: React.FC<{ onBack?: () => void; onComplete?: (
     });
 
   // Single tap gesture (for wrong gesture detection)
-  const tapGesture = Gesture.Tap()
+  const tapGesture = Gesture.Tap().runOnJS(true)
     .onEnd(() => {
       if (!roundActiveRef.current || done || isChestOpenRef.current) return;
       runOnJS(handleWrongGesture)();

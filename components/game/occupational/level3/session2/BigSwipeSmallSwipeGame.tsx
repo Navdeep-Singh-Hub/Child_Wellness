@@ -103,7 +103,7 @@ const BigSwipeSmallSwipeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
     };
   }, []);
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart((evt) => {
       if (!isActive || done) return;
       startX.current = evt.x;

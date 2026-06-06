@@ -158,7 +158,7 @@ const FollowTheLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   };
 
   // Pan gesture for dragging
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (!roundActive || done) return;
       setIsDragging(true);

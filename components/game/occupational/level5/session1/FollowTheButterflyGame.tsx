@@ -114,7 +114,7 @@ const FollowTheButterflyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
     followTimerRef.current = interval;
   }, [done, fingerX, fingerY, butterflyX, butterflyY]);
 
-  const panGesture = Gesture.Pan()
+  const panGesture = Gesture.Pan().runOnJS(true)
     .onUpdate((e) => {
       if (done) return;
       fingerX.value = Math.max(0, Math.min(screenWidth.current, e.x));

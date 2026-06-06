@@ -10,7 +10,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
     Dimensions,
-    PanResponder,
     Platform,
     SafeAreaView,
     StyleSheet,
@@ -18,6 +17,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 const TOTAL_ROUNDS = 10;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -35,35 +35,25 @@ const BigTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const circleScale = useRef(new Animated.Value(0)).current;
   const circleOpacity = useRef(new Animated.Value(0)).current;
-  const swipeDistance = useRef(0);
-  const swipeStartY = useRef(0);
+  const showTargetRef = useRef(false);
+  const hasTappedRef = useRef(false);
+  const doneRef = useRef(false);
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt) => {
-        swipeStartY.current = evt.nativeEvent.pageY;
-        swipeDistance.current = 0;
-      },
-      onPanResponderMove: (evt) => {
-        swipeDistance.current = Math.abs(evt.nativeEvent.pageY - swipeStartY.current);
-      },
-      onPanResponderRelease: (evt) => {
-        const distance = swipeDistance.current;
-        // Require significant swipe (at least 30% of screen height) for big tap
-        const minSwipeDistance = SCREEN_HEIGHT * 0.3;
-        
-        if (showTarget && !hasTapped && distance >= minSwipeDistance) {
-          handleSuccess();
-        }
-      },
-    })
-  ).current;
+  useEffect(() => {
+    showTargetRef.current = showTarget;
+  }, [showTarget]);
+  useEffect(() => {
+    hasTappedRef.current = hasTapped;
+  }, [hasTapped]);
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
 
   const showCircle = useCallback(() => {
     setShowTarget(true);
+    showTargetRef.current = true;
     setHasTapped(false);
+    hasTappedRef.current = false;
     
     Animated.parallel([
       Animated.spring(circleScale, {
@@ -88,18 +78,39 @@ const BigTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   }, [circleScale, circleOpacity]);
 
-  const handleTap = useCallback(() => {
-    if (showTarget && !hasTapped && !done) {
-      handleSuccess();
+  const endGame = useCallback(async () => {
+    const total = TOTAL_ROUNDS;
+    const xp = score * 15;
+    const accuracy = (score / total) * 100;
+
+    setFinalStats({ correct: score, total, xp });
+    setDone(true);
+    setShowTarget(false);
+    doneRef.current = true;
+
+    try {
+      await logGameAndAward({
+        type: 'big-tap',
+        correct: score,
+        total,
+        accuracy,
+        xpAwarded: xp,
+        skillTags: ['large-muscle-movement', 'spatial-awareness'],
+      });
+      router.setParams({ refreshStats: Date.now().toString() });
+    } catch (error) {
+      console.error('Failed to log game:', error);
     }
-  }, [showTarget, hasTapped, done]);
+  }, [score, router]);
 
   const handleSuccess = useCallback(() => {
+    if (!showTargetRef.current || hasTappedRef.current || doneRef.current) return;
     setHasTapped(true);
+    hasTappedRef.current = true;
     setScore((s) => s + 1);
-    
+
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    
+
     Animated.parallel([
       Animated.timing(circleScale, {
         toValue: 1.2,
@@ -117,13 +128,30 @@ const BigTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       if (round < TOTAL_ROUNDS) {
         setRound((r) => r + 1);
         setShowTarget(false);
+        showTargetRef.current = false;
+        hasTappedRef.current = false;
         circleScale.setValue(0);
         circleOpacity.setValue(0);
       } else {
         endGame();
       }
     }, 500);
-  }, [round, circleScale, circleOpacity]);
+  }, [round, circleScale, circleOpacity, endGame]);
+
+  const tapGesture = Gesture.Tap()
+    .runOnJS(true)
+    .onEnd(() => {
+      handleSuccess();
+    });
+
+  const panGesture = Gesture.Pan()
+    .runOnJS(true)
+    .minDistance(15)
+    .onEnd(() => {
+      handleSuccess();
+    });
+
+  const gameGesture = Gesture.Race(tapGesture, panGesture);
 
   const startRound = useCallback(() => {
     if (done) return;
@@ -131,30 +159,6 @@ const BigTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       showCircle();
     }, 500);
   }, [done, showCircle]);
-
-  const endGame = useCallback(async () => {
-    const total = TOTAL_ROUNDS;
-    const xp = score * 15;
-    const accuracy = (score / total) * 100;
-
-    setFinalStats({ correct: score, total, xp });
-    setDone(true);
-    setShowTarget(false);
-
-    try {
-      await logGameAndAward({
-        type: 'big-tap',
-        correct: score,
-        total,
-        accuracy,
-        xpAwarded: xp,
-        skillTags: ['large-muscle-movement', 'spatial-awareness'],
-      });
-      router.setParams({ refreshStats: Date.now().toString() });
-    } catch (error) {
-      console.error('Failed to log game:', error);
-    }
-  }, [score, router]);
 
   useEffect(() => {
     if (!showInfo && !done && round <= TOTAL_ROUNDS) {
@@ -253,15 +257,8 @@ const BigTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </View>
       </View>
 
-      <View 
-        style={styles.gameArea}
-        {...panResponder.panHandlers}
-      >
-        <TouchableOpacity
-          style={StyleSheet.absoluteFillObject}
-          onPress={handleTap}
-          activeOpacity={1}
-        >
+      <GestureDetector gesture={gameGesture}>
+        <View style={styles.gameArea}>
           {showTarget && (
             <Animated.View
               style={[
@@ -281,14 +278,14 @@ const BigTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               </LinearGradient>
             </Animated.View>
           )}
-          
+
           {!showTarget && (
             <View style={styles.waitingContainer}>
               <Text style={styles.waitingText}>Get ready... 👀</Text>
             </View>
           )}
-        </TouchableOpacity>
-      </View>
+        </View>
+      </GestureDetector>
     </SafeAreaView>
   );
 };
@@ -343,6 +340,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+    width: '100%',
   },
   bigCircle: {
     width: BIG_CIRCLE_SIZE,

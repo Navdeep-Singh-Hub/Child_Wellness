@@ -86,7 +86,7 @@ const MatchPairGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     rightY.value = withSpring(SCREEN_HEIGHT * 0.3);
   }, [leftX, leftY, rightX, rightY]);
 
-  const leftPanGesture = Gesture.Pan()
+  const leftPanGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done) return;
       leftScale.value = withSpring(1.2);
@@ -109,7 +109,7 @@ const MatchPairGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       checkCompletion();
     });
 
-  const rightPanGesture = Gesture.Pan()
+  const rightPanGesture = Gesture.Pan().runOnJS(true)
     .onStart(() => {
       if (done) return;
       rightScale.value = withSpring(1.2);

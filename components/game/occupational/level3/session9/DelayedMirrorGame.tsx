@@ -1,4 +1,5 @@
 import GameInfoScreen from '@/components/game/GameInfoScreen';
+import PoseConfirmButton from '@/components/game/occupational/level3/session9/PoseConfirmButton';
 import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -21,7 +22,6 @@ const TOTAL_ROUNDS = 10;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const POSE_DISPLAY_TIME = 2000; // Time to show pose (ms)
 const DELAY_TIME = 2000; // Delay before allowing copy (ms)
-const RESPONSE_TIME = 3000; // Time to copy after delay (ms)
 
 type PoseType = 'hands-up' | 'hands-down' | 'hands-left' | 'hands-right' | 'clap';
 
@@ -51,7 +51,21 @@ const DelayedMirrorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const delayOpacity = useRef(new Animated.Value(0)).current;
   const poseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const delayTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const canCopyRef = useRef(false);
+  const hasCopiedRef = useRef(false);
+  const doneRef = useRef(false);
+  const roundRef = useRef(1);
+  const phaseRef = useRef<'show' | 'wait' | 'copy'>('show');
+
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   const showPoseOnScreen = useCallback(() => {
     if (done) return;
@@ -117,7 +131,10 @@ const DelayedMirrorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       // After delay, allow copying
       delayTimeoutRef.current = setTimeout(() => {
         setPhase('copy');
+        phaseRef.current = 'copy';
         setCanCopy(true);
+        canCopyRef.current = true;
+
         Animated.timing(delayOpacity, {
           toValue: 0,
           duration: 300,
@@ -130,76 +147,10 @@ const DelayedMirrorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           useNativeDriver: true,
         }).start();
 
-        speakTTS('Now copy the pose!', 0.8, 'en-US' );
-
-        copyTimeoutRef.current = setTimeout(() => {
-          setCanCopy(false);
-          if (!hasCopied) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-            speakTTS('Copy the pose!', 0.8, 'en-US' );
-            setTimeout(() => {
-              if (round < TOTAL_ROUNDS) {
-                setRound((r) => r + 1);
-                setShowPose(false);
-                poseOpacity.setValue(0);
-                poseScale.setValue(1);
-                delayOpacity.setValue(0);
-              } else {
-                endGame();
-              }
-            }, 1000);
-          }
-        }, RESPONSE_TIME) as unknown as NodeJS.Timeout;
+        speakTTS('Now copy the pose!', 0.8, 'en-US');
       }, DELAY_TIME) as unknown as NodeJS.Timeout;
     }, POSE_DISPLAY_TIME) as unknown as NodeJS.Timeout;
-  }, [done, poseScale, poseOpacity, delayOpacity, round, hasCopied]);
-
-  const handleCopy = useCallback(() => {
-    if (!canCopy || done || !showPose || hasCopied) return;
-
-    setHasCopied(true);
-    setScore((s) => s + 1);
-    
-    if (copyTimeoutRef.current) {
-      clearTimeout(copyTimeoutRef.current);
-      copyTimeoutRef.current = null;
-    }
-    
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    speakTTS('Perfect! You remembered!', 0.9, 'en-US' );
-    
-    Animated.sequence([
-      Animated.timing(poseScale, {
-        toValue: 1.3,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(poseScale, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    setTimeout(() => {
-      if (round < TOTAL_ROUNDS) {
-        setRound((r) => r + 1);
-        setShowPose(false);
-        poseOpacity.setValue(0);
-        poseScale.setValue(1);
-        delayOpacity.setValue(0);
-      } else {
-        endGame();
-      }
-    }, 1000);
-  }, [canCopy, done, showPose, hasCopied, poseScale, round]);
-
-  const startRound = useCallback(() => {
-    if (done) return;
-    setTimeout(() => {
-      showPoseOnScreen();
-    }, 500);
-  }, [done, showPoseOnScreen]);
+  }, [done, poseScale, poseOpacity, delayOpacity]);
 
   const endGame = useCallback(async () => {
     const total = TOTAL_ROUNDS;
@@ -216,10 +167,6 @@ const DelayedMirrorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     if (delayTimeoutRef.current) {
       clearTimeout(delayTimeoutRef.current);
     }
-    if (copyTimeoutRef.current) {
-      clearTimeout(copyTimeoutRef.current);
-    }
-
     try {
       await logGameAndAward({
         type: 'delayed-mirror',
@@ -234,6 +181,44 @@ const DelayedMirrorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       console.error('Failed to log game:', error);
     }
   }, [score, router]);
+
+  const handleConfirmPose = useCallback(() => {
+    if (!canCopyRef.current || doneRef.current || hasCopiedRef.current || phaseRef.current !== 'copy') return;
+
+    hasCopiedRef.current = true;
+    setHasCopied(true);
+    setCanCopy(false);
+    canCopyRef.current = false;
+    setScore((s) => s + 1);
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    speakTTS('Perfect! You remembered!', 0.9, 'en-US');
+
+    Animated.sequence([
+      Animated.timing(poseScale, { toValue: 1.3, duration: 200, useNativeDriver: true }),
+      Animated.timing(poseScale, { toValue: 1, duration: 200, useNativeDriver: true }),
+    ]).start();
+
+    setTimeout(() => {
+      if (roundRef.current < TOTAL_ROUNDS) {
+        setRound((r) => r + 1);
+        setShowPose(false);
+        hasCopiedRef.current = false;
+        poseOpacity.setValue(0);
+        poseScale.setValue(1);
+        delayOpacity.setValue(0);
+      } else {
+        endGame();
+      }
+    }, 800);
+  }, [poseScale, delayOpacity, endGame]);
+
+  const startRound = useCallback(() => {
+    if (doneRef.current) return;
+    setTimeout(() => {
+      showPoseOnScreen();
+    }, 500);
+  }, [showPoseOnScreen]);
 
   useEffect(() => {
     if (!showInfo && !done && round <= TOTAL_ROUNDS) {
@@ -254,9 +239,6 @@ const DelayedMirrorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       }
       if (delayTimeoutRef.current) {
         clearTimeout(delayTimeoutRef.current);
-      }
-      if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
       }
     };
   }, []);
@@ -334,12 +316,7 @@ const DelayedMirrorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       <View style={styles.gameArea}>
         {showPose && (
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={handleCopy}
-            style={styles.tapArea}
-            disabled={!canCopy}
-          >
+          <View style={styles.tapArea}>
             {phase === 'show' && (
               <Animated.View
                 style={[
@@ -370,20 +347,23 @@ const DelayedMirrorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             )}
 
             {phase === 'copy' && (
-              <Animated.View
-                style={[
-                  styles.poseContainer,
-                  {
-                    transform: [{ scale: poseScale }],
-                    opacity: poseOpacity,
-                  },
-                ]}
-              >
-                <Text style={styles.poseEmoji}>{POSE_EMOJIS[currentPose]}</Text>
-                <Text style={styles.copyLabel}>COPY NOW!</Text>
-              </Animated.View>
+              <>
+                <Animated.View
+                  style={[
+                    styles.poseContainer,
+                    {
+                      transform: [{ scale: poseScale }],
+                      opacity: poseOpacity,
+                    },
+                  ]}
+                >
+                  <Text style={styles.poseEmoji}>{POSE_EMOJIS[currentPose]}</Text>
+                  <Text style={styles.copyLabel}>Do the pose from memory!</Text>
+                </Animated.View>
+                <PoseConfirmButton visible={canCopy} onPress={handleConfirmPose} color="#0EA5E9" />
+              </>
             )}
-          </TouchableOpacity>
+          </View>
         )}
 
         {!showPose && (

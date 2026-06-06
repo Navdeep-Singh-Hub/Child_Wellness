@@ -170,7 +170,7 @@ function DraggableShape({
     }
   }, [isShake]);
 
-  const gesture = Gesture.Pan()
+  const gesture = Gesture.Pan().runOnJS(true)
     .enabled(!disabled)
     .onUpdate((e) => {
       translateX.value = e.translationX;
