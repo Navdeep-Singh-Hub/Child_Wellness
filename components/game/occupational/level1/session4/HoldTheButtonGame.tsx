@@ -1,649 +1,321 @@
+/**
+ * OT Level 1 · Session 4 · Game 1 — Hold The Button
+ * Theme: "Forge Press" — fill the power ring, release on the green flash.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
+import { SESSION4_PACING } from '@/components/game/occupational/level1/session4/session4Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
 } from 'react-native';
 import Animated, {
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withSequence,
-    withTiming
+  Easing,
+  cancelAnimation,
+  useAnimatedProps,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Circle } from 'react-native-svg';
 
+const P = SESSION4_PACING.holdButton;
+const TOTAL_ROUNDS = 8;
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const BREAK_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
-const TOTAL_ROUNDS = 8;
-const HOLD_DURATION_MS = 1800; // 1.8 seconds to fill ring
-const RING_BREAK_THRESHOLD = 0.3; // If released before 30%, ring breaks
+const STAR_ICON = require('@/assets/icons/star.png');
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.55 });
+          ref.current = sound;
+        }
+        await ref.current.replayAsync();
+      } catch { /* noop */ }
+    })();
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
 
 const HoldTheButtonGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playBreak = useSoundEffect(BREAK_SOUND);
+  const { width } = useWindowDimensions();
+  const btnSize = Math.min(width * 0.42, 200);
+  const ringSize = btnSize + 40;
+  const strokeW = 11;
+  const radius = (ringSize - strokeW) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  const playSuccess = useSound(SUCCESS_SOUND);
+  const playBreak = useSound(BREAK_SOUND);
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
-
-  // Initial speech on mount
-  useEffect(() => {
-    try {
-      speakTTS('Press and hold until the ring fills completely. Release when you see the green flash!', 0.78 );
-    } catch {}
-  }, []);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
-  const [isPressed, setIsPressed] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
-  const [holdProgress, setHoldProgress] = useState(0);
-  const [ringBroken, setRingBroken] = useState(false);
-  const [showRelease, setShowRelease] = useState(false);
-  const [roundActive, setRoundActive] = useState(true);
+  const [phase, setPhase] = useState<'idle' | 'holding' | 'ready' | 'broken' | 'transition'>('idle');
+  const [holdPct, setHoldPct] = useState(0);
+  const [sparkleKey, setSparkleKey] = useState(0);
 
-  // Animation values
-  const ringProgress = useSharedValue(0);
-  const buttonScale = useSharedValue(1);
+  const holdingRef = useRef(false);
+  const progressRef = useRef(0);
+  const doneRef = useRef(false);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const progress = useSharedValue(0);
+  const btnScale = useSharedValue(1);
   const ringScale = useSharedValue(1);
-  const ringRotation = useSharedValue(0);
   const flashOpacity = useSharedValue(0);
-  const sparkleX = useSharedValue(0);
-  const sparkleY = useSharedValue(0);
+  const ringRotation = useSharedValue(0);
 
-  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const isPressedRef = useRef(false);
+  const endGame = useCallback((finalScore: number) => {
+    const total = TOTAL_ROUNDS;
+    const xp = finalScore * 16;
+    setFinalStats({ correct: finalScore, total, xp });
+    setDone(true);
+    doneRef.current = true;
+    setShowCongratulations(true);
+    speakTTS('Perfect holds! You forged them all!', 0.78);
+    recordGame(xp).then(() =>
+      logGameAndAward({
+        type: 'holdTheButton',
+        correct: finalScore,
+        total,
+        accuracy: (finalScore / total) * 100,
+        xpAwarded: xp,
+        skillTags: ['sustained-finger-pressure', 'proprioception', 'timing-control', 'finger-stability'],
+      }),
+    ).then(() => router.setParams({ refreshStats: Date.now().toString() })).catch(console.error);
+  }, [router]);
 
-  // Handle press start
-  const handlePressIn = useCallback(() => {
-    if (!roundActive || done || ringBroken) return;
-
-    setIsPressed(true);
-    isPressedRef.current = true;
-    setRingBroken(false);
-    setShowRelease(false);
-    ringProgress.value = 0;
-    ringScale.value = 1;
-    ringRotation.value = 0;
-
-    // Start filling ring
-    const startTime = Date.now();
-    const updateProgress = () => {
-      if (!isPressedRef.current) return;
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / HOLD_DURATION_MS, 1);
-      setHoldProgress(progress);
-      ringProgress.value = withTiming(progress, {
-        duration: 50,
-        easing: Easing.linear,
-      });
-
-      // Rotate ring while filling
-      ringRotation.value = withTiming(progress * 360, {
-        duration: 50,
-        easing: Easing.linear,
-      });
-
-      if (progress < 1) {
-        progressTimerRef.current = setTimeout(updateProgress, 50);
-      } else {
-        // Ring is full - show release cue
-        setShowRelease(true);
-        flashOpacity.value = withSequence(
-          withTiming(1, { duration: 200, easing: Easing.out(Easing.ease) }),
-          withTiming(0.3, { duration: 300, easing: Easing.inOut(Easing.ease) }),
-        );
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        speakTTS('Release now!', 0.85 );
-      }
-    };
-
-    updateProgress();
-  }, [roundActive, done, ringBroken, ringProgress, ringScale, ringRotation, flashOpacity]);
-
-  // Handle release
-  const handlePressOut = useCallback(async () => {
-    if (!isPressedRef.current) return;
-
-    setIsPressed(false);
-    isPressedRef.current = false;
-    if (progressTimerRef.current) {
-      clearTimeout(progressTimerRef.current);
-      progressTimerRef.current = null;
-    }
-
-    const progress = holdProgress;
-
-    if (progress >= 0.95) {
-      // Perfect release - success!
-      setShowRelease(false);
-      flashOpacity.value = withTiming(0, { duration: 200 });
-
-      // Success animation
-      buttonScale.value = withSequence(
-        withTiming(1.2, { duration: 150, easing: Easing.out(Easing.ease) }),
-        withTiming(1, { duration: 150, easing: Easing.in(Easing.ease) }),
-      );
-
-      // Record position for sparkle
-      sparkleX.value = 50;
-      sparkleY.value = 50;
-
-      setScore((s) => {
-        const newScore = s + 1;
-        if (newScore >= TOTAL_ROUNDS) {
-          setTimeout(() => {
-            endGame(newScore);
-          }, 800);
-        } else {
-          setTimeout(() => {
-            setRound((r) => r + 1);
-            setHoldProgress(0);
-            ringProgress.value = 0;
-            setRoundActive(true);
-          }, 1000);
-        }
-        return newScore;
-      });
-
-      try {
-        await playSuccess();
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
-    } else if (progress < RING_BREAK_THRESHOLD) {
-      // Released too early - ring breaks
-      setRingBroken(true);
-      ringScale.value = withSequence(
-        withTiming(1.3, { duration: 200, easing: Easing.out(Easing.ease) }),
-        withTiming(0.8, { duration: 300, easing: Easing.in(Easing.ease) }),
-      );
-      ringRotation.value = withTiming(ringRotation.value + 45, {
-        duration: 300,
-        easing: Easing.out(Easing.ease),
-      });
-
-      try {
-        await playBreak();
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        speakTTS('Hold longer!', 0.78 );
-      } catch {}
-
-      setTimeout(() => {
-        setRingBroken(false);
-        setHoldProgress(0);
-        ringProgress.value = 0;
-        ringScale.value = 1;
-        ringRotation.value = 0;
-      }, 1500);
+  const resetRound = useCallback((instant = false) => {
+    cancelAnimation(progress);
+    holdingRef.current = false;
+    progressRef.current = 0;
+    if (tickRef.current) clearInterval(tickRef.current);
+    if (instant) {
+      progress.value = 0;
+      btnScale.value = 1;
+      ringScale.value = 1;
+      flashOpacity.value = 0;
+      ringRotation.value = 0;
     } else {
-      // Released too early but not broken
-      setHoldProgress(0);
-      ringProgress.value = withTiming(0, { duration: 300 });
-      try {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        speakTTS('Hold until the ring is full!', 0.78 );
-      } catch {}
+      progress.value = withTiming(0, { duration: 200 });
+      btnScale.value = withSpring(1, { damping: 14 });
+      flashOpacity.value = withTiming(0, { duration: 200 });
     }
-  }, [isPressed, holdProgress, ringProgress, ringScale, ringRotation, flashOpacity, buttonScale, sparkleX, sparkleY, playSuccess, playBreak]);
+    setHoldPct(0);
+    setPhase('idle');
+  }, []);
 
-  // End game
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 16; // 16 XP per successful hold
-      const accuracy = (finalScore / total) * 100;
+  const onSuccess = useCallback(() => {
+    setPhase('transition');
+    setSparkleKey(Date.now());
+    playSuccess();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    btnScale.value = withSequence(withSpring(1.15, { damping: 8 }), withSpring(1, { damping: 12 }));
+    flashOpacity.value = withTiming(0, { duration: 150 });
 
-      // Set all states together FIRST (like CatchTheBouncingStar)
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setRoundActive(false);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'holdTheButton',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['sustained-finger-pressure', 'proprioception', 'timing-control', 'finger-stability'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log hold the button game:', e);
+    setScore((prev) => {
+      const next = prev + 1;
+      if (next >= TOTAL_ROUNDS) {
+        setTimeout(() => endGame(next), P.nextRoundDelayMs);
+      } else {
+        setTimeout(() => {
+          setRound((r) => r + 1);
+          resetRound(true);
+        }, P.nextRoundDelayMs);
       }
-    },
-    [router],
-  );
+      return next;
+    });
+  }, [endGame, resetRound, playSuccess]);
 
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
+  const onPressIn = useCallback(() => {
+    if (doneRef.current || phase === 'broken' || phase === 'transition' || holdingRef.current) return;
+    holdingRef.current = true;
+    setPhase('holding');
+    setHoldPct(0);
+    progressRef.current = 0;
+    cancelAnimation(progress);
+    progress.value = 0;
+    btnScale.value = withSpring(0.92, { damping: 16, stiffness: 260 });
 
-  // Animated styles
+    progress.value = withTiming(1, { duration: P.holdDurationMs, easing: Easing.linear });
+    ringRotation.value = withTiming(360, { duration: P.holdDurationMs, easing: Easing.linear });
+
+    tickRef.current = setInterval(() => {
+      if (!holdingRef.current) return;
+      progressRef.current = Math.min(1, progressRef.current + 50 / P.holdDurationMs);
+      setHoldPct(Math.round(progressRef.current * 100));
+      if (progressRef.current >= 1 && holdingRef.current) {
+        setPhase('ready');
+        flashOpacity.value = withSequence(
+          withTiming(1, { duration: 180 }),
+          withTiming(0.35, { duration: 400 }),
+        );
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speakTTS('Release now!', 0.85).catch(() => {});
+        if (tickRef.current) clearInterval(tickRef.current);
+      }
+    }, 50);
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  }, [phase]);
+
+  const onPressOut = useCallback(() => {
+    if (!holdingRef.current) return;
+    holdingRef.current = false;
+    if (tickRef.current) clearInterval(tickRef.current);
+    cancelAnimation(progress);
+    cancelAnimation(ringRotation);
+
+    const p = progressRef.current;
+
+    if (p >= P.perfectThreshold) {
+      onSuccess();
+    } else if (p < P.breakThreshold) {
+      setPhase('broken');
+      playBreak();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      speakTTS('Hold longer!', 0.78).catch(() => {});
+      ringScale.value = withSequence(
+        withTiming(1.25, { duration: 180 }),
+        withTiming(0.85, { duration: 280 }),
+      );
+      setTimeout(() => resetRound(true), P.breakResetMs);
+    } else {
+      progress.value = withTiming(0, { duration: 220 });
+      btnScale.value = withSpring(1, { damping: 12 });
+      flashOpacity.value = withTiming(0, { duration: 180 });
+      setPhase('idle');
+      setHoldPct(0);
+      progressRef.current = 0;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft).catch(() => {});
+      speakTTS('Hold until the ring is full!', 0.78).catch(() => {});
+    }
+  }, [onSuccess, resetRound, playBreak]);
+
+  useEffect(() => {
+    speakTTS('Press and hold until the ring fills. Release on the green flash!', 0.78);
+    return () => { stopAllSpeech(); cleanupSounds(); };
+  }, []);
+
+  const ringProps = useAnimatedProps(() => ({
+    strokeDashoffset: circumference * (1 - progress.value),
+  }));
+
+  const btnStyle = useAnimatedStyle(() => ({ transform: [{ scale: btnScale.value }] }));
   const ringStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: ringScale.value },
-      { rotate: `${ringRotation.value}deg` },
-    ],
+    transform: [{ scale: ringScale.value }, { rotate: `${ringRotation.value}deg` }],
   }));
+  const flashStyle = useAnimatedStyle(() => ({ opacity: flashOpacity.value }));
 
-  const buttonStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: buttonScale.value }],
-  }));
-
-  const flashStyle = useAnimatedStyle(() => ({
-    opacity: flashOpacity.value,
-  }));
-
-  const sparkleStyle = useAnimatedStyle(() => ({
-    left: `${sparkleX.value}%`,
-    top: `${sparkleY.value}%`,
-  }));
-
-  // Calculate ring stroke dash for progress
-  const ringCircumference = 2 * Math.PI * 80; // radius = 80
-  const ringDashOffset = ringCircumference * (1 - holdProgress);
-
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
   if (showCongratulations && done && finalStats) {
     return (
-      <CongratulationsScreen
-        message="Perfect Holds!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
+      <CongratulationsScreen message="Forge Master!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
+  if (done && finalStats && !showCongratulations) return null;
 
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
+  const phaseLabel = phase === 'ready' ? 'RELEASE!' : phase === 'holding' ? 'HOLDING…' : phase === 'broken' ? 'Too soon!' : 'PRESS & HOLD';
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#1C0A00', '#431407', '#7C2D12', '#9A3412']} locations={[0, 0.3, 0.65, 1]} style={StyleSheet.absoluteFillObject} />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Hold The Button</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • ✅ Score: {score}
-        </Text>
-        <Text style={styles.helper}>
-          Press and hold until the ring fills completely. Release when you see the green flash!
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>🔥 Forge Press</Text>
+        <Text style={styles.subtitle}>Fill the ring · release on green flash</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabel}>Round</Text><Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} /><Text style={styles.statValue}>{score}</Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.playArea}>
-        <Pressable
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          style={styles.tapArea}
-          disabled={!roundActive || done}
-        >
-          {/* Ring progress indicator */}
-          <Animated.View style={[styles.ringContainer, ringStyle]}>
-            <View style={styles.ringBackground} />
-            <View
-              style={[
-                styles.ringProgress,
-                {
-                  transform: [
-                    {
-                      rotate: `${-90}deg`,
-                    },
-                  ],
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.ringProgressFill,
-                  {
-                    width: `${holdProgress * 100}%`,
-                  },
-                ]}
-              />
-            </View>
+        <View style={[styles.stage, { width: ringSize + 24, height: ringSize + 24 }]}>
+          <Animated.View style={[styles.flashRing, { width: ringSize + 16, height: ringSize + 16, borderRadius: (ringSize + 16) / 2 }, flashStyle]} />
+
+          <Animated.View style={ringStyle}>
+            <Svg width={ringSize} height={ringSize}>
+              <Circle cx={ringSize / 2} cy={ringSize / 2} r={radius} stroke="rgba(255,255,255,0.1)" strokeWidth={strokeW} fill="none" />
+              <AnimatedCircle cx={ringSize / 2} cy={ringSize / 2} r={radius} stroke="#F97316" strokeWidth={strokeW} fill="none"
+                strokeLinecap="round" strokeDasharray={circumference} animatedProps={ringProps} rotation={-90} origin={`${ringSize / 2}, ${ringSize / 2}`} />
+            </Svg>
           </Animated.View>
 
-          {/* Main button */}
-          <Animated.View style={[styles.buttonContainer, buttonStyle]}>
-            <View
-              style={[
-                styles.button,
-                {
-                  backgroundColor: isPressed ? '#3B82F6' : '#60A5FA',
-                  opacity: ringBroken ? 0.6 : 1,
-                },
-              ]}
-            >
-              {isPressed && (
-                <Text selectable={false} style={styles.buttonText}>HOLDING...</Text>
-              )}
-              {showRelease && (
-                <Text selectable={false} style={styles.releaseText}>RELEASE!</Text>
-              )}
-            </View>
+          <Animated.View style={btnStyle}>
+            <TouchableOpacity activeOpacity={1} onPressIn={onPressIn} onPressOut={onPressOut}
+              disabled={phase === 'transition' || phase === 'broken'} style={[styles.button, { width: btnSize, height: btnSize, borderRadius: btnSize / 2 }]}>
+              <LinearGradient colors={phase === 'ready' ? ['#22C55E', '#16A34A'] : ['#EA580C', '#C2410C', '#7C2D12']}
+                style={[StyleSheet.absoluteFillObject, { borderRadius: btnSize / 2 }]}>
+                <View style={styles.btnShine} />
+              </LinearGradient>
+              <Text style={styles.btnLabel}>{phaseLabel}</Text>
+            </TouchableOpacity>
           </Animated.View>
+        </View>
 
-          {/* Green flash when ready */}
-          {showRelease && (
-            <Animated.View style={[styles.flashOverlay, flashStyle]}>
-              <View style={styles.flashCircle} />
-            </Animated.View>
-          )}
-
-          {/* Sparkle burst on success */}
-          {score > 0 && !isPressed && !ringBroken && (
-            <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
-              <SparkleBurst />
-            </Animated.View>
-          )}
-
-          {/* Ring broken indicator */}
-          {ringBroken && (
-            <View style={styles.breakIndicator}>
-              <Text selectable={false} style={styles.breakText}>Hold longer! 💪</Text>
-            </View>
-          )}
-        </Pressable>
-
-        {/* Instruction text below button */}
-        {!isPressed && !ringBroken && (
-          <Text selectable={false} style={styles.instructionText}>PRESS & HOLD</Text>
-        )}
-      </View>
-
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: sustained finger pressure • proprioception • timing control • finger stability
-        </Text>
-        <Text style={styles.footerSub}>
-          Hold the button until the ring fills completely. This builds finger strength and control!
-        </Text>
+        <Text style={styles.pctLabel}>{phase === 'holding' || phase === 'ready' ? `${holdPct}%` : 'Ready'}</Text>
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#F97316" count={12} size={7} />
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    position: 'relative',
-  },
-  tapArea: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  ringContainer: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  ringBackground: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    borderWidth: 12,
-    borderColor: 'rgba(148, 163, 184, 0.3)',
-  },
-  ringProgress: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    overflow: 'hidden',
-  },
-  ringProgressFill: {
-    height: '100%',
-    backgroundColor: '#22C55E',
-    borderRadius: 100,
-  },
-  buttonContainer: {
-    position: 'relative',
-    zIndex: 2,
-  },
-  button: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
-  },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: '#fff',
-    textAlign: 'center',
-    userSelect: 'none', // For web
-  },
-  releaseText: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#22C55E',
-    marginTop: 8,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    userSelect: 'none', // For web
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  flashOverlay: {
-    position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: 'rgba(34, 197, 94, 0.3)',
-    zIndex: 1,
-  },
-  flashCircle: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 110,
-    borderWidth: 4,
-    borderColor: '#22C55E',
-  },
-  sparkleContainer: {
-    position: 'absolute',
-    transform: [{ translateX: -20 }, { translateY: -20 }],
-    zIndex: 3,
-  },
-  breakIndicator: {
-    position: 'absolute',
-    top: '40%',
-    backgroundColor: 'rgba(239, 68, 68, 0.9)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  breakText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '800',
-    userSelect: 'none', // For web
-  },
-  instructionText: {
-    marginTop: 20,
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#1F2937',
-    textAlign: 'center',
-    letterSpacing: 1,
-    userSelect: 'none', // For web
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#475569',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  savedText: {
-    color: '#22C55E',
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#431407' },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)' },
+  backText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  title: { fontSize: 28, fontWeight: '900', color: '#FED7AA', textShadowColor: 'rgba(249,115,22,0.5)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10 },
+  subtitle: { fontSize: 14, color: 'rgba(254,215,170,0.8)', fontWeight: '600', marginTop: 4, marginBottom: 14 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.12)', borderColor: 'rgba(251,191,36,0.3)' },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 20, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  playArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  stage: { justifyContent: 'center', alignItems: 'center' },
+  flashRing: { position: 'absolute', borderWidth: 4, borderColor: '#22C55E', backgroundColor: 'rgba(34,197,94,0.15)' },
+  button: { justifyContent: 'center', alignItems: 'center', overflow: 'hidden', shadowColor: '#EA580C', shadowOpacity: 0.55, shadowRadius: 20, elevation: 14 },
+  btnShine: { position: 'absolute', top: '12%', left: '15%', width: '38%', height: '22%', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.35)' },
+  btnLabel: { fontSize: 17, fontWeight: '900', color: '#fff', letterSpacing: 0.5, zIndex: 2 },
+  pctLabel: { marginTop: 18, fontSize: 16, fontWeight: '800', color: 'rgba(254,215,170,0.85)' },
 });
 
 export default HoldTheButtonGame;
-

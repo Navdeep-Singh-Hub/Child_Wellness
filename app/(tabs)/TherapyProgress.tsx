@@ -7,6 +7,7 @@ import {
     SPRING_CONFIG,
     THERAPY_STAGGER_MS,
 } from '@/constants/therapyProgressAnimations';
+import { UNLOCK_ALL_THERAPY_CONTENT } from '@/constants/unlockConfig';
 import { SPEECH_LEVEL } from '@/constants/speechLevels';
 import {
     advanceTherapyProgress,
@@ -519,7 +520,7 @@ function LevelCard({
   therapyMeta: { id: string; label: string; color: string };
   onSelectLevel: (level: number, unlocked: boolean) => void;
 }) {
-  const unlocked = lvl.levelNumber <= currentLevel;
+  const unlocked = UNLOCK_ALL_THERAPY_CONTENT || lvl.levelNumber <= currentLevel;
   const isCurrent = lvl.levelNumber === currentLevel;
   const speechSubtitle =
     therapyMeta.id === 'speech' ? speechLevelSubtitle(lvl.levelNumber) : null;
@@ -654,7 +655,11 @@ function SessionCard({
 }) {
   const router = useRouter();
   const prevInLevel = level.sessions.find((s: { sessionNumber: number; completed: boolean }) => s.sessionNumber === sess.sessionNumber - 1);
-  const unlocked = isFreeAccess === true || sess.sessionNumber === 1 || prevInLevel?.completed === true;
+  const unlocked =
+    UNLOCK_ALL_THERAPY_CONTENT ||
+    isFreeAccess === true ||
+    sess.sessionNumber === 1 ||
+    prevInLevel?.completed === true;
   const completed = sess.completed;
   const isCurrentSession = unlocked && !completed;
 

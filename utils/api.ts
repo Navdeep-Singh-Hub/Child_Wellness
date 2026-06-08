@@ -35,9 +35,15 @@ if (isLocalhost) {
 ) {
   rawBase = `http://${window.location.hostname}:4000`;
 } else {
-  rawBase =
-    process.env.EXPO_PUBLIC_API_BASE_URL?.trim() ||
-    'https://child-wellness.onrender.com'; // HARD SAFE PROD FALLBACK
+  const envUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
+  if (envUrl) {
+    rawBase = envUrl;
+  } else if (__DEV__ && Platform.OS !== 'web') {
+    // USB tablet: `adb reverse tcp:4000 tcp:4000` → device 127.0.0.1 reaches PC backend
+    rawBase = Platform.OS === 'android' ? 'http://127.0.0.1:4000' : (FALLBACK_BASE || 'http://localhost:4000');
+  } else {
+    rawBase = 'https://child-wellness.onrender.com';
+  }
 }
 
 

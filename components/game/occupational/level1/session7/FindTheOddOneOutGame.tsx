@@ -1,475 +1,193 @@
+/**
+ * OT Level 1 · Session 7 · Game 3 — Find The Odd One Out
+ * Theme: "Spotlight Stage" — which shape doesn't belong?
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import { SparkleBurst } from '@/components/game/FX';
+import { SESSION7_PACING } from '@/components/game/occupational/level1/session7/session7Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Animated,
-    Easing,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+const P = SESSION7_PACING;
+const TOTAL_ROUNDS = 8;
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
-const TOTAL_ROUNDS = 8;
-const ITEM_SIZE = 100;
+const STAR_ICON = require('@/assets/icons/star.png');
 
 type ItemType = 'circle' | 'square' | 'triangle' | 'star';
+const EMOJIS: Record<ItemType, string> = { circle: '⭕', square: '⬜', triangle: '🔺', star: '⭐' };
 
-const ITEM_EMOJIS: Record<ItemType, string> = {
-  circle: '⭕',
-  square: '⬜',
-  triangle: '▲',
-  star: '⭐',
-};
-
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.55 });
+          ref.current = sound;
+        }
+        await ref.current.replayAsync();
+      } catch { /* noop */ }
+    })();
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
+
+function buildRound() {
+  const types: ItemType[] = ['circle', 'square', 'triangle', 'star'];
+  const common = types[Math.floor(Math.random() * types.length)];
+  const odd = types.filter((t) => t !== common)[Math.floor(Math.random() * 3)];
+  const items = [
+    { type: common, isOdd: false }, { type: common, isOdd: false }, { type: common, isOdd: false }, { type: odd, isOdd: true },
+  ].sort(() => Math.random() - 0.5);
+  return items;
+}
+
+function StageTile({ emoji, onPress, disabled }: { emoji: string; onPress: () => void; disabled: boolean }) {
+  const scale = useSharedValue(1);
+  const shake = useSharedValue(0);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }, { translateX: shake.value }] }));
+
+  return (
+    <Animated.View style={style}>
+      <Pressable
+        onPress={() => {
+          onPress();
+        }}
+        disabled={disabled}
+        onPressIn={() => { scale.value = withSpring(0.92, { damping: 14 }); }}
+        onPressOut={() => { scale.value = withSpring(1, { damping: 12 }); }}
+      >
+        <LinearGradient colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.05)']} style={styles.tile}>
+          <Text style={styles.emoji}>{emoji}</Text>
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 const FindTheOddOneOutGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
+  const playSuccess = useSound(SUCCESS_SOUND);
+  const playError = useSound(ERROR_SOUND);
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
-  const [roundActive, setRoundActive] = useState(false);
-  const [items, setItems] = useState<Array<{ type: ItemType; isOdd: boolean; scale: Animated.Value; shakeAnim: Animated.Value }>>([]);
-  const [isShaking, setIsShaking] = useState(false);
+  const [items, setItems] = useState<{ type: ItemType; isOdd: boolean }[]>([]);
+  const [sparkleKey, setSparkleKey] = useState(0);
 
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playError = useSoundEffect(ERROR_SOUND);
+  const roundActiveRef = useRef(true);
+  const doneRef = useRef(false);
+  const shakingRef = useRef(false);
 
-  const COLORS = ['#3B82F6', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6', '#F472B6'];
+  const endGame = useCallback((finalScore: number) => {
+    const total = TOTAL_ROUNDS;
+    const xp = finalScore * 15;
+    setFinalStats({ correct: finalScore, total, xp });
+    setDone(true);
+    doneRef.current = true;
+    setShowCongratulations(true);
+    speakTTS('Spotlight star! You spotted every odd one!', 0.78);
+    recordGame(xp).then(() =>
+      logGameAndAward({ type: 'findTheOddOneOut', correct: finalScore, total, accuracy: (finalScore / total) * 100, xpAwarded: xp,
+        skillTags: ['figure-ground-perception', 'discrimination', 'early-classification'] }),
+    ).then(() => router.setParams({ refreshStats: Date.now().toString() })).catch(console.error);
+  }, [router]);
 
-  // End game function
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 15; // 15 XP per correct tap
-      const accuracy = (finalScore / total) * 100;
+  useEffect(() => { setItems(buildRound()); roundActiveRef.current = true; shakingRef.current = false; }, [round]);
+  useEffect(() => { speakTTS('Find the one that is different!', 0.78); return () => { stopAllSpeech(); cleanupSounds(); }; }, []);
 
-      // Set all states together FIRST (like CatchTheBouncingStar)
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setRoundActive(false);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78);
+  const handleTap = useCallback((index: number) => {
+    if (!roundActiveRef.current || doneRef.current || shakingRef.current) return;
+    const item = items[index];
+    if (!item) return;
 
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'findTheOddOneOut' as any,
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['figure-ground-perception', 'discrimination', 'early-classification'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log find the odd one out game:', e);
-      }
-    },
-    [router],
-  );
-
-  // Start a new round
-  const startRound = useCallback(() => {
-    // Generate 3 items of one type + 1 item of another
-    const allTypes: ItemType[] = ['circle', 'square', 'triangle', 'star'];
-    const commonType = allTypes[Math.floor(Math.random() * allTypes.length)];
-    const oddType = allTypes.filter(t => t !== commonType)[Math.floor(Math.random() * (allTypes.length - 1))];
-
-    // Create 4 items: 3 common + 1 odd
-    const newItems: Array<{ type: ItemType; isOdd: boolean; scale: Animated.Value; shakeAnim: Animated.Value }> = [
-      { type: commonType, isOdd: false, scale: new Animated.Value(1), shakeAnim: new Animated.Value(0) },
-      { type: commonType, isOdd: false, scale: new Animated.Value(1), shakeAnim: new Animated.Value(0) },
-      { type: commonType, isOdd: false, scale: new Animated.Value(1), shakeAnim: new Animated.Value(0) },
-      { type: oddType, isOdd: true, scale: new Animated.Value(1), shakeAnim: new Animated.Value(0) },
-    ];
-
-    // Shuffle items
-    const shuffled = newItems.sort(() => Math.random() - 0.5);
-    setItems(shuffled);
-    setRoundActive(true);
-    setIsShaking(false);
-  }, []);
-
-  // Handle item tap
-  const handleItemTap = useCallback(
-    async (index: number) => {
-      if (!roundActive || done || isShaking) return;
-
-      const item = items[index];
-      if (!item) return;
-
-      const isCorrect = item.isOdd;
-
-      if (isCorrect) {
-        // Correct tap - success animation
-        setRoundActive(false);
-        Animated.sequence([
-          Animated.timing(item.scale, {
-            toValue: 1.3,
-            duration: 120,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(item.scale, {
-            toValue: 0,
-            duration: 150,
-            easing: Easing.in(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]).start();
-
-        try {
-          await playSuccess();
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch {}
-
-        setScore((s) => s + 1);
-
-        // Next round or finish
-        if (round >= TOTAL_ROUNDS) {
-          endGame(score + 1);
-        } else {
-          setTimeout(() => {
-            setRound((r) => r + 1);
-            setTimeout(() => {
-              startRound();
-            }, 400);
-          }, 600);
-        }
-      } else {
-        // Wrong tap - shake animation
-        setIsShaking(true);
-        Animated.sequence([
-          Animated.timing(item.shakeAnim, {
-            toValue: 10,
-            duration: 50,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(item.shakeAnim, {
-            toValue: -10,
-            duration: 50,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(item.shakeAnim, {
-            toValue: 10,
-            duration: 50,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(item.shakeAnim, {
-            toValue: 0,
-            duration: 50,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          setIsShaking(false);
-        });
-
-        try {
-          await playError();
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          speakTTS('Find the different one!', 0.78 );
-        } catch {}
-
-        // Retry - don't advance round
-      }
-    },
-    [roundActive, done, isShaking, items, round, score, startRound, endGame, playSuccess, playError],
-  );
-
-  // Start first round
-  useEffect(() => {
-    if (!done) {
-      startRound();
+    if (item.isOdd) {
+      setSparkleKey(Date.now());
+      playSuccess();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      roundActiveRef.current = false;
+      setScore((prev) => {
+        const next = prev + 1;
+        setTimeout(() => { if (next >= TOTAL_ROUNDS) endGame(next); else setRound((r) => r + 1); }, P.nextRoundDelayMs);
+        return next;
+      });
+    } else {
+      playError();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      speakTTS('Find the different one!', 0.78).catch(() => {});
     }
-  }, []);
+  }, [items, endGame, playSuccess, playError]);
 
-  useEffect(() => {
-    if (!done) {
-      try {
-        speakTTS('Find the one that is different!', 0.78 );
-      } catch {}
-    }
-    return () => {
-      stopAllSpeech();
-      cleanupSounds();
-    };
-  }, []);
-
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
-
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
   if (showCongratulations && done && finalStats) {
     return (
-      <CongratulationsScreen
-        message="Pattern Expert!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
+      <CongratulationsScreen message="Spotlight Star!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#1A0A2E', '#3B0764', '#581C87', '#7E22CE']} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Find The Odd One Out</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 🔍 Score: {score}
-        </Text>
-        <Text style={styles.helper}>
-          Find the one that's different!
-        </Text>
-      </View>
-
-      <View style={styles.playArea}>
-        <View style={styles.itemsContainer}>
-          {items.map((item, index) => {
-            const shakeTranslateX = item.shakeAnim.interpolate({
-              inputRange: [-10, 10],
-              outputRange: [-10, 10],
-            });
-
-            return (
-              <Animated.View
-                key={index}
-                style={[
-                  styles.itemContainer,
-                  {
-                    transform: [
-                      { scale: item.scale },
-                      { translateX: shakeTranslateX },
-                    ],
-                  },
-                ]}
-              >
-                <Pressable
-                  onPress={() => handleItemTap(index)}
-                  style={[
-                    styles.item,
-                    {
-                      backgroundColor: item.isOdd ? '#EF4444' : '#3B82F6',
-                      borderColor: item.isOdd ? '#DC2626' : '#2563EB',
-                      borderWidth: item.isOdd ? 4 : 2,
-                    },
-                  ]}
-                  disabled={!roundActive || done || isShaking}
-                >
-                  <Text style={styles.itemEmoji}>{ITEM_EMOJIS[item.type]}</Text>
-                </Pressable>
-              </Animated.View>
-            );
-          })}
+      <View style={styles.header}>
+        <Text style={styles.title}>🎭 Spotlight Stage</Text>
+        <Text style={styles.subtitle}>Tap the shape that doesn't belong</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabel}>Round</Text><Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} /><Text style={styles.statValue}>{score}</Text>
+          </View>
         </View>
       </View>
 
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: figure–ground perception • discrimination • early classification
-        </Text>
-        <Text style={styles.footerSub}>
-          Find the item that's different from the others! This builds pattern recognition and classification.
-        </Text>
+      <View style={styles.grid}>
+        {items.map((item, i) => (
+          <StageTile key={`${round}-${i}`} emoji={EMOJIS[item.type]} onPress={() => handleTap(i)} disabled={!roundActiveRef.current} />
+        ))}
       </View>
+
+      <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#C084FC" count={16} size={8} />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  itemsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 15,
-    flexWrap: 'wrap',
-  },
-  itemContainer: {
-    margin: 8,
-  },
-  item: {
-    width: ITEM_SIZE,
-    height: ITEM_SIZE,
-    borderRadius: ITEM_SIZE / 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 8,
-  },
-  itemEmoji: {
-    fontSize: 50,
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#64748B',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  savedText: {
-    marginTop: 16,
-    fontSize: 14,
-    color: '#22C55E',
-    fontWeight: '600',
-  },
+  container: { flex: 1, backgroundColor: '#3B0764' },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  backText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  title: { fontSize: 28, fontWeight: '900', color: '#F3E8FF', textShadowColor: 'rgba(192,132,252,0.5)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10 },
+  subtitle: { fontSize: 14, color: 'rgba(243,232,255,0.85)', fontWeight: '600', marginTop: 4, marginBottom: 14 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.12)', borderColor: 'rgba(251,191,36,0.3)' },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 20, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  grid: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignContent: 'center', gap: 18, paddingHorizontal: 24, paddingBottom: 40 },
+  tile: { width: P.oddOne.itemSize + 28, height: P.oddOne.itemSize + 28, borderRadius: 20, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)' },
+  emoji: { fontSize: P.oddOne.itemSize * 0.55 },
 });
 
 export default FindTheOddOneOutGame;
-

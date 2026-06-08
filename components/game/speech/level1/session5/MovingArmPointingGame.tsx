@@ -5,6 +5,12 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import {
+  animateAvatarEyes,
+  ObjectTapHand,
+  PointingAvatarFace,
+  resetAvatarEyes,
+} from '@/components/game/speech/level1/session5/pointingAvatarShared';
 import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -79,9 +85,9 @@ export const MovingArmPointingGame: React.FC<Props> = ({
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
 
   const avatarScale = useRef(new Animated.Value(1)).current;
-  const armRotation = useRef(new Animated.Value(0)).current;
-  const armOpacity = useRef(new Animated.Value(0)).current;
-  const armRaiseY = useRef(new Animated.Value(0)).current;
+  const avatarEyeX = useRef(new Animated.Value(0)).current;
+  const pointingOpacity = useRef(new Animated.Value(0)).current;
+  const pointingHandScale = useRef(new Animated.Value(0.8)).current;
   const objectScale = useRef(new Animated.Value(1)).current;
   const objectBounce = useRef(new Animated.Value(1)).current;
   const pointingLineOpacity = useRef(new Animated.Value(0)).current;
@@ -145,9 +151,9 @@ export const MovingArmPointingGame: React.FC<Props> = ({
     objectScale.setValue(1);
     objectBounce.setValue(1);
     pointingLineOpacity.setValue(0);
-    armRotation.setValue(0);
-    armOpacity.setValue(0);
-    armRaiseY.setValue(0);
+    pointingOpacity.setValue(0);
+    pointingHandScale.setValue(0.8);
+    resetAvatarEyes(avatarEyeX);
 
     const direction: PointDirection = Math.random() > 0.5 ? 'left' : 'right';
     setCurrentDirection(direction);
@@ -161,40 +167,23 @@ export const MovingArmPointingGame: React.FC<Props> = ({
   }, []);
 
   const raiseArmAndPoint = (direction: PointDirection) => {
-    // Step 1: Raise arm slowly
     setArmRaised(true);
-    
-    // Calculate the actual angle to the object for proper arm rotation
-    const avatarCenterX = SCREEN_WIDTH / 2;
-    const avatarCenterY = SCREEN_HEIGHT * 0.3;
-    const objectCenterX = direction === 'left' ? SCREEN_WIDTH * 0.15 : SCREEN_WIDTH * 0.85;
-    const objectCenterY = SCREEN_HEIGHT * 0.5;
-    
-    const dx = objectCenterX - avatarCenterX;
-    const dy = objectCenterY - avatarCenterY;
-    const calculatedAngle = Math.atan2(dy, dx) * (180 / Math.PI);
-    
-    Animated.sequence([
-      Animated.timing(armRaiseY, {
-        toValue: -30,
-        duration: 800,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      }),
-      Animated.timing(armOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      // Step 2: Point to direction
+    animateAvatarEyes(avatarEyeX, direction);
+
+    setTimeout(() => {
       setIsPointing(true);
-      
+
       Animated.parallel([
-        Animated.timing(armRotation, {
-          toValue: calculatedAngle,
-          duration: 600,
-          easing: Easing.out(Easing.quad),
+        Animated.timing(pointingOpacity, {
+          toValue: 1,
+          duration: 400,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.spring(pointingHandScale, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
           useNativeDriver: true,
         }),
         Animated.timing(pointingLineOpacity, {
@@ -204,10 +193,7 @@ export const MovingArmPointingGame: React.FC<Props> = ({
           useNativeDriver: true,
         }),
       ]).start();
-    });
 
-    // Start object bounce animation when pointing starts
-    setTimeout(() => {
       Animated.loop(
         Animated.sequence([
           Animated.timing(objectBounce, {
@@ -224,7 +210,7 @@ export const MovingArmPointingGame: React.FC<Props> = ({
           }),
         ])
       ).start();
-    }, 1400);
+    }, 800);
   };
 
   const handleObjectTap = () => {
@@ -245,12 +231,7 @@ export const MovingArmPointingGame: React.FC<Props> = ({
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
-      Animated.timing(armOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(armRaiseY, {
+      Animated.timing(pointingOpacity, {
         toValue: 0,
         duration: 200,
         useNativeDriver: true,
@@ -378,44 +359,21 @@ export const MovingArmPointingGame: React.FC<Props> = ({
                 colors={['#60A5FA', '#3B82F6']}
                 style={styles.avatarGradient}
               >
-                <View style={styles.face}>
-                  <View style={styles.eyesContainer}>
-                    <View style={styles.eye}>
-                      <View style={styles.pupil} />
-                    </View>
-                    <View style={styles.eye}>
-                      <View style={styles.pupil} />
-                    </View>
-                  </View>
-                  <View style={styles.smile} />
-                </View>
-                
-                {/* Moving Pointing Arm */}
-                {(armRaised || isPointing) && (
-                  <Animated.View
-                    style={[
-                      styles.arm,
-                      {
-                        transform: [
-                          { translateY: armRaiseY },
-                          { rotate: armRotation.interpolate({
-                            inputRange: [-180, 180],
-                            outputRange: ['-180deg', '180deg'],
-                          })},
-                        ],
-                        opacity: armOpacity,
-                      },
-                    ]}
-                  >
-                    <View style={styles.armLine} />
-                    <View style={styles.hand}>
-                      <Text style={styles.handEmoji}>👆</Text>
-                    </View>
-                  </Animated.View>
-                )}
+                <PointingAvatarFace avatarEyeX={avatarEyeX} />
               </LinearGradient>
             </Animated.View>
           </View>
+
+          {isPointing && objectVisible && (
+            <ObjectTapHand
+              objectCenterX={objectCenterX}
+              objectCenterY={objectCenterY}
+              objectSize={OBJECT_SIZE}
+              opacity={pointingOpacity}
+              scale={pointingHandScale}
+              visible={isPointing}
+            />
+          )}
 
           {/* Pointing line */}
           {isPointing && (
@@ -568,68 +526,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     elevation: 8,
     position: 'relative',
-  },
-  face: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  eyesContainer: {
-    flexDirection: 'row',
-    gap: 20,
-    marginBottom: 8,
-  },
-  eye: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  pupil: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#0F172A',
-  },
-  smile: {
-    width: 30,
-    height: 15,
-    borderBottomWidth: 3,
-    borderBottomColor: '#0F172A',
-    borderRadius: 15,
-    marginTop: 4,
-  },
-  arm: {
-    position: 'absolute',
-    width: 45,
-    height: 10,
-    backgroundColor: '#3B82F6',
-    borderRadius: 5,
-    top: AVATAR_SIZE / 2 - 5,
-    left: AVATAR_SIZE / 2,
-    transformOrigin: 'left center',
-  },
-  armLine: {
-    flex: 1,
-    height: 10,
-    backgroundColor: '#3B82F6',
-    borderRadius: 5,
-  },
-  hand: {
-    position: 'absolute',
-    right: -16,
-    top: -12,
-    width: 34,
-    height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 17,
-  },
-  handEmoji: {
-    fontSize: 26,
   },
   pointingLine: {
     position: 'absolute',

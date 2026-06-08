@@ -1,650 +1,278 @@
+/**
+ * OT Level 1 · Session 6 · Game 4 — Tap Lights In Order
+ * Theme: "Simon Spark" — classic watch-and-repeat light sequence.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
+import { SESSION6_PACING } from '@/components/game/occupational/level1/session6/session6Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withSequence,
-    withTiming
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+const P = SESSION6_PACING;
+const TOTAL_ROUNDS = 8;
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
-const TOTAL_ROUNDS = 8;
-const SHAPE_SIZE = 100;
+const STAR_ICON = require('@/assets/icons/star.png');
 
-type ShapeType = 'circle' | 'square' | 'star';
+type ShapeId = 'circle' | 'square' | 'star';
 
-const SHAPE_EMOJIS: Record<ShapeType, string> = {
-  circle: '⭕',
-  square: '⬜',
-  star: '⭐',
+const SHAPES: Record<ShapeId, { emoji: string; colors: [string, string]; glow: string }> = {
+  circle: { emoji: '⭕', colors: ['#F472B6', '#DB2777'], glow: '#FBCFE8' },
+  square: { emoji: '⬜', colors: ['#60A5FA', '#2563EB'], glow: '#BFDBFE' },
+  star: { emoji: '⭐', colors: ['#FBBF24', '#D97706'], glow: '#FDE68A' },
 };
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.55 });
+          ref.current = sound;
+        }
+        await ref.current.replayAsync();
+      } catch { /* noop */ }
+    })();
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
 
-const TapLightsInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const TapLightsInOrderGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playError = useSoundEffect(ERROR_SOUND);
+  const playSuccess = useSound(SUCCESS_SOUND);
+  const playError = useSound(ERROR_SOUND);
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
-  const [roundActive, setRoundActive] = useState(true);
-  const [sequence, setSequence] = useState<ShapeType[]>([]);
-  const [userSequence, setUserSequence] = useState<ShapeType[]>([]);
-  const [isShowingSequence, setIsShowingSequence] = useState(true);
-  const [isShaking, setIsShaking] = useState(false);
-  const [sequenceLength, setSequenceLength] = useState(2);
+  const [showCongratulations, setShowCongratulations] = useState(false);
+  const [sequence, setSequence] = useState<ShapeId[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showSequence, setShowSequence] = useState(true);
+  const [seqLength, setSeqLength] = useState(P.lights.startLength);
+  const [sparkleKey, setSparkleKey] = useState(0);
 
-  // Animation values
-  const circleGlow = useSharedValue(0);
-  const squareGlow = useSharedValue(0);
-  const starGlow = useSharedValue(0);
-  const circleScale = useSharedValue(1);
-  const squareScale = useSharedValue(1);
-  const starScale = useSharedValue(1);
-  const circleX = useSharedValue(0);
-  const squareX = useSharedValue(0);
-  const starX = useSharedValue(0);
-  const sparkleX = useSharedValue(0);
-  const sparkleY = useSharedValue(0);
+  const indexRef = useRef(0);
+  const sequenceRef = useRef<ShapeId[]>([]);
+  const seqLengthRef = useRef(P.lights.startLength);
+  const shakingRef = useRef(false);
+  const roundActiveRef = useRef(false);
+  const showingRef = useRef(true);
+  const doneRef = useRef(false);
+  const demoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // End game function (defined before use)
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 18; // 18 XP per successful sequence
-      const accuracy = (finalScore / total) * 100;
+  const glows = { circle: useSharedValue(0), square: useSharedValue(0), star: useSharedValue(0) };
+  const scales = { circle: useSharedValue(1), square: useSharedValue(1), star: useSharedValue(1) };
+  const shakes = { circle: useSharedValue(0), square: useSharedValue(0), star: useSharedValue(0) };
 
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setRoundActive(false);
+  const endGame = useCallback((finalScore: number) => {
+    const total = TOTAL_ROUNDS;
+    const xp = finalScore * 18;
+    setFinalStats({ correct: finalScore, total, xp });
+    setDone(true);
+    doneRef.current = true;
+    setShowCongratulations(true);
+    speakTTS('Simon Spark champion! Amazing memory!', 0.78);
+    recordGame(xp).then(() =>
+      logGameAndAward({
+        type: 'tapLightsInOrder',
+        correct: finalScore,
+        total,
+        accuracy: (finalScore / total) * 100,
+        xpAwarded: xp,
+        skillTags: ['visual-memory', 'imitation-of-visual-sequence', 'attention-to-order'],
+      }),
+    ).then(() => router.setParams({ refreshStats: Date.now().toString() })).catch(console.error);
+  }, [router]);
 
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'tapLightsInOrder',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['visual-memory', 'imitation-of-visual-sequence', 'attention-to-order'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log tap lights in order game:', e);
-      }
+  const generateSequence = useCallback((len: number): ShapeId[] => {
+    const ids: ShapeId[] = ['circle', 'square', 'star'];
+    return Array.from({ length: len }, () => ids[Math.floor(Math.random() * 3)]);
+  }, []);
 
-      speakTTS('Great memory!', 0.78 );
-    },
-    [router],
-  );
+  const playDemo = useCallback((seq: ShapeId[]) => {
+    if (demoTimerRef.current) clearTimeout(demoTimerRef.current);
+    setShowSequence(true);
+    showingRef.current = true;
+    roundActiveRef.current = false;
+    (['circle', 'square', 'star'] as ShapeId[]).forEach((s) => { glows[s].value = 0; scales[s].value = 1; });
 
-  // Generate random sequence
-  const generateSequence = useCallback(() => {
-    const shapes: ShapeType[] = ['circle', 'square', 'star'];
-    const newSequence: ShapeType[] = [];
-    for (let i = 0; i < sequenceLength; i++) {
-      newSequence.push(shapes[Math.floor(Math.random() * shapes.length)]);
-    }
-    return newSequence;
-  }, [sequenceLength]);
-
-  // Function to show sequence animation
-  const showSequenceAnimation = useCallback((sequenceToShow: ShapeType[]) => {
-    setIsShowingSequence(true);
-    setRoundActive(false);
-    
-    // Reset all glows
-    circleGlow.value = 0;
-    squareGlow.value = 0;
-    starGlow.value = 0;
-    circleScale.value = 1;
-    squareScale.value = 1;
-    starScale.value = 1;
-
-    // Animate sequence
-    let index = 0;
-    const showNext = () => {
-      if (index >= sequenceToShow.length) {
-        setIsShowingSequence(false);
-        setRoundActive(true);
-        try {
-          speakTTS('Watch the sequence, then tap the shapes in the same order!', { rate: 0.78 });
-        } catch {}
+    let i = 0;
+    const step = () => {
+      if (i >= seq.length) {
+        setShowSequence(false);
+        showingRef.current = false;
+        roundActiveRef.current = true;
+        speakTTS('Your turn! Repeat the pattern.', 0.78).catch(() => {});
         return;
       }
-
-      const shape = sequenceToShow[index];
-      const glowAnim = shape === 'circle' ? circleGlow : shape === 'square' ? squareGlow : starGlow;
-      const scaleAnim = shape === 'circle' ? circleScale : shape === 'square' ? squareScale : starScale;
-      
-      // Make it VERY visible: bright glow + big scale pulse
-      // First, scale up and glow bright
-      scaleAnim.value = withTiming(1.6, { duration: 400, easing: Easing.out(Easing.ease) });
-      glowAnim.value = withTiming(1, { duration: 400, easing: Easing.out(Easing.ease) });
-      
-      // Then scale down and fade out
-      setTimeout(() => {
-        scaleAnim.value = withTiming(1, { duration: 400, easing: Easing.in(Easing.ease) });
-        glowAnim.value = withTiming(0, { duration: 400, easing: Easing.in(Easing.ease) });
-      }, 600);
-
-      index++;
-      setTimeout(showNext, 1500); // More time between shapes to see clearly
+      const s = seq[i];
+      scales[s].value = withSequence(withTiming(1.3, { duration: 200 }), withTiming(1, { duration: 200 }));
+      glows[s].value = withSequence(withTiming(1, { duration: 200 }), withTiming(0, { duration: 280 }));
+      i += 1;
+      demoTimerRef.current = setTimeout(step, P.sequenceStepMs);
     };
+    demoTimerRef.current = setTimeout(step, P.sequenceStartDelayMs);
+  }, []);
 
-    setTimeout(showNext, 500);
-  }, [circleGlow, squareGlow, starGlow, circleScale, squareScale, starScale]);
-
-  // Show sequence animation on round change
   useEffect(() => {
-    if (done) return;
-    
-    // Always show sequence when round changes or on initial load
-    const newSequence = generateSequence();
-    setSequence(newSequence);
-    setUserSequence([]);
-    showSequenceAnimation(newSequence);
-    
-    return () => {
-      stopAllSpeech();
-      cleanupSounds();
-    };
-  }, [round, sequenceLength, generateSequence, done, showSequenceAnimation]);
+    if (doneRef.current) return;
+    const len = seqLengthRef.current;
+    const seq = generateSequence(len);
+    setSequence(seq);
+    setCurrentIndex(0);
+    indexRef.current = 0;
+    sequenceRef.current = seq;
+    playDemo(seq);
+  }, [round]);
 
-  // Handle tap
-  const handleTap = useCallback(async (shape: ShapeType) => {
-    if (!roundActive || done || isShaking || isShowingSequence) return;
+  useEffect(() => {
+    speakTTS('Watch the lights flash, then tap the shapes in the same order!', 0.78);
+    return () => { stopAllSpeech(); cleanupSounds(); if (demoTimerRef.current) clearTimeout(demoTimerRef.current); };
+  }, []);
 
-    const newUserSequence = [...userSequence, shape];
-    setUserSequence(newUserSequence);
+  const handleTap = useCallback((shape: ShapeId) => {
+    if (!roundActiveRef.current || doneRef.current || shakingRef.current || showingRef.current) return;
 
-    // Animate tap
-    const scaleAnim = shape === 'circle' ? circleScale : shape === 'square' ? squareScale : starScale;
-    scaleAnim.value = withSequence(
-      withTiming(1.3, { duration: 150, easing: Easing.out(Easing.ease) }),
-      withTiming(1, { duration: 150, easing: Easing.in(Easing.ease) }),
-    );
+    const expected = sequenceRef.current[indexRef.current];
+    if (shape === expected) {
+      scales[shape].value = withSequence(withSpring(1.15, { damping: 8 }), withSpring(1, { damping: 12 }));
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      const next = indexRef.current + 1;
+      indexRef.current = next;
+      setCurrentIndex(next);
 
-    // Check if correct
-    const expectedShape = sequence[newUserSequence.length - 1];
-    if (shape === expectedShape) {
-      // Correct!
-      if (newUserSequence.length >= sequence.length) {
-        // Sequence complete!
-        sparkleX.value = 50;
-        sparkleY.value = 50;
+      if (next >= sequenceRef.current.length) {
+        setSparkleKey(Date.now());
+        playSuccess();
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        roundActiveRef.current = false;
 
-        setScore((s) => {
-          const newScore = s + 1;
-          if (newScore >= TOTAL_ROUNDS) {
-            setTimeout(() => {
-              endGame(newScore);
-            }, 1000);
-          } else {
-            // Increase sequence length every 2 rounds
-            const newLength = newScore % 2 === 0 && sequenceLength < 3 ? sequenceLength + 1 : sequenceLength;
-            setSequenceLength(newLength);
-            setTimeout(() => {
-              setRound((r) => r + 1);
-              setRoundActive(true);
-            }, 1500);
+        setScore((prev) => {
+          const newScore = prev + 1;
+          if (newScore % 2 === 0 && seqLengthRef.current < P.lights.maxLength) {
+            seqLengthRef.current += 1;
+            setSeqLength(seqLengthRef.current);
           }
+          setTimeout(() => {
+            if (newScore >= TOTAL_ROUNDS) endGame(newScore);
+            else setRound((r) => r + 1);
+          }, P.nextRoundDelayMs);
           return newScore;
         });
-
-        try {
-          playSuccess();
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          speakTTS('Perfect!', 0.78 );
-        } catch {}
-      } else {
-        try {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        } catch {}
       }
     } else {
-      // Wrong tap - shake!
-      setIsShaking(true);
-      const shakeAnim = shape === 'circle' ? circleX : shape === 'square' ? squareX : starX;
-      shakeAnim.value = withSequence(
-        withTiming(-10, { duration: 50 }),
-        withTiming(10, { duration: 50 }),
-        withTiming(-10, { duration: 50 }),
-        withTiming(10, { duration: 50 }),
-        withTiming(0, { duration: 50 }),
-      );
-
-      setUserSequence([]);
-
-      try {
-        playError();
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        speakTTS('Watch the sequence again!', 0.78 );
-      } catch {}
-
-      // Show sequence again - replay the same sequence
-      setIsShaking(false);
+      shakingRef.current = true;
+      shakes[shape].value = withSequence(withTiming(-8, { duration: 45 }), withTiming(8, { duration: 45 }), withTiming(0, { duration: 45 }));
+      indexRef.current = 0;
+      setCurrentIndex(0);
+      playError();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      speakTTS('Watch again!', 0.78).catch(() => {});
       setTimeout(() => {
-        showSequenceAnimation(sequence);
-      }, 500);
+        shakingRef.current = false;
+        playDemo(sequenceRef.current);
+      }, P.replayDelayMs);
     }
-  }, [roundActive, done, isShaking, isShowingSequence, userSequence, sequence, sequenceLength, playSuccess, playError, circleScale, squareScale, starScale, circleX, squareX, starX, endGame]);
+  }, [endGame, playSuccess, playError, playDemo]);
 
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
+  const circleStyle = useAnimatedStyle(() => ({ transform: [{ scale: scales.circle.value + glows.circle.value * 0.15 }, { translateX: shakes.circle.value }], opacity: 0.5 + glows.circle.value * 0.5 }));
+  const squareStyle = useAnimatedStyle(() => ({ transform: [{ scale: scales.square.value + glows.square.value * 0.15 }, { translateX: shakes.square.value }], opacity: 0.5 + glows.square.value * 0.5 }));
+  const starStyle = useAnimatedStyle(() => ({ transform: [{ scale: scales.star.value + glows.star.value * 0.15 }, { translateX: shakes.star.value }], opacity: 0.5 + glows.star.value * 0.5 }));
+  const shapeStyles: Record<ShapeId, typeof circleStyle> = { circle: circleStyle, square: squareStyle, star: starStyle };
 
-  // Animated styles - make sequence VERY visible with bright glow
-  const circleStyle = useAnimatedStyle(() => {
-    const glowIntensity = circleGlow.value;
-    return {
-      transform: [
-        { scale: circleScale.value }, // Scale is handled separately
-        { translateX: circleX.value },
-      ],
-      opacity: 0.2 + (glowIntensity * 0.8), // Very bright when glowing
-    };
-  });
-
-  const squareStyle = useAnimatedStyle(() => {
-    const glowIntensity = squareGlow.value;
-    return {
-      transform: [
-        { scale: squareScale.value }, // Scale is handled separately
-        { translateX: squareX.value },
-      ],
-      opacity: 0.2 + (glowIntensity * 0.8), // Very bright when glowing
-    };
-  });
-
-  const starStyle = useAnimatedStyle(() => {
-    const glowIntensity = starGlow.value;
-    return {
-      transform: [
-        { scale: starScale.value }, // Scale is handled separately
-        { translateX: starX.value },
-      ],
-      opacity: 0.2 + (glowIntensity * 0.8), // Very bright when glowing
-    };
-  });
-  
-  // Animated background colors for shapes during sequence
-  const circleBgStyle = useAnimatedStyle(() => {
-    const glowIntensity = circleGlow.value;
-    return {
-      backgroundColor: glowIntensity > 0.5 ? '#FCD34D' : '#3B82F6', // Yellow when glowing
-    };
-  });
-
-  const squareBgStyle = useAnimatedStyle(() => {
-    const glowIntensity = squareGlow.value;
-    return {
-      backgroundColor: glowIntensity > 0.5 ? '#FCD34D' : '#3B82F6', // Yellow when glowing
-    };
-  });
-
-  const starBgStyle = useAnimatedStyle(() => {
-    const glowIntensity = starGlow.value;
-    return {
-      backgroundColor: glowIntensity > 0.5 ? '#FCD34D' : '#3B82F6', // Yellow when glowing
-    };
-  });
-
-  const sparkleStyle = useAnimatedStyle(() => ({
-    left: `${sparkleX.value}%`,
-    top: `${sparkleY.value}%`,
-  }));
-
-  // Result screen
-  if (done && finalStats) {
-    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 24,
-          }}
-        >
-          <View style={styles.resultCard}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>💡</Text>
-            <Text style={styles.resultTitle}>Memory master!</Text>
-            <Text style={styles.resultSubtitle}>
-              You completed {finalStats.correct} sequences out of {finalStats.total}!
-            </Text>
-            <ResultCard
-              correct={finalStats.correct}
-              total={finalStats.total}
-              xpAwarded={finalStats.xp}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setRound(1);
-                setScore(0);
-                setDone(false);
-                setFinalStats(null);
-                setLogTimestamp(null);
-                setSequenceLength(2);
-                setUserSequence([]);
-                setRoundActive(true);
-                circleGlow.value = 0;
-                squareGlow.value = 0;
-                starGlow.value = 0;
-                circleScale.value = 1;
-                squareScale.value = 1;
-                starScale.value = 1;
-              }}
-            />
-            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen message="Simon Spark Pro!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#1A0A2E', '#2E1065', '#4C1D95', '#6D28D9']} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Tap The Lights In Order</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 💡 Score: {score}
-        </Text>
-        <Text style={styles.helper}>
-          Watch the sequence, then tap the shapes in the same order!
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>💡 Simon Spark</Text>
+        <Text style={styles.subtitle}>Pattern length: {seqLength} · watch & repeat</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabel}>Round</Text><Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} /><Text style={styles.statValue}>{score}</Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.playArea}>
-        <View style={styles.shapesContainer}>
-          {/* Circle */}
-          <Animated.View style={[styles.shapeContainer, circleStyle]}>
-            <Animated.View style={[styles.shape, circleBgStyle]}>
-              <Pressable
-                onPress={() => handleTap('circle')}
-                style={styles.shapePressable}
-                disabled={!roundActive || done || isShaking || isShowingSequence}
-              >
-                <Text style={styles.shapeEmoji}>{SHAPE_EMOJIS.circle}</Text>
+        <View style={styles.panel}>
+          {(['circle', 'square', 'star'] as ShapeId[]).map((id) => (
+            <Animated.View key={id} style={shapeStyles[id]}>
+              <Pressable onPress={() => handleTap(id)} disabled={showSequence || shakingRef.current}>
+                <LinearGradient colors={SHAPES[id].colors} style={styles.lightPad}>
+                  <Text style={styles.shapeEmoji}>{SHAPES[id].emoji}</Text>
+                </LinearGradient>
               </Pressable>
             </Animated.View>
-          </Animated.View>
-
-          {/* Square */}
-          <Animated.View style={[styles.shapeContainer, squareStyle]}>
-            <Animated.View style={[styles.shape, squareBgStyle]}>
-              <Pressable
-                onPress={() => handleTap('square')}
-                style={styles.shapePressable}
-                disabled={!roundActive || done || isShaking || isShowingSequence}
-              >
-                <Text style={styles.shapeEmoji}>{SHAPE_EMOJIS.square}</Text>
-              </Pressable>
-            </Animated.View>
-          </Animated.View>
-
-          {/* Star */}
-          <Animated.View style={[styles.shapeContainer, starStyle]}>
-            <Animated.View style={[styles.shape, starBgStyle]}>
-              <Pressable
-                onPress={() => handleTap('star')}
-                style={styles.shapePressable}
-                disabled={!roundActive || done || isShaking || isShowingSequence}
-              >
-                <Text style={styles.shapeEmoji}>{SHAPE_EMOJIS.star}</Text>
-              </Pressable>
-            </Animated.View>
-          </Animated.View>
+          ))}
         </View>
 
-        {/* Status indicator */}
-        {isShowingSequence && (
-          <View style={styles.statusBox}>
-            <Text style={styles.statusText}>Watch the sequence! 👀</Text>
-          </View>
-        )}
+        <View style={[styles.statusPill, showSequence && styles.statusWatch]}>
+          <Text style={styles.statusText}>
+            {showSequence ? '👀 Watch the lights!' : `Tap ${currentIndex + 1} of ${sequence.length}`}
+          </Text>
+        </View>
 
-        {!isShowingSequence && roundActive && (
-          <View style={styles.statusBox}>
-            <Text style={styles.statusText}>
-              Tap {userSequence.length + 1} of {sequence.length}
-            </Text>
-          </View>
-        )}
-
-        {/* Sparkle burst on success */}
-        {score > 0 && !isShaking && !isShowingSequence && (
-          <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
-            <SparkleBurst />
-          </Animated.View>
-        )}
-      </View>
-
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: visual memory • imitation of visual sequence • attention to order
-        </Text>
-        <Text style={styles.footerSub}>
-          Watch and remember! This is a toddler-friendly version of SIMON Says.
-        </Text>
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#A855F7" count={16} size={8} />
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    position: 'relative',
-  },
-  shapesContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 20,
-    flexWrap: 'wrap',
-  },
-  shapeContainer: {
-    margin: 10,
-  },
-  shape: {
-    width: SHAPE_SIZE,
-    height: SHAPE_SIZE,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 8,
-  },
-  shapePressable: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  shapeEmoji: {
-    fontSize: 60,
-  },
-  statusBox: {
-    marginTop: 40,
-    backgroundColor: 'rgba(59, 130, 246, 0.9)',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  sparkleContainer: {
-    position: 'absolute',
-    transform: [{ translateX: -20 }, { translateY: -20 }],
-    zIndex: 4,
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#475569',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  savedText: {
-    color: '#22C55E',
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#2E1065' },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  backText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  title: { fontSize: 28, fontWeight: '900', color: '#EDE9FE', textShadowColor: 'rgba(167,139,250,0.5)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10 },
+  subtitle: { fontSize: 14, color: 'rgba(221,214,254,0.85)', fontWeight: '600', marginTop: 4, marginBottom: 14 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.12)', borderColor: 'rgba(251,191,36,0.3)' },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 20, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  playArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  panel: { flexDirection: 'row', gap: 18, backgroundColor: 'rgba(0,0,0,0.25)', padding: 24, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' },
+  lightPad: { width: P.lights.size, height: P.lights.size, borderRadius: 18, justifyContent: 'center', alignItems: 'center', shadowColor: '#A855F7', shadowOpacity: 0.45, shadowRadius: 14, elevation: 12 },
+  shapeEmoji: { fontSize: 48 },
+  statusPill: { marginTop: 36, backgroundColor: 'rgba(109,40,217,0.9)', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 22 },
+  statusWatch: { backgroundColor: 'rgba(251,191,36,0.88)' },
+  statusText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });
 
 export default TapLightsInOrderGame;
-

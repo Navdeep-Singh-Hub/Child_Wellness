@@ -1,629 +1,291 @@
-import { SparkleBurst } from '@/components/game/FX';
+/**
+ * OT Level 1 · Session 2 · Game 4 — Track Then Tap
+ * Theme: "Firefly Catcher" — follow the firefly, tap when it lands.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import { SparkleBurst } from '@/components/game/FX';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Platform,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
-    Easing,
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withSequence,
-    withTiming,
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const MISS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
 const TOTAL_ROUNDS = 8;
-const OBJECT_SIZE = 50; // Small object size
-const MOVE_DURATION_MS = 3000; // 3 seconds to move across screen
-const STOP_DURATION_MS = 2000; // 2 seconds to tap after stopping
-const MOVE_SPEED = 0.3; // Slow movement speed
+const OBJECT_SIZE = 52;
+const MOVE_DURATION_MS = 2800;
+const STOP_WINDOW_MS = 2200;
+const ROUND_HANDOFF_MS = 360;
+const STAR_ICON = require('@/assets/icons/star.png');
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
+type Critter = 'firefly' | 'star' | 'bee';
+const CRITTER = {
+  firefly: { emoji: '✨', color: '#A3E635', label: 'firefly' },
+  star: { emoji: '⭐', color: '#FBBF24', label: 'star' },
+  bee: { emoji: '🐝', color: '#FCD34D', label: 'bee' },
+};
 
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.45 });
+          ref.current = sound;
+        }
+        ref.current.replayAsync().catch(() => {});
+      } catch { /* noop */ }
+    })();
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
-};
-
-type ObjectType = 'bee' | 'dot' | 'star';
-
-const OBJECT_EMOJIS: Record<ObjectType, string> = {
-  bee: '🐝',
-  dot: '⚫',
-  star: '⭐',
-};
-
-const OBJECT_COLORS: Record<ObjectType, string> = {
-  bee: '#FCD34D',
-  dot: '#3B82F6',
-  star: '#F59E0B',
-};
-
-const OBJECT_LABELS: Record<ObjectType, string> = {
-  bee: 'busy bee',
-  dot: 'dot',
-  star: 'star',
 };
 
 const TrackThenTapSmallObjectGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playMiss = useSoundEffect(MISS_SOUND);
+  const playSuccess = useSound(SUCCESS_SOUND);
+  const playMiss = useSound(MISS_SOUND);
+
+  const roundRef = useRef(1);
+  const scoreRef = useRef(0);
+  const phaseRef = useRef<'moving' | 'stopped' | 'done'>('moving');
+  const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
-  const [roundActive, setRoundActive] = useState(false);
-  const [objectType, setObjectType] = useState<ObjectType>('bee');
-  const [hasStopped, setHasStopped] = useState(false);
-  const [missed, setMissed] = useState(false);
+  const [phase, setPhase] = useState<'moving' | 'stopped' | 'missed'>('moving');
+  const [critter, setCritter] = useState<Critter>('firefly');
   const [sparkleKey, setSparkleKey] = useState(0);
 
-  const roundRef = useRef(round);
-  const scoreRef = useRef(score);
-  const hasStoppedRef = useRef(hasStopped);
-  const missedRef = useRef(missed);
-  const doneRef = useRef(done);
-  const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const startRoundRef = useRef<() => void>(() => {});
-
-  useEffect(() => {
-    roundRef.current = round;
-  }, [round]);
-  useEffect(() => {
-    scoreRef.current = score;
-  }, [score]);
-  useEffect(() => {
-    hasStoppedRef.current = hasStopped;
-  }, [hasStopped]);
-  useEffect(() => {
-    missedRef.current = missed;
-  }, [missed]);
-  useEffect(() => {
-    doneRef.current = done;
-  }, [done]);
-
-  // Animation values
-  const x = useSharedValue(0);
-  const y = useSharedValue(0);
+  const x = useSharedValue(50);
+  const y = useSharedValue(50);
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
-  const sparkleX = useSharedValue(0);
-  const sparkleY = useSharedValue(0);
-  const pulseScale = useSharedValue(1);
+  const landPulse = useSharedValue(1);
+  const trailOpacity = useSharedValue(0.3);
 
-  // Generate random path for object movement
-  const generatePath = useCallback(() => {
-    const margin = 20; // percentage margin
-    const startX = margin + Math.random() * (100 - margin * 2);
-    const startY = margin + Math.random() * (100 - margin * 2);
-    const endX = margin + Math.random() * (100 - margin * 2);
-    const endY = margin + Math.random() * (100 - margin * 2);
+  const clearStopTimer = () => {
+    if (stopTimerRef.current) { clearTimeout(stopTimerRef.current); stopTimerRef.current = null; }
+  };
 
-    // Ensure path is visible (not too short)
-    const distance = Math.sqrt((endX - startX) ** 2 + (endY - startY) ** 2);
-    if (distance < 30) {
-      // If too short, make end point opposite side
-      return {
-        startX,
-        startY,
-        endX: 100 - startX,
-        endY: 100 - startY,
-      };
+  const endGame = useCallback(async (finalScore: number) => {
+    const stats = { correct: finalScore, total: TOTAL_ROUNDS, xp: finalScore * 14 };
+    setFinalStats(stats);
+    setDone(true);
+    setShowCongratulations(true);
+    speakTTS('Firefly master! Amazing tracking!', 0.78);
+    try {
+      await recordGame(stats.xp);
+      await logGameAndAward({
+        type: 'trackThenTap',
+        correct: finalScore,
+        total: TOTAL_ROUNDS,
+        accuracy: (finalScore / TOTAL_ROUNDS) * 100,
+        xpAwarded: stats.xp,
+        skillTags: ['visual-tracking', 'fine-motor-coordination', 'timing-precision', 'aac-targeting'],
+      });
+      router.setParams({ refreshStats: Date.now().toString() });
+    } catch (e) {
+      console.error('Failed to log track then tap game:', e);
     }
+  }, [router]);
 
-    return { startX, startY, endX, endY };
-  }, []);
-
-  const clearStopTimer = useCallback(() => {
-    if (stopTimerRef.current) {
-      clearTimeout(stopTimerRef.current);
-      stopTimerRef.current = null;
-    }
-  }, []);
-
-  // End game
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 14;
-      const accuracy = (finalScore / total) * 100;
-
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setShowCongratulations(true);
-
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'trackThenTap',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['visual-tracking', 'fine-motor-coordination', 'timing-precision', 'aac-targeting'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log track then tap game:', e);
-      }
-    },
-    [router],
-  );
-
-  const scheduleStopTimer = useCallback(() => {
-    clearStopTimer();
-    stopTimerRef.current = setTimeout(() => {
-      if (!hasStoppedRef.current || doneRef.current || missedRef.current) return;
-
-      setMissed(true);
-      setRoundActive(false);
-
-      opacity.value = withTiming(0, { duration: 400 });
-      scale.value = withTiming(0.5, { duration: 400 });
-
-      try {
-        playMiss();
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        speakTTS('Follow it and tap when it stops!', 0.78);
-      } catch {}
-
-      setTimeout(() => {
-        const currentRound = roundRef.current;
-        const currentScore = scoreRef.current;
-        if (currentRound >= TOTAL_ROUNDS) {
-          endGame(currentScore);
-        } else {
-          setRound((r) => r + 1);
-          setTimeout(() => {
-            startRoundRef.current();
-          }, 800);
-        }
-      }, 600);
-    }, STOP_DURATION_MS);
-  }, [clearStopTimer, opacity, scale, playMiss, endGame]);
-
-  const onObjectStopped = useCallback(() => {
-    setHasStopped(true);
-    setRoundActive(false);
-    pulseScale.value = withSequence(
-      withTiming(1.2, { duration: 300, easing: Easing.out(Easing.ease) }),
-      withTiming(1, { duration: 300, easing: Easing.in(Easing.ease) }),
-    );
-    scheduleStopTimer();
-  }, [pulseScale, scheduleStopTimer]);
-
-  const onHitAnimationDone = useCallback(() => {
-    const nextScore = scoreRef.current + 1;
-    setScore(nextScore);
-    setRoundActive(false);
-    setSparkleKey(Date.now());
-
+  const advanceRound = useCallback((newScore: number) => {
     if (roundRef.current >= TOTAL_ROUNDS) {
-      endGame(nextScore);
+      endGame(newScore);
     } else {
-      setRound((r) => r + 1);
-      setTimeout(() => {
-        startRoundRef.current();
-      }, 600);
+      roundRef.current += 1;
+      setRound(roundRef.current);
+      setTimeout(() => startRoundRef.current(), ROUND_HANDOFF_MS);
     }
   }, [endGame]);
 
-  // Start a new round
+  const onStopped = useCallback(() => {
+    phaseRef.current = 'stopped';
+    setPhase('stopped');
+    landPulse.value = withRepeat(
+      withSequence(withTiming(1.15, { duration: 350 }), withTiming(1, { duration: 350 })),
+      -1,
+      true,
+    );
+    clearStopTimer();
+    stopTimerRef.current = setTimeout(() => {
+      if (phaseRef.current !== 'stopped') return;
+      phaseRef.current = 'done';
+      setPhase('missed');
+      playMiss();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      opacity.value = withTiming(0.4, { duration: 300 });
+      setTimeout(() => advanceRound(scoreRef.current), ROUND_HANDOFF_MS);
+    }, STOP_WINDOW_MS);
+  }, [advanceRound, playMiss]);
+
   const startRound = useCallback(() => {
     clearStopTimer();
-    setRoundActive(true);
-    setHasStopped(false);
-    setMissed(false);
+    phaseRef.current = 'moving';
+    setPhase('moving');
     opacity.value = 1;
     scale.value = 1;
-    pulseScale.value = 1;
+    landPulse.value = 1;
 
-    const types: ObjectType[] = ['bee', 'dot', 'star'];
-    const randomType = types[Math.floor(Math.random() * types.length)];
-    setObjectType(randomType);
+    const types: Critter[] = ['firefly', 'star', 'bee'];
+    setCritter(types[Math.floor(Math.random() * types.length)]);
 
-    const path = generatePath();
+    const margin = 18;
+    const sx = margin + Math.random() * (100 - margin * 2);
+    const sy = margin + Math.random() * (100 - margin * 2);
+    let ex = margin + Math.random() * (100 - margin * 2);
+    let ey = margin + Math.random() * (100 - margin * 2);
+    if (Math.hypot(ex - sx, ey - sy) < 30) { ex = 100 - sx; ey = 100 - sy; }
 
-    x.value = path.startX;
-    y.value = path.startY;
+    x.value = sx;
+    y.value = sy;
+    trailOpacity.value = 0.4;
 
-    x.value = withTiming(
-      path.endX,
-      {
-        duration: MOVE_DURATION_MS,
-        easing: Easing.inOut(Easing.ease),
-      },
-      (finished) => {
-        if (finished) {
-          runOnJS(onObjectStopped)();
-        }
-      },
-    );
-    y.value = withTiming(path.endY, {
-      duration: MOVE_DURATION_MS,
-      easing: Easing.inOut(Easing.ease),
-    });
-  }, [x, y, opacity, scale, pulseScale, generatePath, clearStopTimer, onObjectStopped]);
+    x.value = withTiming(ex, { duration: MOVE_DURATION_MS, easing: Easing.inOut(Easing.sin) }, (f) => { if (f) runOnJS(onStopped)(); });
+    y.value = withTiming(ey, { duration: MOVE_DURATION_MS, easing: Easing.inOut(Easing.sin) });
+  }, [onStopped]);
 
-  // Handle object tap
+  const startRoundRef = useRef(startRound);
+  startRoundRef.current = startRound;
+
   const handleTap = useCallback(() => {
-    if (!hasStoppedRef.current || doneRef.current || missedRef.current) return;
-
+    if (phaseRef.current !== 'stopped') return;
     clearStopTimer();
-    sparkleX.value = x.value;
-    sparkleY.value = y.value;
-
-    scale.value = withSequence(
-      withTiming(1.5, { duration: 150, easing: Easing.out(Easing.ease) }),
-      withTiming(0, { duration: 200, easing: Easing.in(Easing.ease) }, (finished) => {
-        if (finished) {
-          runOnJS(onHitAnimationDone)();
-        }
-      }),
-    );
-
-    opacity.value = withTiming(0, { duration: 200 });
-
-    playSuccess().catch(() => {});
+    phaseRef.current = 'done';
+    playSuccess();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    setSparkleKey(Date.now());
+    scale.value = withSequence(withTiming(1.4, { duration: 80 }), withTiming(0, { duration: 150 }));
+    opacity.value = withTiming(0, { duration: 150 });
 
-    setTimeout(() => {
-      scale.value = 1;
-      opacity.value = 1;
-    }, 400);
-  }, [x, y, scale, opacity, sparkleX, sparkleY, clearStopTimer, onHitAnimationDone, playSuccess]);
+    const newScore = scoreRef.current + 1;
+    scoreRef.current = newScore;
+    setScore(newScore);
+    setTimeout(() => advanceRound(newScore), 200);
+  }, [advanceRound, playSuccess]);
 
   useEffect(() => {
-    startRoundRef.current = startRound;
-  }, [startRound]);
-
-  // Initialize first round (mount only)
-  useEffect(() => {
-    try {
-      speakTTS('Follow the object with your eyes. When it stops, tap it quickly!', 0.78);
-    } catch {}
-    startRoundRef.current();
-    return () => {
-      clearStopTimer();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+    speakTTS('Follow the firefly with your eyes. Tap it when it stops!', 0.78);
+    startRound();
+    return () => { clearStopTimer(); stopAllSpeech(); cleanupSounds(); };
   }, []);
 
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
-
-  // Animated styles
   const objectStyle = useAnimatedStyle(() => ({
-    left: `${x.value}%`,
-    top: `${y.value}%`,
+    left: `${x.value}%` as any,
+    top: `${y.value}%` as any,
     transform: [
       { translateX: -OBJECT_SIZE / 2 },
       { translateY: -OBJECT_SIZE / 2 },
-      { scale: scale.value * pulseScale.value },
+      { scale: scale.value * landPulse.value },
     ],
     opacity: opacity.value,
   }));
 
-  const sparkleStyle = useAnimatedStyle(() => ({
-    left: `${sparkleX.value}%`,
-    top: `${sparkleY.value}%`,
-  }));
+  const info = CRITTER[critter];
 
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
   if (showCongratulations && done && finalStats) {
     return (
       <CongratulationsScreen
-        message="Excellent Tracking!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
+        message="Firefly Catcher!"
+        showButtons
+        correct={finalStats.correct}
+        total={finalStats.total}
+        xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }}
       />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#0C1445', '#1E1B4B', '#312E81', '#1E3A5F']} locations={[0, 0.4, 0.75, 1]} style={StyleSheet.absoluteFillObject} />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Track Then Tap</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Firefly Catcher</Text>
         <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 🎯 Score: {score}
+          {phase === 'moving' ? `Follow the ${info.label}…` : phase === 'stopped' ? 'Tap now!' : 'Try again next round'}
         </Text>
-        <Text style={styles.helper}>
-          Follow the {OBJECT_LABELS[objectType]} with your eyes. When it stops, tap it quickly!
-        </Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabel}>Round</Text><Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} /><Text style={styles.statValue}>{score}</Text>
+          </View>
+        </View>
       </View>
 
-      <View style={styles.playArea}>
-        <Pressable
-          onPress={handleTap}
-          style={styles.tapArea}
-          disabled={!hasStopped || missed}
-        >
-          <Animated.View
-            style={[
-              styles.objectContainer,
-              objectStyle,
-            ]}
-          >
-            <View
-              style={[
-                styles.object,
-                {
-                  width: OBJECT_SIZE,
-                  height: OBJECT_SIZE,
-                  borderRadius: OBJECT_SIZE / 2,
-                  backgroundColor: OBJECT_COLORS[objectType],
-                },
-              ]}
-            >
-              <Text style={styles.objectEmoji}>{OBJECT_EMOJIS[objectType]}</Text>
-            </View>
-          </Animated.View>
+      <Pressable style={styles.playArea} onPress={handleTap}>
+        <LinearGradient colors={['rgba(255,255,255,0.04)', 'rgba(163,230,53,0.06)']} style={StyleSheet.absoluteFillObject} />
 
-          {/* Sparkle burst on tap */}
-          <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
-            <SparkleBurst
-              visible={sparkleKey > 0}
-              color={OBJECT_COLORS[objectType]}
-              count={12}
-              size={8}
-            />
-          </Animated.View>
+        {phase === 'stopped' && (
+          <View pointerEvents="none" style={styles.tapNowBanner}>
+            <Text style={styles.tapNowText}>Tap now! 👆</Text>
+          </View>
+        )}
 
-          {/* Instruction overlay when stopped */}
-          {hasStopped && !missed && (
-            <View style={styles.stopIndicator}>
-              <Text style={styles.stopText}>Tap now! 👆</Text>
-            </View>
-          )}
+        <Animated.View pointerEvents="none" style={[styles.critterWrap, objectStyle]}>
+          <View style={[styles.critterGlow, { backgroundColor: info.color }]} />
+          <View style={[styles.critter, { backgroundColor: info.color }]}>
+            <Text style={styles.critterEmoji}>{info.emoji}</Text>
+          </View>
+        </Animated.View>
 
-          {/* Miss indicator */}
-          {missed && (
-            <View style={styles.missIndicator}>
-              <Text style={styles.missText}>Missed! Follow and tap when it stops.</Text>
-            </View>
-          )}
-        </Pressable>
-      </View>
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color={info.color} count={14} size={7} />
+      </Pressable>
 
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: visual tracking • fine motor coordination • timing & precision • AAC targeting
-        </Text>
-        <Text style={styles.footerSub}>
-          Follow the moving object with your eyes, then tap it when it stops. This builds skills for AAC buttons!
-        </Text>
-      </View>
+      <Text style={styles.footer}>Watch it move · tap the instant it stops</Text>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    position: 'relative',
-    marginBottom: 16,
-  },
-  tapArea: {
-    flex: 1,
-    position: 'relative',
-  },
-  objectContainer: {
-    position: 'absolute',
-  },
-  object: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
-  objectEmoji: {
-    fontSize: 28,
-  },
-  sparkleContainer: {
-    position: 'absolute',
-    transform: [{ translateX: -20 }, { translateY: -20 }],
-  },
-  stopIndicator: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -60 }, { translateY: -20 }],
-    backgroundColor: 'rgba(34, 197, 94, 0.9)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  stopText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  missIndicator: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -100 }, { translateY: -20 }],
-    backgroundColor: 'rgba(239, 68, 68, 0.9)',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  missText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#475569',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  savedText: {
-    color: '#22C55E',
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#0C1445' },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  backText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16, marginBottom: 8 },
+  title: { fontSize: 26, fontWeight: '900', color: '#A3E635' },
+  subtitle: { fontSize: 14, color: 'rgba(190,242,100,0.85)', fontWeight: '600', marginTop: 4, marginBottom: 12 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.15)', borderColor: 'rgba(251,191,36,0.3)' },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 18, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 16, height: 16, resizeMode: 'contain' },
+  playArea: { flex: 1, marginHorizontal: 14, marginBottom: 10, borderRadius: 28, overflow: 'hidden', borderWidth: 2, borderColor: 'rgba(163,230,53,0.3)' },
+  tapNowBanner: { position: 'absolute', top: 16, alignSelf: 'center', backgroundColor: 'rgba(34,197,94,0.9)', paddingHorizontal: 22, paddingVertical: 10, borderRadius: 999, zIndex: 5 },
+  tapNowText: { color: '#fff', fontSize: 17, fontWeight: '900' },
+  critterWrap: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
+  critterGlow: { position: 'absolute', width: OBJECT_SIZE + 28, height: OBJECT_SIZE + 28, borderRadius: (OBJECT_SIZE + 28) / 2, opacity: 0.45 },
+  critter: { width: OBJECT_SIZE, height: OBJECT_SIZE, borderRadius: OBJECT_SIZE / 2, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)' },
+  critterEmoji: { fontSize: 26 },
+  footer: { textAlign: 'center', color: 'rgba(190,242,100,0.7)', fontSize: 13, fontWeight: '600', paddingBottom: 18 },
 });
 
 export default TrackThenTapSmallObjectGame;
-

@@ -1,3 +1,4 @@
+import { UNLOCK_ALL_THERAPY_CONTENT } from '@/constants/unlockConfig';
 import { getSubscriptionStatus, type SubscriptionStatus } from '@/utils/api';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -95,6 +96,7 @@ export function SessionSelector({ sessions, onSelectSession, onBack, isFreeAcces
           // - Regular users: Session 1 always, others unlock if previous session is completed
           const prevSession = sessions.find((s) => s.sessionNumber === session.sessionNumber - 1);
           const unlocked = 
+            UNLOCK_ALL_THERAPY_CONTENT ||
             isFreeAccessUser || // Free access users get all sessions
             session.sessionNumber === 1 || // Session 1 always unlocked
             (prevSession && (prevSession.completed || prevSession.completedGames.length > 0)); // Others unlock if previous completed

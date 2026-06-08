@@ -1,0 +1,36 @@
+/**
+ * Pacing constants for OT Level 3 Session 3 (fast vs slow + drum tap).
+ */
+
+export const SESSION3_PACING = {
+  dragRounds: 10,
+  speedMatchRounds: 12,
+  trafficRounds: 12,
+  musicRounds: 10,
+  singleBeatRounds: 10,
+  doubleBeatRounds: 8,
+  pauseTapRounds: 10,
+  fastBeatRounds: 12,
+  slowBeatRounds: 8,
+  slowMinDragMs: 450,
+  fastMaxDragMs: 700,
+  fastMatchMs: 650,
+  slowMatchMs: 1600,
+  speedToleranceMs: 450,
+  fastSwipeMaxMs: 300,
+  slowSwipeMinMs: 1000,
+  minSwipeDistance: 50,
+  doubleBeatIntervalMs: 600,
+  doubleBeatTapWindowMs: 1200,
+  pauseBeatMs: 500,
+  pauseWaitMs: 1500,
+  pauseTapWindowMs: 2000,
+  fastBeatIntervalMs: 400,
+  fastBeatsPerRound: 5,
+  fastBeatTapWindowMs: 500,
+  slowBeatIntervalMs: 3000,
+  slowBeatTapWindowMs: 2500,
+  singleBeatTapWindowMs: 2500,
+  nextRoundDelayMs: 420,
+  roundStartDelayMs: 500,
+} as const;

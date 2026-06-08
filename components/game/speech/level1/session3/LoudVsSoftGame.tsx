@@ -80,12 +80,22 @@ export const LoudVsSoftGame: React.FC<Props> = ({
   const smallGlow = useRef(new Animated.Value(0.5)).current;
   const feedbackScale = useRef(new Animated.Value(0)).current;
   const feedbackOpacity = useRef(new Animated.Value(0)).current;
+  const trialTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearTrialTimers = useCallback(() => {
+    trialTimersRef.current.forEach((timer) => clearTimeout(timer));
+    trialTimersRef.current = [];
+  }, []);
+
+  const scheduleTrialStep = useCallback((fn: () => void, delayMs: number) => {
+    const timer = setTimeout(fn, delayMs);
+    trialTimersRef.current.push(timer);
+  }, []);
 
   useEffect(() => {
-    // Preload sounds on mount for instant playback (especially important for mobile browsers)
-    preloadSounds();
-    startTrial();
+    preloadSounds().then(() => startTrial());
     return () => {
+      clearTrialTimers();
       clearScheduledSpeech();
     };
   }, []);
@@ -128,41 +138,44 @@ export const LoudVsSoftGame: React.FC<Props> = ({
     }
   }, [correct, requiredTrials, gameFinished]);
 
+  const playTrialSound = useCallback(async (instrumentIndex: number, volume: 'loud' | 'soft') => {
+    clearScheduledSpeech();
+    stopTTS();
+    stopAllSpeech();
+
+    const instrument = INSTRUMENTS[instrumentIndex];
+    const soundVolume = volume === 'loud' ? 1.0 : 0.2;
+    await playSound(instrument.soundKey, soundVolume, 1.0);
+  }, []);
+
   const startTrial = useCallback(() => {
+    clearTrialTimers();
     setPhase('sound');
     setCanTap(false);
-    setCurrentTrialResult(null); // Reset trial result
+    setCurrentTrialResult(null);
     bigScale.setValue(1);
     smallScale.setValue(1);
     feedbackScale.setValue(0);
     feedbackOpacity.setValue(0);
 
-    // Random volume and instrument
     const volume: 'loud' | 'soft' = Math.random() > 0.5 ? 'loud' : 'soft';
     const instrumentIndex = Math.floor(Math.random() * INSTRUMENTS.length);
     setCurrentVolume(volume);
     setCurrentInstrument(instrumentIndex);
 
-    // Speak instruction
-    speak('Listen carefully! Loud sound? Tap big! Soft sound? Tap small!');
+    speak('Listen!');
 
-    // Play sound after a short delay
-    setTimeout(() => {
-      const instrument = INSTRUMENTS[instrumentIndex];
-      // Big volume contrast so loud vs soft is easy to hear:
-      // Loud = full volume, soft = clearly quiet (same pitch so only volume differs)
-      const soundVolume = volume === 'loud' ? 1.0 : 0.15;
-      const soundRate = 1.0;
-      playSound(instrument.soundKey, soundVolume, soundRate);
-      
-      // Show choices after sound
-      setTimeout(() => {
+    scheduleTrialStep(async () => {
+      await playTrialSound(instrumentIndex, volume);
+
+      scheduleTrialStep(() => {
         setPhase('choice');
         setCanTap(true);
         startGlowAnimation();
-      }, 2000);
-    }, 1000);
-  }, []);
+        speak('Loud? Tap big! Soft? Tap small!');
+      }, 1200);
+    }, 700);
+  }, [clearTrialTimers, playTrialSound, scheduleTrialStep]);
 
   const startGlowAnimation = () => {
     Animated.loop(
@@ -336,7 +349,16 @@ export const LoudVsSoftGame: React.FC<Props> = ({
           )}
 
           {phase === 'choice' && (
-            <View style={styles.choiceContainer}>
+            <View style={styles.choiceWrapper}>
+              <Pressable
+                onPress={() => playTrialSound(currentInstrument, currentVolume)}
+                style={styles.replayButton}
+                hitSlop={12}
+              >
+                <Text style={styles.replayEmoji}>🔊</Text>
+                <Text style={styles.replayText}>Hear again</Text>
+              </Pressable>
+              <View style={styles.choiceContainer}>
               <Pressable
                 onPress={() => handleTap('big')}
                 style={styles.itemPressable}
@@ -402,6 +424,7 @@ export const LoudVsSoftGame: React.FC<Props> = ({
                   </LinearGradient>
                 </Animated.View>
               </Pressable>
+              </View>
             </View>
           )}
 
@@ -531,6 +554,30 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.1)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
+  },
+  choiceWrapper: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  replayButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    borderWidth: 2,
+    borderColor: '#3B82F6',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 24,
+    marginBottom: 28,
+    gap: 8,
+  },
+  replayEmoji: {
+    fontSize: 22,
+  },
+  replayText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E40AF',
   },
   choiceContainer: {
     flexDirection: 'row',

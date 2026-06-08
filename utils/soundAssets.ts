@@ -41,4 +41,5 @@ export const SOUND_MAP = {
   'car-beep': 'car-beep',
   splash: 'water-splash',
   'water-splash': 'water-splash',
+  'beep-continuous': 'beep-continuous',
 };

@@ -1,549 +1,196 @@
 /**
- * OT Level 11 - Game 3: Follow and Touch
- * 
- * Core Goal: Dynamic Eye-Hand Coordination
- * - A large object moves slowly
- * - It stops
- * - Child taps when it stops
- * 
- * Skills trained:
- * - visual tracking
- * - motor timing
- * - hand control
+ * OT Level 2 · Session 1 · Game 3 — Follow and Touch
+ * Theme: "Drift & Tap" — watch the orb drift, tap when it stops.
  */
-
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
+import { SESSION1_PACING } from '@/components/game/occupational/level2/session1/session1Pacing';
+import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { speak as speakTTS } from '@/utils/tts';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeIn, runOnJS, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { cancelAnimation, runOnJS, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const COLORS = ['#22C55E', '#3B82F6', '#F59E0B', '#F472B6', '#8B5CF6', '#06B6D4'];
-const POP_URI = 'https://actions.google.com/sounds/v1/cartoon/pop.ogg';
+const P = SESSION1_PACING;
+const TOTAL = P.totalRounds;
+const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const STAR_ICON = require('@/assets/icons/star.png');
+const ORB_COLORS: [string, string][] = [
+  ['#F472B6', '#DB2777'], ['#60A5FA', '#2563EB'], ['#A78BFA', '#7C3AED'],
+];
 
-const usePopSound = () => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    const { sound } = await ExpoAudio.Sound.createAsync({ uri: POP_URI }, { volume: 0.35, shouldPlay: false });
-    soundRef.current = sound;
-  }, []);
-
-  useEffect(() => {
-    return () => { soundRef.current?.unloadAsync().catch(() => {}); };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web' && typeof window !== 'undefined' && (window as any).Audio) {
-        const WebAudio = (window as any).Audio;
-        const webSound = new WebAudio(POP_URI);
-        webSound.volume = 0.3;
-        webSound.play().catch(() => {});
-        return;
-      }
-      await ensureSound();
-      if (soundRef.current) {
-        await soundRef.current.replayAsync();
-      }
-    } catch { }
-  }, [ensureSound]);
-
-  return play;
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.55 });
+          ref.current = sound;
+        }
+        await ref.current.replayAsync();
+      } catch { /* noop */ }
+    })();
+  }, [uri]);
 };
 
-interface FollowAndTouchGameProps {
-  onBack: () => void;
-}
+export const FollowAndTouchGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
+  const router = useRouter();
+  const playSuccess = useSound(SUCCESS_SOUND);
 
-export const FollowAndTouchGame: React.FC<FollowAndTouchGameProps> = ({ onBack }) => {
+  const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
-  const [targetsLeft, setTargetsLeft] = useState(10);
   const [done, setDone] = useState(false);
-  const [isMoving, setIsMoving] = useState(true);
-  const [isStopped, setIsStopped] = useState(false);
-  const [color, setColor] = useState(COLORS[0]);
+  const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const [showCongratulations, setShowCongratulations] = useState(false);
+  const [colors, setColors] = useState<[string, string]>(ORB_COLORS[0]);
   const [sparkleKey, setSparkleKey] = useState(0);
-  const playPop = usePopSound();
+  const [isStopped, setIsStopped] = useState(false);
 
-  const sizePct = 20;
-  const radiusPct = sizePct / 2;
-
-  const targetX = useSharedValue(50);
-  const targetY = useSharedValue(50);
+  const roundActiveRef = useRef(true);
+  const isStoppedRef = useRef(false);
+  const doneRef = useRef(false);
+  const posX = useSharedValue(20);
+  const posY = useSharedValue(30);
   const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
 
-  const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
+  const endGame = useCallback((finalScore: number) => {
+    const total = TOTAL;
+    const xp = finalScore * 12;
+    setFinalStats({ correct: finalScore, total, xp });
+    setDone(true);
+    doneRef.current = true;
+    setShowCongratulations(true);
+    speakTTS('Drift and tap complete!', 0.78);
+    recordGame(xp).then(() =>
+      logGameAndAward({ type: 'followAndTouch', correct: finalScore, total, accuracy: (finalScore / total) * 100, xpAwarded: xp,
+        skillTags: ['visual-tracking', 'motor-timing', 'eye-hand-coordination'] }),
+    ).then(() => router.setParams({ refreshStats: Date.now().toString() })).catch(console.error);
+  }, [router]);
 
-  const moveAndStop = () => {
-    setIsMoving(true);
-    setIsStopped(false);
-    setColor(randomColor());
-    
-    // Move to random position slowly
-    const margin = radiusPct + 5;
-    const newX = margin + Math.random() * (100 - margin * 2);
-    const newY = margin + Math.random() * (100 - margin * 2);
-    
-    targetX.value = withTiming(newX, { duration: 2000 }, (finished) => {
-      if (finished) {
-        runOnJS(setIsMoving)(false);
-        runOnJS(setIsStopped)(true);
-      }
-    });
-    targetY.value = withTiming(newY, { duration: 2000 });
-    scale.value = withTiming(1, { duration: 2000 });
-    opacity.value = withTiming(1, { duration: 2000 });
-  };
-
-  const handleTap = () => {
-    if (!isStopped || isMoving) return;
-    
-    Haptics.selectionAsync().catch(() => {});
-    playPop();
-    scale.value = withSequence(withTiming(1.2, { duration: 100 }), withTiming(0, { duration: 150 }));
-    opacity.value = withTiming(0, { duration: 180 });
-    setSparkleKey(Date.now());
-    setScore((s) => s + 1);
-    setIsStopped(false);
-    setTargetsLeft((t) => {
-      const next = t - 1;
-      if (next <= 0) {
-        runOnJS(setDone)(true);
-      } else {
-        setTimeout(() => {
-          runOnJS(moveAndStop)();
-        }, 500);
-      }
-      return next;
-    });
-  };
-
-  useEffect(() => {
-    try {
-      speakTTS('Watch it move, then tap it when it stops!', { rate: 0.78 });
-    } catch {}
-    moveAndStop();
-    return () => {
-      stopAllSpeech();
-      cleanupSounds();
-    };
+  const onStopped = useCallback(() => {
+    isStoppedRef.current = true;
+    setIsStopped(true);
   }, []);
 
-  const circleStyle = useAnimatedStyle(() => ({
-    width: `${sizePct}%`,
-    height: `${sizePct}%`,
-    borderRadius: 999,
-    left: `${targetX.value}%`,
-    top: `${targetY.value}%`,
-    transform: [
-      { translateX: -(sizePct / 2) + '%' as any },
-      { translateY: -(sizePct / 2) + '%' as any },
-      { scale: scale.value }
-    ],
-    opacity: opacity.value,
+  const startMove = useCallback(() => {
+    cancelAnimation(posX);
+    cancelAnimation(posY);
+    const m = 12;
+    const tx = m + Math.random() * (100 - m * 2);
+    const ty = m + Math.random() * (100 - m * 2);
+    isStoppedRef.current = false;
+    setIsStopped(false);
+    roundActiveRef.current = true;
+    setColors(ORB_COLORS[Math.floor(Math.random() * ORB_COLORS.length)]);
+    scale.value = 1;
+    posX.value = m + Math.random() * (100 - m * 2);
+    posY.value = m + Math.random() * (100 - m * 2);
+    posX.value = withTiming(tx, { duration: P.moveDurationMs }, (finished) => {
+      if (finished) runOnJS(onStopped)();
+    });
+    posY.value = withTiming(ty, { duration: P.moveDurationMs });
+  }, [onStopped]);
+
+  useEffect(() => {
+    if (doneRef.current) return;
+    startMove();
+    return () => { cancelAnimation(posX); cancelAnimation(posY); };
+  }, [round]);
+
+  useEffect(() => {
+    speakTTS('Watch the orb move, then tap when it stops!', 0.78);
+    return () => { stopAllSpeech(); cleanupSounds(); };
+  }, []);
+
+  const handleTap = useCallback(() => {
+    if (!roundActiveRef.current || doneRef.current) return;
+    if (!isStoppedRef.current) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      return;
+    }
+    roundActiveRef.current = false;
+    setSparkleKey(Date.now());
+    playSuccess();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    scale.value = withSequence(withTiming(1.2, { duration: 100 }), withTiming(0, { duration: P.successPopMs }));
+    setScore((prev) => {
+      const next = prev + 1;
+      setTimeout(() => { if (next >= TOTAL) endGame(next); else setRound((r) => r + 1); }, P.nextRoundDelayMs);
+      return next;
+    });
+  }, [endGame, playSuccess]);
+
+  const orbStyle = useAnimatedStyle(() => ({
+    left: `${posX.value}%`,
+    top: `${posY.value}%`,
+    transform: [{ scale: scale.value }],
   }));
 
-  if (done) {
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <LinearGradient
-          colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <TouchableOpacity
-          onPress={() => {
-            stopAllSpeech();
-            cleanupSounds();
-            onBack();
-          }}
-          style={styles.backButton}
-        >
-          <LinearGradient
-            colors={['#1E293B', '#0F172A']}
-            style={styles.backButtonGradient}
-          >
-            <Text style={styles.backButtonText}>← Back</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-        <View style={styles.completion}>
-          <Animated.Text 
-            style={styles.bigEmoji}
-            entering={FadeIn.duration(600).delay(200)}
-          >
-            🎉✨🌟
-          </Animated.Text>
-          <Text style={styles.title}>Great Tracking! 👀</Text>
-          <Text style={styles.subtitle}>You followed and touched {score} targets! ⭐</Text>
-          <View style={styles.statsBox}>
-            <Text style={styles.statsText}>Perfect Score: {score}/10 ⭐</Text>
-            <Text style={styles.badgeText}>🏅 Eye–Hand Explorer Badge</Text>
-          </View>
-          <TouchableOpacity 
-            style={styles.primaryButton} 
-            onPress={() => {
-              setScore(0);
-              setTargetsLeft(10);
-              setDone(false);
-              setIsMoving(true);
-              setIsStopped(false);
-              moveAndStop();
-            }}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={['#22C55E', '#16A34A']}
-              style={styles.primaryButtonGradient}
-            >
-              <Text style={styles.primaryButtonText}>🎮 Play Again</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.secondaryButton} 
-            onPress={() => {
-              stopAllSpeech();
-              cleanupSounds();
-              onBack();
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.secondaryButtonText}>← Back to Sessions</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+      <CongratulationsScreen message="Tracking Pro!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#F0F9FF', '#E0F2FE', '#DBEAFE']}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack(); }} style={styles.backButton}>
-        <LinearGradient
-          colors={['#1E293B', '#0F172A']}
-          style={styles.backButtonGradient}
-        >
-          <Text style={styles.backButtonText}>← Back</Text>
-        </LinearGradient>
+      <LinearGradient colors={['#FAF5FF', '#F3E8FF', '#E9D5FF', '#D8B4FE']} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backTextDark}>← Back</Text></View>
       </TouchableOpacity>
-
-      <View style={styles.hud}>
-        <View style={styles.hudCard}>
-          <LinearGradient
-            colors={['#FEF3C7', '#FDE68A']}
-            style={styles.hudCardGradient}
-          >
-            <View style={styles.rowCenter}>
-              <Image source={STAR_ICON} style={styles.starIcon} />
-              <Text style={styles.hudLabel}>Stars</Text>
-            </View>
-            <Text style={styles.hudValue}>{score}</Text>
-          </LinearGradient>
-        </View>
-        <View style={styles.hudCard}>
-          <LinearGradient
-            colors={['#E0E7FF', '#C7D2FE']}
-            style={styles.hudCardGradient}
-          >
-            <Text style={styles.hudLabel}>Targets Left</Text>
-            <Text style={styles.hudValue}>{targetsLeft}</Text>
-          </LinearGradient>
+      <View style={styles.header}>
+        <Text style={styles.titleDark}>🌀 Drift & Tap</Text>
+        <Text style={styles.subtitleDark}>{isStopped ? 'Tap now!' : 'Follow the orb…'}</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabelDark}>Round</Text><Text style={styles.statValueDark}>{round}/{TOTAL}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} /><Text style={styles.statValueDark}>{score}</Text>
+          </View>
         </View>
       </View>
-
       <View style={styles.playArea}>
-        <LinearGradient
-          colors={['#F0FDF4', '#ECFDF5', '#D1FAE5']}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <View style={styles.instructionWrap}>
-          <Text style={styles.instructionTitle}>👀 Follow and Touch 👀</Text>
-          <Text style={styles.instructionSubtitle}>
-            {isMoving ? 'Watch it move...' : isStopped ? 'Tap it now! ✨' : 'Get ready...'}
-          </Text>
-        </View>
-        <Animated.View style={[styles.circle, circleStyle]}>
-          <TouchableOpacity 
-            style={styles.hitArea} 
-            activeOpacity={0.7} 
-            onPress={handleTap}
-            disabled={isMoving || !isStopped}
-          >
-            <LinearGradient
-              colors={[color, `${color}CC`, '#fff']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.circleFill}
-            >
-              <View style={styles.circleInnerGlow} />
-            </LinearGradient>
-          </TouchableOpacity>
+        <Animated.View style={[styles.orbWrap, orbStyle]}>
+          <Pressable onPress={handleTap} style={styles.hit}>
+            <LinearGradient colors={colors} style={styles.orb} />
+          </Pressable>
         </Animated.View>
-        {isStopped && !isMoving && (
-          <View style={styles.pulseIndicator}>
-            <Text style={styles.pulseText}>✨ TAP NOW ✨</Text>
-          </View>
-        )}
-        <SparkleBurst key={sparkleKey} visible color={color} count={15} size={8} />
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color={colors[0]} count={14} size={8} />
       </View>
     </SafeAreaView>
   );
 };
 
+const S = P.dotSize;
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
-  },
-  backButtonGradient: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  hud: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
-    marginTop: 70,
-    paddingHorizontal: 16,
-  },
-  hudCard: {
-    borderRadius: 18,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
-    minWidth: 120,
-    alignItems: 'center',
-  },
-  hudCardGradient: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    width: '100%',
-    alignItems: 'center',
-    borderRadius: 18,
-  },
-  hudLabel: {
-    fontSize: 12,
-    color: '#64748B',
-    marginBottom: 4,
-    fontWeight: '700',
-  },
-  hudValue: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  rowCenter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  starIcon: {
-    width: 16,
-    height: 16,
-    resizeMode: 'contain',
-  },
-  playArea: {
-    flex: 1,
-    marginTop: 16,
-    marginHorizontal: 12,
-    borderRadius: 28,
-    overflow: 'hidden',
-    borderWidth: 3,
-    borderColor: '#A7F3D0',
-    shadowColor: '#10B981',
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  circle: {
-    position: 'absolute',
-  },
-  instructionWrap: {
-    alignItems: 'center',
-    marginBottom: 40,
-    paddingHorizontal: 20,
-  },
-  instructionTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#065F46',
-    letterSpacing: 0.5,
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  instructionSubtitle: {
-    fontSize: 15,
-    color: '#047857',
-    marginTop: 6,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  hitArea: {
-    flex: 1,
-    borderRadius: 999,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
-  },
-  circleFill: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  circleInnerGlow: {
-    width: '60%',
-    height: '60%',
-    borderRadius: 999,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    shadowColor: '#fff',
-    shadowOpacity: 0.8,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  pulseIndicator: {
-    position: 'absolute',
-    bottom: 40,
-    backgroundColor: 'rgba(34, 197, 94, 0.9)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
-    shadowColor: '#22C55E',
-    shadowOpacity: 0.5,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  pulseText: {
-    color: '#fff',
-    fontWeight: '900',
-    fontSize: 18,
-    letterSpacing: 1,
-  },
-  completion: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  bigEmoji: {
-    fontSize: 80,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: '#78350F',
-    marginBottom: 8,
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#92400E',
-    marginBottom: 20,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  statsBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
-    alignItems: 'center',
-  },
-  statsText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#78350F',
-    marginBottom: 8,
-  },
-  badgeText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#10B981',
-  },
-  primaryButton: {
-    borderRadius: 16,
-    marginBottom: 12,
-    overflow: 'hidden',
-    shadowColor: '#22C55E',
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
-  },
-  primaryButtonGradient: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    alignItems: 'center',
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontWeight: '900',
-    fontSize: 18,
-    letterSpacing: 0.5,
-  },
-  secondaryButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  secondaryButtonText: {
-    color: '#0F172A',
-    fontWeight: '800',
-    fontSize: 16,
-  },
+  container: { flex: 1 },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.75)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(147,51,234,0.25)' },
+  backTextDark: { color: '#7C3AED', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  titleDark: { fontSize: 28, fontWeight: '900', color: '#7C3AED' },
+  subtitleDark: { fontSize: 14, color: '#9333EA', fontWeight: '600', marginTop: 4, marginBottom: 14 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.7)', borderWidth: 1, borderColor: 'rgba(147,51,234,0.2)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.2)', borderColor: 'rgba(251,191,36,0.4)' },
+  statLabelDark: { fontSize: 11, color: '#9333EA', fontWeight: '700', textTransform: 'uppercase' },
+  statValueDark: { fontSize: 20, fontWeight: '900', color: '#7C3AED' },
+  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(147,51,234,0.25)', backgroundColor: 'rgba(255,255,255,0.35)' },
+  orbWrap: { position: 'absolute', marginLeft: -S / 2, marginTop: -S / 2 },
+  hit: { width: S + 24, height: S + 24, justifyContent: 'center', alignItems: 'center' },
+  orb: { width: S, height: S, borderRadius: S / 2, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 8 },
 });
 
-
+export default FollowAndTouchGame;

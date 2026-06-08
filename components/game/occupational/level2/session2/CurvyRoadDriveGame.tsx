@@ -1,745 +1,220 @@
+/**
+ * OT Level 2 · Session 2 · Game 5 — Curvy Road Drive
+ * Theme: "Road Rally" — drive along the curvy road without leaving the line.
+ */
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
+import { SESSION2_PACING } from '@/components/game/occupational/level2/session2/session2Pacing';
+import { buildBezierPaths, distanceToBezier, useTraceSound } from '@/components/game/occupational/level2/session2/traceUtils';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
-import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
-const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
-const WARNING_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
-const TOTAL_ROUNDS = 6;
-const OBJECT_SIZE = 50;
-const LINE_TOLERANCE = 25; // Reduced tolerance for stricter path following
-const SLOW_SPEED = 0.3;
-const NORMAL_SPEED = 1.0;
+const P = SESSION2_PACING;
+const TOTAL = P.totalRounds;
+const SUCCESS = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
+const STAR = require('@/assets/icons/star.png');
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
-  }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
-};
-
-// Distance to bezier curve and return both distance and t parameter
-const distanceToBezier = (
-  px: number,
-  py: number,
-  x1: number,
-  y1: number,
-  cx1: number,
-  cy1: number,
-  cx2: number,
-  cy2: number,
-  x2: number,
-  y2: number,
-) => {
-  let minDist = Infinity;
-  let bestT = 0;
-  for (let t = 0; t <= 1; t += 0.01) {
-    const mt = 1 - t;
-    const x = mt * mt * mt * x1 + 3 * mt * mt * t * cx1 + 3 * mt * t * t * cx2 + t * t * t * x2;
-    const y = mt * mt * mt * y1 + 3 * mt * mt * t * cy1 + 3 * mt * t * t * cy2 + t * t * t * y2;
-    const dist = Math.sqrt(Math.pow(px - x, 2) + Math.pow(py - y, 2));
-    if (dist < minDist) {
-      minDist = dist;
-      bestT = t;
-    }
-  }
-  return { dist: minDist, t: bestT };
-};
-
-const CurvyRoadDriveGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const CurvyRoadDriveGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playWarning = useSoundEffect(WARNING_SOUND);
+  const playSuccess = useTraceSound(SUCCESS);
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
-  const [roundActive, setRoundActive] = useState(true);
-  const [isDragging, setIsDragging] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
   const [isOffTrack, setIsOffTrack] = useState(false);
-  const [hasGoneOffTrack, setHasGoneOffTrack] = useState(false); // Track if user ever went off track in current round
-  const [offTrackCounter, setOffTrackCounter] = useState(0); // Force re-render for warning display
-  const progress = useSharedValue(0);
-  const [roadPathStr, setRoadPathStr] = useState('');
-  const [progressPathStr, setProgressPathStr] = useState('');
-  const pathPoints = useRef<Array<{ x: number; y: number }>>([]);
+  const [sparkleKey, setSparkleKey] = useState(0);
+  const [pathFull, setPathFull] = useState('');
+  const [pathProg, setPathProg] = useState('');
 
-  const updatePaths = useCallback(() => {
-    // Generate points along bezier curve
-    pathPoints.current = [];
-    for (let i = 0; i <= 100; i++) {
-      const t = i / 100;
-      const mt = 1 - t;
-      const x = mt * mt * mt * startX.value + 3 * mt * mt * t * controlX1.value + 3 * mt * t * t * controlX2.value + t * t * t * endX.value;
-      const y = mt * mt * mt * startY.value + 3 * mt * mt * t * controlY1.value + 3 * mt * t * t * controlY2.value + t * t * t * endY.value;
-      pathPoints.current.push({ x, y });
-    }
+  const roundActiveRef = useRef(true);
+  const doneRef = useRef(false);
+  const offTrackRef = useRef(false);
+  const progressRef = useRef(0);
+  const lastWarn = useRef(0);
+  const screenW = useRef(400);
+  const screenH = useRef(600);
 
-    // Generate full path string
-    let fullPath = `M ${pathPoints.current[0].x} ${pathPoints.current[0].y}`;
-    for (let i = 1; i < pathPoints.current.length; i++) {
-      fullPath += ` L ${pathPoints.current[i].x} ${pathPoints.current[i].y}`;
-    }
-    setRoadPathStr(fullPath);
+  const sx = useSharedValue(15); const sy = useSharedValue(50);
+  const c1x = useSharedValue(35); const c1y = useSharedValue(35);
+  const c2x = useSharedValue(65); const c2y = useSharedValue(65);
+  const ex = useSharedValue(85); const ey = useSharedValue(50);
+  const ox = useSharedValue(15); const oy = useSharedValue(50);
+  const oScale = useSharedValue(1);
 
-    // Generate progress path based on progress value
-    if (progress.value > 0) {
-      if (progress.value >= 0.99) {
-        // Draw complete path
-        setProgressPathStr(fullPath);
-      } else {
-        // Draw partial path based on progress
-        const totalSegments = pathPoints.current.length - 1;
-        const progressSegment = Math.floor(progress.value * totalSegments);
-        const segmentProgress = (progress.value * totalSegments) - progressSegment;
-        const clampedSegment = Math.min(progressSegment, totalSegments - 1);
-
-        let progressPath = `M ${pathPoints.current[0].x} ${pathPoints.current[0].y}`;
-        for (let i = 1; i <= clampedSegment; i++) {
-          progressPath += ` L ${pathPoints.current[i].x} ${pathPoints.current[i].y}`;
-        }
-
-        if (segmentProgress > 0 && clampedSegment < totalSegments) {
-          const startPt = pathPoints.current[clampedSegment];
-          const endPt = pathPoints.current[clampedSegment + 1];
-          const x = startPt.x + (endPt.x - startPt.x) * segmentProgress;
-          const y = startPt.y + (endPt.y - startPt.y) * segmentProgress;
-          progressPath += ` L ${x} ${y}`;
-        }
-        setProgressPathStr(progressPath);
-      }
-    } else {
-      setProgressPathStr('');
-    }
+  const refreshPaths = useCallback((prog: number) => {
+    const { full, progressPath } = buildBezierPaths(sx.value, sy.value, c1x.value, c1y.value, c2x.value, c2y.value, ex.value, ey.value, prog);
+    setPathFull(full);
+    setPathProg(progressPath);
   }, []);
 
-  // Curvy road parameters (bezier curve)
-  const startX = useSharedValue(15);
-  const startY = useSharedValue(50);
-  const controlX1 = useSharedValue(35);
-  const controlY1 = useSharedValue(35);
-  const controlX2 = useSharedValue(65);
-  const controlY2 = useSharedValue(65);
-  const endX = useSharedValue(85);
-  const endY = useSharedValue(50);
+  const endGame = useCallback((finalScore: number) => {
+    const total = TOTAL;
+    const xp = finalScore * 18;
+    setFinalStats({ correct: finalScore, total, xp });
+    setDone(true);
+    doneRef.current = true;
+    roundActiveRef.current = false;
+    setShowCongratulations(true);
+    speakTTS('Road rally complete!', 0.78);
+    recordGame(xp).then(() =>
+      logGameAndAward({ type: 'curvyRoadDrive', correct: finalScore, total, accuracy: (finalScore / total) * 100, xpAwarded: xp,
+        skillTags: ['smooth-wrist-movement', 'curved-tracking', 'line-boundary-awareness'] }),
+    ).then(() => router.setParams({ refreshStats: Date.now().toString() })).catch(console.error);
+  }, [router]);
 
-  const objectX = useSharedValue(15);
-  const objectY = useSharedValue(50);
-  const objectScale = useSharedValue(1);
-  const carSpeed = useSharedValue(NORMAL_SPEED);
-  const sparkleX = useSharedValue(0);
-  const sparkleY = useSharedValue(0);
+  const initRound = useCallback(() => {
+    sy.value = 38 + Math.random() * 24;
+    c1y.value = sy.value - 10 - Math.random() * 8;
+    c2y.value = sy.value + 10 + Math.random() * 8;
+    ey.value = sy.value;
+    ox.value = sx.value; oy.value = sy.value;
+    progressRef.current = 0;
+    offTrackRef.current = false;
+    setIsOffTrack(false);
+    refreshPaths(0);
+    roundActiveRef.current = true;
+  }, [refreshPaths]);
 
-  const screenWidth = useRef(400);
-  const screenHeight = useRef(600);
-  const lastWarningTime = useRef(0);
-  const hasGoneOffTrackRef = useRef(false); // Use ref for immediate access
-  const isOffTrackRef = useRef(false); // Use ref for immediate warning display
-  const currentPointerX = useSharedValue(15); // Track current pointer position
-  const currentPointerY = useSharedValue(50);
+  useEffect(() => { if (!doneRef.current) initRound(); }, [round]);
+  useEffect(() => {
+    speakTTS('Drive along the curvy road and stay on the line!', 0.78);
+    return () => { stopAllSpeech(); cleanupSounds(); };
+  }, []);
 
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 20;
-      const accuracy = (finalScore / total) * 100;
-
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setRoundActive(false);
-
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'curvyRoadDrive',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['smooth-wrist-movement', 'curved-tracking', 'line-boundary-awareness'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log curvy road drive game:', e);
-      }
-
-      speakTTS('Great driving on the curvy road!', 0.78 );
-    },
-    [router],
-  );
-
-  const panGesture = Gesture.Pan().runOnJS(true)
+  const pan = Gesture.Pan().runOnJS(true)
     .onStart(() => {
-      if (!roundActive || done) return;
-      setIsDragging(true);
-      objectScale.value = withSpring(1.2, { damping: 10, stiffness: 200 });
+      if (!roundActiveRef.current || doneRef.current) return;
+      oScale.value = withSpring(1.15, { damping: 12, stiffness: 220 });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     })
     .onUpdate((e) => {
-      if (!roundActive || done) return;
-      const newX = (e.x / screenWidth.current) * 100;
-      const newY = (e.y / screenHeight.current) * 100;
-
-      // Always update pointer position for continuous checking
-      currentPointerX.value = newX;
-      currentPointerY.value = newY;
-
-      // First check if pointer is on track
-      const { dist, t } = distanceToBezier(
-        newX,
-        newY,
-        startX.value,
-        startY.value,
-        controlX1.value,
-        controlY1.value,
-        controlX2.value,
-        controlY2.value,
-        endX.value,
-        endY.value,
-      );
-
-      if (dist > LINE_TOLERANCE) {
-        // Pointer is off track - ALWAYS show error and mark as off track
-        // Always update state to ensure warning is visible - use counter to force re-render
-        setIsOffTrack(true);
-        isOffTrackRef.current = true;
-        setHasGoneOffTrack(true); // Update state for UI
-        hasGoneOffTrackRef.current = true; // Update ref for immediate check - this prevents completion
-        setOffTrackCounter((prev) => (prev >= 1000 ? 1 : prev + 1)); // Force re-render every frame when off track
-        carSpeed.value = withTiming(SLOW_SPEED, { duration: 200 });
-        
-        // Play warning sound/vibration periodically (not every frame to avoid spam)
+      if (!roundActiveRef.current || doneRef.current) return;
+      const nx = Math.max(4, Math.min(96, (e.x / screenW.current) * 100));
+      const ny = Math.max(6, Math.min(94, (e.y / screenH.current) * 100));
+      const { dist, t } = distanceToBezier(nx, ny, sx.value, sy.value, c1x.value, c1y.value, c2x.value, c2y.value, ex.value, ey.value);
+      const off = dist > P.lineTolerance;
+      offTrackRef.current = off;
+      setIsOffTrack(off);
+      if (off) {
         const now = Date.now();
-        if (now - lastWarningTime.current > 500) {
-          lastWarningTime.current = now;
-          try {
-            playWarning();
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          } catch {}
+        if (now - lastWarn.current > P.warnIntervalMs) {
+          lastWarn.current = now;
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
         }
-        
-        // CRITICAL: Don't move car, don't update progress when off track - return early
-        // Car stays at last valid position
         return;
-      } else {
-        // Pointer is on track - allow car movement
-        if (isOffTrack) {
-          setIsOffTrack(false);
-          setOffTrackCounter(0); // Reset counter when back on track
-        }
-        isOffTrackRef.current = false;
-        carSpeed.value = withTiming(NORMAL_SPEED, { duration: 200 });
-        
-        // Update car position only when on track
-        objectX.value = Math.max(5, Math.min(95, newX));
-        objectY.value = Math.max(10, Math.min(90, newY));
-        
-        // Use t parameter from bezier curve as progress - this accurately represents progress along the curve
-        // Ensure progress is monotonic (only increases)
-        const newProgress = Math.max(progress.value, Math.min(1, Math.max(0, t)));
-        
-        // Check if close to end point - ensure progress reaches 1.0 only if actual progress is high
-        const distToEnd = Math.sqrt(
-          Math.pow(objectX.value - endX.value, 2) + Math.pow(objectY.value - endY.value, 2),
-        );
-        // Only set to 1.0 if close to end AND calculated progress is high
-        const finalProgress = (distToEnd <= LINE_TOLERANCE && newProgress >= 0.95) ? 1.0 : newProgress;
-        
-        if (finalProgress > progress.value) {
-          progress.value = finalProgress;
-          updatePaths();
-        }
       }
+      ox.value = nx; oy.value = ny;
+      const prog = Math.max(progressRef.current, Math.min(1, t));
+      if (prog > progressRef.current) { progressRef.current = prog; refreshPaths(prog); }
     })
     .onEnd(() => {
-      if (!roundActive || done) return;
-      setIsDragging(false);
-      objectScale.value = withSpring(1, { damping: 10, stiffness: 200 });
-      carSpeed.value = withTiming(NORMAL_SPEED, { duration: 200 });
-
-      const distToEnd = Math.sqrt(
-        Math.pow(objectX.value - endX.value, 2) + Math.pow(objectY.value - endY.value, 2),
-      );
-
-      // Only allow completion if user reached the end AND never went off track AND progress is complete
-      // Check both state and ref to ensure we catch it
-      if (distToEnd <= LINE_TOLERANCE && progress.value >= 0.99 && !hasGoneOffTrack && !hasGoneOffTrackRef.current) {
-        sparkleX.value = endX.value;
-        sparkleY.value = endY.value;
-
-        setScore((s) => {
-          const newScore = s + 1;
-          if (newScore >= TOTAL_ROUNDS) {
-            setTimeout(() => {
-              endGame(newScore);
-            }, 1000);
-          } else {
-            setTimeout(() => {
-              setRound((r) => r + 1);
-              progress.value = 0;
-              updatePaths();
-              setIsOffTrack(false);
-              setHasGoneOffTrack(false); // Reset for new round
-              hasGoneOffTrackRef.current = false; // Reset ref for new round
-              isOffTrackRef.current = false; // Reset off-track ref
-              setOffTrackCounter(0); // Reset counter
-              objectX.value = withSpring(startX.value, { damping: 10, stiffness: 100 });
-              objectY.value = withSpring(startY.value, { damping: 10, stiffness: 100 });
-              setRoundActive(true);
-            }, 1500);
-          }
-          return newScore;
+      if (!roundActiveRef.current || doneRef.current) return;
+      oScale.value = withSpring(1, { damping: 12, stiffness: 180 });
+      const distEnd = Math.hypot(ox.value - ex.value, oy.value - ey.value);
+      if (distEnd <= P.endTolerance && progressRef.current >= P.minProgress && !offTrackRef.current) {
+        setSparkleKey(Date.now());
+        playSuccess();
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        roundActiveRef.current = false;
+        setScore((prev) => {
+          const next = prev + 1;
+          setTimeout(() => {
+            if (next >= TOTAL) endGame(next);
+            else { setRound((r) => r + 1); roundActiveRef.current = true; }
+          }, P.nextRoundDelayMs);
+          return next;
         });
-
-        try {
-          playSuccess();
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch {}
       } else {
-        objectX.value = withSpring(startX.value, { damping: 10, stiffness: 100 });
-        objectY.value = withSpring(startY.value, { damping: 10, stiffness: 100 });
-        progress.value = 0;
-        updatePaths();
-        setIsOffTrack(false);
-        setHasGoneOffTrack(false); // Reset for retry
-        hasGoneOffTrackRef.current = false; // Reset ref for retry
-        isOffTrackRef.current = false; // Reset off-track ref
-        setOffTrackCounter(0); // Reset counter
-
-        try {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          if (hasGoneOffTrack) {
-            speakTTS('Stay on the path! Try again.', 0.78 );
-          } else {
-            speakTTS('Stay on the road!', 0.78 );
-          }
-        } catch {}
+        ox.value = withSpring(sx.value, { damping: 12 }); oy.value = withSpring(sy.value, { damping: 12 });
+        progressRef.current = 0; refreshPaths(0);
+        offTrackRef.current = false; setIsOffTrack(false);
+        speakTTS('Stay on the road to the finish!', 0.78).catch(() => {});
       }
     });
 
-  useEffect(() => {
-    try {
-      speakTTS('Drive along the curvy road!', 0.78 );
-    } catch {}
-    startX.value = 15;
-    startY.value = 50;
-    controlX1.value = 30;
-    controlY1.value = 30 + Math.random() * 20;
-    controlX2.value = 70;
-    controlY2.value = 70 - Math.random() * 20;
-    endX.value = 85;
-    endY.value = 50;
-
-    objectX.value = startX.value;
-    objectY.value = startY.value;
-    carSpeed.value = NORMAL_SPEED;
-    progress.value = 0;
-    setIsOffTrack(false);
-    setHasGoneOffTrack(false); // Reset off-track flag for new round
-    hasGoneOffTrackRef.current = false; // Reset ref for new round
-    isOffTrackRef.current = false; // Reset off-track ref
-    setOffTrackCounter(0); // Reset counter
-    updatePaths();
-    
-    return () => {
-      stopAllSpeech();
-      cleanupSounds();
-    };
-  }, [round, updatePaths]);
-
-  useEffect(() => {
-    const interval = setInterval(updatePaths, 100);
-    return () => clearInterval(interval);
-  }, [updatePaths]);
-
-  // Continuous check for off-track status - runs every frame when dragging
-  useEffect(() => {
-    if (!roundActive || done || !isDragging) return;
-    
-    const checkInterval = setInterval(() => {
-      const { dist } = distanceToBezier(
-        currentPointerX.value,
-        currentPointerY.value,
-        startX.value,
-        startY.value,
-        controlX1.value,
-        controlY1.value,
-        controlX2.value,
-        controlY2.value,
-        endX.value,
-        endY.value,
-      );
-
-      if (dist > LINE_TOLERANCE) {
-        // Force state update to show warning - use multiple state updates to ensure re-render
-        setIsOffTrack(true);
-        isOffTrackRef.current = true;
-        setHasGoneOffTrack(true);
-        hasGoneOffTrackRef.current = true;
-        setOffTrackCounter((prev) => (prev >= 1000 ? 1 : prev + 1)); // Reset at 1000 to prevent overflow
-      } else {
-        if (isOffTrack) {
-          setIsOffTrack(false);
-          setOffTrackCounter(0);
-        }
-        isOffTrackRef.current = false;
-      }
-    }, 50); // Check every 50ms for reliable updates
-
-    return () => clearInterval(checkInterval);
-  }, [roundActive, done, isDragging]);
-
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
-
-  const objectStyle = useAnimatedStyle(() => ({
-    left: `${objectX.value}%`,
-    top: `${objectY.value}%`,
-    transform: [
-      { translateX: -OBJECT_SIZE / 2 },
-      { translateY: -OBJECT_SIZE / 2 },
-      { scale: objectScale.value * carSpeed.value },
-    ],
+  const objStyle = useAnimatedStyle(() => ({
+    left: `${ox.value}%`, top: `${oy.value}%`,
+    transform: [{ translateX: -P.objectSize / 2 }, { translateY: -P.objectSize / 2 }, { scale: oScale.value }],
   }));
 
-  const sparkleStyle = useAnimatedStyle(() => ({
-    left: `${sparkleX.value}%`,
-    top: `${sparkleY.value}%`,
-  }));
-
-
-  if (done && finalStats) {
-    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 24,
-          }}
-        >
-          <View style={styles.resultCard}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>🚗</Text>
-            <Text style={styles.resultTitle}>Road Trip Complete!</Text>
-            <Text style={styles.resultSubtitle}>
-              You drove {finalStats.correct} curvy roads out of {finalStats.total}!
-            </Text>
-            <ResultCard
-              correct={finalStats.correct}
-              total={finalStats.total}
-              xpAwarded={finalStats.xp}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setRound(1);
-                setScore(0);
-                setDone(false);
-                setFinalStats(null);
-                setLogTimestamp(null);
-                progress.value = 0;
-                updatePaths();
-                setRoundActive(true);
-              }}
-            />
-            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen message="Road Champion!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#EFF6FF', '#DBEAFE', '#BFDBFE', '#93C5FD']} locations={[0, 0.35, 0.75, 1]} style={StyleSheet.absoluteFillObject} />
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
-
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Curvy Road Drive</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 🚗 Score: {score}
-        </Text>
-        <Text style={styles.helper}>
-          Drive along the curvy road! The car slows down if you cross the line.
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>🚗 Road Rally</Text>
+        <Text style={styles.subtitle}>Drive the car along the curvy road</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabel}>Round</Text><Text style={styles.statValue}>{round}/{TOTAL}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}><Image source={STAR} style={styles.starIcon} /><Text style={styles.statValue}>{score}</Text></View>
+        </View>
       </View>
-
-      <View
-        style={styles.playArea}
-        onLayout={(e) => {
-          screenWidth.current = e.nativeEvent.layout.width;
-          screenHeight.current = e.nativeEvent.layout.height;
-        }}
-      >
-        <GestureDetector gesture={panGesture}>
+      <View style={styles.playArea} onLayout={(e) => { screenW.current = e.nativeEvent.layout.width; screenH.current = e.nativeEvent.layout.height; }}>
+        <GestureDetector gesture={pan}>
           <Animated.View style={styles.gestureArea}>
             <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.svg}>
-              <Path
-                d={roadPathStr}
-                stroke="rgba(148, 163, 184, 0.5)"
-                strokeWidth="2"
-                fill="none"
-                strokeLinecap="round"
-              />
-              {progressPathStr ? (
-                <Path
-                  d={progressPathStr}
-                  stroke="#3B82F6"
-                  strokeWidth="2"
-                  fill="none"
-                  strokeLinecap="round"
-                />
-              ) : null}
+              <Path d={pathFull} stroke="rgba(59,130,246,0.35)" strokeWidth={P.pathStroke + 1} fill="none" strokeLinecap="round" />
+              {pathProg ? <Path d={pathProg} stroke="#2563EB" strokeWidth={P.pathStroke + 1} fill="none" strokeLinecap="round" /> : null}
             </Svg>
-
-            <Animated.View style={[styles.objectContainer, objectStyle]}>
-              <View
-                style={[
-                  styles.object,
-                  {
-                    backgroundColor: isOffTrack ? '#EF4444' : '#3B82F6',
-                  },
-                ]}
-              >
-                <Text style={styles.objectEmoji}>🚗</Text>
-              </View>
+            <Animated.View style={[styles.objWrap, objStyle]}>
+              <LinearGradient colors={isOffTrack ? ['#EF4444', '#DC2626'] : ['#60A5FA', '#2563EB']} style={styles.obj}>
+                <Text style={styles.emoji}>🚗</Text>
+              </LinearGradient>
             </Animated.View>
-
-            {score > 0 && !isDragging && (
-              <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
-                <SparkleBurst />
-              </Animated.View>
-            )}
-
-            {(isOffTrack || offTrackCounter > 0) && (
-              <View style={styles.warningBox}>
-                <Text style={styles.warningText}>❌ Stay on the path! Game won't complete if you go off track! ⚠️</Text>
-              </View>
-            )}
+            {isOffTrack && <View style={styles.warnPill}><Text style={styles.warnText}>Stay on the road!</Text></View>}
+            <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#2563EB" count={14} size={8} />
           </Animated.View>
         </GestureDetector>
-      </View>
-
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: smooth wrist movement • curved tracking • line boundary awareness
-        </Text>
-        <Text style={styles.footerSub}>
-          Keep the car on the road - it slows down if you cross the line!
-        </Text>
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    position: 'relative',
-    marginBottom: 16,
-  },
-  gestureArea: {
-    flex: 1,
-    position: 'relative',
-  },
-  svg: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-  },
-  objectContainer: {
-    position: 'absolute',
-    zIndex: 3,
-  },
-  object: {
-    width: OBJECT_SIZE,
-    height: OBJECT_SIZE,
-    borderRadius: OBJECT_SIZE / 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 8,
-  },
-  objectEmoji: {
-    fontSize: 32,
-  },
-  sparkleContainer: {
-    position: 'absolute',
-    transform: [{ translateX: -20 }, { translateY: -20 }],
-    zIndex: 4,
-  },
-  warningBox: {
-    position: 'absolute',
-    top: '15%',
-    left: '50%',
-    transform: [{ translateX: -120 }],
-    backgroundColor: '#EF4444',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderRadius: 24,
-    shadowColor: '#000',
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 12,
-    borderWidth: 3,
-    borderColor: '#DC2626',
-    zIndex: 100,
-  },
-  warningText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '900',
-    textAlign: 'center',
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#475569',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  savedText: {
-    color: '#22C55E',
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
+  container: { flex: 1 },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.75)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(59,130,246,0.25)' },
+  backText: { color: '#1D4ED8', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  title: { fontSize: 28, fontWeight: '900', color: '#1D4ED8' },
+  subtitle: { fontSize: 14, color: '#2563EB', fontWeight: '600', marginTop: 4, marginBottom: 14 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.7)', borderWidth: 1, borderColor: 'rgba(59,130,246,0.2)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.2)', borderColor: 'rgba(251,191,36,0.4)' },
+  statLabel: { fontSize: 11, color: '#2563EB', fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 20, fontWeight: '900', color: '#1D4ED8' },
+  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(59,130,246,0.25)', backgroundColor: 'rgba(255,255,255,0.35)' },
+  gestureArea: { flex: 1, position: 'relative' },
+  svg: { position: 'absolute', width: '100%', height: '100%' },
+  objWrap: { position: 'absolute', zIndex: 3 },
+  obj: { width: P.objectSize, height: P.objectSize, borderRadius: P.objectSize / 2, justifyContent: 'center', alignItems: 'center', elevation: 8 },
+  emoji: { fontSize: 26 },
+  warnPill: { position: 'absolute', top: '10%', alignSelf: 'center', left: '20%', right: '20%', backgroundColor: 'rgba(239,68,68,0.9)', paddingVertical: 10, borderRadius: 20, alignItems: 'center' },
+  warnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
 });
 
 export default CurvyRoadDriveGame;
-

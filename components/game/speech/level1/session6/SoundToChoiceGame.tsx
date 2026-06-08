@@ -18,7 +18,7 @@ import {
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
-import { playSound } from '@/utils/soundPlayer';
+import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
 
 type Props = {
   onBack: () => void;

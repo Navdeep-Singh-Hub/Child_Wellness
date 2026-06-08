@@ -1,581 +1,299 @@
+/**
+ * OT Level 1 · Session 4 · Game 3 — Launch Rocket
+ * Theme: "Cosmic Launch Bay" — fill fuel, release at full to blast off.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
+import { SESSION4_PACING } from '@/components/game/occupational/level1/session4/session4Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withSequence,
-    withTiming
+  Easing,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
-const LAUNCH_SOUND = 'https://actions.google.com/sounds/v1/cartoon/pop.ogg';
+const P = SESSION4_PACING.launchRocket;
 const TOTAL_ROUNDS = 8;
-const FUEL_DURATION_MS = 2000; // 2 seconds to fill fuel bar
+const LAUNCH_SOUND = 'https://actions.google.com/sounds/v1/cartoon/pop.ogg';
+const STAR_ICON = require('@/assets/icons/star.png');
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.55 });
+          ref.current = sound;
+        }
+        await ref.current.replayAsync();
+      } catch { /* noop */ }
+    })();
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
 
 const LaunchRocketGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playLaunch = useSoundEffect(LAUNCH_SOUND);
+  const playLaunch = useSound(LAUNCH_SOUND);
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
-
-  // Initial speech on mount
-  useEffect(() => {
-    try {
-      speakTTS('Press and hold to fill the fuel bar. Release when full to launch!', 0.78 );
-    } catch {}
-  }, []);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-  const [fuelProgress, setFuelProgress] = useState(0);
-  const [isLaunching, setIsLaunching] = useState(false);
-  const [showRelease, setShowRelease] = useState(false);
-  const [roundActive, setRoundActive] = useState(true);
+  const [phase, setPhase] = useState<'idle' | 'filling' | 'ready' | 'launching' | 'transition'>('idle');
+  const [fuelPct, setFuelPct] = useState(0);
+  const [sparkleKey, setSparkleKey] = useState(0);
 
-  // Animation values
-  const fuelBarHeight = useSharedValue(0);
-  const rocketY = useSharedValue(50); // Start at 50% from top
+  const holdingRef = useRef(false);
+  const progressRef = useRef(0);
+  const doneRef = useRef(false);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fuelHeight = useSharedValue(0);
+  const rocketY = useSharedValue(0);
   const rocketScale = useSharedValue(1);
   const rocketOpacity = useSharedValue(1);
-  const sparkleX = useSharedValue(0);
-  const sparkleY = useSharedValue(0);
-  const releaseFlash = useSharedValue(0);
+  const flashOpacity = useSharedValue(0);
+  const flameScale = useSharedValue(0.6);
+  const starTwinkle = useSharedValue(0.4);
 
-  const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const isPressedRef = useRef(false);
-  const isLaunchingRef = useRef(false);
+  const endGame = useCallback((finalScore: number) => {
+    const total = TOTAL_ROUNDS;
+    const xp = finalScore * 18;
+    setFinalStats({ correct: finalScore, total, xp });
+    setDone(true);
+    doneRef.current = true;
+    setShowCongratulations(true);
+    speakTTS('All rockets launched! Mission complete!', 0.78);
+    recordGame(xp).then(() =>
+      logGameAndAward({
+        type: 'launchRocket',
+        correct: finalScore,
+        total,
+        accuracy: (finalScore / total) * 100,
+        xpAwarded: xp,
+        skillTags: ['force-duration-control', 'delayed-gratification', 'impulse-inhibition'],
+      }),
+    ).then(() => router.setParams({ refreshStats: Date.now().toString() })).catch(console.error);
+  }, [router]);
 
-  // Handle press start
-  const handlePressIn = useCallback(() => {
-    if (!roundActive || done || isLaunchingRef.current) return;
+  const resetRocket = useCallback(() => {
+    fuelHeight.value = 0;
+    rocketY.value = 0;
+    rocketScale.value = 1;
+    rocketOpacity.value = 1;
+    flashOpacity.value = 0;
+    flameScale.value = 0.6;
+    progressRef.current = 0;
+    setFuelPct(0);
+    setPhase('idle');
+  }, []);
 
-    setIsPressed(true);
-    isPressedRef.current = true;
-    setFuelProgress(0);
-    setShowRelease(false);
-    fuelBarHeight.value = 0;
-    releaseFlash.value = 0;
+  useEffect(() => {
+    starTwinkle.value = withRepeat(
+      withSequence(withTiming(1, { duration: 1200 }), withTiming(0.3, { duration: 1200 })),
+      -1,
+      true,
+    );
+    speakTTS('Press and hold to fill fuel. Release when full to launch!', 0.78);
+    return () => { stopAllSpeech(); cleanupSounds(); if (tickRef.current) clearInterval(tickRef.current); };
+  }, []);
 
-    // Start filling fuel
-    const startTime = Date.now();
-    const updateProgress = () => {
-      if (!isPressedRef.current || isLaunchingRef.current) return;
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / FUEL_DURATION_MS, 1);
-      setFuelProgress(progress);
+  const onPressIn = useCallback(() => {
+    if (doneRef.current || phase === 'launching' || phase === 'transition' || holdingRef.current) return;
+    holdingRef.current = true;
+    setPhase('filling');
+    progressRef.current = 0;
+    setFuelPct(0);
+    fuelHeight.value = 0;
+    flashOpacity.value = 0;
+    flameScale.value = withRepeat(withSequence(withTiming(1.1, { duration: 150 }), withTiming(0.7, { duration: 150 })), -1, true);
 
-      // Fill fuel bar (0 to 100% height)
-      fuelBarHeight.value = withTiming(progress * 100, {
-        duration: 50,
-        easing: Easing.linear,
-      });
-
-      if (progress >= 1) {
-        // Fuel bar is full - show release cue
-        setShowRelease(true);
-        releaseFlash.value = withSequence(
-          withTiming(1, { duration: 200, easing: Easing.out(Easing.ease) }),
-          withTiming(0.3, { duration: 300, easing: Easing.inOut(Easing.ease) }),
-        );
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        speakTTS('Release to launch!', 0.85 );
-      } else {
-        progressTimerRef.current = setTimeout(updateProgress, 50);
+    tickRef.current = setInterval(() => {
+      if (!holdingRef.current) return;
+      progressRef.current = Math.min(1, progressRef.current + 50 / P.fuelDurationMs);
+      setFuelPct(Math.round(progressRef.current * 100));
+      fuelHeight.value = progressRef.current * 100;
+      if (progressRef.current >= 1) {
+        setPhase('ready');
+        flashOpacity.value = withSequence(withTiming(1, { duration: 180 }), withTiming(0.4, { duration: 400 }));
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speakTTS('Release to launch!', 0.85).catch(() => {});
+        if (tickRef.current) clearInterval(tickRef.current);
       }
-    };
+    }, 50);
 
-    updateProgress();
-  }, [roundActive, done, fuelBarHeight, releaseFlash]);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  }, [phase]);
 
-  // Handle release
-  const handlePressOut = useCallback(async () => {
-    if (!isPressedRef.current || isLaunchingRef.current) return;
+  const onPressOut = useCallback(() => {
+    if (!holdingRef.current) return;
+    holdingRef.current = false;
+    if (tickRef.current) clearInterval(tickRef.current);
+    cancelAnimation(flameScale);
+    flameScale.value = 0.6;
 
-    setIsPressed(false);
-    isPressedRef.current = false;
-    if (progressTimerRef.current) {
-      clearTimeout(progressTimerRef.current);
-      progressTimerRef.current = null;
-    }
+    const p = progressRef.current;
+    if (p >= P.perfectThreshold) {
+      setPhase('launching');
+      setSparkleKey(Date.now());
+      playLaunch();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      flashOpacity.value = withTiming(0, { duration: 150 });
 
-    const progress = fuelProgress;
+      rocketY.value = withTiming(-320, { duration: P.launchDurationMs, easing: Easing.out(Easing.quad) });
+      rocketScale.value = withTiming(1.4, { duration: P.launchDurationMs });
+      rocketOpacity.value = withTiming(0, { duration: P.launchDurationMs, easing: Easing.in(Easing.quad) });
 
-    if (progress >= 0.95) {
-      // Perfect release - launch rocket!
-      setIsLaunching(true);
-      isLaunchingRef.current = true;
-      setShowRelease(false);
-      releaseFlash.value = withTiming(0, { duration: 200 });
-
-      // Launch animation
-      rocketY.value = withTiming(-30, {
-        duration: 2000,
-        easing: Easing.out(Easing.ease),
-      });
-      rocketOpacity.value = withTiming(0, {
-        duration: 2000,
-        easing: Easing.in(Easing.ease),
-      });
-      rocketScale.value = withTiming(1.5, {
-        duration: 2000,
-        easing: Easing.out(Easing.ease),
-      });
-
-      // Record position for sparkle
-      sparkleX.value = 50;
-      sparkleY.value = 20;
-
-      setScore((s) => {
-        const newScore = s + 1;
-        if (newScore >= TOTAL_ROUNDS) {
-          setTimeout(() => {
-            endGame(newScore);
-          }, 2500);
-        } else {
-          setTimeout(() => {
+      setScore((prev) => {
+        const next = prev + 1;
+        setPhase('transition');
+        setTimeout(() => {
+          if (next >= TOTAL_ROUNDS) {
+            endGame(next);
+          } else {
             setRound((r) => r + 1);
-            setFuelProgress(0);
-            setIsLaunching(false);
-            isLaunchingRef.current = false;
-            fuelBarHeight.value = 0;
-            rocketY.value = 50;
-            rocketOpacity.value = 1;
-            rocketScale.value = 1;
-            setRoundActive(true);
-          }, 2500);
-        }
-        return newScore;
+            resetRocket();
+          }
+        }, P.launchDurationMs + P.nextRoundDelayMs);
+        return next;
       });
-
-      try {
-        await playLaunch();
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
     } else {
-      // Released too early
-      fuelBarHeight.value = withTiming(0, { duration: 300 });
-      setFuelProgress(0);
-      setShowRelease(false);
-      releaseFlash.value = withTiming(0, { duration: 200 });
-
-      try {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        speakTTS('Fill the fuel bar completely!', 0.78 );
-      } catch {}
+      fuelHeight.value = withTiming(0, { duration: 250 });
+      flashOpacity.value = withTiming(0, { duration: 180 });
+      setFuelPct(0);
+      progressRef.current = 0;
+      setPhase('idle');
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft).catch(() => {});
+      speakTTS('Fill the fuel bar completely!', 0.78).catch(() => {});
     }
-  }, [isPressed, isLaunching, fuelProgress, fuelBarHeight, releaseFlash, rocketY, rocketOpacity, rocketScale, sparkleX, sparkleY, playLaunch]);
+  }, [endGame, resetRocket, playLaunch]);
 
-  // End game
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 18; // 18 XP per successful launch
-      const accuracy = (finalScore / total) * 100;
-
-      // Set all states together FIRST (like CatchTheBouncingStar)
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setRoundActive(false);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'launchRocket',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['force-duration-control', 'delayed-gratification', 'impulse-inhibition'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log launch rocket game:', e);
-      }
-    },
-    [router],
-  );
-
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
-
-  // Animated styles
-  const fuelBarStyle = useAnimatedStyle(() => ({
-    height: `${fuelBarHeight.value}%`,
-  }));
-
+  const fuelStyle = useAnimatedStyle(() => ({ height: `${fuelHeight.value}%` }));
   const rocketStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: `${rocketY.value - 50}%` },
-      { scale: rocketScale.value },
-    ],
+    transform: [{ translateY: rocketY.value }, { scale: rocketScale.value }],
     opacity: rocketOpacity.value,
   }));
+  const flashStyle = useAnimatedStyle(() => ({ opacity: flashOpacity.value }));
+  const flameStyle = useAnimatedStyle(() => ({ transform: [{ scaleY: flameScale.value }] }));
+  const starStyle = useAnimatedStyle(() => ({ opacity: starTwinkle.value }));
 
-  const flashStyle = useAnimatedStyle(() => ({
-    opacity: releaseFlash.value,
-  }));
-
-  const sparkleStyle = useAnimatedStyle(() => ({
-    left: `${sparkleX.value}%`,
-    top: `${sparkleY.value}%`,
-  }));
-
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
   if (showCongratulations && done && finalStats) {
     return (
-      <CongratulationsScreen
-        message="Rocket Master!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
+      <CongratulationsScreen message="Rocket Commander!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#020617', '#0F172A', '#1E1B4B', '#312E81']} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+
+      {/* Stars */}
+      {[...Array(6)].map((_, i) => (
+        <Animated.View key={i} style={[styles.star, { top: `${12 + i * 13}%`, left: `${8 + i * 14}%` }, starStyle]} />
+      ))}
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Launch Rocket</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 🚀 Score: {score}
-        </Text>
-        <Text style={styles.helper}>
-          Press and hold to fill the fuel bar. Release when full to launch!
-        </Text>
-      </View>
-
-      <View style={styles.playArea}>
-        <Pressable
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          style={styles.tapArea}
-          disabled={!roundActive || done || isLaunching}
-        >
-          {/* Fuel bar container */}
-          <View style={styles.fuelBarContainer}>
-            <View style={styles.fuelBarBackground} />
-            <Animated.View style={[styles.fuelBarFill, fuelBarStyle]} />
-            <Text style={styles.fuelLabel}>FUEL</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>🚀 Cosmic Launch Bay</Text>
+        <Text style={styles.subtitle}>Fill fuel · release to blast off</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabel}>Round</Text><Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} /><Text style={styles.statValue}>{score}</Text>
           </View>
+        </View>
+      </View>
 
-          {/* Rocket */}
-          <Animated.View style={[styles.rocketContainer, rocketStyle]} pointerEvents="none">
-            <View style={styles.rocket}>
-              <Text style={styles.rocketEmoji} selectable={false}>🚀</Text>
-            </View>
+      <Pressable style={styles.playArea} onPressIn={onPressIn} onPressOut={onPressOut} disabled={phase === 'launching' || phase === 'transition'}>
+        {/* Launch pad */}
+        <View style={styles.pad}>
+          <LinearGradient colors={['#475569', '#334155', '#1E293B']} style={styles.padSurface} />
+        </View>
+
+        {/* Fuel gauge */}
+        <View style={styles.fuelGauge}>
+          <Text style={styles.fuelLabel}>FUEL</Text>
+          <View style={styles.fuelTrack}>
+            <Animated.View style={[styles.fuelFill, fuelStyle]} />
+          </View>
+          {(phase === 'filling' || phase === 'ready') && (
+            <Text style={styles.fuelPct}>{fuelPct}%</Text>
+          )}
+        </View>
+
+        {/* Rocket */}
+        <Animated.View style={[styles.rocketWrap, rocketStyle]}>
+          <Text style={styles.rocketEmoji}>🚀</Text>
+          <Animated.View style={[styles.flame, flameStyle]}>
+            <LinearGradient colors={['#F59E0B', '#EF4444', 'transparent']} style={StyleSheet.absoluteFillObject} />
           </Animated.View>
+        </Animated.View>
 
-          {/* Release flash */}
-          {showRelease && (
-            <Animated.View style={[styles.flashOverlay, flashStyle]}>
-              <View style={styles.flashCircle} />
-            </Animated.View>
-          )}
+        <Animated.View style={[styles.launchFlash, flashStyle]} />
 
-          {/* Sparkle burst on launch */}
-          {isLaunching && (
-            <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
-              <SparkleBurst />
-            </Animated.View>
-          )}
+        {phase === 'idle' && (
+          <View style={styles.hintPill}><Text style={styles.hintText}>Press & hold to fuel ⛽</Text></View>
+        )}
 
-          {/* Instruction */}
-          {!isPressed && !isLaunching && (
-            <View style={styles.instructionBox}>
-              <Text selectable={false} style={styles.instructionText}>
-                Press and hold to fill fuel! ⛽
-              </Text>
-            </View>
-          )}
-        </Pressable>
-      </View>
-
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: force + duration control • delayed gratification • impulse inhibition
-        </Text>
-        <Text style={styles.footerSub}>
-          Hold until the fuel bar is full, then release to launch! This builds patience and control.
-        </Text>
-      </View>
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#F59E0B" count={16} size={8} />
+      </Pressable>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    position: 'relative',
-  },
-  tapArea: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    userSelect: 'none', // For web - prevent text selection
-  },
-  fuelBarContainer: {
-    position: 'absolute',
-    left: '10%',
-    top: '20%',
-    width: 40,
-    height: '50%',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  fuelBarBackground: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'rgba(148, 163, 184, 0.3)',
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#64748B',
-  },
-  fuelBarFill: {
-    width: '100%',
-    backgroundColor: '#F59E0B',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#D97706',
-  },
-  fuelLabel: {
-    position: 'absolute',
-    top: -25,
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  rocketContainer: {
-    position: 'absolute',
-    alignItems: 'center',
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-  },
-  rocket: {
-    width: 80,
-    height: 120,
-    justifyContent: 'center',
-    alignItems: 'center',
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-  },
-  rocketEmoji: {
-    fontSize: 80,
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-  },
-  flashOverlay: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(34, 197, 94, 0.3)',
-    zIndex: 1,
-  },
-  flashCircle: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 100,
-    borderWidth: 4,
-    borderColor: '#22C55E',
-  },
-  sparkleContainer: {
-    position: 'absolute',
-    transform: [{ translateX: -20 }, { translateY: -20 }],
-    zIndex: 3,
-  },
-  instructionBox: {
-    position: 'absolute',
-    top: '70%',
-    backgroundColor: 'rgba(59, 130, 246, 0.9)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  instructionText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '800',
-    userSelect: 'none', // For web
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#475569',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  savedText: {
-    color: '#22C55E',
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#0F172A' },
+  star: { position: 'absolute', width: 3, height: 3, borderRadius: 2, backgroundColor: '#fff' },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  backText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  title: { fontSize: 28, fontWeight: '900', color: '#E0E7FF', textShadowColor: 'rgba(99,102,241,0.4)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10 },
+  subtitle: { fontSize: 14, color: 'rgba(199,210,254,0.8)', fontWeight: '600', marginTop: 4, marginBottom: 14 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.12)', borderColor: 'rgba(251,191,36,0.3)' },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 20, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  playArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  pad: { position: 'absolute', bottom: '22%', width: 180, height: 24, borderRadius: 6, overflow: 'hidden' },
+  padSurface: { flex: 1 },
+  fuelGauge: { position: 'absolute', left: '12%', bottom: '28%', alignItems: 'center' },
+  fuelLabel: { fontSize: 11, fontWeight: '900', color: '#F59E0B', letterSpacing: 2, marginBottom: 6 },
+  fuelTrack: { width: 36, height: 160, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 18, borderWidth: 2, borderColor: 'rgba(245,158,11,0.4)', overflow: 'hidden', justifyContent: 'flex-end' },
+  fuelFill: { width: '100%', backgroundColor: '#F59E0B', borderRadius: 16 },
+  fuelPct: { marginTop: 8, fontSize: 13, fontWeight: '800', color: '#FCD34D' },
+  rocketWrap: { alignItems: 'center', marginBottom: 40 },
+  rocketEmoji: { fontSize: 72 },
+  flame: { width: 20, height: 40, borderRadius: 10, marginTop: -8, overflow: 'hidden' },
+  launchFlash: { position: 'absolute', width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(34,197,94,0.25)', borderWidth: 3, borderColor: '#22C55E' },
+  hintPill: { position: 'absolute', bottom: '12%', backgroundColor: 'rgba(99,102,241,0.85)', paddingHorizontal: 22, paddingVertical: 12, borderRadius: 22 },
+  hintText: { color: '#fff', fontSize: 15, fontWeight: '800' },
 });
 
 export default LaunchRocketGame;
-

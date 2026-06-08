@@ -1,3 +1,7 @@
+/**
+ * OT Level 1 · Session 3 · Game 2 — Tap Fast
+ * Theme: "Lightning Strike" — react the instant the bolt flashes orange.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
 import { SESSION3_PACING } from '@/components/game/occupational/level1/session3/session3Pacing';
@@ -5,497 +9,229 @@ import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Animated,
-    Easing,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
-const {
-  blinkInterval: BLINK_INTERVAL,
-  litDuration: LIT_DURATION,
-  glowRiseMs: GLOW_RISE_MS,
-  glowFallMs: GLOW_FALL_MS,
-} = SESSION3_PACING.tapFast;
-const TOTAL_TAPS_REQUIRED = 15;
-const CIRCLE_SIZE = 180;
+const P = SESSION3_PACING.tapFast;
+const TOTAL_TAPS = 15;
+const CIRCLE_SIZE = 168;
+const STAR_ICON = require('@/assets/icons/star.png');
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
-  }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
+const usePopSound = () => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri: SUCCESS_SOUND }, { volume: 0.48 });
+          ref.current = sound;
+        }
+        ref.current.replayAsync().catch(() => {});
+      } catch { /* noop */ }
+    })();
   }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
 
 const TapFastGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
+  const playPop = usePopSound();
+
+  const scoreRef = useRef(0);
+  const isLitRef = useRef(false);
+  const litStartRef = useRef(0);
+  const doneRef = useRef(false);
+  const blinkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const responseTimesRef = useRef<number[]>([]);
 
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
-  const [isLit, setIsLit] = useState(false);
-  const [lastBlinkTime, setLastBlinkTime] = useState<number>(0);
-  const [responseTimes, setResponseTimes] = useState<number[]>([]);
   const [showCongratulations, setShowCongratulations] = useState(false);
+  const [isLit, setIsLit] = useState(false);
+  const [sparkleKey, setSparkleKey] = useState(0);
+  const [avgMs, setAvgMs] = useState(0);
 
-  // Animation values
-  const glowAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const glow = useSharedValue(0);
+  const scale = useSharedValue(1);
+  const boltFlash = useSharedValue(0);
 
-  // Initial instruction - only once
-  useEffect(() => {
+  const endGame = useCallback(async (finalScore: number) => {
+    const avg = responseTimesRef.current.length
+      ? Math.round(responseTimesRef.current.reduce((a, b) => a + b, 0) / responseTimesRef.current.length)
+      : 0;
+    const stats = { correct: finalScore, total: TOTAL_TAPS, xp: finalScore * 10 };
+    setFinalStats(stats);
+    setDone(true);
+    doneRef.current = true;
+    setShowCongratulations(true);
+    speakTTS('Lightning fast! Amazing reactions!', 0.78);
     try {
-      speakTTS('Watch the circle! When it turns orange and says TAP, tap it quickly!', 0.78);
-    } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
-
-  // Rapid blink animation loop
-  useEffect(() => {
-    if (done) return;
-
-    const blinkLoop = () => {
-      const now = Date.now();
-      setLastBlinkTime(now);
-      
-      // Turn on (light up) - orange color
-      setIsLit(true);
-      Animated.sequence([
-        Animated.timing(glowAnim, {
-          toValue: 1,
-          duration: GLOW_RISE_MS,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(glowAnim, {
-          toValue: 0.8,
-          duration: LIT_DURATION,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(glowAnim, {
-          toValue: 0,
-          duration: GLOW_FALL_MS,
-          easing: Easing.in(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ]).start(() => {
-        setIsLit(false);
+      await recordGame(stats.xp);
+      await logGameAndAward({
+        type: 'tapFast',
+        correct: finalScore,
+        total: TOTAL_TAPS,
+        accuracy: (finalScore / TOTAL_TAPS) * 100,
+        xpAwarded: stats.xp,
+        skillTags: ['fast-motor-activation', 'quick-reaction', 'proprioceptive-timing'],
+        meta: { avgResponseTime: avg },
       });
-    };
+      router.setParams({ refreshStats: Date.now().toString() });
+    } catch (e) {
+      console.error('Failed to log tap fast game:', e);
+    }
+  }, [router]);
 
-    const cycleMs = GLOW_RISE_MS + LIT_DURATION + GLOW_FALL_MS + 300;
-    blinkLoop();
-    const interval = setInterval(blinkLoop, Math.max(BLINK_INTERVAL, cycleMs));
+  const runBlinkCycle = useCallback(() => {
+    if (doneRef.current) return;
+    isLitRef.current = true;
+    litStartRef.current = Date.now();
+    setIsLit(true);
+    glow.value = withTiming(1, { duration: P.glowRiseMs, easing: Easing.out(Easing.quad) });
+    boltFlash.value = withSequence(withTiming(1, { duration: 80 }), withTiming(0.3, { duration: P.litDuration }));
 
-    return () => clearInterval(interval);
-  }, [done, glowAnim]);
+    blinkTimerRef.current = setTimeout(() => {
+      isLitRef.current = false;
+      setIsLit(false);
+      glow.value = withTiming(0, { duration: P.glowFallMs });
+      blinkTimerRef.current = setTimeout(() => {
+        if (!doneRef.current) runBlinkCycle();
+      }, Math.max(180, P.blinkInterval - P.litDuration - P.glowRiseMs - P.glowFallMs));
+    }, P.litDuration);
+  }, []);
 
-  // End game - defined before handleTap to avoid initialization error
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_TAPS_REQUIRED;
-      const xp = finalScore * 10; // 10 XP per tap
-      const accuracy = (finalScore / total) * 100;
-      const avgResponseTime = responseTimes.length > 0
-        ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
-        : 0;
+  useEffect(() => {
+    speakTTS('When the bolt turns orange, tap as fast as you can!', 0.78);
+    runBlinkCycle();
+    return () => { if (blinkTimerRef.current) clearTimeout(blinkTimerRef.current); stopAllSpeech(); cleanupSounds(); };
+  }, []);
 
-      // Set all states together FIRST (like CatchTheBouncingStar)
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'tapFast',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['fast-motor-activation', 'quick-reaction', 'proprioceptive-timing'],
-          meta: { avgResponseTime },
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log tap fast game:', e);
-      }
-    },
-    [router, responseTimes],
-  );
-
-  // Handle circle tap - ONLY when circle is lit (orange and showing TAP)
-  const handleTap = useCallback(async () => {
-    if (done) return;
-
-    // ONLY accept tap when circle is currently lit (orange and showing TAP)
-    if (!isLit) {
-      // Wrong tap - tapped when not lit (circle is red, not orange)
-      try {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        speakTTS('Wait for the circle to turn orange!', 0.78).catch(() => {});
-      } catch {}
-      return; // Exit early - don't increase score
+  const handleTap = useCallback(() => {
+    if (doneRef.current) return;
+    if (!isLitRef.current) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      speakTTS('Wait for orange!', 0.78).catch(() => {});
+      scale.value = withSequence(withTiming(0.94, { duration: 60 }), withSpring(1));
+      return;
     }
 
-    // Correct tap - circle is lit (orange and showing TAP)
-    const now = Date.now();
-    const timeSinceBlink = now - lastBlinkTime;
-    const responseTime = timeSinceBlink;
-    setResponseTimes((prev) => [...prev, responseTime]);
+    const rt = Date.now() - litStartRef.current;
+    responseTimesRef.current.push(rt);
+    setAvgMs(Math.round(responseTimesRef.current.reduce((a, b) => a + b, 0) / responseTimesRef.current.length));
 
-    setScore((s) => {
-      const newScore = s + 1;
+    isLitRef.current = false;
+    setIsLit(false);
+    if (blinkTimerRef.current) clearTimeout(blinkTimerRef.current);
+    glow.value = withTiming(0, { duration: 60 });
 
-      // Success animation
-      Animated.sequence([
-        Animated.timing(scaleAnim, {
-          toValue: 1.2,
-          duration: 100,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 100,
-          easing: Easing.in(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ]).start();
+    playPop();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+    setSparkleKey(Date.now());
+    scale.value = withSequence(withSpring(1.15, { damping: 6 }), withSpring(1));
 
-      if (newScore >= TOTAL_TAPS_REQUIRED) {
-        setTimeout(() => {
-          endGame(newScore);
-        }, 500);
-      }
+    const next = scoreRef.current + 1;
+    scoreRef.current = next;
+    setScore(next);
 
-      return newScore;
-    });
+    if (next >= TOTAL_TAPS) {
+      endGame(next);
+    } else {
+      setTimeout(runBlinkCycle, 120);
+    }
+  }, [endGame, runBlinkCycle, playPop]);
 
-    try {
-      await playSuccess();
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {}
-  }, [done, isLit, lastBlinkTime, scaleAnim, playSuccess, endGame]);
+  const glowStyle = useAnimatedStyle(() => ({ opacity: glow.value * 0.9, transform: [{ scale: 1 + glow.value * 0.25 }] }));
+  const orbStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const boltStyle = useAnimatedStyle(() => ({ opacity: boltFlash.value }));
 
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
-
-  // Glow animation style
-  const glowStyle = {
-    opacity: glowAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 0.8],
-    }),
-  };
-
-  // Result screen
-  if (done && finalStats) {
-    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
-    const avgResponseTime = responseTimes.length > 0
-      ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
-      : 0;
-
-    // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-    // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <CongratulationsScreen
-        message="Lightning Fast!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
+      <CongratulationsScreen message="Lightning Fast!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#431407', '#7C2D12', '#C2410C', '#EA580C']} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Tap Fast</Text>
-        <Text style={styles.subtitle}>
-          Taps: {score}/{TOTAL_TAPS_REQUIRED} • ⚡ Fast pace!
-        </Text>
-        <Text style={styles.helper}>
-          Watch the circle! When it turns orange and shows "TAP", tap it quickly! ⚡
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>⚡ Lightning Strike</Text>
+        <Text style={styles.subtitle}>Tap instantly when orange!</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}>
+            <Image source={STAR_ICON} style={styles.starIcon} />
+            <Text style={styles.statValue}>{score}/{TOTAL_TAPS}</Text>
+          </View>
+          {avgMs > 0 && (
+            <View style={styles.statPill}>
+              <Text style={styles.statLabel}>Avg</Text>
+              <Text style={styles.statValue}>{avgMs}ms</Text>
+            </View>
+          )}
+        </View>
+        <View style={[styles.phasePill, isLit && styles.phasePillLit]}>
+          <Text style={styles.phaseText}>{isLit ? '⚡ STRIKE NOW!' : '⏳ Ready…'}</Text>
+        </View>
       </View>
 
       <View style={styles.playArea}>
-        <Animated.View
-          style={[
-            styles.circleContainer,
-            {
-              transform: [{ scale: scaleAnim }],
-            },
-          ]}
-        >
-          {/* Glow effect */}
-          <Animated.View
-            style={[
-              styles.glowEffect,
-              {
-                width: CIRCLE_SIZE + 60,
-                height: CIRCLE_SIZE + 60,
-                borderRadius: (CIRCLE_SIZE + 60) / 2,
-              },
-              glowStyle,
-            ]}
-          />
-
-          {/* Main circle - Pressable only on the circle itself */}
-          <Pressable 
-            onPress={handleTap} 
-            style={[
-              styles.circle,
-              {
-                width: CIRCLE_SIZE,
-                height: CIRCLE_SIZE,
-                borderRadius: CIRCLE_SIZE / 2,
-                backgroundColor: isLit ? '#F59E0B' : '#EF4444',
-                borderWidth: isLit ? 4 : 2,
-                borderColor: isLit ? '#FCD34D' : '#DC2626',
-              },
-            ]}
-          >
-            <View style={styles.circleInner} />
-            {isLit && (
-              <View style={styles.tapTextContainer}>
-                <Text style={styles.tapText}>TAP!</Text>
-              </View>
-            )}
+        <Animated.View style={orbStyle}>
+          <Animated.View pointerEvents="none" style={[styles.glowRing, glowStyle]} />
+          <Pressable onPress={handleTap}>
+            <LinearGradient
+              colors={isLit ? ['#FDE68A', '#F59E0B', '#EA580C'] : ['#7F1D1D', '#991B1B', '#450A0A']}
+              style={[styles.orb, { width: CIRCLE_SIZE, height: CIRCLE_SIZE, borderRadius: CIRCLE_SIZE / 2 }]}
+            >
+              <Animated.Text style={[styles.boltEmoji, boltStyle]}>⚡</Animated.Text>
+              {isLit && <Text style={styles.tapLabel}>TAP!</Text>}
+            </LinearGradient>
           </Pressable>
         </Animated.View>
-
-        {/* Sparkle burst on tap */}
-        {score > 0 && isLit && (
-          <View style={styles.sparkleContainer} pointerEvents="none">
-            <SparkleBurst />
-          </View>
-        )}
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#F59E0B" count={14} size={8} />
       </View>
 
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: fast motor activation • quick reaction • proprioceptive timing
-        </Text>
-        <Text style={styles.footerSub}>
-          Tap when the circle is orange! This builds fast motor responses and timing control.
-        </Text>
-      </View>
+      <Text style={styles.footer}>Fast reactions — tap the moment it flashes orange</Text>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  circleContainer: {
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  glowEffect: {
-    position: 'absolute',
-    backgroundColor: '#F59E0B',
-    shadowColor: '#F59E0B',
-    shadowOpacity: 0.6,
-    shadowRadius: 30,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 10,
-  },
-  circle: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
-  },
-  circleInner: {
-    width: '50%',
-    height: '50%',
-    borderRadius: 999,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  tapTextContainer: {
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-    height: '100%',
-  },
-  tapText: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: '#fff',
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 0, height: 3 },
-    textShadowRadius: 6,
-    letterSpacing: 2,
-  },
-  sparkleContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -20 }, { translateY: -20 }],
-    pointerEvents: 'none',
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#475569',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  savedText: {
-    color: '#22C55E',
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#7C2D12' },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
+  backText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  title: { fontSize: 26, fontWeight: '900', color: '#FED7AA' },
+  subtitle: { fontSize: 13, color: 'rgba(254,215,170,0.85)', fontWeight: '600', marginTop: 4, marginBottom: 12 },
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 10 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: '700' },
+  statValue: { fontSize: 18, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 16, height: 16, resizeMode: 'contain' },
+  phasePill: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.2)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
+  phasePillLit: { backgroundColor: 'rgba(245,158,11,0.4)', borderColor: '#FDE68A' },
+  phaseText: { fontSize: 14, fontWeight: '900', color: '#fff' },
+  playArea: { flex: 1, justifyContent: 'center', alignItems: 'center', marginHorizontal: 14, marginBottom: 10, borderRadius: 28, borderWidth: 2, borderColor: 'rgba(251,191,36,0.35)', backgroundColor: 'rgba(0,0,0,0.15)' },
+  glowRing: { position: 'absolute', width: CIRCLE_SIZE + 70, height: CIRCLE_SIZE + 70, borderRadius: (CIRCLE_SIZE + 70) / 2, backgroundColor: '#F59E0B', alignSelf: 'center' },
+  orb: { justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: 'rgba(255,255,255,0.4)', shadowColor: '#F59E0B', shadowOpacity: 0.6, shadowRadius: 22, elevation: 16 },
+  boltEmoji: { fontSize: 36, position: 'absolute' },
+  tapLabel: { fontSize: 26, fontWeight: '900', color: '#fff', letterSpacing: 3, marginTop: 28 },
+  footer: { textAlign: 'center', color: 'rgba(254,215,170,0.75)', fontSize: 13, fontWeight: '600', paddingBottom: 18 },
 });
 
 export default TapFastGame;
-

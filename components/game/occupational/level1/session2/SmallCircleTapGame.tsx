@@ -1,3 +1,7 @@
+/**
+ * OT Level 1 · Session 2 · Game 1 — Small Circle Tap
+ * Theme: "Neon Pinpoint" — precision gems on a deep teal starfield.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
 import { logGameAndAward, recordGame } from '@/utils/api';
@@ -6,493 +10,265 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { gradientStopsFromHex } from '@/utils/gradientColors';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
-    Easing,
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withSequence,
-    withTiming,
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const POP_SOUND = 'https://actions.google.com/sounds/v1/cartoon/pop.ogg';
-const TARGETS_TO_POP = 15; // Total targets to pop
-const CIRCLE_SIZE_PCT = 12; // 12% of screen (between 10-15% as specified)
-const COLORS = ['#3B82F6', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6', '#F472B6', '#06B6D4'];
+const TARGETS_TO_POP = 15;
+const CIRCLE_SIZE_PCT = 11;
+const SPAWN_DELAY_MS = 130;
+const STAR_ICON = require('@/assets/icons/star.png');
+
+const GEM_COLORS = [
+  { main: '#22D3EE', light: '#A5F3FC', glow: '#06B6D4' },
+  { main: '#A78BFA', light: '#DDD6FE', glow: '#8B5CF6' },
+  { main: '#F472B6', light: '#FBCFE8', glow: '#EC4899' },
+  { main: '#34D399', light: '#A7F3D0', glow: '#10B981' },
+  { main: '#FBBF24', light: '#FDE68A', glow: '#F59E0B' },
+];
 
 const usePopSound = () => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri: POP_SOUND },
-        { volume: 0.5, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load pop sound');
-    }
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri: POP_SOUND }, { volume: 0.45 });
+          ref.current = sound;
+        }
+        ref.current.replayAsync().catch(() => {});
+      } catch { /* noop */ }
+    })();
   }, []);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
+
+function StarDot({ x, y, size }: { x: number; y: number; size: number }) {
+  return (
+    <View pointerEvents="none" style={[styles.bgStar, { left: `${x}%`, top: `${y}%`, width: size, height: size, borderRadius: size / 2 }]} />
+  );
+}
 
 const SmallCircleTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const playPop = usePopSound();
+  const scoreRef = useRef(0);
 
   const [score, setScore] = useState(0);
   const [targetsLeft, setTargetsLeft] = useState(TARGETS_TO_POP);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
-  const [sparkleKey, setSparkleKey] = useState(0);
   const [showCongratulations, setShowCongratulations] = useState(false);
+  const [sparkleKey, setSparkleKey] = useState(0);
+  const [gemIdx, setGemIdx] = useState(0);
+  const [spawnKey, setSpawnKey] = useState(0);
 
-  // Animation values
   const targetX = useSharedValue(50);
   const targetY = useSharedValue(50);
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
+  const scale = useSharedValue(0);
+  const opacity = useSharedValue(0);
+  const pulse = useSharedValue(1);
+  const glowPulse = useSharedValue(0.4);
 
-  // Random color for each target
-  const [color, setColor] = useState(COLORS[0]);
+  const palette = GEM_COLORS[gemIdx % GEM_COLORS.length];
 
-  const randomColor = () => COLORS[Math.floor(Math.random() * COLORS.length)];
-
-  // Spawn a new target at random position
   const spawnTarget = useCallback(() => {
-    const radiusPct = CIRCLE_SIZE_PCT / 2;
-    const margin = radiusPct + 8; // Avoid edges with margin
-    const x = margin + Math.random() * (100 - margin * 2);
-    const y = margin + Math.random() * (100 - margin * 2);
-
-    targetX.value = withTiming(x, { duration: 200, easing: Easing.out(Easing.ease) });
-    targetY.value = withTiming(y, { duration: 200, easing: Easing.out(Easing.ease) });
-    scale.value = withTiming(1, { duration: 180 });
-    opacity.value = withTiming(1, { duration: 180 });
-    setColor(randomColor());
-  }, [targetX, targetY, scale, opacity]);
-
-  // Handle tap on target
-  const handleTap = useCallback(() => {
-    Haptics.selectionAsync().catch(() => {});
-    playPop();
-
-    // Pop animation
-    scale.value = withSequence(
-      withTiming(1.3, { duration: 80, easing: Easing.out(Easing.ease) }),
-      withTiming(0, { duration: 120, easing: Easing.in(Easing.ease) }),
+    const margin = CIRCLE_SIZE_PCT / 2 + 8;
+    targetX.value = margin + Math.random() * (100 - margin * 2);
+    targetY.value = margin + Math.random() * (100 - margin * 2);
+    scale.value = 0;
+    opacity.value = 0;
+    scale.value = withSpring(1, { damping: 11, stiffness: 160 });
+    opacity.value = withTiming(1, { duration: 160 });
+    pulse.value = withRepeat(
+      withSequence(
+        withTiming(1.08, { duration: 700, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0.94, { duration: 700, easing: Easing.inOut(Easing.sin) }),
+      ),
+      -1,
+      true,
     );
-    opacity.value = withTiming(0, { duration: 140 });
+    glowPulse.value = withRepeat(
+      withSequence(withTiming(0.8, { duration: 700 }), withTiming(0.35, { duration: 700 })),
+      -1,
+      true,
+    );
+    setGemIdx((i) => i + 1);
+    setSpawnKey((k) => k + 1);
+  }, []);
 
-    setSparkleKey(Date.now());
-    setScore((s) => s + 1);
-    setTargetsLeft((t) => {
-      const next = t - 1;
-      if (next <= 0) {
-        runOnJS(setDone)(true);
-      } else {
-        // Spawn next target after a brief delay
-        setTimeout(() => {
-          runOnJS(spawnTarget)();
-        }, 300);
-      }
-      return next;
-    });
-  }, [scale, opacity, playPop, spawnTarget]);
-
-  // End game
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TARGETS_TO_POP;
-      const xp = finalScore * 12; // 12 XP per target
-      const accuracy = 100; // All targets are correct if popped
-
-      // Set all states together FIRST (like CatchTheBouncingStar)
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'smallCircleTap' as any,
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['finger-isolation', 'precision-motor', 'attention'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log small circle tap game:', e);
-      }
-    },
-    [router],
-  );
-
-  // Initialize first target
-  useEffect(() => {
+  const finishGame = useCallback(async (finalScore: number) => {
+    const stats = { correct: finalScore, total: TARGETS_TO_POP, xp: finalScore * 12 };
+    setFinalStats(stats);
+    setDone(true);
+    setShowCongratulations(true);
+    speakTTS('Pinpoint master! Amazing precision!', 0.78);
     try {
-      speakTTS('Use your index finger to tap the small circle. Be precise!', 0.78 );
-    } catch {}
-    spawnTarget();
-  }, [spawnTarget]);
-
-  // End game when done
-  useEffect(() => {
-    if (done && score > 0 && !finalStats) {
-      endGame(score);
+      await recordGame(stats.xp);
+      await logGameAndAward({
+        type: 'smallCircleTap' as any,
+        correct: finalScore,
+        total: TARGETS_TO_POP,
+        accuracy: 100,
+        xpAwarded: stats.xp,
+        skillTags: ['finger-isolation', 'precision-motor', 'attention'],
+      });
+      router.setParams({ refreshStats: Date.now().toString() });
+    } catch (e) {
+      console.error('Failed to log small circle tap game:', e);
     }
-  }, [done, score, finalStats, endGame]);
+  }, [router]);
 
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
+  const handleTap = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    playPop();
+    scale.value = withSequence(withTiming(1.25, { duration: 60 }), withTiming(0, { duration: 120, easing: Easing.in(Easing.back(1.5)) }));
+    opacity.value = withTiming(0, { duration: 130 });
+    setSparkleKey(Date.now());
 
-  // Animated style for target circle
+    const next = scoreRef.current + 1;
+    scoreRef.current = next;
+    setScore(next);
+    setTargetsLeft(TARGETS_TO_POP - next);
+
+    if (next >= TARGETS_TO_POP) {
+      finishGame(next);
+    } else {
+      setTimeout(spawnTarget, SPAWN_DELAY_MS);
+    }
+  }, [playPop, spawnTarget, finishGame]);
+
+  useEffect(() => {
+    speakTTS('Use your index finger. Tap the small glowing gem!', 0.78);
+    spawnTarget();
+    return () => { stopAllSpeech(); cleanupSounds(); };
+  }, []);
+
   const circleStyle = useAnimatedStyle(() => ({
-    width: `${CIRCLE_SIZE_PCT}%`,
-    height: `${CIRCLE_SIZE_PCT}%`,
-    borderRadius: 999,
-    left: `${targetX.value}%`,
-    top: `${targetY.value}%`,
+    width: `${CIRCLE_SIZE_PCT}%` as any,
+    height: `${CIRCLE_SIZE_PCT}%` as any,
+    left: `${targetX.value}%` as any,
+    top: `${targetY.value}%` as any,
     transform: [
-      { translateX: -(CIRCLE_SIZE_PCT / 2) + '%' as any },
-      { translateY: -(CIRCLE_SIZE_PCT / 2) + '%' as any },
-      { scale: scale.value },
+      { translateX: `${-CIRCLE_SIZE_PCT / 2}%` as any },
+      { translateY: `${-CIRCLE_SIZE_PCT / 2}%` as any },
+      { scale: scale.value * pulse.value },
     ],
     opacity: opacity.value,
   }));
 
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
+  const glowStyle = useAnimatedStyle(() => ({
+    width: `${CIRCLE_SIZE_PCT * 1.5}%` as any,
+    height: `${CIRCLE_SIZE_PCT * 1.5}%` as any,
+    left: `${targetX.value}%` as any,
+    top: `${targetY.value}%` as any,
+    opacity: glowPulse.value * opacity.value,
+    transform: [
+      { translateX: `${-(CIRCLE_SIZE_PCT * 1.5) / 2}%` as any },
+      { translateY: `${-(CIRCLE_SIZE_PCT * 1.5) / 2}%` as any },
+      { scale: scale.value * pulse.value },
+    ],
+  }));
+
   if (showCongratulations && done && finalStats) {
     return (
       <CongratulationsScreen
-        message="Excellent Precision!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
+        message="Pinpoint Pro!"
+        showButtons
+        correct={finalStats.correct}
+        total={finalStats.total}
+        xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }}
       />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#EFF6FF', '#DBEAFE', '#BFDBFE']}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <LinearGradient
-          colors={['#1E293B', '#0F172A']}
-          style={styles.backChipGradient}
-        >
-          <Text style={styles.backChipText}>← Back</Text>
-        </LinearGradient>
+      <LinearGradient colors={['#042F2E', '#0F766E', '#115E59', '#134E4A']} locations={[0, 0.4, 0.75, 1]} style={StyleSheet.absoluteFillObject} />
+      <StarDot x={12} y={18} size={3} /><StarDot x={78} y={12} size={2} /><StarDot x={45} y={8} size={2} />
+      <StarDot x={88} y={42} size={3} /><StarDot x={22} y={55} size={2} /><StarDot x={65} y={72} size={2} />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>🎯 Small Circle Tap 🎯</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Neon Pinpoint</Text>
+        <Text style={styles.subtitle}>Tap the small gem with your index finger</Text>
         <View style={styles.statsRow}>
-          <View style={styles.statBadge}>
-            <Text style={styles.statLabel}>Tapped</Text>
+          <View style={styles.statPill}>
+            <Image source={STAR_ICON} style={styles.starIcon} />
             <Text style={styles.statValue}>{score}/{TARGETS_TO_POP}</Text>
           </View>
-          <View style={[styles.statBadge, styles.statBadgeAccent]}>
+          <View style={styles.statPill}>
             <Text style={styles.statLabel}>Left</Text>
             <Text style={styles.statValue}>{targetsLeft}</Text>
           </View>
         </View>
-        <Text style={styles.helper}>
-          Use your index finger to tap the small circle. Be precise! ✨
-        </Text>
+        <View style={styles.progressRow}>
+          {Array.from({ length: TARGETS_TO_POP }).map((_, i) => (
+            <View key={i} style={[styles.progressDot, i < score && styles.progressDotDone]} />
+          ))}
+        </View>
       </View>
 
       <View style={styles.playArea}>
-        <LinearGradient
-          colors={['#F0FDF4', '#DCFCE7', '#BBF7D0']}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <Animated.View style={[circleStyle]}>
-          <Pressable
-            onPress={handleTap}
-            style={styles.circlePressable}
-          >
-            <LinearGradient
-              colors={gradientStopsFromHex(color)}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.circle}
-            >
-              <View style={styles.circleInner} />
+        <LinearGradient colors={['rgba(255,255,255,0.06)', 'rgba(45,212,191,0.08)']} style={StyleSheet.absoluteFillObject} />
+        <Animated.View pointerEvents="none" style={[styles.glowRing, { backgroundColor: palette.glow }, glowStyle]} />
+        <Animated.View style={circleStyle}>
+          <Pressable onPress={handleTap} style={styles.hitArea}>
+            <LinearGradient colors={[palette.light, palette.main, palette.glow]} style={styles.gem}>
+              <View style={styles.gemShine} />
             </LinearGradient>
           </Pressable>
         </Animated.View>
-
-        {/* Sparkle effect */}
-        <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={color} count={15} size={8} />
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color={palette.main} count={12} size={6} />
       </View>
 
-      <View style={styles.footerBox}>
-        <LinearGradient
-          colors={['#FFFFFF', '#EFF6FF']}
-          style={styles.footerGradient}
-        >
-          <Text style={styles.footerMain}>
-            Skills: finger isolation • precision motor control • attention to small objects
-          </Text>
-          <Text style={styles.footerSub}>
-            Level 2 focuses on isolated index finger tapping for AAC and writing readiness.
-          </Text>
-        </LinearGradient>
-      </View>
+      <Text style={styles.footer}>Small target · precise finger tap</Text>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 6,
-  },
-  backChipGradient: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 15,
-    letterSpacing: 0.3,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: '#1E40AF',
-    marginBottom: 12,
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
-  statBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 18,
-    alignItems: 'center',
-    minWidth: 100,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 5,
-  },
-  statBadgeAccent: {
-    backgroundColor: '#DBEAFE',
-  },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#64748B',
-    marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#0F172A',
-    letterSpacing: 0.5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 15,
-    color: '#1E40AF',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-    fontWeight: '600',
-  },
-  playArea: {
-    flex: 1,
-    position: 'relative',
-    borderRadius: 24,
-    overflow: 'hidden',
-    marginHorizontal: 8,
-    borderWidth: 3,
-    borderColor: '#A7F3D0',
-  },
-  circlePressable: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-  circle: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 999,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
-  },
-  circleInner: {
-    width: '40%',
-    height: '40%',
-    borderRadius: 999,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    shadowColor: '#fff',
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  footerBox: {
-    marginBottom: 20,
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
-  },
-  footerGradient: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  footerMain: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#1E40AF',
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#3B82F6',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 28,
-    padding: 32,
-    alignItems: 'center',
-    marginTop: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 10,
-  },
-  resultTitle: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: '#1E40AF',
-    marginBottom: 12,
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  resultSubtitle: {
-    fontSize: 18,
-    color: '#64748B',
-    marginBottom: 24,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  savedText: {
-    color: '#22C55E',
-    fontWeight: '700',
-    marginTop: 16,
-    textAlign: 'center',
-    fontSize: 15,
-  },
+  container: { flex: 1, backgroundColor: '#042F2E' },
+  bgStar: { position: 'absolute', backgroundColor: 'rgba(255,255,255,0.35)' },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
+  backText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  title: { fontSize: 26, fontWeight: '900', color: '#5EEAD4' },
+  subtitle: { fontSize: 13, color: 'rgba(153,246,228,0.85)', fontWeight: '600', marginTop: 4, marginBottom: 12 },
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: '700' },
+  statValue: { fontSize: 18, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 16, height: 16, resizeMode: 'contain' },
+  progressRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 4, maxWidth: '90%', marginTop: 4 },
+  progressDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
+  progressDotDone: { backgroundColor: '#2DD4BF', borderColor: '#5EEAD4' },
+  playArea: { flex: 1, marginHorizontal: 14, marginBottom: 12, borderRadius: 28, overflow: 'hidden', borderWidth: 2, borderColor: 'rgba(45,212,191,0.35)' },
+  glowRing: { position: 'absolute', borderRadius: 9999 },
+  hitArea: { flex: 1, borderRadius: 9999, overflow: 'hidden' },
+  gem: { flex: 1, borderRadius: 9999, borderWidth: 2, borderColor: 'rgba(255,255,255,0.45)', shadowColor: '#2DD4BF', shadowOpacity: 0.6, shadowRadius: 16, elevation: 12 },
+  gemShine: { position: 'absolute', top: '15%', left: '20%', width: '35%', height: '25%', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.55)', transform: [{ rotate: '-20deg' }] },
+  footer: { textAlign: 'center', color: 'rgba(153,246,228,0.7)', fontSize: 13, fontWeight: '600', paddingBottom: 18 },
 });
 
 export default SmallCircleTapGame;
-

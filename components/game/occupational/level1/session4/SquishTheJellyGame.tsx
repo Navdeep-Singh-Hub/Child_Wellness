@@ -1,557 +1,287 @@
+/**
+ * OT Level 1 · Session 4 · Game 4 — Squish The Jelly
+ * Theme: "Wobble Dome" — gentle squish in the sweet spot, not too hard!
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
+import { SESSION4_PACING } from '@/components/game/occupational/level1/session4/session4Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withSequence,
-    withSpring,
-    withTiming
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+const P = SESSION4_PACING.squishJelly;
+const TOTAL_ROUNDS = 10;
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const SPLAT_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
-const TOTAL_ROUNDS = 10;
-const MAX_COMPRESSION = 0.5; // Jelly can compress to 50% of original size
-const SPLAT_THRESHOLD = 0.3; // If compressed below 30%, it splats
+const STAR_ICON = require('@/assets/icons/star.png');
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
+const JELLY_COLORS = [
+  ['#C084FC', '#A855F7', '#7E22CE'] as [string, string, string],
+  ['#F472B6', '#EC4899', '#BE185D'] as [string, string, string],
+  ['#67E8F9', '#22D3EE', '#0891B2'] as [string, string, string],
+  ['#86EFAC', '#4ADE80', '#16A34A'] as [string, string, string],
+];
 
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.55 });
+          ref.current = sound;
+        }
+        await ref.current.replayAsync();
+      } catch { /* noop */ }
+    })();
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
 
 const SquishTheJellyGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playSplat = useSoundEffect(SPLAT_SOUND);
+  const playSuccess = useSound(SUCCESS_SOUND);
+  const playSplat = useSound(SPLAT_SOUND);
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
-
-  // Initial speech on mount
-  useEffect(() => {
-    try {
-      speakTTS('Press and hold to compress the jelly. Release to let it spring back!', 0.78 );
-    } catch {}
-  }, []);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-  const [compression, setCompression] = useState(1); // 1 = normal, 0.5 = max compressed
-  const [isSplatted, setIsSplatted] = useState(false);
-  const [roundActive, setRoundActive] = useState(true);
+  const [phase, setPhase] = useState<'idle' | 'squishing' | 'splat' | 'transition'>('idle');
+  const [squishPct, setSquishPct] = useState(100);
+  const [sparkleKey, setSparkleKey] = useState(0);
 
-  // Animation values
-  const jellyScaleY = useSharedValue(1);
-  const jellyScaleX = useSharedValue(1);
-  const jellyY = useSharedValue(50); // Start at 50% from top
-  const jellyOpacity = useSharedValue(1);
-  const sparkleX = useSharedValue(0);
-  const sparkleY = useSharedValue(0);
-  const splatScale = useSharedValue(1);
+  const holdingRef = useRef(false);
+  const compressionRef = useRef(1);
+  const splattedRef = useRef(false);
+  const doneRef = useRef(false);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const compressionTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const isPressedRef = useRef(false);
-  const isSplattedRef = useRef(false);
+  const scaleY = useSharedValue(1);
+  const scaleX = useSharedValue(1);
+  const jellyBounce = useSharedValue(0);
+  const splatPulse = useSharedValue(1);
 
-  // Handle press start
-  const handlePressIn = useCallback(() => {
-    if (!roundActive || done || isSplattedRef.current) return;
+  const palette = JELLY_COLORS[(round - 1) % JELLY_COLORS.length];
 
-    setIsPressed(true);
-    isPressedRef.current = true;
-    setCompression(1);
-    setIsSplatted(false);
-    isSplattedRef.current = false;
+  const endGame = useCallback((finalScore: number) => {
+    const total = TOTAL_ROUNDS;
+    const xp = finalScore * 16;
+    setFinalStats({ correct: finalScore, total, xp });
+    setDone(true);
+    doneRef.current = true;
+    setShowCongratulations(true);
+    speakTTS('Perfect squish control! Jelly master!', 0.78);
+    recordGame(xp).then(() =>
+      logGameAndAward({
+        type: 'squishTheJelly',
+        correct: finalScore,
+        total,
+        accuracy: (finalScore / total) * 100,
+        xpAwarded: xp,
+        skillTags: ['proprioception', 'force-regulation', 'sensory-feedback'],
+      }),
+    ).then(() => router.setParams({ refreshStats: Date.now().toString() })).catch(console.error);
+  }, [router]);
 
-    // Start compressing jelly
+  const resetJelly = useCallback(() => {
+    scaleY.value = withSpring(1, { damping: 10, stiffness: 120 });
+    scaleX.value = withSpring(1, { damping: 10, stiffness: 120 });
+    compressionRef.current = 1;
+    splattedRef.current = false;
+    setSquishPct(100);
+    setPhase('idle');
+  }, []);
+
+  const triggerSplat = useCallback(() => {
+    splattedRef.current = true;
+    setPhase('splat');
+    playSplat();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+    speakTTS('Too much pressure!', 0.78).catch(() => {});
+    splatPulse.value = withSequence(withTiming(1.4, { duration: 180 }), withTiming(1.1, { duration: 260 }));
+    scaleY.value = withTiming(0.15, { duration: 200 });
+    scaleX.value = withTiming(1.9, { duration: 200 });
+    if (tickRef.current) clearInterval(tickRef.current);
+    holdingRef.current = false;
+    setTimeout(resetJelly, P.splatResetMs);
+  }, [playSplat, resetJelly]);
+
+  const onPressIn = useCallback(() => {
+    if (doneRef.current || phase === 'splat' || phase === 'transition' || holdingRef.current) return;
+    holdingRef.current = true;
+    splattedRef.current = false;
+    setPhase('squishing');
+    compressionRef.current = 1;
+
     const startTime = Date.now();
-    const updateCompression = () => {
-      if (!isPressedRef.current || isSplattedRef.current) return;
+    tickRef.current = setInterval(() => {
+      if (!holdingRef.current || splattedRef.current) return;
       const elapsed = Date.now() - startTime;
-      const compressionAmount = Math.min(elapsed / 1000, 1); // Compress over 1 second
-      const newCompression = 1 - (compressionAmount * (1 - MAX_COMPRESSION));
-      setCompression(newCompression);
+      const amount = Math.min(elapsed / P.compressDurationMs, 1);
+      const comp = 1 - amount * (1 - P.maxCompression);
+      compressionRef.current = comp;
+      setSquishPct(Math.round(comp * 100));
+      scaleY.value = comp;
+      scaleX.value = 1 + (1 - comp) * 0.35;
+      jellyBounce.value = withTiming(Math.sin(elapsed / 80) * 2, { duration: 50 });
 
-      // Animate compression (squish vertically, expand horizontally)
-      jellyScaleY.value = withTiming(newCompression, {
-        duration: 50,
-        easing: Easing.out(Easing.ease),
-      });
-      jellyScaleX.value = withTiming(1 + (1 - newCompression) * 0.3, {
-        duration: 50,
-        easing: Easing.out(Easing.ease),
-      });
-      jellyY.value = withTiming(50 + (1 - newCompression) * 10, {
-        duration: 50,
-        easing: Easing.out(Easing.ease),
-      });
+      if (comp <= P.splatThreshold) {
+        triggerSplat();
+      }
+    }, 50);
 
-      if (newCompression <= SPLAT_THRESHOLD) {
-        // Too much pressure - splat!
-        setIsSplatted(true);
-        isSplattedRef.current = true;
-        splatScale.value = withSequence(
-          withTiming(1.5, { duration: 200, easing: Easing.out(Easing.ease) }),
-          withTiming(1.2, { duration: 300, easing: Easing.in(Easing.ease) }),
-        );
-        jellyScaleY.value = withTiming(0.2, { duration: 200 });
-        jellyScaleX.value = withTiming(1.8, { duration: 200 });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  }, [phase, triggerSplat]);
 
-        try {
-          playSplat();
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          speakTTS('Too much pressure!', 0.78 );
-        } catch {}
+  const onPressOut = useCallback(() => {
+    if (!holdingRef.current || splattedRef.current) return;
+    holdingRef.current = false;
+    if (tickRef.current) clearInterval(tickRef.current);
 
+    const comp = compressionRef.current;
+    scaleY.value = withSpring(1, { damping: 10, stiffness: 120 });
+    scaleX.value = withSpring(1, { damping: 10, stiffness: 120 });
+
+    if (comp >= P.goodMin && comp <= P.goodMax) {
+      setSparkleKey(Date.now());
+      playSuccess();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      setScore((prev) => {
+        const next = prev + 1;
+        setPhase('transition');
         setTimeout(() => {
-          setIsSplatted(false);
-          isSplattedRef.current = false;
-          setCompression(1);
-          jellyScaleY.value = withSpring(1, { damping: 10, stiffness: 100 });
-          jellyScaleX.value = withSpring(1, { damping: 10, stiffness: 100 });
-          jellyY.value = withSpring(50, { damping: 10, stiffness: 100 });
-          splatScale.value = 1;
-        }, 2000);
-      } else {
-        compressionTimerRef.current = setTimeout(updateCompression, 50);
-      }
-    };
-
-    updateCompression();
-  }, [roundActive, done, jellyScaleY, jellyScaleX, jellyY, splatScale, playSplat]);
-
-  // Handle release
-  const handlePressOut = useCallback(async () => {
-    if (!isPressedRef.current) return;
-
-    setIsPressed(false);
-    isPressedRef.current = false;
-    if (compressionTimerRef.current) {
-      clearTimeout(compressionTimerRef.current);
-      compressionTimerRef.current = null;
-    }
-
-    if (isSplattedRef.current) return; // Already handled in press in
-
-    // Spring back animation
-    jellyScaleY.value = withSpring(1, { damping: 10, stiffness: 100 });
-    jellyScaleX.value = withSpring(1, { damping: 10, stiffness: 100 });
-    jellyY.value = withSpring(50, { damping: 10, stiffness: 100 });
-
-    // Check if good compression (between 0.5 and 0.7)
-    const finalCompression = compression;
-    if (finalCompression >= 0.5 && finalCompression <= 0.7) {
-      // Good squish!
-      setScore((s) => {
-        const newScore = s + 1;
-        if (newScore >= TOTAL_ROUNDS) {
-          setTimeout(() => {
-            endGame(newScore);
-          }, 1000);
-        } else {
-          setTimeout(() => {
+          if (next >= TOTAL_ROUNDS) {
+            endGame(next);
+          } else {
             setRound((r) => r + 1);
-            setCompression(1);
-            setRoundActive(true);
-          }, 1000);
-        }
-        return newScore;
+            resetJelly();
+          }
+        }, P.nextRoundDelayMs);
+        return next;
       });
-
-      // Record position for sparkle
-      sparkleX.value = 50;
-      sparkleY.value = 50;
-
-      try {
-        await playSuccess();
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
+    } else if (comp > P.goodMax) {
+      speakTTS('Squish a little less!', 0.78).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft).catch(() => {});
+      setPhase('idle');
     } else {
-      // Not quite right
-      setCompression(1);
-      try {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch {}
+      speakTTS('Squish a bit more!', 0.78).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft).catch(() => {});
+      setPhase('idle');
     }
-  }, [isPressed, isSplatted, compression, jellyScaleY, jellyScaleX, jellyY, sparkleX, sparkleY, playSuccess]);
+  }, [endGame, resetJelly, playSuccess]);
 
-  // End game
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 16; // 16 XP per successful squish
-      const accuracy = (finalScore / total) * 100;
+  useEffect(() => {
+    speakTTS('Press and hold to squish the jelly gently. Release in the sweet spot!', 0.78);
+    return () => { stopAllSpeech(); cleanupSounds(); if (tickRef.current) clearInterval(tickRef.current); };
+  }, []);
 
-      // Set all states together FIRST (like CatchTheBouncingStar)
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setRoundActive(false);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'squishTheJelly',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['proprioception', 'force-regulation', 'sensory-feedback'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log squish the jelly game:', e);
-      }
-    },
-    [router],
-  );
-
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
-
-  // Animated styles
   const jellyStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scaleY: jellyScaleY.value },
-      { scaleX: jellyScaleX.value },
-      { translateY: `${jellyY.value - 50}%` },
-    ],
-    opacity: jellyOpacity.value,
+    transform: [{ scaleY: scaleY.value }, { scaleX: scaleX.value }, { rotate: `${jellyBounce.value}deg` }],
   }));
+  const splatStyle = useAnimatedStyle(() => ({ transform: [{ scale: splatPulse.value }] }));
 
-  const splatStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: splatScale.value }],
-  }));
-
-  const sparkleStyle = useAnimatedStyle(() => ({
-    left: `${sparkleX.value}%`,
-    top: `${sparkleY.value}%`,
-  }));
-
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
   if (showCongratulations && done && finalStats) {
     return (
-      <CongratulationsScreen
-        message="Jelly Master!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
+      <CongratulationsScreen message="Wobble Master!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#2E1065', '#4C1D95', '#6D28D9', '#7C3AED']} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Squish The Jelly</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 🍮 Score: {score}
-        </Text>
-        <Text style={styles.helper}>
-          Press and hold to compress the jelly. Release to let it spring back!
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>🍮 Wobble Dome</Text>
+        <Text style={styles.subtitle}>Gentle squish · sweet spot 50–72%</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabel}>Round</Text><Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} /><Text style={styles.statValue}>{score}</Text>
+          </View>
+        </View>
       </View>
 
-      <View style={styles.playArea}>
-        <Pressable
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          style={styles.tapArea}
-          disabled={!roundActive || done || isSplatted}
-        >
-          {/* Jelly blob */}
-          <Animated.View style={[styles.jellyContainer, jellyStyle]} pointerEvents="none">
-            <View
-              style={[
-                styles.jelly,
-                {
-                  backgroundColor: isSplatted ? '#EF4444' : '#8B5CF6',
-                },
-              ]}
-            >
-              <Text style={styles.jellyEmoji} selectable={false}>
-                {isSplatted ? '💥' : '🍮'}
-              </Text>
-            </View>
-          </Animated.View>
+      <Pressable style={styles.playArea} onPressIn={onPressIn} onPressOut={onPressOut} disabled={phase === 'splat' || phase === 'transition'}>
+        <View style={styles.domeBase} />
 
-          {/* Splat effect */}
-          {isSplatted && (
-            <Animated.View style={[styles.splatContainer, splatStyle]} pointerEvents="none">
-              <View style={styles.splatEffect} />
-            </Animated.View>
-          )}
+        <Animated.View style={[styles.jellyWrap, jellyStyle]}>
+          <LinearGradient colors={palette} style={styles.jelly}>
+            <View style={styles.jellyShine} />
+            <Text style={styles.jellyFace}>{phase === 'splat' ? '💥' : '🍮'}</Text>
+          </LinearGradient>
+        </Animated.View>
 
-          {/* Sparkle burst on success */}
-          {score > 0 && !isPressed && !isSplatted && (
-            <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
-              <SparkleBurst />
-            </Animated.View>
-          )}
+        {phase === 'splat' && (
+          <Animated.View style={[styles.splatRing, splatStyle]} />
+        )}
 
-          {/* Instruction */}
-          {!isPressed && !isSplatted && (
-            <View style={styles.instructionBox}>
-              <Text selectable={false} style={styles.instructionText}>
-                Press and hold to squish! 👆
-              </Text>
-            </View>
-          )}
-        </Pressable>
-      </View>
+        {phase === 'squishing' && (
+          <View style={[styles.pctPill, squishPct >= P.goodMin * 100 && squishPct <= P.goodMax * 100 && styles.sweetPill]}>
+            <Text style={styles.pctText}>{squishPct}%</Text>
+          </View>
+        )}
 
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: proprioception • force regulation • sensory feedback
-        </Text>
-        <Text style={styles.footerSub}>
-          Squish the jelly gently! Too much pressure makes it splat. This builds force control!
-        </Text>
-      </View>
+        {phase === 'idle' && (
+          <View style={styles.hintPill}><Text style={styles.hintText}>Press & hold to squish 👆</Text></View>
+        )}
+
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color={palette[0]} count={12} size={7} />
+      </Pressable>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    position: 'relative',
-  },
-  tapArea: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    userSelect: 'none', // For web - prevent text selection
-  },
-  jellyContainer: {
-    position: 'absolute',
-    alignItems: 'center',
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-  },
-  jelly: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-  },
-  jellyEmoji: {
-    fontSize: 80,
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-  },
-  splatContainer: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  splatEffect: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(239, 68, 68, 0.3)',
-    borderWidth: 4,
-    borderColor: '#EF4444',
-  },
-  sparkleContainer: {
-    position: 'absolute',
-    transform: [{ translateX: -20 }, { translateY: -20 }],
-    zIndex: 3,
-  },
-  instructionBox: {
-    position: 'absolute',
-    top: '70%',
-    backgroundColor: 'rgba(139, 92, 246, 0.9)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  instructionText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '800',
-    userSelect: 'none', // For web
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#475569',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  savedText: {
-    color: '#22C55E',
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#4C1D95' },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  backText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  title: { fontSize: 28, fontWeight: '900', color: '#EDE9FE', textShadowColor: 'rgba(167,139,250,0.5)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10 },
+  subtitle: { fontSize: 14, color: 'rgba(221,214,254,0.85)', fontWeight: '600', marginTop: 4, marginBottom: 14 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.12)', borderColor: 'rgba(251,191,36,0.3)' },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 20, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  playArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  domeBase: { position: 'absolute', bottom: '26%', width: 200, height: 30, borderRadius: 100, backgroundColor: 'rgba(0,0,0,0.25)' },
+  jellyWrap: { alignItems: 'center' },
+  jelly: { width: 150, height: 150, borderRadius: 75, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', shadowColor: '#A855F7', shadowOpacity: 0.5, shadowRadius: 20, elevation: 14 },
+  jellyShine: { position: 'absolute', top: 20, left: 28, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.35)' },
+  jellyFace: { fontSize: 56 },
+  splatRing: { position: 'absolute', width: 220, height: 220, borderRadius: 110, borderWidth: 4, borderColor: '#EF4444', backgroundColor: 'rgba(239,68,68,0.2)' },
+  pctPill: { position: 'absolute', bottom: '18%', backgroundColor: 'rgba(15,23,42,0.85)', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
+  sweetPill: { backgroundColor: 'rgba(34,197,94,0.85)' },
+  pctText: { color: '#fff', fontSize: 16, fontWeight: '900' },
+  hintPill: { position: 'absolute', bottom: '12%', backgroundColor: 'rgba(167,139,250,0.9)', paddingHorizontal: 22, paddingVertical: 12, borderRadius: 22 },
+  hintText: { color: '#fff', fontSize: 15, fontWeight: '800' },
 });
 
 export default SquishTheJellyGame;
-

@@ -1,518 +1,187 @@
+/**
+ * OT Level 1 · Session 10 · Game 1 — Pinch To Pop
+ * Theme: "Bubble Burst Bay" — pinch the floating balloon to pop it.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
+import { SESSION10_PACING } from '@/components/game/occupational/level1/session10/session10Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-    Easing,
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withSequence,
-    withSpring,
-    withTiming,
-} from 'react-native-reanimated';
+import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+const P = SESSION10_PACING;
+const B = P.pinchPop;
+const TOTAL_ROUNDS = 8;
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
-const TOTAL_ROUNDS = 8;
-const BALLOON_SIZE = 150;
-const PINCH_THRESHOLD = 0.3; // Scale threshold to trigger pop (30% reduction)
+const STAR_ICON = require('@/assets/icons/star.png');
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.55 });
+          ref.current = sound;
+        }
+        await ref.current.replayAsync();
+      } catch { /* noop */ }
+    })();
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
 
 const PinchToPopGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playError = useSoundEffect(ERROR_SOUND);
+  const playSuccess = useSound(SUCCESS_SOUND);
+  const playError = useSound(ERROR_SOUND);
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
-  const [roundActive, setRoundActive] = useState(false);
-  const [lastResult, setLastResult] = useState<'hit' | 'miss' | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
   const [sparkleKey, setSparkleKey] = useState(0);
-  const [sparkleX, setSparkleX] = useState(0);
-  const [sparkleY, setSparkleY] = useState(0);
 
-  // Animation values
+  const roundActiveRef = useRef(true);
+  const doneRef = useRef(false);
+  const poppedRef = useRef(false);
   const balloonScale = useSharedValue(1);
-  const balloonX = useSharedValue(50); // Center horizontally (%)
-  const balloonY = useSharedValue(50); // Center vertically (%)
+  const balloonX = useSharedValue(50);
+  const balloonY = useSharedValue(50);
   const balloonOpacity = useSharedValue(1);
-  const wiggleRotation = useSharedValue(0);
-  const feedbackOpacity = useSharedValue(0);
-  const glowIntensity = useSharedValue(0);
+  const wiggle = useSharedValue(0);
   const floatY = useSharedValue(0);
-  const progressWidth = useSharedValue(0);
+  const glow = useSharedValue(0.4);
 
-  const roundActiveRef = useRef(false);
-  const roundRef = useRef(1);
-  const scoreRef = useRef(0);
-  const isPoppedRef = useRef(false);
-
-  // Keep refs in sync
-  useEffect(() => {
-    roundRef.current = round;
-    scoreRef.current = score;
-  }, [round, score]);
-
-  // End game function
-  const endGame = useCallback(async () => {
-    if (done) return;
+  const endGame = useCallback((finalScore: number) => {
+    const total = TOTAL_ROUNDS;
+    const xp = finalScore * 20;
+    setFinalStats({ correct: finalScore, total, xp });
     setDone(true);
-    setRoundActive(false);
-    roundActiveRef.current = false;
+    doneRef.current = true;
+    setShowCongratulations(true);
+    speakTTS('Bubble burst champion!', 0.78);
+    recordGame(xp).then(() =>
+      logGameAndAward({ type: 'pinchToPop', correct: finalScore, total, accuracy: (finalScore / total) * 100, xpAwarded: xp,
+        skillTags: ['pinch-grasp', 'bilateral-coordination', 'fine-motor-control'] }),
+    ).then(() => router.setParams({ refreshStats: Date.now().toString() })).catch(console.error);
+  }, [router]);
 
-    const finalScore = scoreRef.current;
-    const totalRounds = TOTAL_ROUNDS;
-    const xp = Math.floor((finalScore / totalRounds) * 50);
-
-    try {
-      const timestamp = await recordGame({
-        type: 'pinchToPop',
-        score: finalScore,
-        totalRounds,
-        correct: finalScore,
-        incorrect: totalRounds - finalScore,
-      });
-
-      await logGameAndAward({
-        gameType: 'pinchToPop',
-        score: finalScore,
-        totalRounds,
-        correct: finalScore,
-        incorrect: totalRounds - finalScore,
-        xp,
-      });
-
-      setFinalStats({
-        correct: finalScore,
-        total: totalRounds,
-        xp,
-      });
-      setLogTimestamp(timestamp);
-      setShowCongratulations(true);
-      speakTTS('Amazing work! You completed the game!', 0.78);
-    } catch (error) {
-      console.error('Failed to save game result:', error);
-      // Still show congratulations even if logging fails
-      setShowCongratulations(true);
-      speakTTS('Amazing work! You completed the game!', 0.78);
-    }
-  }, [done]);
-
-  // Handle single tap (wrong gesture)
-  const handleSingleTap = useCallback(async () => {
-    if (!roundActiveRef.current || done || isPoppedRef.current) return;
-
-    // Wiggle animation
-    wiggleRotation.value = withSequence(
-      withTiming(-10, { duration: 100, easing: Easing.out(Easing.ease) }),
-      withTiming(10, { duration: 100, easing: Easing.inOut(Easing.ease) }),
-      withTiming(-10, { duration: 100, easing: Easing.inOut(Easing.ease) }),
-      withTiming(0, { duration: 100, easing: Easing.in(Easing.ease) })
-    );
-
-    setLastResult('miss');
-    setShowFeedback(true);
-    feedbackOpacity.value = withTiming(1, { duration: 200 });
-
-    try {
-      await playError();
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      speakTTS('Try two fingers!', 0.78 );
-    } catch {}
-
-    setTimeout(() => {
-      setShowFeedback(false);
-      feedbackOpacity.value = 0;
-    }, 2000);
-  }, [done, wiggleRotation, feedbackOpacity, playError]);
-
-  // Handle successful pinch (pop)
-  const handlePop = useCallback(async () => {
-    if (!roundActiveRef.current || done || isPoppedRef.current) return;
-
-    isPoppedRef.current = true;
-    setLastResult('hit');
-    setShowFeedback(true);
-    setRoundActive(false);
-    roundActiveRef.current = false;
-    setScore((s) => s + 1);
-
-    // Pop animation
-    balloonScale.value = withSequence(
-      withTiming(1.3, { duration: 150, easing: Easing.out(Easing.ease) }),
-      withTiming(0, { duration: 200, easing: Easing.in(Easing.ease) })
-    );
-    balloonOpacity.value = withTiming(0, { duration: 200 });
-
-    feedbackOpacity.value = withTiming(1, { duration: 200 });
-
-    setSparkleX(balloonX.value);
-    setSparkleY(balloonY.value);
-    setSparkleKey((k) => k + 1);
-
-    try {
-      await playSuccess();
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      speakTTS('Pop!', 0.78 );
-    } catch {}
-
-    if (roundRef.current >= TOTAL_ROUNDS) {
-      setTimeout(() => {
-        endGame();
-      }, 1500);
-    } else {
-      setTimeout(() => {
-        setShowFeedback(false);
-        feedbackOpacity.value = 0;
-        setRound((r) => r + 1);
-        setTimeout(() => {
-          startRound();
-        }, 500);
-      }, 1500);
-    }
-  }, [done, balloonScale, balloonOpacity, balloonX, balloonY, feedbackOpacity, playSuccess, endGame]);
-
-  // Start a new round
   const startRound = useCallback(() => {
-    if (done) return;
-
-    setRoundActive(true);
+    if (doneRef.current) return;
     roundActiveRef.current = true;
-    setLastResult(null);
-    setShowFeedback(false);
-    isPoppedRef.current = false;
-    feedbackOpacity.value = 0;
-
-    // Random position
-    const margin = 20;
+    poppedRef.current = false;
+    const margin = 18;
     balloonX.value = margin + Math.random() * (100 - margin * 2);
     balloonY.value = margin + Math.random() * (100 - margin * 2);
-
-    // Reset balloon
     balloonScale.value = 1;
     balloonOpacity.value = 1;
-    wiggleRotation.value = 0;
-    glowIntensity.value = 0;
-    floatY.value = 0;
-    
-    // Start glow pulse
-    glowIntensity.value = withSequence(
-      withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-      withTiming(0.3, { duration: 1000, easing: Easing.inOut(Easing.ease) })
-    );
-    const glowInterval = setInterval(() => {
-      if (roundActiveRef.current && !isPoppedRef.current) {
-        glowIntensity.value = withSequence(
-          withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-          withTiming(0.3, { duration: 1000, easing: Easing.inOut(Easing.ease) })
-        );
-      }
-    }, 2000);
-    setTimeout(() => clearInterval(glowInterval), 10000);
-  }, [done, balloonX, balloonY, balloonScale, balloonOpacity, wiggleRotation, feedbackOpacity]);
+    wiggle.value = 0;
+    glow.value = withRepeat(withSequence(withTiming(1, { duration: 700 }), withTiming(0.35, { duration: 700 })), -1, true);
+    floatY.value = withRepeat(withSequence(withTiming(-10, { duration: 1800, easing: Easing.inOut(Easing.ease) }), withTiming(10, { duration: 1800, easing: Easing.inOut(Easing.ease) })), -1, true);
+  }, []);
 
-  // Pinch gesture
-  const pinchGesture = Gesture.Pinch().runOnJS(true)
-    .onStart(() => {
-      if (!roundActiveRef.current || done || isPoppedRef.current) return;
-    })
-    .onUpdate((e) => {
-      if (!roundActiveRef.current || done || isPoppedRef.current) return;
-      
-      // Scale down as user pinches (scale < 1 means pinching inward)
-      const currentScale = 1 - (1 - e.scale) * 0.5; // Dampen the effect
-      balloonScale.value = Math.max(0.3, currentScale);
-      
-      // Increase glow as pinching
-      const pinchProgress = 1 - e.scale;
-      glowIntensity.value = Math.min(1, 0.3 + pinchProgress * 2);
-
-      // If pinched enough, trigger pop
-      if (e.scale < (1 - PINCH_THRESHOLD)) {
-        runOnJS(handlePop)();
-      }
-    })
-    .onEnd(() => {
-      if (!roundActiveRef.current || done || isPoppedRef.current) return;
-      // Spring back if not popped
-      if (!isPoppedRef.current) {
-        balloonScale.value = withSpring(1, { damping: 10, stiffness: 200 });
-      }
-    });
-
-  // Single tap gesture (for wrong gesture detection)
-  const tapGesture = Gesture.Tap().runOnJS(true)
-    .onEnd(() => {
-      if (!roundActiveRef.current || done || isPoppedRef.current) return;
-      runOnJS(handleSingleTap)();
-    });
-
-  // Combine gestures (tap has lower priority)
-  const combinedGesture = Gesture.Race(pinchGesture, tapGesture);
-
-  // Set ref after startRound is defined
   useEffect(() => {
-    // startRound will be set via ref if needed
-  }, [startRound]);
-
-  // Start first round
-  useEffect(() => {
+    if (doneRef.current) return;
     startRound();
+  }, [round]);
+
+  useEffect(() => {
+    speakTTS('Pinch the balloon with two fingers to pop it!', 0.78);
+    return () => { stopAllSpeech(); cleanupSounds(); };
   }, []);
 
-  // Floating animation
-  useEffect(() => {
-    if (roundActive && !isPoppedRef.current) {
-      floatY.value = withSequence(
-        withTiming(-8, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(8, { duration: 2000, easing: Easing.inOut(Easing.ease) })
-      );
-      const interval = setInterval(() => {
-        if (roundActive && !isPoppedRef.current) {
-          floatY.value = withSequence(
-            withTiming(-8, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-            withTiming(8, { duration: 2000, easing: Easing.inOut(Easing.ease) })
-          );
-        }
-      }, 4000);
-      return () => clearInterval(interval);
-    }
-  }, [roundActive, floatY]);
+  const handlePop = useCallback(() => {
+    if (!roundActiveRef.current || doneRef.current || poppedRef.current) return;
+    poppedRef.current = true;
+    roundActiveRef.current = false;
+    setSparkleKey(Date.now());
+    playSuccess();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    balloonScale.value = withSequence(withTiming(1.3, { duration: 120 }), withTiming(0, { duration: P.successPopMs }));
+    balloonOpacity.value = withTiming(0, { duration: P.successPopMs });
+    setScore((prev) => {
+      const next = prev + 1;
+      setTimeout(() => { if (next >= TOTAL_ROUNDS) endGame(next); else setRound((r) => r + 1); }, P.nextRoundDelayMs);
+      return next;
+    });
+  }, [endGame, playSuccess]);
 
-  // Progress animation
-  useEffect(() => {
-    progressWidth.value = withTiming((score / TOTAL_ROUNDS) * 100, { duration: 300 });
-  }, [score, progressWidth]);
+  const handleSingleTap = useCallback(() => {
+    if (!roundActiveRef.current || doneRef.current || poppedRef.current) return;
+    playError();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+    speakTTS('Use two fingers to pinch!', 0.78).catch(() => {});
+    wiggle.value = withSequence(withTiming(-12, { duration: 60 }), withTiming(12, { duration: 60 }), withTiming(0, { duration: 60 }));
+  }, [playError]);
 
-  // Animated styles
-  const balloonAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      width: BALLOON_SIZE,
-      height: BALLOON_SIZE,
-      left: `${balloonX.value}%`,
-      top: `${balloonY.value}%`,
-      transform: [
-        { translateX: -BALLOON_SIZE / 2 },
-        { translateY: -BALLOON_SIZE / 2 + floatY.value },
-        { scale: balloonScale.value },
-        { rotate: `${wiggleRotation.value}deg` },
-      ],
-      opacity: balloonOpacity.value,
-    };
-  });
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      if (!roundActiveRef.current || poppedRef.current) return;
+      balloonScale.value = Math.max(0.35, 1 - (1 - e.scale) * 0.55);
+      glow.value = Math.min(1, 0.35 + (1 - e.scale) * 1.5);
+      if (e.scale < 1 - B.pinchThreshold) runOnJS(handlePop)();
+    })
+    .onEnd(() => {
+      if (!poppedRef.current) balloonScale.value = withSpring(1, { damping: 12 });
+    });
 
-  const glowStyle = useAnimatedStyle(() => {
-    return {
-      opacity: glowIntensity.value * 0.6,
-      transform: [{ scale: 1 + glowIntensity.value * 0.2 }],
-    };
-  });
+  const tapGesture = Gesture.Tap().onEnd(() => { runOnJS(handleSingleTap)(); });
+  const gesture = Gesture.Race(pinchGesture, tapGesture);
 
-  const progressStyle = useAnimatedStyle(() => {
-    return {
-      width: `${progressWidth.value}%`,
-    };
-  });
+  const balloonStyle = useAnimatedStyle(() => ({
+    width: B.balloonSize, height: B.balloonSize, left: `${balloonX.value}%`, top: `${balloonY.value}%`,
+    transform: [{ translateX: -B.balloonSize / 2 }, { translateY: -B.balloonSize / 2 + floatY.value }, { scale: balloonScale.value }, { rotate: `${wiggle.value}deg` }],
+    opacity: balloonOpacity.value,
+  }));
+  const glowStyle = useAnimatedStyle(() => ({ opacity: glow.value * 0.55, transform: [{ scale: 1 + glow.value * 0.15 }] }));
 
-  const feedbackStyle = useAnimatedStyle(() => {
-    return {
-      opacity: feedbackOpacity.value,
-    };
-  });
-
-  useEffect(() => {
-    if (!done) {
-      try {
-        speakTTS('Pinch to pop the balloon!', 0.78 );
-      } catch {}
-    }
-    return () => {
-      stopAllSpeech();
-      cleanupSounds();
-    };
-  }, []);
-
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    if (onBack) {
-      onBack();
-    } else {
-      // Safe fallback: try to go back, but catch errors
-      try {
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.replace('/(tabs)/Games');
-        }
-      } catch (error) {
-        try {
-          router.replace('/(tabs)/Games');
-        } catch (e) {
-          console.warn('Navigation error:', e);
-        }
-      }
-    }
-  }, [onBack, router]);
-
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
   if (showCongratulations && done && finalStats) {
     return (
-      <CongratulationsScreen
-        message="Pinch Master!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
+      <CongratulationsScreen message="Pop Star!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#FEE2E2', '#FECACA', '#FCA5A5', '#F87171']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <LinearGradient
-          colors={['#1E293B', '#0F172A']}
-          style={styles.backChipGradient}
-        >
-          <Text style={styles.backChipText}>← Back</Text>
-        </LinearGradient>
+      <LinearGradient colors={['#FFF1F2', '#FECDD3', '#FDA4AF', '#FB7185']} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backTextDark}>← Back</Text></View>
       </TouchableOpacity>
-
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>🎈 Pinch to Pop 🎈</Text>
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <Animated.View style={[styles.progressFill, progressStyle]} />
+      <View style={styles.header}>
+        <Text style={styles.titleDark}>🎈 Bubble Burst Bay</Text>
+        <Text style={styles.subtitleDark}>Pinch with two fingers to pop!</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabelDark}>Round</Text><Text style={styles.statValueDark}>{round}/{TOTAL_ROUNDS}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} /><Text style={styles.statValueDark}>{score}</Text>
           </View>
-          <Text style={styles.progressText}>{score}/{TOTAL_ROUNDS}</Text>
         </View>
-        <Text style={styles.helper}>
-          Use two fingers to pinch the balloon!
-        </Text>
       </View>
-
-      {/* Play area */}
-      <GestureDetector gesture={combinedGesture}>
+      <GestureDetector gesture={gesture}>
         <View style={styles.playArea}>
-          <LinearGradient
-            colors={['#FFF1F2', '#FFE4E6', '#FECDD3']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <Animated.View
-            style={[
-              styles.balloon,
-              balloonAnimatedStyle,
-            ]}
-          >
-            <Animated.View style={[styles.glowRing, glowStyle]} />
-            <LinearGradient
-              colors={['#EF4444', '#DC2626', '#B91C1C']}
-              style={styles.balloonGradient}
-            >
-              <Text style={styles.balloonEmoji}>🎈</Text>
+          <Animated.View style={[styles.glow, glowStyle]} />
+          <Animated.View style={[styles.balloon, balloonStyle]}>
+            <LinearGradient colors={['#FCA5A5', '#EF4444', '#B91C1C']} style={styles.balloonGrad}>
+              <Text style={styles.emoji}>🎈</Text>
             </LinearGradient>
           </Animated.View>
-
-          {/* Feedback */}
-          {showFeedback && lastResult && (
-            <Animated.View style={[styles.feedbackContainer, feedbackStyle]}>
-              <LinearGradient
-                colors={lastResult === 'hit' 
-                  ? ['#22C55E', '#16A34A'] 
-                  : ['#EF4444', '#DC2626']}
-                style={styles.feedbackGradient}
-              >
-                <Text style={styles.feedbackText}>
-                  {lastResult === 'hit' ? '✨ Pop! ✨' : '👆 Try two fingers!'}
-                </Text>
-              </LinearGradient>
-            </Animated.View>
-          )}
-
-          {/* Sparkle effect */}
-          {sparkleKey > 0 && (
-            <SparkleBurst
-              key={sparkleKey}
-              x={sparkleX}
-              y={sparkleY}
-            />
-          )}
+          <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#FB7185" count={16} size={8} />
         </View>
       </GestureDetector>
     </SafeAreaView>
@@ -520,144 +189,24 @@ const PinchToPopGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  backChip: {
-    alignSelf: 'flex-start',
-    margin: 16,
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  backChipGradient: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-  },
-  backChipText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1E293B',
-  },
-  headerBlock: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: '#78350F',
-    marginBottom: 16,
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
-  },
-  progressBar: {
-    width: 200,
-    height: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#22C55E',
-    borderRadius: 6,
-  },
-  progressText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#78350F',
-  },
-  helper: {
-    fontSize: 15,
-    color: '#92400E',
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  playArea: {
-    flex: 1,
-    position: 'relative',
-    margin: 20,
-    borderRadius: 24,
-    overflow: 'hidden',
-    borderWidth: 3,
-    borderColor: '#FCD34D',
-  },
-  balloon: {
-    position: 'absolute',
-    borderRadius: 1000,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#EF4444',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    elevation: 12,
-  },
-  balloonGradient: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 1000,
-    borderWidth: 4,
-    borderColor: '#DC2626',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  glowRing: {
-    position: 'absolute',
-    width: BALLOON_SIZE * 1.4,
-    height: BALLOON_SIZE * 1.4,
-    borderRadius: BALLOON_SIZE * 0.7,
-    backgroundColor: '#EF4444',
-    opacity: 0.3,
-  },
-  balloonEmoji: {
-    fontSize: 60,
-  },
-  feedbackContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -100 }, { translateY: -20 }],
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  feedbackGradient: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  feedbackText: {
-    fontSize: 20,
-    fontWeight: '900',
-    textAlign: 'center',
-    color: '#FFFFFF',
-  },
-  feedbackSuccess: {
-    color: '#22C55E',
-  },
-  feedbackError: {
-    color: '#EF4444',
-  },
-  scrollContent: {
-    padding: 20,
-  },
+  container: { flex: 1 },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.75)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(244,63,94,0.25)' },
+  backTextDark: { color: '#BE123C', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  titleDark: { fontSize: 28, fontWeight: '900', color: '#BE123C' },
+  subtitleDark: { fontSize: 14, color: '#E11D48', fontWeight: '600', marginTop: 4, marginBottom: 14 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.7)', borderWidth: 1, borderColor: 'rgba(244,63,94,0.2)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.2)', borderColor: 'rgba(251,191,36,0.4)' },
+  statLabelDark: { fontSize: 11, color: '#E11D48', fontWeight: '700', textTransform: 'uppercase' },
+  statValueDark: { fontSize: 20, fontWeight: '900', color: '#BE123C' },
+  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(251,113,133,0.3)', backgroundColor: 'rgba(255,255,255,0.35)' },
+  glow: { position: 'absolute', alignSelf: 'center', top: '40%', width: B.balloonSize * 1.5, height: B.balloonSize * 1.5, borderRadius: B.balloonSize, backgroundColor: '#FB7185' },
+  balloon: { position: 'absolute', borderRadius: 999, overflow: 'hidden', shadowColor: '#EF4444', shadowOpacity: 0.45, shadowRadius: 14, elevation: 10 },
+  balloonGrad: { flex: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 999, borderWidth: 3, borderColor: '#FECACA' },
+  emoji: { fontSize: 56 },
 });
 
 export default PinchToPopGame;
-

@@ -1,3 +1,7 @@
+/**
+ * OT Level 1 · Session 3 · Game 4 — Race The Dot
+ * Theme: "Turbo Track" — tap to push the racer toward the finish line.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
 import { SESSION3_PACING } from '@/components/game/occupational/level1/session3/session3Pacing';
@@ -5,571 +9,282 @@ import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
-    Easing,
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withSequence,
-    withTiming
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const GOAL_SOUND = 'https://actions.google.com/sounds/v1/cartoon/pop.ogg';
+const P = SESSION3_PACING.raceDot;
 const TOTAL_ROUNDS = 10;
-const {
-  goalDistance: GOAL_DISTANCE,
-  slowSpeedPerTap: SLOW_SPEED,
-  fastSpeedPerTap: FAST_SPEED,
-  slowRounds: SLOW_ROUNDS,
-  nextRoundDelayMs: NEXT_ROUND_DELAY_MS,
-} = SESSION3_PACING.raceDot;
+const STAR_ICON = require('@/assets/icons/star.png');
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.48 });
+          ref.current = sound;
+        }
+        ref.current.replayAsync().catch(() => {});
+      } catch { /* noop */ }
+    })();
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
 
 const RaceTheDotGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playGoal = useSoundEffect(GOAL_SOUND);
+  const playTap = useSound(SUCCESS_SOUND);
+  const playGoal = useSound(GOAL_SOUND);
+
+  const roundRef = useRef(1);
+  const scoreRef = useRef(0);
+  const positionRef = useRef(0);
+  const activeRef = useRef(true);
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
+  const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
-  const [roundActive, setRoundActive] = useState(true);
-  const [dotPosition, setDotPosition] = useState(0); // Position along path (0 to GOAL_DISTANCE)
-  const [isFastMode, setIsFastMode] = useState(false);
-  const [showGoal, setShowGoal] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
+  const [sparkleKey, setSparkleKey] = useState(0);
 
-  // Animation values
-  const dotX = useSharedValue(50); // Start at 50% of screen width
-  const dotY = useSharedValue(50); // Start at 50% of screen height
-  const pathProgress = useSharedValue(0); // 0 to 1 (0% to 100% of path)
+  const dotX = useSharedValue(15);
+  const pathProgress = useSharedValue(0);
   const dotScale = useSharedValue(1);
   const dotOpacity = useSharedValue(1);
-  const sparkleX = useSharedValue(0);
-  const sparkleY = useSharedValue(0);
-  const goalScale = useSharedValue(1);
+  const goalPulse = useSharedValue(1);
+  const turboFlash = useSharedValue(0);
 
-  const roundRef = useRef(round);
-  const scoreRef = useRef(score);
-  const startRoundRef = useRef<() => void>(() => {});
+  const isFastMode = round > P.slowRounds;
 
-  useEffect(() => {
-    roundRef.current = round;
-  }, [round]);
-  useEffect(() => {
-    scoreRef.current = score;
-  }, [score]);
+  const endGame = useCallback(async (finalScore: number) => {
+    const stats = { correct: finalScore, total: TOTAL_ROUNDS, xp: finalScore * 15 };
+    setFinalStats(stats);
+    setDone(true);
+    setShowCongratulations(true);
+    speakTTS('Race complete! Turbo champion!', 0.78);
+    try {
+      await recordGame(stats.xp);
+      await logGameAndAward({
+        type: 'raceTheDot',
+        correct: finalScore,
+        total: TOTAL_ROUNDS,
+        accuracy: (finalScore / TOTAL_ROUNDS) * 100,
+        xpAwarded: stats.xp,
+        skillTags: ['visual-tracking', 'speed-modulation', 'motor-planning', 'timing'],
+      });
+      router.setParams({ refreshStats: Date.now().toString() });
+    } catch (e) {
+      console.error('Failed to log race the dot game:', e);
+    }
+  }, [router]);
 
-  // Determine if current round is fast mode
-  useEffect(() => {
-    setIsFastMode(round > SLOW_ROUNDS);
-  }, [round]);
-
-  // Start a new round
   const startRound = useCallback(() => {
-    setRoundActive(true);
-    setDotPosition(0);
-    setShowGoal(false);
-    pathProgress.value = 0;
-    dotScale.value = 1;
+    activeRef.current = true;
+    positionRef.current = 0;
+    setProgress(0);
     dotOpacity.value = 1;
-    goalScale.value = 1;
-
-    // Reset dot position to start
-    dotX.value = 50; // Start at left side (50% - will be adjusted)
-    dotY.value = 50;
-
-    // Animate goal appearance
-    goalScale.value = withSequence(
-      withTiming(1.2, { duration: 200, easing: Easing.out(Easing.ease) }),
-      withTiming(1, { duration: 200, easing: Easing.in(Easing.ease) }),
+    dotScale.value = 1;
+    pathProgress.value = 0;
+    dotX.value = 15;
+    goalPulse.value = withRepeat(
+      withSequence(withTiming(1.12, { duration: 500 }), withTiming(1, { duration: 500 })),
+      -1,
+      true,
     );
-    setShowGoal(true);
-  }, [isFastMode, pathProgress, dotScale, dotOpacity, dotX, dotY, goalScale]);
+    if (roundRef.current > P.slowRounds) {
+      turboFlash.value = withSequence(withTiming(1, { duration: 150 }), withTiming(0.3, { duration: 400 }));
+    }
+  }, []);
 
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 15;
-      const accuracy = (finalScore / total) * 100;
-
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setShowCongratulations(true);
-
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'raceTheDot',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['visual-tracking', 'speed-modulation', 'motor-planning', 'timing'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log race the dot game:', e);
-      }
-    },
-    [router],
-  );
-
-  const onRoundGoalReached = useCallback(() => {
+  const onGoalReached = useCallback(() => {
     const nextScore = scoreRef.current + 1;
+    scoreRef.current = nextScore;
     setScore(nextScore);
-    setRoundActive(false);
+    setSparkleKey(Date.now());
 
     if (roundRef.current >= TOTAL_ROUNDS) {
       endGame(nextScore);
     } else {
-      setRound((r) => r + 1);
-      setTimeout(() => {
-        startRoundRef.current();
-      }, NEXT_ROUND_DELAY_MS);
+      roundRef.current += 1;
+      setRound(roundRef.current);
+      if (roundRef.current === P.slowRounds + 1) {
+        speakTTS('Turbo mode! Tap faster!', 0.78).catch(() => {});
+      }
+      setTimeout(startRound, P.nextRoundDelayMs);
     }
-  }, [endGame]);
+  }, [endGame, startRound]);
 
-  useEffect(() => {
-    startRoundRef.current = startRound;
-  }, [startRound]);
-
-  // Handle tap - move dot forward
   const handleTap = useCallback(() => {
-    if (!roundActive || done) return;
+    if (!activeRef.current || done) return;
 
-    const speed = isFastMode ? FAST_SPEED : SLOW_SPEED;
-    const newPosition = Math.min(dotPosition + speed, GOAL_DISTANCE);
-    setDotPosition(newPosition);
+    const speed = isFastMode ? P.fastSpeedPerTap : P.slowSpeedPerTap;
+    const newPos = Math.min(positionRef.current + speed, P.goalDistance);
+    positionRef.current = newPos;
+    const pct = newPos / P.goalDistance;
+    setProgress(Math.round(pct * 100));
 
-    // Update progress (0 to 1)
-    const progress = newPosition / GOAL_DISTANCE;
-    pathProgress.value = withTiming(progress, {
-      duration: 100,
-      easing: Easing.out(Easing.ease),
-    });
+    pathProgress.value = withTiming(pct, { duration: 90, easing: Easing.out(Easing.quad) });
+    dotX.value = withTiming(15 + pct * 65, { duration: 90, easing: Easing.out(Easing.quad) });
+    dotScale.value = withSequence(withSpring(1.25, { damping: 6 }), withSpring(1, { damping: 10 }));
 
-    // Move dot along path (simple horizontal path for now)
-    // Start at 20% of screen, move to 80%
-    const startX = 20;
-    const endX = 80;
-    const currentX = startX + (endX - startX) * progress;
-    dotX.value = withTiming(currentX, {
-      duration: 100,
-      easing: Easing.out(Easing.ease),
-    });
-
-    // Tap animation
-    dotScale.value = withSequence(
-      withTiming(1.3, { duration: 100, easing: Easing.out(Easing.ease) }),
-      withTiming(1, { duration: 100, easing: Easing.in(Easing.ease) }),
-    );
-
-    // Check if reached goal
-    if (newPosition >= GOAL_DISTANCE) {
-      setRoundActive(false);
-      setShowGoal(false);
-
-      // Record tap position for sparkle
-      sparkleX.value = dotX.value;
-      sparkleY.value = dotY.value;
-
-      // Success animation
-      dotScale.value = withSequence(
-        withTiming(1.5, { duration: 200, easing: Easing.out(Easing.ease) }),
-        withTiming(0, { duration: 300, easing: Easing.in(Easing.ease) }, (finished) => {
-          if (finished) {
-            runOnJS(onRoundGoalReached)();
-          }
-        }),
-      );
-
-      dotOpacity.value = withTiming(0, { duration: 300 });
-
-      playGoal().catch(() => {});
+    if (newPos >= P.goalDistance) {
+      activeRef.current = false;
+      playGoal();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      dotScale.value = withSequence(
+        withTiming(1.5, { duration: 150 }),
+        withTiming(0, { duration: 220, easing: Easing.in(Easing.back(1.5)) }, (f) => { if (f) runOnJS(onGoalReached)(); }),
+      );
+      dotOpacity.value = withTiming(0, { duration: 220 });
     } else {
-      playSuccess().catch(() => {});
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      playTap();
+      Haptics.impactAsync(isFastMode ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
-  }, [roundActive, done, dotPosition, isFastMode, pathProgress, dotScale, dotOpacity, dotX, dotY, sparkleX, sparkleY, playSuccess, playGoal, onRoundGoalReached]);
+  }, [done, isFastMode, onGoalReached, playTap, playGoal]);
 
-  // Initialize first round
   useEffect(() => {
-    try {
-      speakTTS(isFastMode ? 'Tap fast repeatedly to race the dot to the goal!' : 'Tap to keep the dot moving slowly toward the goal!', 0.78 );
-    } catch {}
+    speakTTS('Tap to race the dot to the finish line!', 0.78);
     startRound();
+    return () => { stopAllSpeech(); cleanupSounds(); };
   }, []);
 
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
-
-  // Animated styles
   const dotStyle = useAnimatedStyle(() => ({
     left: `${dotX.value}%`,
-    top: `${dotY.value}%`,
-    transform: [
-      { translateX: -15 },
-      { translateY: -15 },
-      { scale: dotScale.value },
-    ],
+    transform: [{ translateY: -18 }, { scale: dotScale.value }],
     opacity: dotOpacity.value,
   }));
 
-  const pathStyle = useAnimatedStyle(() => ({
-    width: `${pathProgress.value * 100}%`,
-  }));
+  const pathFillStyle = useAnimatedStyle(() => ({ width: `${pathProgress.value * 100}%` }));
+  const goalStyle = useAnimatedStyle(() => ({ transform: [{ scale: goalPulse.value }] }));
+  const turboStyle = useAnimatedStyle(() => ({ opacity: turboFlash.value }));
 
-  const goalStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: goalScale.value }],
-  }));
-
-  const sparkleStyle = useAnimatedStyle(() => ({
-    left: `${sparkleX.value}%`,
-    top: `${sparkleY.value}%`,
-  }));
-
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
   if (showCongratulations && done && finalStats) {
     return (
-      <CongratulationsScreen
-        message="Race Complete!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
+      <CongratulationsScreen message="Turbo Champion!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient
+        colors={isFastMode ? ['#450A0A', '#7F1D1D', '#B91C1C'] : ['#0C4A6E', '#0369A1', '#0284C7']}
+        style={StyleSheet.absoluteFillObject}
+      />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Race The Dot</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>{isFastMode ? '🏎️ Turbo Track' : '🏁 Race Track'}</Text>
         <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 🏁 Score: {score}
+          {isFastMode ? 'Tap fast to boost!' : 'Tap steadily to advance'} · Round {round}/{TOTAL_ROUNDS}
         </Text>
-        <Text style={styles.helper}>
-          {isFastMode
-            ? 'Tap fast repeatedly to race the dot to the goal!'
-            : 'Tap to keep the dot moving slowly toward the goal!'}
-        </Text>
-      </View>
-
-      <View style={styles.playArea}>
-        <Pressable onPress={handleTap} style={styles.tapArea} disabled={!roundActive || done}>
-          {/* Visual path */}
-          <View style={styles.pathContainer}>
-            <Animated.View style={[styles.path, pathStyle]} />
+        <View style={styles.statsRow}>
+          <View style={[styles.statPill, isFastMode && styles.turboPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} />
+            <Text style={styles.statValue}>{score}</Text>
           </View>
-
-          {/* Goal indicator */}
-          {showGoal && (
-            <Animated.View style={[styles.goalContainer, goalStyle]}>
-              <View style={styles.goal}>
-                <Text style={styles.goalText}>🏁</Text>
-                <Text style={styles.goalLabel}>GOAL</Text>
-              </View>
-            </Animated.View>
-          )}
-
-          {/* Dot */}
-          <Animated.View style={[styles.dotContainer, dotStyle]}>
-            <View
-              style={[
-                styles.dot,
-                {
-                  backgroundColor: isFastMode ? '#F59E0B' : '#3B82F6',
-                },
-              ]}
-            >
-              <View style={styles.dotInner} />
-            </View>
+          <View style={styles.statPill}>
+            <Text style={styles.statLabel}>Progress</Text>
+            <Text style={styles.statValue}>{progress}%</Text>
+          </View>
+        </View>
+        {isFastMode && (
+          <Animated.View style={[styles.turboBadge, turboStyle]}>
+            <Text style={styles.turboText}>TURBO MODE</Text>
           </Animated.View>
+        )}
+      </View>
 
-          {/* Sparkle burst on goal */}
-          {score > 0 && !roundActive && (
-            <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
-              <SparkleBurst />
-            </Animated.View>
-          )}
+      <Pressable style={styles.playArea} onPress={handleTap}>
+        <LinearGradient colors={['rgba(255,255,255,0.06)', 'rgba(0,0,0,0.15)']} style={StyleSheet.absoluteFillObject} />
 
-          {/* Progress indicator */}
-          <View style={styles.progressContainer}>
-            <Text style={styles.progressText}>
-              {Math.round((dotPosition / GOAL_DISTANCE) * 100)}% to goal
-            </Text>
+        <View style={styles.track}>
+          <View style={styles.trackBg} />
+          <Animated.View style={[styles.trackFill, { backgroundColor: isFastMode ? '#F59E0B' : '#38BDF8' }, pathFillStyle]} />
+          <View style={styles.trackDashRow}>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <View key={i} style={styles.trackDash} />
+            ))}
           </View>
-        </Pressable>
-      </View>
+        </View>
 
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: visual tracking • speed modulation • motor planning • timing
-        </Text>
-        <Text style={styles.footerSub}>
-          {isFastMode
-            ? 'Tap fast to race! This builds speed control and motor planning.'
-            : 'Tap to keep moving! This builds visual tracking and timing.'}
-        </Text>
-      </View>
+        <Animated.View style={[styles.goalWrap, goalStyle]}>
+          <View style={styles.goal}>
+            <Text style={styles.goalEmoji}>🏁</Text>
+          </View>
+        </Animated.View>
+
+        <Animated.View style={[styles.racer, dotStyle]}>
+          <LinearGradient
+            colors={isFastMode ? ['#FDE68A', '#F59E0B'] : ['#BAE6FD', '#0EA5E9']}
+            style={styles.racerBody}
+          >
+            <Text style={styles.racerEmoji}>{isFastMode ? '🏎️' : '🔵'}</Text>
+          </LinearGradient>
+        </Animated.View>
+
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color={isFastMode ? '#F59E0B' : '#38BDF8'} count={14} size={8} />
+      </Pressable>
+
+      <Text style={styles.footer}>Keep tapping — reach the finish flag!</Text>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    position: 'relative',
-    marginBottom: 16,
-  },
-  tapArea: {
-    flex: 1,
-    position: 'relative',
-  },
-  pathContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: '10%',
-    right: '10%',
-    height: 8,
-    backgroundColor: 'rgba(148, 163, 184, 0.3)',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  path: {
-    height: '100%',
-    backgroundColor: '#3B82F6',
-    borderRadius: 4,
-  },
-  goalContainer: {
-    position: 'absolute',
-    top: '50%',
-    right: '10%',
-    transform: [{ translateX: -30 }, { translateY: -30 }],
-  },
-  goal: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#22C55E',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  goalText: {
-    fontSize: 28,
-  },
-  goalLabel: {
-    position: 'absolute',
-    bottom: -20,
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  dotContainer: {
-    position: 'absolute',
-  },
-  dot: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
-  dotInner: {
-    width: '50%',
-    height: '50%',
-    borderRadius: 999,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  sparkleContainer: {
-    position: 'absolute',
-    transform: [{ translateX: -20 }, { translateY: -20 }],
-  },
-  progressContainer: {
-    position: 'absolute',
-    top: '30%',
-    left: '50%',
-    transform: [{ translateX: -60 }],
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  progressText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#475569',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  savedText: {
-    color: '#22C55E',
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
+  container: { flex: 1 },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
+  backText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16, marginBottom: 8 },
+  title: { fontSize: 26, fontWeight: '900', color: '#fff' },
+  subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: '600', marginTop: 4, marginBottom: 10 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  turboPill: { backgroundColor: 'rgba(245,158,11,0.2)', borderColor: 'rgba(251,191,36,0.4)' },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: '700' },
+  statValue: { fontSize: 18, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 16, height: 16, resizeMode: 'contain' },
+  turboBadge: { marginTop: 8, backgroundColor: 'rgba(245,158,11,0.35)', paddingHorizontal: 16, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: '#FDE68A' },
+  turboText: { fontSize: 12, fontWeight: '900', color: '#FDE68A', letterSpacing: 2 },
+  playArea: { flex: 1, marginHorizontal: 14, marginBottom: 10, borderRadius: 28, overflow: 'hidden', borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)', justifyContent: 'center' },
+  track: { position: 'absolute', left: '8%', right: '8%', top: '52%', height: 14, justifyContent: 'center' },
+  trackBg: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 8 },
+  trackFill: { height: '100%', borderRadius: 8 },
+  trackDashRow: { position: 'absolute', flexDirection: 'row', justifyContent: 'space-around', width: '100%', top: 3 },
+  trackDash: { width: 14, height: 3, backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 2 },
+  goalWrap: { position: 'absolute', right: '6%', top: '46%' },
+  goal: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#22C55E', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#fff', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, elevation: 10 },
+  goalEmoji: { fontSize: 28 },
+  racer: { position: 'absolute', top: '50%' },
+  racerBody: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' },
+  racerEmoji: { fontSize: 18 },
+  footer: { textAlign: 'center', color: 'rgba(255,255,255,0.75)', fontSize: 13, fontWeight: '600', paddingBottom: 18 },
 });
 
 export default RaceTheDotGame;
-

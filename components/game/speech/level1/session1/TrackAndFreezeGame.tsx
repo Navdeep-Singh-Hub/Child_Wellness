@@ -120,11 +120,8 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
     const endX = 80 + Math.random() * (SCREEN_WIDTH - 160);
     const endY = 150 + Math.random() * (SCREEN_HEIGHT - 400);
 
-    // Calculate rotation based on direction
-    const deltaX = endX - startX;
-    const deltaY = endY - startY;
-    const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
-    carRotation.setValue(angle);
+    // Keep car emoji facing straight (horizontal) regardless of movement direction
+    carRotation.setValue(0);
 
     // Speak at start of every round, then start movement after a short delay
     speak('Watch the car move.');

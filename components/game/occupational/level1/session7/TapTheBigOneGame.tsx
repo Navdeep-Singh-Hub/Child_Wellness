@@ -1,551 +1,244 @@
+/**
+ * OT Level 1 · Session 7 · Game 1 — Tap The Big One
+ * Theme: "Giant's Garden" — tap the glowing giant orb.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import { SparkleBurst } from '@/components/game/FX';
+import { SESSION7_PACING } from '@/components/game/occupational/level1/session7/session7Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Animated,
-    Easing,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+const P = SESSION7_PACING;
+const TOTAL_ROUNDS = 8;
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
-const TOTAL_ROUNDS = 8;
-const LARGE_SIZE = 180; // Large circle size
-const SMALL_SIZE = 80; // Small circle size
-const GLOW_DURATION_MS = 1500; // Big circle glows for 1.5 seconds
+const STAR_ICON = require('@/assets/icons/star.png');
 
-type Circle = {
-  id: 'large' | 'small';
-  x: number; // percentage
-  y: number; // percentage
-  color: string;
-  scale: Animated.Value;
-  glowOpacity: Animated.Value;
-  shakeAnim: Animated.Value;
+const PALETTES: [string, string][] = [
+  ['#34D399', '#059669'], ['#60A5FA', '#2563EB'], ['#FBBF24', '#D97706'],
+  ['#F472B6', '#DB2777'], ['#A78BFA', '#7C3AED'], ['#FB923C', '#EA580C'],
+];
+
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.55 });
+          ref.current = sound;
+        }
+        await ref.current.replayAsync();
+      } catch { /* noop */ }
+    })();
+  }, [uri]);
 };
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
+type OrbTarget = { id: 'large' | 'small'; size: number; x: number; y: number; colors: [string, string] };
 
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
-  }, [uri]);
+function spawnOrbs(): OrbTarget[] {
+  const margin = 18;
+  const minDist = 28;
+  let lx = margin + Math.random() * (100 - margin * 2);
+  let ly = margin + Math.random() * (100 - margin * 2);
+  let sx = 0; let sy = 0;
+  for (let i = 0; i < 40; i++) {
+    sx = margin + Math.random() * (100 - margin * 2);
+    sy = margin + Math.random() * (100 - margin * 2);
+    if (Math.hypot(lx - sx, ly - sy) >= minDist) break;
+  }
+  const p1 = PALETTES[Math.floor(Math.random() * PALETTES.length)];
+  const p2 = PALETTES[Math.floor(Math.random() * PALETTES.length)];
+  return [
+    { id: 'large', size: P.bigOne.largeSize, x: lx, y: ly, colors: p1 },
+    { id: 'small', size: P.bigOne.smallSize, x: sx, y: sy, colors: p2 },
+  ];
+}
+
+function OrbButton({ target, glow, onPress, disabled }: {
+  target: OrbTarget; glow?: boolean; onPress: () => void; disabled: boolean;
+}) {
+  const scale = useSharedValue(1);
+  const shake = useSharedValue(0);
+  const glowOp = useSharedValue(glow ? 0.6 : 0);
 
   useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
+    if (glow) {
+      glowOp.value = withRepeat(
+        withSequence(withTiming(1, { duration: 400 }), withTiming(0.45, { duration: 400 })),
+        Math.ceil(P.glowDurationMs / 800),
+        true,
+      );
+    }
+  }, [glow]);
 
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
+  const style = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }, { translateX: shake.value }],
+    opacity: 1 - glowOp.value * 0.15 + glowOp.value * 0.15,
+  }));
 
-  return play;
-};
+  const pulseRing = useAnimatedStyle(() => ({
+    opacity: glowOp.value * 0.7,
+    transform: [{ scale: 1 + glowOp.value * 0.12 }],
+  }));
+
+  return (
+    <Animated.View style={[{ position: 'absolute', left: `${target.x}%`, top: `${target.y}%`, marginLeft: -target.size / 2, marginTop: -target.size / 2 }, style]}>
+      {glow && (
+        <Animated.View style={[styles.glowRing, { width: target.size + 24, height: target.size + 24, borderRadius: (target.size + 24) / 2, marginLeft: -12, marginTop: -12 }, pulseRing]} />
+      )}
+      <Pressable
+        onPress={() => {
+          onPress();
+        }}
+        disabled={disabled}
+        onPressIn={() => { scale.value = withSpring(0.92, { damping: 14 }); }}
+        onPressOut={() => { scale.value = withSpring(1, { damping: 12 }); }}
+      >
+        <LinearGradient colors={target.colors} style={[styles.orb, { width: target.size, height: target.size, borderRadius: target.size / 2 }]}>
+          <View style={styles.shine} />
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 const TapTheBigOneGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
+  const playSuccess = useSound(SUCCESS_SOUND);
+  const playError = useSound(ERROR_SOUND);
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
-  const [roundActive, setRoundActive] = useState(false);
-  const [circles, setCircles] = useState<Circle[]>([]);
   const [showCongratulations, setShowCongratulations] = useState(false);
+  const [orbs, setOrbs] = useState<OrbTarget[]>([]);
+  const [sparkleKey, setSparkleKey] = useState(0);
 
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playError = useSoundEffect(ERROR_SOUND);
+  const roundActiveRef = useRef(true);
+  const doneRef = useRef(false);
 
-  const COLORS = ['#3B82F6', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6', '#F472B6'];
+  const endGame = useCallback((finalScore: number) => {
+    const total = TOTAL_ROUNDS;
+    const xp = finalScore * 15;
+    setFinalStats({ correct: finalScore, total, xp });
+    setDone(true);
+    doneRef.current = true;
+    setShowCongratulations(true);
+    speakTTS('You found every giant!', 0.78);
+    recordGame(xp).then(() =>
+      logGameAndAward({ type: 'tapTheBigOne', correct: finalScore, total, accuracy: (finalScore / total) * 100, xpAwarded: xp,
+        skillTags: ['size-discrimination', 'target-accuracy', 'inhibition-of-distractor'] }),
+    ).then(() => router.setParams({ refreshStats: Date.now().toString() })).catch(console.error);
+  }, [router]);
 
-  // Generate random positions for circles, ensuring they don't overlap
-  const generateCirclePositions = useCallback((): { large: { x: number; y: number }; small: { x: number; y: number } } => {
-    const margin = 20; // percentage margin from edges
-    const minDistance = 25; // minimum distance between circles (percentage)
-
-    // Generate large circle position
-    const largeX = margin + Math.random() * (100 - margin * 2);
-    const largeY = margin + Math.random() * (100 - margin * 2);
-
-    // Generate small circle position (ensure it's far enough from large)
-    let smallX = 0;
-    let smallY = 0;
-    let attempts = 0;
-    let validPosition = false;
-
-    while (!validPosition && attempts < 50) {
-      smallX = margin + Math.random() * (100 - margin * 2);
-      smallY = margin + Math.random() * (100 - margin * 2);
-
-      const dx = largeX - smallX;
-      const dy = largeY - smallY;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      if (distance >= minDistance) {
-        validPosition = true;
-      }
-      attempts++;
-    }
-
-    return { large: { x: largeX, y: largeY }, small: { x: smallX, y: smallY } };
-  }, []);
-
-  // End game function
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 15; // 15 XP per correct tap
-      const accuracy = (finalScore / total) * 100;
-
-      // Set all states together FIRST (like CatchTheBouncingStar)
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setRoundActive(false);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'tapTheBigOne' as any,
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['size-discrimination', 'target-accuracy', 'inhibition-of-distractor'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log tap the big one game:', e);
-      }
-    },
-    [router],
-  );
-
-  // Start a new round
-  const startRound = useCallback(() => {
-    const positions = generateCirclePositions();
-    const largeColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-    const smallColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-
-    const newCircles: Circle[] = [
-      {
-        id: 'large',
-        x: positions.large.x,
-        y: positions.large.y,
-        color: largeColor,
-        scale: new Animated.Value(1),
-        glowOpacity: new Animated.Value(0),
-        shakeAnim: new Animated.Value(0),
-      },
-      {
-        id: 'small',
-        x: positions.small.x,
-        y: positions.small.y,
-        color: smallColor,
-        scale: new Animated.Value(1),
-        glowOpacity: new Animated.Value(0),
-        shakeAnim: new Animated.Value(0),
-      },
-    ];
-
-    setCircles(newCircles);
-    setRoundActive(true);
-
-    // Make big circle glow briefly
-    Animated.sequence([
-      Animated.timing(newCircles[0].glowOpacity, {
-        toValue: 1,
-        duration: 300,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: false,
-      }),
-      Animated.timing(newCircles[0].glowOpacity, {
-        toValue: 0.6,
-        duration: GLOW_DURATION_MS - 600,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: false,
-      }),
-      Animated.timing(newCircles[0].glowOpacity, {
-        toValue: 0,
-        duration: 300,
-        easing: Easing.in(Easing.ease),
-        useNativeDriver: false,
-      }),
-    ]).start();
-  }, [generateCirclePositions]);
-
-  // Handle circle tap
-  const handleCircleTap = useCallback(
-    async (circleId: 'large' | 'small') => {
-      if (!roundActive || done) return;
-
-      const circle = circles.find((c) => c.id === circleId);
-      if (!circle) return;
-
-      const isCorrect = circleId === 'large';
-
-      if (isCorrect) {
-        // Correct tap - success animation
-        setRoundActive(false);
-        Animated.parallel([
-          Animated.sequence([
-            Animated.timing(circle.scale, {
-              toValue: 1.3,
-              duration: 120,
-              easing: Easing.out(Easing.ease),
-              useNativeDriver: false,
-            }),
-            Animated.timing(circle.scale, {
-              toValue: 0,
-              duration: 150,
-              easing: Easing.in(Easing.ease),
-              useNativeDriver: false,
-            }),
-          ]),
-          Animated.timing(circle.glowOpacity, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: false,
-          }),
-        ]).start();
-
-        try {
-          await playSuccess();
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch {}
-
-        setScore((s) => s + 1);
-
-        // Next round or finish
-        if (round >= TOTAL_ROUNDS) {
-          endGame(score + 1);
-        } else {
-          setTimeout(() => {
-            setRound((r) => r + 1);
-            setTimeout(() => {
-              startRound();
-            }, 400);
-          }, 600);
-        }
-      } else {
-        // Wrong tap - shake animation
-        Animated.sequence([
-          Animated.timing(circle.shakeAnim, {
-            toValue: 10,
-            duration: 50,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: false,
-          }),
-          Animated.timing(circle.shakeAnim, {
-            toValue: -10,
-            duration: 50,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
-          }),
-          Animated.timing(circle.shakeAnim, {
-            toValue: 10,
-            duration: 50,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
-          }),
-          Animated.timing(circle.shakeAnim, {
-            toValue: 0,
-            duration: 50,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: false,
-          }),
-        ]).start();
-
-        try {
-          await playError();
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          speakTTS('Try the big one!', 0.78 );
-        } catch {}
-
-        // Retry - don't advance round
-        setTimeout(() => {
-          circle.shakeAnim.setValue(0);
-        }, 500);
-      }
-    },
-    [roundActive, done, circles, round, score, startRound, endGame, playSuccess, playError],
-  );
-
-  // Start first round
   useEffect(() => {
-    if (!done) {
-      try {
-        speakTTS('Tap the big circle!', 0.78 );
-      } catch {}
-      startRound();
-    }
-    return () => {
-      stopAllSpeech();
-      cleanupSounds();
-    };
+    setOrbs(spawnOrbs());
+    roundActiveRef.current = true;
+  }, [round]);
+
+  useEffect(() => {
+    speakTTS('Tap the big circle!', 0.78);
+    return () => { stopAllSpeech(); cleanupSounds(); };
   }, []);
 
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
+  const handleTap = useCallback((id: 'large' | 'small') => {
+    if (!roundActiveRef.current || doneRef.current) return;
+    if (id === 'large') {
+      setSparkleKey(Date.now());
+      playSuccess();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      roundActiveRef.current = false;
+      setScore((prev) => {
+        const next = prev + 1;
+        setTimeout(() => {
+          if (next >= TOTAL_ROUNDS) endGame(next);
+          else setRound((r) => r + 1);
+        }, P.nextRoundDelayMs);
+        return next;
+      });
+    } else {
+      playError();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      speakTTS('Tap the big one!', 0.78).catch(() => {});
+    }
+  }, [endGame, playSuccess, playError]);
 
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
   if (showCongratulations && done && finalStats) {
     return (
-      <CongratulationsScreen
-        message="Size Master!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
+      <CongratulationsScreen message="Giant Spotter!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#064E3B', '#047857', '#10B981', '#6EE7B7']} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Tap The Big One</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 🎯 Score: {score}
-        </Text>
-        <Text style={styles.helper}>
-          Watch the big circle glow, then tap it!
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>🌳 Giant's Garden</Text>
+        <Text style={styles.subtitle}>Tap the biggest orb</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabel}>Round</Text><Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} /><Text style={styles.statValue}>{score}</Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.playArea}>
-        {circles.map((circle) => {
-          const glowOpacity = circle.glowOpacity.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 0.8],
-          });
-
-          const shakeTranslateX = circle.shakeAnim.interpolate({
-            inputRange: [-10, 10],
-            outputRange: [-10, 10],
-          });
-
-          return (
-            <Animated.View
-              key={circle.id}
-              style={[
-                styles.circleContainer,
-                {
-                  left: `${circle.x}%`,
-                  top: `${circle.y}%`,
-                  transform: [
-                    { scale: circle.scale },
-                    { translateX: shakeTranslateX },
-                  ],
-                },
-              ]}
-            >
-              <Pressable
-                onPress={() => handleCircleTap(circle.id)}
-                style={[
-                  styles.circle,
-                  {
-                    width: circle.id === 'large' ? LARGE_SIZE : SMALL_SIZE,
-                    height: circle.id === 'large' ? LARGE_SIZE : SMALL_SIZE,
-                    borderRadius: circle.id === 'large' ? LARGE_SIZE / 2 : SMALL_SIZE / 2,
-                    backgroundColor: circle.color,
-                  },
-                ]}
-                disabled={!roundActive || done}
-              >
-                <Animated.View
-                  style={[
-                    styles.glowOverlay,
-                    {
-                      width: circle.id === 'large' ? LARGE_SIZE : SMALL_SIZE,
-                      height: circle.id === 'large' ? LARGE_SIZE : SMALL_SIZE,
-                      borderRadius: circle.id === 'large' ? LARGE_SIZE / 2 : SMALL_SIZE / 2,
-                      opacity: glowOpacity,
-                    },
-                  ]}
-                />
-              </Pressable>
-            </Animated.View>
-          );
-        })}
-      </View>
-
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: size discrimination • target accuracy • inhibition of distractor
-        </Text>
-        <Text style={styles.footerSub}>
-          Tap the big circle when it glows! This builds size discrimination and target accuracy.
-        </Text>
+        {orbs.map((o) => (
+          <OrbButton key={`${round}-${o.id}`} target={o} glow={o.id === 'large'} onPress={() => handleTap(o.id)} disabled={!roundActiveRef.current} />
+        ))}
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#34D399" count={14} size={8} />
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    position: 'relative',
-    marginBottom: 16,
-  },
-  circleContainer: {
-    position: 'absolute',
-    transform: [{ translateX: -LARGE_SIZE / 2 }, { translateY: -LARGE_SIZE / 2 }],
-  },
-  circle: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 8,
-  },
-  glowOverlay: {
-    position: 'absolute',
-    backgroundColor: '#FCD34D',
-    top: 0,
-    left: 0,
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#64748B',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  savedText: {
-    marginTop: 16,
-    fontSize: 14,
-    color: '#22C55E',
-    fontWeight: '600',
-  },
+  container: { flex: 1, backgroundColor: '#047857' },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)' },
+  backText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  title: { fontSize: 28, fontWeight: '900', color: '#D1FAE5', textShadowColor: 'rgba(52,211,153,0.4)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10 },
+  subtitle: { fontSize: 14, color: 'rgba(209,250,229,0.85)', fontWeight: '600', marginTop: 4, marginBottom: 14 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.15)', borderColor: 'rgba(251,191,36,0.35)' },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 20, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  playArea: { flex: 1, position: 'relative', marginHorizontal: 8 },
+  orb: { justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, elevation: 12 },
+  shine: { position: 'absolute', top: '14%', left: '18%', width: '32%', height: '22%', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.4)' },
+  glowRing: { position: 'absolute', borderWidth: 4, borderColor: '#FDE047', backgroundColor: 'rgba(253,224,71,0.15)' },
 });
 
 export default TapTheBigOneGame;
-

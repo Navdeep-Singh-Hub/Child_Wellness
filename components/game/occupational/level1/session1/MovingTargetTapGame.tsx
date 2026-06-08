@@ -1,4 +1,10 @@
+/**
+ * OT Level 1 · Session 1 · Game 3 — Balloon Pop (Moving Target Tap)
+ * Theme: "Sunset Balloon Carnival" — golden sky parade with floating balloons.
+ * UX focus: visual tracking path, gentle bobbing motion, satisfying pop feedback.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import { SparkleBurst } from '@/components/game/FX';
 import { isTapNearTarget } from '@/components/game/occupational/shared/movingTargetTouch';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -9,60 +15,74 @@ import { useRouter } from 'expo-router';
 import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    LayoutChangeEvent,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    type GestureResponderEvent,
+  Animated,
+  Easing,
+  Image,
+  LayoutChangeEvent,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  type GestureResponderEvent,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const MISS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
-
 const TOTAL_ROUNDS = 8;
-const BALLOON_SIZE = 120;
-const BALLOON_HIT_PADDING = 12;
-const TAP_TOLERANCE = 40;
-const ROUND_DURATION_MS = 5000; // slow movement (5s)
+const BALLOON_SIZE = 128;
+const ROUND_DURATION_MS = 5000;
+const TAP_TOLERANCE = 44;
+const STAR_ICON = require('@/assets/icons/star.png');
+
+const BALLOON_COLORS = [
+  { body: ['#FB7185', '#F43F5E'], string: '#BE123C' },
+  { body: ['#FBBF24', '#F59E0B'], string: '#B45309' },
+  { body: ['#A78BFA', '#8B5CF6'], string: '#6D28D9' },
+  { body: ['#34D399', '#10B981'], string: '#047857' },
+  { body: ['#60A5FA', '#3B82F6'], string: '#1D4ED8' },
+  { body: ['#F472B6', '#EC4899'], string: '#BE185D' },
+];
 
 const useSoundEffect = (uri: string) => {
   const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
   const ensureSound = useCallback(async () => {
     if (soundRef.current) return;
     try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
+      const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.55, shouldPlay: false });
       soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+    } catch { /* noop */ }
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
+  useEffect(() => () => { soundRef.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(async () => {
     try {
       if (Platform.OS === 'web') return;
       await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
+      await soundRef.current?.replayAsync();
+    } catch { /* noop */ }
   }, [ensureSound]);
-
-  return play;
 };
+
+function Cloud({ style }: { style: object }) {
+  return (
+    <View pointerEvents="none" style={[styles.cloud, style]}>
+      <View style={[styles.cloudPuff, { width: 48, height: 32, left: 0 }]} />
+      <View style={[styles.cloudPuff, { width: 64, height: 40, left: 28, top: -8 }]} />
+      <View style={[styles.cloudPuff, { width: 52, height: 34, left: 72, top: 2 }]} />
+    </View>
+  );
+}
+
+function TimeBar({ progress }: { progress: Animated.Value }) {
+  const width = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
+  return (
+    <View style={styles.timeBarTrack}>
+      <Animated.View style={[styles.timeBarFill, { width }]} />
+    </View>
+  );
+}
 
 const MovingTargetTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
@@ -71,17 +91,21 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
   const [hits, setHits] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [roundActive, setRoundActive] = useState(false);
-  const [balloonPopped, setBalloonPopped] = useState(false);
+  const [sparkleKey, setSparkleKey] = useState(0);
+  const [missFlash, setMissFlash] = useState(false);
 
   const xAnim = useRef(new Animated.Value(0)).current;
+  const yBobAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const timeProgress = useRef(new Animated.Value(0)).current;
 
   const currentAnimRef = useRef<Animated.CompositeAnimation | null>(null);
+  const bobAnimRef = useRef<Animated.CompositeAnimation | null>(null);
   const hitThisRoundRef = useRef(false);
   const xPosRef = useRef(0);
+  const yPosRef = useRef(0);
   const xListenerRef = useRef<string | null>(null);
   const roundActiveRef = useRef(false);
   const hasStartedRef = useRef(false);
@@ -91,10 +115,9 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
 
   const playPop = useSoundEffect(SUCCESS_SOUND);
   const playMiss = useSoundEffect(MISS_SOUND);
+  const balloonColor = BALLOON_COLORS[(round - 1) % BALLOON_COLORS.length];
 
-  useEffect(() => {
-    roundActiveRef.current = roundActive;
-  }, [roundActive]);
+  useEffect(() => { roundActiveRef.current = roundActive; }, [roundActive]);
 
   const removeXListener = useCallback(() => {
     if (xListenerRef.current) {
@@ -108,162 +131,125 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
 
     const startX = -BALLOON_SIZE;
     const endX = playAreaLayout.width - BALLOON_SIZE / 2;
+    const centerY = playAreaLayout.height / 2 - BALLOON_SIZE / 2;
 
     hitThisRoundRef.current = false;
     setRoundActive(true);
     roundActiveRef.current = true;
-    setBalloonPopped(false);
     scaleAnim.setValue(1);
+    timeProgress.setValue(0);
 
     removeXListener();
     xPosRef.current = startX;
+    yPosRef.current = centerY + BALLOON_SIZE / 2;
     xAnim.setValue(startX);
+    yBobAnim.setValue(0);
 
-    xListenerRef.current = xAnim.addListener(({ value }) => {
-      xPosRef.current = value;
-    });
+    xListenerRef.current = xAnim.addListener(({ value }) => { xPosRef.current = value; });
 
-    const anim = Animated.timing(xAnim, {
+    bobAnimRef.current?.stop();
+    bobAnimRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(yBobAnim, { toValue: -14, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(yBobAnim, { toValue: 14, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ]),
+    );
+    bobAnimRef.current.start();
+
+    const moveAnim = Animated.timing(xAnim, {
       toValue: endX,
       duration: ROUND_DURATION_MS,
       easing: Easing.linear,
       useNativeDriver: true,
     });
-
-    currentAnimRef.current = anim;
-
-    anim.start(({ finished }) => {
-      removeXListener();
-      if (finished && !hitThisRoundRef.current) {
-        handleMissRef.current();
-      }
+    const timeAnim = Animated.timing(timeProgress, {
+      toValue: 1,
+      duration: ROUND_DURATION_MS,
+      easing: Easing.linear,
+      useNativeDriver: false,
     });
-  }, [xAnim, scaleAnim, playAreaLayout, removeXListener]);
+
+    currentAnimRef.current = Animated.parallel([moveAnim, timeAnim]);
+    currentAnimRef.current.start(({ finished }) => {
+      removeXListener();
+      bobAnimRef.current?.stop();
+      if (finished && !hitThisRoundRef.current) handleMissRef.current();
+    });
+  }, [xAnim, yBobAnim, scaleAnim, timeProgress, playAreaLayout, removeXListener]);
 
   useEffect(() => {
-    const speakIntro = async () => {
-      try {
-        await speakTTS('Watch the slow balloon and tap it before it reaches the other side!', 0.78);
-      } catch (error) {
-        console.warn('TTS initialization error:', error);
-      }
-    };
-
-    speakIntro();
-
-    return () => {
-      try {
-        stopTTS();
-      } catch {
-        // Ignore errors
-      }
-    };
+    speakTTS('Watch the balloon float across the sky. Tap it before it flies away!', 0.78).catch(() => {});
+    return () => { stopTTS(); };
   }, []);
 
   useEffect(() => {
     if (!playAreaLayout || hasStartedRef.current) return;
-
-    const timer = setTimeout(() => {
-      hasStartedRef.current = true;
-      startRound();
-    }, 500);
-
-    return () => {
-      clearTimeout(timer);
-    };
+    const timer = setTimeout(() => { hasStartedRef.current = true; startRound(); }, 600);
+    return () => clearTimeout(timer);
   }, [playAreaLayout, startRound]);
 
-  useEffect(() => {
-    return () => {
-      currentAnimRef.current?.stop();
-      removeXListener();
-    };
+  useEffect(() => () => {
+    currentAnimRef.current?.stop();
+    bobAnimRef.current?.stop();
+    removeXListener();
+    stopAllSpeech();
+    cleanupSounds();
   }, [removeXListener]);
 
-  const endGame = useCallback(
-    async (finalHits: number) => {
-      const xp = finalHits * 15;
-      const total = TOTAL_ROUNDS;
-      const accuracy = (finalHits / total) * 100;
+  const endGame = useCallback(async (finalHits: number) => {
+    const xp = finalHits * 15;
+    const total = TOTAL_ROUNDS;
+    const stats = { correct: finalHits, total, xp };
+    setFinalStats(stats);
+    setDone(true);
+    setShowCongratulations(true);
+    speakTTS('You caught the balloons! Amazing tracking!', 0.78);
+    try {
+      await recordGame(xp);
+      await logGameAndAward({
+        type: 'movingTarget' as any,
+        correct: finalHits,
+        total,
+        accuracy: (finalHits / total) * 100,
+        xpAwarded: xp,
+        skillTags: ['hand-eye', 'tracking-tap', 'timing-control'],
+      });
+      router.setParams({ refreshStats: Date.now().toString() });
+    } catch (e) {
+      console.error('Failed to log moving target game:', e);
+    }
+  }, [router]);
 
-      const stats = { correct: finalHits, total, xp };
-      
-      // Set all states together (like CatchTheBouncingStar)
-      setFinalStats(stats);
-      setDone(true);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78 );
-
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'movingTarget' as any,
-          correct: finalHits,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['hand-eye', 'tracking-tap', 'timing-control'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log moving target game:', e);
-      }
-    },
-    [router],
-  );
-
-  const nextOrFinish = useCallback(
-    (justHit: boolean) => {
-      const nextRound = round + 1;
-      if (nextRound > TOTAL_ROUNDS) {
-        const finalHits = hits + (justHit ? 1 : 0);
-        endGame(finalHits);
-      } else {
-        if (justHit) setHits((h) => h + 1);
-        setRound(nextRound);
-        setTimeout(() => {
-          startRound();
-        }, 600);
-      }
-    },
-    [round, hits, startRound, endGame],
-  );
+  const nextOrFinish = useCallback((justHit: boolean) => {
+    const nextRound = round + 1;
+    if (nextRound > TOTAL_ROUNDS) {
+      endGame(hits + (justHit ? 1 : 0));
+    } else {
+      if (justHit) setHits((h) => h + 1);
+      setRound(nextRound);
+      setTimeout(() => startRound(), justHit ? 320 : 480);
+    }
+  }, [round, hits, startRound, endGame]);
 
   const handleHit = async () => {
     if (!roundActiveRef.current || hitThisRoundRef.current || done) return;
-
     hitThisRoundRef.current = true;
     setRoundActive(false);
     roundActiveRef.current = false;
-    setBalloonPopped(true);
-
     currentAnimRef.current?.stop();
+    bobAnimRef.current?.stop();
     removeXListener();
+    setSparkleKey(Date.now());
 
-    // pop animation
     Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 1.2,
-        duration: 120,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 0,
-        duration: 160,
-        easing: Easing.in(Easing.ease),
-        useNativeDriver: true,
-      }),
+      Animated.timing(scaleAnim, { toValue: 1.3, duration: 100, useNativeDriver: true }),
+      Animated.timing(scaleAnim, { toValue: 0, duration: 180, easing: Easing.in(Easing.back(1.5)), useNativeDriver: true }),
     ]).start();
 
     try {
       await playPop();
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
-
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    } catch { /* noop */ }
     nextOrFinish(true);
   };
 
@@ -271,26 +257,33 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
     if (hitThisRoundRef.current || done) return;
     setRoundActive(false);
     roundActiveRef.current = false;
+    setMissFlash(true);
+    setTimeout(() => setMissFlash(false), 500);
 
-    Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 0.9,
-        duration: 120,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 160,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.timing(scaleAnim, { toValue: 0.7, duration: 400, useNativeDriver: true }).start();
 
     try {
       await playMiss();
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    } catch {}
-
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      speakTTS('Try again! Tap the balloon next time!', 0.78).catch(() => {});
+    } catch { /* noop */ }
     nextOrFinish(false);
+  };
+
+  handleMissRef.current = handleMiss;
+
+  const handlePlayAreaLayout = (e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    setPlayAreaLayout({ width, height });
+  };
+
+  const handlePlayAreaPress = (event: GestureResponderEvent) => {
+    if (!roundActiveRef.current || hitThisRoundRef.current || done || !playAreaLayout) return;
+    const targetX = xPosRef.current + BALLOON_SIZE / 2;
+    const targetY = yPosRef.current;
+    if (isTapNearTarget(event, targetX, targetY, BALLOON_SIZE, TAP_TOLERANCE)) {
+      handleHit();
+    }
   };
 
   const handleBack = useCallback(() => {
@@ -299,316 +292,156 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
     onBack?.();
   }, [onBack]);
 
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
   if (showCongratulations && done && finalStats) {
     return (
       <CongratulationsScreen
-        message="Great Tracking!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
+        message="Sky Catcher!"
+        showButtons
+        correct={finalStats.correct}
+        total={finalStats.total}
+        xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }}
       />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
+  if (done && finalStats && !showCongratulations) return null;
 
   const balloonStyle = {
     transform: [
       { translateX: xAnim },
+      { translateY: Animated.add(
+        playAreaLayout ? playAreaLayout.height / 2 - BALLOON_SIZE / 2 : 0,
+        yBobAnim,
+      ) },
       { scale: scaleAnim },
     ],
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <TouchableOpacity
-        onPress={handleBack}
-        style={styles.backChip}
-      >
-        <LinearGradient
-          colors={['#1E293B', '#0F172A']}
-          style={styles.backChipGradient}
-        >
-          <Text style={styles.backChipText}>← Back</Text>
-        </LinearGradient>
+      <LinearGradient colors={['#F97316', '#FB923C', '#FDBA74', '#FEF3C7']} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+
+      <TouchableOpacity onPress={handleBack} style={styles.backButton} activeOpacity={0.85}>
+        <View style={styles.backButtonInner}>
+          <Text style={styles.backButtonText}>← Back</Text>
+        </View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>🎈 Moving Balloon Tap 🎈</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Balloon Carnival</Text>
+        <Text style={styles.subtitle}>Track and tap the floating balloon!</Text>
         <View style={styles.statsRow}>
-          <View style={styles.statBadge}>
+          <View style={styles.statPill}>
             <Text style={styles.statLabel}>Round</Text>
             <Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text>
           </View>
-          <View style={[styles.statBadge, styles.hitBadge]}>
-            <Text style={styles.statLabel}>🎯 Hits</Text>
+          <View style={[styles.statPill, styles.hitPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} />
             <Text style={styles.statValue}>{hits}</Text>
           </View>
         </View>
-        <Text style={styles.helper}>
-          Watch the slow balloon and tap it before it reaches the other side! ✨
-        </Text>
       </View>
 
       <Pressable
-        style={styles.playArea}
+        style={[styles.playArea, missFlash && styles.playAreaMiss]}
         onLayout={handlePlayAreaLayout}
         onPress={handlePlayAreaPress}
         disabled={!roundActive || done}
       >
-        <LinearGradient
-          colors={['#F0FDF4', '#DCFCE7', '#BBF7D0']}
-          style={StyleSheet.absoluteFillObject}
-        />
+        <LinearGradient colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.05)', 'rgba(254,243,199,0.2)']} style={StyleSheet.absoluteFillObject} />
+
+        <Cloud style={{ top: '12%', left: '5%', opacity: 0.7 }} />
+        <Cloud style={{ top: '22%', right: '8%', opacity: 0.5, transform: [{ scale: 0.8 }] }} />
+        <Cloud style={{ top: '55%', left: '15%', opacity: 0.35, transform: [{ scale: 0.6 }] }} />
+
+        {/* Flight path guide */}
+        <View pointerEvents="none" style={styles.flightPath}>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <View key={i} style={[styles.pathDot, { left: `${8 + i * 7.5}%` }]} />
+          ))}
+        </View>
+
         <Animated.View pointerEvents="none" style={[styles.balloonWrapper, balloonStyle]}>
-          <View style={styles.balloonHitArea}>
-            <LinearGradient
-              colors={['#F97316', '#EA580C', '#DC2626']}
-              style={styles.balloon}
-            >
-              <Text style={{ fontSize: 52 }}>🎈</Text>
-              <View style={styles.balloonGlow} />
+          <View style={styles.balloonColumn}>
+            <LinearGradient colors={balloonColor.body as [string, string]} style={styles.balloon}>
+              <View style={styles.balloonShine} />
+              <View style={styles.balloonShineSmall} />
             </LinearGradient>
+            <View style={[styles.balloonString, { backgroundColor: balloonColor.string }]} />
+            <View style={[styles.balloonKnot, { backgroundColor: balloonColor.string }]} />
           </View>
         </Animated.View>
+
+        {roundActive && <TimeBar progress={timeProgress} />}
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color={balloonColor.body[0]} count={16} size={9} />
       </Pressable>
 
-      <View style={styles.footerBox}>
-        <LinearGradient
-          colors={['#FFFFFF', '#FEF3C7']}
-          style={styles.footerGradient}
-        >
-          <Text style={styles.footerMain}>
-            Skills: hand–eye coordination • tracking + tapping • timing control
-          </Text>
-          <Text style={styles.footerSub}>
-            Let the child visually follow the moving balloon and tap when ready.
-          </Text>
-        </LinearGradient>
+      <View style={styles.footer}>
+        <Text style={styles.footerMain}>Follow the balloon with your eyes, then tap!</Text>
+        <Text style={styles.footerSub}>It moves slowly — you can do it 🎈</Text>
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ECFEFF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
+  container: { flex: 1, backgroundColor: '#F97316' },
+  backButton: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backButtonInner: {
+    paddingHorizontal: 18, paddingVertical: 10,
+    backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)', borderRadius: 24,
   },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
+  backButtonText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16, marginBottom: 10 },
+  title: { fontSize: 28, fontWeight: '900', color: '#fff', textShadowColor: 'rgba(0,0,0,0.25)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 },
+  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.9)', fontWeight: '600', marginTop: 4, marginBottom: 12 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.18)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+    paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20,
   },
-  backChipGradient: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 100,
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  backButtonGradient: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 16,
-    letterSpacing: 0.5,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: '#78350F',
-    marginBottom: 12,
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
-  statBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  hitBadge: {
-    backgroundColor: '#FEF3C7',
-  },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#64748B',
-    marginBottom: 4,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#0F172A',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 15,
-    color: '#92400E',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-    fontWeight: '600',
-  },
+  hitPill: { backgroundColor: 'rgba(251,191,36,0.25)', borderColor: 'rgba(251,191,36,0.45)' },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.75)', fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 20, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
   playArea: {
-    flex: 1,
-    justifyContent: 'center',
-    borderRadius: 24,
-    overflow: 'hidden',
-    marginHorizontal: 8,
-    borderWidth: 3,
-    borderColor: '#A7F3D0',
+    flex: 1, marginHorizontal: 14, marginBottom: 8,
+    borderRadius: 28, overflow: 'hidden',
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)',
+    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 8,
   },
-  balloonWrapper: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
-  },
-  balloonHitArea: {
-    padding: 12,
-  },
+  playAreaMiss: { borderColor: 'rgba(239,68,68,0.6)' },
+  cloud: { position: 'absolute', width: 130, height: 44 },
+  cloudPuff: { position: 'absolute', backgroundColor: 'rgba(255,255,255,0.55)', borderRadius: 999 },
+  flightPath: { position: 'absolute', top: '50%', left: 0, right: 0, height: 2, marginTop: -1 },
+  pathDot: { position: 'absolute', width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.35)', top: -2 },
+  balloonWrapper: { position: 'absolute', top: 0, left: 0 },
+  balloonColumn: { alignItems: 'center' },
   balloon: {
-    width: BALLOON_SIZE,
-    height: BALLOON_SIZE,
-    borderRadius: BALLOON_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#F97316',
-    shadowOpacity: 0.5,
-    shadowRadius: 25,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 12,
+    width: BALLOON_SIZE, height: BALLOON_SIZE * 1.15, borderRadius: BALLOON_SIZE * 0.55,
+    shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 12,
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)',
   },
-  balloonGlow: {
-    position: 'absolute',
-    width: '40%',
-    height: '40%',
-    borderRadius: 999,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    top: '20%',
-    left: '30%',
+  balloonShine: {
+    position: 'absolute', top: '15%', left: '18%', width: '32%', height: '22%',
+    borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.55)', transform: [{ rotate: '-25deg' }],
   },
-  footerBox: {
-    marginBottom: 20,
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
+  balloonShineSmall: {
+    position: 'absolute', bottom: '28%', right: '22%', width: '12%', height: '8%',
+    borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.35)',
   },
-  footerGradient: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+  balloonString: { width: 2, height: 36, marginTop: -2 },
+  balloonKnot: { width: 8, height: 8, borderRadius: 4, marginTop: -2 },
+  timeBarTrack: {
+    position: 'absolute', bottom: 14, left: 20, right: 20, height: 8,
+    backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: 999, overflow: 'hidden',
   },
-  footerMain: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#78350F',
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#92400E',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#475569',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  savedText: {
-    color: '#22C55E',
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
+  timeBarFill: { height: '100%', backgroundColor: 'rgba(255,255,255,0.75)', borderRadius: 999 },
+  footer: { alignItems: 'center', paddingBottom: 20, paddingHorizontal: 20 },
+  footerMain: { fontSize: 15, fontWeight: '800', color: 'rgba(255,255,255,0.95)', textAlign: 'center' },
+  footerSub: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 4, textAlign: 'center' },
 });
 
 export default MovingTargetTapGame;

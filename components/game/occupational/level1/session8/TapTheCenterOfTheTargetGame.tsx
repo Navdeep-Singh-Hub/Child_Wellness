@@ -1,854 +1,246 @@
+/**
+ * OT Level 1 · Session 8 · Game 2 — Tap The Center Of The Target
+ * Theme: "Bullseye Arena" — hit the glowing bullseye core.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import { SparkleBurst } from '@/components/game/FX';
+import { SESSION8_PACING } from '@/components/game/occupational/level1/session8/session8Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Animated,
-    Easing,
-    LayoutChangeEvent,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+const P = SESSION8_PACING;
+const TOTAL_ROUNDS = 10;
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
-const TOTAL_ROUNDS = 12;
-const TARGET_SIZE = 200; // Medium-sized circle
-const CENTER_SIZE = 50; // Small inner dot (center area)
-const CENTER_RADIUS = CENTER_SIZE / 2;
-const TARGET_RADIUS = TARGET_SIZE / 2;
-const EDGE_ZONE = TARGET_RADIUS - CENTER_RADIUS; // Area between center and edge
+const STAR_ICON = require('@/assets/icons/star.png');
+const T = P.centerTarget;
 
 type TapResult = 'center' | 'edge' | 'miss';
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.55 });
+          ref.current = sound;
+        }
+        await ref.current.replayAsync();
+      } catch { /* noop */ }
+    })();
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
 
 const TapTheCenterOfTheTargetGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
+  const playSuccess = useSound(SUCCESS_SOUND);
+  const playError = useSound(ERROR_SOUND);
 
   const [round, setRound] = useState(1);
   const [centerTaps, setCenterTaps] = useState(0);
   const [edgeTaps, setEdgeTaps] = useState(0);
-  const [misses, setMisses] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
-  const [roundActive, setRoundActive] = useState(false);
-  const [targetPosition, setTargetPosition] = useState<{ x: number; y: number } | null>(null);
-  const [lastResult, setLastResult] = useState<TapResult | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
+  const [targetPos, setTargetPos] = useState<{ x: number; y: number } | null>(null);
+  const [sparkleKey, setSparkleKey] = useState(0);
 
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playError = useSoundEffect(ERROR_SOUND);
-
-  const targetScale = useRef(new Animated.Value(1)).current;
-  const centerGlow = useRef(new Animated.Value(0)).current;
-  const feedbackOpacity = useRef(new Animated.Value(0)).current;
-
-  const targetRef = useRef<View>(null);
-  const [targetLayout, setTargetLayout] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const roundActiveRef = useRef(true);
+  const doneRef = useRef(false);
   const centerTapsRef = useRef(0);
+  const edgeTapsRef = useRef(0);
   const roundRef = useRef(1);
-  const roundActiveRef = useRef(false);
+  const layoutRef = useRef<{ w: number; h: number } | null>(null);
 
-  // Keep refs in sync
-  useEffect(() => {
-    centerTapsRef.current = centerTaps;
-  }, [centerTaps]);
+  useEffect(() => { roundRef.current = round; }, [round]);
+
+  const targetScale = useSharedValue(1);
+  const coreGlow = useSharedValue(0.4);
+
+  const endGame = useCallback((finalCenter: number) => {
+    const total = TOTAL_ROUNDS;
+    const xp = finalCenter * 15 + edgeTapsRef.current * 5;
+    setFinalStats({ correct: finalCenter, total, xp });
+    setDone(true);
+    doneRef.current = true;
+    setShowCongratulations(true);
+    speakTTS('Bullseye champion!', 0.78);
+    recordGame(xp).then(() =>
+      logGameAndAward({ type: 'tapTheCenterOfTheTarget', correct: finalCenter, total, accuracy: (finalCenter / total) * 100, xpAwarded: xp,
+        skillTags: ['spatial-precision', 'proprioceptive-feedback', 'accuracy-grading'] }),
+    ).then(() => router.setParams({ refreshStats: Date.now().toString() })).catch(console.error);
+  }, [router]);
+
+  const startRound = useCallback(() => {
+    const margin = 18;
+    setTargetPos({ x: margin + Math.random() * (100 - margin * 2), y: margin + Math.random() * (100 - margin * 2) });
+    roundActiveRef.current = true;
+    targetScale.value = 0;
+    targetScale.value = withSequence(withSpring(1.08, { damping: 10 }), withSpring(1, { damping: 14 }));
+    cancelAnimation(coreGlow);
+    coreGlow.value = withRepeat(withSequence(withTiming(1, { duration: 700 }), withTiming(0.35, { duration: 700 })), -1, true);
+  }, []);
 
   useEffect(() => {
-    roundRef.current = round;
+    if (doneRef.current) return;
+    startRound();
   }, [round]);
 
   useEffect(() => {
-    roundActiveRef.current = roundActive;
-  }, [roundActive]);
-
-  // End game function
-  const endGame = useCallback(
-    async (finalCenterTaps: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalCenterTaps * 15 + edgeTaps * 5; // 15 XP for center, 5 for edge
-      const accuracy = (finalCenterTaps / total) * 100;
-
-      // Set all states together FIRST (like CatchTheBouncingStar)
-      setFinalStats({ correct: finalCenterTaps, total, xp });
-      setDone(true);
-      setRoundActive(false);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'tapTheCenterOfTheTarget' as any,
-          correct: finalCenterTaps,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['spatial-precision', 'proprioceptive-feedback', 'accuracy-grading'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log tap the center of the target game:', e);
-      }
-    },
-    [router, edgeTaps],
-  );
-
-  // Generate random target position
-  const generateTargetPosition = useCallback((): { x: number; y: number } => {
-    const margin = 15; // percentage margin from edges
-    const x = margin + Math.random() * (100 - margin * 2);
-    const y = margin + Math.random() * (100 - margin * 2);
-    return { x, y };
+    speakTTS('Tap the center of the bullseye!', 0.78);
+    return () => { stopAllSpeech(); cleanupSounds(); };
   }, []);
 
-  // Start a new round
-  const startRound = useCallback(() => {
-    const position = generateTargetPosition();
-    setTargetPosition(position);
-    setRoundActive(true);
-    roundActiveRef.current = true;
-    setLastResult(null);
-    setShowFeedback(false);
-    feedbackOpacity.setValue(0);
+  const calcResult = (lx: number, ly: number): TapResult => {
+    const layout = layoutRef.current;
+    if (!layout) return 'miss';
+    const cx = layout.w / 2;
+    const cy = layout.h / 2;
+    const dist = Math.hypot(lx - cx, ly - cy);
+    if (dist <= T.centerHit) return 'center';
+    if (dist <= T.outer / 2 + 10) return 'edge';
+    return 'miss';
+  };
 
-    // Animate target appearance
-    targetScale.setValue(0);
-    Animated.sequence([
-      Animated.timing(targetScale, {
-        toValue: 1.1,
-        duration: 300,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: true,
-      }),
-      Animated.timing(targetScale, {
-        toValue: 1,
-        duration: 200,
-        easing: Easing.in(Easing.ease),
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Pulse center dot
-    centerGlow.setValue(0);
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(centerGlow, {
-          toValue: 1,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(centerGlow, {
-          toValue: 0,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
-  }, [generateTargetPosition, targetScale, centerGlow, feedbackOpacity]);
-
-  // Calculate tap result based on distance from center
-  const calculateTapResult = useCallback(
-    (tapX: number, tapY: number, centerX: number, centerY: number): TapResult => {
-      const dx = tapX - centerX;
-      const dy = tapY - centerY;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      // Very forgiving thresholds - make it easy to tap center
-      // Center dot is 50px, so we'll accept taps within 80px of center (very generous)
-      const centerThreshold = 80; // Very forgiving - much larger than center dot
-      const edgeThreshold = TARGET_RADIUS + 20; // 100 + 20 = 120px
-
-      if (distance <= centerThreshold) {
-        return 'center';
-      } else if (distance <= edgeThreshold) {
-        return 'edge';
-      } else {
-        return 'miss';
-      }
-    },
-    [],
-  );
-
-  // Handle center dot tap (guaranteed center tap)
-  const handleCenterTap = useCallback(
-    async () => {
-      if (!roundActiveRef.current || done || !targetLayout) return;
-      
-      setLastResult('center');
-      setShowFeedback(true);
-      setRoundActive(false);
-      roundActiveRef.current = false;
-      setCenterTaps((c) => c + 1);
-      
-      // Stop center glow
-      centerGlow.stopAnimation();
-      
-      // Success animation
-      Animated.sequence([
-        Animated.timing(targetScale, {
-          toValue: 1.2,
-          duration: 150,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(targetScale, {
-          toValue: 1,
-          duration: 150,
-          easing: Easing.in(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      Animated.timing(feedbackOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-
-      try {
-        await playSuccess();
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        speakTTS('Perfect center!', 0.78 );
-      } catch {}
-
-      // Next round or finish
-      if (roundRef.current >= TOTAL_ROUNDS) {
+  const advanceRound = useCallback((result: TapResult) => {
+    if (result === 'center') {
+      setSparkleKey(Date.now());
+      playSuccess();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      setCenterTaps((prev) => {
+        const next = prev + 1;
+        centerTapsRef.current = next;
         setTimeout(() => {
-          endGame(centerTapsRef.current + 1);
-        }, 1500);
-      } else {
-        setTimeout(() => {
-          setShowFeedback(false);
-          feedbackOpacity.setValue(0);
-          setRound((r) => r + 1);
-          setTimeout(() => {
-            startRound();
-          }, 300);
-        }, 1500);
-      }
-    },
-    [done, targetLayout, endGame, playSuccess, targetScale, feedbackOpacity, centerGlow, startRound],
-  );
-
-  // Handle target tap
-  const handleTargetTap = useCallback(
-    async (event: any) => {
-      if (!roundActiveRef.current || done || !targetLayout) return;
-
-      const { locationX, locationY } = event.nativeEvent;
-      const centerX = targetLayout.width / 2;
-      const centerY = targetLayout.height / 2;
-
-      const result = calculateTapResult(locationX, locationY, centerX, centerY);
-      setLastResult(result);
-      setShowFeedback(true);
-      setRoundActive(false);
-      roundActiveRef.current = false;
-
-      // Stop center glow animation
-      centerGlow.stopAnimation();
-
-      if (result === 'center') {
-        // Center tap - perfect!
-        setCenterTaps((c) => c + 1);
-        Animated.sequence([
-          Animated.timing(targetScale, {
-            toValue: 1.2,
-            duration: 150,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(targetScale, {
-            toValue: 1,
-            duration: 150,
-            easing: Easing.in(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]).start();
-
-        Animated.timing(feedbackOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
-
-        try {
-          await playSuccess();
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          speakTTS('Perfect center!', 0.78 );
-        } catch {}
-      } else if (result === 'edge') {
-        // Edge tap - close but not center
-        setEdgeTaps((e) => e + 1);
-        Animated.sequence([
-          Animated.timing(targetScale, {
-            toValue: 0.95,
-            duration: 100,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(targetScale, {
-            toValue: 1,
-            duration: 100,
-            easing: Easing.in(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]).start();
-
-        Animated.timing(feedbackOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
-
-        try {
-          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          speakTTS('Close! Try the center.', 0.78 );
-        } catch {}
-      } else {
-        // Miss - outside target
-        setMisses((m) => m + 1);
-        Animated.sequence([
-          Animated.timing(targetScale, {
-            toValue: 0.9,
-            duration: 100,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(targetScale, {
-            toValue: 1,
-            duration: 100,
-            easing: Easing.in(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]).start();
-
-        Animated.timing(feedbackOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
-
-        try {
-          await playError();
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          speakTTS('Try again!', 0.78 );
-        } catch {}
-        
-        // Miss - don't advance round, just reset and try again
-        setTimeout(() => {
-          setShowFeedback(false);
-          feedbackOpacity.setValue(0);
-          setRoundActive(true);
-          roundActiveRef.current = true;
-          // Restart center glow animation
-          centerGlow.setValue(0);
-          Animated.loop(
-            Animated.sequence([
-              Animated.timing(centerGlow, {
-                toValue: 1,
-                duration: 1000,
-                easing: Easing.inOut(Easing.ease),
-                useNativeDriver: true,
-              }),
-              Animated.timing(centerGlow, {
-                toValue: 0,
-                duration: 1000,
-                easing: Easing.inOut(Easing.ease),
-                useNativeDriver: true,
-              }),
-            ]),
-          ).start();
-        }, 1500);
-        return; // Don't proceed to next round logic
-      }
-
-      // Next round or finish (only for center or edge taps)
-      if (roundRef.current >= TOTAL_ROUNDS) {
-        setTimeout(() => {
-          endGame(result === 'center' ? centerTapsRef.current + 1 : centerTapsRef.current);
-        }, 1500);
-      } else {
-        setTimeout(() => {
-          setShowFeedback(false);
-          feedbackOpacity.setValue(0);
-          setRound((r) => r + 1);
-          setTimeout(() => {
-            startRound();
-          }, 300);
-        }, 1500);
-      }
-    },
-    [done, targetLayout, startRound, endGame, playSuccess, playError, targetScale, centerGlow, feedbackOpacity, calculateTapResult],
-  );
-
-  // Handle target layout
-  const handleTargetLayout = useCallback((event: LayoutChangeEvent) => {
-    const { x, y, width, height } = event.nativeEvent.layout;
-    setTargetLayout({ x, y, width, height });
-  }, []);
-
-  // Start first round
-  useEffect(() => {
-    if (!done) {
-      startRound();
+          if (roundRef.current >= TOTAL_ROUNDS) endGame(next);
+          else setRound((r) => r + 1);
+        }, P.nextRoundDelayMs);
+        return next;
+      });
+    } else if (result === 'edge') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      speakTTS('Close! Aim for the center.', 0.78).catch(() => {});
+      setEdgeTaps((prev) => { edgeTapsRef.current = prev + 1; return prev + 1; });
+      setTimeout(() => {
+        if (roundRef.current >= TOTAL_ROUNDS) endGame(centerTapsRef.current);
+        else setRound((r) => r + 1);
+      }, P.nextRoundDelayMs);
     }
-  }, []);
+  }, [endGame, playSuccess]);
 
-  useEffect(() => {
-    if (!done) {
-      try {
-        speakTTS('Tap the center of the target!', 0.78 );
-      } catch {}
+  const handleTap = useCallback((e: { nativeEvent: { locationX: number; locationY: number } }) => {
+    if (!roundActiveRef.current || doneRef.current) return;
+    const result = calcResult(e.nativeEvent.locationX, e.nativeEvent.locationY);
+    if (result === 'miss') {
+      playError();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      speakTTS('Aim for the center dot!', 0.78).catch(() => {});
+      targetScale.value = withSequence(withTiming(0.92, { duration: 80 }), withSpring(1, { damping: 12 }));
+      return;
     }
-    return () => {
-      stopAllSpeech();
-      cleanupSounds();
-    };
+    roundActiveRef.current = false;
+    cancelAnimation(coreGlow);
+    targetScale.value = withSequence(withSpring(1.15, { damping: 8 }), withSpring(1, { damping: 14 }));
+    advanceRound(result);
+  }, [advanceRound, playError]);
+
+  const handleCenterTap = useCallback(() => {
+    if (!roundActiveRef.current || doneRef.current) return;
+    roundActiveRef.current = false;
+    cancelAnimation(coreGlow);
+    targetScale.value = withSequence(withSpring(1.15, { damping: 8 }), withSpring(1, { damping: 14 }));
+    advanceRound('center');
+  }, [advanceRound]);
+
+  const onLayout = useCallback((e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    layoutRef.current = { w: width, h: height };
   }, []);
 
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
+  const targetAnimStyle = useAnimatedStyle(() => ({ transform: [{ scale: targetScale.value }] }));
+  const coreAnimStyle = useAnimatedStyle(() => ({ opacity: coreGlow.value }));
 
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
   if (showCongratulations && done && finalStats) {
     return (
-      <CongratulationsScreen
-        message="Precision Master!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
+      <CongratulationsScreen message="Bullseye King!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
-
-  const centerGlowOpacity = centerGlow.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.3, 0.8],
-  });
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#450A0A', '#7F1D1D', '#991B1B', '#B45309']} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Tap The Center Of The Target</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 🎯 Center: {centerTaps} • Edge: {edgeTaps} • Miss: {misses}
-        </Text>
-        <Text style={styles.helper}>
-          Tap the center dot, not the outer ring!
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>🏹 Bullseye Arena</Text>
+        <Text style={styles.subtitle}>Hit the glowing center, not the outer ring</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabel}>Round</Text><Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} /><Text style={styles.statValue}>{centerTaps}</Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.playArea}>
-        {targetPosition && (
-          <Animated.View
-            style={[
-              styles.targetContainer,
-              {
-                left: `${targetPosition.x}%`,
-                top: `${targetPosition.y}%`,
-                transform: [{ scale: targetScale }],
-              },
-            ]}
-          >
-            <View
-              ref={targetRef}
-              onLayout={handleTargetLayout}
-              style={styles.targetWrapper}
-            >
-              <View style={styles.target}>
-                {/* Outer ring - always miss if clicked (center dot handles center taps) */}
-                <Pressable
-                  onPress={async (e) => {
-                    if (!roundActiveRef.current || done || !targetLayout) return;
-                    
-                    // Check if tap is in center area
-                    const { locationX, locationY } = e.nativeEvent;
-                    const centerX = targetLayout.width / 2;
-                    const centerY = targetLayout.height / 2;
-                    const dx = locationX - centerX;
-                    const dy = locationY - centerY;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    // Center dot hit area is 110px (55px radius)
-                    // If tap is in center area, don't handle here (let center dot handle it)
-                    if (distance <= 55) {
-                      return; // Center dot will handle this
-                    }
-                    
-                    // Otherwise, always show miss
-                    setLastResult('miss');
-                    setShowFeedback(true);
-                    setRoundActive(false);
-                    roundActiveRef.current = false;
-                    setMisses((m) => m + 1);
-                    
-                    // Stop center glow
-                    centerGlow.stopAnimation();
-                    
-                    // Miss animation
-                    Animated.sequence([
-                      Animated.timing(targetScale, {
-                        toValue: 0.9,
-                        duration: 100,
-                        easing: Easing.out(Easing.ease),
-                        useNativeDriver: true,
-                      }),
-                      Animated.timing(targetScale, {
-                        toValue: 1,
-                        duration: 100,
-                        easing: Easing.in(Easing.ease),
-                        useNativeDriver: true,
-                      }),
-                    ]).start();
-
-                    Animated.timing(feedbackOpacity, {
-                      toValue: 1,
-                      duration: 200,
-                      useNativeDriver: true,
-                    }).start();
-
-                    try {
-                      await playError();
-                      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                      speakTTS('Try the center dot!', 0.78 );
-                    } catch {}
-
-                    // Miss - don't advance round, just reset and try again
-                    setTimeout(() => {
-                      setShowFeedback(false);
-                      feedbackOpacity.setValue(0);
-                      setRoundActive(true);
-                      roundActiveRef.current = true;
-                      // Restart center glow animation
-                      centerGlow.setValue(0);
-                      Animated.loop(
-                        Animated.sequence([
-                          Animated.timing(centerGlow, {
-                            toValue: 1,
-                            duration: 1000,
-                            easing: Easing.inOut(Easing.ease),
-                            useNativeDriver: true,
-                          }),
-                          Animated.timing(centerGlow, {
-                            toValue: 0,
-                            duration: 1000,
-                            easing: Easing.inOut(Easing.ease),
-                            useNativeDriver: true,
-                          }),
-                        ]),
-                      ).start();
-                    }, 1500);
-                  }}
-                  style={styles.outerRingPressable}
-                  disabled={!roundActive || done}
-                >
-                  <View style={styles.outerRing} />
-                </Pressable>
-                
-                {/* Center dot - separate tapable area */}
-                <Pressable
-                  onPress={handleCenterTap}
-                  style={styles.centerDotPressable}
-                  disabled={!roundActive || done}
-                >
-                  <Animated.View
-                    style={[
-                      styles.centerDot,
-                      {
-                        opacity: centerGlowOpacity,
-                      },
-                    ]}
-                  />
-                </Pressable>
+        {targetPos && (
+          <Animated.View style={[styles.targetWrap, { left: `${targetPos.x}%`, top: `${targetPos.y}%` }, targetAnimStyle]}>
+            <Pressable onPress={handleTap} onLayout={onLayout} style={styles.targetPress}>
+              <View style={styles.outerRing}>
+                <LinearGradient colors={['rgba(254,243,199,0.15)', 'rgba(251,191,36,0.05)']} style={StyleSheet.absoluteFillObject} />
               </View>
-            </View>
+              <Pressable onPress={handleCenterTap} style={styles.coreHit} hitSlop={16}>
+                <Animated.View style={[styles.core, coreAnimStyle]}>
+                  <LinearGradient colors={['#FDE047', '#F59E0B', '#B45309']} style={styles.coreGrad} />
+                </Animated.View>
+              </Pressable>
+            </Pressable>
           </Animated.View>
         )}
-
-        {/* Feedback indicator */}
-        {showFeedback && lastResult && (
-          <Animated.View
-            style={[
-              styles.feedbackContainer,
-              {
-                opacity: feedbackOpacity,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.feedbackBox,
-                {
-                  backgroundColor:
-                    lastResult === 'center'
-                      ? '#22C55E'
-                      : lastResult === 'edge'
-                      ? '#F59E0B'
-                      : '#EF4444',
-                },
-              ]}
-            >
-              <Text style={styles.feedbackText}>
-                {lastResult === 'center'
-                  ? '✔ Center tap!'
-                  : lastResult === 'edge'
-                  ? '⚠ Edge tap'
-                  : '✗ Miss'}
-              </Text>
-            </View>
-          </Animated.View>
-        )}
-      </View>
-
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: spatial precision • proprioceptive feedback • accuracy grading
-        </Text>
-        <Text style={styles.footerSub}>
-          Tap the center dot for perfect score! Edge taps count less, misses don't count.
-        </Text>
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#FDE047" count={14} size={8} />
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    position: 'relative',
-    marginBottom: 16,
-  },
-  targetContainer: {
-    position: 'absolute',
-    transform: [{ translateX: -TARGET_SIZE / 2 }, { translateY: -TARGET_SIZE / 2 }],
-  },
-  targetWrapper: {
-    width: TARGET_SIZE,
-    height: TARGET_SIZE,
-  },
-  target: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  outerRingPressable: {
-    position: 'absolute',
-    width: TARGET_SIZE,
-    height: TARGET_SIZE,
-  },
-  outerRing: {
-    position: 'absolute',
-    width: TARGET_SIZE,
-    height: TARGET_SIZE,
-    borderRadius: TARGET_RADIUS,
-    borderWidth: 4,
-    borderColor: '#3B82F6',
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-  },
-  centerDotPressable: {
-    position: 'absolute',
-    width: CENTER_SIZE + 60, // Large hit area (50 + 60 = 110px) - very forgiving
-    height: CENTER_SIZE + 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-    left: '50%',
-    top: '50%',
-    transform: [{ translateX: -(CENTER_SIZE + 60) / 2 }, { translateY: -(CENTER_SIZE + 60) / 2 }],
-    zIndex: 10, // Above outer ring
-  },
-  centerDot: {
-    width: CENTER_SIZE,
-    height: CENTER_SIZE,
-    borderRadius: CENTER_RADIUS,
-    backgroundColor: '#EF4444',
-    shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 6,
-  },
-  feedbackContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -80 }, { translateY: -25 }],
-  },
-  feedbackBox: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  feedbackText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#64748B',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  savedText: {
-    marginTop: 16,
-    fontSize: 14,
-    color: '#22C55E',
-    fontWeight: '600',
-  },
+  container: { flex: 1 },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)' },
+  backText: { color: '#FEF3C7', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  title: { fontSize: 28, fontWeight: '900', color: '#FEF3C7' },
+  subtitle: { fontSize: 14, color: 'rgba(254,243,199,0.8)', fontWeight: '600', marginTop: 4, marginBottom: 14 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.15)', borderColor: 'rgba(251,191,36,0.35)' },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 20, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  playArea: { flex: 1 },
+  targetWrap: { position: 'absolute', marginLeft: -T.outer / 2, marginTop: -T.outer / 2 },
+  targetPress: { width: T.outer, height: T.outer, justifyContent: 'center', alignItems: 'center' },
+  outerRing: { position: 'absolute', width: T.outer, height: T.outer, borderRadius: T.outer / 2, borderWidth: 5, borderColor: '#FDE047', overflow: 'hidden' },
+  coreHit: { width: T.center + 50, height: T.center + 50, justifyContent: 'center', alignItems: 'center', zIndex: 2 },
+  core: { width: T.center, height: T.center, borderRadius: T.center / 2, overflow: 'hidden', shadowColor: '#F59E0B', shadowOpacity: 0.8, shadowRadius: 14, elevation: 10 },
+  coreGrad: { flex: 1, borderRadius: T.center / 2 },
 });
 
 export default TapTheCenterOfTheTargetGame;
-

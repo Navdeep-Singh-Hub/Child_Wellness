@@ -1,24 +1,22 @@
-import CongratulationsScreen from '@/components/game/CongratulationsScreen';
-import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
-import { logGameAndAward } from '@/utils/api';
-import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import CongratulationsScreen from "@/components/game/CongratulationsScreen";
+import RoundSuccessAnimation from "@/components/game/RoundSuccessAnimation";
+import { logGameAndAward } from "@/utils/api";
+import { cleanupSounds, stopAllSpeech } from "@/utils/soundPlayer";
+import { DEFAULT_TTS_RATE, speak as speakTTS, stopTTS } from "@/utils/tts";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Animated,
-  Easing,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+    Animated,
+    Easing,
+    Pressable,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    useWindowDimensions,
+    View
+} from "react-native";
 
 type Props = {
   onBack: () => void;
@@ -28,12 +26,12 @@ type Props = {
 
 const AVATAR_SIZE = 120;
 const OBJECT_SIZE = 100;
-type LookDirection = 'left' | 'right';
+type LookDirection = "left" | "right";
 
 let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
 function clearScheduledSpeech() {
-  scheduledSpeechTimers.forEach(t => clearTimeout(t));
+  scheduledSpeechTimers.forEach((t) => clearTimeout(t));
   scheduledSpeechTimers = [];
   try {
     stopTTS();
@@ -45,16 +43,16 @@ function speak(text: string, rate = DEFAULT_TTS_RATE) {
     clearScheduledSpeech();
     speakTTS(text, rate);
   } catch (e) {
-    console.warn('speak error', e);
+    console.warn("speak error", e);
   }
 }
 
 const objects = [
-  { emoji: '🎈', name: 'toy', color: '#EF4444' },
-  { emoji: '🧸', name: 'toy', color: '#F59E0B' },
-  { emoji: '🚗', name: 'toy', color: '#3B82F6' },
-  { emoji: '⚽', name: 'toy', color: '#22C55E' },
-  { emoji: '🎨', name: 'toy', color: '#8B5CF6' },
+  { emoji: "🎈", name: "toy", color: "#EF4444" },
+  { emoji: "🧸", name: "toy", color: "#F59E0B" },
+  { emoji: "🚗", name: "toy", color: "#3B82F6" },
+  { emoji: "⚽", name: "toy", color: "#22C55E" },
+  { emoji: "🎨", name: "toy", color: "#8B5CF6" },
 ];
 
 export const FollowMyEyesGame: React.FC<Props> = ({
@@ -64,7 +62,8 @@ export const FollowMyEyesGame: React.FC<Props> = ({
 }) => {
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const [hits, setHits] = useState(0);
-  const [currentDirection, setCurrentDirection] = useState<LookDirection>('left');
+  const [currentDirection, setCurrentDirection] =
+    useState<LookDirection>("left");
   const [objectVisible, setObjectVisible] = useState(false);
   const [round, setRound] = useState(0);
   const [isLooking, setIsLooking] = useState(false);
@@ -82,14 +81,11 @@ export const FollowMyEyesGame: React.FC<Props> = ({
   const objectScale = useRef(new Animated.Value(0)).current;
   const objectOpacity = useRef(new Animated.Value(0)).current;
   const objectBounce = useRef(new Animated.Value(1)).current;
-  const gazeLineOpacity = useRef(new Animated.Value(0)).current;
-  const gazeLineScale = useRef(new Animated.Value(0)).current;
-
   const [currentObject, setCurrentObject] = useState(0);
 
   useEffect(() => {
     startRound();
-    speak('Look… where am I looking?');
+    speak("Look… where am I looking?");
     return () => {
       clearScheduledSpeech();
     };
@@ -103,7 +99,7 @@ export const FollowMyEyesGame: React.FC<Props> = ({
 
   const finishGame = useCallback(async () => {
     if (gameFinished) return;
-    
+
     const stats = {
       totalTaps: requiredTaps || 5,
       correctTaps: hits,
@@ -111,17 +107,17 @@ export const FollowMyEyesGame: React.FC<Props> = ({
     };
     setFinalStats(stats);
     setGameFinished(true);
-    speak('Amazing! You followed my gaze perfectly!');
+    speak("Amazing! You followed my gaze perfectly!");
 
     try {
       const xpAwarded = hits * 10;
       const result = await logGameAndAward({
-        type: 'follow-my-point',
+        type: "follow-my-point",
         correct: hits,
         total: requiredTaps || 5,
         accuracy: stats.accuracy,
         xpAwarded,
-        skillTags: ['gaze-following', 'joint-attention', 'social-cues'],
+        skillTags: ["gaze-following", "joint-attention", "social-cues"],
         meta: {
           totalTaps: requiredTaps || 5,
           correctTaps: hits,
@@ -129,7 +125,7 @@ export const FollowMyEyesGame: React.FC<Props> = ({
       });
       setLogTimestamp(result?.last?.at ?? null);
     } catch (e) {
-      console.error('Failed to save game:', e);
+      console.error("Failed to save game:", e);
     }
   }, [hits, requiredTaps, gameFinished]);
 
@@ -137,15 +133,13 @@ export const FollowMyEyesGame: React.FC<Props> = ({
     setRound((prev) => prev + 1);
     setObjectVisible(false);
     setIsLooking(false);
-    
+
     objectScale.setValue(0);
     objectOpacity.setValue(0);
     objectBounce.setValue(1);
-    gazeLineOpacity.setValue(0);
-    gazeLineScale.setValue(0);
     avatarEyeX.setValue(0);
 
-    const direction: LookDirection = Math.random() > 0.5 ? 'left' : 'right';
+    const direction: LookDirection = Math.random() > 0.5 ? "left" : "right";
     setCurrentDirection(direction);
 
     const objectIndex = Math.floor(Math.random() * objects.length);
@@ -158,29 +152,14 @@ export const FollowMyEyesGame: React.FC<Props> = ({
 
   const lookAtDirection = (direction: LookDirection, objectIndex: number) => {
     setIsLooking(true);
-    
-    const eyeOffset = direction === 'left' ? -8 : 8;
+
+    const eyeOffset = direction === "left" ? -8 : 8;
     Animated.timing(avatarEyeX, {
       toValue: eyeOffset,
       duration: 400,
       easing: Easing.out(Easing.quad),
       useNativeDriver: false,
     }).start();
-
-    Animated.parallel([
-      Animated.timing(gazeLineOpacity, {
-        toValue: 0.6,
-        duration: 300,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: false,
-      }),
-      Animated.timing(gazeLineScale, {
-        toValue: 1,
-        duration: 400,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: false,
-      }),
-    ]).start();
 
     setTimeout(() => {
       showObject(direction, objectIndex);
@@ -189,7 +168,7 @@ export const FollowMyEyesGame: React.FC<Props> = ({
 
   const showObject = (direction: LookDirection, objectIndex: number) => {
     setObjectVisible(true);
-    
+
     Animated.parallel([
       Animated.spring(objectScale, {
         toValue: 1,
@@ -219,17 +198,17 @@ export const FollowMyEyesGame: React.FC<Props> = ({
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
         }),
-      ])
+      ]),
     ).start();
 
-    speak('Tap the toy!');
+    speak("Tap the toy!");
   };
 
   const handleObjectTap = () => {
     if (!objectVisible) return;
 
     setObjectVisible(false);
-    
+
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
@@ -299,15 +278,19 @@ export const FollowMyEyesGame: React.FC<Props> = ({
     );
   }
 
-  const progressDots = Array.from({ length: requiredTaps || 5 }, (_, i) => i < hits);
+  const progressDots = Array.from(
+    { length: requiredTaps || 5 },
+    (_, i) => i < hits,
+  );
   const currentObj = objects[currentObject];
-  const objectX = currentDirection === 'left' ? SCREEN_WIDTH * 0.2 : SCREEN_WIDTH * 0.8;
+  const objectX =
+    currentDirection === "left" ? SCREEN_WIDTH * 0.2 : SCREEN_WIDTH * 0.8;
   const objectY = SCREEN_HEIGHT * 0.5;
 
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
-        colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
+        colors={["#FEF3C7", "#FDE68A", "#FCD34D"]}
         style={styles.gradient}
       >
         <View style={styles.header}>
@@ -326,19 +309,23 @@ export const FollowMyEyesGame: React.FC<Props> = ({
           <View style={styles.headerText}>
             <Text style={styles.title}>Follow My Eyes</Text>
             <Text style={styles.subtitle}>
-              {isLooking ? `👀 Looking ${currentDirection}...` : 'Watch my eyes!'}
+              {isLooking
+                ? `👀 Looking ${currentDirection}...`
+                : "Watch my eyes!"}
             </Text>
           </View>
         </View>
 
         <View style={styles.playArea}>
-          <View style={[
-            styles.avatarContainer,
-            {
-              left: SCREEN_WIDTH / 2 - AVATAR_SIZE / 2,
-              top: SCREEN_HEIGHT * 0.35 - AVATAR_SIZE / 2,
-            }
-          ]}>
+          <View
+            style={[
+              styles.avatarContainer,
+              {
+                left: SCREEN_WIDTH / 2 - AVATAR_SIZE / 2,
+                top: SCREEN_HEIGHT * 0.35 - AVATAR_SIZE / 2,
+              },
+            ]}
+          >
             <Animated.View
               style={[
                 styles.avatar,
@@ -348,7 +335,7 @@ export const FollowMyEyesGame: React.FC<Props> = ({
               ]}
             >
               <LinearGradient
-                colors={['#60A5FA', '#3B82F6']}
+                colors={["#60A5FA", "#3B82F6"]}
                 style={styles.avatarGradient}
               >
                 <View style={styles.face}>
@@ -378,35 +365,10 @@ export const FollowMyEyesGame: React.FC<Props> = ({
                       </Animated.View>
                     </View>
                   </View>
-                  <View style={styles.smile} />
                 </View>
               </LinearGradient>
             </Animated.View>
           </View>
-
-          {isLooking && (
-            <Animated.View
-              style={[
-                styles.gazeLine,
-                {
-                  left: SCREEN_WIDTH / 2,
-                  top: SCREEN_HEIGHT * 0.35,
-                  width: SCREEN_WIDTH * 0.3,
-                  transform: [
-                    { 
-                      translateX: currentDirection === 'left' 
-                        ? -SCREEN_WIDTH * 0.3 
-                        : SCREEN_WIDTH * 0.3 
-                    },
-                    { scaleX: gazeLineScale },
-                  ],
-                  opacity: gazeLineOpacity,
-                },
-              ]}
-            >
-              <View style={styles.gazeLineInner} />
-            </Animated.View>
-          )}
 
           {objectVisible && (
             <Animated.View
@@ -422,9 +384,13 @@ export const FollowMyEyesGame: React.FC<Props> = ({
                 },
               ]}
             >
-              <Pressable onPress={handleObjectTap} hitSlop={30} style={styles.objectPressable}>
+              <Pressable
+                onPress={handleObjectTap}
+                hitSlop={30}
+                style={styles.objectPressable}
+              >
                 <LinearGradient
-                  colors={[currentObj.color + 'CC', currentObj.color]}
+                  colors={[currentObj.color + "CC", currentObj.color]}
                   style={styles.object}
                 >
                   <Text style={styles.objectEmoji}>{currentObj.emoji}</Text>
@@ -453,16 +419,15 @@ export const FollowMyEyesGame: React.FC<Props> = ({
             ))}
           </View>
           <Text style={styles.progressText}>
-            {hits >= (requiredTaps || 5) ? '🎊 Amazing! You did it! 🎊' : `Round ${round} • Correct: ${hits} / ${requiredTaps || 5}`}
+            {hits >= (requiredTaps || 5)
+              ? "🎊 Amazing! You did it! 🎊"
+              : `Round ${round} • Correct: ${hits} / ${requiredTaps || 5}`}
           </Text>
         </View>
       </LinearGradient>
 
       {/* Round Success Animation */}
-      <RoundSuccessAnimation
-        visible={showRoundSuccess}
-        stars={3}
-      />
+      <RoundSuccessAnimation visible={showRoundSuccess} stars={3} />
     </SafeAreaView>
   );
 };
@@ -475,26 +440,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderBottomWidth: 2,
-    borderBottomColor: '#FCD34D',
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 10,
     borderRadius: 12,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: "#FEF3C7",
   },
   backText: {
     marginLeft: 6,
     fontSize: 16,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontWeight: "700",
+    color: "#0F172A",
   },
   headerText: {
     marginLeft: 12,
@@ -502,23 +465,23 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontWeight: '900',
-    color: '#0F172A',
+    fontWeight: "900",
+    color: "#0F172A",
     letterSpacing: 0.5,
   },
   subtitle: {
     marginTop: 4,
     fontSize: 15,
-    color: '#475569',
-    fontWeight: '600',
+    color: "#475569",
+    fontWeight: "600",
   },
   playArea: {
     flex: 1,
-    position: 'relative',
-    overflow: 'visible',
+    position: "relative",
+    overflow: "visible",
   },
   avatarContainer: {
-    position: 'absolute',
+    position: "absolute",
     zIndex: 100,
     elevation: 10,
   },
@@ -530,22 +493,22 @@ const styles = StyleSheet.create({
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
     borderRadius: AVATAR_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 4,
-    borderColor: 'rgba(255, 255, 255, 0.9)',
-    shadowColor: '#3B82F6',
+    borderColor: "rgba(255, 255, 255, 0.9)",
+    shadowColor: "#3B82F6",
     shadowOpacity: 0.4,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
     elevation: 8,
   },
   face: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   eyesContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 20,
     marginBottom: 8,
   },
@@ -553,46 +516,25 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
   },
   eyeball: {
     width: 20,
     height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   pupil: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#0F172A',
-  },
-  smile: {
-    width: 30,
-    height: 15,
-    borderBottomWidth: 3,
-    borderBottomColor: '#0F172A',
-    borderRadius: 15,
-    marginTop: 4,
-  },
-  gazeLine: {
-    position: 'absolute',
-    height: 4,
-    backgroundColor: '#3B82F6',
-    borderRadius: 2,
-    zIndex: 50,
-    elevation: 5,
-  },
-  gazeLineInner: {
-    flex: 1,
-    backgroundColor: '#60A5FA',
-    borderRadius: 2,
+    backgroundColor: "#0F172A",
   },
   objectContainer: {
-    position: 'absolute',
+    position: "absolute",
     zIndex: 200,
     elevation: 15,
   },
@@ -604,11 +546,11 @@ const styles = StyleSheet.create({
     width: OBJECT_SIZE,
     height: OBJECT_SIZE,
     borderRadius: OBJECT_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 4,
-    borderColor: 'rgba(255, 255, 255, 0.9)',
-    shadowColor: '#000',
+    borderColor: "rgba(255, 255, 255, 0.9)",
+    shadowColor: "#000",
     shadowOpacity: 0.3,
     shadowRadius: 15,
     shadowOffset: { width: 0, height: 8 },
@@ -618,38 +560,38 @@ const styles = StyleSheet.create({
     fontSize: 60,
   },
   instructionBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: 100,
-    alignSelf: 'center',
+    alignSelf: "center",
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 20,
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    backgroundColor: "rgba(59, 130, 246, 0.2)",
     borderWidth: 2,
-    borderColor: '#3B82F6',
+    borderColor: "#3B82F6",
   },
   instructionText: {
-    color: '#1E40AF',
-    fontWeight: '800',
+    color: "#1E40AF",
+    fontWeight: "800",
     fontSize: 16,
   },
   footer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderTopWidth: 2,
-    borderTopColor: '#FCD34D',
+    borderTopColor: "#FCD34D",
   },
   footerText: {
     fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    fontWeight: '600',
+    color: "#475569",
+    textAlign: "center",
+    fontWeight: "600",
     marginBottom: 12,
   },
   progressRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 10,
     marginBottom: 10,
   },
@@ -657,20 +599,20 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: "#E2E8F0",
     borderWidth: 2,
-    borderColor: '#CBD5E1',
+    borderColor: "#CBD5E1",
   },
   progressDotFilled: {
-    backgroundColor: '#10B981',
-    borderColor: '#059669',
+    backgroundColor: "#10B981",
+    borderColor: "#059669",
     transform: [{ scale: 1.2 }],
   },
   progressText: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 16,
-    fontWeight: '800',
-    color: '#0F172A',
+    fontWeight: "800",
+    color: "#0F172A",
   },
   completionScroll: {
     flexGrow: 1,
@@ -678,9 +620,8 @@ const styles = StyleSheet.create({
   },
   completionContent: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 24,
   },
 });
-

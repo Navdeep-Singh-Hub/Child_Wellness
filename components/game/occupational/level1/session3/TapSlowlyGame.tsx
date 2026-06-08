@@ -1,3 +1,7 @@
+/**
+ * OT Level 1 · Session 3 · Game 1 — Tap Slowly
+ * Theme: "Moonlight Pulse" — wait for the calm glow, then tap.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
 import { SESSION3_PACING } from '@/components/game/occupational/level1/session3/session3Pacing';
@@ -5,578 +9,264 @@ import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Animated,
-    Easing,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
-const {
-  initialBlinkInterval: INITIAL_BLINK_INTERVAL,
-  minBlinkInterval: MIN_BLINK_INTERVAL,
-  speedDecreasePerStep: SPEED_INCREASE,
-  tapsBeforeSpeedUp: CORRECT_TAPS_FOR_SPEED_UP,
-  glowRiseMs: GLOW_RISE_MS,
-  glowHoldMs: GLOW_HOLD_MS,
-  glowFallMs: GLOW_FALL_MS,
-} = SESSION3_PACING.tapSlowly;
-const TOTAL_TAPS_REQUIRED = 15; // Total taps to complete game
-const CIRCLE_SIZE = 180;
+const P = SESSION3_PACING.tapSlowly;
+const TOTAL_TAPS = 15;
+const CIRCLE_SIZE = 168;
+const STAR_ICON = require('@/assets/icons/star.png');
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.45 });
+          ref.current = sound;
+        }
+        ref.current.replayAsync().catch(() => {});
+      } catch { /* noop */ }
+    })();
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
 
 const TapSlowlyGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playError = useSoundEffect(ERROR_SOUND);
+  const playSuccess = useSound(SUCCESS_SOUND);
+  const playError = useSound(ERROR_SOUND);
+
+  const scoreRef = useRef(0);
+  const isLitRef = useRef(false);
+  const doneRef = useRef(false);
+  const blinkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [isLit, setIsLit] = useState(false);
-  const [blinkInterval, setBlinkInterval] = useState(INITIAL_BLINK_INTERVAL);
+  const [blinkInterval, setBlinkInterval] = useState(P.initialBlinkInterval);
   const [consecutiveCorrect, setConsecutiveCorrect] = useState(0);
-  const [lastTapTime, setLastTapTime] = useState<number | null>(null);
-  const [missed, setMissed] = useState(false);
+  const [missFlash, setMissFlash] = useState(false);
+  const [sparkleKey, setSparkleKey] = useState(0);
 
-  // Animation values
-  const glowAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const glow = useSharedValue(0);
+  const scale = useSharedValue(1);
+  const shake = useSharedValue(0);
+  const ringScale = useSharedValue(1);
 
-  // Initial instruction - only once
-  useEffect(() => {
+  const endGame = useCallback(async (finalScore: number) => {
+    const stats = { correct: finalScore, total: TOTAL_TAPS, xp: finalScore * 12 };
+    setFinalStats(stats);
+    setDone(true);
+    doneRef.current = true;
+    setShowCongratulations(true);
+    speakTTS('Beautiful rhythm! You mastered slow tapping!', 0.78);
     try {
-      speakTTS('Wait for the circle to light up, then tap! Tap only when it\'s glowing.', 0.78);
-    } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
-
-  // Blink animation loop
-  useEffect(() => {
-    if (done) return;
-
-    const holdDuration = Math.min(
-      GLOW_HOLD_MS,
-      Math.max(1500, blinkInterval - GLOW_RISE_MS - GLOW_FALL_MS),
-    );
-
-    const blinkLoop = () => {
-      // Turn on (light up)
-      setIsLit(true);
-      setMissed(false);
-      Animated.sequence([
-        Animated.timing(glowAnim, {
-          toValue: 1,
-          duration: GLOW_RISE_MS,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(glowAnim, {
-          toValue: 0.7,
-          duration: holdDuration,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(glowAnim, {
-          toValue: 0,
-          duration: GLOW_FALL_MS,
-          easing: Easing.in(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ]).start(() => {
-        setIsLit(false);
+      await recordGame(stats.xp);
+      await logGameAndAward({
+        type: 'tapSlowly',
+        correct: finalScore,
+        total: TOTAL_TAPS,
+        accuracy: (finalScore / TOTAL_TAPS) * 100,
+        xpAwarded: stats.xp,
+        skillTags: ['slow-motor-control', 'motor-inhibition', 'rhythm-synchronization', 'visual-motor-mapping'],
       });
-    };
+      router.setParams({ refreshStats: Date.now().toString() });
+    } catch (e) {
+      console.error('Failed to log tap slowly game:', e);
+    }
+  }, [router]);
 
-    // Start blinking
-    blinkLoop();
-    const cycleMs = GLOW_RISE_MS + holdDuration + GLOW_FALL_MS + 250;
-    const interval = setInterval(blinkLoop, Math.max(blinkInterval, cycleMs));
+  const runBlinkCycle = useCallback(() => {
+    if (doneRef.current) return;
+    const hold = Math.min(P.glowHoldMs, Math.max(1500, blinkInterval - P.glowRiseMs - P.glowFallMs));
 
-    return () => clearInterval(interval);
-  }, [blinkInterval, done, glowAnim]);
+    isLitRef.current = true;
+    setIsLit(true);
+    glow.value = withTiming(1, { duration: P.glowRiseMs, easing: Easing.out(Easing.quad) });
+    ringScale.value = withRepeatPulse();
 
-  // Handle circle tap - ONLY when circle is lit (showing TAP NOW)
-  const handleTap = useCallback(async () => {
-    if (done) return;
+    blinkTimerRef.current = setTimeout(() => {
+      isLitRef.current = false;
+      setIsLit(false);
+      glow.value = withTiming(0, { duration: P.glowFallMs, easing: Easing.in(Easing.quad) });
 
-    // ONLY accept tap when circle is currently lit (showing TAP NOW)
-    if (!isLit) {
-      // Wrong tap - tapped when not lit
-      setMissed(true);
-      setConsecutiveCorrect(0); // Reset consecutive correct count
+      blinkTimerRef.current = setTimeout(() => {
+        if (!doneRef.current) runBlinkCycle();
+      }, Math.max(200, blinkInterval - hold - P.glowRiseMs - P.glowFallMs));
+    }, hold);
+  }, [blinkInterval]);
 
-      // Shake animation
-      Animated.sequence([
-        Animated.timing(shakeAnim, {
-          toValue: 10,
-          duration: 50,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(shakeAnim, {
-          toValue: -10,
-          duration: 50,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(shakeAnim, {
-          toValue: 10,
-          duration: 50,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(shakeAnim, {
-          toValue: 0,
-          duration: 50,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ]).start();
+  function withRepeatPulse() {
+    return withSequence(withTiming(1.08, { duration: 400 }), withTiming(1, { duration: 400 }));
+  }
 
-      try {
-        await playError();
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        speakTTS('Wait for it to light up!', 0.78).catch(() => {});
-      } catch {}
-      return; // Exit early - don't increase score
+  const spokeRef = useRef(false);
+
+  useEffect(() => {
+    if (!spokeRef.current) {
+      spokeRef.current = true;
+      speakTTS('Wait for the moon to glow, then tap gently!', 0.78);
+    }
+    if (blinkTimerRef.current) clearTimeout(blinkTimerRef.current);
+    runBlinkCycle();
+    return () => { if (blinkTimerRef.current) clearTimeout(blinkTimerRef.current); };
+  }, [blinkInterval]);
+
+  useEffect(() => () => { stopAllSpeech(); cleanupSounds(); }, []);
+
+  const handleTap = useCallback(() => {
+    if (doneRef.current) return;
+
+    if (!isLitRef.current) {
+      setMissFlash(true);
+      setTimeout(() => setMissFlash(false), 600);
+      shake.value = withSequence(
+        withTiming(-8, { duration: 40 }), withTiming(8, { duration: 40 }), withTiming(0, { duration: 40 }),
+      );
+      playError();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      speakTTS('Wait for the glow!', 0.78).catch(() => {});
+      setConsecutiveCorrect(0);
+      return;
     }
 
-    // Correct tap - circle is lit (showing TAP NOW)
-    const now = Date.now();
-
-    // Correct tap - only when lit
-    setConsecutiveCorrect((prev) => {
-      const newCount = prev + 1;
-
-      // Increase speed after CORRECT_TAPS_FOR_SPEED_UP correct taps
-      if (newCount >= CORRECT_TAPS_FOR_SPEED_UP) {
-        setBlinkInterval((current) => Math.max(MIN_BLINK_INTERVAL, current - SPEED_INCREASE));
-        setConsecutiveCorrect(0); // Reset counter
-      }
-
-      return newCount;
-    });
-
-    setScore((s) => {
-      const newScore = s + 1;
-
-      // Success animation
-      Animated.sequence([
-        Animated.timing(scaleAnim, {
-          toValue: 1.2,
-          duration: 150,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: false,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 150,
-          easing: Easing.in(Easing.ease),
-          useNativeDriver: false,
-        }),
-      ]).start();
-
-      if (newScore >= TOTAL_TAPS_REQUIRED) {
-        setTimeout(() => {
-          endGame(newScore);
-        }, 500);
-      }
-
-      return newScore;
-    });
-
+    isLitRef.current = false;
     setIsLit(false);
-    glowAnim.setValue(0);
+    glow.value = withTiming(0, { duration: 80 });
+    if (blinkTimerRef.current) clearTimeout(blinkTimerRef.current);
 
-    try {
-      await playSuccess();
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
+    playSuccess();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    setSparkleKey(Date.now());
+    scale.value = withSequence(withSpring(1.12, { damping: 8 }), withSpring(1, { damping: 12 }));
 
-    setLastTapTime(now);
-  }, [done, isLit, scaleAnim, glowAnim, shakeAnim, playSuccess, playError, endGame]);
+    const next = scoreRef.current + 1;
+    scoreRef.current = next;
+    setScore(next);
 
-  // End game
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_TAPS_REQUIRED;
-      const xp = finalScore * 12; // 12 XP per correct tap
-      const accuracy = (finalScore / total) * 100;
-
-      // Set all states together FIRST (like CatchTheBouncingStar)
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'tapSlowly',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['slow-motor-control', 'motor-inhibition', 'rhythm-synchronization', 'visual-motor-mapping'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log tap slowly game:', e);
+    setConsecutiveCorrect((c) => {
+      const nc = c + 1;
+      if (nc >= P.tapsBeforeSpeedUp) {
+        setBlinkInterval((bi) => Math.max(P.minBlinkInterval, bi - P.speedDecreasePerStep));
+        return 0;
       }
-    },
-    [router],
-  );
+      return nc;
+    });
 
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
+    if (next >= TOTAL_TAPS) {
+      endGame(next);
+    } else {
+      setTimeout(runBlinkCycle, 180);
+    }
+  }, [endGame, runBlinkCycle, playSuccess, playError]);
 
-  // Calculate speed percentage (faster = higher percentage)
-  const speedPercentage = Math.round(((INITIAL_BLINK_INTERVAL - blinkInterval) / (INITIAL_BLINK_INTERVAL - MIN_BLINK_INTERVAL)) * 100);
+  const glowStyle = useAnimatedStyle(() => ({ opacity: glow.value * 0.85, transform: [{ scale: 1 + glow.value * 0.2 }] }));
+  const orbStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }, { translateX: shake.value }] }));
+  const ringStyle = useAnimatedStyle(() => ({ transform: [{ scale: ringScale.value }], opacity: glow.value * 0.6 }));
 
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
+  const speedPct = Math.round(((P.initialBlinkInterval - blinkInterval) / (P.initialBlinkInterval - P.minBlinkInterval)) * 100);
+
   if (showCongratulations && done && finalStats) {
     return (
-      <CongratulationsScreen
-        message="Excellent Rhythm Control!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
+      <CongratulationsScreen message="Rhythm Master!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
-
-  // Glow animation style
-  const glowStyle = {
-    opacity: glowAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 0.8],
-    }),
-  };
-
-  const shakeStyle = {
-    transform: [
-      {
-        translateX: shakeAnim.interpolate({
-          inputRange: [-10, 10],
-          outputRange: [-10, 10],
-        }),
-      },
-    ],
-  };
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#1E1B4B', '#312E81', '#4C1D95', '#6B21A8']} locations={[0, 0.4, 0.75, 1]} style={StyleSheet.absoluteFillObject} />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Tap Slowly</Text>
-        <Text style={styles.subtitle}>
-          Taps: {score}/{TOTAL_TAPS_REQUIRED} • Speed: {speedPercentage}%
-        </Text>
-        <Text style={styles.helper}>
-          Wait for the circle to light up, then tap! Tap only when it's glowing.
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Moonlight Pulse</Text>
+        <Text style={styles.subtitle}>Tap only when the orb glows</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}>
+            <Image source={STAR_ICON} style={styles.starIcon} />
+            <Text style={styles.statValue}>{score}/{TOTAL_TAPS}</Text>
+          </View>
+          <View style={styles.statPill}>
+            <Text style={styles.statLabel}>Tempo</Text>
+            <Text style={styles.statValue}>{speedPct}%</Text>
+          </View>
+        </View>
+        <View style={[styles.phasePill, isLit && styles.phasePillLit]}>
+          <Text style={styles.phaseText}>{isLit ? '✨ GLOW — TAP NOW!' : '🌙 Wait…'}</Text>
+        </View>
       </View>
 
-      <View style={styles.playArea}>
-        <Animated.View
-          style={[
-            styles.circleContainer,
-            {
-              transform: [{ scale: scaleAnim }],
-            },
-            shakeStyle,
-          ]}
-        >
-          {/* Glow effect */}
-          <Animated.View
-            style={[
-              styles.glowEffect,
-              {
-                width: CIRCLE_SIZE + 60,
-                height: CIRCLE_SIZE + 60,
-                borderRadius: (CIRCLE_SIZE + 60) / 2,
-              },
-              glowStyle,
-            ]}
-          />
-
-          {/* Main circle - Pressable only on the circle itself */}
-          <Pressable 
-            onPress={handleTap} 
-            style={[
-              styles.circle,
-              {
-                width: CIRCLE_SIZE,
-                height: CIRCLE_SIZE,
-                borderRadius: CIRCLE_SIZE / 2,
-                backgroundColor: isLit ? '#22C55E' : '#3B82F6',
-              },
-            ]}
-          >
-            <View style={styles.circleInner} />
-            {isLit && (
-              <Text style={styles.tapText}>TAP NOW!</Text>
-            )}
+      <View style={[styles.playArea, missFlash && styles.playAreaMiss]}>
+        <Animated.View style={orbStyle}>
+          <Animated.View pointerEvents="none" style={[styles.glowRing, glowStyle]} />
+          <Animated.View pointerEvents="none" style={[styles.outerRing, ringStyle]} />
+          <Pressable onPress={handleTap}>
+            <LinearGradient
+              colors={isLit ? ['#C4B5FD', '#8B5CF6', '#6D28D9'] : ['#475569', '#334155', '#1E293B']}
+              style={[styles.orb, { width: CIRCLE_SIZE, height: CIRCLE_SIZE, borderRadius: CIRCLE_SIZE / 2 }]}
+            >
+              <View style={styles.orbShine} />
+              {isLit && <Text style={styles.tapLabel}>TAP</Text>}
+            </LinearGradient>
           </Pressable>
         </Animated.View>
-
-          {/* Sparkle burst on correct tap */}
-          {score > 0 && isLit && (
-            <View style={styles.sparkleContainer} pointerEvents="none">
-              <SparkleBurst />
-            </View>
-          )}
-
-        {/* Miss indicator */}
-        {missed && (
-          <View style={styles.missIndicator}>
-            <Text style={styles.missText}>Wait for it to light up! ⏳</Text>
-          </View>
-        )}
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#A78BFA" count={12} size={7} />
       </View>
 
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: slow motor control • motor inhibition • rhythm synchronization • visual-motor mapping
-        </Text>
-        <Text style={styles.footerSub}>
-          Control your tapping speed. Wait for the circle to light up before tapping!
-        </Text>
-      </View>
+      <Text style={styles.footer}>Slow and steady — tap only during the glow window</Text>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    position: 'relative',
-  },
-  circleContainer: {
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  glowEffect: {
-    position: 'absolute',
-    backgroundColor: '#22C55E',
-    shadowColor: '#22C55E',
-    shadowOpacity: 0.6,
-    shadowRadius: 30,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 10,
-  },
-  circle: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
-  },
-  circleInner: {
-    width: '50%',
-    height: '50%',
-    borderRadius: 999,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  tapText: {
-    position: 'absolute',
-    fontSize: 18,
-    fontWeight: '900',
-    color: '#fff',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  sparkleContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -20 }, { translateY: -20 }],
-  },
-  missIndicator: {
-    position: 'absolute',
-    top: '70%',
-    left: '50%',
-    transform: [{ translateX: -100 }, { translateY: -20 }],
-    backgroundColor: 'rgba(239, 68, 68, 0.9)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  missText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#475569',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  savedText: {
-    color: '#22C55E',
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#312E81' },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)' },
+  backText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  title: { fontSize: 26, fontWeight: '900', color: '#E9D5FF' },
+  subtitle: { fontSize: 13, color: 'rgba(233,213,255,0.8)', fontWeight: '600', marginTop: 4, marginBottom: 12 },
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 10 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: '700' },
+  statValue: { fontSize: 18, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 16, height: 16, resizeMode: 'contain' },
+  phasePill: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
+  phasePillLit: { backgroundColor: 'rgba(139,92,246,0.35)', borderColor: '#C4B5FD' },
+  phaseText: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  playArea: { flex: 1, justifyContent: 'center', alignItems: 'center', marginHorizontal: 14, marginBottom: 10, borderRadius: 28, borderWidth: 2, borderColor: 'rgba(167,139,250,0.3)', backgroundColor: 'rgba(0,0,0,0.12)' },
+  playAreaMiss: { borderColor: 'rgba(248,113,113,0.5)' },
+  glowRing: { position: 'absolute', width: CIRCLE_SIZE + 70, height: CIRCLE_SIZE + 70, borderRadius: (CIRCLE_SIZE + 70) / 2, backgroundColor: '#8B5CF6', alignSelf: 'center' },
+  outerRing: { position: 'absolute', width: CIRCLE_SIZE + 40, height: CIRCLE_SIZE + 40, borderRadius: (CIRCLE_SIZE + 40) / 2, borderWidth: 3, borderColor: '#C4B5FD', alignSelf: 'center' },
+  orb: { justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)', shadowColor: '#8B5CF6', shadowOpacity: 0.5, shadowRadius: 20, elevation: 14 },
+  orbShine: { position: 'absolute', top: '14%', left: '20%', width: '34%', height: '24%', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.45)', transform: [{ rotate: '-20deg' }] },
+  tapLabel: { fontSize: 22, fontWeight: '900', color: '#fff', letterSpacing: 2 },
+  footer: { textAlign: 'center', color: 'rgba(233,213,255,0.7)', fontSize: 13, fontWeight: '600', paddingBottom: 18 },
 });
 
 export default TapSlowlyGame;
-

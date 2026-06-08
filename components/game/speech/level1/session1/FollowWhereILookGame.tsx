@@ -59,9 +59,6 @@ export const FollowWhereILookGame: React.FC<Props> = ({
   const objectScale = useRef(new Animated.Value(0)).current;
   const objectOpacity = useRef(new Animated.Value(0)).current;
   const objectBounce = useRef(new Animated.Value(1)).current;
-  const gazeLineOpacity = useRef(new Animated.Value(0)).current;
-  const gazeLineScale = useRef(new Animated.Value(0)).current;
-
   const objects = [
     { emoji: '🍎', name: 'apple', color: '#EF4444' },
     { emoji: '🍌', name: 'banana', color: '#FBBF24' },
@@ -106,8 +103,6 @@ export const FollowWhereILookGame: React.FC<Props> = ({
     objectScale.setValue(0);
     objectOpacity.setValue(0);
     objectBounce.setValue(1);
-    gazeLineOpacity.setValue(0);
-    gazeLineScale.setValue(0);
     avatarEyeX.setValue(0);
 
     // Random direction
@@ -135,22 +130,6 @@ export const FollowWhereILookGame: React.FC<Props> = ({
       easing: Easing.out(Easing.quad),
       useNativeDriver: NATIVE_EFFECT,
     }).start();
-
-    // Show gaze line
-    Animated.parallel([
-      Animated.timing(gazeLineOpacity, {
-        toValue: 0.6,
-        duration: 300,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: NATIVE_EFFECT,
-      }),
-      Animated.timing(gazeLineScale, {
-        toValue: 1,
-        duration: 400,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: NATIVE_EFFECT,
-      }),
-    ]).start();
 
     const directionText = direction === 'left' ? 'I\'m looking left!' : 'I\'m looking right!';
     speak(directionText);
@@ -399,36 +378,6 @@ export const FollowWhereILookGame: React.FC<Props> = ({
             </Animated.View>
           </View>
 
-          {/* Gaze line from avatar to object */}
-          {isLooking && (
-            <View
-              style={[
-                styles.gazeLine,
-                {
-                  left: SCREEN_WIDTH / 2,
-                  top: SCREEN_HEIGHT * 0.35,
-                  width: SCREEN_WIDTH * 0.3,
-                  transform: [
-                    {
-                      translateX:
-                        currentDirection === 'left' ? -SCREEN_WIDTH * 0.3 : SCREEN_WIDTH * 0.3,
-                    },
-                  ],
-                },
-              ]}
-            >
-              <Animated.View
-                style={[
-                  styles.gazeLineInner,
-                  {
-                    opacity: gazeLineOpacity,
-                    transform: [{ scaleX: gazeLineScale }],
-                  },
-                ]}
-              />
-            </View>
-          )}
-
           {/* Object on left or right side */}
           {objectVisible && (
             <View
@@ -612,19 +561,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#0F172A',
     borderRadius: 15,
     marginTop: 4,
-  },
-  gazeLine: {
-    position: 'absolute',
-    height: 4,
-    backgroundColor: '#3B82F6',
-    borderRadius: 2,
-    zIndex: 50,
-    elevation: 5,
-  },
-  gazeLineInner: {
-    flex: 1,
-    backgroundColor: '#60A5FA',
-    borderRadius: 2,
   },
   objectContainer: {
     position: 'absolute',

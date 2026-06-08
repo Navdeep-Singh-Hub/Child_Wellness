@@ -1,680 +1,211 @@
+/**
+ * OT Level 1 · Session 8 · Game 4 — Tap Only The Smallest Shape
+ * Theme: "Scale Lab" — pick the tiniest orb among mixed sizes.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import { SparkleBurst } from '@/components/game/FX';
+import { SESSION8_PACING } from '@/components/game/occupational/level1/session8/session8Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Animated,
-    Easing,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+const P = SESSION8_PACING;
+const TOTAL_ROUNDS = 10;
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
-const TOTAL_ROUNDS = 10;
-const MIN_SHAPES = 3;
-const MAX_SHAPES = 4;
-const SIZE_OPTIONS = [60, 90, 120, 150]; // Different sizes in pixels
+const STAR_ICON = require('@/assets/icons/star.png');
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
+type ShapeItem = { id: string; size: number; x: number; y: number; colors: [string, string] };
 
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+const PALETTES: [string, string][] = [
+  ['#2DD4BF', '#0D9488'], ['#38BDF8', '#0284C7'], ['#A78BFA', '#7C3AED'],
+  ['#FB7185', '#E11D48'], ['#FBBF24', '#D97706'], ['#4ADE80', '#16A34A'],
+];
+
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.55 });
+          ref.current = sound;
+        }
+        await ref.current.replayAsync();
+      } catch { /* noop */ }
+    })();
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
 
-type Shape = {
-  id: string;
-  size: number;
-  x: number;
-  y: number;
-  scale: Animated.Value;
-  opacity: Animated.Value;
-};
+function ShapeOrb({ item, onPress, disabled }: { item: ShapeItem; onPress: (id: string, anim: { pop: () => void; shake: () => void }) => void; disabled: boolean }) {
+  const scale = useSharedValue(0);
+  const shakeX = useSharedValue(0);
+  useEffect(() => { scale.value = withSpring(1, { damping: 12 }); }, []);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }, { translateX: shakeX.value }] }));
+  const anim = {
+    pop: () => { scale.value = withSequence(withTiming(1.4, { duration: 120 }), withTiming(0, { duration: 180 })); },
+    shake: () => { shakeX.value = withSequence(withTiming(-8, { duration: 50 }), withTiming(8, { duration: 50 }), withTiming(0, { duration: 50 })); },
+  };
+  return (
+    <Animated.View style={[{ position: 'absolute', left: `${item.x}%`, top: `${item.y}%`, marginLeft: -item.size / 2, marginTop: -item.size / 2 }, style]}>
+      <Pressable onPress={() => onPress(item.id, anim)} disabled={disabled} style={{ borderRadius: item.size / 2, overflow: 'hidden' }}>
+        <LinearGradient colors={item.colors} style={{ width: item.size, height: item.size, borderRadius: item.size / 2 }} />
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 const TapOnlyTheSmallestShapeGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
+  const playSuccess = useSound(SUCCESS_SOUND);
+  const playError = useSound(ERROR_SOUND);
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
-  const [roundActive, setRoundActive] = useState(false);
-  const [shapes, setShapes] = useState<Shape[]>([]);
-  const [smallestId, setSmallestId] = useState<string | null>(null);
-  const [lastResult, setLastResult] = useState<'hit' | 'miss' | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [shapes, setShapes] = useState<ShapeItem[]>([]);
+  const [sparkleKey, setSparkleKey] = useState(0);
+  const [roundActive, setRoundActive] = useState(true);
 
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playError = useSoundEffect(ERROR_SOUND);
+  const roundActiveRef = useRef(true);
+  const doneRef = useRef(false);
+  const smallestRef = useRef('');
 
-  const shakeAnimation = useRef(new Animated.Value(0)).current;
-  const feedbackOpacity = useRef(new Animated.Value(0)).current;
-  const shapesRef = useRef<Shape[]>([]);
-  const smallestIdRef = useRef<string | null>(null);
-  const roundRef = useRef(1);
-  const scoreRef = useRef(0);
+  const endGame = useCallback((finalScore: number) => {
+    const total = TOTAL_ROUNDS;
+    const xp = finalScore * 20;
+    setFinalStats({ correct: finalScore, total, xp });
+    setDone(true);
+    doneRef.current = true;
+    setShowCongratulations(true);
+    speakTTS('Scale lab expert!', 0.78);
+    recordGame(xp).then(() =>
+      logGameAndAward({ type: 'tapOnlyTheSmallestShape', correct: finalScore, total, accuracy: (finalScore / total) * 100, xpAwarded: xp,
+        skillTags: ['precision-discrimination', 'selective-control', 'inhibitory-control'] }),
+    ).then(() => router.setParams({ refreshStats: Date.now().toString() })).catch(console.error);
+  }, [router]);
 
-  // Keep refs in sync with state
-  useEffect(() => {
-    shapesRef.current = shapes;
-  }, [shapes]);
-
-  useEffect(() => {
-    smallestIdRef.current = smallestId;
-  }, [smallestId]);
-
-  useEffect(() => {
-    roundRef.current = round;
+  const spawnShapes = useCallback(() => {
+    const count = 3 + Math.floor(Math.random() * 2);
+    const sizes = [...P.smallestShape.sizes].sort(() => Math.random() - 0.5).slice(0, count);
+    const minSize = Math.min(...sizes);
+    const margin = 12;
+    const positions: { x: number; y: number }[] = [];
+    for (let i = 0; i < count; i++) {
+      for (let a = 0; a < 40; a++) {
+        const x = margin + Math.random() * (100 - margin * 2);
+        const y = margin + Math.random() * (100 - margin * 2);
+        if (positions.every((p) => Math.hypot(p.x - x, p.y - y) >= 20)) { positions.push({ x, y }); break; }
+      }
+      if (positions.length <= i) positions.push({ x: 20 + i * 25, y: 30 + Math.random() * 40 });
+    }
+    const items: ShapeItem[] = sizes.map((size, i) => ({
+      id: `${round}-${i}`, size, x: positions[i].x, y: positions[i].y,
+      colors: PALETTES[Math.floor(Math.random() * PALETTES.length)],
+    }));
+    smallestRef.current = items.find((s) => s.size === minSize)!.id;
+    setShapes(items);
+    roundActiveRef.current = true;
+    setRoundActive(true);
   }, [round]);
 
   useEffect(() => {
-    scoreRef.current = score;
-  }, [score]);
-
-  // End game function
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 20;
-      const accuracy = (finalScore / total) * 100;
-
-      // Set all states together FIRST (like CatchTheBouncingStar)
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setRoundActive(false);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'tapOnlyTheSmallestShape' as any,
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['precision-discrimination', 'selective-control', 'inhibitory-control'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log tap only the smallest shape game:', e);
-      }
-    },
-    [router],
-  );
-
-  // Generate random non-overlapping positions
-  const generatePositions = useCallback((count: number, shapeSize: number): Array<{ x: number; y: number }> => {
-    const positions: Array<{ x: number; y: number }> = [];
-    const margin = 10; // percentage margin from edges
-    const minDistance = shapeSize * 1.5; // Minimum distance between shapes
-
-    for (let i = 0; i < count; i++) {
-      let attempts = 0;
-      let valid = false;
-      let x = 0;
-      let y = 0;
-
-      while (!valid && attempts < 50) {
-        x = margin + Math.random() * (100 - margin * 2);
-        y = margin + Math.random() * (100 - margin * 2);
-
-        // Check distance from existing positions
-        valid = positions.every((pos) => {
-          const dx = x - pos.x;
-          const dy = y - pos.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          return distance >= minDistance / 100; // Convert to percentage
-        });
-
-        attempts++;
-      }
-
-      positions.push({ x, y });
-    }
-
-    return positions;
-  }, []);
-
-  // Start a new round
-  const startRound = useCallback(() => {
-    setRoundActive(true);
-    setLastResult(null);
-    setShowFeedback(false);
-    feedbackOpacity.setValue(0);
-
-    // Random number of shapes (3 or 4)
-    const numShapes = MIN_SHAPES + Math.floor(Math.random() * (MAX_SHAPES - MIN_SHAPES + 1));
-
-    // Select random sizes (ensuring one is smallest)
-    const selectedSizes = [...SIZE_OPTIONS].sort(() => Math.random() - 0.5).slice(0, numShapes);
-    const smallestSize = Math.min(...selectedSizes);
-
-    // Generate positions
-    const positions = generatePositions(numShapes, Math.max(...selectedSizes));
-
-    // Create shapes
-    const newShapes: Shape[] = selectedSizes.map((size, index) => ({
-      id: `shape-${index}`,
-      size,
-      x: positions[index].x,
-      y: positions[index].y,
-      scale: new Animated.Value(0),
-      opacity: new Animated.Value(0),
-    }));
-
-    setShapes(newShapes);
-    setSmallestId(newShapes.find((s) => s.size === smallestSize)?.id || null);
-
-    // Animate shapes appearing
-    newShapes.forEach((shape, index) => {
-      Animated.sequence([
-        Animated.delay(index * 100),
-        Animated.parallel([
-          Animated.timing(shape.scale, {
-            toValue: 1,
-            duration: 300,
-            easing: Easing.out(Easing.back(1.2)),
-            useNativeDriver: true,
-          }),
-          Animated.timing(shape.opacity, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]).start();
-    });
-  }, [generatePositions, feedbackOpacity]);
-
-  // Handle shape tap
-  const handleShapeTap = useCallback(
-    async (shapeId: string) => {
-      if (!roundActive || done) return;
-
-      setRoundActive(false);
-
-      const currentShapes = shapesRef.current;
-      const currentSmallestId = smallestIdRef.current;
-      const isSmallest = shapeId === currentSmallestId;
-      setLastResult(isSmallest ? 'hit' : 'miss');
-      setShowFeedback(true);
-
-      if (isSmallest) {
-        // Correct tap - smallest shape
-        setScore((s) => s + 1);
-
-        // Success animation - pop the smallest shape
-        const tappedShape = currentShapes.find((s) => s.id === shapeId);
-        if (tappedShape) {
-          Animated.sequence([
-            Animated.parallel([
-              Animated.timing(tappedShape.scale, {
-                toValue: 1.5,
-                duration: 200,
-                easing: Easing.out(Easing.ease),
-                useNativeDriver: true,
-              }),
-              Animated.timing(tappedShape.opacity, {
-                toValue: 0,
-                duration: 200,
-                useNativeDriver: true,
-              }),
-            ]),
-          ]).start();
-        }
-
-        // Fade out other shapes
-        currentShapes.forEach((shape) => {
-          if (shape.id !== shapeId) {
-            Animated.timing(shape.opacity, {
-              toValue: 0.3,
-              duration: 300,
-              useNativeDriver: true,
-            }).start();
-          }
-        });
-
-        Animated.timing(feedbackOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
-
-        try {
-          await playSuccess();
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          speakTTS('Perfect! You found the smallest!', 0.78 );
-        } catch {}
-      } else {
-        // Wrong tap - not the smallest
-        // Shake animation for wrong tap
-        Animated.sequence([
-          Animated.timing(shakeAnimation, {
-            toValue: 10,
-            duration: 50,
-            useNativeDriver: true,
-          }),
-          Animated.timing(shakeAnimation, {
-            toValue: -10,
-            duration: 50,
-            useNativeDriver: true,
-          }),
-          Animated.timing(shakeAnimation, {
-            toValue: 10,
-            duration: 50,
-            useNativeDriver: true,
-          }),
-          Animated.timing(shakeAnimation, {
-            toValue: 0,
-            duration: 50,
-            useNativeDriver: true,
-          }),
-        ]).start();
-
-        // Highlight the smallest shape
-        const smallestShape = currentShapes.find((s) => s.id === currentSmallestId);
-        if (smallestShape) {
-          Animated.sequence([
-            Animated.timing(smallestShape.scale, {
-              toValue: 1.2,
-              duration: 200,
-              easing: Easing.out(Easing.ease),
-              useNativeDriver: true,
-            }),
-            Animated.timing(smallestShape.scale, {
-              toValue: 1,
-              duration: 200,
-              easing: Easing.in(Easing.ease),
-              useNativeDriver: true,
-            }),
-          ]).start();
-        }
-
-        Animated.timing(feedbackOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
-
-        try {
-          await playError();
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          speakTTS('Try the smallest one!', 0.78 );
-        } catch {}
-      }
-
-      // Next round or finish
-      if (roundRef.current >= TOTAL_ROUNDS) {
-        setTimeout(() => {
-          endGame(isSmallest ? scoreRef.current + 1 : scoreRef.current);
-        }, 2000);
-      } else {
-        setTimeout(() => {
-          setShowFeedback(false);
-          feedbackOpacity.setValue(0);
-          shakeAnimation.setValue(0);
-          setRound((r) => r + 1);
-          setTimeout(() => {
-            startRound();
-          }, 500);
-        }, 2000);
-      }
-    },
-    [roundActive, done, endGame, playSuccess, playError, feedbackOpacity, shakeAnimation, startRound],
-  );
-
-  // Start first round
-  useEffect(() => {
-    if (!done) {
-      setTimeout(() => {
-        startRound();
-      }, 500);
-    }
-  }, []);
+    if (doneRef.current) return;
+    spawnShapes();
+  }, [round]);
 
   useEffect(() => {
-    if (!done) {
-      try {
-        speakTTS('Tap only the smallest shape!', 0.78 );
-      } catch {}
-    }
-    return () => {
-      stopAllSpeech();
-      cleanupSounds();
-    };
+    speakTTS('Tap only the smallest shape!', 0.78);
+    return () => { stopAllSpeech(); cleanupSounds(); };
   }, []);
 
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
+  const handleTap = useCallback((id: string, anim: { pop: () => void; shake: () => void }) => {
+    if (!roundActiveRef.current || doneRef.current) return;
+    if (id === smallestRef.current) {
+      anim.pop();
+      setSparkleKey(Date.now());
+      playSuccess();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      roundActiveRef.current = false;
+      setRoundActive(false);
+      setScore((prev) => {
+        const next = prev + 1;
+        setTimeout(() => { if (next >= TOTAL_ROUNDS) endGame(next); else setRound((r) => r + 1); }, P.nextRoundDelayMs);
+        return next;
+      });
+    } else {
+      anim.shake();
+      playError();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      speakTTS('Find the smallest one!', 0.78).catch(() => {});
+    }
+  }, [endGame, playSuccess, playError]);
 
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
   if (showCongratulations && done && finalStats) {
     return (
-      <CongratulationsScreen
-        message="Discrimination Master!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
+      <CongratulationsScreen message="Micro Master!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
-
-  const shakeTranslateX = shakeAnimation.interpolate({
-    inputRange: [-10, 10],
-    outputRange: [-10, 10],
-  });
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#042F2E', '#0F766E', '#14B8A6', '#5EEAD4']} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Tap Only The Smallest Shape</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • Score: {score}
-        </Text>
-        <Text style={styles.helper}>
-          Find and tap the smallest shape!
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>🔬 Scale Lab</Text>
+        <Text style={styles.subtitle}>Find and tap the smallest orb</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabel}>Round</Text><Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} /><Text style={styles.statValue}>{score}</Text>
+          </View>
+        </View>
       </View>
 
-      <Animated.View
-        style={[
-          styles.playArea,
-          {
-            transform: [{ translateX: shakeTranslateX }],
-          },
-        ]}
-      >
-        {shapes.map((shape) => {
-          const isSmallest = shape.id === smallestId;
-          return (
-            <Animated.View
-              key={shape.id}
-              style={[
-                styles.shapeContainer,
-                {
-                  left: `${shape.x}%`,
-                  top: `${shape.y}%`,
-                  width: shape.size,
-                  height: shape.size,
-                  transform: [
-                    { translateX: -shape.size / 2 },
-                    { translateY: -shape.size / 2 },
-                    { scale: shape.scale },
-                  ],
-                  opacity: shape.opacity,
-                },
-              ]}
-            >
-              <Pressable
-                onPress={() => handleShapeTap(shape.id)}
-                style={[
-                  styles.shape,
-                  {
-                    width: shape.size,
-                    height: shape.size,
-                    borderRadius: shape.size / 2,
-                    borderWidth: isSmallest ? 3 : 2,
-                    borderColor: isSmallest ? '#22C55E' : '#3B82F6',
-                    backgroundColor: isSmallest ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.2)',
-                  },
-                ]}
-                disabled={!roundActive || done}
-              >
-                <View
-                  style={[
-                    styles.shapeInner,
-                    {
-                      width: shape.size * 0.7,
-                      height: shape.size * 0.7,
-                      borderRadius: (shape.size * 0.7) / 2,
-                    },
-                  ]}
-                />
-              </Pressable>
-            </Animated.View>
-          );
-        })}
-
-        {/* Feedback indicator */}
-        {showFeedback && lastResult && (
-          <Animated.View
-            style={[
-              styles.feedbackContainer,
-              {
-                opacity: feedbackOpacity,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.feedbackBox,
-                {
-                  backgroundColor: lastResult === 'hit' ? '#22C55E' : '#EF4444',
-                },
-              ]}
-            >
-              <Text style={styles.feedbackText}>
-                {lastResult === 'hit' ? '✔ Perfect! Smallest found!' : '✗ Try the smallest one!'}
-              </Text>
-            </View>
-          </Animated.View>
-        )}
-      </Animated.View>
-
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: precision + discrimination • selective control • inhibitory control
-        </Text>
-        <Text style={styles.footerSub}>
-          Look carefully at all shapes and tap only the smallest one!
-        </Text>
+      <View style={styles.playArea}>
+        {shapes.map((s) => (
+          <ShapeOrb key={s.id} item={s} onPress={handleTap} disabled={!roundActive} />
+        ))}
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#5EEAD4" count={14} size={8} />
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    position: 'relative',
-    marginBottom: 16,
-    backgroundColor: '#E0F2FE',
-    borderRadius: 16,
-    overflow: 'visible',
-  },
-  shapeContainer: {
-    position: 'absolute',
-  },
-  shape: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
-  shapeInner: {
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  feedbackContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -100 }, { translateY: -25 }],
-  },
-  feedbackBox: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  feedbackText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#64748B',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  savedText: {
-    marginTop: 16,
-    fontSize: 14,
-    color: '#22C55E',
-    fontWeight: '600',
-  },
+  container: { flex: 1 },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)' },
+  backText: { color: '#CCFBF1', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  title: { fontSize: 28, fontWeight: '900', color: '#CCFBF1' },
+  subtitle: { fontSize: 14, color: 'rgba(204,251,241,0.8)', fontWeight: '600', marginTop: 4, marginBottom: 14 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(94,234,212,0.15)', borderColor: 'rgba(94,234,212,0.35)' },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 20, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(94,234,212,0.25)', backgroundColor: 'rgba(0,0,0,0.15)' },
 });
 
 export default TapOnlyTheSmallestShapeGame;
-

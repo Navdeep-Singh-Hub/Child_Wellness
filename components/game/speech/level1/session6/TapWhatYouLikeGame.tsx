@@ -18,7 +18,6 @@ import {
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
-
 type Props = {
   onBack: () => void;
   onComplete?: () => void;
@@ -92,8 +91,8 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
   const [choices, setChoices] = useState(0);
   const [currentPairIndex, setCurrentPairIndex] = useState(0);
   const [selectedItem, setSelectedItem] = useState<'left' | 'right' | null>(null);
-  const [isAnimating, setIsAnimating] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
+  const isAnimatingRef = useRef(false);
   const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [finalStats, setFinalStats] = useState<{
     totalChoices: number;
@@ -214,13 +213,13 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
           toValue: 1.05,
           duration: 1000,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
         Animated.timing(leftBounce, {
           toValue: 1,
           duration: 1000,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
       ])
     ).start();
@@ -231,13 +230,13 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
           toValue: 1.05,
           duration: 1000,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
         Animated.timing(rightBounce, {
           toValue: 1,
           duration: 1000,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
       ])
     ).start();
@@ -291,12 +290,11 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
   };
 
   const handleChoice = useCallback((side: 'left' | 'right') => {
-    if (isAnimating) return;
+    if (isAnimatingRef.current) return;
+    isAnimatingRef.current = true;
 
-    setIsAnimating(true);
     setSelectedItem(side);
 
-    const item = side === 'left' ? currentPair.left : currentPair.right;
     const scaleAnim = side === 'left' ? leftScale : rightScale;
     const rotationAnim = side === 'left' ? leftRotation : rightRotation;
 
@@ -304,7 +302,6 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
 
-    // Create sparkles
     const sparkles = createSparkles(12);
     if (side === 'left') {
       leftSparklePositions.splice(0, leftSparklePositions.length, ...sparkles);
@@ -312,73 +309,58 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
       rightSparklePositions.splice(0, rightSparklePositions.length, ...sparkles);
     }
 
-    // Celebration animation
     Animated.sequence([
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1.4,
-          tension: 50,
-          friction: 7,
-          useNativeDriver: false,
-        }),
-        Animated.timing(rotationAnim, {
-          toValue: 15,
-          duration: 200,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: false,
-        }),
-      ]),
       Animated.parallel([
         Animated.spring(scaleAnim, {
           toValue: 1.2,
           tension: 50,
           friction: 7,
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
         Animated.timing(rotationAnim, {
-          toValue: -15,
+          toValue: 1,
           duration: 200,
-          easing: Easing.in(Easing.quad),
-          useNativeDriver: false,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
         }),
       ]),
-      Animated.timing(rotationAnim, {
-        toValue: 0,
-        duration: 200,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: false,
-      }),
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+        Animated.timing(rotationAnim, {
+          toValue: 0,
+          duration: 200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
     ]).start();
 
-    // Animate sparkles
     if (sparkles.length > 0) {
       animateSparkles(sparkles).start();
     }
 
-    // Show success animation instead of TTS
     setShowRoundSuccess(true);
 
-    // Update choices and move to next pair
     setTimeout(() => {
       setShowRoundSuccess(false);
-      const nextChoices = choices + 1;
-      setChoices(nextChoices);
+      setChoices((prev) => {
+        const nextChoices = prev + 1;
+        if (nextChoices < requiredChoices) {
+          setCurrentPairIndex((idx) => (idx + 1) % CHOICE_PAIRS.length);
+        }
+        return nextChoices;
+      });
       setSelectedItem(null);
       scaleAnim.setValue(1);
       rotationAnim.setValue(0);
-
-      if (nextChoices < requiredChoices) {
-        // Move to next pair
-        const nextIndex = (currentPairIndex + 1) % CHOICE_PAIRS.length;
-        setCurrentPairIndex(nextIndex);
-        setTimeout(() => {
-          setIsAnimating(false);
-        }, 500);
-      } else {
-        setIsAnimating(false);
-      }
-    }, 2500);
-  }, [isAnimating, currentPair, choices, requiredChoices, currentPairIndex]);
+      isAnimatingRef.current = false;
+    }, 1800);
+  }, [requiredChoices, leftScale, rightScale, leftRotation, rightRotation, leftSparklePositions, rightSparklePositions]);
 
   if (gameFinished && finalStats) {
     return (
@@ -391,8 +373,7 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
         xpAwarded={finalStats.choicesMade * 10}
         onContinue={() => {
           clearScheduledSpeech();
-          stopAllSpeech();
-          cleanupSounds();
+          stopTTS();
           onComplete?.();
         }}
         onHome={onBack}
@@ -429,19 +410,20 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
 
         <View style={styles.gameArea}>
           {/* Instruction */}
-          {choices === 0 && !isAnimating && (
-            <View style={styles.instructionBadge}>
+          {choices === 0 && (
+            <View style={styles.instructionBadge} pointerEvents="none">
               <Text style={styles.instructionText}>👆 Choose the one you like!</Text>
             </View>
           )}
 
-          {/* Choice Items */}
           <View style={styles.choiceContainer}>
-            {/* Left Item */}
             <Pressable
               onPress={() => handleChoice('left')}
-              disabled={isAnimating}
-              style={styles.choicePressable}
+              hitSlop={24}
+              style={({ pressed }) => [
+                styles.choicePressable,
+                pressed && styles.choicePressablePressed,
+              ]}
             >
               <Animated.View
                 style={[
@@ -449,22 +431,29 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
                   {
                     transform: [
                       { scale: Animated.multiply(leftScale, leftBounce) },
-                      { rotate: leftRotation.interpolate({
-                        inputRange: [-15, 15],
-                        outputRange: ['-15deg', '15deg'],
-                      })},
+                      {
+                        rotate: leftRotation.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ['0deg', '12deg'],
+                        }),
+                      },
                     ],
-                    shadowColor: currentPair.left.color[0],
-                    shadowOpacity: leftGlow.interpolate({
-                      inputRange: [0.5, 1],
-                      outputRange: [0.4, 0.9],
-                    }),
-                    shadowRadius: 30,
-                    shadowOffset: { width: 0, height: 0 },
-                    elevation: 15,
                   },
                 ]}
               >
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.itemGlow,
+                    {
+                      backgroundColor: currentPair.left.color[0],
+                      opacity: leftGlow.interpolate({
+                        inputRange: [0.5, 1],
+                        outputRange: [0.35, 0.7],
+                      }),
+                    },
+                  ]}
+                />
                 <LinearGradient
                   colors={currentPair.left.color}
                   style={styles.itemGradient}
@@ -472,11 +461,10 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
                   end={{ x: 1, y: 1 }}
                 >
                   <Text style={styles.itemEmoji}>{currentPair.left.emoji}</Text>
-                  
-                  {/* Sparkles */}
                   {selectedItem === 'left' && leftSparklePositions.map((sparkle, idx) => (
                     <Animated.View
                       key={idx}
+                      pointerEvents="none"
                       style={[
                         styles.sparkle,
                         {
@@ -491,20 +479,20 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
                   ))}
                 </LinearGradient>
               </Animated.View>
+              <Text style={styles.itemLabel}>{currentPair.left.name}</Text>
             </Pressable>
 
-            {/* VS Divider */}
-            <View style={styles.vsContainer}>
-              <View style={styles.vsLine} />
+            <View style={styles.vsBadge} pointerEvents="none">
               <Text style={styles.vsText}>VS</Text>
-              <View style={styles.vsLine} />
             </View>
 
-            {/* Right Item */}
             <Pressable
               onPress={() => handleChoice('right')}
-              disabled={isAnimating}
-              style={styles.choicePressable}
+              hitSlop={24}
+              style={({ pressed }) => [
+                styles.choicePressable,
+                pressed && styles.choicePressablePressed,
+              ]}
             >
               <Animated.View
                 style={[
@@ -512,22 +500,29 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
                   {
                     transform: [
                       { scale: Animated.multiply(rightScale, rightBounce) },
-                      { rotate: rightRotation.interpolate({
-                        inputRange: [-15, 15],
-                        outputRange: ['-15deg', '15deg'],
-                      })},
+                      {
+                        rotate: rightRotation.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ['0deg', '-12deg'],
+                        }),
+                      },
                     ],
-                    shadowColor: currentPair.right.color[0],
-                    shadowOpacity: rightGlow.interpolate({
-                      inputRange: [0.5, 1],
-                      outputRange: [0.4, 0.9],
-                    }),
-                    shadowRadius: 30,
-                    shadowOffset: { width: 0, height: 0 },
-                    elevation: 15,
                   },
                 ]}
               >
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.itemGlow,
+                    {
+                      backgroundColor: currentPair.right.color[0],
+                      opacity: rightGlow.interpolate({
+                        inputRange: [0.5, 1],
+                        outputRange: [0.35, 0.7],
+                      }),
+                    },
+                  ]}
+                />
                 <LinearGradient
                   colors={currentPair.right.color}
                   style={styles.itemGradient}
@@ -535,11 +530,10 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
                   end={{ x: 1, y: 1 }}
                 >
                   <Text style={styles.itemEmoji}>{currentPair.right.emoji}</Text>
-                  
-                  {/* Sparkles */}
                   {selectedItem === 'right' && rightSparklePositions.map((sparkle, idx) => (
                     <Animated.View
                       key={idx}
+                      pointerEvents="none"
                       style={[
                         styles.sparkle,
                         {
@@ -554,6 +548,7 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
                   ))}
                 </LinearGradient>
               </Animated.View>
+              <Text style={styles.itemLabel}>{currentPair.right.name}</Text>
             </Pressable>
           </View>
         </View>
@@ -656,32 +651,57 @@ const styles = StyleSheet.create({
   choiceContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     width: '100%',
-    paddingHorizontal: 10,
+    paddingHorizontal: 16,
+    minHeight: ITEM_SIZE + 48,
   },
   choicePressable: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 16,
+    zIndex: 2,
+  },
+  choicePressablePressed: {
+    opacity: 0.85,
   },
   choiceItem: {
     width: ITEM_SIZE,
     height: ITEM_SIZE,
     borderRadius: ITEM_SIZE / 2,
-    overflow: 'hidden',
+    overflow: 'visible',
+    position: 'relative',
+  },
+  itemGlow: {
+    position: 'absolute',
+    width: ITEM_SIZE + 20,
+    height: ITEM_SIZE + 20,
+    borderRadius: (ITEM_SIZE + 20) / 2,
+    top: -10,
+    left: -10,
   },
   itemGradient: {
-    width: '100%',
-    height: '100%',
+    width: ITEM_SIZE,
+    height: ITEM_SIZE,
+    borderRadius: ITEM_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
     borderWidth: 4,
     borderColor: 'rgba(255, 255, 255, 0.9)',
+    overflow: 'hidden',
   },
   itemEmoji: {
-    fontSize: 100,
+    fontSize: 88,
+    textAlign: 'center',
+  },
+  itemLabel: {
+    marginTop: 14,
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    textTransform: 'capitalize',
     textAlign: 'center',
   },
   sparkle: {
@@ -694,25 +714,22 @@ const styles = StyleSheet.create({
   sparkleText: {
     fontSize: 24,
   },
-  vsContainer: {
-    flexDirection: 'row',
+  vsBadge: {
     alignItems: 'center',
-    marginHorizontal: 20,
-  },
-  vsLine: {
-    flex: 1,
-    height: 2,
-    backgroundColor: '#94A3B8',
+    justifyContent: 'center',
+    marginHorizontal: 8,
+    zIndex: 1,
   },
   vsText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#64748B',
-    marginHorizontal: 12,
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#475569',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
   },
   footer: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',

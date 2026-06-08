@@ -1,3 +1,4 @@
+import { UNLOCK_ALL_THERAPY_CONTENT } from '@/constants/unlockConfig';
 import { getSubscriptionStatus, type SubscriptionStatus } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
@@ -65,6 +66,7 @@ export function SectionSelector({ onSelectSection, onShowMap }: SectionSelectorP
             const sectionData = progress?.sections.find((s) => s.sectionNumber === section.number);
             // Keep Explorer + Matcher open by default; later sections rely on progress/free access.
             const unlocked =
+              UNLOCK_ALL_THERAPY_CONTENT ||
               isFreeAccess ||
               sectionData?.unlocked ||
               section.number === 1 ||

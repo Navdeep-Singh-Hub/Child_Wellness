@@ -128,11 +128,19 @@ router.post('/progress/advance', async (req, res) => {
     const { therapy, levelNumber, sessionNumber, gameId, markCompleted, sectionNumber, levelNumberSE, sessionNumberSE, gameNumber, accuracy } = req.body || {};
     if (!THERAPIES.includes(therapy)) return res.status(400).json({ error: 'Invalid therapy' });
 
-    const doc = await UserTherapyProgress.findOne({ userId: user._id });
-    if (!doc) return res.status(404).json({ error: 'Not initialized' });
+    let doc = await UserTherapyProgress.findOne({ userId: user._id });
+    if (!doc) {
+      doc = await UserTherapyProgress.create({
+        userId: user._id,
+        therapies: THERAPIES.map(buildEmptyTherapy),
+      });
+    }
 
-    const t = doc.therapies.find((x) => x.therapy === therapy);
-    if (!t) return res.status(404).json({ error: 'Therapy not found' });
+    let t = doc.therapies.find((x) => x.therapy === therapy);
+    if (!t) {
+      t = buildEmptyTherapy(therapy);
+      doc.therapies.push(t);
+    }
 
     // Special Education: sections[].sessions[].games[]
     if (therapy === 'special-education' && t.sections && t.sections.length) {
@@ -166,11 +174,17 @@ router.post('/progress/advance', async (req, res) => {
     }
 
     // Standard structure (speech, occupational, etc.)
-    const lvl = t.levels && t.levels.find((l) => l.levelNumber === Number(levelNumber));
+    if (!Array.isArray(t.levels) || t.levels.length === 0) {
+      t.levels = buildEmptyTherapy(therapy).levels;
+    }
+    const lvl = t.levels.find((l) => l.levelNumber === Number(levelNumber));
     if (!lvl) return res.status(404).json({ error: 'Level not found' });
     const sess = lvl.sessions.find((s) => s.sessionNumber === Number(sessionNumber));
     if (!sess) return res.status(404).json({ error: 'Session not found' });
 
+    if (!Array.isArray(sess.completedGames)) {
+      sess.completedGames = [];
+    }
     if (gameId && !sess.completedGames.includes(gameId) && sess.completedGames.length < GAMES_PER_SESSION) {
       sess.completedGames.push(gameId);
     }
@@ -187,6 +201,7 @@ router.post('/progress/advance', async (req, res) => {
       }
     }
     t.updatedAt = new Date();
+    doc.markModified('therapies');
     await doc.save();
     return res.json({ ok: true, therapy: t });
   } catch (error) {

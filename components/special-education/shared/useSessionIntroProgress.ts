@@ -2,6 +2,7 @@
  * Shared helpers for session intro: clickable game cards and "Start = next game".
  * Used by all special-education session components (Farm, Ocean, Graduate, etc.).
  */
+import { UNLOCK_ALL_THERAPY_CONTENT } from '@/constants/unlockConfig';
 import { advanceTherapyProgress, fetchTherapyProgress } from '@/utils/api';
 
 const THERAPY = 'special-education';
@@ -15,6 +16,10 @@ export async function getLastCompletedGameIndex(
   sessionNumber: number,
   gameCount: number
 ): Promise<number> {
+  if (UNLOCK_ALL_THERAPY_CONTENT) {
+    return gameCount;
+  }
+
   try {
     const { therapies } = await fetchTherapyProgress();
     const se = therapies?.find((t: { therapy: string }) => t.therapy === THERAPY);

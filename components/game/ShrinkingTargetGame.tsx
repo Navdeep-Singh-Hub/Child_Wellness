@@ -1,3 +1,7 @@
+/**
+ * OT Level 1 · Session 2 · Game 3 — Shrinking Target
+ * Theme: "Zoom Challenge" — target shrinks with each success, grows if you struggle.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
 import { logGameAndAward, recordGame } from '@/utils/api';
@@ -6,603 +10,259 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { gradientStopsFromHex } from '@/utils/gradientColors';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-} from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
-    Easing,
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withSequence,
-    withTiming,
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const POP_SOUND = 'https://actions.google.com/sounds/v1/cartoon/pop.ogg';
-const TOTAL_TARGETS = 12; // Total targets to tap
-const INITIAL_SIZE = 140; // Starting size (medium)
-const MIN_SIZE = 50; // Smallest size
-const MAX_SIZE = 180; // Largest size (if struggling)
-const SIZE_DECREASE = 12; // How much to decrease each time
-const SIZE_INCREASE = 15; // How much to increase if struggling
-const MISS_THRESHOLD = 2; // Number of misses before increasing size
+const TOTAL_TARGETS = 12;
+const INITIAL_SIZE = 140;
+const MIN_SIZE = 48;
+const MAX_SIZE = 180;
+const SIZE_DECREASE = 10;
+const SIZE_INCREASE = 14;
+const MISS_THRESHOLD = 2;
+const STAR_ICON = require('@/assets/icons/star.png');
+
+const RING_COLORS = ['#818CF8', '#F472B6', '#34D399', '#FBBF24', '#38BDF8', '#FB7185'];
 
 const usePopSound = () => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri: POP_SOUND },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load pop sound');
-    }
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri: POP_SOUND }, { volume: 0.45 });
+          ref.current = sound;
+        }
+        ref.current.replayAsync().catch(() => {});
+      } catch { /* noop */ }
+    })();
   }, []);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      await ensureSound();
-      if (soundRef.current) {
-        await soundRef.current.replayAsync();
-      }
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
 
-const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const ShrinkingTargetGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
   const playPop = usePopSound();
 
+  const scoreRef = useRef(0);
+  const sizeRef = useRef(INITIAL_SIZE);
+  const missRef = useRef(0);
+  const doneRef = useRef(false);
+  const posRef = useRef({ x: 50, y: 50 });
+
   const [score, setScore] = useState(0);
   const [currentSize, setCurrentSize] = useState(INITIAL_SIZE);
-  const [missCount, setMissCount] = useState(0); // Track consecutive misses
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
-  const [targetPosition, setTargetPosition] = useState({ x: 50, y: 50 }); // percentage
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [sparkleKey, setSparkleKey] = useState(0);
+  const [sizeHint, setSizeHint] = useState('');
+  const [targetPos, setTargetPos] = useState({ x: 50, y: 50 });
 
-  const scoreRef = useRef(score);
-  const currentSizeRef = useRef(currentSize);
-  const doneRef = useRef(done);
-
-  // Animation values
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
-  const sparkleX = useSharedValue(0);
-  const sparkleY = useSharedValue(0);
+  const ringPulse = useSharedValue(0.5);
 
-  const COLORS = ['#3B82F6', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6', '#F472B6', '#06B6D4', '#EC4899'];
+  const spawnTarget = useCallback(() => {
+    const size = sizeRef.current;
+    const margin = Math.max(18, size / 5 + 12);
+    const x = margin + Math.random() * (100 - margin * 2);
+    const y = margin + Math.random() * (100 - margin * 2);
+    posRef.current = { x, y };
+    setTargetPos({ x, y });
+    scale.value = 0;
+    opacity.value = 0;
+    scale.value = withSpring(1, { damping: 11, stiffness: 150 });
+    opacity.value = withTiming(1, { duration: 150 });
+    ringPulse.value = withSequence(withTiming(1, { duration: 400 }), withTiming(0.4, { duration: 400 }));
+  }, []);
 
-  useEffect(() => {
-    scoreRef.current = score;
-  }, [score]);
-  useEffect(() => {
-    currentSizeRef.current = currentSize;
-  }, [currentSize]);
+  const finishGame = useCallback(async (finalScore: number) => {
+    const stats = { correct: finalScore, total: TOTAL_TARGETS, xp: finalScore * 12 };
+    setFinalStats(stats);
+    setDone(true);
+    setShowCongratulations(true);
+    speakTTS('Zoom master! You hit every target!', 0.78);
+    try {
+      await recordGame(stats.xp);
+      await logGameAndAward({
+        type: 'shrinkingTarget',
+        correct: finalScore,
+        total: TOTAL_TARGETS,
+        accuracy: (finalScore / TOTAL_TARGETS) * 100,
+        xpAwarded: stats.xp,
+        skillTags: ['graded-motor-control', 'progressive-precision', 'adaptability'],
+      });
+      router.setParams({ refreshStats: Date.now().toString() });
+    } catch (e) {
+      console.error('Failed to log shrinking target game:', e);
+    }
+  }, [router]);
+
+  const onTapDone = useCallback(() => {
+    const next = scoreRef.current + 1;
+    scoreRef.current = next;
+    setScore(next);
+    setSparkleKey(Date.now());
+    missRef.current = 0;
+
+    if (next >= TOTAL_TARGETS) {
+      finishGame(next);
+      return;
+    }
+
+    const nextSize = Math.max(MIN_SIZE, sizeRef.current - SIZE_DECREASE);
+    sizeRef.current = nextSize;
+    setCurrentSize(nextSize);
+    setTimeout(spawnTarget, 120);
+  }, [finishGame, spawnTarget]);
+
+  const handleTap = useCallback(() => {
+    if (doneRef.current) return;
+    playPop();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    scale.value = withSequence(
+      withTiming(1.2, { duration: 60 }),
+      withTiming(0, { duration: 130, easing: Easing.in(Easing.back(1.5)) }, (f) => { if (f) runOnJS(onTapDone)(); }),
+    );
+    opacity.value = withTiming(0, { duration: 130 });
+  }, [playPop, onTapDone]);
+
+  const handleMiss = useCallback(() => {
+    if (doneRef.current) return;
+    missRef.current += 1;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+    if (missRef.current >= MISS_THRESHOLD) {
+      const bigger = Math.min(MAX_SIZE, sizeRef.current + SIZE_INCREASE);
+      sizeRef.current = bigger;
+      setCurrentSize(bigger);
+      missRef.current = 0;
+      setSizeHint('Target grew bigger!');
+      setTimeout(() => setSizeHint(''), 1200);
+      speakTTS('Target is bigger now!', 0.78).catch(() => {});
+    }
+  }, []);
+
   useEffect(() => {
     doneRef.current = done;
   }, [done]);
 
-  // Generate random position for target - ensures target stays within bounds
-  const generateRandomPosition = useCallback(() => {
-    const size = currentSizeRef.current;
-    const minMargin = 25;
-    const sizeBasedMargin = Math.max(minMargin, size / 4 + 15);
-    const safeMargin = Math.min(sizeBasedMargin, 35);
-
-    const x = safeMargin + Math.random() * (100 - safeMargin * 2);
-    const y = safeMargin + Math.random() * (100 - safeMargin * 2);
-
-    return {
-      x: Math.max(20, Math.min(80, x)),
-      y: Math.max(20, Math.min(80, y)),
-    };
+  useEffect(() => {
+    speakTTS('Tap the target! It shrinks each time. If you miss, it grows to help you.', 0.78);
+    spawnTarget();
+    return () => { stopAllSpeech(); cleanupSounds(); };
   }, []);
 
-  // Spawn new target
-  const spawnTarget = useCallback(() => {
-    const newPosition = generateRandomPosition();
-    setTargetPosition(newPosition);
-    scale.value = 0;
-    opacity.value = 0;
-
-    // Animate in
-    scale.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) });
-    opacity.value = withTiming(1, { duration: 300 });
-  }, [generateRandomPosition, scale, opacity]);
-
-  // End game - defined before handleTap to avoid initialization error
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_TARGETS;
-      const xp = finalScore * 12; // 12 XP per target
-      const accuracy = (finalScore / total) * 100;
-
-      // Set all states together FIRST (like CatchTheBouncingStar)
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'shrinkingTarget',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['graded-motor-control', 'progressive-precision', 'adaptability'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log shrinking target game:', e);
-      }
-    },
-    [router],
-  );
-
-  const onTapAnimationDone = useCallback(() => {
-    const nextScore = scoreRef.current + 1;
-    setScore(nextScore);
-    setMissCount(0);
-    setSparkleKey(Date.now());
-
-    if (nextScore >= TOTAL_TARGETS) {
-      endGame(nextScore);
-      return;
-    }
-
-    const nextSize = Math.max(MIN_SIZE, currentSizeRef.current - SIZE_DECREASE);
-    currentSizeRef.current = nextSize;
-    setCurrentSize(nextSize);
-    // Let React apply new size before animating the next target in
-    requestAnimationFrame(() => {
-      spawnTarget();
-    });
-  }, [endGame, spawnTarget]);
-
-  // Handle target tap
-  const handleTap = useCallback(() => {
-    if (doneRef.current) return;
-
-    sparkleX.value = targetPosition.x;
-    sparkleY.value = targetPosition.y;
-
-    scale.value = withSequence(
-      withTiming(1.3, { duration: 120, easing: Easing.out(Easing.ease) }),
-      withTiming(0, { duration: 200, easing: Easing.in(Easing.ease) }, (finished) => {
-        if (finished) {
-          runOnJS(onTapAnimationDone)();
-        }
-      }),
-    );
-
-    opacity.value = withTiming(0, { duration: 200 });
-
-    playPop().catch(() => {});
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-  }, [targetPosition, scale, opacity, sparkleX, sparkleY, playPop, onTapAnimationDone]);
-
-  // Handle miss (tap outside target)
-  const handleMiss = useCallback(() => {
-    if (done) return;
-
-    setMissCount((m) => {
-      const newMissCount = m + 1;
-
-      // If struggling (multiple misses), increase target size
-      if (newMissCount >= MISS_THRESHOLD) {
-        setCurrentSize((s) => Math.min(MAX_SIZE, s + SIZE_INCREASE));
-        setMissCount(0); // Reset after adapting
-        speakTTS('Target is bigger now!', 0.78 );
-      }
-
-      return newMissCount;
-    });
-
-    try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    } catch {}
-  }, [done]);
-
-  // Initialize first target
-  useEffect(() => {
-    try {
-      speakTTS('Tap the target! It gets smaller each time. If you struggle, it grows bigger to help you.', 0.78);
-    } catch {}
-    spawnTarget();
-    
-    // Cleanup: Stop speech when component unmounts
-    return () => {
-      try {
-        stopTTS();
-      } catch (e) {
-        // Ignore errors
-      }
-      stopAllSpeech();
-      cleanupSounds();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
-
-  const handleBack = useCallback(() => {
-    try {
-      stopTTS();
-    } catch (e) {
-      // Ignore errors
-    }
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
-
-  // Animated styles
   const targetStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     opacity: opacity.value,
   }));
 
-  const sparkleStyle = useAnimatedStyle(() => ({
-    left: `${sparkleX.value}%`,
-    top: `${sparkleY.value}%`,
-  }));
+  const ringColor = RING_COLORS[score % RING_COLORS.length];
+  const sizePct = Math.round((currentSize / INITIAL_SIZE) * 100);
 
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
   if (showCongratulations && done && finalStats) {
     return (
       <CongratulationsScreen
-        message="Excellent Precision!"
-        showButtons={true}
-        onContinue={() => {
-          // Continue - go back to games (no ResultCard screen needed)
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
+        message="Zoom Champion!"
+        showButtons
+        correct={finalStats.correct}
+        total={finalStats.total}
+        xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }}
       />
     );
   }
+  if (done && finalStats && !showCongratulations) return null;
 
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
-
-  const currentColor = COLORS[score % COLORS.length];
-  const sizePercentage = ((currentSize / INITIAL_SIZE) * 100).toFixed(0);
+  const { x, y } = targetPos;
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <LinearGradient
-          colors={['#1E293B', '#0F172A']}
-          style={styles.backChipGradient}
-        >
-          <Text style={styles.backChipText}>← Back</Text>
-        </LinearGradient>
+      <LinearGradient colors={['#1E1B4B', '#312E81', '#4338CA', '#6366F1']} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>🎯 Shrinking Target 🎯</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Zoom Challenge</Text>
+        <Text style={styles.subtitle}>Target shrinks as you succeed</Text>
         <View style={styles.statsRow}>
-          <View style={styles.statBadge}>
-            <Text style={styles.statLabel}>Target</Text>
+          <View style={styles.statPill}>
+            <Image source={STAR_ICON} style={styles.starIcon} />
             <Text style={styles.statValue}>{score + 1}/{TOTAL_TARGETS}</Text>
           </View>
-          <View style={[styles.statBadge, styles.statBadgeAccent]}>
+          <View style={styles.statPill}>
             <Text style={styles.statLabel}>Size</Text>
-            <Text style={styles.statValue}>{sizePercentage}%</Text>
+            <Text style={styles.statValue}>{sizePct}%</Text>
           </View>
         </View>
-        <Text style={styles.helper}>
-          Tap the target! It gets smaller each time. If you struggle, it grows bigger to help you. ✨
-        </Text>
+        <View style={styles.sizeBarTrack}>
+          <View style={[styles.sizeBarFill, { width: `${sizePct}%`, backgroundColor: ringColor }]} />
+        </View>
+        {sizeHint ? <Text style={styles.sizeHint}>{sizeHint}</Text> : null}
       </View>
 
       <View style={styles.playArea}>
-        <LinearGradient
-          colors={['#F0FDF4', '#DCFCE7', '#BBF7D0']}
-          style={StyleSheet.absoluteFillObject}
-        />
         <Pressable style={StyleSheet.absoluteFillObject} onPress={handleMiss}>
           <Animated.View
             style={[
-              styles.targetContainer,
-              {
-                left: `${targetPosition.x}%`,
-                top: `${targetPosition.y}%`,
-                marginLeft: -currentSize / 2,
-                marginTop: -currentSize / 2,
-              },
+              styles.targetWrap,
+              { left: `${x}%`, top: `${y}%`, marginLeft: -currentSize / 2, marginTop: -currentSize / 2 },
               targetStyle,
             ]}
           >
-            <Pressable
-              onPress={handleTap}
-              style={styles.targetPressable}
-            >
-              <LinearGradient
-                colors={gradientStopsFromHex(currentColor)}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[
-                  styles.target,
-                  {
-                    width: currentSize,
-                    height: currentSize,
-                    borderRadius: currentSize / 2,
-                  },
-                ]}
-              >
-                <View style={styles.targetInner} />
+            <Pressable onPress={(e) => { e.stopPropagation?.(); handleTap(); }}>
+              <LinearGradient colors={[ringColor, '#6366F1', '#4338CA']} style={[styles.target, { width: currentSize, height: currentSize, borderRadius: currentSize / 2 }]}>
+                <View style={styles.targetShine} />
               </LinearGradient>
             </Pressable>
           </Animated.View>
         </Pressable>
-
-        <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
-          <SparkleBurst
-            visible={sparkleKey > 0}
-            color={currentColor}
-            count={12}
-            size={8}
-          />
-        </Animated.View>
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color={ringColor} count={12} size={7} />
       </View>
 
-      <View style={styles.footerBox}>
-        <LinearGradient
-          colors={['#FFFFFF', '#FEF3C7']}
-          style={styles.footerGradient}
-        >
-          <Text style={styles.footerMain}>
-            Skills: graded motor control • progressive finger precision • adaptability
-          </Text>
-          <Text style={styles.footerSub}>
-            The target shrinks as you succeed, building precision. If you miss, it grows to help you!
-          </Text>
-        </LinearGradient>
-      </View>
+      <Text style={styles.footer}>Miss the background? Target grows to help you</Text>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    borderRadius: 20,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 6,
-  },
-  backChipGradient: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 15,
-    letterSpacing: 0.3,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: '#78350F',
-    marginBottom: 12,
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
-  statBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 18,
-    alignItems: 'center',
-    minWidth: 100,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 5,
-  },
-  statBadgeAccent: {
-    backgroundColor: '#FEF3C7',
-  },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#64748B',
-    marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#0F172A',
-    letterSpacing: 0.5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 15,
-    color: '#92400E',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-    fontWeight: '600',
-  },
-  playArea: {
-    flex: 1,
-    position: 'relative',
-    marginBottom: 16,
-    borderRadius: 24,
-    overflow: 'hidden',
-    marginHorizontal: 8,
-    borderWidth: 3,
-    borderColor: '#A7F3D0',
-  },
-  targetContainer: {
-    position: 'absolute',
-  },
-  targetPressable: {
-    overflow: 'hidden',
-  },
-  target: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
-  },
-  targetInner: {
-    width: '40%',
-    height: '40%',
-    borderRadius: 999,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    shadowColor: '#fff',
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  sparkleContainer: {
-    position: 'absolute',
-    transform: [{ translateX: -20 }, { translateY: -20 }],
-  },
-  footerBox: {
-    marginBottom: 20,
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
-  },
-  footerGradient: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  footerMain: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#78350F',
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#92400E',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 28,
-    padding: 32,
-    alignItems: 'center',
-    marginTop: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 10,
-  },
-  resultTitle: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: '#78350F',
-    marginBottom: 12,
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  resultSubtitle: {
-    fontSize: 18,
-    color: '#64748B',
-    marginBottom: 12,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  savedText: {
-    color: '#22C55E',
-    fontWeight: '700',
-    marginTop: 16,
-    textAlign: 'center',
-    fontSize: 15,
-  },
-  resultContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
+  container: { flex: 1, backgroundColor: '#312E81' },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
+  backText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  title: { fontSize: 26, fontWeight: '900', color: '#E0E7FF' },
+  subtitle: { fontSize: 13, color: 'rgba(199,210,254,0.85)', fontWeight: '600', marginTop: 4, marginBottom: 12 },
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: '700' },
+  statValue: { fontSize: 18, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 16, height: 16, resizeMode: 'contain' },
+  sizeBarTrack: { width: '70%', height: 8, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 999, overflow: 'hidden', marginTop: 4 },
+  sizeBarFill: { height: '100%', borderRadius: 999 },
+  sizeHint: { marginTop: 6, fontSize: 13, fontWeight: '800', color: '#FDE68A' },
+  playArea: { flex: 1, marginHorizontal: 14, marginBottom: 12, borderRadius: 28, overflow: 'hidden', borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)', backgroundColor: 'rgba(0,0,0,0.15)' },
+  targetWrap: { position: 'absolute' },
+  target: { justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)', shadowColor: '#818CF8', shadowOpacity: 0.6, shadowRadius: 20, elevation: 14 },
+  targetShine: { position: 'absolute', top: '14%', left: '20%', width: '34%', height: '24%', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.45)', transform: [{ rotate: '-20deg' }] },
+  footer: { textAlign: 'center', color: 'rgba(199,210,254,0.75)', fontSize: 13, fontWeight: '600', paddingBottom: 18 },
 });
 
 export default ShrinkingTargetGame;
-

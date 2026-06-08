@@ -1,528 +1,231 @@
+/**
+ * OT Level 1 · Session 7 · Game 4 — Tap The Shape I Show You
+ * Theme: "Shape Flash Studio" — memorize the flash, tap the match.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import { SparkleBurst } from '@/components/game/FX';
+import { SESSION7_PACING } from '@/components/game/occupational/level1/session7/session7Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Animated,
-    Easing,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+const P = SESSION7_PACING;
+const TOTAL_ROUNDS = 8;
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
-const TOTAL_ROUNDS = 8;
-const SHAPE_SIZE = 120;
-const SHOW_DURATION_MS = 2000; // Shape shows for 2 seconds
+const STAR_ICON = require('@/assets/icons/star.png');
 
 type ShapeType = 'circle' | 'square' | 'triangle';
-
-const SHAPE_EMOJIS: Record<ShapeType, string> = {
-  circle: '⭕',
-  square: '⬜',
-  triangle: '▲',
+const EMOJIS: Record<ShapeType, string> = { circle: '⭕', square: '⬜', triangle: '🔺' };
+const COLORS: Record<ShapeType, [string, string]> = {
+  circle: ['#60A5FA', '#2563EB'],
+  square: ['#F472B6', '#DB2777'],
+  triangle: ['#FBBF24', '#D97706'],
 };
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.55 });
+          ref.current = sound;
+        }
+        await ref.current.replayAsync();
+      } catch { /* noop */ }
+    })();
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
 
 const TapTheShapeIShowYouGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
+  const playSuccess = useSound(SUCCESS_SOUND);
+  const playError = useSound(ERROR_SOUND);
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
-  const [roundActive, setRoundActive] = useState(false);
-  const [targetShape, setTargetShape] = useState<ShapeType | null>(null);
-  const [showingTarget, setShowingTarget] = useState(true);
   const [showCongratulations, setShowCongratulations] = useState(false);
-  const [shapes, setShapes] = useState<ShapeType[]>([]);
-  const [isShaking, setIsShaking] = useState(false);
+  const [phase, setPhase] = useState<'preview' | 'choose'>('preview');
+  const [choices, setChoices] = useState<ShapeType[]>([]);
+  const [sparkleKey, setSparkleKey] = useState(0);
 
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playError = useSoundEffect(ERROR_SOUND);
+  const targetRef = useRef<ShapeType>('circle');
+  const roundActiveRef = useRef(false);
+  const doneRef = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const targetScale = useRef(new Animated.Value(1)).current;
-  const targetOpacity = useRef(new Animated.Value(1)).current;
-  const shakeAnim = useRef(new Animated.Value(0)).current;
+  const previewScale = useSharedValue(1);
+  const previewOpacity = useSharedValue(1);
 
-  // End game function
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 15; // 15 XP per correct tap
-      const accuracy = (finalScore / total) * 100;
+  const endGame = useCallback((finalScore: number) => {
+    const total = TOTAL_ROUNDS;
+    const xp = finalScore * 15;
+    setFinalStats({ correct: finalScore, total, xp });
+    setDone(true);
+    doneRef.current = true;
+    setShowCongratulations(true);
+    speakTTS('Shape flash master!', 0.78);
+    recordGame(xp).then(() =>
+      logGameAndAward({ type: 'tapTheShapeIShowYou', correct: finalScore, total, accuracy: (finalScore / total) * 100, xpAwarded: xp,
+        skillTags: ['shape-recognition-and-matching', 'working-memory', 'controlled-tapping'] }),
+    ).then(() => router.setParams({ refreshStats: Date.now().toString() })).catch(console.error);
+  }, [router]);
 
-      // Set all states together FIRST (like CatchTheBouncingStar)
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setRoundActive(false);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'tapTheShapeIShowYou' as any,
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['shape-recognition-and-matching', 'working-memory', 'controlled-tapping'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log tap the shape I show you game:', e);
-      }
-    },
-    [router],
-  );
-
-  // Start a new round
   const startRound = useCallback(() => {
-    // Generate random target shape
     const shapes: ShapeType[] = ['circle', 'square', 'triangle'];
-    const newTarget = shapes[Math.floor(Math.random() * shapes.length)];
-    setTargetShape(newTarget);
-    setShowingTarget(true);
-    setRoundActive(false);
-    setIsShaking(false);
+    const target = shapes[Math.floor(Math.random() * shapes.length)];
+    targetRef.current = target;
+    setPhase('preview');
+    roundActiveRef.current = false;
+    previewScale.value = 1;
+    previewOpacity.value = 1;
+    previewScale.value = withRepeat(
+      withSequence(withTiming(1.15, { duration: 350 }), withTiming(1, { duration: 350 })),
+      2,
+      true,
+    );
 
-    // Reset animations
-    targetScale.setValue(1);
-    targetOpacity.setValue(1);
-    shakeAnim.setValue(0);
-
-    // Show target shape with pulse animation
-    Animated.sequence([
-      Animated.parallel([
-        Animated.sequence([
-          Animated.timing(targetScale, {
-            toValue: 1.2,
-            duration: 300,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(targetScale, {
-            toValue: 1,
-            duration: 300,
-            easing: Easing.in(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.timing(targetOpacity, {
-          toValue: 1,
-          duration: 200,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.delay(SHOW_DURATION_MS - 600),
-      Animated.timing(targetOpacity, {
-        toValue: 0,
-        duration: 300,
-        easing: Easing.in(Easing.ease),
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      // After showing target, display 3 shapes
-      setShowingTarget(false);
-      const allShapes: ShapeType[] = ['circle', 'square', 'triangle'];
-      // Shuffle shapes
-      const shuffled = [...allShapes].sort(() => Math.random() - 0.5);
-      setShapes(shuffled);
-      setRoundActive(true);
-    });
-  }, [targetScale, targetOpacity]);
-
-  // Handle shape tap
-  const handleShapeTap = useCallback(
-    async (shape: ShapeType) => {
-      if (!roundActive || done || isShaking) return;
-
-      const isCorrect = shape === targetShape;
-
-      if (isCorrect) {
-        // Correct tap - success animation
-        setRoundActive(false);
-        try {
-          await playSuccess();
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch {}
-
-        setScore((s) => s + 1);
-
-        // Next round or finish
-        if (round >= TOTAL_ROUNDS) {
-          endGame(score + 1);
-        } else {
-          setTimeout(() => {
-            setRound((r) => r + 1);
-            setTimeout(() => {
-              startRound();
-            }, 400);
-          }, 600);
-        }
-      } else {
-        // Wrong tap - shake animation
-        setIsShaking(true);
-        Animated.sequence([
-          Animated.timing(shakeAnim, {
-            toValue: 10,
-            duration: 50,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(shakeAnim, {
-            toValue: -10,
-            duration: 50,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(shakeAnim, {
-            toValue: 10,
-            duration: 50,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(shakeAnim, {
-            toValue: 0,
-            duration: 50,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          setIsShaking(false);
-        });
-
-        try {
-          await playError();
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          speakTTS('Try again!', 0.78 );
-        } catch {}
-
-        // Retry - don't advance round
-      }
-    },
-    [roundActive, done, isShaking, targetShape, round, score, startRound, endGame, playSuccess, playError, shakeAnim],
-  );
-
-  // Start first round
-  useEffect(() => {
-    if (!done) {
-      startRound();
-    }
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      previewOpacity.value = withTiming(0, { duration: 280 });
+      setTimeout(() => {
+        setChoices([...shapes].sort(() => Math.random() - 0.5));
+        setPhase('choose');
+        roundActiveRef.current = true;
+        previewOpacity.value = 1;
+      }, 300);
+    }, P.showShapeMs);
   }, []);
 
   useEffect(() => {
-    if (!done) {
-      try {
-        speakTTS('Watch the shape, then tap the same one!', { rate: 0.78 });
-      } catch {}
-    }
-    return () => {
-      stopAllSpeech();
-      cleanupSounds();
-    };
+    if (doneRef.current) return;
+    startRound();
+  }, [round]);
+
+  useEffect(() => {
+    speakTTS('Watch the shape flash, then tap the same one!', 0.78);
+    return () => { stopAllSpeech(); cleanupSounds(); if (timerRef.current) clearTimeout(timerRef.current); };
   }, []);
 
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
+  const handleTap = useCallback((shape: ShapeType) => {
+    if (!roundActiveRef.current || doneRef.current || phase !== 'choose') return;
+    if (shape === targetRef.current) {
+      setSparkleKey(Date.now());
+      playSuccess();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      roundActiveRef.current = false;
+      setScore((prev) => {
+        const next = prev + 1;
+        setTimeout(() => { if (next >= TOTAL_ROUNDS) endGame(next); else setRound((r) => r + 1); }, P.nextRoundDelayMs);
+        return next;
+      });
+    } else {
+      playError();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      speakTTS('Try again!', 0.78).catch(() => {});
+    }
+  }, [phase, endGame, playSuccess, playError]);
 
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
+  const previewStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: previewScale.value }],
+    opacity: previewOpacity.value,
+  }));
+
   if (showCongratulations && done && finalStats) {
     return (
-      <CongratulationsScreen
-        message="Shape Master!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
+      <CongratulationsScreen message="Flash Master!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
-
-  const shakeTranslateX = shakeAnim.interpolate({
-    inputRange: [-10, 10],
-    outputRange: [-10, 10],
-  });
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#FFF7ED', '#FFEDD5', '#FED7AA', '#FDBA74']} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backTextDark}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Tap The Shape I Show You</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 🎯 Score: {score}
-        </Text>
-        <Text style={styles.helper}>
-          {showingTarget ? 'Watch the shape!' : 'Tap the matching shape!'}
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.titleDark}>📸 Shape Flash Studio</Text>
+        <Text style={styles.subtitleDark}>{phase === 'preview' ? 'Memorize the shape!' : 'Tap the matching shape'}</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabelDark}>Round</Text><Text style={styles.statValueDark}>{round}/{TOTAL_ROUNDS}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} /><Text style={styles.statValueDark}>{score}</Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.playArea}>
-        {showingTarget && targetShape ? (
-          <Animated.View
-            style={[
-              styles.targetContainer,
-              {
-                transform: [
-                  { scale: targetScale },
-                  { translateX: shakeTranslateX },
-                ],
-                opacity: targetOpacity,
-              },
-            ]}
-          >
-            <View style={[styles.targetShape, { backgroundColor: '#3B82F6' }]}>
-              <Text style={styles.shapeEmoji}>{SHAPE_EMOJIS[targetShape]}</Text>
-            </View>
+        {phase === 'preview' ? (
+          <Animated.View style={previewStyle}>
+            <LinearGradient colors={COLORS[targetRef.current]} style={styles.preview}>
+              <Text style={styles.previewEmoji}>{EMOJIS[targetRef.current]}</Text>
+            </LinearGradient>
+            <Text style={styles.flashLabel}>👀 Watch closely!</Text>
           </Animated.View>
         ) : (
-          <View style={styles.shapesContainer}>
-            {shapes.map((shape, index) => (
-              <Animated.View
-                key={`${shape}-${index}`}
-                style={[
-                  styles.shapeContainer,
-                  isShaking && shape !== targetShape
-                    ? {
-                        transform: [{ translateX: shakeTranslateX }],
-                      }
-                    : {},
-                ]}
-              >
-                <Pressable
-                  onPress={() => handleShapeTap(shape)}
-                  style={[
-                    styles.shape,
-                    {
-                      backgroundColor: shape === targetShape ? '#22C55E' : '#3B82F6',
-                      borderColor: shape === targetShape ? '#16A34A' : '#2563EB',
-                      borderWidth: shape === targetShape ? 4 : 2,
-                    },
-                  ]}
-                  disabled={!roundActive || done || isShaking}
-                >
-                  <Text style={styles.shapeEmoji}>{SHAPE_EMOJIS[shape]}</Text>
-                </Pressable>
-              </Animated.View>
+          <View style={styles.choicesRow}>
+            {choices.map((s) => (
+              <Pressable key={s} onPress={() => handleTap(s)} style={styles.choiceWrap}>
+                <LinearGradient colors={COLORS[s]} style={styles.choice}>
+                  <Text style={styles.choiceEmoji}>{EMOJIS[s]}</Text>
+                </LinearGradient>
+              </Pressable>
             ))}
           </View>
         )}
-      </View>
-
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: shape recognition and matching • working memory • controlled tapping
-        </Text>
-        <Text style={styles.footerSub}>
-          Remember the shape, then find and tap the matching one!
-        </Text>
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#F97316" count={14} size={8} />
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  targetContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  targetShape: {
-    width: SHAPE_SIZE * 1.5,
-    height: SHAPE_SIZE * 1.5,
-    borderRadius: SHAPE_SIZE * 0.75,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 8,
-  },
-  shapesContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 20,
-    flexWrap: 'wrap',
-  },
-  shapeContainer: {
-    margin: 10,
-  },
-  shape: {
-    width: SHAPE_SIZE,
-    height: SHAPE_SIZE,
-    borderRadius: SHAPE_SIZE / 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 8,
-  },
-  shapeEmoji: {
-    fontSize: 60,
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#64748B',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  savedText: {
-    marginTop: 16,
-    fontSize: 14,
-    color: '#22C55E',
-    fontWeight: '600',
-  },
+  container: { flex: 1 },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.75)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(234,88,12,0.25)' },
+  backTextDark: { color: '#9A3412', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  titleDark: { fontSize: 28, fontWeight: '900', color: '#9A3412' },
+  subtitleDark: { fontSize: 14, color: '#C2410C', fontWeight: '600', marginTop: 4, marginBottom: 14 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.7)', borderWidth: 1, borderColor: 'rgba(234,88,12,0.2)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.2)', borderColor: 'rgba(251,191,36,0.4)' },
+  statLabelDark: { fontSize: 11, color: '#C2410C', fontWeight: '700', textTransform: 'uppercase' },
+  statValueDark: { fontSize: 20, fontWeight: '900', color: '#9A3412' },
+  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  playArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  preview: { width: P.shapeShow.previewSize + 20, height: P.shapeShow.previewSize + 20, borderRadius: 24, justifyContent: 'center', alignItems: 'center', shadowColor: '#EA580C', shadowOpacity: 0.35, shadowRadius: 16, elevation: 12 },
+  previewEmoji: { fontSize: 64 },
+  flashLabel: { marginTop: 20, fontSize: 18, fontWeight: '800', color: '#9A3412', textAlign: 'center' },
+  choicesRow: { flexDirection: 'row', gap: 16 },
+  choiceWrap: { borderRadius: 20, overflow: 'hidden' },
+  choice: { width: P.shapeShow.choiceSize, height: P.shapeShow.choiceSize, borderRadius: 20, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, elevation: 8 },
+  choiceEmoji: { fontSize: 48 },
 });
 
 export default TapTheShapeIShowYouGame;
-

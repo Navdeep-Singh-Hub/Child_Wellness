@@ -1,3 +1,4 @@
+import { UNLOCK_ALL_THERAPY_CONTENT } from '@/constants/unlockConfig';
 import { advanceTherapyProgress, fetchTherapyProgress, initTherapyProgress, type TherapyProgress } from '@/utils/api';
 import { useEffect, useState } from 'react';
 
@@ -115,6 +116,8 @@ export function isUnlocked(
   session: number,
   game: number
 ): boolean {
+  if (UNLOCK_ALL_THERAPY_CONTENT) return true;
+
   // Matcher (section 2) sessions 1–10 are always unlocked for play (Farm through Celebration Party)
   if (section === 2 && session >= 1 && session <= 10) return true;
   // Explorer (section 1) Sessions 1–10 — always unlocked

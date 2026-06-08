@@ -88,12 +88,22 @@ export const FindSoundSourceGame: React.FC<Props> = ({
   const soundEmojiScale = useRef(new Animated.Value(1)).current;
   const soundEmojiRotation = useRef(new Animated.Value(0)).current;
   const backgroundPulse = useRef(new Animated.Value(1)).current;
+  const trialTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearTrialTimers = useCallback(() => {
+    trialTimersRef.current.forEach((timer) => clearTimeout(timer));
+    trialTimersRef.current = [];
+  }, []);
+
+  const scheduleTrialStep = useCallback((fn: () => void, delayMs: number) => {
+    const timer = setTimeout(fn, delayMs);
+    trialTimersRef.current.push(timer);
+  }, []);
 
   useEffect(() => {
-    // Preload sounds on mount for instant playback (especially important for mobile browsers)
-    preloadSounds();
-    startTrial();
+    preloadSounds().then(() => startTrial());
     return () => {
+      clearTrialTimers();
       clearScheduledSpeech();
     };
   }, []);
@@ -136,7 +146,17 @@ export const FindSoundSourceGame: React.FC<Props> = ({
     }
   }, [correct, requiredTrials, gameFinished]);
 
+  const playTrialSound = useCallback(async (correctIndex: number) => {
+    clearScheduledSpeech();
+    stopTTS();
+    stopAllSpeech();
+
+    const source = SOUND_SOURCES[correctIndex];
+    await playSound(source.soundKey, 1.0, 1.0);
+  }, []);
+
   const startTrial = useCallback(() => {
+    clearTrialTimers();
     setPhase('sound');
     setCanTap(false);
     setFeedbackResult(null);
@@ -150,57 +170,51 @@ export const FindSoundSourceGame: React.FC<Props> = ({
     soundEmojiRotation.setValue(0);
     backgroundPulse.setValue(1);
 
-    // Random correct answer
     const correctIndex = Math.floor(Math.random() * SOUND_SOURCES.length);
     setCurrentCorrect(correctIndex);
 
-    // Select 2 options: one correct + one random wrong
     const wrongOptions = SOUND_SOURCES.filter((_, idx) => idx !== correctIndex);
     const randomWrong = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
     const wrongIndex = SOUND_SOURCES.findIndex(s => s.soundKey === randomWrong.soundKey);
-    const options = [correctIndex, wrongIndex].sort(() => Math.random() - 0.5); // Shuffle
+    const options = [correctIndex, wrongIndex].sort(() => Math.random() - 0.5);
     setCurrentOptions(options);
 
-    // Speak instruction
-    speak('Listen carefully, which one made the sound?');
+    speak('Listen!');
 
-    // Animate sound emoji
     Animated.sequence([
       Animated.parallel([
         Animated.spring(soundEmojiScale, {
-          toValue: 1.3,
+          toValue: 1.2,
           tension: 50,
           friction: 7,
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
         Animated.timing(soundEmojiRotation, {
-          toValue: 360,
-          duration: 1000,
+          toValue: 1,
+          duration: 800,
           easing: Easing.out(Easing.ease),
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
       ]),
       Animated.spring(soundEmojiScale, {
         toValue: 1,
         tension: 50,
         friction: 7,
-        useNativeDriver: false,
+        useNativeDriver: true,
       }),
     ]).start();
 
-    // Play sound after a short delay
-    setTimeout(() => {
-      const source = SOUND_SOURCES[correctIndex];
-      playSound(source.soundKey, 1.0, 1.0);
-      
-      // Show choices after sound
-      setTimeout(() => {
+    scheduleTrialStep(async () => {
+      await playTrialSound(correctIndex);
+
+      scheduleTrialStep(() => {
         setPhase('choice');
         setCanTap(true);
         startGlowAnimation();
-      }, 2000);
-    }, 2000);
-  }, []);
+        speak('Which one made the sound?');
+      }, 1200);
+    }, 700);
+  }, [clearTrialTimers, playTrialSound, scheduleTrialStep]);
 
   const startGlowAnimation = () => {
     itemGlows.forEach(glow => {
@@ -531,8 +545,8 @@ export const FindSoundSourceGame: React.FC<Props> = ({
                     { scale: soundEmojiScale },
                     {
                       rotate: soundEmojiRotation.interpolate({
-                        inputRange: [0, 360],
-                        outputRange: ['0deg', '360deg'],
+                        inputRange: [0, 1],
+                        outputRange: ['0deg', '15deg'],
                       }),
                     },
                   ],
@@ -545,7 +559,16 @@ export const FindSoundSourceGame: React.FC<Props> = ({
           )}
 
           {phase === 'choice' && (
-            <View style={styles.choiceContainer}>
+            <View style={styles.choiceWrapper}>
+              <Pressable
+                onPress={() => playTrialSound(currentCorrect)}
+                style={styles.replayButton}
+                hitSlop={12}
+              >
+                <Text style={styles.replayEmoji}>🔊</Text>
+                <Text style={styles.replayText}>Hear again</Text>
+              </Pressable>
+              <View style={styles.choiceContainer}>
               {currentOptions.map((sourceIndex) => {
                 const source = SOUND_SOURCES[sourceIndex];
                 return (
@@ -591,6 +614,7 @@ export const FindSoundSourceGame: React.FC<Props> = ({
                   </Pressable>
                 );
               })}
+              </View>
             </View>
           )}
 
@@ -727,6 +751,30 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.1)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
+  },
+  choiceWrapper: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  replayButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    borderWidth: 2,
+    borderColor: '#3B82F6',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 24,
+    marginBottom: 28,
+    gap: 8,
+  },
+  replayEmoji: {
+    fontSize: 22,
+  },
+  replayText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E40AF',
   },
   choiceContainer: {
     flexDirection: 'row',

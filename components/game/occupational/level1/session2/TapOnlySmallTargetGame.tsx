@@ -1,549 +1,312 @@
+/**
+ * OT Level 1 · Session 2 · Game 2 — Tap Only Small Target
+ * Theme: "Gem vs Boulder" — glowing gem among dull boulders in a crystal cave.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import { SparkleBurst } from '@/components/game/FX';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Animated,
-    Easing,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
 const TOTAL_ROUNDS = 8;
-const LARGE_SIZE = 180; // Large shape size
-const SMALL_SIZE = 80; // Small shape size (much smaller)
-const GLOW_DURATION_MS = 2200; // Small shape glow — longer hint for kids
-const NEXT_ROUND_DELAY_MS = 150; // Pause before next pair appears
+const ROUND_HANDOFF_MS = 340;
+const STAR_ICON = require('@/assets/icons/star.png');
 
-type Shape = {
-  id: 'large' | 'small';
-  x: number; // percentage
-  y: number; // percentage
-  color: string;
-  scale: Animated.Value;
-  glowOpacity: Animated.Value;
-  shakeAnim: Animated.Value;
-};
-
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.45 });
+          ref.current = sound;
+        }
+        ref.current.replayAsync().catch(() => {});
+      } catch { /* noop */ }
+    })();
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
+
+function FeedbackChip({ text, type, show }: { text: string; type: 'ok' | 'bad'; show: boolean }) {
+  const opacity = useSharedValue(0);
+  const y = useSharedValue(8);
+  useEffect(() => {
+    if (!show) return;
+    opacity.value = withSequence(withTiming(1, { duration: 120 }), withTiming(0, { duration: 350 }));
+    y.value = withSpring(0, { damping: 12 });
+  }, [show, text]);
+  const style = useAnimatedStyle(() => ({ opacity: opacity.value, transform: [{ translateY: y.value }] }));
+  if (!show) return null;
+  return (
+    <Animated.View style={[styles.feedback, type === 'ok' ? styles.feedbackOk : styles.feedbackBad, style]}>
+      <Text style={[styles.feedbackText, type === 'bad' && styles.feedbackTextDark]}>{text}</Text>
+    </Animated.View>
+  );
+}
 
 const TapOnlySmallTargetGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const largeSize = Math.min(width * 0.38, 168);
+  const smallSize = Math.min(width * 0.17, 76);
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
-  const [roundActive, setRoundActive] = useState(false);
-  const [shapes, setShapes] = useState<Shape[]>([]);
+  const [roundActive, setRoundActive] = useState(true);
+  const [positions, setPositions] = useState<{ small: { x: number; y: number }; large: { x: number; y: number }; smallSide: 'left' | 'right' } | null>(null);
+  const [sparkleKey, setSparkleKey] = useState(0);
+  const [feedback, setFeedback] = useState<{ text: string; type: 'ok' | 'bad'; key: number } | null>(null);
 
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playError = useSoundEffect(ERROR_SOUND);
+  const scoreRef = useRef(0);
+  const roundRef = useRef(1);
+  const playSuccess = useSound(SUCCESS_SOUND);
+  const playError = useSound(ERROR_SOUND);
 
-  const COLORS = ['#3B82F6', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6', '#F472B6'];
+  const shakeX = useSharedValue(0);
+  const smallScale = useSharedValue(0);
+  const largeScale = useSharedValue(0);
+  const gemGlow = useSharedValue(0.5);
+  const smallEnter = useSharedValue(0);
+  const largeEnter = useSharedValue(0);
 
-  // Generate random positions for shapes, ensuring they don't overlap
-  const generateShapePositions = useCallback((): { large: { x: number; y: number }; small: { x: number; y: number } } => {
-    const margin = 20; // percentage margin from edges
-    const minDistance = 25; // minimum distance between shapes (percentage)
-
-    // Generate large shape position
-    const largeX = margin + Math.random() * (100 - margin * 2);
-    const largeY = margin + Math.random() * (100 - margin * 2);
-
-    // Generate small shape position (ensure it's far enough from large)
-    let smallX = 0;
-    let smallY = 0;
-    let attempts = 0;
-    let validPosition = false;
-
-    while (!validPosition && attempts < 50) {
-      smallX = margin + Math.random() * (100 - margin * 2);
-      smallY = margin + Math.random() * (100 - margin * 2);
-
-      const dx = largeX - smallX;
-      const dy = largeY - smallY;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      if (distance >= minDistance) {
-        validPosition = true;
-      }
-      attempts++;
+  const generatePositions = useCallback(() => {
+    const margin = 22;
+    const minDist = 28;
+    let lx = 0, ly = 0, sx = 0, sy = 0;
+    for (let i = 0; i < 50; i++) {
+      lx = margin + Math.random() * (100 - margin * 2);
+      ly = margin + Math.random() * (100 - margin * 2);
+      sx = margin + Math.random() * (100 - margin * 2);
+      sy = margin + Math.random() * (100 - margin * 2);
+      if (Math.hypot(lx - sx, ly - sy) >= minDist) break;
     }
-
-    return { large: { x: largeX, y: largeY }, small: { x: smallX, y: smallY } };
+    const smallSide: 'left' | 'right' = sx < lx ? 'left' : 'right';
+    return { small: { x: sx, y: sy }, large: { x: lx, y: ly }, smallSide };
   }, []);
 
-  // Start a new round
   const startRound = useCallback(() => {
-    const positions = generateShapePositions();
-    const largeColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-    const smallColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-
-    const newShapes: Shape[] = [
-      {
-        id: 'large',
-        x: positions.large.x,
-        y: positions.large.y,
-        color: largeColor,
-        scale: new Animated.Value(1),
-        glowOpacity: new Animated.Value(0),
-        shakeAnim: new Animated.Value(0),
-      },
-      {
-        id: 'small',
-        x: positions.small.x,
-        y: positions.small.y,
-        color: smallColor,
-        scale: new Animated.Value(1),
-        glowOpacity: new Animated.Value(0),
-        shakeAnim: new Animated.Value(0),
-      },
-    ];
-
-    setShapes(newShapes);
+    const pos = generatePositions();
+    setPositions(pos);
     setRoundActive(true);
+    smallScale.value = 0;
+    largeScale.value = 0;
+    smallEnter.value = pos.smallSide === 'left' ? -80 : 80;
+    largeEnter.value = pos.smallSide === 'left' ? 80 : -80;
+    smallScale.value = withSpring(1, { damping: 12, stiffness: 140 });
+    largeScale.value = withSpring(1, { damping: 12, stiffness: 100 });
+    smallEnter.value = withSpring(0, { damping: 14, stiffness: 100 });
+    largeEnter.value = withSpring(0, { damping: 14, stiffness: 90 });
+    gemGlow.value = withRepeat(
+      withSequence(withTiming(1, { duration: 600 }), withTiming(0.45, { duration: 600 })),
+      -1,
+      true,
+    );
+  }, [generatePositions]);
 
-    // Make small shape glow briefly
-    Animated.sequence([
-      Animated.timing(newShapes[1].glowOpacity, {
-        toValue: 1,
-        duration: 300,
-        easing: Easing.out(Easing.ease),
-        useNativeDriver: false,
-      }),
-      Animated.timing(newShapes[1].glowOpacity, {
-        toValue: 0.6,
-        duration: GLOW_DURATION_MS - 600,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: false,
-      }),
-      Animated.timing(newShapes[1].glowOpacity, {
-        toValue: 0,
-        duration: 300,
-        easing: Easing.in(Easing.ease),
-        useNativeDriver: false,
-      }),
-    ]).start();
-  }, [generateShapePositions]);
-
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 15;
-      const accuracy = (finalScore / total) * 100;
-
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setShowCongratulations(true);
-
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'tapOnlySmall',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['selective-targeting', 'inhibition', 'visual-discrimination'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log tap only small game:', e);
-      }
-    },
-    [router],
-  );
-
-  // Handle shape tap
-  const handleShapeTap = useCallback(
-    async (shapeId: 'large' | 'small') => {
-      if (!roundActive || done) return;
-
-      const shape = shapes.find((s) => s.id === shapeId);
-      if (!shape) return;
-
-      const isCorrect = shapeId === 'small';
-
-      if (isCorrect) {
-        setRoundActive(false);
-        const newScore = score + 1;
-
-        Animated.parallel([
-          Animated.sequence([
-            Animated.timing(shape.scale, {
-              toValue: 1.25,
-              duration: 80,
-              easing: Easing.out(Easing.ease),
-              useNativeDriver: false,
-            }),
-            Animated.timing(shape.scale, {
-              toValue: 0,
-              duration: 100,
-              easing: Easing.in(Easing.ease),
-              useNativeDriver: false,
-            }),
-          ]),
-          Animated.timing(shape.glowOpacity, {
-            toValue: 0,
-            duration: 120,
-            useNativeDriver: false,
-          }),
-        ]).start(() => {
-          playSuccess().catch(() => {});
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-
-          setScore(newScore);
-
-          if (round >= TOTAL_ROUNDS) {
-            endGame(newScore);
-          } else {
-            setTimeout(() => {
-              setRound((r) => r + 1);
-              startRound();
-            }, NEXT_ROUND_DELAY_MS);
-          }
-        });
-      } else {
-        // Wrong tap - shake animation
-        Animated.sequence([
-          Animated.timing(shape.shakeAnim, {
-            toValue: 10,
-            duration: 50,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: false,
-          }),
-          Animated.timing(shape.shakeAnim, {
-            toValue: -10,
-            duration: 50,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
-          }),
-          Animated.timing(shape.shakeAnim, {
-            toValue: 10,
-            duration: 50,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: false,
-          }),
-          Animated.timing(shape.shakeAnim, {
-            toValue: 0,
-            duration: 50,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: false,
-          }),
-        ]).start();
-
-        try {
-          await playError();
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          speakTTS('Tap the small one!', 0.78 );
-        } catch {}
-      }
-    },
-    [roundActive, done, shapes, round, score, playSuccess, playError, startRound, endGame],
-  );
-
-  // Initialize first round
-  useEffect(() => {
+  const endGame = useCallback(async (finalScore: number) => {
+    const stats = { correct: finalScore, total: TOTAL_ROUNDS, xp: finalScore * 15 };
+    setFinalStats(stats);
+    setDone(true);
+    setShowCongratulations(true);
+    speakTTS('Perfect targeting! You found every gem!', 0.78);
     try {
-      speakTTS('Watch for the small shape to glow, then tap only the small one!', 0.78);
-    } catch {}
+      await recordGame(stats.xp);
+      await logGameAndAward({
+        type: 'tapOnlySmall',
+        correct: finalScore,
+        total: TOTAL_ROUNDS,
+        accuracy: (finalScore / TOTAL_ROUNDS) * 100,
+        xpAwarded: stats.xp,
+        skillTags: ['selective-targeting', 'inhibition', 'visual-discrimination'],
+      });
+      router.setParams({ refreshStats: Date.now().toString() });
+    } catch (e) {
+      console.error('Failed to log tap only small game:', e);
+    }
+  }, [router]);
+
+  const nextRound = useCallback((newScore: number) => {
+    if (roundRef.current >= TOTAL_ROUNDS) {
+      endGame(newScore);
+    } else {
+      roundRef.current += 1;
+      setRound(roundRef.current);
+      setTimeout(startRound, ROUND_HANDOFF_MS);
+    }
+  }, [endGame, startRound]);
+
+  const handleTap = useCallback((which: 'small' | 'large') => {
+    if (!roundActive || done) return;
+    const isCorrect = which === 'small';
+
+    if (isCorrect) {
+      setRoundActive(false);
+      playSuccess();
+      setSparkleKey(Date.now());
+      setFeedback({ text: '✓ Gem found!', type: 'ok', key: Date.now() });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      smallScale.value = withSequence(withTiming(1.2, { duration: 70 }), withTiming(0, { duration: 120 }));
+      const newScore = scoreRef.current + 1;
+      scoreRef.current = newScore;
+      setScore(newScore);
+      setTimeout(() => nextRound(newScore), ROUND_HANDOFF_MS);
+    } else {
+      playError();
+      setFeedback({ text: 'Tap the small gem!', type: 'bad', key: Date.now() });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      shakeX.value = withSequence(
+        withTiming(-10, { duration: 45 }), withTiming(10, { duration: 45 }),
+        withTiming(-6, { duration: 45 }), withTiming(0, { duration: 45 }),
+      );
+      speakTTS('Tap the small one!', 0.78).catch(() => {});
+    }
+  }, [roundActive, done, nextRound, playSuccess, playError]);
+
+  useEffect(() => {
+    speakTTS('Find the small glowing gem. Ignore the big boulder!', 0.78);
     startRound();
+    return () => { stopAllSpeech(); cleanupSounds(); };
   }, []);
 
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
+  const arenaStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
+  const smallStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: smallEnter.value }, { scale: smallScale.value }],
+  }));
+  const largeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: largeEnter.value }, { scale: largeScale.value }],
+    opacity: 0.75,
+  }));
+  const glowStyle = useAnimatedStyle(() => ({ opacity: gemGlow.value }));
 
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
   if (showCongratulations && done && finalStats) {
     return (
       <CongratulationsScreen
-        message="Excellent Targeting!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
+        message="Gem Hunter!"
+        showButtons
+        correct={finalStats.correct}
+        total={finalStats.total}
+        xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }}
       />
     );
   }
+  if (done && finalStats && !showCongratulations) return null;
 
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
+  const renderGem = () => (
+    <Animated.View style={smallStyle}>
+      <Animated.View pointerEvents="none" style={[styles.gemGlow, { width: smallSize + 36, height: smallSize + 36, borderRadius: (smallSize + 36) / 2 }, glowStyle]} />
+      <Pressable onPress={() => handleTap('small')} style={{ width: smallSize + 20, height: smallSize + 20, justifyContent: 'center', alignItems: 'center' }}>
+        <LinearGradient colors={['#FDE68A', '#F59E0B', '#B45309']} style={[styles.gem, { width: smallSize, height: smallSize, borderRadius: smallSize / 2 }]}>
+          <View style={styles.gemShine} />
+          <Text style={styles.gemStar}>★</Text>
+        </LinearGradient>
+      </Pressable>
+      <Text style={styles.gemLabel}>GEM</Text>
+    </Animated.View>
+  );
+
+  const renderBoulder = () => (
+    <Animated.View style={largeStyle}>
+      <Pressable onPress={() => handleTap('large')} style={{ width: largeSize + 16, height: largeSize + 16, justifyContent: 'center', alignItems: 'center' }}>
+        <LinearGradient colors={['#78716C', '#57534E', '#44403C']} style={[styles.boulder, { width: largeSize, height: largeSize, borderRadius: largeSize * 0.35 }]}>
+          <View style={styles.boulderCrack} />
+        </LinearGradient>
+      </Pressable>
+      <Text style={styles.boulderLabel}>boulder</Text>
+    </Animated.View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#1C1917', '#292524', '#44403C', '#57534E']} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Tap Only the Small Target</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 🎯 Score: {score}
-        </Text>
-        <Text style={styles.helper}>
-          Watch for the small shape to glow, then tap only the small one!
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Gem vs Boulder</Text>
+        <Text style={styles.subtitle}>Tap only the small glowing gem</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabel}>Round</Text><Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} /><Text style={styles.statValue}>{score}</Text>
+          </View>
+        </View>
       </View>
 
-      <View style={styles.playArea}>
-        {shapes.map((shape) => {
-          const isSmall = shape.id === 'small';
-          const size = isSmall ? SMALL_SIZE : LARGE_SIZE;
+      {feedback && <FeedbackChip text={feedback.text} type={feedback.type} show key={feedback.key} />}
 
-          const shapeStyle = {
-            left: `${shape.x}%`,
-            top: `${shape.y}%`,
-            transform: [
-              { translateX: -size / 2 },
-              { translateY: -size / 2 },
-              { scale: shape.scale },
-              {
-                translateX: shape.shakeAnim.interpolate({
-                  inputRange: [-10, 10],
-                  outputRange: [-10, 10],
-                }),
-              },
-            ],
-          };
+      <Animated.View style={[styles.arena, arenaStyle]}>
+        <LinearGradient colors={['rgba(255,255,255,0.04)', 'rgba(0,0,0,0.2)']} style={StyleSheet.absoluteFillObject} />
+        {positions && (
+          <>
+            <View style={[styles.shapePos, { left: `${positions.small.x}%`, top: `${positions.small.y}%` }]}>{renderGem()}</View>
+            <View style={[styles.shapePos, { left: `${positions.large.x}%`, top: `${positions.large.y}%` }]}>{renderBoulder()}</View>
+          </>
+        )}
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#F59E0B" count={12} size={7} />
+      </Animated.View>
 
-          const glowStyle = {
-            opacity: shape.glowOpacity,
-          };
-
-          return (
-            <Animated.View
-              key={shape.id}
-              style={[styles.shapeContainer, shapeStyle]}
-              pointerEvents="auto"
-            >
-              {/* Glow effect for small shape */}
-              {isSmall && (
-                <Animated.View
-                  style={[
-                    styles.glowEffect,
-                    {
-                      backgroundColor: shape.color,
-                      width: size + 40,
-                      height: size + 40,
-                      borderRadius: (size + 40) / 2,
-                    },
-                    glowStyle,
-                  ]}
-                />
-              )}
-              <Pressable
-                onPress={() => handleShapeTap(shape.id)}
-                style={[
-                  styles.shape,
-                  {
-                    width: size,
-                    height: size,
-                    borderRadius: size / 2,
-                    backgroundColor: shape.color,
-                  },
-                ]}
-              >
-                <View style={styles.shapeInner} />
-              </Pressable>
-            </Animated.View>
-          );
-        })}
-      </View>
-
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: selective targeting • inhibition of large objects • visual discrimination
-        </Text>
-        <Text style={styles.footerSub}>
-          Ignore the big shape and tap only the small glowing target.
-        </Text>
-      </View>
+      <Text style={styles.footer}>The gem is small and glowing — ignore the big boulder</Text>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    position: 'relative',
-  },
-  shapeContainer: {
-    position: 'absolute',
-  },
-  glowEffect: {
-    position: 'absolute',
-    top: -20,
-    left: -20,
-    shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 10,
-  },
-  shape: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
-  },
-  shapeInner: {
-    width: '40%',
-    height: '40%',
-    borderRadius: 999,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#475569',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  savedText: {
-    color: '#22C55E',
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#1C1917' },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  backText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16, marginBottom: 8 },
+  title: { fontSize: 26, fontWeight: '900', color: '#FDE68A' },
+  subtitle: { fontSize: 13, color: 'rgba(253,230,138,0.8)', fontWeight: '600', marginTop: 4, marginBottom: 12 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.15)', borderColor: 'rgba(251,191,36,0.3)' },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 18, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 16, height: 16, resizeMode: 'contain' },
+  feedback: { position: 'absolute', top: 188, alignSelf: 'center', zIndex: 20, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999 },
+  feedbackOk: { backgroundColor: 'rgba(34,197,94,0.92)' },
+  feedbackBad: { backgroundColor: 'rgba(255,255,255,0.92)' },
+  feedbackText: { fontSize: 16, fontWeight: '900', color: '#fff' },
+  feedbackTextDark: { color: '#44403C' },
+  arena: { flex: 1, marginHorizontal: 14, marginBottom: 10, borderRadius: 28, overflow: 'hidden', borderWidth: 2, borderColor: 'rgba(253,230,138,0.25)' },
+  shapePos: { position: 'absolute', transform: [{ translateX: -40 }, { translateY: -40 }], alignItems: 'center' },
+  gemGlow: { position: 'absolute', alignSelf: 'center', backgroundColor: '#F59E0B' },
+  gem: { justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)', shadowColor: '#F59E0B', shadowOpacity: 0.7, shadowRadius: 18, elevation: 14 },
+  gemShine: { position: 'absolute', top: '12%', left: '18%', width: '38%', height: '28%', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.5)', transform: [{ rotate: '-20deg' }] },
+  gemStar: { fontSize: 16, color: '#78350F', fontWeight: '900' },
+  gemLabel: { marginTop: 6, fontSize: 11, fontWeight: '900', color: '#FDE68A', letterSpacing: 2 },
+  boulder: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
+  boulderCrack: { width: '60%', height: 3, backgroundColor: 'rgba(0,0,0,0.3)', transform: [{ rotate: '-15deg' }] },
+  boulderLabel: { marginTop: 6, fontSize: 11, color: 'rgba(168,162,158,0.6)', fontWeight: '600' },
+  footer: { textAlign: 'center', color: 'rgba(214,211,209,0.75)', fontSize: 13, fontWeight: '600', paddingBottom: 18, paddingHorizontal: 20 },
 });
 
 export default TapOnlySmallTargetGame;
-

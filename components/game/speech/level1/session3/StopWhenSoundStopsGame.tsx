@@ -2,10 +2,8 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { createGlowLoop } from '@/utils/animatedGlowLoop';
-import { getSoundAsset } from '@/utils/soundAssets';
-import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { cleanupSounds, playLoopingSound, preloadSounds, stopAllSpeech, stopLoopingSound } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
-import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -18,7 +16,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Animated,
   Easing,
-  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -91,8 +88,6 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
   const movementAnim = useRef<Animated.CompositeAnimation | null>(null);
   const stopTimer = useRef<NodeJS.Timeout | null>(null);
   const soundTimer = useRef<NodeJS.Timeout | null>(null);
-  const continuousSoundRef = useRef<ExpoAudio.Sound | HTMLAudioElement | null>(null);
-
   const ballGlowLoop = useMemo(
     () => createGlowLoop(ballGlow, { min: 0, max: 1, duration: 600, useNativeDriver: false }),
     [ballGlow],
@@ -112,29 +107,6 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
     setGameState(state);
   }, []);
 
-  // Helper function to stop continuous sound
-  const stopContinuousSound = useCallback(async () => {
-    if (continuousSoundRef.current) {
-      try {
-        if (Platform.OS === 'web') {
-          const audio = continuousSoundRef.current as HTMLAudioElement;
-          audio.pause();
-          audio.currentTime = 0;
-          audio.loop = false;
-        } else {
-          const sound = continuousSoundRef.current as ExpoAudio.Sound;
-          await sound.stopAsync();
-          await sound.setIsLoopingAsync(false);
-          await sound.unloadAsync();
-        }
-        continuousSoundRef.current = null;
-      } catch (e) {
-        console.warn('Error stopping continuous sound:', e);
-        continuousSoundRef.current = null;
-      }
-    }
-  }, []);
-
   const shutdownGame = useCallback(() => {
     gameActiveRef.current = false;
     clearGameTimeouts();
@@ -148,12 +120,12 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
     }
     movementAnim.current?.stop();
     stopPulseAnimations();
-    void stopContinuousSound();
+    void stopLoopingSound();
     clearScheduledSpeech();
     stopTTS();
     stopAllSpeech();
     cleanupSounds();
-  }, [clearGameTimeouts, stopContinuousSound, stopPulseAnimations]);
+  }, [clearGameTimeouts, stopPulseAnimations]);
 
   const finishGame = useCallback(async () => {
     if (gameFinished || !gameActiveRef.current) return;
@@ -200,7 +172,7 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
     }
 
     movementAnim.current?.stop();
-    await stopContinuousSound();
+    await stopLoopingSound();
     setGameStateSafe('stopped');
 
     ballGlow.setValue(0);
@@ -222,7 +194,6 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
     ballGlowLoop,
     ballScaleLoop,
     setGameStateSafe,
-    stopContinuousSound,
     stopPulseAnimations,
     speakGame,
     scheduleGameTimeout,
@@ -230,8 +201,7 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
 
   const startTrial = useCallback(async () => {
     if (!gameActiveRef.current) return;
-    // Stop any previous continuous sound
-    await stopContinuousSound();
+    await stopLoopingSound();
     stopPulseAnimations();
     
     // Reset guard
@@ -262,44 +232,10 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
     const endX = 80 + Math.random() * (SCREEN_WIDTH - 160);
     const endY = 150 + Math.random() * (SCREEN_HEIGHT - 400);
 
-    // Start continuous sound
-    const playContinuousSound = async () => {
-      const soundAsset = getSoundAsset('beep-continuous');
-      if (!soundAsset) {
-        // No sound available, continue without sound
-        return;
-      }
-
-      try {
-        if (Platform.OS === 'web') {
-          const audio = new Audio();
-          const audioSrc = typeof soundAsset === 'string' 
-            ? soundAsset 
-            : (soundAsset as any).default || (soundAsset as any).uri || '';
-          audio.src = audioSrc;
-          audio.loop = true;
-          audio.volume = 0.7;
-          await audio.play();
-          continuousSoundRef.current = audio;
-        } else {
-          await ExpoAudio.setAudioModeAsync({
-            playsInSilentModeIOS: true,
-            staysActiveInBackground: false,
-            shouldDuckAndroid: true,
-          });
-          const { sound } = await ExpoAudio.Sound.createAsync(
-            soundAsset,
-            { volume: 0.7, shouldPlay: true, isLooping: true },
-          );
-          continuousSoundRef.current = sound;
-        }
-      } catch (e) {
-        console.warn('Error playing continuous sound:', e);
-        // No sound available, continue without sound
-      }
-    };
-    
-    playContinuousSound();
+    clearScheduledSpeech();
+    stopTTS();
+    stopAllSpeech();
+    await playLoopingSound('beep-continuous', 0.7);
 
     // Move duration: 2-4 seconds
     const moveDuration = 2000 + Math.random() * 2000;
@@ -344,7 +280,6 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
     stopBall,
-    stopContinuousSound,
     stopPulseAnimations,
     setGameStateSafe,
     scheduleGameTimeout,
@@ -355,10 +290,12 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
   useEffect(() => {
     if (SCREEN_WIDTH < 100 || SCREEN_HEIGHT < 100) return;
 
-    speakGame('Watch the ball! When the sound stops, tap it!');
-    scheduleGameTimeout(() => {
-      void startTrialRef.current();
-    }, 2000);
+    preloadSounds().then(() => {
+      speakGame('Watch the ball! When the sound stops, tap it!');
+      scheduleGameTimeout(() => {
+        void startTrialRef.current();
+      }, 1200);
+    });
   }, [SCREEN_WIDTH, SCREEN_HEIGHT, speakGame, scheduleGameTimeout]);
 
   useEffect(() => {
@@ -395,7 +332,7 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
     }
     
     stopPulseAnimations();
-    void stopContinuousSound();
+    void stopLoopingSound();
     movementAnim.current?.stop();
     
     // Mark as incorrect
@@ -497,13 +434,13 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
         accuracy={accuracyPct}
         xpAwarded={finalStats.correctTrials * 10}
         onContinue={async () => {
-          await stopContinuousSound();
+          await stopLoopingSound();
           clearScheduledSpeech();
           stopTTS();
           onComplete?.();
         }}
         onHome={async () => {
-          await stopContinuousSound();
+          await stopLoopingSound();
           clearScheduledSpeech();
           stopTTS();
           stopAllSpeech();

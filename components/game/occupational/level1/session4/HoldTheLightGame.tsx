@@ -1,661 +1,315 @@
+/**
+ * OT Level 1 · Session 4 · Game 5 — Hold The Light
+ * Theme: "Beacon Glow" — hold until the lighthouse beam shines fully bright.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
+import { SESSION4_PACING } from '@/components/game/occupational/level1/session4/session4Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
 } from 'react-native';
 import Animated, {
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withSequence,
-    withTiming
+  Easing,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
-const FLICKER_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
+const P = SESSION4_PACING.holdLight;
 const TOTAL_ROUNDS = 6;
-const HOLD_DURATION_MS = 1800; // 1.8 seconds to fully glow
-const PERFECT_WINDOW_START = 0.9; // 90% to 100% is perfect
-const TOO_LATE_THRESHOLD = 1.1; // If held past 110%, bulb flickers
+const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
+const STAR_ICON = require('@/assets/icons/star.png');
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.55 });
+          ref.current = sound;
+        }
+        await ref.current.replayAsync();
+      } catch { /* noop */ }
+    })();
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
 
 const HoldTheLightGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playFlicker = useSoundEffect(FLICKER_SOUND);
+  const { width } = useWindowDimensions();
+  const bulbSize = Math.min(width * 0.38, 180);
+  const playSuccess = useSound(SUCCESS_SOUND);
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-  const [glowProgress, setGlowProgress] = useState(0);
-  const [isFlickering, setIsFlickering] = useState(false);
-  const [roundActive, setRoundActive] = useState(true);
+  const [phase, setPhase] = useState<'idle' | 'glowing' | 'ready' | 'transition'>('idle');
+  const [brightPct, setBrightPct] = useState(0);
+  const [sparkleKey, setSparkleKey] = useState(0);
 
-  // Animation values
-  const bulbGlow = useSharedValue(0); // 0 to 1 (dim to bright)
+  const holdingRef = useRef(false);
+  const progressRef = useRef(0);
+  const doneRef = useRef(false);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const bulbGlow = useSharedValue(0);
+  const beamOpacity = useSharedValue(0);
   const bulbScale = useSharedValue(1);
-  const bulbOpacity = useSharedValue(1);
-  const flickerOpacity = useSharedValue(1);
-  const sparkleX = useSharedValue(0);
-  const sparkleY = useSharedValue(0);
+  const waveOpacity = useSharedValue(0.3);
 
-  const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const holdStartTimeRef = useRef<number | null>(null);
-  const isPressedRef = useRef(false);
-  const isFlickeringRef = useRef(false);
-  const glowProgressRef = useRef(0);
+  const endGame = useCallback((finalScore: number) => {
+    const total = TOTAL_ROUNDS;
+    const xp = finalScore * 17;
+    setFinalStats({ correct: finalScore, total, xp });
+    setDone(true);
+    doneRef.current = true;
+    setShowCongratulations(true);
+    speakTTS('The beacon shines! Light master!', 0.78);
+    recordGame(xp).then(() =>
+      logGameAndAward({
+        type: 'holdTheLight',
+        correct: finalScore,
+        total,
+        accuracy: (finalScore / total) * 100,
+        xpAwarded: xp,
+        skillTags: ['timing-modulation', 'sustained-attention', 'fine-motor-precision'],
+      }),
+    ).then(() => router.setParams({ refreshStats: Date.now().toString() })).catch(console.error);
+  }, [router]);
 
-  // Handle press start
-  const handlePressIn = useCallback(() => {
-    if (!roundActive || done || isFlickeringRef.current) return;
-
-    setIsPressed(true);
-    isPressedRef.current = true;
-    setGlowProgress(0);
-    setIsFlickering(false);
-    isFlickeringRef.current = false;
+  const resetBulb = useCallback(() => {
     bulbGlow.value = 0;
-    flickerOpacity.value = 1;
-    holdStartTimeRef.current = Date.now();
+    beamOpacity.value = 0;
+    bulbScale.value = 1;
+    progressRef.current = 0;
+    setBrightPct(0);
+    setPhase('idle');
+  }, []);
 
-    // Start glowing
-    const startTime = Date.now();
-    const updateProgress = () => {
-      if (!isPressedRef.current || isFlickeringRef.current) return;
-      const elapsed = Date.now() - startTime;
-      // Stop at 100% (1.0) - don't go beyond
-      const progress = Math.min(elapsed / HOLD_DURATION_MS, 1.0);
-      setGlowProgress(progress);
-      glowProgressRef.current = progress; // Update ref for immediate access
+  const onRoundSuccess = useCallback(() => {
+    setPhase('transition');
+    setSparkleKey(Date.now());
+    playSuccess();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    bulbScale.value = withSequence(withSpring(1.15, { damping: 8 }), withSpring(1, { damping: 12 }));
 
-      // Glow from 0 to 1 (stop at 100%)
-      const glowValue = Math.min(progress, 1);
-      bulbGlow.value = withTiming(glowValue, {
-        duration: 50,
-        easing: Easing.out(Easing.ease),
-      });
-
-      // When reaching exactly 100%, automatically increase score
-      if (progress >= 1.0 && !isFlickeringRef.current) {
-        // Stop the progress loop
-        if (progressTimerRef.current) {
-          clearTimeout(progressTimerRef.current);
-          progressTimerRef.current = null;
-        }
-        
-        // Automatically trigger success
-        setIsPressed(false);
-        isPressedRef.current = false;
-        setRoundActive(false);
-        
-        bulbScale.value = withSequence(
-          withTiming(1.2, { duration: 200, easing: Easing.out(Easing.ease) }),
-          withTiming(1, { duration: 200, easing: Easing.in(Easing.ease) }),
-        );
-
-        // Record position for sparkle
-        sparkleX.value = 50;
-        sparkleY.value = 50;
-
-        playSuccess().catch(() => {});
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-
-        setScore((s) => {
-          const newScore = s + 1;
-          if (newScore >= TOTAL_ROUNDS) {
-            setTimeout(() => {
-              endGame(newScore);
-            }, 1000);
-          } else {
-            setTimeout(() => {
-              setRound((r) => r + 1);
-              setGlowProgress(0);
-              glowProgressRef.current = 0;
-              bulbGlow.value = 0;
-              bulbScale.value = 1;
-              setRoundActive(true);
-            }, 1000);
-          }
-          return newScore;
-        });
-      } else if (progress < 1.0) {
-        // Continue updating until 100%
-        progressTimerRef.current = setTimeout(updateProgress, 50);
-      }
-    };
-
-    updateProgress();
-  }, [roundActive, done, bulbGlow, flickerOpacity, playFlicker]);
-
-  // End game - defined before handlePressOut to avoid initialization error
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 17; // 17 XP per perfect hold
-      const accuracy = (finalScore / total) * 100;
-
-      // Set all states together FIRST (like CatchTheBouncingStar)
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setRoundActive(false);
-      setShowCongratulations(true);
-      
-      speakTTS('Amazing work! You completed the game!', 0.78);
-
-      // Log game in background (don't wait for it)
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'holdTheLight',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['timing-modulation', 'sustained-attention', 'fine-motor-precision'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log hold the light game:', e);
-      }
-    },
-    [router],
-  );
-
-  // Handle release
-  const handlePressOut = useCallback(async () => {
-    if (!isPressedRef.current) return;
-
-    setIsPressed(false);
-    isPressedRef.current = false;
-    if (progressTimerRef.current) {
-      clearTimeout(progressTimerRef.current);
-      progressTimerRef.current = null;
-    }
-
-    // Use ref value for accurate progress reading
-    const progress = glowProgressRef.current;
-
-    // If already at 100%, score was already increased automatically
-    if (progress >= 1.0) {
-      return; // Already handled in updateProgress
-    }
-
-    if (progress >= PERFECT_WINDOW_START && progress < 1.0) {
-      // Perfect release between 90% and 100% - bulb shines fully!
-      setRoundActive(false); // Disable input during animation
-      
-      bulbScale.value = withSequence(
-        withTiming(1.2, { duration: 200, easing: Easing.out(Easing.ease) }),
-        withTiming(1, { duration: 200, easing: Easing.in(Easing.ease) }),
-      );
-
-      // Record position for sparkle
-      sparkleX.value = 50;
-      sparkleY.value = 50;
-
-      try {
-        await playSuccess();
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
-
-      setScore((s) => {
-        const newScore = s + 1;
-        if (newScore >= TOTAL_ROUNDS) {
-          setTimeout(() => {
-            endGame(newScore);
-          }, 1000);
-        } else {
-          setTimeout(() => {
-            setRound((r) => r + 1);
-            setGlowProgress(0);
-            glowProgressRef.current = 0;
-            bulbGlow.value = 0;
-            bulbScale.value = 1;
-            setRoundActive(true);
-          }, 1000);
-        }
-        return newScore;
-      });
-    } else if (progress < PERFECT_WINDOW_START) {
-      // Released too early - dim and allow retry
-      setRoundActive(false); // Brief pause
-      bulbGlow.value = withTiming(0, { duration: 500 });
-      setGlowProgress(0);
-      glowProgressRef.current = 0;
-
-      try {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        speakTTS('Hold longer for full brightness!', 0.78 );
-      } catch {}
-
-      // Re-enable after brief delay
+    setScore((prev) => {
+      const next = prev + 1;
       setTimeout(() => {
-        setRoundActive(true);
-      }, 800);
+        if (next >= TOTAL_ROUNDS) {
+          endGame(next);
+        } else {
+          setRound((r) => r + 1);
+          resetBulb();
+        }
+      }, P.nextRoundDelayMs);
+      return next;
+    });
+  }, [endGame, resetBulb, playSuccess]);
+
+  const onPressIn = useCallback(() => {
+    if (doneRef.current || phase === 'transition' || holdingRef.current) return;
+    holdingRef.current = true;
+    setPhase('glowing');
+    progressRef.current = 0;
+    setBrightPct(0);
+    bulbGlow.value = 0;
+
+    tickRef.current = setInterval(() => {
+      if (!holdingRef.current) return;
+      progressRef.current = Math.min(1, progressRef.current + 50 / P.holdDurationMs);
+      setBrightPct(Math.round(progressRef.current * 100));
+      bulbGlow.value = progressRef.current;
+      beamOpacity.value = progressRef.current * 0.85;
+      waveOpacity.value = 0.3 + progressRef.current * 0.5;
+
+      if (progressRef.current >= 1) {
+        setPhase('ready');
+        if (tickRef.current) clearInterval(tickRef.current);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speakTTS('Release now!', 0.85).catch(() => {});
+      } else if (progressRef.current >= P.perfectWindowStart) {
+        setPhase('ready');
+      }
+    }, 50);
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  }, [phase]);
+
+  const onPressOut = useCallback(() => {
+    if (!holdingRef.current) return;
+    holdingRef.current = false;
+    if (tickRef.current) clearInterval(tickRef.current);
+    cancelAnimation(bulbGlow);
+
+    const p = progressRef.current;
+
+    if (p >= P.perfectWindowStart) {
+      onRoundSuccess();
+    } else {
+      bulbGlow.value = withTiming(0, { duration: 400 });
+      beamOpacity.value = withTiming(0, { duration: 400 });
+      setBrightPct(0);
+      progressRef.current = 0;
+      setPhase('idle');
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft).catch(() => {});
+      speakTTS('Hold longer for full brightness!', 0.78).catch(() => {});
     }
-  }, [bulbGlow, bulbScale, sparkleX, sparkleY, playSuccess, endGame]);
+  }, [onRoundSuccess]);
 
-  // Initial instruction - only once
   useEffect(() => {
-    try {
-      speakTTS('Press and hold to make the bulb glow brighter. Release at full brightness!', 0.78 );
-    } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
+    waveOpacity.value = withRepeat(
+      withSequence(withTiming(0.7, { duration: 1800 }), withTiming(0.25, { duration: 1800 })),
+      -1,
+      true,
+    );
+    speakTTS('Press and hold to make the beacon glow. Release at full brightness!', 0.78);
+    return () => { stopAllSpeech(); cleanupSounds(); if (tickRef.current) clearInterval(tickRef.current); };
+  }, []);
 
-  // Reset round state
-  useEffect(() => {
-    if (roundActive && !done) {
-      setGlowProgress(0);
-      glowProgressRef.current = 0;
-      setIsPressed(false);
-      isPressedRef.current = false;
-      setIsFlickering(false);
-      isFlickeringRef.current = false;
-      bulbGlow.value = 0;
-      bulbScale.value = 1;
-      flickerOpacity.value = 1;
-    }
-  }, [round, roundActive, done, score]);
-
-  const handleBack = useCallback(() => {
-    stopAllSpeech();
-    cleanupSounds();
-    onBack?.();
-  }, [onBack]);
-
-  // Animated styles
-  const bulbStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: bulbScale.value }],
-    opacity: flickerOpacity.value,
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: bulbGlow.value * 0.9,
+    transform: [{ scale: 1 + bulbGlow.value * 0.4 }],
   }));
+  const beamStyle = useAnimatedStyle(() => ({ opacity: beamOpacity.value }));
+  const bulbStyle = useAnimatedStyle(() => ({ transform: [{ scale: bulbScale.value }] }));
+  const waveStyle = useAnimatedStyle(() => ({ opacity: waveOpacity.value }));
 
-  const glowStyle = useAnimatedStyle(() => {
-    const glowIntensity = bulbGlow.value;
-    return {
-      opacity: glowIntensity * 0.8,
-      shadowOpacity: glowIntensity * 0.6,
-    };
-  });
+  const glowColor = brightPct >= 90 ? '#FDE047' : brightPct >= 50 ? '#FBBF24' : '#F59E0B';
 
-  const sparkleStyle = useAnimatedStyle(() => ({
-    left: `${sparkleX.value}%`,
-    top: `${sparkleY.value}%`,
-  }));
-
-  // Calculate glow color based on progress
-  const getGlowColor = () => {
-    if (glowProgress < 0.3) return '#FCD34D'; // Dim yellow
-    if (glowProgress < 0.7) return '#FBBF24'; // Medium yellow
-    if (glowProgress < PERFECT_WINDOW_START) return '#F59E0B'; // Bright yellow
-    return '#FCD34D'; // Full bright yellow
-  };
-
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
   if (showCongratulations && done && finalStats) {
     return (
-      <CongratulationsScreen
-        message="Light Master!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
+      <CongratulationsScreen message="Beacon Keeper!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#0C1445', '#1E3A5F', '#0F2847', '#172554']} locations={[0, 0.4, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+
+      {/* Ocean waves */}
+      <Animated.View style={[styles.wave, styles.wave1, waveStyle]} />
+      <Animated.View style={[styles.wave, styles.wave2, waveStyle]} />
+
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
 
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Hold The Light</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 💡 Score: {score}
-        </Text>
-        <Text style={styles.helper}>
-          Press and hold to make the bulb glow brighter. Release at full brightness!
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>💡 Beacon Glow</Text>
+        <Text style={styles.subtitle}>Hold steady · release at full brightness</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabel}>Round</Text><Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} /><Text style={styles.statValue}>{score}</Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.playArea}>
-        <Pressable
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          style={styles.tapArea}
-          disabled={!roundActive || done || isFlickering}
-        >
-          {/* Glow effect */}
-          <Animated.View style={[styles.glowContainer, glowStyle]}>
-            <View
-              style={[
-                styles.glowCircle,
-                {
-                  backgroundColor: getGlowColor(),
-                  shadowColor: getGlowColor(),
-                },
-              ]}
-            />
-          </Animated.View>
+        {/* Lighthouse tower */}
+        <View style={styles.tower}>
+          <LinearGradient colors={['#F8FAFC', '#E2E8F0', '#CBD5E1']} style={styles.towerBody} />
+          <View style={styles.towerStripes}>
+            <View style={styles.stripe} /><View style={[styles.stripe, styles.stripeRed]} />
+          </View>
+        </View>
 
-          {/* Light bulb */}
-          <Animated.View style={[styles.bulbContainer, bulbStyle]}>
-            <View style={styles.bulb}>
-              <Text selectable={false} style={styles.bulbEmoji}>💡</Text>
-            </View>
-            <View style={styles.bulbBase} />
-          </Animated.View>
+        {/* Glow aura */}
+        <Animated.View style={[styles.glowAura, { backgroundColor: glowColor, shadowColor: glowColor }, glowStyle]} />
 
-          {/* Sparkle burst on success */}
-          {score > 0 && !isPressed && !isFlickering && (
-            <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
-              <SparkleBurst />
-            </Animated.View>
-          )}
+        {/* Light beam */}
+        <Animated.View style={[styles.beam, beamStyle]}>
+          <LinearGradient colors={[`${glowColor}CC`, `${glowColor}00`]} style={StyleSheet.absoluteFillObject} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} />
+        </Animated.View>
 
-          {/* Brightness indicator */}
-          {isPressed && !isFlickering && (
-            <View style={styles.brightnessIndicator}>
-              <Text selectable={false} style={styles.brightnessText}>
-                {Math.round(glowProgress * 100)}% bright
-              </Text>
-            </View>
-          )}
+        <Animated.View style={bulbStyle}>
+          <TouchableOpacity activeOpacity={1} onPressIn={onPressIn} onPressOut={onPressOut}
+            disabled={phase === 'transition'} style={[styles.bulbBtn, { width: bulbSize, height: bulbSize, borderRadius: bulbSize / 2 }]}>
+            <LinearGradient colors={phase === 'ready' ? ['#FDE047', '#FBBF24'] : ['#64748B', '#475569']}
+              style={[StyleSheet.absoluteFillObject, { borderRadius: bulbSize / 2 }]}>
+              <View style={styles.bulbShine} />
+            </LinearGradient>
+            <Text style={styles.bulbEmoji}>💡</Text>
+          </TouchableOpacity>
+        </Animated.View>
 
-          {/* Flicker indicator */}
-          {isFlickering && (
-            <View style={styles.flickerIndicator}>
-              <Text selectable={false} style={styles.flickerText}>Release now! ⚡</Text>
-            </View>
-          )}
+        {(phase === 'glowing' || phase === 'ready') && (
+          <View style={[styles.pctPill, phase === 'ready' && styles.readyPill]}>
+            <Text style={styles.pctText}>{phase === 'ready' ? 'RELEASE!' : `${brightPct}%`}</Text>
+          </View>
+        )}
 
-          {/* Instruction */}
-          {!isPressed && !isFlickering && (
-            <View style={styles.instructionBox}>
-              <Text selectable={false} style={styles.instructionText}>
-                Press and hold to glow! ✨
-              </Text>
-            </View>
-          )}
-        </Pressable>
-      </View>
+        {phase === 'idle' && (
+          <View style={styles.hintPill}><Text style={styles.hintText}>Press & hold to glow ✨</Text></View>
+        )}
 
-      <View style={styles.footerBox}>
-        <Text style={styles.footerMain}>
-          Skills: timing modulation • sustained attention • fine motor precision
-        </Text>
-        <Text style={styles.footerSub}>
-          Hold until the bulb is fully bright, then release! This builds timing and attention.
-        </Text>
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#FBBF24" count={14} size={8} />
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: 16,
-    paddingTop: 48,
-  },
-  backChip: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backChipText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  headerBlock: {
-    marginTop: 72,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#475569',
-    textAlign: 'center',
-    paddingHorizontal: 18,
-  },
-  playArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    position: 'relative',
-  },
-  tapArea: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    userSelect: 'none', // For web - prevent text selection
-  },
-  glowContainer: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  glowCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    shadowRadius: 50,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  bulbContainer: {
-    position: 'absolute',
-    alignItems: 'center',
-    zIndex: 2,
-  },
-  bulb: {
-    width: 100,
-    height: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bulbEmoji: {
-    fontSize: 80,
-    userSelect: 'none', // For web
-  },
-  bulbBase: {
-    width: 40,
-    height: 20,
-    backgroundColor: '#64748B',
-    borderRadius: 4,
-    marginTop: -5,
-  },
-  sparkleContainer: {
-    position: 'absolute',
-    transform: [{ translateX: -20 }, { translateY: -20 }],
-    zIndex: 3,
-  },
-  brightnessIndicator: {
-    position: 'absolute',
-    top: '60%',
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  brightnessText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
-    userSelect: 'none', // For web
-  },
-  flickerIndicator: {
-    position: 'absolute',
-    top: '60%',
-    backgroundColor: 'rgba(239, 68, 68, 0.9)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  flickerText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '800',
-    userSelect: 'none', // For web
-  },
-  instructionBox: {
-    position: 'absolute',
-    top: '70%',
-    backgroundColor: 'rgba(251, 191, 36, 0.9)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
-  instructionText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '800',
-    userSelect: 'none', // For web
-  },
-  footerBox: {
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  footerMain: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  resultCard: {
-    width: '100%',
-    maxWidth: 420,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  resultTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  resultSubtitle: {
-    fontSize: 16,
-    color: '#475569',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  savedText: {
-    color: '#22C55E',
-    fontWeight: '600',
-    marginTop: 16,
-    textAlign: 'center',
-  },
+  container: { flex: 1, backgroundColor: '#0C1445' },
+  wave: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, backgroundColor: 'rgba(30,58,95,0.6)', borderTopLeftRadius: 50, borderTopRightRadius: 50 },
+  wave1: { height: 60, bottom: 20 },
+  wave2: { height: 40, bottom: 0, backgroundColor: 'rgba(15,40,71,0.8)' },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  backText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  title: { fontSize: 28, fontWeight: '900', color: '#FEF3C7', textShadowColor: 'rgba(251,191,36,0.4)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 10 },
+  subtitle: { fontSize: 14, color: 'rgba(254,243,199,0.8)', fontWeight: '600', marginTop: 4, marginBottom: 14 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.12)', borderColor: 'rgba(251,191,36,0.3)' },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 20, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  playArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  tower: { position: 'absolute', bottom: '18%', alignItems: 'center' },
+  towerBody: { width: 60, height: 120, borderRadius: 4 },
+  towerStripes: { position: 'absolute', top: 20, gap: 16 },
+  stripe: { width: 60, height: 14, backgroundColor: '#EF4444' },
+  stripeRed: { backgroundColor: '#DC2626' },
+  glowAura: { position: 'absolute', width: 220, height: 220, borderRadius: 110, shadowRadius: 40, shadowOffset: { width: 0, height: 0 }, elevation: 20 },
+  beam: { position: 'absolute', top: '18%', width: 120, height: 180, borderRadius: 60, overflow: 'hidden' },
+  bulbBtn: { justifyContent: 'center', alignItems: 'center', overflow: 'hidden', zIndex: 5, shadowColor: '#FBBF24', shadowOpacity: 0.4, shadowRadius: 16, elevation: 12 },
+  bulbShine: { position: 'absolute', top: '15%', left: '20%', width: '35%', height: '25%', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.4)' },
+  bulbEmoji: { fontSize: 56, zIndex: 2 },
+  pctPill: { position: 'absolute', bottom: '14%', backgroundColor: 'rgba(15,23,42,0.85)', paddingHorizontal: 22, paddingVertical: 10, borderRadius: 20 },
+  readyPill: { backgroundColor: 'rgba(34,197,94,0.9)' },
+  pctText: { color: '#fff', fontSize: 16, fontWeight: '900', letterSpacing: 1 },
+  hintPill: { position: 'absolute', bottom: '8%', backgroundColor: 'rgba(251,191,36,0.85)', paddingHorizontal: 22, paddingVertical: 12, borderRadius: 22 },
+  hintText: { color: '#78350F', fontSize: 15, fontWeight: '800' },
 });
 
 export default HoldTheLightGame;
-

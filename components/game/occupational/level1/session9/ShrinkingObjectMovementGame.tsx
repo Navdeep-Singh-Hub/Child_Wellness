@@ -1,670 +1,224 @@
+/**
+ * OT Level 1 · Session 9 · Game 5 — Shrinking Object Movement
+ * Theme: "Wander Shrink" — chase the shrinking drifter at its smallest.
+ */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
+import { SESSION9_PACING } from '@/components/game/occupational/level1/session9/session9Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import Animated, {
-    Easing,
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withSequence,
-    withTiming,
-} from 'react-native-reanimated';
+import { Image, LayoutChangeEvent, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { cancelAnimation, Easing, runOnJS, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+const P = SESSION9_PACING;
+const W = P.moveShrink;
+const TOTAL_ROUNDS = 8;
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
-const TOTAL_ROUNDS = 8;
-const INITIAL_SIZE = 80;
-const MIN_SIZE = 30;
-const SHRINK_DURATION = 6000; // 6 seconds to shrink - slow and visible
-const MOVE_DURATION = 7000; // 7 seconds to move across screen
-const MOVE_SPEED = 50; // pixels per second
+const STAR_ICON = require('@/assets/icons/star.png');
 
-const useSoundEffect = (uri: string) => {
-  const soundRef = useRef<ExpoAudio.Sound | null>(null);
-
-  const ensureSound = useCallback(async () => {
-    if (soundRef.current) return;
-    try {
-      const { sound } = await ExpoAudio.Sound.createAsync(
-        { uri },
-        { volume: 0.6, shouldPlay: false },
-      );
-      soundRef.current = sound;
-    } catch {
-      console.warn('Failed to load sound:', uri);
-    }
+const useSound = (uri: string) => {
+  const ref = useRef<ExpoAudio.Sound | null>(null);
+  useEffect(() => () => { ref.current?.unloadAsync().catch(() => {}); }, []);
+  return useCallback(() => {
+    if (Platform.OS === 'web') return;
+    (async () => {
+      try {
+        if (!ref.current) {
+          const { sound } = await ExpoAudio.Sound.createAsync({ uri }, { volume: 0.55 });
+          ref.current = sound;
+        }
+        await ref.current.replayAsync();
+      } catch { /* noop */ }
+    })();
   }, [uri]);
-
-  useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
-
-  const play = useCallback(async () => {
-    try {
-      if (Platform.OS === 'web') return;
-      await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
-    } catch {}
-  }, [ensureSound]);
-
-  return play;
 };
 
 const ShrinkingObjectMovementGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
-  const playSuccess = useSoundEffect(SUCCESS_SOUND);
-  const playError = useSoundEffect(ERROR_SOUND);
+  const playSuccess = useSound(SUCCESS_SOUND);
+  const playError = useSound(ERROR_SOUND);
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
-  const [roundActive, setRoundActive] = useState(false);
-  const [lastResult, setLastResult] = useState<'hit' | 'miss' | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [sparkleKey, setSparkleKey] = useState(0);
   const [showCongratulations, setShowCongratulations] = useState(false);
-  const [playAreaLayout, setPlayAreaLayout] = useState<{ width: number; height: number; x: number; y: number } | null>(null);
+  const [sparkleKey, setSparkleKey] = useState(0);
+  const [playLayout, setPlayLayout] = useState({ w: 0, h: 0 });
 
-  // Animation values
-  const objectSize = useSharedValue(INITIAL_SIZE);
-  const objectX = useSharedValue(0); // Pixels from left
-  const objectY = useSharedValue(0); // Pixels from top
-  const objectScale = useSharedValue(1);
-  const objectOpacity = useSharedValue(1);
-  const sparkleX = useSharedValue(0);
-  const sparkleY = useSharedValue(0);
-  const feedbackOpacity = useSharedValue(0);
+  const roundActiveRef = useRef(true);
+  const doneRef = useRef(false);
+  const startRoundRef = useRef<() => void>(() => {});
+  const objSize = useSharedValue(W.initial);
+  const objX = useSharedValue(0);
+  const objY = useSharedValue(0);
+  const objScale = useSharedValue(1);
+  const objOpacity = useSharedValue(1);
 
-  const animationRef = useRef<any>(null);
-  const roundActiveRef = useRef(false);
-  const roundRef = useRef(1);
-  const scoreRef = useRef(0);
-  const objectXRef = useRef(0);
-  const objectYRef = useRef(0);
-  const timeoutRefs = useRef<NodeJS.Timeout[]>([]);
-
-  // Keep refs in sync
-  useEffect(() => {
-    roundRef.current = round;
-    scoreRef.current = score;
-  }, [round, score]);
-
-  // Handle play area layout
-  const handlePlayAreaLayout = useCallback((event: any) => {
-    const { width, height, x, y } = event.nativeEvent.layout;
-    setPlayAreaLayout({ width, height, x, y });
-  }, []);
-
-  // End game function
-  const endGame = useCallback(async () => {
-    if (done) return;
+  const endGame = useCallback((finalScore: number) => {
+    const total = TOTAL_ROUNDS;
+    const xp = finalScore * 18;
+    setFinalStats({ correct: finalScore, total, xp });
     setDone(true);
-    setRoundActive(false);
-    roundActiveRef.current = false;
+    doneRef.current = true;
+    setShowCongratulations(true);
+    speakTTS('Wander shrink complete!', 0.78);
+    recordGame(xp).then(() =>
+      logGameAndAward({ type: 'shrinkingObjectMovement', correct: finalScore, total, accuracy: (finalScore / total) * 100, xpAwarded: xp,
+        skillTags: ['dynamic-tracking', 'size-timing', 'hand-eye-coordination'] }),
+    ).then(() => router.setParams({ refreshStats: Date.now().toString() })).catch(console.error);
+  }, [router]);
 
-    if (animationRef.current) {
-      animationRef.current.stop();
-    }
+  const onMiss = useCallback(() => {
+    if (!roundActiveRef.current || doneRef.current) return;
+    playError();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+    speakTTS('Catch it at its smallest!', 0.78).catch(() => {});
+    setTimeout(() => startRoundRef.current(), P.retryDelayMs);
+  }, [playError]);
 
-    const finalScore = scoreRef.current;
-    const totalRounds = TOTAL_ROUNDS;
-    const xp = Math.floor((finalScore / totalRounds) * 50);
-
-    try {
-      const timestamp = await recordGame({
-        type: 'shrinkingObjectMovement',
-        score: finalScore,
-        totalRounds,
-        correct: finalScore,
-        incorrect: totalRounds - finalScore,
-      });
-
-      await logGameAndAward({
-        gameType: 'shrinkingObjectMovement',
-        score: finalScore,
-        totalRounds,
-        correct: finalScore,
-        incorrect: totalRounds - finalScore,
-        xp,
-      });
-
-      setFinalStats({
-        correct: finalScore,
-        total: totalRounds,
-        xp,
-      });
-      setLogTimestamp(timestamp);
-      setShowCongratulations(true);
-      speakTTS('Amazing work! You completed the game!', 0.78);
-    } catch (error) {
-      console.error('Failed to save game result:', error);
-      // Still show congratulations even if logging fails
-      setShowCongratulations(true);
-      speakTTS('Amazing work! You completed the game!', 0.78);
-    }
-  }, [done]);
-
-  // Start round ref for handleMiss
-  const startRoundRef = useRef<() => void>();
-
-  // Handle miss
-  const handleMiss = useCallback(async () => {
-    if (!roundActiveRef.current || done) return;
-
-    setLastResult('miss');
-    setShowFeedback(true);
-    setRoundActive(false);
-    roundActiveRef.current = false;
-
-    if (animationRef.current) {
-      animationRef.current.stop();
-    }
-
-    // Shake animation
-    objectScale.value = withSequence(
-      withTiming(0.9, { duration: 100, easing: Easing.out(Easing.ease) }),
-      withTiming(1, { duration: 100, easing: Easing.in(Easing.ease) })
-    );
-
-    feedbackOpacity.value = withTiming(1, { duration: 200 });
-
-    try {
-      await playError();
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      speakTTS('Try again!', 0.78 );
-    } catch {}
-
-    const timeout1 = setTimeout(() => {
-      setShowFeedback(false);
-      feedbackOpacity.value = 0;
-      const timeout2 = setTimeout(() => {
-        if (startRoundRef.current) {
-          startRoundRef.current();
-        }
-      }, 500);
-      timeoutRefs.current.push(timeout2);
-    }, 1500);
-    timeoutRefs.current.push(timeout1);
-  }, [done, objectScale, feedbackOpacity, playError]);
-
-  // Start a new round
   const startRound = useCallback(() => {
-    if (done || !playAreaLayout) return;
-
-    setRoundActive(true);
+    if (doneRef.current || playLayout.w <= 0 || playLayout.h <= 0) return;
     roundActiveRef.current = true;
-    setLastResult(null);
-    setShowFeedback(false);
-    feedbackOpacity.value = 0;
+    cancelAnimation(objSize);
+    cancelAnimation(objX);
+    cancelAnimation(objY);
+    const startX = -W.initial / 2;
+    const endX = playLayout.w + W.initial / 2;
+    const startY = playLayout.h * (0.25 + Math.random() * 0.5);
+    const endY = playLayout.h * (0.25 + Math.random() * 0.5);
+    const moveMs = ((endX - startX) / W.speedPxPerSec) * 1000;
+    objSize.value = W.initial;
+    objOpacity.value = 1;
+    objScale.value = 1;
+    objX.value = startX;
+    objY.value = startY;
+    objX.value = withTiming(endX, { duration: moveMs, easing: Easing.linear }, (finished) => {
+      if (finished && roundActiveRef.current) runOnJS(onMiss)();
+    });
+    objY.value = withTiming(endY, { duration: moveMs, easing: Easing.linear });
+    objSize.value = withTiming(W.min, { duration: W.shrinkMs, easing: Easing.linear });
+  }, [playLayout, onMiss]);
 
-    // Random starting position (left side) - use pixels
-    // Start slightly off-screen on the left
-    const startX = -INITIAL_SIZE / 2;
-    const startYPercent = 20 + Math.random() * 60; // 20% to 80% vertically
-    const startY = (startYPercent / 100) * playAreaLayout.height;
-
-    // Random end position (right side) - use pixels
-    // End slightly off-screen on the right
-    const endX = playAreaLayout.width + INITIAL_SIZE / 2;
-    const endYPercent = 20 + Math.random() * 60;
-    const endY = (endYPercent / 100) * playAreaLayout.height;
-
-    objectX.value = startX;
-    objectY.value = startY; // Store as pixels, not percentage
-    objectXRef.current = startX;
-    objectYRef.current = startY;
-
-    // Reset object first
-    objectSize.value = INITIAL_SIZE;
-    objectOpacity.value = 1;
-    objectScale.value = 1;
-
-    // Calculate movement distance and duration
-    const distance = Math.sqrt(
-      Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2)
-    );
-    const moveDuration = (distance / MOVE_SPEED) * 1000; // Convert to ms
-
-    // Move animation - animate X and Y separately
-    const moveXAnim = withTiming(
-      endX,
-      {
-        duration: moveDuration,
-        easing: Easing.linear,
-      },
-      (finished) => {
-        if (finished && roundActiveRef.current) {
-          // Object moved off screen - too late
-          runOnJS(handleMiss)();
-        }
-      }
-    );
-
-    const moveYAnim = withTiming(
-      endY,
-      {
-        duration: moveDuration,
-        easing: Easing.linear,
-      }
-    );
-
-    objectX.value = moveXAnim;
-    objectY.value = moveYAnim;
-
-    // Shrink animation (simultaneous with movement) - slow and visible
-    // Use linear easing for consistent, clearly visible shrinking
-    const shrinkAnim = withTiming(
-      MIN_SIZE,
-      {
-        duration: SHRINK_DURATION,
-        easing: Easing.linear, // Linear for consistent, clearly visible shrinking
-      }
-    );
-
-    objectSize.value = shrinkAnim;
-
-    // Update position refs initially
-    objectXRef.current = startX;
-    objectYRef.current = startY;
-
-    animationRef.current = {
-      stop: () => {
-        objectSize.value = withTiming(MIN_SIZE, { duration: 0 });
-        objectX.value = withTiming(endX, { duration: 0 });
-        objectY.value = withTiming(endY, { duration: 0 });
-      },
-    };
-  }, [done, playAreaLayout, objectSize, objectX, objectY, objectOpacity, objectScale, feedbackOpacity, handleMiss]);
-
-  // Handle object tap
-  const handleObjectTap = useCallback(async (event: any) => {
-    if (!roundActiveRef.current || done || !playAreaLayout) return;
-
-    const { locationX, locationY } = event.nativeEvent;
-    
-    // Get current object position and size from shared values
-    // These are reactive and will have the current animated values
-    const currentX = objectX.value;
-    const currentY = objectY.value;
-    const currentSize = objectSize.value;
-
-    // Object center position relative to play area (object is positioned at center via translate)
-    const objectCenterX = currentX;
-    const objectCenterY = currentY;
-
-    // Check if tap is near object center
-    const tapDistance = Math.sqrt(
-      Math.pow(locationX - objectCenterX, 2) + Math.pow(locationY - objectCenterY, 2)
-    );
-    // More forgiving threshold - especially when object is small
-    // When object is smallest (30px), threshold will be at least 70px for easier tapping
-    const tapThreshold = Math.max(currentSize / 2 + 55, 70);
-    
-    // Check if object is at smallest size (within tolerance)
-    // Allow tolerance for animation timing - user should tap when object is smallest
-    // Increased tolerance to 30px to account for animation timing and visual perception
-    const isAtSmallestSize = currentSize <= MIN_SIZE + 30;
-
-    if (tapDistance <= tapThreshold && isAtSmallestSize) {
-      // Hit! - Only count if tapped on object AND object is at smallest size
-      setLastResult('hit');
-      setShowFeedback(true);
-      setRoundActive(false);
-      roundActiveRef.current = false;
-      setScore((s) => s + 1);
-
-      if (animationRef.current) {
-        animationRef.current.stop();
-      }
-
-      // Success animation
-      objectScale.value = withSequence(
-        withTiming(1.5, { duration: 150, easing: Easing.out(Easing.ease) }),
-        withTiming(0, { duration: 200, easing: Easing.in(Easing.ease) })
-      );
-
-      objectOpacity.value = withTiming(0, { duration: 200 });
-      feedbackOpacity.value = withTiming(1, { duration: 200 });
-
-      sparkleX.value = objectCenterX;
-      sparkleY.value = objectCenterY;
-      setSparkleKey((k) => k + 1);
-
-      try {
-        await playSuccess();
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        speakTTS('Perfect timing!', 0.78 );
-      } catch {}
-
-      if (roundRef.current >= TOTAL_ROUNDS) {
-        const timeout1 = setTimeout(() => {
-          endGame();
-        }, 1500);
-        timeoutRefs.current.push(timeout1);
-      } else {
-        const timeout1 = setTimeout(() => {
-          setShowFeedback(false);
-          feedbackOpacity.value = 0;
-          setRound((r) => r + 1);
-          const timeout2 = setTimeout(() => {
-            startRound();
-          }, 500);
-          timeoutRefs.current.push(timeout2);
-        }, 1500);
-        timeoutRefs.current.push(timeout1);
-      }
-    } else {
-      // Miss - either tap was outside object OR object wasn't at smallest size yet
-      if (tapDistance <= tapThreshold && !isAtSmallestSize) {
-        // Tap was on object but too early - give specific feedback
-        try {
-          speakTTS('Wait until it is smallest!', 0.78);
-        } catch {}
-      }
-      handleMiss();
-    }
-  }, [done, playAreaLayout, objectSize, objectScale, objectOpacity, feedbackOpacity, sparkleX, sparkleY, playSuccess, endGame, startRound, handleMiss]);
-
-  // Set ref after startRound is defined
-  useEffect(() => {
-    startRoundRef.current = startRound;
-  }, [startRound]);
-
-  // Start first round when layout is ready
-  useEffect(() => {
-    if (playAreaLayout && playAreaLayout.width > 0 && playAreaLayout.height > 0) {
-      // Small delay to ensure layout is fully ready
-      const timer = setTimeout(() => {
-        startRound();
-      }, 100);
-      timeoutRefs.current.push(timer);
-      return () => {
-        // Clear all timeouts
-        timeoutRefs.current.forEach(timeout => clearTimeout(timeout));
-        timeoutRefs.current = [];
-        // Stop TTS and sounds
-        stopAllSpeech();
-        cleanupSounds();
-        // Stop animations
-        if (animationRef.current) {
-          animationRef.current.stop();
-        }
-      };
-    }
-    return () => {
-      // Clear all timeouts
-      timeoutRefs.current.forEach(timeout => clearTimeout(timeout));
-      timeoutRefs.current = [];
-      // Stop TTS and sounds
-      stopAllSpeech();
-      cleanupSounds();
-      // Stop animations
-      if (animationRef.current) {
-        animationRef.current.stop();
-      }
-    };
-  }, [playAreaLayout, startRound]);
-
-  // Animated styles
-  const objectAnimatedStyle = useAnimatedStyle(() => {
-    'worklet';
-    const size = objectSize.value;
-    return {
-      width: size,
-      height: size,
-      left: objectX.value,
-      top: objectY.value,
-      transform: [
-        { translateX: -size / 2 },
-        { translateY: -size / 2 },
-        { scale: objectScale.value },
-      ],
-      opacity: objectOpacity.value,
-    };
-  });
-
-  const feedbackStyle = useAnimatedStyle(() => {
-    return {
-      opacity: feedbackOpacity.value,
-    };
-  });
+  useEffect(() => { startRoundRef.current = startRound; }, [startRound]);
 
   useEffect(() => {
-    if (!done) {
-      try {
-        speakTTS('Tap the moving object as it shrinks!', 0.78 );
-      } catch {}
-    }
-    return () => {
-      stopAllSpeech();
-      cleanupSounds();
-    };
+    if (doneRef.current || playLayout.w <= 0 || round > 1) return;
+    startRound();
+  }, [playLayout]);
+
+  useEffect(() => {
+    if (doneRef.current || round === 1 || playLayout.w <= 0) return;
+    startRound();
+    return () => { cancelAnimation(objX); cancelAnimation(objSize); };
+  }, [round]);
+
+  useEffect(() => {
+    speakTTS('Tap the drifter when it is smallest!', 0.78);
+    return () => { stopAllSpeech(); cleanupSounds(); cancelAnimation(objX); };
   }, []);
 
-  const handleBack = useCallback(() => {
-    // Clear all timeouts
-    timeoutRefs.current.forEach(timeout => clearTimeout(timeout));
-    timeoutRefs.current = [];
-    // Stop animations
-    if (animationRef.current) {
-      animationRef.current.stop();
-    }
-    // Stop round activity
-    roundActiveRef.current = false;
-    setRoundActive(false);
-    // Stop TTS and sounds
-    stopAllSpeech();
-    cleanupSounds();
-    if (onBack) {
-      onBack();
-    } else {
-      // Safe fallback: try to go back, but catch errors
-      try {
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.replace('/(tabs)/Games');
-        }
-      } catch (error) {
-        try {
-          router.replace('/(tabs)/Games');
-        } catch (e) {
-          console.warn('Navigation error:', e);
-        }
-      }
-    }
-  }, [onBack, router]);
+  const onLayout = useCallback((e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    setPlayLayout({ w: width, h: height });
+  }, []);
 
-  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
-  // This is the ONLY completion screen - no ResultCard needed for OT games
+  const handleTap = useCallback((e: { nativeEvent: { locationX: number; locationY: number } }) => {
+    if (!roundActiveRef.current || doneRef.current) return;
+    const { locationX, locationY } = e.nativeEvent;
+    const dist = Math.hypot(locationX - objX.value, locationY - objY.value);
+    const threshold = Math.max(objSize.value / 2 + 50, 65);
+    const atSmallest = objSize.value <= W.min + 24;
+    if (dist > threshold || !atSmallest) {
+      playError();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      speakTTS(atSmallest ? 'Aim for the drifter!' : 'Wait until it is smallest!', 0.78).catch(() => {});
+      return;
+    }
+    roundActiveRef.current = false;
+    cancelAnimation(objX);
+    cancelAnimation(objSize);
+    setSparkleKey(Date.now());
+    playSuccess();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    objScale.value = withSequence(withTiming(1.45, { duration: 120 }), withTiming(0, { duration: P.successPopMs }));
+    objOpacity.value = withTiming(0, { duration: P.successPopMs });
+    setScore((prev) => {
+      const next = prev + 1;
+      setTimeout(() => { if (next >= TOTAL_ROUNDS) endGame(next); else setRound((r) => r + 1); }, P.nextRoundDelayMs);
+      return next;
+    });
+  }, [endGame, playSuccess, playError]);
+
+  const objStyle = useAnimatedStyle(() => ({
+    width: objSize.value, height: objSize.value, borderRadius: objSize.value / 2,
+    opacity: objOpacity.value,
+    transform: [
+      { translateX: objX.value - objSize.value / 2 },
+      { translateY: objY.value - objSize.value / 2 },
+      { scale: objScale.value },
+    ],
+  }));
+
   if (showCongratulations && done && finalStats) {
     return (
-      <CongratulationsScreen
-        message="Dynamic Targeting Master!"
-        showButtons={true}
-        onContinue={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          if (onComplete) onComplete(); else onBack?.();
-        }}
-        onHome={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
+      <CongratulationsScreen message="Drift Catcher!" showButtons correct={finalStats.correct} total={finalStats.total} xpAwarded={finalStats.xp}
+        onContinue={() => { stopAllSpeech(); cleanupSounds(); onComplete ? onComplete() : onBack?.(); }}
+        onHome={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} />
     );
   }
-
-  // Prevent any rendering when game is done but congratulations hasn't shown yet
-  if (done && finalStats && !showCongratulations) {
-    return null; // Wait for showCongratulations to be set
-  }
+  if (done && finalStats && !showCongratulations) return null;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-        <Text style={styles.backChipText}>← Back</Text>
+      <LinearGradient colors={['#431407', '#9A3412', '#EA580C', '#FB923C']} locations={[0, 0.35, 0.7, 1]} style={StyleSheet.absoluteFillObject} />
+      <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn} activeOpacity={0.85}>
+        <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
-
-      <View style={styles.headerBlock}>
-        <Text style={styles.title}>Shrinking Object + Movement</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • Score: {score}
-        </Text>
-        <Text style={styles.helper}>
-          Track the moving object as it shrinks and tap it!
-        </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>🔥 Wander Shrink</Text>
+        <Text style={styles.subtitle}>Tap the drifter at its tiniest size</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statPill}><Text style={styles.statLabel}>Round</Text><Text style={styles.statValue}>{round}/{TOTAL_ROUNDS}</Text></View>
+          <View style={[styles.statPill, styles.starPill]}>
+            <Image source={STAR_ICON} style={styles.starIcon} /><Text style={styles.statValue}>{score}</Text>
+          </View>
+        </View>
       </View>
-
-      {/* Play area */}
-      <Pressable
-        onPress={handleObjectTap}
-        onLayout={handlePlayAreaLayout}
-        style={styles.playArea}
-        disabled={!roundActive || done}
-      >
-        <Animated.View
-          style={[
-            styles.object,
-            objectAnimatedStyle,
-          ]}
-        >
-          <Text style={styles.objectEmoji}>🐝</Text>
+      <Pressable onLayout={onLayout} onPress={handleTap} style={styles.playArea}>
+        <Animated.View style={[styles.drifter, objStyle]}>
+          <LinearGradient colors={['#FDE047', '#F97316', '#DC2626']} style={StyleSheet.absoluteFillObject} />
         </Animated.View>
-
-        {/* Feedback */}
-        {showFeedback && lastResult && (
-          <Animated.View style={[styles.feedbackContainer, feedbackStyle]}>
-            <Text style={[
-              styles.feedbackText,
-              lastResult === 'hit' ? styles.feedbackSuccess : styles.feedbackError,
-            ]}>
-              {lastResult === 'hit' ? 'Perfect timing!' : 'Try again!'}
-            </Text>
-          </Animated.View>
-        )}
-
-        {/* Sparkle effect */}
-        {sparkleKey > 0 && playAreaLayout && (
-          <SparkleBurst
-            key={sparkleKey}
-            x={sparkleX.value}
-            y={sparkleY.value}
-          />
-        )}
+        <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#FDE047" count={14} size={8} />
       </Pressable>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F4F8',
-  },
-  backChip: {
-    alignSelf: 'flex-start',
-    margin: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  backChipText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1E293B',
-  },
-  headerBlock: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#64748B',
-    marginBottom: 8,
-  },
-  helper: {
-    fontSize: 14,
-    color: '#94A3B8',
-    textAlign: 'center',
-  },
-  playArea: {
-    flex: 1,
-    position: 'relative',
-    margin: 20,
-    overflow: 'visible', // Allow object to be visible even when slightly off-screen
-  },
-  object: {
-    position: 'absolute',
-    backgroundColor: '#FCD34D',
-    borderRadius: 1000,
-    borderWidth: 3,
-    borderColor: '#F59E0B',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10, // Ensure object is above other elements
-  },
-  objectEmoji: {
-    fontSize: 40,
-  },
-  feedbackContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -100 }, { translateY: -20 }],
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  feedbackText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  feedbackSuccess: {
-    color: '#22C55E',
-  },
-  feedbackError: {
-    color: '#EF4444',
-  },
-  scrollContent: {
-    padding: 20,
-  },
+  container: { flex: 1 },
+  backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)' },
+  backText: { color: '#FFEDD5', fontWeight: '800', fontSize: 14 },
+  header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
+  title: { fontSize: 28, fontWeight: '900', color: '#FFEDD5' },
+  subtitle: { fontSize: 14, color: 'rgba(255,237,213,0.85)', fontWeight: '600', marginTop: 4, marginBottom: 14 },
+  statsRow: { flexDirection: 'row', gap: 12 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(253,224,71,0.15)', borderColor: 'rgba(253,224,71,0.35)' },
+  statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 20, fontWeight: '900', color: '#fff' },
+  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(253,224,71,0.25)', backgroundColor: 'rgba(0,0,0,0.12)', overflow: 'hidden' },
+  drifter: { position: 'absolute', left: 0, top: 0, overflow: 'hidden' },
 });
 
 export default ShrinkingObjectMovementGame;
-

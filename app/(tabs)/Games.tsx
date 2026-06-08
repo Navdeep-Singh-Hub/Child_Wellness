@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { speak as speakTTS, speakSequence, clearScheduledSpeech, DEFAULT_TTS_RATE } from '@/utils/tts';
+import { UNLOCK_ALL_THERAPY_CONTENT } from '@/constants/unlockConfig';
 import { FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
     Easing,
@@ -2105,6 +2106,7 @@ export default function GamesScreen() {
 
   const currentLevel = stats?.globalLevel ?? 1;
   const computeLocked = (id: GameKey) => {
+    if (UNLOCK_ALL_THERAPY_CONTENT) return false;
     const gate = levelGates[id];
     return typeof gate === 'number' ? currentLevel < gate : false;
   };
