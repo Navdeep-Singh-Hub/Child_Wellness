@@ -14,7 +14,7 @@ const TriangleMountainTraceGame: React.FC<{ onBack?: () => void; onComplete?: ()
       objectColor: '#F59E0B', objectOffColor: '#EF4444',
       backText: '#B45309', backBorder: 'rgba(245,158,11,0.25)',
       titleColor: '#92400E', subtitleColor: '#B45309', statLabel: '#D97706', statValue: '#92400E',
-      statBorder: 'rgba(245,158,11,0.2)', playBorder: 'rgba(245,158,11,0.25)', playBg: 'rgba(255,255,255,0.4)',
+      statBorder: 'rgba(245,158,11,0.2)', playBorder: 'rgba(245,158,11,0.3)', playBg: 'rgba(254,243,199,0.55)',
       sparkleColor: '#F59E0B', hintText: 'Trace up and down each side of the mountain!',
       objectEmoji: '🔺',
     }}

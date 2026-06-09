@@ -12,8 +12,8 @@ const LookHideDrawGame: React.FC<{ onBack?: () => void; onComplete?: () => void 
       backText: '#BE185D', backBorder: 'rgba(236,72,153,0.25)',
       titleColor: '#9D174D', subtitleColor: '#BE185D', statLabel: '#DB2777', statValue: '#9D174D',
       statBorder: 'rgba(236,72,153,0.2)', playBorder: 'rgba(236,72,153,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#EC4899', phaseText: '#BE185D',
-      btnBg: 'rgba(255,255,255,0.75)', btnBorder: 'rgba(236,72,153,0.25)',
+      sparkleColor: '#EC4899', phaseText: '#BE185D', hintText: 'Watch the shape, then pick it from memory!',
+      btnBg: 'rgba(255,255,255,0.85)', btnBorder: 'rgba(236,72,153,0.3)',
     }}
     ttsIntro="Look at the pattern carefully!"
     ttsHidden="Pattern is hidden. Remember it!"

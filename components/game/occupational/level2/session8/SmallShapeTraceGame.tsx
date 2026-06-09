@@ -18,6 +18,7 @@ import {
   polygonTraceProgress,
   shrinkRadiusForRound,
   sidesForDotShape,
+  toleranceForCircle,
   useTraceSound,
 } from '@/components/game/occupational/level2/session8/traceUtils';
 import { logGameAndAward, recordGame } from '@/utils/api';
@@ -31,9 +32,58 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Defs, Ellipse, Path, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 
 const P = SESSION8_PACING;
+const STROKE = P.pathStroke;
+
+const RectDecor = () => (
+  <Path d="M 38 38 L 62 38 L 62 62 L 38 62 Z" fill="none" stroke="rgba(99,102,241,0.1)" strokeWidth="0.8" />
+);
+
+const SceneDecor: React.FC<{ mode: 'circle' | 'square' | 'dots'; dotBorder: boolean; shrinkMode: boolean; round: number; total: number }> = ({
+  mode, dotBorder, shrinkMode, round, total,
+}) => {
+  if (shrinkMode) {
+    const r0 = shrinkRadiusForRound(round, total, P.shrinkInitialRadius, P.shrinkMinRadius);
+    return (
+      <>
+        <Circle cx="50" cy="50" r={P.shrinkInitialRadius + 4} fill="none" stroke="rgba(239,68,68,0.12)" strokeWidth="1" />
+        <Circle cx="50" cy="50" r={r0 + 6} fill="rgba(239,68,68,0.06)" />
+      </>
+    );
+  }
+  switch (mode) {
+    case 'circle':
+      return (
+        <>
+          <Circle cx="50" cy="50" r="28" fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.15)" strokeWidth="0.8" />
+          <Ellipse cx="22" cy="20" rx="8" ry="4.5" fill="rgba(255,255,255,0.7)" />
+          <Ellipse cx="76" cy="18" rx="9" ry="5" fill="rgba(255,255,255,0.65)" />
+        </>
+      );
+    case 'square':
+      return (
+        <>
+          <RectDecor />
+          <Circle cx="50" cy="32" r="4" fill="rgba(99,102,241,0.2)" />
+        </>
+      );
+    case 'dots':
+      return (
+        <>
+          {dotBorder && [[30, 30], [70, 30], [70, 70], [30, 70]].map(([x, y], i) => (
+            <Circle key={i} cx={x} cy={y} r="1.2" fill="rgba(139,92,246,0.35)" />
+          ))}
+          <Circle cx="18" cy="18" r="3" fill="rgba(139,92,246,0.2)" />
+          <Circle cx="82" cy="18" r="3" fill="rgba(139,92,246,0.2)" />
+        </>
+      );
+    default:
+      return null;
+  }
+};
+
 const SUCCESS = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const WARN = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
 const STAR = require('@/assets/icons/star.png');
@@ -108,7 +158,9 @@ export const SmallShapeTraceGame: React.FC<
   const playSuccess = useTraceSound(SUCCESS);
   const playWarn = useTraceSound(WARN);
   const TOTAL = P.totalRounds;
-  const progStroke = strokeWidth + 0.5;
+  const guideStroke = strokeWidth || P.guideStrokeWidth;
+  const progStroke = STROKE + 1;
+  const refCircleRadius = shrinkMode ? P.shrinkInitialRadius : circleRadius;
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
@@ -120,6 +172,7 @@ export const SmallShapeTraceGame: React.FC<
   const [isOffTrack, setIsOffTrack] = useState(false);
   const [sparkleKey, setSparkleKey] = useState(0);
   const [dotShape, setDotShape] = useState<DotShapeKind>('triangle');
+  const [traceProg, setTraceProg] = useState(0);
 
   const roundActiveRef = useRef(true);
   const doneRef = useRef(false);
@@ -184,6 +237,7 @@ export const SmallShapeTraceGame: React.FC<
     lastProgressRef.current = 0;
     offTrackRef.current = false;
     setIsOffTrack(false);
+    setTraceProg(0);
     roundActiveRef.current = true;
 
     if (mode === 'circle') {
@@ -266,6 +320,7 @@ export const SmallShapeTraceGame: React.FC<
     progress.value = 0;
     progressRef.current = 0;
     lastProgressRef.current = 0;
+    setTraceProg(0);
     offTrackRef.current = false;
     setIsOffTrack(false);
     resetObjectToStart();
@@ -288,11 +343,15 @@ export const SmallShapeTraceGame: React.FC<
       let onTrack = false;
       let current = 0;
 
+      const hitTol = mode === 'circle'
+        ? toleranceForCircle(tolerance, radius.value, refCircleRadius, P.minTolerance)
+        : tolerance;
+
       if (mode === 'circle') {
-        onTrack = distanceToFullCircle(ox.value, oy.value, cx.value, cy.value, radius.value) <= tolerance;
+        onTrack = distanceToFullCircle(ox.value, oy.value, cx.value, cy.value, radius.value) <= hitTol;
         if (onTrack) current = circleTraceProgress(ox.value, oy.value, cx.value, cy.value, startAngle.value);
       } else {
-        onTrack = distanceToPolygon(ox.value, oy.value, pathPointsRef.current) <= tolerance;
+        onTrack = distanceToPolygon(ox.value, oy.value, pathPointsRef.current) <= hitTol;
         if (onTrack) current = polygonTraceProgress(ox.value, oy.value, pathPointsRef.current);
       }
 
@@ -316,6 +375,7 @@ export const SmallShapeTraceGame: React.FC<
       lastProgressRef.current = current;
       progressRef.current = next;
       progress.value = next;
+      setTraceProg(next);
       refreshPaths(next);
     })
     .onEnd(() => {
@@ -336,6 +396,7 @@ export const SmallShapeTraceGame: React.FC<
   }));
 
   const dotEmoji = dotShape === 'triangle' ? '🔺' : dotShape === 'pentagon' ? '⬟' : '⬡';
+  const currentCircleR = mode === 'circle' ? resolveCircleRadius(round) : 0;
 
   if (showCongratulations && done && finalStats) {
     return (
@@ -403,38 +464,87 @@ export const SmallShapeTraceGame: React.FC<
           screenH.current = e.nativeEvent.layout.height;
         }}
       >
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${Math.round(traceProg * 100)}%`, backgroundColor: T.progressStroke }]} />
+        </View>
+        {shrinkMode && (
+          <Text style={[styles.sizeHint, { color: T.subtitleColor }]}>
+            Size: {Math.round(currentCircleR)} — round {round}/{TOTAL}
+          </Text>
+        )}
         <GestureDetector gesture={panGesture}>
           <Animated.View style={styles.gestureArea}>
             <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.svg}>
-              <Path
-                d={pathFull}
-                stroke={T.guideStroke}
-                strokeWidth={strokeWidth}
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                opacity={0.55}
-                strokeDasharray={dotBorder ? '2 3' : undefined}
-              />
+              <Defs>
+                <SvgLinearGradient id="smallTraceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <Stop offset="0%" stopColor={T.progressStroke} stopOpacity="0.95" />
+                  <Stop offset="100%" stopColor={T.objectColor} stopOpacity="1" />
+                </SvgLinearGradient>
+              </Defs>
+              <SceneDecor mode={mode} dotBorder={dotBorder} shrinkMode={shrinkMode} round={round} total={TOTAL} />
+              {mode === 'circle' && (
+                <Circle cx="50" cy="50" r={currentCircleR + 5} fill="none" stroke={T.guideStroke} strokeWidth="1" opacity={0.2} />
+              )}
+              {pathFull ? (
+                <>
+                  <Path
+                    d={pathFull}
+                    stroke={T.guideStroke}
+                    strokeWidth={STROKE + 5}
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity={0.2}
+                    strokeDasharray={dotBorder ? '2 3' : undefined}
+                  />
+                  <Path
+                    d={pathFull}
+                    stroke="rgba(255,255,255,0.5)"
+                    strokeWidth={STROKE + 1}
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeDasharray={dotBorder ? '2 3' : undefined}
+                  />
+                  <Path
+                    d={pathFull}
+                    stroke={T.guideStroke}
+                    strokeWidth={guideStroke}
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity={0.7}
+                    strokeDasharray={dotBorder ? '3 2.5' : undefined}
+                  />
+                </>
+              ) : null}
               {pathProg ? (
-                <Path
-                  d={pathProg}
-                  stroke={T.progressStroke}
-                  strokeWidth={progStroke}
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+                <>
+                  <Path d={pathProg} stroke="rgba(255,255,255,0.9)" strokeWidth={progStroke + 2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  <Path d={pathProg} stroke="url(#smallTraceGrad)" strokeWidth={progStroke} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </>
               ) : null}
             </Svg>
 
             <Animated.View style={[styles.objectWrap, objectStyle]}>
-              <View style={[styles.object, { backgroundColor: isOffTrack ? T.objectOffColor : T.objectColor }]}>
+              <View
+                style={[
+                  styles.object,
+                  { backgroundColor: isOffTrack ? T.objectOffColor : T.objectColor },
+                  !isOffTrack && { shadowColor: T.progressStroke, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.55, shadowRadius: 8 },
+                ]}
+              >
                 <Text style={styles.objectEmoji}>{mode === 'dots' ? dotEmoji : T.objectEmoji}</Text>
               </View>
             </Animated.View>
 
-            <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color={T.sparkleColor} count={12} size={7} />
+            {traceProg > 0.05 && traceProg < P.completeThreshold - 0.05 && !isOffTrack && (
+              <View style={styles.traceHint} pointerEvents="none">
+                <Text style={[styles.traceHintText, { color: T.titleColor }]}>Keep tracing!</Text>
+              </View>
+            )}
+
+            <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color={T.sparkleColor} count={18} size={9} />
           </Animated.View>
         </GestureDetector>
 
@@ -463,7 +573,10 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
-  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, position: 'relative', overflow: 'hidden' },
+  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1.5, position: 'relative', overflow: 'hidden' },
+  progressTrack: { height: 6, marginHorizontal: 12, marginTop: 10, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.45)', overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 3 },
+  sizeHint: { textAlign: 'center', fontSize: 12, fontWeight: '700', marginBottom: 4 },
   gestureArea: { flex: 1 },
   svg: { position: 'absolute', width: '100%', height: '100%' },
   objectWrap: { position: 'absolute', zIndex: 5 },
@@ -473,10 +586,13 @@ const styles = StyleSheet.create({
     borderRadius: P.objectSize / 2,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.85)',
+    borderWidth: 3,
+    borderColor: '#fff',
+    elevation: 8,
   },
-  objectEmoji: { fontSize: 16 },
+  objectEmoji: { fontSize: 22 },
+  traceHint: { position: 'absolute', top: '8%', alignSelf: 'center', backgroundColor: 'rgba(255,255,255,0.9)', paddingVertical: 6, paddingHorizontal: 14, borderRadius: 14, zIndex: 4 },
+  traceHintText: { fontSize: 12, fontWeight: '800' },
   warnPill: {
     position: 'absolute',
     bottom: 12,

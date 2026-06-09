@@ -16,7 +16,7 @@ const GlowBorderTraceGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
       glowRing: 'rgba(168,85,247,0.45)',
       backText: '#7E22CE', backBorder: 'rgba(168,85,247,0.25)',
       titleColor: '#6B21A8', subtitleColor: '#7E22CE', statLabel: '#9333EA', statValue: '#6B21A8',
-      statBorder: 'rgba(168,85,247,0.2)', playBorder: 'rgba(168,85,247,0.25)', playBg: 'rgba(255,255,255,0.35)',
+      statBorder: 'rgba(168,85,247,0.2)', playBorder: 'rgba(168,85,247,0.35)', playBg: 'rgba(30,27,75,0.45)',
       sparkleColor: '#A855F7', hintText: 'Follow the pulsing glow all the way around!',
       objectEmoji: '⭐',
     }}

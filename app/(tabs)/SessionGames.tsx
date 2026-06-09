@@ -804,7 +804,6 @@ import PuzzleDropShapesGame from '@/components/game/occupational/level2/session6
 import ShadowMatchGame from '@/components/game/occupational/level2/session6/ShadowMatchGame';
 
 // Occupational Therapy Level 2 Session 7: Trace Large Shapes games
-import BigCircleTraceGame from '@/components/game/occupational/level2/session7/BigCircleTraceGame';
 import BigSquareWalkGame from '@/components/game/occupational/level2/session7/BigSquareWalkGame';
 import GlowBorderTraceGame from '@/components/game/occupational/level2/session7/GlowBorderTraceGame';
 import PaintTheShapeGame from '@/components/game/occupational/level2/session7/PaintTheShapeGame';
@@ -1383,7 +1382,6 @@ type GameKey =
   | 'cookie-cutter-match'
   | 'parking-shapes'
   | 'fast-match'
-  | 'big-circle-trace'
   | 'big-square-walk'
   | 'triangle-mountain-trace'
   | 'paint-the-shape'
@@ -2040,8 +2038,6 @@ export default function SessionGamesScreen() {
     therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 6;
 
   // Level 2 Session 7: Trace Large Shapes games
-  const isBigCircleTraceAvailable =
-    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 7;
   const isBigSquareWalkAvailable =
     therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 7;
   const isTriangleMountainTraceAvailable =
@@ -4580,47 +4576,6 @@ export default function SessionGamesScreen() {
       color: '#A855F7',
       available: isConversationAvatarAvailable,
     },
-    // Level 2 Session 3: Trace Zig-Zag games (OT)
-    {
-      id: 'mountain-climb',
-      title: 'Peak Path',
-      emoji: '⛰️',
-      description: 'Climb the zig-zag trail up the mountain. Change direction smoothly!',
-      color: '#16A34A',
-      available: isMountainClimbAvailable,
-    },
-    {
-      id: 'lightning-bolt',
-      title: 'Thunder Trace',
-      emoji: '⚡',
-      description: 'Trace the lightning bolt with sharp angles. Follow the zig-zag!',
-      color: '#FBBF24',
-      available: isLightningBoltAvailable,
-    },
-    {
-      id: 'saw-path',
-      title: 'Saw Wave',
-      emoji: '🪚',
-      description: 'Follow the up-down saw-tooth path. Controlled motion left to right!',
-      color: '#EA580C',
-      available: isSawPathAvailable,
-    },
-    {
-      id: 'robot-wire-fix',
-      title: 'Wire Fix Lab',
-      emoji: '🤖',
-      description: 'Follow the zig-zag wire to fix the robot! Trace carefully.',
-      color: '#2563EB',
-      available: isRobotWireFixAvailable,
-    },
-    {
-      id: 'zig-zag-race',
-      title: 'Zig Sprint',
-      emoji: '🏁',
-      description: 'Race along the zig-zag track to the finish!',
-      color: '#DC2626',
-      available: isZigZagRaceAvailable,
-    },
     // Level 2 Session 4: Follow Path (Drag) games
     {
       id: 'maze-walk',
@@ -4745,14 +4700,6 @@ export default function SessionGamesScreen() {
       available: isFastMatchAvailable,
     },
     // Level 2 Session 7: Trace Large Shapes games
-    {
-      id: 'big-circle-trace',
-      title: 'Orbit Loop',
-      emoji: '⭕',
-      description: 'Trace the big circle with your whole arm!',
-      color: '#3B82F6',
-      available: isBigCircleTraceAvailable,
-    },
     {
       id: 'big-square-walk',
       title: 'Square Stroll',
@@ -7639,48 +7586,48 @@ export default function SessionGamesScreen() {
     // Level 4 Session 6: Pass Ball Across Midline
     {
       id: 'hand-to-hand-pass',
-      title: 'Hand-to-Hand Pass',
+      title: 'Hand Swap',
       emoji: '🤲',
-      description: 'Ball left hand → right hand - midline awareness!',
+      description: 'Pass left ↔ right across midline — awareness!',
       color: '#3B82F6',
       available: isHandToHandPassAvailable,
     },
     {
       id: 'throw-catch',
-      title: 'Throw & Catch',
+      title: 'Toss & Grab',
       emoji: '🎾',
-      description: 'Left throw → right catch - hand coordination!',
+      description: 'Throw left, catch right — hand coordination!',
       color: '#F59E0B',
       available: isThrowCatchAvailable,
     },
     {
       id: 'target-pass',
-      title: 'Target Pass',
+      title: 'Aim Pass',
       emoji: '🎯',
-      description: 'Across body target me pass - accuracy!',
+      description: 'Drag across body to the target — accuracy!',
       color: '#EF4444',
       available: isTargetPassAvailable,
     },
     {
       id: 'rhythm-pass',
-      title: 'Rhythm Pass',
+      title: 'Beat Pass',
       emoji: '🎵',
-      description: 'Music ke sath pass - timing + flow!',
+      description: 'Pass on the beat — timing + flow!',
       color: '#8B5CF6',
       available: isRhythmPassAvailable,
     },
     {
       id: 'obstacle-pass',
-      title: 'Obstacle Pass',
+      title: 'Detour Pass',
       emoji: '🚧',
-      description: 'Obstacle ke upar se pass - planning skill!',
+      description: 'Go around the obstacle — planning skill!',
       color: '#10B981',
       available: isObstaclePassAvailable,
     },
     // Level 4 Session 7: Follow Cross-Body Arrows
     {
       id: 'arrow-touch',
-      title: 'Arrow Touch',
+      title: 'Cross Tap',
       emoji: '⬅️',
       description: 'Left arrow → right hand! Cross-body brain training!',
       color: '#3B82F6',
@@ -7688,163 +7635,163 @@ export default function SessionGamesScreen() {
     },
     {
       id: 'arrow-swipe',
-      title: 'Arrow Swipe',
+      title: 'Swipe Cross',
       emoji: '➡️',
-      description: 'Cross-body swipe! Left arrow → right swipe!',
+      description: 'Swipe across your body — opposite direction!',
       color: '#EF4444',
       available: isArrowSwipeAvailable,
     },
     {
       id: 'moving-arrows',
-      title: 'Moving Arrows',
+      title: 'Drift Tap',
       emoji: '➡️',
-      description: 'Arrows move hote hue! Track and tap with cross-body!',
+      description: 'Track the drifting arrow — tap cross-body!',
       color: '#8B5CF6',
       available: isMovingArrowsAvailable,
     },
     {
       id: 'arrow-sequence',
-      title: 'Arrow Sequence',
+      title: 'Arrow Chain',
       emoji: '➡️',
-      description: 'Multiple arrows follow! Remember the sequence!',
+      description: 'Watch 3 arrows, tap the chain in order!',
       color: '#10B981',
       available: isArrowSequenceAvailable,
     },
     {
       id: 'speed-arrows',
-      title: 'Speed Arrows',
+      title: 'Flash Cross',
       emoji: '⚡',
-      description: 'Fast-changing arrows! React quickly with cross-body!',
+      description: 'Fast-flashing arrows — react cross-body!',
       color: '#F59E0B',
       available: isSpeedArrowsAvailable,
     },
     // Level 4 Session 8: Tap Alternating Sides
     {
       id: 'side-lights-l4s8',
-      title: 'Side Lights',
+      title: 'Glow Tap',
       emoji: '💡',
-      description: 'Left-right lights tap! Bilateral activation!',
+      description: 'Tap the glowing side — bilateral activation!',
       color: '#3B82F6',
       available: isSideLightsAvailable,
     },
     {
       id: 'ping-pong-tap',
-      title: 'Ping-Pong Tap',
+      title: 'Rally Tap',
       emoji: '🏓',
-      description: 'Ball idhar-udhar tap! Focus on the moving ball!',
+      description: 'Tap when the ball hits center — focus!',
       color: '#10B981',
       available: isPingPongTapAvailable,
     },
     {
       id: 'sound-side-tap',
-      title: 'Sound Side Tap',
+      title: 'Sound Tap',
       emoji: '🔊',
-      description: 'Sound jis side aaye tap! Auditory processing!',
+      description: 'Hear the sound — tap that side!',
       color: '#8B5CF6',
       available: isSoundSideTapAvailable,
     },
     {
       id: 'count-and-tap',
-      title: 'Count & Tap',
+      title: 'Odd Even Tap',
       emoji: '🔢',
-      description: 'Odd = left, even = right! Cognitive-motor link!',
+      description: 'Odd = left, even = right — brain + motor!',
       color: '#EF4444',
       available: isCountAndTapAvailable,
     },
     {
       id: 'fast-switch',
-      title: 'Fast Switch',
+      title: 'Quick Switch',
       emoji: '⚡',
-      description: 'Rapid side switching! Brain speed training!',
+      description: 'Sides flash faster — rapid switching!',
       color: '#F59E0B',
       available: isFastSwitchAvailable,
     },
     // Level 4 Session 9: Drag Two Objects Simultaneously
     {
       id: 'double-drag',
-      title: 'Double Drag',
+      title: 'Twin Drag',
       emoji: '🤲',
-      description: 'Dono haathon se drag! Bilateral strength!',
+      description: 'Drag both objects at once — bilateral strength!',
       color: '#3B82F6',
       available: isDoubleDragAvailable,
     },
     {
       id: 'match-pair',
-      title: 'Match Pair',
+      title: 'Pair Match',
       emoji: '🤝',
-      description: 'Left-right object same time! Coordination!',
+      description: 'Match both shapes to the center together!',
       color: '#10B981',
       available: isMatchPairAvailable,
     },
     {
       id: 'shape-sort',
-      title: 'Shape Sort',
+      title: 'Box Sort',
       emoji: '📦',
-      description: '2 shapes → 2 boxes! Multitasking!',
+      description: 'Sort two shapes into boxes — multitasking!',
       color: '#8B5CF6',
       available: isShapeSortAvailable,
     },
     {
       id: 'rope-pull',
-      title: 'Rope Pull',
+      title: 'Tug Rope',
       emoji: '🪢',
-      description: 'Dono sides rope pull! Upper body integration!',
+      description: 'Pull both handles outward — upper body!',
       color: '#F59E0B',
       available: isRopePullAvailable,
     },
     {
       id: 'balance-drag',
-      title: 'Balance Drag',
+      title: 'Even Pull',
       emoji: '⚖️',
-      description: 'Objects ko equal pace! Speed regulation!',
+      description: 'Drag both at equal pace — speed regulation!',
       color: '#EF4444',
       available: isBalanceDragAvailable,
     },
     // Level 4 Session 10: Cross-Body Rhythm Imitation
     {
       id: 'clap-pattern',
-      title: 'Clap Pattern',
+      title: 'Cross Clap',
       emoji: '👏',
-      description: 'Cross-body clap copy! Rhythm + midline!',
+      description: 'Copy cross-body clap patterns — rhythm + midline!',
       color: '#3B82F6',
       available: isClapPatternAvailable,
     },
     {
       id: 'tap-shoulder-pattern',
-      title: 'Tap-Shoulder Pattern',
+      title: 'Shoulder Tap',
       emoji: '👆',
-      description: 'Right hand → left shoulder! Body mapping!',
+      description: 'Cross-body shoulder tap patterns — body mapping!',
       color: '#10B981',
       available: isTapShoulderPatternAvailable,
     },
     {
       id: 'music-copy',
-      title: 'Music Copy',
+      title: 'Beat Mirror',
       emoji: '🎵',
-      description: 'Beat ke sath movements! Auditory-motor sync!',
+      description: 'Mirror hand movements to the beat!',
       color: '#8B5CF6',
       available: isMusicCopyAvailable,
     },
     {
       id: 'memory-rhythm',
-      title: 'Memory Rhythm',
+      title: 'Rhythm Recall',
       emoji: '🧠',
-      description: 'Pattern yaad karke repeat! Working memory!',
+      description: 'Remember the pattern, then repeat!',
       color: '#F59E0B',
       available: isMemoryRhythmAvailable,
     },
     {
       id: 'speed-rhythm',
-      title: 'Speed Rhythm',
+      title: 'Fast Beat',
       emoji: '⚡',
-      description: 'Slow → fast rhythm! Control + flexibility!',
+      description: 'Rhythm speeds up — control + flexibility!',
       color: '#EF4444',
       available: isSpeedRhythmAvailable,
     },
     // Level 5 Session 1: Follow Moving Object
     {
       id: 'catch-moving-ball',
-      title: 'Catch the Ball',
+      title: 'Ball Chase',
       emoji: '⚽',
       description: 'Ball screen pe move karta hai → tap karna. Visual tracking + reaction time!',
       color: '#3B82F6',
@@ -7852,7 +7799,7 @@ export default function SessionGamesScreen() {
     },
     {
       id: 'follow-the-butterfly',
-      title: 'Follow the Butterfly',
+      title: 'Butterfly Trail',
       emoji: '🦋',
       description: 'Butterfly ko finger se follow. Smooth eye movement!',
       color: '#10B981',
@@ -7860,7 +7807,7 @@ export default function SessionGamesScreen() {
     },
     {
       id: 'avoid-the-bomb',
-      title: 'Avoid the Bomb',
+      title: 'Safe Tap',
       emoji: '💣',
       description: 'Bomb se bachate hue target tap. Focus + control!',
       color: '#EF4444',
@@ -7868,7 +7815,7 @@ export default function SessionGamesScreen() {
     },
     {
       id: 'chase-the-star',
-      title: 'Chase the Star',
+      title: 'Star Hunt',
       emoji: '⭐',
       description: 'Star idhar-udhar bhage. Predictive tracking!',
       color: '#F59E0B',
@@ -7876,7 +7823,7 @@ export default function SessionGamesScreen() {
     },
     {
       id: 'zigzag-follow',
-      title: 'Zig-zag Follow',
+      title: 'Zigzag Run',
       emoji: '〰️',
       description: 'Object zig-zag me chale. Reading line movement prep!',
       color: '#8B5CF6',
@@ -8694,27 +8641,6 @@ export default function SessionGamesScreen() {
     return <SuccessReplayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Level 2 Session 3: Trace Zig-Zag games (OT)
-  if (currentGame === 'mountain-climb') {
-    return <MountainClimbGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
-  if (currentGame === 'lightning-bolt') {
-    return <LightningBoltGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
-  if (currentGame === 'saw-path') {
-    return <SawPathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
-  if (currentGame === 'robot-wire-fix') {
-    return <RobotWireFixGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
-  if (currentGame === 'zig-zag-race') {
-    return <ZigZagRaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
   // Level 2 Session 4: Follow Path (Drag) games
   if (currentGame === 'maze-walk') {
     return <MazeWalkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
@@ -8779,10 +8705,6 @@ export default function SessionGamesScreen() {
   }
 
   // Level 2 Session 7: Trace Large Shapes games
-  if (currentGame === 'big-circle-trace') {
-    return <BigCircleTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
   if (currentGame === 'big-square-walk') {
     return <BigSquareWalkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }

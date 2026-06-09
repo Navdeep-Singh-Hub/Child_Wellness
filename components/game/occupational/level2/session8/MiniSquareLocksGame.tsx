@@ -15,7 +15,7 @@ const MiniSquareLocksGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
       objectColor: '#6366F1', objectOffColor: '#EF4444',
       backText: '#4338CA', backBorder: 'rgba(99,102,241,0.25)',
       titleColor: '#3730A3', subtitleColor: '#4338CA', statLabel: '#4F46E5', statValue: '#3730A3',
-      statBorder: 'rgba(99,102,241,0.2)', playBorder: 'rgba(99,102,241,0.25)', playBg: 'rgba(255,255,255,0.35)',
+      statBorder: 'rgba(99,102,241,0.2)', playBorder: 'rgba(99,102,241,0.3)', playBg: 'rgba(224,231,255,0.55)',
       sparkleColor: '#6366F1', hintText: 'Trace every edge of the mini square!',
       objectEmoji: '🔒',
     }}

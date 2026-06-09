@@ -16,7 +16,7 @@ const CarefulTraceChallengeGame: React.FC<{ onBack?: () => void; onComplete?: ()
       objectColor: '#10B981', objectOffColor: '#EF4444',
       backText: '#047857', backBorder: 'rgba(16,185,129,0.25)',
       titleColor: '#065F46', subtitleColor: '#047857', statLabel: '#059669', statValue: '#065F46',
-      statBorder: 'rgba(16,185,129,0.2)', playBorder: 'rgba(16,185,129,0.25)', playBg: 'rgba(255,255,255,0.35)',
+      statBorder: 'rgba(16,185,129,0.2)', playBorder: 'rgba(16,185,129,0.3)', playBg: 'rgba(167,243,208,0.5)',
       sparkleColor: '#10B981', hintText: 'Go slow — stay close to the line!',
       objectEmoji: '🎯',
     }}

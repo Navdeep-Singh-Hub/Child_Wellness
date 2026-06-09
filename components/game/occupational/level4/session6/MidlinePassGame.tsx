@@ -370,6 +370,7 @@ export const MidlinePassGame: React.FC<
     clearTimers();
     canInteractRef.current = false;
     ballStateRef.current = 'right';
+    setBallState('right');
     rightScale.value = withSequence(withSpring(1.2), withSpring(1));
     completeRound();
   }, [clearTimers, completeRound, rightScale]);
@@ -405,15 +406,7 @@ export const MidlinePassGame: React.FC<
       }
       animatePass(hand);
     },
-    [animatePass, ballStateRef, catchBall, mode, playWarn, throwBall],
-  );
-
-  const showWrong = useCallback(
-    (msg: string) => {
-      playWarn();
-      speakTTS(msg, 0.78).catch(() => {});
-    },
-    [playWarn],
+    [animatePass, catchBall, clearTimers, mode, playWarn, showWrong, throwBall],
   );
 
   const startRoundPlay = useCallback(() => {
@@ -450,11 +443,11 @@ export const MidlinePassGame: React.FC<
     [clearTimers],
   );
 
-  const showBallOnHand = mode !== 'throwCatch' || ballStateRef.current === 'left';
+  const showBallOnHand = mode !== 'throwCatch' || ballState === 'left';
   const showFlyingBall =
     mode === 'throwCatch'
-      ? ballStateRef.current === 'throwing' || ballStateRef.current === 'catching'
-      : ballStateRef.current === 'moving' || mode === 'rhythmPass';
+      ? ballState === 'throwing' || ballState === 'catching'
+      : ballState === 'moving';
 
   if (showCongratulations && done && finalStats) {
     return (
@@ -559,7 +552,7 @@ export const MidlinePassGame: React.FC<
               <Animated.View style={[styles.hand, styles.rightHand, rightStyle]}>
                 <Text style={styles.handEmoji}>👉</Text>
                 <Text style={styles.handLabel}>{mode === 'throwCatch' ? 'CATCH' : 'RIGHT'}</Text>
-                {ballSide === 'right' && ballStateRef.current === 'right' && (
+                {ballSide === 'right' && ballState === 'right' && (
                   <View style={styles.ballBadge}>
                     <Text style={styles.ballBadgeEmoji}>{T.ballEmoji}</Text>
                   </View>

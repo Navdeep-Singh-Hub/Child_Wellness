@@ -14,7 +14,7 @@ const ShrinkModeTraceGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
       objectColor: '#EF4444', objectOffColor: '#991B1B',
       backText: '#991B1B', backBorder: 'rgba(239,68,68,0.25)',
       titleColor: '#991B1B', subtitleColor: '#B91C1C', statLabel: '#DC2626', statValue: '#991B1B',
-      statBorder: 'rgba(239,68,68,0.2)', playBorder: 'rgba(239,68,68,0.25)', playBg: 'rgba(255,255,255,0.35)',
+      statBorder: 'rgba(239,68,68,0.2)', playBorder: 'rgba(239,68,68,0.3)', playBg: 'rgba(254,202,202,0.5)',
       sparkleColor: '#EF4444', hintText: 'The circle shrinks each round — trace carefully!',
       objectEmoji: '🔽',
     }}

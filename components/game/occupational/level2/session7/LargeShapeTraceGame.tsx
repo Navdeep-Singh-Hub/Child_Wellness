@@ -39,10 +39,63 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Defs, Ellipse, Path, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const P = SESSION7_PACING;
+const STROKE = P.pathStroke;
+
+const SceneDecor: React.FC<{ mode: 'circle' | 'square' | 'triangle' | 'paint'; glowMode: boolean }> = ({ mode, glowMode }) => {
+  if (glowMode) {
+    return (
+      <>
+        {[[12, 14], [28, 8], [55, 12], [78, 10], [88, 20], [20, 28], [70, 26]].map(([x, y], i) => (
+          <Circle key={i} cx={x} cy={y} r={i % 2 === 0 ? 1.1 : 0.7} fill="rgba(255,255,255,0.55)" />
+        ))}
+        <Circle cx="50" cy="50" r="38" fill="rgba(168,85,247,0.06)" />
+      </>
+    );
+  }
+  switch (mode) {
+    case 'circle':
+      return (
+        <>
+          <Circle cx="18" cy="10" r="4" fill="rgba(255,255,255,0.55)" />
+          <Circle cx="82" cy="8" r="5" fill="rgba(255,255,255,0.5)" />
+          <Path d="M 0 92 Q 30 86 50 92 T 100 92 L 100 100 L 0 100 Z" fill="rgba(59,130,246,0.1)" />
+        </>
+      );
+    case 'square':
+      return (
+        <>
+          <Circle cx="15" cy="15" r="2" fill="rgba(16,185,129,0.25)" />
+          <Circle cx="85" cy="15" r="2" fill="rgba(16,185,129,0.25)" />
+          <Circle cx="85" cy="85" r="2" fill="rgba(16,185,129,0.25)" />
+          <Circle cx="15" cy="85" r="2" fill="rgba(16,185,129,0.25)" />
+          <Path d="M 0 92 L 100 92 L 100 100 L 0 100 Z" fill="rgba(16,185,129,0.2)" />
+        </>
+      );
+    case 'triangle':
+      return (
+        <>
+          <Path d="M 8 82 L 22 58 L 36 82 Z" fill="rgba(180,83,9,0.25)" />
+          <Path d="M 64 84 L 80 56 L 94 84 Z" fill="rgba(146,64,14,0.3)" />
+          <Path d="M 0 90 L 100 90 L 100 100 L 0 100 Z" fill="rgba(245,158,11,0.15)" />
+        </>
+      );
+    case 'paint':
+      return (
+        <>
+          <Circle cx="14" cy="18" r="5" fill="rgba(239,68,68,0.35)" />
+          <Circle cx="26" cy="14" r="4" fill="rgba(59,130,246,0.35)" />
+          <Circle cx="38" cy="20" r="4.5" fill="rgba(234,179,8,0.4)" />
+          <Circle cx="86" cy="16" r="5" fill="rgba(34,197,94,0.35)" />
+        </>
+      );
+    default:
+      return null;
+  }
+};
 const SUCCESS = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const WARN = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
 const STAR = require('@/assets/icons/star.png');
@@ -110,6 +163,7 @@ export const LargeShapeTraceGame: React.FC<
   const playSuccess = useTraceSound(SUCCESS);
   const playWarn = useTraceSound(WARN);
   const tol = tolerance ?? (glowMode ? P.glowTolerance : mode === 'paint' ? P.paintTolerance : P.lineTolerance);
+  const finishThreshold = mode === 'paint' ? P.paintCompleteThreshold : P.completeThreshold;
   const TOTAL = P.totalRounds;
 
   const [round, setRound] = useState(1);
@@ -124,6 +178,7 @@ export const LargeShapeTraceGame: React.FC<
   const [isOffTrack, setIsOffTrack] = useState(false);
   const [sparkleKey, setSparkleKey] = useState(0);
   const [paintShape, setPaintShape] = useState<PaintShapeKind>('star');
+  const [traceProg, setTraceProg] = useState(0);
 
   const roundActiveRef = useRef(true);
   const doneRef = useRef(false);
@@ -149,7 +204,7 @@ export const LargeShapeTraceGame: React.FC<
   useEffect(() => {
     if (glowMode) {
       glowOpacity.value = withRepeat(
-        withSequence(withTiming(0.85, { duration: 900 }), withTiming(0.35, { duration: 900 })),
+        withSequence(withTiming(0.9, { duration: 550 }), withTiming(0.35, { duration: 550 })),
         -1,
         false,
       );
@@ -170,7 +225,7 @@ export const LargeShapeTraceGame: React.FC<
     if (mode === 'paint') {
       const { fillPath: fill } = buildPaintFillPath(pts, prog);
       setFillPath(fill);
-      setFillComplete(prog >= 0.95);
+      setFillComplete(prog >= finishThreshold);
       setPathProg('');
       return;
     }
@@ -178,7 +233,7 @@ export const LargeShapeTraceGame: React.FC<
     setPathFull(full);
     setPathProg(progressPath);
     setFillPath('');
-  }, [glowMode, mode]);
+  }, [finishThreshold, glowMode, mode]);
 
   const resetObjectToStart = useCallback(() => {
     if (mode === 'circle' || glowMode) {
@@ -200,6 +255,7 @@ export const LargeShapeTraceGame: React.FC<
     offTrackRef.current = false;
     setIsOffTrack(false);
     setFillComplete(false);
+    setTraceProg(0);
     roundActiveRef.current = true;
 
     if (mode === 'circle' || glowMode) {
@@ -282,6 +338,7 @@ export const LargeShapeTraceGame: React.FC<
     progress.value = 0;
     progressRef.current = 0;
     lastProgressRef.current = 0;
+    setTraceProg(0);
     offTrackRef.current = false;
     setIsOffTrack(false);
     resetObjectToStart();
@@ -336,12 +393,13 @@ export const LargeShapeTraceGame: React.FC<
       lastProgressRef.current = current;
       progressRef.current = next;
       progress.value = next;
+      setTraceProg(next);
       refreshPaths(next);
     })
     .onEnd(() => {
       if (!roundActiveRef.current || doneRef.current) return;
       oScale.value = withSpring(1, { damping: 10, stiffness: 200 });
-      if (progressRef.current >= P.completeThreshold) completeRound();
+      if (progressRef.current >= finishThreshold) completeRound();
       else failRound();
     });
 
@@ -421,56 +479,74 @@ export const LargeShapeTraceGame: React.FC<
           screenH.current = e.nativeEvent.layout.height;
         }}
       >
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${Math.round(traceProg * 100)}%`, backgroundColor: T.progressStroke }]} />
+        </View>
         <GestureDetector gesture={panGesture}>
           <Animated.View style={styles.gestureArea}>
-            <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.svg}>
+            <Svg pointerEvents="none" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.svg}>
+              <Defs>
+                <SvgLinearGradient id="traceGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <Stop offset="0%" stopColor={T.progressStroke} stopOpacity="0.9" />
+                  <Stop offset="100%" stopColor={T.fillDoneColor} stopOpacity="1" />
+                </SvgLinearGradient>
+              </Defs>
+              <SceneDecor mode={mode} glowMode={glowMode} />
               {glowMode && (
                 <AnimatedCircle
                   cx={50}
                   cy={50}
-                  r={P.circleRadius + 2}
+                  r={P.circleRadius + 3}
                   fill="none"
                   stroke={T.glowRing ?? T.guideStroke}
-                  strokeWidth={8}
+                  strokeWidth={STROKE + 4}
                   animatedProps={glowProps}
                 />
               )}
               {mode === 'paint' ? (
                 <>
-                  <Path d={pathFull} fill="none" stroke={T.guideStroke} strokeWidth={3} opacity={0.45} />
+                  <Path d={pathFull} fill="none" stroke={T.guideStroke} strokeWidth={STROKE - 2} opacity={0.5} />
                   {fillPath ? (
                     <Path
                       d={fillPath}
                       fill={fillComplete ? T.fillDoneColor : T.fillColor}
                       stroke={T.progressStroke}
-                      strokeWidth={1.5}
+                      strokeWidth={2}
+                      opacity={fillComplete ? 1 : 0.85}
                     />
                   ) : null}
                 </>
               ) : (
                 <>
-                  {glowMode && (
-                    <Circle
-                      cx={50}
-                      cy={50}
-                      r={P.circleRadius}
-                      fill="none"
-                      stroke={T.guideStroke}
-                      strokeWidth={6}
-                      strokeDasharray="4 4"
-                      opacity={0.55}
-                    />
+                  {(mode === 'circle' || glowMode) && (
+                    <>
+                      <Circle cx={50} cy={50} r={P.circleRadius + 5} fill="none" stroke={T.guideStroke} strokeWidth={STROKE + 8} opacity={0.18} />
+                      <Circle
+                        cx={50}
+                        cy={50}
+                        r={P.circleRadius}
+                        fill="rgba(255,255,255,0.12)"
+                        stroke={T.guideStroke}
+                        strokeWidth={STROKE}
+                        strokeDasharray={glowMode ? '5 4' : '7 5'}
+                        opacity={0.9}
+                      />
+                      <Circle cx={50 + P.circleRadius} cy={50} r={3.5} fill={T.progressStroke} opacity={0.85} />
+                      <Circle cx={50 + P.circleRadius} cy={50} r={5.5} fill="none" stroke="#fff" strokeWidth={1.2} opacity={0.9} />
+                    </>
                   )}
-                  <Path
-                    d={pathFull}
-                    stroke={T.guideStroke}
-                    strokeWidth={glowMode ? 6 : 4}
-                    fill="none"
-                    strokeLinecap="round"
-                    opacity={glowMode ? 0.75 : 0.5}
-                  />
+                  {mode !== 'circle' && !glowMode && pathFull ? (
+                    <>
+                      <Path d={pathFull} stroke={T.guideStroke} strokeWidth={STROKE + 6} fill="none" strokeLinecap="round" opacity={0.25} />
+                      <Path d={pathFull} stroke="rgba(255,255,255,0.45)" strokeWidth={STROKE + 2} fill="none" strokeLinecap="round" />
+                      <Path d={pathFull} stroke={T.guideStroke} strokeWidth={STROKE} fill="none" strokeLinecap="round" opacity={0.75} />
+                    </>
+                  ) : null}
                   {pathProg ? (
-                    <Path d={pathProg} stroke={T.progressStroke} strokeWidth={glowMode ? 6 : 4} fill="none" strokeLinecap="round" />
+                    <>
+                      <Path d={pathProg} stroke="rgba(255,255,255,0.85)" strokeWidth={STROKE + 3} fill="none" strokeLinecap="round" />
+                      <Path d={pathProg} stroke="url(#traceGrad)" strokeWidth={STROKE + 1} fill="none" strokeLinecap="round" />
+                    </>
                   ) : null}
                 </>
               )}
@@ -481,13 +557,20 @@ export const LargeShapeTraceGame: React.FC<
                 style={[
                   styles.object,
                   { backgroundColor: isOffTrack ? T.objectOffColor : T.objectColor },
+                  !isOffTrack && { shadowColor: T.progressStroke, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.55, shadowRadius: 10 },
                 ]}
               >
                 <Text style={styles.objectEmoji}>{mode === 'paint' ? (paintShape === 'heart' ? '💖' : paintShape === 'star' ? '⭐' : '⬟') : T.objectEmoji}</Text>
               </View>
             </Animated.View>
 
-            <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color={T.sparkleColor} count={14} size={8} />
+            {traceProg > 0.05 && traceProg < finishThreshold - 0.05 && !isOffTrack && (
+              <View style={styles.traceHint} pointerEvents="none">
+                <Text style={[styles.traceHintText, { color: T.titleColor }]}>Keep going!</Text>
+              </View>
+            )}
+
+            <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color={T.sparkleColor} count={20} size={10} />
           </Animated.View>
         </GestureDetector>
 
@@ -516,7 +599,9 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
-  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, position: 'relative', overflow: 'hidden' },
+  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1.5, position: 'relative', overflow: 'hidden' },
+  progressTrack: { height: 6, marginHorizontal: 12, marginTop: 10, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.45)', overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 3 },
   gestureArea: { flex: 1 },
   svg: { position: 'absolute', width: '100%', height: '100%' },
   objectWrap: { position: 'absolute', zIndex: 5 },
@@ -526,10 +611,13 @@ const styles = StyleSheet.create({
     borderRadius: P.objectSize / 2,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.85)',
+    borderWidth: 3,
+    borderColor: '#fff',
+    elevation: 8,
   },
-  objectEmoji: { fontSize: 18 },
+  objectEmoji: { fontSize: 24 },
+  traceHint: { position: 'absolute', top: '6%', alignSelf: 'center', backgroundColor: 'rgba(255,255,255,0.88)', paddingVertical: 6, paddingHorizontal: 16, borderRadius: 16, zIndex: 4 },
+  traceHintText: { fontSize: 13, fontWeight: '800' },
   warnPill: {
     position: 'absolute',
     bottom: 12,

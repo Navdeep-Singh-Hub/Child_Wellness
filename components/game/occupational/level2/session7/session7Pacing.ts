@@ -3,16 +3,18 @@
  */
 
 export const SESSION7_PACING = {
-  totalRounds: 6,
-  nextRoundDelayMs: 420,
-  completeThreshold: 0.85,
+  totalRounds: 5,
+  nextRoundDelayMs: 280,
+  completeThreshold: 0.78,
+  paintCompleteThreshold: 0.72,
   circleRadius: 35,
   squareSize: 50,
   triangleSize: 45,
   paintSize: 45,
-  lineTolerance: 18,
-  glowTolerance: 22,
-  paintTolerance: 20,
-  objectSize: 36,
-  warnCooldownMs: 500,
+  lineTolerance: 22,
+  glowTolerance: 26,
+  paintTolerance: 24,
+  objectSize: 46,
+  pathStroke: 7,
+  warnCooldownMs: 320,
 } as const;

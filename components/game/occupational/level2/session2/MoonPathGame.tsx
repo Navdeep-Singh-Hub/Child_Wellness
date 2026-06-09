@@ -17,9 +17,11 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Defs, Path, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 
 const P = SESSION2_PACING;
+const PATH_STROKE = P.pathStroke + 4;
+const STARS = [[12, 18], [25, 10], [40, 22], [58, 12], [72, 20], [88, 14], [18, 32], [75, 30], [50, 8]];
 const TOTAL = P.totalRounds;
 const SUCCESS = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const STAR = require('@/assets/icons/star.png');
@@ -37,6 +39,8 @@ const MoonPathGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> =
   const [sparkleKey, setSparkleKey] = useState(0);
   const [pathFull, setPathFull] = useState('');
   const [pathProg, setPathProg] = useState('');
+  const [traceProg, setTraceProg] = useState(0);
+  const [markers, setMarkers] = useState({ sx: 0, sy: 0, ex: 0, ey: 0 });
 
   const roundActiveRef = useRef(true);
   const doneRef = useRef(false);
@@ -76,10 +80,14 @@ const MoonPathGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> =
     r.value = 25 + Math.random() * 12;
     const startX = cx.value + r.value * Math.cos(sa.value);
     const startY = cy.value + r.value * Math.sin(sa.value);
+    const endX = cx.value + r.value * Math.cos(ea.value);
+    const endY = cy.value + r.value * Math.sin(ea.value);
     ox.value = startX; oy.value = startY;
     progressRef.current = 0;
     offTrackRef.current = false;
     setIsOffTrack(false);
+    setTraceProg(0);
+    setMarkers({ sx: startX, sy: startY, ex: endX, ey: endY });
     refreshPaths(0);
     roundActiveRef.current = true;
   }, [refreshPaths]);
@@ -114,7 +122,7 @@ const MoonPathGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> =
       }
       ox.value = nx; oy.value = ny;
       const prog = Math.max(progressRef.current, arcProgress(nx, ny, cx.value, cy.value, sa.value, ea.value));
-      if (prog > progressRef.current) { progressRef.current = prog; refreshPaths(prog); }
+      if (prog > progressRef.current) { progressRef.current = prog; setTraceProg(prog); refreshPaths(prog); }
     })
     .onEnd(() => {
       if (!roundActiveRef.current || doneRef.current) return;
@@ -139,7 +147,7 @@ const MoonPathGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> =
         const startX = cx.value + r.value * Math.cos(sa.value);
         const startY = cy.value + r.value * Math.sin(sa.value);
         ox.value = withSpring(startX, { damping: 12 }); oy.value = withSpring(startY, { damping: 12 });
-        progressRef.current = 0; refreshPaths(0);
+        progressRef.current = 0; setTraceProg(0); refreshPaths(0);
         offTrackRef.current = false; setIsOffTrack(false);
         speakTTS('Trace the moon path!', 0.78).catch(() => {});
       }
@@ -174,19 +182,50 @@ const MoonPathGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> =
         </View>
       </View>
       <View style={styles.playArea} onLayout={(e) => { screenW.current = e.nativeEvent.layout.width; screenH.current = e.nativeEvent.layout.height; }}>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${Math.round(traceProg * 100)}%` }]} />
+        </View>
         <GestureDetector gesture={pan}>
           <Animated.View style={styles.gestureArea}>
             <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.svg}>
-              <Path d={pathFull} stroke="rgba(251,191,36,0.35)" strokeWidth={P.pathStroke} fill="none" strokeLinecap="round" />
-              {pathProg ? <Path d={pathProg} stroke="#FBBF24" strokeWidth={P.pathStroke + 1} fill="none" strokeLinecap="round" /> : null}
+              <Defs>
+                <SvgLinearGradient id="moonGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <Stop offset="0%" stopColor="#FDE68A" /><Stop offset="50%" stopColor="#FBBF24" /><Stop offset="100%" stopColor="#F59E0B" />
+                </SvgLinearGradient>
+              </Defs>
+              {STARS.map(([x, y], i) => (
+                <Circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 1.2 : 0.8} fill="rgba(255,255,255,0.7)" />
+              ))}
+              <Circle cx="82" cy="18" r="10" fill="rgba(253,230,138,0.2)" />
+              <Circle cx="82" cy="18" r="7" fill="rgba(253,230,138,0.35)" />
+              <Circle cx="80" cy="16" r="1.5" fill="rgba(148,163,184,0.3)" />
+              <Circle cx="84" cy="20" r="1" fill="rgba(148,163,184,0.25)" />
+              {pathFull ? (
+                <>
+                  <Path d={pathFull} stroke="rgba(251,191,36,0.15)" strokeWidth={PATH_STROKE + 10} fill="none" strokeLinecap="round" />
+                  <Path d={pathFull} stroke="rgba(255,255,255,0.35)" strokeWidth={PATH_STROKE + 2} fill="none" strokeLinecap="round" />
+                  <Path d={pathFull} stroke="url(#moonGlow)" strokeWidth={PATH_STROKE} fill="none" strokeLinecap="round" />
+                </>
+              ) : null}
+              {pathProg ? (
+                <>
+                  <Path d={pathProg} stroke="rgba(255,255,255,0.85)" strokeWidth={PATH_STROKE + 4} fill="none" strokeLinecap="round" />
+                  <Path d={pathProg} stroke="#FDE68A" strokeWidth={PATH_STROKE + 1} fill="none" strokeLinecap="round" />
+                </>
+              ) : null}
+              <Circle cx={markers.sx} cy={markers.sy} r="3.5" fill="#22C55E" stroke="#fff" strokeWidth="1.2" />
+              <Circle cx={markers.ex} cy={markers.ey} r="4.5" fill="#FBBF24" stroke="#fff" strokeWidth="1.2" />
             </Svg>
             <Animated.View style={[styles.objWrap, objStyle]}>
-              <LinearGradient colors={isOffTrack ? ['#EF4444', '#DC2626'] : ['#FDE68A', '#FBBF24']} style={styles.obj}>
+              <LinearGradient colors={isOffTrack ? ['#EF4444', '#DC2626'] : ['#FDE68A', '#FBBF24']} style={[styles.obj, !isOffTrack && styles.objGlow]}>
                 <Text style={styles.emoji}>🌙</Text>
               </LinearGradient>
             </Animated.View>
+            {traceProg > 0 && traceProg < 0.95 && !isOffTrack && (
+              <View style={styles.traceHint}><Text style={styles.traceHintText}>Follow the moon!</Text></View>
+            )}
             {isOffTrack && <View style={styles.warnPill}><Text style={styles.warnText}>Stay on the path!</Text></View>}
-            <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#FBBF24" count={14} size={8} />
+            <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#FDE68A" count={20} size={10} />
           </Animated.View>
         </GestureDetector>
       </View>
@@ -208,12 +247,17 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, color: 'rgba(253,230,138,0.75)', fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900', color: '#FDE68A' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
-  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(251,191,36,0.25)', backgroundColor: 'rgba(255,255,255,0.05)' },
+  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1.5, borderColor: 'rgba(251,191,36,0.3)', backgroundColor: 'rgba(15,23,42,0.55)', overflow: 'hidden' },
+  progressTrack: { height: 6, marginHorizontal: 12, marginTop: 10, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.15)', overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 3, backgroundColor: '#FBBF24' },
   gestureArea: { flex: 1, position: 'relative' },
   svg: { position: 'absolute', width: '100%', height: '100%' },
   objWrap: { position: 'absolute', zIndex: 3 },
-  obj: { width: P.objectSize, height: P.objectSize, borderRadius: P.objectSize / 2, justifyContent: 'center', alignItems: 'center', elevation: 8 },
+  obj: { width: P.objectSize, height: P.objectSize, borderRadius: P.objectSize / 2, justifyContent: 'center', alignItems: 'center', elevation: 8, borderWidth: 3, borderColor: '#fff' },
+  objGlow: { shadowColor: '#FBBF24', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 12 },
   emoji: { fontSize: 26 },
+  traceHint: { position: 'absolute', top: '6%', alignSelf: 'center', backgroundColor: 'rgba(30,41,59,0.85)', paddingVertical: 6, paddingHorizontal: 16, borderRadius: 16 },
+  traceHintText: { color: '#FDE68A', fontSize: 13, fontWeight: '800' },
   warnPill: { position: 'absolute', top: '10%', alignSelf: 'center', left: '20%', right: '20%', backgroundColor: 'rgba(239,68,68,0.9)', paddingVertical: 10, borderRadius: 20, alignItems: 'center' },
   warnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
 });

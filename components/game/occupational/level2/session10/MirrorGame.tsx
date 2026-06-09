@@ -10,12 +10,16 @@ import {
   Point,
   generateMaze,
   halfShapePath,
+  isOnMazePath,
   mazePathSvg,
   mirrorPath,
   mirrorX,
+  pathLength,
   pathToSvg,
   randomHalfShape,
+  rightHalfGuidePath,
   useTraceSound,
+  validateHalfTrace,
 } from '@/components/game/occupational/level2/session10/mirrorUtils';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -119,6 +123,9 @@ export const MirrorGame: React.FC<
   const doneRef = useRef(false);
   const pathRef = useRef<Point[]>([]);
   const drawingRef = useRef(false);
+  const faceStepRef = useRef<'eye' | 'mouth'>('eye');
+  const leftEyeRef = useRef<Eye | null>(null);
+  const mouthRef = useRef<Mouth | null>(null);
   const screenW = useRef(400);
   const screenH = useRef(600);
 
@@ -126,6 +133,9 @@ export const MirrorGame: React.FC<
   const leftY = useSharedValue(20);
   const rightX = useSharedValue(80);
   const rightY = useSharedValue(20);
+  const fingerX = useSharedValue(25);
+  const fingerY = useSharedValue(50);
+  const fingerVisible = useSharedValue(0);
 
   const syncPaths = useCallback((pts: Point[]) => {
     pathRef.current = pts;
@@ -148,6 +158,9 @@ export const MirrorGame: React.FC<
     setRightEye(null);
     setMouth(null);
     setFaceStep('eye');
+    faceStepRef.current = 'eye';
+    leftEyeRef.current = null;
+    mouthRef.current = null;
     setFaceHint(T.hintText);
 
     if (mode === 'half') setHalfShape(randomHalfShape());
@@ -200,13 +213,6 @@ export const MirrorGame: React.FC<
     };
   }, [ttsIntro]);
 
-  useEffect(() => {
-    if (mode === 'face' && faceStep === 'mouth') {
-      speakTTS('Tap to place the mouth, centered!', 0.78).catch(() => {});
-      setFaceHint('Tap to place the mouth on the face center line');
-    }
-  }, [faceStep, mode]);
-
   const completeRound = useCallback(() => {
     setSparkleKey(Date.now());
     playSuccess();
@@ -232,22 +238,84 @@ export const MirrorGame: React.FC<
     playWarn();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
     speakTTS(ttsIncomplete, 0.78).catch(() => {});
-  }, [playWarn, syncPaths, ttsIncomplete]);
+  }, [playWarn, syncPaths, ttsIncomplete, mode]);
+
+  const isInsideFace = useCallback((x: number, y: number) => {
+    return Math.hypot(x - MX, y - P.faceCenterY) <= P.faceRadius - 1;
+  }, []);
+
+  const handleFaceTap = useCallback(
+    (x: number, y: number) => {
+      if (!roundActiveRef.current || doneRef.current) return;
+
+      if (!isInsideFace(x, y)) {
+        failAttempt();
+        return;
+      }
+
+      if (faceStepRef.current === 'eye' && !leftEyeRef.current) {
+        if (x >= MX - 2) {
+          failAttempt();
+          return;
+        }
+        const eye = { x, y };
+        leftEyeRef.current = eye;
+        setLeftEye(eye);
+        setRightEye({ x: mirrorX(x), y });
+        faceStepRef.current = 'mouth';
+        setFaceStep('mouth');
+        setFaceHint('Now tap to place the smile!');
+        speakTTS('Great! Now tap to place the smile!', 0.78).catch(() => {});
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        return;
+      }
+
+      if (faceStepRef.current === 'mouth' && !mouthRef.current) {
+        if (y < P.faceCenterY + 2) {
+          failAttempt();
+          return;
+        }
+        const halfWidth = Math.min(Math.abs(MX - x), P.faceRadius - 3);
+        const width = Math.max(14, halfWidth * 1.8);
+        const mouthPos = { x: MX, y, width };
+        mouthRef.current = mouthPos;
+        setMouth(mouthPos);
+        completeRound();
+        return;
+      }
+
+      failAttempt();
+    },
+    [completeRound, failAttempt, isInsideFace],
+  );
 
   const addPoint = useCallback(
     (x: number, y: number) => {
+      const last = pathRef.current[pathRef.current.length - 1];
+      if (last && Math.hypot(x - last.x, y - last.y) < P.pointMinDist) return;
+
       if (mode === 'half') {
-        if (x <= MX) return;
+        if (x <= MX + 1) return;
         syncPaths([...pathRef.current, { x, y }]);
         return;
       }
       if (mode === 'line' || mode === 'butterfly') {
-        if (x >= MX) return;
+        if (x >= MX - 1) return;
         syncPaths([...pathRef.current, { x, y }]);
       }
     },
     [mode, syncPaths],
   );
+
+  const validateDraw = useCallback(() => {
+    const pts = pathRef.current;
+    if (pts.length < P.minPathPoints) return false;
+    if (pathLength(pts) < P.minPathLength) return false;
+    if (mode === 'half') {
+      return validateHalfTrace(pts, halfShape, P.halfTolerance, P.halfCoverageThreshold);
+    }
+    return true;
+  }, [mode, halfShape]);
 
   const drawGesture = Gesture.Pan()
     .runOnJS(true)
@@ -255,21 +323,29 @@ export const MirrorGame: React.FC<
       if (!roundActiveRef.current || doneRef.current) return;
       if (mode === 'face' || mode === 'maze') return;
       drawingRef.current = true;
+      fingerVisible.value = 1;
       const x = (e.x / screenW.current) * 100;
       const y = (e.y / screenH.current) * 100;
+      fingerX.value = x;
+      fingerY.value = y;
       syncPaths([]);
       addPoint(x, y);
     })
     .onUpdate((e) => {
       if (!roundActiveRef.current || doneRef.current || !drawingRef.current) return;
       if (mode === 'face' || mode === 'maze') return;
-      addPoint((e.x / screenW.current) * 100, (e.y / screenH.current) * 100);
+      const x = (e.x / screenW.current) * 100;
+      const y = (e.y / screenH.current) * 100;
+      fingerX.value = x;
+      fingerY.value = y;
+      addPoint(x, y);
     })
     .onEnd(() => {
       if (!roundActiveRef.current || doneRef.current) return;
       if (mode === 'face' || mode === 'maze') return;
       drawingRef.current = false;
-      if (pathRef.current.length >= P.minPathPoints) completeRound();
+      fingerVisible.value = 0;
+      if (validateDraw()) completeRound();
       else failAttempt();
     });
 
@@ -279,16 +355,18 @@ export const MirrorGame: React.FC<
       if (!roundActiveRef.current || doneRef.current || !maze) return;
       const x = (e.x / screenW.current) * 100;
       const y = (e.y / screenH.current) * 100;
-      if (x >= MX) return;
-      leftX.value = Math.max(5, Math.min(MX - 2, x));
-      leftY.value = Math.max(10, Math.min(90, y));
-      rightX.value = Math.max(MX + 2, Math.min(95, mirrorX(leftX.value)));
-      rightY.value = leftY.value;
+      if (x >= MX - 1) return;
+      if (!isOnMazePath(x, y, maze.path, P.mazeTolerance)) return;
+      leftX.value = x;
+      leftY.value = y;
+      rightX.value = mirrorX(x);
+      rightY.value = y;
     })
     .onEnd(() => {
       if (!roundActiveRef.current || doneRef.current || !maze) return;
-      const dist = Math.hypot(leftX.value - maze.goalX, leftY.value - maze.goalY);
-      if (dist < P.goalTolerance) {
+      const distLeft = Math.hypot(leftX.value - maze.goalX, leftY.value - maze.goalY);
+      const distRight = Math.hypot(rightX.value - mirrorX(maze.goalX), rightY.value - maze.goalY);
+      if (distLeft < P.goalTolerance && distRight < P.goalTolerance) {
         completeRound();
         return;
       }
@@ -299,30 +377,25 @@ export const MirrorGame: React.FC<
       failAttempt();
     });
 
-  const faceGesture = Gesture.Pan()
+  const faceTapGesture = Gesture.Tap()
     .runOnJS(true)
+    .maxDuration(400)
     .onEnd((e) => {
-      if (!roundActiveRef.current || doneRef.current) return;
       const x = (e.x / screenW.current) * 100;
       const y = (e.y / screenH.current) * 100;
-
-      if (faceStep === 'eye' && !leftEye && x < MX) {
-        setLeftEye({ x, y });
-        setRightEye({ x: mirrorX(x), y });
-        setFaceStep('mouth');
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-        return;
-      }
-
-      if (faceStep === 'mouth' && !mouth && Math.abs(y - P.faceCenterY) < 15) {
-        const width = Math.abs(x - MX) * 2;
-        setMouth({ x: MX, y, width: Math.max(8, width) });
-        completeRound();
-        return;
-      }
-
-      failAttempt();
+      handleFaceTap(x, y);
     });
+
+  const facePanGesture = Gesture.Pan()
+    .runOnJS(true)
+    .minDistance(0)
+    .onEnd((e) => {
+      const x = (e.x / screenW.current) * 100;
+      const y = (e.y / screenH.current) * 100;
+      handleFaceTap(x, y);
+    });
+
+  const faceGesture = Gesture.Exclusive(faceTapGesture, facePanGesture);
 
   const gesture = mode === 'maze' ? mazeGesture : mode === 'face' ? faceGesture : drawGesture;
 
@@ -335,6 +408,13 @@ export const MirrorGame: React.FC<
   const rightObjStyle = useAnimatedStyle(() => ({
     left: `${rightX.value}%`,
     top: `${rightY.value}%`,
+    transform: [{ translateX: -P.objectSize / 2 }, { translateY: -P.objectSize / 2 }],
+  }));
+
+  const fingerStyle = useAnimatedStyle(() => ({
+    left: `${fingerX.value}%`,
+    top: `${fingerY.value}%`,
+    opacity: fingerVisible.value,
     transform: [{ translateX: -P.objectSize / 2 }, { translateY: -P.objectSize / 2 }],
   }));
 
@@ -408,15 +488,18 @@ export const MirrorGame: React.FC<
       >
         <GestureDetector gesture={gesture}>
           <View style={styles.gestureArea}>
-            <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.svg}>
-              <Line x1={MX} y1={8} x2={MX} y2={92} stroke={T.guideStroke} strokeWidth={1} strokeDasharray="2 2" />
+            <Svg pointerEvents="none" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.svg}>
+              <Line x1={MX} y1={8} x2={MX} y2={92} stroke={T.guideStroke} strokeWidth={1.5} strokeDasharray="3 3" />
 
               {mode === 'butterfly' && (
                 <Line x1={MX} y1={35} x2={MX} y2={65} stroke={T.accentColor} strokeWidth={2} strokeLinecap="round" />
               )}
 
               {mode === 'half' && (
-                <Path d={halfShapePath(halfShape)} fill="none" stroke={T.guideStroke} strokeWidth={3} strokeLinecap="round" />
+                <>
+                  <Path d={halfShapePath(halfShape)} fill="rgba(100,116,139,0.08)" stroke={T.guideStroke} strokeWidth={P.pathStroke} strokeLinecap="round" />
+                  <Path d={rightHalfGuidePath(halfShape)} fill="none" stroke={T.accentColor} strokeWidth={P.pathStroke} strokeLinecap="round" strokeDasharray="4 3" opacity={0.65} />
+                </>
               )}
 
               {mode === 'maze' && maze && (
@@ -429,30 +512,65 @@ export const MirrorGame: React.FC<
               )}
 
               {mode === 'face' && (
-                <Circle cx={MX} cy={P.faceCenterY} r={P.faceRadius} fill="none" stroke={T.faceStroke} strokeWidth={2} strokeDasharray="2 2" />
+                <>
+                  <Circle cx={MX} cy={P.faceCenterY} r={P.faceRadius} fill="rgba(254,240,138,0.25)" stroke={T.faceStroke} strokeWidth={2.5} strokeDasharray="4 3" />
+                  {faceStep === 'eye' && !leftEye && (
+                    <>
+                      <Circle cx={MX - 12} cy={P.faceCenterY - 6} r={6} fill="none" stroke={T.accentColor} strokeWidth={1.5} strokeDasharray="3 2" opacity={0.7} />
+                      <Circle cx={MX + 12} cy={P.faceCenterY - 6} r={6} fill="none" stroke={T.accentColor} strokeWidth={1.5} strokeDasharray="3 2" opacity={0.35} />
+                    </>
+                  )}
+                  {faceStep === 'mouth' && leftEye && !mouth && (
+                    <Path
+                      d={`M ${MX - 14} ${P.faceCenterY + 10} Q ${MX} ${P.faceCenterY + 18} ${MX + 14} ${P.faceCenterY + 10}`}
+                      fill="none"
+                      stroke={T.accentColor}
+                      strokeWidth={1.5}
+                      strokeDasharray="3 2"
+                      opacity={0.55}
+                    />
+                  )}
+                </>
               )}
 
               {(mode === 'line' || mode === 'butterfly') && leftPath.length > 0 && (
-                <Path d={pathToSvg(leftPath)} stroke={T.strokeColor} strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                <>
+                  <Path d={pathToSvg(leftPath)} stroke="rgba(255,255,255,0.7)" strokeWidth={P.pathStroke + 2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  <Path d={pathToSvg(leftPath)} stroke={T.strokeColor} strokeWidth={P.pathStroke} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </>
               )}
               {(mode === 'line' || mode === 'butterfly') && rightPath.length > 0 && (
-                <Path d={pathToSvg(rightPath)} stroke={T.strokeColor} strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                <>
+                  <Path d={pathToSvg(rightPath)} stroke="rgba(255,255,255,0.7)" strokeWidth={P.pathStroke + 2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  <Path d={pathToSvg(rightPath)} stroke={T.strokeColor} strokeWidth={P.pathStroke} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </>
               )}
 
               {mode === 'half' && userPath.length > 0 && (
-                <Path d={pathToSvg(userPath)} stroke={T.strokeColor} strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                <>
+                  <Path d={pathToSvg(userPath)} stroke="rgba(255,255,255,0.7)" strokeWidth={P.pathStroke + 2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  <Path d={pathToSvg(userPath)} stroke={T.strokeColor} strokeWidth={P.pathStroke} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </>
               )}
 
-              {leftEye && <Circle cx={leftEye.x} cy={leftEye.y} r={3} fill="#0F172A" />}
-              {rightEye && <Circle cx={rightEye.x} cy={rightEye.y} r={3} fill="#0F172A" />}
+              {leftEye && (
+                <>
+                  <Circle cx={leftEye.x} cy={leftEye.y} r={P.eyeRadius + 1.5} fill="#fff" stroke="#0F172A" strokeWidth={1} />
+                  <Circle cx={leftEye.x} cy={leftEye.y} r={P.eyeRadius} fill="#0F172A" />
+                </>
+              )}
+              {rightEye && (
+                <>
+                  <Circle cx={rightEye.x} cy={rightEye.y} r={P.eyeRadius + 1.5} fill="#fff" stroke="#0F172A" strokeWidth={1} />
+                  <Circle cx={rightEye.x} cy={rightEye.y} r={P.eyeRadius} fill="#0F172A" />
+                </>
+              )}
               {mouth && (
-                <Line
-                  x1={mouth.x - mouth.width / 2}
-                  y1={mouth.y}
-                  x2={mouth.x + mouth.width / 2}
-                  y2={mouth.y}
+                <Path
+                  d={`M ${mouth.x - mouth.width / 2} ${mouth.y} Q ${mouth.x} ${mouth.y + mouth.width * 0.22} ${mouth.x + mouth.width / 2} ${mouth.y}`}
+                  fill="none"
                   stroke="#0F172A"
-                  strokeWidth={2}
+                  strokeWidth={2.5}
                   strokeLinecap="round"
                 />
               )}
@@ -465,7 +583,11 @@ export const MirrorGame: React.FC<
               </>
             )}
 
-            <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color={T.sparkleColor} count={14} size={8} />
+            {(mode === 'line' || mode === 'butterfly' || mode === 'half') && (
+              <Animated.View style={[styles.finger, fingerStyle, { backgroundColor: T.objectColor }]} />
+            )}
+
+            <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color={T.sparkleColor} count={18} size={9} />
           </View>
         </GestureDetector>
 
@@ -502,8 +624,19 @@ const styles = StyleSheet.create({
     width: P.objectSize,
     height: P.objectSize,
     borderRadius: P.objectSize / 2,
+    borderWidth: 3,
+    borderColor: '#fff',
+    elevation: 6,
+  },
+  finger: {
+    position: 'absolute',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.85)',
+    borderColor: '#fff',
+    zIndex: 6,
+    elevation: 4,
   },
   warnPill: {
     position: 'absolute',

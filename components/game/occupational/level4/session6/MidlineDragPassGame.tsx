@@ -98,6 +98,8 @@ export const MidlineDragPassGame: React.FC<
   const [sparkleKey, setSparkleKey] = useState(0);
   const [roundActive, setRoundActive] = useState(false);
   const [statusHint, setStatusHint] = useState('');
+  const [targetPos, setTargetPos] = useState({ x: 288, y: 96 });
+  const [obstaclePos, setObstaclePos] = useState({ x: 180, y: 200 });
 
   const doneRef = useRef(false);
   const scoreRef = useRef(0);
@@ -136,8 +138,6 @@ export const MidlineDragPassGame: React.FC<
   }));
 
   const targetStyle = useAnimatedStyle(() => ({
-    left: targetX.current - 40,
-    top: targetY.current - 40,
     transform: [{ scale: targetScale.value }],
   }));
 
@@ -377,7 +377,13 @@ export const MidlineDragPassGame: React.FC<
               <View style={[styles.startZone, { borderColor: T.accent }]}>
                 <Text style={[styles.zoneLabel, { color: T.accentDark }]}>START</Text>
               </View>
-              <Animated.View style={[styles.target, targetStyle, { borderColor: T.accent }]}>
+              <Animated.View
+                style={[
+                  styles.target,
+                  targetStyle,
+                  { left: targetPos.x - 40, top: targetPos.y - 40, borderColor: T.accent },
+                ]}
+              >
                 <Text style={styles.targetEmoji}>{T.targetEmoji}</Text>
               </Animated.View>
               {mode === 'obstaclePass' && (
@@ -385,8 +391,8 @@ export const MidlineDragPassGame: React.FC<
                   style={[
                     styles.obstacle,
                     {
-                      left: obstacleX.current - P.obstacleRadiusPx,
-                      top: obstacleY.current - P.obstacleRadiusPx,
+                      left: obstaclePos.x - P.obstacleRadiusPx,
+                      top: obstaclePos.y - P.obstacleRadiusPx,
                       width: P.obstacleRadiusPx * 2,
                       height: P.obstacleRadiusPx * 2,
                     },

@@ -17,9 +17,10 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Defs, Ellipse, Path, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 
 const P = SESSION2_PACING;
+const PATH_STROKE = P.pathStroke + 4;
 const TOTAL = P.totalRounds;
 const SUCCESS = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const STAR = require('@/assets/icons/star.png');
@@ -37,6 +38,8 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
   const [sparkleKey, setSparkleKey] = useState(0);
   const [pathFull, setPathFull] = useState('');
   const [pathProg, setPathProg] = useState('');
+  const [traceProg, setTraceProg] = useState(0);
+  const [markers, setMarkers] = useState({ sx: 15, sy: 50, ex: 85, ey: 50 });
 
   const roundActiveRef = useRef(true);
   const doneRef = useRef(false);
@@ -83,6 +86,8 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
     progressRef.current = 0;
     offTrackRef.current = false;
     setIsOffTrack(false);
+    setTraceProg(0);
+    setMarkers({ sx: sx.value, sy: sy.value, ex: ex.value, ey: ey.value });
     refreshPaths(0);
     roundActiveRef.current = true;
   }, [refreshPaths]);
@@ -119,6 +124,7 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
       const prog = Math.max(progressRef.current, Math.min(1, t));
       if (prog > progressRef.current) {
         progressRef.current = prog;
+        setTraceProg(prog);
         refreshPaths(prog);
       }
     })
@@ -141,7 +147,7 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
         });
       } else {
         ox.value = withSpring(sx.value, { damping: 12 }); oy.value = withSpring(sy.value, { damping: 12 });
-        progressRef.current = 0; refreshPaths(0);
+        progressRef.current = 0; setTraceProg(0); refreshPaths(0);
         offTrackRef.current = false; setIsOffTrack(false);
         speakTTS('Follow the curve to the end!', 0.78).catch(() => {});
       }
@@ -176,19 +182,48 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
         </View>
       </View>
       <View style={styles.playArea} onLayout={(e) => { screenW.current = e.nativeEvent.layout.width; screenH.current = e.nativeEvent.layout.height; }}>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${Math.round(traceProg * 100)}%` }]} />
+        </View>
         <GestureDetector gesture={pan}>
           <Animated.View style={styles.gestureArea}>
             <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.svg}>
-              <Path d={pathFull} stroke="rgba(16,185,129,0.35)" strokeWidth={P.pathStroke} fill="none" strokeLinecap="round" />
-              {pathProg ? <Path d={pathProg} stroke="#059669" strokeWidth={P.pathStroke + 1} fill="none" strokeLinecap="round" /> : null}
+              <Defs>
+                <SvgLinearGradient id="snakePath" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <Stop offset="0%" stopColor="#34D399" /><Stop offset="50%" stopColor="#059669" /><Stop offset="100%" stopColor="#047857" />
+                </SvgLinearGradient>
+              </Defs>
+              <Path d="M 0 85 Q 20 78 40 85 T 80 85 L 100 85 L 100 100 L 0 100 Z" fill="rgba(22,163,74,0.4)" />
+              <Path d="M 0 90 Q 25 82 50 90 T 100 90 L 100 100 L 0 100 Z" fill="rgba(21,128,61,0.5)" />
+              <Ellipse cx="12" cy="22" rx="8" ry="12" fill="rgba(22,101,52,0.35)" />
+              <Ellipse cx="88" cy="20" rx="9" ry="13" fill="rgba(22,101,52,0.35)" />
+              <Ellipse cx="50" cy="12" rx="10" ry="14" fill="rgba(22,101,52,0.3)" />
+              {pathFull ? (
+                <>
+                  <Path d={pathFull} stroke="rgba(16,185,129,0.2)" strokeWidth={PATH_STROKE + 8} fill="none" strokeLinecap="round" />
+                  <Path d={pathFull} stroke="rgba(255,255,255,0.5)" strokeWidth={PATH_STROKE + 2} fill="none" strokeLinecap="round" />
+                  <Path d={pathFull} stroke="url(#snakePath)" strokeWidth={PATH_STROKE} fill="none" strokeLinecap="round" />
+                </>
+              ) : null}
+              {pathProg ? (
+                <>
+                  <Path d={pathProg} stroke="rgba(255,255,255,0.85)" strokeWidth={PATH_STROKE + 3} fill="none" strokeLinecap="round" />
+                  <Path d={pathProg} stroke="#34D399" strokeWidth={PATH_STROKE + 1} fill="none" strokeLinecap="round" />
+                </>
+              ) : null}
+              <Circle cx={markers.sx} cy={markers.sy} r="3.5" fill="#22C55E" stroke="#fff" strokeWidth="1.2" />
+              <Circle cx={markers.ex} cy={markers.ey} r="4.5" fill="#FBBF24" stroke="#fff" strokeWidth="1.2" />
             </Svg>
             <Animated.View style={[styles.objWrap, objStyle]}>
-              <LinearGradient colors={isOffTrack ? ['#EF4444', '#DC2626'] : ['#10B981', '#059669']} style={styles.obj}>
+              <LinearGradient colors={isOffTrack ? ['#EF4444', '#DC2626'] : ['#6EE7B7', '#059669']} style={[styles.obj, !isOffTrack && styles.objGlow]}>
                 <Text style={styles.emoji}>🐍</Text>
               </LinearGradient>
             </Animated.View>
+            {traceProg > 0 && traceProg < 0.95 && !isOffTrack && (
+              <View style={styles.traceHint}><Text style={styles.traceHintText}>Slide along!</Text></View>
+            )}
             {isOffTrack && <View style={styles.warnPill}><Text style={styles.warnText}>Stay on the path!</Text></View>}
-            <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#10B981" count={14} size={8} />
+            <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#34D399" count={18} size={10} />
           </Animated.View>
         </GestureDetector>
       </View>
@@ -210,12 +245,17 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, color: '#059669', fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900', color: '#047857' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
-  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(16,185,129,0.25)', backgroundColor: 'rgba(255,255,255,0.35)' },
+  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1.5, borderColor: 'rgba(16,185,129,0.3)', backgroundColor: 'rgba(167,243,208,0.5)', overflow: 'hidden' },
+  progressTrack: { height: 6, marginHorizontal: 12, marginTop: 10, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.5)', overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 3, backgroundColor: '#059669' },
   gestureArea: { flex: 1, position: 'relative' },
   svg: { position: 'absolute', width: '100%', height: '100%' },
   objWrap: { position: 'absolute', zIndex: 3 },
-  obj: { width: P.objectSize, height: P.objectSize, borderRadius: P.objectSize / 2, justifyContent: 'center', alignItems: 'center', elevation: 8 },
+  obj: { width: P.objectSize, height: P.objectSize, borderRadius: P.objectSize / 2, justifyContent: 'center', alignItems: 'center', elevation: 8, borderWidth: 3, borderColor: '#fff' },
+  objGlow: { shadowColor: '#10B981', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 10 },
   emoji: { fontSize: 26 },
+  traceHint: { position: 'absolute', top: '6%', alignSelf: 'center', backgroundColor: 'rgba(255,255,255,0.85)', paddingVertical: 6, paddingHorizontal: 16, borderRadius: 16 },
+  traceHintText: { color: '#047857', fontSize: 13, fontWeight: '800' },
   warnPill: { position: 'absolute', top: '10%', alignSelf: 'center', left: '20%', right: '20%', backgroundColor: 'rgba(239,68,68,0.9)', paddingVertical: 10, borderRadius: 20, alignItems: 'center' },
   warnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
 });

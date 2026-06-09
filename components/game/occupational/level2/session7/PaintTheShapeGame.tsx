@@ -15,7 +15,7 @@ const PaintTheShapeGame: React.FC<{ onBack?: () => void; onComplete?: () => void
       objectColor: '#EC4899', objectOffColor: '#EF4444',
       backText: '#BE185D', backBorder: 'rgba(236,72,153,0.25)',
       titleColor: '#9D174D', subtitleColor: '#BE185D', statLabel: '#DB2777', statValue: '#9D174D',
-      statBorder: 'rgba(236,72,153,0.2)', playBorder: 'rgba(236,72,153,0.25)', playBg: 'rgba(255,255,255,0.35)',
+      statBorder: 'rgba(236,72,153,0.2)', playBorder: 'rgba(236,72,153,0.3)', playBg: 'rgba(252,231,243,0.55)',
       sparkleColor: '#EC4899', hintText: 'Trace the outline to paint the shape!',
       objectEmoji: '🖌️',
     }}

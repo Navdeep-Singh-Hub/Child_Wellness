@@ -35,3 +35,7 @@ export const shrinkRadiusForRound = (round: number, total: number, initial: numb
   const t = (round - 1) / (total - 1);
   return initial - (initial - min) * t;
 };
+
+/** Scale hit tolerance with shape size so small circles stay playable. */
+export const toleranceForCircle = (baseTolerance: number, currentRadius: number, referenceRadius: number, minTolerance: number) =>
+  Math.max(minTolerance, baseTolerance * Math.max(0.7, currentRadius / referenceRadius));

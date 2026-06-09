@@ -17,7 +17,7 @@ const DotBorderShapesGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
       objectColor: '#8B5CF6', objectOffColor: '#EF4444',
       backText: '#5B21B6', backBorder: 'rgba(139,92,246,0.25)',
       titleColor: '#5B21B6', subtitleColor: '#6D28D9', statLabel: '#7C3AED', statValue: '#5B21B6',
-      statBorder: 'rgba(139,92,246,0.2)', playBorder: 'rgba(139,92,246,0.25)', playBg: 'rgba(255,255,255,0.35)',
+      statBorder: 'rgba(139,92,246,0.2)', playBorder: 'rgba(139,92,246,0.3)', playBg: 'rgba(237,233,254,0.55)',
       sparkleColor: '#8B5CF6', hintText: 'Follow the dotted outline all the way around!',
       objectEmoji: '⚫',
     }}

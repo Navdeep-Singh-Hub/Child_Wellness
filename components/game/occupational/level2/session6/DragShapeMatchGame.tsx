@@ -110,6 +110,7 @@ export const DragShapeMatchGame: React.FC<
   const roundDataRef = useRef<MatchRound | null>(null);
   const screenW = useRef(400);
   const screenH = useRef(600);
+  const [shapePx, setShapePx] = useState(64);
 
   const shapeX = useSharedValue(50);
   const shapeY = useSharedValue(25);
@@ -238,19 +239,19 @@ export const DragShapeMatchGame: React.FC<
     left: `${shapeX.value}%`,
     top: `${shapeY.value}%`,
     transform: [
-      { translateX: -P.shapeSize / 2 },
-      { translateY: -P.shapeSize / 2 },
+      { translateX: -shapePx / 2 },
+      { translateY: -shapePx / 2 },
       { scale: shapeScale.value },
       { rotate: `${shapeRot.value}deg` },
     ],
-  }));
+  }), [shapePx]);
 
   const outlinePaint = (() => {
     switch (outlineMode) {
       case 'shadow':
         return { fill: T.outlineFill, stroke: T.outlineStroke, strokeWidth: 2, opacity: 0.55 };
       case 'puzzle':
-        return { fill: 'none', stroke: T.outlineStroke, strokeWidth: 3, opacity: 0.35 };
+        return { fill: 'none', stroke: T.outlineStroke, strokeWidth: 2.5, opacity: 0.55 };
       case 'cookie':
         return { fill: 'none', stroke: T.outlineStroke, strokeWidth: 3.5, opacity: 1 };
       default:
@@ -316,14 +317,16 @@ export const DragShapeMatchGame: React.FC<
             <Text style={[styles.statValue, { color: T.statValue }]}>{score}</Text>
           </View>
         </View>
-        <Text style={[styles.hint, { color: T.hintText }]}>{T.hintText}</Text>
+        <Text style={[styles.hint, { color: T.subtitleColor }]}>{T.hintText}</Text>
       </View>
 
       <View
         style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
         onLayout={(e) => {
-          screenW.current = e.nativeEvent.layout.width;
-          screenH.current = e.nativeEvent.layout.height;
+          const { width, height } = e.nativeEvent.layout;
+          screenW.current = width;
+          screenH.current = height;
+          setShapePx((width * P.shapeViewSize) / 100);
         }}
       >
         <GestureDetector gesture={panGesture}>
@@ -334,7 +337,7 @@ export const DragShapeMatchGame: React.FC<
                   roundData.shape,
                   roundData.targetX,
                   roundData.targetY,
-                  P.shapeSize,
+                  P.shapeViewSize,
                   outlinePaint,
                   requireRotation ? roundData.requiredRotation : 0,
                   { x: roundData.targetX, y: roundData.targetY },
@@ -342,9 +345,9 @@ export const DragShapeMatchGame: React.FC<
             </Svg>
 
             {roundData && (
-              <Animated.View style={[styles.shapeWrap, shapeStyle]}>
-                <Svg width={P.shapeSize} height={P.shapeSize} viewBox="0 0 100 100">
-                  {renderShapeSvg(roundData.shape, 50, 50, P.shapeSize, draggablePaint)}
+              <Animated.View style={[styles.shapeWrap, { width: shapePx, height: shapePx }, shapeStyle]}>
+                <Svg width="100%" height="100%" viewBox="0 0 100 100">
+                  {renderShapeSvg(roundData.shape, 50, 50, P.shapeInnerSize, draggablePaint)}
                 </Svg>
               </Animated.View>
             )}
@@ -390,7 +393,7 @@ const styles = StyleSheet.create({
   playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, position: 'relative', overflow: 'hidden' },
   gestureArea: { flex: 1 },
   svg: { position: 'absolute', width: '100%', height: '100%' },
-  shapeWrap: { position: 'absolute', width: P.shapeSize, height: P.shapeSize, zIndex: 5 },
+  shapeWrap: { position: 'absolute', zIndex: 5 },
   warnPill: {
     position: 'absolute',
     bottom: 12,

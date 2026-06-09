@@ -6,7 +6,10 @@ export const SESSION6_PACING = {
   totalRounds: 6,
   nextRoundDelayMs: 420,
   fastNextRoundDelayMs: 300,
-  shapeSize: 50,
-  matchTolerance: 14,
+  /** Shape diameter in the 0–100 play-area SVG coordinate system */
+  shapeViewSize: 16,
+  /** Draggable shape fill ratio inside its nested 0–100 viewBox */
+  shapeInnerSize: 88,
+  matchTolerance: 9,
   rotationTolerance: 30,
 } as const;

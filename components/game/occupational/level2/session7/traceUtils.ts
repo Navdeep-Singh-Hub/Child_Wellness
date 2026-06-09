@@ -73,22 +73,43 @@ export const polygonTraceProgress = (px: number, py: number, points: Point[]) =>
 
 export const advanceTraceProgress = (current: number, last: number, stored: number) => {
   const diff = current - last;
-  if (current < 0.1 && last > 0.9) return Math.min(1, current + 1);
-  if (diff > -0.05) return Math.min(1, Math.max(stored, current));
-  return stored;
+
+  // Forward lap complete: almost done clockwise, crossed the start point
+  if (stored >= 0.68 && diff < -0.4 && current < 0.22) {
+    return 1;
+  }
+
+  // Anticlockwise from near start wraps angle 0 → ~1 (false huge forward jump)
+  if (last < 0.3 && current > 0.65 && stored < 0.4) {
+    return stored;
+  }
+
+  // Backward along the path — hold progress until user traces forward again
+  if (diff < -0.04) {
+    return stored;
+  }
+
+  if (diff < 0.003) {
+    return stored;
+  }
+
+  // Forward only, capped per frame so segment snaps cannot skip the shape
+  const step = Math.min(current, last + 0.16);
+  return Math.min(1, Math.max(stored, step));
 };
 
 export const buildFullCirclePaths = (cx: number, cy: number, r: number, startAngle: number, progress: number) => {
   const sx = cx + r * Math.cos(startAngle);
   const sy = cy + r * Math.sin(startAngle);
-  const ex = cx + r * Math.cos(startAngle + 2 * Math.PI);
-  const ey = cy + r * Math.sin(startAngle + 2 * Math.PI);
-  const full = `M ${sx} ${sy} A ${r} ${r} 0 1 1 ${ex} ${ey} A ${r} ${r} 0 1 1 ${sx} ${sy}`;
+  const mx = cx + r * Math.cos(startAngle + Math.PI);
+  const my = cy + r * Math.sin(startAngle + Math.PI);
+  const full = `M ${sx} ${sy} A ${r} ${r} 0 1 1 ${mx} ${my} A ${r} ${r} 0 1 1 ${sx} ${sy}`;
   if (progress <= 0) return { full, progressPath: '' };
   const ca = startAngle + 2 * Math.PI * progress;
   const px = cx + r * Math.cos(ca);
   const py = cy + r * Math.sin(ca);
-  return { full, progressPath: `M ${sx} ${sy} A ${r} ${r} 0 ${progress > 0.5 ? 1 : 0} 1 ${px} ${py}` };
+  const largeArc = progress > 0.5 ? 1 : 0;
+  return { full, progressPath: `M ${sx} ${sy} A ${r} ${r} 0 ${largeArc} 1 ${px} ${py}` };
 };
 
 export const buildPolygonStrokePath = (points: Point[], progress: number) => {
@@ -113,14 +134,21 @@ export const buildPaintFillPath = (points: Point[], progress: number) => {
   const full = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ') + ' Z';
   if (progress <= 0) return { full, fillPath: '' };
   const n = points.length;
-  const toFill = Math.floor(progress * n);
-  if (toFill <= 0) return { full, fillPath: '' };
+  const exact = progress * n;
+  const toFill = Math.floor(exact);
+  const frac = exact - toFill;
+  if (toFill <= 0 && frac <= 0) return { full, fillPath: '' };
   let fill = `M ${points[0]!.x} ${points[0]!.y}`;
   for (let i = 1; i <= toFill; i++) {
     const idx = i % n;
     fill += ` L ${points[idx]!.x} ${points[idx]!.y}`;
   }
-  if (progress >= 0.95) fill += ' Z';
+  if (frac > 0 && toFill < n) {
+    const a = points[toFill % n]!;
+    const b = points[(toFill + 1) % n]!;
+    fill += ` L ${a.x + (b.x - a.x) * frac} ${a.y + (b.y - a.y) * frac}`;
+  }
+  if (progress >= 0.78) fill += ' Z';
   return { full, fillPath: fill };
 };
 

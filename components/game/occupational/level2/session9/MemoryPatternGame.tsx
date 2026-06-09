@@ -47,26 +47,28 @@ export type MemoryTheme = {
 
 type Phase = 'show' | 'hide' | 'draw';
 
-const renderShape = (type: MemoryShape, stroke: string) => {
+const renderShape = (type: MemoryShape, stroke: string, size: 'large' | 'small' = 'large') => {
+  const sw = size === 'large' ? 4 : 3.5;
+  const cy = 40;
   switch (type) {
     case 'circle':
-      return <Circle cx={50} cy={40} r={10} fill="none" stroke={stroke} strokeWidth={3} />;
+      return <Circle cx={50} cy={cy} r={size === 'large' ? 14 : 11} fill="none" stroke={stroke} strokeWidth={sw} />;
     case 'square':
-      return <Rect x={40} y={30} width={20} height={20} fill="none" stroke={stroke} strokeWidth={3} />;
+      return <Rect x={36} y={cy - 14} width={28} height={28} fill="none" stroke={stroke} strokeWidth={sw} />;
     case 'triangle':
-      return <Path d="M 50 30 L 60 50 L 40 50 Z" fill="none" stroke={stroke} strokeWidth={3} />;
+      return <Path d={`M 50 ${cy - 14} L 64 ${cy + 12} L 36 ${cy + 12} Z`} fill="none" stroke={stroke} strokeWidth={sw} />;
     case 'cross':
       return (
         <>
-          <Line x1={50} y1={30} x2={50} y2={50} stroke={stroke} strokeWidth={3} strokeLinecap="round" />
-          <Line x1={40} y1={40} x2={60} y2={40} stroke={stroke} strokeWidth={3} strokeLinecap="round" />
+          <Line x1={36} y1={cy - 14} x2={64} y2={cy + 12} stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
+          <Line x1={64} y1={cy - 14} x2={36} y2={cy + 12} stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
         </>
       );
     case 'plus':
       return (
         <>
-          <Line x1={50} y1={35} x2={50} y2={45} stroke={stroke} strokeWidth={3} strokeLinecap="round" />
-          <Line x1={45} y1={40} x2={55} y2={40} stroke={stroke} strokeWidth={3} strokeLinecap="round" />
+          <Line x1={50} y1={cy - 14} x2={50} y2={cy + 12} stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
+          <Line x1={36} y1={cy - 1} x2={64} y2={cy - 1} stroke={stroke} strokeWidth={sw} strokeLinecap="round" />
         </>
       );
   }
@@ -160,9 +162,10 @@ export const MemoryPatternGame: React.FC<
 
     speakTTS(ttsIntro, 0.78).catch(() => {});
 
+    let hideTimer: ReturnType<typeof setTimeout> | undefined;
     const showTimer = setTimeout(() => {
-      setPhase('hide');
-      fade.value = withTiming(0, { duration: 300 });
+      fade.value = withTiming(0, { duration: 350 });
+      hideTimer = setTimeout(() => setPhase('hide'), 360);
       speakTTS(ttsHidden, 0.78).catch(() => {});
     }, P.showDurationMs);
 
@@ -174,6 +177,7 @@ export const MemoryPatternGame: React.FC<
 
     return () => {
       clearTimeout(showTimer);
+      clearTimeout(hideTimer);
       clearTimeout(drawTimer);
     };
   }, [round, fade, ttsIntro, ttsHidden, ttsSelect]);
@@ -272,24 +276,28 @@ export const MemoryPatternGame: React.FC<
           </View>
         </View>
         <Text style={[styles.phasePill, { color: T.phaseText, borderColor: T.playBorder }]}>{phaseLabel}</Text>
+        {T.hintText ? <Text style={[styles.hint, { color: T.subtitleColor }]}>{T.hintText}</Text> : null}
       </View>
 
       <View style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}>
         <View style={[styles.previewBox, { borderColor: T.playBorder }]}>
-          {(phase === 'show' || phase === 'hide') && (
+          {phase === 'show' && (
             <Animated.View style={fadeStyle}>
-              <Svg width="100%" height={80} viewBox="0 0 100 80">
-                {renderShape(target, T.shapeStroke)}
+              <Svg width="100%" height={100} viewBox="0 0 100 80">
+                {renderShape(target, T.shapeStroke, 'large')}
               </Svg>
             </Animated.View>
           )}
-          {phase === 'draw' && userPick && (
-            <Svg width="100%" height={80} viewBox="0 0 100 80">
-              {renderShape(userPick, T.shapeStroke)}
-            </Svg>
-          )}
           {phase === 'hide' && (
             <Text style={[styles.hiddenText, { color: T.subtitleColor }]}>?</Text>
+          )}
+          {phase === 'draw' && !userPick && (
+            <Text style={[styles.drawPrompt, { color: T.subtitleColor }]}>What did you see?</Text>
+          )}
+          {phase === 'draw' && userPick && (
+            <Svg width="100%" height={100} viewBox="0 0 100 80">
+              {renderShape(userPick, T.shapeStroke, 'large')}
+            </Svg>
           )}
         </View>
 
@@ -306,11 +314,11 @@ export const MemoryPatternGame: React.FC<
                     { backgroundColor: T.btnBg, borderColor: userPick === shape ? T.selectedBorder : T.btnBorder },
                   ]}
                 >
-                  <Svg width={48} height={40} viewBox="0 0 100 80">
-                    {renderShape(shape, T.shapeStroke)}
+                  <Svg width={56} height={48} viewBox="0 0 100 80">
+                    {renderShape(shape, T.shapeStroke, 'small')}
                   </Svg>
                   <Text style={[styles.choiceLabel, { color: T.titleColor }]}>
-                    {shape.charAt(0).toUpperCase() + shape.slice(1)}
+                    {shape === 'cross' ? 'X Cross' : shape === 'plus' ? '+ Plus' : shape.charAt(0).toUpperCase() + shape.slice(1)}
                   </Text>
                 </Pressable>
               ))}
@@ -332,7 +340,8 @@ const styles = StyleSheet.create({
   header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
   title: { fontSize: 28, fontWeight: '900' },
   subtitle: { fontSize: 14, fontWeight: '600', marginTop: 4, marginBottom: 8 },
-  phasePill: { fontSize: 13, fontWeight: '700', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.6)', marginBottom: 8 },
+  phasePill: { fontSize: 13, fontWeight: '700', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 16, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.6)', marginBottom: 6 },
+  hint: { fontSize: 12, fontWeight: '600', textAlign: 'center', marginBottom: 8, paddingHorizontal: 12 },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
   statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.7)', borderWidth: 1, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
   starPill: { backgroundColor: 'rgba(251,191,36,0.2)', borderColor: 'rgba(251,191,36,0.4)' },
@@ -340,8 +349,9 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 20, fontWeight: '900' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
   playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, padding: 14 },
-  previewBox: { height: 100, borderRadius: 16, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.5)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  hiddenText: { position: 'absolute', fontSize: 36, fontWeight: '900' },
+  previewBox: { height: 110, borderRadius: 16, borderWidth: 1.5, backgroundColor: 'rgba(255,255,255,0.55)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  hiddenText: { fontSize: 40, fontWeight: '900' },
+  drawPrompt: { fontSize: 16, fontWeight: '700', textAlign: 'center' },
   pickTitle: { fontSize: 14, fontWeight: '800', textAlign: 'center', marginBottom: 10 },
   choiceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
   choiceBtn: { width: '30%', minWidth: 90, alignItems: 'center', padding: 8, borderRadius: 14, borderWidth: 2 },

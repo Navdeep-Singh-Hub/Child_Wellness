@@ -17,12 +17,14 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Defs, Ellipse, Path, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
 
 const P = SESSION2_PACING;
 const TOTAL = P.totalRounds;
 const SUCCESS = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const STAR = require('@/assets/icons/star.png');
+const RAINBOW_COLORS = ['#EF4444', '#F97316', '#EAB308', '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899'];
+const PATH_STROKE = P.pathStroke + 4;
 
 const RainbowCurveTraceGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
@@ -37,6 +39,8 @@ const RainbowCurveTraceGame: React.FC<{ onBack?: () => void; onComplete?: () => 
   const [sparkleKey, setSparkleKey] = useState(0);
   const [pathFull, setPathFull] = useState('');
   const [pathProg, setPathProg] = useState('');
+  const [traceProg, setTraceProg] = useState(0);
+  const [markers, setMarkers] = useState({ sx: 0, sy: 0, ex: 0, ey: 0 });
 
   const roundActiveRef = useRef(true);
   const doneRef = useRef(false);
@@ -76,10 +80,14 @@ const RainbowCurveTraceGame: React.FC<{ onBack?: () => void; onComplete?: () => 
     r.value = 25 + Math.random() * 12;
     const startX = cx.value + r.value * Math.cos(sa.value);
     const startY = cy.value + r.value * Math.sin(sa.value);
+    const endX = cx.value + r.value * Math.cos(ea.value);
+    const endY = cy.value + r.value * Math.sin(ea.value);
     ox.value = startX; oy.value = startY;
     progressRef.current = 0;
     offTrackRef.current = false;
     setIsOffTrack(false);
+    setTraceProg(0);
+    setMarkers({ sx: startX, sy: startY, ex: endX, ey: endY });
     refreshPaths(0);
     roundActiveRef.current = true;
   }, [refreshPaths]);
@@ -114,7 +122,11 @@ const RainbowCurveTraceGame: React.FC<{ onBack?: () => void; onComplete?: () => 
       }
       ox.value = nx; oy.value = ny;
       const prog = Math.max(progressRef.current, arcProgress(nx, ny, cx.value, cy.value, sa.value, ea.value));
-      if (prog > progressRef.current) { progressRef.current = prog; refreshPaths(prog); }
+      if (prog > progressRef.current) {
+        progressRef.current = prog;
+        setTraceProg(prog);
+        refreshPaths(prog);
+      }
     })
     .onEnd(() => {
       if (!roundActiveRef.current || doneRef.current) return;
@@ -139,7 +151,7 @@ const RainbowCurveTraceGame: React.FC<{ onBack?: () => void; onComplete?: () => 
         const startX = cx.value + r.value * Math.cos(sa.value);
         const startY = cy.value + r.value * Math.sin(sa.value);
         ox.value = withSpring(startX, { damping: 12 }); oy.value = withSpring(startY, { damping: 12 });
-        progressRef.current = 0; refreshPaths(0);
+        progressRef.current = 0; setTraceProg(0); refreshPaths(0);
         offTrackRef.current = false; setIsOffTrack(false);
         speakTTS('Trace the rainbow arc!', 0.78).catch(() => {});
       }
@@ -161,7 +173,7 @@ const RainbowCurveTraceGame: React.FC<{ onBack?: () => void; onComplete?: () => 
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient colors={['#FFF7ED', '#FFEDD5', '#FED7AA', '#FDBA74']} locations={[0, 0.35, 0.75, 1]} style={StyleSheet.absoluteFillObject} />
+      <LinearGradient colors={['#7DD3FC', '#BAE6FD', '#E0F2FE', '#F0F9FF']} locations={[0, 0.3, 0.65, 1]} style={StyleSheet.absoluteFillObject} />
       <TouchableOpacity onPress={() => { stopAllSpeech(); cleanupSounds(); onBack?.(); }} style={styles.backBtn}>
         <View style={styles.backInner}><Text style={styles.backText}>← Back</Text></View>
       </TouchableOpacity>
@@ -174,19 +186,59 @@ const RainbowCurveTraceGame: React.FC<{ onBack?: () => void; onComplete?: () => 
         </View>
       </View>
       <View style={styles.playArea} onLayout={(e) => { screenW.current = e.nativeEvent.layout.width; screenH.current = e.nativeEvent.layout.height; }}>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${Math.round(traceProg * 100)}%` }]} />
+        </View>
         <GestureDetector gesture={pan}>
           <Animated.View style={styles.gestureArea}>
             <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.svg}>
-              <Path d={pathFull} stroke="rgba(234,88,12,0.3)" strokeWidth={P.pathStroke} fill="none" strokeLinecap="round" />
-              {pathProg ? <Path d={pathProg} stroke="#EF4444" strokeWidth={P.pathStroke + 1} fill="none" strokeLinecap="round" /> : null}
+              <Defs>
+                <SvgLinearGradient id="rainbowArc" x1="0%" y1="0%" x2="100%" y2="0%">
+                  {RAINBOW_COLORS.map((color, i) => (
+                    <Stop key={color} offset={`${(i / (RAINBOW_COLORS.length - 1)) * 100}%`} stopColor={color} stopOpacity="1" />
+                  ))}
+                </SvgLinearGradient>
+                <SvgLinearGradient id="rainbowFade" x1="0%" y1="0%" x2="100%" y2="0%">
+                  {RAINBOW_COLORS.map((color, i) => (
+                    <Stop key={`f-${color}`} offset={`${(i / (RAINBOW_COLORS.length - 1)) * 100}%`} stopColor={color} stopOpacity="0.28" />
+                  ))}
+                </SvgLinearGradient>
+              </Defs>
+              <Ellipse cx="18" cy="18" rx="11" ry="6" fill="rgba(255,255,255,0.85)" />
+              <Ellipse cx="28" cy="16" rx="9" ry="5" fill="rgba(255,255,255,0.75)" />
+              <Ellipse cx="72" cy="14" rx="13" ry="7" fill="rgba(255,255,255,0.8)" />
+              <Ellipse cx="84" cy="17" rx="10" ry="5.5" fill="rgba(255,255,255,0.7)" />
+              <Path d="M 0 88 Q 25 78 50 88 T 100 88 L 100 100 L 0 100 Z" fill="rgba(34,197,94,0.35)" />
+              <Path d="M 0 92 Q 30 84 55 92 T 100 92 L 100 100 L 0 100 Z" fill="rgba(22,163,74,0.45)" />
+              {pathFull ? (
+                <>
+                  <Path d={pathFull} stroke="url(#rainbowFade)" strokeWidth={PATH_STROKE + 6} fill="none" strokeLinecap="round" />
+                  <Path d={pathFull} stroke="rgba(255,255,255,0.55)" strokeWidth={PATH_STROKE + 2} fill="none" strokeLinecap="round" />
+                  <Path d={pathFull} stroke="url(#rainbowArc)" strokeWidth={PATH_STROKE} fill="none" strokeLinecap="round" />
+                </>
+              ) : null}
+              {pathProg ? (
+                <>
+                  <Path d={pathProg} stroke="rgba(255,255,255,0.9)" strokeWidth={PATH_STROKE + 3} fill="none" strokeLinecap="round" />
+                  <Path d={pathProg} stroke="url(#rainbowArc)" strokeWidth={PATH_STROKE + 1} fill="none" strokeLinecap="round" />
+                </>
+              ) : null}
+              <Circle cx={markers.sx} cy={markers.sy} r="3.5" fill="#22C55E" stroke="#fff" strokeWidth="1.2" />
+              <Circle cx={markers.ex} cy={markers.ey} r="4.5" fill="#FBBF24" stroke="#fff" strokeWidth="1.2" />
             </Svg>
             <Animated.View style={[styles.objWrap, objStyle]}>
-              <LinearGradient colors={isOffTrack ? ['#EF4444', '#DC2626'] : ['#FB923C', '#EF4444']} style={styles.obj}>
+              <LinearGradient
+                colors={isOffTrack ? ['#EF4444', '#DC2626'] : RAINBOW_COLORS.slice(0, 3) as [string, string, string]}
+                style={[styles.obj, !isOffTrack && styles.objGlow]}
+              >
                 <Text style={styles.emoji}>🌈</Text>
               </LinearGradient>
             </Animated.View>
+            {traceProg > 0 && traceProg < 0.95 && !isOffTrack && (
+              <View style={styles.traceHint}><Text style={styles.traceHintText}>Keep going!</Text></View>
+            )}
             {isOffTrack && <View style={styles.warnPill}><Text style={styles.warnText}>Stay on the path!</Text></View>}
-            <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#FB923C" count={14} size={8} />
+            <SparkleBurst key={sparkleKey} visible={!!sparkleKey} color="#FBBF24" count={18} size={10} />
           </Animated.View>
         </GestureDetector>
       </View>
@@ -197,23 +249,28 @@ const RainbowCurveTraceGame: React.FC<{ onBack?: () => void; onComplete?: () => 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
-  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.75)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(234,88,12,0.25)' },
-  backText: { color: '#C2410C', fontWeight: '800', fontSize: 14 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 24, borderWidth: 1, borderColor: 'rgba(59,130,246,0.25)' },
+  backText: { color: '#1D4ED8', fontWeight: '800', fontSize: 14 },
   header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
-  title: { fontSize: 28, fontWeight: '900', color: '#C2410C' },
-  subtitle: { fontSize: 14, color: '#EA580C', fontWeight: '600', marginTop: 4, marginBottom: 14 },
+  title: { fontSize: 28, fontWeight: '900', color: '#1E40AF' },
+  subtitle: { fontSize: 14, color: '#2563EB', fontWeight: '600', marginTop: 4, marginBottom: 14 },
   statsRow: { flexDirection: 'row', gap: 12 },
-  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.7)', borderWidth: 1, borderColor: 'rgba(234,88,12,0.2)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
-  starPill: { backgroundColor: 'rgba(251,191,36,0.2)', borderColor: 'rgba(251,191,36,0.4)' },
-  statLabel: { fontSize: 11, color: '#EA580C', fontWeight: '700', textTransform: 'uppercase' },
-  statValue: { fontSize: 20, fontWeight: '900', color: '#C2410C' },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.8)', borderWidth: 1, borderColor: 'rgba(59,130,246,0.2)', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.25)', borderColor: 'rgba(251,191,36,0.45)' },
+  statLabel: { fontSize: 11, color: '#3B82F6', fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 20, fontWeight: '900', color: '#1E40AF' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
-  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(234,88,12,0.25)', backgroundColor: 'rgba(255,255,255,0.35)' },
+  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1.5, borderColor: 'rgba(59,130,246,0.2)', backgroundColor: 'rgba(186,230,253,0.45)', overflow: 'hidden' },
+  progressTrack: { height: 6, marginHorizontal: 12, marginTop: 10, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.5)', overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 3, backgroundColor: '#22C55E' },
   gestureArea: { flex: 1, position: 'relative' },
   svg: { position: 'absolute', width: '100%', height: '100%' },
   objWrap: { position: 'absolute', zIndex: 3 },
-  obj: { width: P.objectSize, height: P.objectSize, borderRadius: P.objectSize / 2, justifyContent: 'center', alignItems: 'center', elevation: 8 },
+  obj: { width: P.objectSize, height: P.objectSize, borderRadius: P.objectSize / 2, justifyContent: 'center', alignItems: 'center', elevation: 8, borderWidth: 3, borderColor: '#fff' },
+  objGlow: { shadowColor: '#F97316', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.55, shadowRadius: 10 },
   emoji: { fontSize: 26 },
+  traceHint: { position: 'absolute', top: '6%', alignSelf: 'center', backgroundColor: 'rgba(255,255,255,0.85)', paddingVertical: 6, paddingHorizontal: 16, borderRadius: 16 },
+  traceHintText: { color: '#1E40AF', fontSize: 13, fontWeight: '800' },
   warnPill: { position: 'absolute', top: '10%', alignSelf: 'center', left: '20%', right: '20%', backgroundColor: 'rgba(239,68,68,0.9)', paddingVertical: 10, borderRadius: 20, alignItems: 'center' },
   warnText: { color: '#fff', fontSize: 15, fontWeight: '900' },
 });
