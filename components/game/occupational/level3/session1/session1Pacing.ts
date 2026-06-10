@@ -10,7 +10,7 @@ export const SESSION1_PACING = {
   stopGoRounds: 8,
   stopGoBeatsPerRound: 6,
   stopGoBeatIntervalMs: 800,
-  stopGoSoundMs: 400,
+  stopGoSoundMs: 500,
   copyRounds: 6,
   copyBaseIntervalMs: 600,
   loudSoftRounds: 8,
@@ -18,6 +18,7 @@ export const SESSION1_PACING = {
   loudSoftBeatIntervalMs: 1000,
   instrumentRounds: 10,
   nextRoundDelayMs: 420,
-  tapToleranceRatio: 0.3,
-  copyToleranceRatio: 0.4,
+  tapToleranceRatio: 0.45,
+  beatMatchTapLatencyMs: 80,
+  copyToleranceRatio: 0.5,
 } as const;

@@ -14,7 +14,7 @@ const BeatMatchTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void 
       backText: '#9A3412', backBorder: 'rgba(249,115,22,0.25)',
       titleColor: '#7C2D12', subtitleColor: '#C2410C', statLabel: '#EA580C', statValue: '#7C2D12',
       statBorder: 'rgba(249,115,22,0.2)', playBorder: 'rgba(249,115,22,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#F97316', hintText: 'Tap the drum when you hear each beat!',
+      sparkleColor: '#F97316', hintText: 'Watch the circle shrink — tap when it gets small!',
       choiceBg: 'rgba(255,255,255,0.85)', choiceBorder: 'rgba(249,115,22,0.3)', choiceText: '#7C2D12',
     }}
     ttsIntro="Tap the drum in time with each beat!"

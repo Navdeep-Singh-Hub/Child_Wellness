@@ -23,7 +23,7 @@ export const bpmForRound = (round: number, total: number, initial: number, final
   initial + ((final - initial) * (round - 1)) / Math.max(1, total - 1);
 
 export const playInstrument = (inst: Instrument, volume = 0.8) => {
-  playSound(inst, volume, 1.0).catch(() => {});
+  playSound(inst as 'drum' | 'bell' | 'clap', volume, 1.0).catch(() => {});
 };
 
 export const randomInstrument = (): Instrument =>

@@ -25,7 +25,7 @@ import { useRouter } from 'expo-router';
 import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { cancelAnimation, Easing, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const P = SESSION1_PACING;
@@ -101,6 +101,15 @@ export const RhythmGame: React.FC<
             ? P.stopGoRounds
             : P.loudSoftRounds;
 
+  const beatsPerRound =
+    mode === 'beatMatch'
+      ? P.beatMatchBeatsPerRound
+      : mode === 'stopGo'
+        ? P.stopGoBeatsPerRound
+        : mode === 'loudSoft'
+          ? P.loudSoftBeatsPerRound
+          : 1;
+
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
@@ -114,22 +123,42 @@ export const RhythmGame: React.FC<
   const [phase, setPhase] = useState<'idle' | 'listen' | 'tap' | 'choose'>('idle');
   const [isDrumActive, setIsDrumActive] = useState(false);
   const [currentVolume, setCurrentVolume] = useState<VolumeKind | null>(null);
-  const [volumePattern, setVolumePattern] = useState<VolumeKind[]>([]);
-  const [targetInstrument, setTargetInstrument] = useState<Instrument | null>(null);
   const [statusHint, setStatusHint] = useState('');
+  const [roundHits, setRoundHits] = useState(0);
 
-  const expectedTapRef = useRef<number | null>(null);
-  const beatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const userTapsRef = useRef<number[]>([]);
   const copyPatternRef = useRef<number[]>(BEAT_PATTERNS[0]!);
   const doneRef = useRef(false);
   const scoreRef = useRef(0);
+  const roundRef = useRef(1);
+  const roundHitsRef = useRef(0);
+  const isPlayingRef = useRef(false);
+  const isDrumActiveRef = useRef(false);
+  const canTapBeatRef = useRef(false);
+  const canRespondRef = useRef(false);
+  const scoredThisCycleRef = useRef(false);
+  const beatsDoneRef = useRef(0);
+  const currentVolumeRef = useRef<VolumeKind | null>(null);
+  const phaseRef = useRef<'idle' | 'listen' | 'tap' | 'choose'>('idle');
+  const targetInstrumentRef = useRef<Instrument | null>(null);
   const drumPulse = useSharedValue(1);
 
   useEffect(() => {
     scoreRef.current = score;
   }, [score]);
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+  useEffect(() => {
+    isDrumActiveRef.current = isDrumActive;
+  }, [isDrumActive]);
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   const drumAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: drumPulse.value }],
@@ -139,27 +168,39 @@ export const RhythmGame: React.FC<
     drumPulse.value = withSequence(withTiming(1.12, { duration: 80 }), withTiming(1, { duration: 120 }));
   }, [drumPulse]);
 
-  const clearTimers = useCallback(() => {
-    if (beatIntervalRef.current) {
-      clearInterval(beatIntervalRef.current);
-      beatIntervalRef.current = null;
-    }
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
+  /** Beat Sync: circle starts big and shrinks — tap when small */
+  const shrinkBeatCircle = useCallback(
+    (intervalMs: number) => {
+      cancelAnimation(drumPulse);
+      drumPulse.value = 1.55;
+      drumPulse.value = withTiming(1, {
+        duration: Math.round(intervalMs * 0.8),
+        easing: Easing.out(Easing.cubic),
+      });
+    },
+    [drumPulse],
+  );
+
+  const scheduleTimeout = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      timersRef.current = timersRef.current.filter((t) => t !== id);
+      fn();
+    }, ms);
+    timersRef.current.push(id);
+    return id;
   }, []);
 
-  const totalScoreUnits = useCallback(() => {
-    if (mode === 'copy' || mode === 'instrument') return totalRounds;
-    if (mode === 'beatMatch') return totalRounds * P.beatMatchBeatsPerRound;
-    if (mode === 'stopGo') return totalRounds * P.stopGoBeatsPerRound;
-    return totalRounds * P.loudSoftBeatsPerRound;
-  }, [mode, totalRounds]);
+  const clearTimers = useCallback(() => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+    canTapBeatRef.current = false;
+    canRespondRef.current = false;
+    scoredThisCycleRef.current = false;
+  }, []);
 
   const endGame = useCallback(
     (finalScore: number) => {
-      const total = totalScoreUnits();
+      const total = totalRounds;
       const xp = Math.round(finalScore * (mode === 'copy' || mode === 'instrument' ? 18 : 15));
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
@@ -173,7 +214,7 @@ export const RhythmGame: React.FC<
             type: logType,
             correct: finalScore,
             total,
-            accuracy: (finalScore / total) * 100,
+            accuracy: total > 0 ? (finalScore / total) * 100 : 0,
             xpAwarded: xp,
             skillTags,
           }),
@@ -181,7 +222,7 @@ export const RhythmGame: React.FC<
         .then(() => router.setParams({ refreshStats: Date.now().toString() }))
         .catch(console.error);
     },
-    [clearTimers, logType, mode, router, skillTags, totalScoreUnits, ttsComplete],
+    [clearTimers, logType, mode, router, skillTags, totalRounds, ttsComplete],
   );
 
   const bumpScore = useCallback(() => {
@@ -189,90 +230,133 @@ export const RhythmGame: React.FC<
     playSuccess();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setScore((s) => {
-      scoreRef.current = s + 1;
-      return s + 1;
+      const next = s + 1;
+      scoreRef.current = next;
+      return next;
     });
+  }, [playSuccess]);
+
+  const markHit = useCallback(() => {
+    roundHitsRef.current += 1;
+    setRoundHits(roundHitsRef.current);
+    setSparkleKey(Date.now());
+    playSuccess();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   }, [playSuccess]);
 
   const failTap = useCallback(() => {
     playWarn();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
     setWarnVisible(true);
-    setTimeout(() => setWarnVisible(false), 800);
+    scheduleTimeout(() => setWarnVisible(false), 800);
     speakTTS(ttsWrong, 0.78).catch(() => {});
-  }, [playWarn, ttsWrong]);
+  }, [playWarn, scheduleTimeout, ttsWrong]);
+
+  const awardRoundStar = useCallback(() => {
+    if (mode === 'copy' || mode === 'instrument') return;
+    const needed = Math.max(1, Math.ceil(beatsPerRound / 2));
+    if (roundHitsRef.current >= needed) {
+      bumpScore();
+    }
+    roundHitsRef.current = 0;
+    setRoundHits(0);
+  }, [beatsPerRound, bumpScore, mode]);
 
   const advanceRound = useCallback(() => {
     clearTimers();
     setIsPlaying(false);
+    isPlayingRef.current = false;
     setIsDrumActive(false);
+    isDrumActiveRef.current = false;
+    cancelAnimation(drumPulse);
+    drumPulse.value = 1;
+    currentVolumeRef.current = null;
     setCurrentVolume(null);
-    if (round >= totalRounds) {
+    beatsDoneRef.current = 0;
+    awardRoundStar();
+
+    if (roundRef.current >= totalRounds) {
       endGame(scoreRef.current);
       return;
     }
-    setTimeout(() => setRound((r) => r + 1), P.nextRoundDelayMs);
-  }, [clearTimers, endGame, round, totalRounds]);
+    scheduleTimeout(() => setRound((r) => r + 1), P.nextRoundDelayMs);
+  }, [awardRoundStar, clearTimers, drumPulse, endGame, scheduleTimeout, totalRounds]);
 
   const startBeatMatch = useCallback(() => {
-    if (isPlaying || doneRef.current) return;
-    const bpm = bpmForRound(round, totalRounds, P.beatMatchInitialBpm, P.beatMatchFinalBpm);
+    if (isPlayingRef.current || doneRef.current) return;
+    isPlayingRef.current = true;
+    const bpm = bpmForRound(roundRef.current, totalRounds, P.beatMatchInitialBpm, P.beatMatchFinalBpm);
     const interval = bpmToInterval(bpm);
+    const tapWindow = interval * P.tapToleranceRatio;
     setIsPlaying(true);
     setBeatCount(0);
-    setStatusHint(`Tap with the beat! (${Math.round(bpm)} BPM)`);
+    beatsDoneRef.current = 0;
+    setStatusHint(`Tap when the circle gets small! (${Math.round(bpm)} BPM)`);
 
-    const playBeat = () => {
-      const now = Date.now();
-      expectedTapRef.current = now;
+    const playNextBeat = () => {
+      if (doneRef.current) return;
+      canTapBeatRef.current = false;
       playInstrument('drum');
-      pulseDrum();
-      setBeatCount((c) => {
-        const next = c + 1;
-        if (next >= P.beatMatchBeatsPerRound) {
-          clearTimers();
-          setIsPlaying(false);
-          advanceRound();
-        }
-        return next;
-      });
+      shrinkBeatCircle(interval);
+      beatsDoneRef.current += 1;
+      setBeatCount(beatsDoneRef.current);
+
+      const tapOpenMs = Math.round(interval * 0.55);
+      scheduleTimeout(() => {
+        canTapBeatRef.current = true;
+        scheduleTimeout(() => {
+          canTapBeatRef.current = false;
+        }, tapWindow);
+      }, tapOpenMs);
+
+      if (beatsDoneRef.current >= P.beatMatchBeatsPerRound) {
+        scheduleTimeout(() => advanceRound(), interval);
+      } else {
+        scheduleTimeout(playNextBeat, interval);
+      }
     };
 
-    playBeat();
-    beatIntervalRef.current = setInterval(playBeat, interval);
-  }, [advanceRound, clearTimers, isPlaying, pulseDrum, round, totalRounds]);
+    playNextBeat();
+  }, [advanceRound, scheduleTimeout, shrinkBeatCircle, totalRounds]);
 
   const startStopGo = useCallback(() => {
-    if (isPlaying || doneRef.current) return;
+    if (isPlayingRef.current || doneRef.current) return;
+    isPlayingRef.current = true;
     setIsPlaying(true);
     setBeatCount(0);
+    beatsDoneRef.current = 0;
     setStatusHint('Tap only while the drum plays!');
 
-    let count = 0;
     const cycle = () => {
+      if (doneRef.current) return;
+      scoredThisCycleRef.current = false;
       setIsDrumActive(true);
+      isDrumActiveRef.current = true;
       playInstrument('drum');
       pulseDrum();
-      timeoutRef.current = setTimeout(() => setIsDrumActive(false), P.stopGoSoundMs);
-      count += 1;
-      setBeatCount(count);
-      if (count >= P.stopGoBeatsPerRound) {
-        clearTimers();
-        setIsPlaying(false);
+      scheduleTimeout(() => {
         setIsDrumActive(false);
-        advanceRound();
+        isDrumActiveRef.current = false;
+      }, P.stopGoSoundMs);
+      beatsDoneRef.current += 1;
+      setBeatCount(beatsDoneRef.current);
+
+      if (beatsDoneRef.current >= P.stopGoBeatsPerRound) {
+        scheduleTimeout(() => advanceRound(), P.stopGoBeatIntervalMs);
+      } else {
+        scheduleTimeout(cycle, P.stopGoBeatIntervalMs);
       }
     };
 
     cycle();
-    beatIntervalRef.current = setInterval(cycle, P.stopGoBeatIntervalMs);
-  }, [advanceRound, clearTimers, isPlaying, pulseDrum]);
+  }, [advanceRound, pulseDrum, scheduleTimeout]);
 
   const playCopyPattern = useCallback(() => {
-    const pattern = BEAT_PATTERNS[(round - 1) % BEAT_PATTERNS.length]!;
+    const pattern = BEAT_PATTERNS[(roundRef.current - 1) % BEAT_PATTERNS.length]!;
     copyPatternRef.current = pattern;
     userTapsRef.current = [];
     setPhase('listen');
+    phaseRef.current = 'listen';
     setIsPlaying(true);
     setStatusHint('Listen to the pattern…');
 
@@ -281,6 +365,7 @@ export const RhythmGame: React.FC<
       if (idx >= pattern.length) {
         setIsPlaying(false);
         setPhase('tap');
+        phaseRef.current = 'tap';
         setStatusHint('Now tap the same pattern!');
         speakTTS('Now tap the same pattern!', 0.78).catch(() => {});
         return;
@@ -289,69 +374,101 @@ export const RhythmGame: React.FC<
       pulseDrum();
       const delay = pattern[idx]! * P.copyBaseIntervalMs;
       idx += 1;
-      timeoutRef.current = setTimeout(playNext, delay);
+      scheduleTimeout(playNext, delay);
     };
 
     speakTTS('Listen to the pattern!', 0.78).catch(() => {});
-    timeoutRef.current = setTimeout(playNext, 400);
-  }, [pulseDrum, round]);
+    scheduleTimeout(playNext, 400);
+  }, [pulseDrum, scheduleTimeout]);
 
   const startLoudSoft = useCallback(() => {
-    if (isPlaying || doneRef.current) return;
+    if (isPlayingRef.current || doneRef.current) return;
+    isPlayingRef.current = true;
     const pattern = randomVolumePattern(P.loudSoftBeatsPerRound);
-    setVolumePattern(pattern);
     setIsPlaying(true);
     setBeatCount(0);
+    beatsDoneRef.current = 0;
     setStatusHint('Match loud or soft beats!');
 
     let idx = 0;
     const playNext = () => {
-      if (idx >= pattern.length) {
-        clearTimers();
-        setIsPlaying(false);
-        setCurrentVolume(null);
+      if (doneRef.current || idx >= pattern.length) {
         advanceRound();
         return;
       }
       const vol = pattern[idx]!;
+      currentVolumeRef.current = vol;
       setCurrentVolume(vol);
-      setBeatCount(idx + 1);
+      canRespondRef.current = true;
+      beatsDoneRef.current = idx + 1;
+      setBeatCount(beatsDoneRef.current);
       playInstrument('drum', vol === 'loud' ? 0.9 : 0.3);
       pulseDrum();
       idx += 1;
+      scheduleTimeout(playNext, P.loudSoftBeatIntervalMs);
     };
 
     playNext();
-    beatIntervalRef.current = setInterval(playNext, P.loudSoftBeatIntervalMs);
-  }, [advanceRound, clearTimers, isPlaying, pulseDrum]);
+  }, [advanceRound, pulseDrum, scheduleTimeout]);
 
   const startInstrumentRound = useCallback(() => {
     const inst = randomInstrument();
-    setTargetInstrument(inst);
+    targetInstrumentRef.current = inst;
     setPhase('listen');
+    phaseRef.current = 'listen';
     setStatusHint('Listen…');
     playInstrument(inst);
-    timeoutRef.current = setTimeout(() => {
+    scheduleTimeout(() => {
       setPhase('choose');
+      phaseRef.current = 'choose';
       setStatusHint('Which instrument was that?');
     }, 900);
-  }, []);
+  }, [scheduleTimeout]);
+
+  const callbacksRef = useRef({
+    startBeatMatch,
+    startStopGo,
+    startLoudSoft,
+    playCopyPattern,
+    startInstrumentRound,
+  });
+  callbacksRef.current = {
+    startBeatMatch,
+    startStopGo,
+    startLoudSoft,
+    playCopyPattern,
+    startInstrumentRound,
+  };
 
   useEffect(() => {
     if (doneRef.current) return;
     clearTimers();
     setIsPlaying(false);
+    isPlayingRef.current = false;
+    cancelAnimation(drumPulse);
+    drumPulse.value = 1;
     setPhase('idle');
+    phaseRef.current = 'idle';
     setBeatCount(0);
     setStatusHint(T.hintText);
     userTapsRef.current = [];
+    beatsDoneRef.current = 0;
+    roundHitsRef.current = 0;
+    setRoundHits(0);
 
+    const c = callbacksRef.current;
     if (mode === 'copy') {
-      timeoutRef.current = setTimeout(() => playCopyPattern(), 600);
+      scheduleTimeout(() => c.playCopyPattern(), 600);
     } else if (mode === 'instrument') {
-      timeoutRef.current = setTimeout(() => startInstrumentRound(), 400);
+      scheduleTimeout(() => c.startInstrumentRound(), 400);
+    } else if (mode === 'beatMatch') {
+      scheduleTimeout(() => c.startBeatMatch(), 600);
+    } else if (mode === 'stopGo') {
+      scheduleTimeout(() => c.startStopGo(), 600);
+    } else if (mode === 'loudSoft') {
+      scheduleTimeout(() => c.startLoudSoft(), 600);
     }
-  }, [round]);
+  }, [round, mode, clearTimers, drumPulse, scheduleTimeout, T.hintText]);
 
   useEffect(() => {
     speakTTS(ttsIntro, 0.78);
@@ -366,28 +483,34 @@ export const RhythmGame: React.FC<
     if (doneRef.current) return;
 
     if (mode === 'beatMatch') {
-      if (!isPlaying) {
+      if (!isPlayingRef.current) {
         startBeatMatch();
         return;
       }
-      const now = Date.now();
-      if (expectedTapRef.current && Math.abs(now - expectedTapRef.current) <= bpmToInterval(bpmForRound(round, totalRounds, P.beatMatchInitialBpm, P.beatMatchFinalBpm)) * P.tapToleranceRatio) {
-        bumpScore();
-      } else failTap();
+      if (canTapBeatRef.current) {
+        canTapBeatRef.current = false;
+        markHit();
+      } else {
+        failTap();
+      }
       return;
     }
 
     if (mode === 'stopGo') {
-      if (!isPlaying) {
+      if (!isPlayingRef.current) {
         startStopGo();
         return;
       }
-      if (isDrumActive) bumpScore();
-      else failTap();
+      if (isDrumActiveRef.current && !scoredThisCycleRef.current) {
+        scoredThisCycleRef.current = true;
+        markHit();
+      } else {
+        failTap();
+      }
       return;
     }
 
-    if (mode === 'copy' && phase === 'tap' && !isPlaying) {
+    if (mode === 'copy' && phaseRef.current === 'tap' && !isPlayingRef.current) {
       playInstrument('drum', 0.6);
       pulseDrum();
       userTapsRef.current.push(Date.now());
@@ -402,34 +525,35 @@ export const RhythmGame: React.FC<
         }
       }
     }
-  }, [advanceRound, bumpScore, failTap, isDrumActive, isPlaying, mode, phase, pulseDrum, round, startBeatMatch, startStopGo, totalRounds]);
+  }, [advanceRound, bumpScore, failTap, markHit, mode, pulseDrum, startBeatMatch, startStopGo]);
 
   const handleVolumeTap = useCallback(
     (vol: VolumeKind) => {
-      if (mode !== 'loudSoft' || !isPlaying || !currentVolume) return;
-      if (vol === currentVolume) bumpScore();
+      if (mode !== 'loudSoft' || !isPlayingRef.current || !canRespondRef.current || !currentVolumeRef.current) return;
+      canRespondRef.current = false;
+      if (vol === currentVolumeRef.current) markHit();
       else failTap();
     },
-    [bumpScore, currentVolume, failTap, isPlaying, mode],
+    [failTap, markHit, mode],
   );
 
   const handleInstrumentPick = useCallback(
     (inst: Instrument) => {
-      if (mode !== 'instrument' || phase !== 'choose' || !targetInstrument || doneRef.current) return;
+      if (mode !== 'instrument' || phaseRef.current !== 'choose' || !targetInstrumentRef.current || doneRef.current) return;
       playInstrument(inst, 0.6);
-      if (inst === targetInstrument) {
+      if (inst === targetInstrumentRef.current) {
         bumpScore();
         advanceRound();
       } else {
         failTap();
-        timeoutRef.current = setTimeout(() => startInstrumentRound(), P.nextRoundDelayMs);
+        scheduleTimeout(() => startInstrumentRound(), P.nextRoundDelayMs);
       }
     },
-    [advanceRound, bumpScore, failTap, mode, phase, startInstrumentRound, targetInstrument],
+    [advanceRound, bumpScore, failTap, mode, scheduleTimeout, startInstrumentRound],
   );
 
   const startAction = () => {
-    if (mode === 'loudSoft' && !isPlaying) startLoudSoft();
+    if (mode === 'loudSoft' && !isPlayingRef.current) startLoudSoft();
     else handleDrumTap();
   };
 
@@ -539,10 +663,11 @@ export const RhythmGame: React.FC<
           </Pressable>
         )}
 
-        {(mode === 'loudSoft' || mode === 'stopGo') && isPlaying && (
+        {(mode === 'loudSoft' || mode === 'stopGo' || mode === 'beatMatch') && isPlaying && (
           <Text style={[styles.beatCounter, { color: T.subtitleColor }]}>
-            Beat {beatCount}
+            Beat {beatCount}/{beatsPerRound}
             {mode === 'loudSoft' && currentVolume ? ` · ${currentVolume}` : ''}
+            {` · Hits ${roundHits}`}
           </Text>
         )}
 
