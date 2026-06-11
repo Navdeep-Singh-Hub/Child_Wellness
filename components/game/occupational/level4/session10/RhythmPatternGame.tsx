@@ -391,6 +391,11 @@ export const RhythmPatternGame: React.FC<
   const recordStep = useCallback(
     (step: RhythmStep) => {
       if (phaseRef.current !== 'copy' || doneRef.current) return;
+      const stepIdx = userRef.current.length;
+      if (patternRef.current[stepIdx] !== step) {
+        failCopy();
+        return;
+      }
       const time = Date.now() - copyStartRef.current;
       userRef.current = [...userRef.current, { time, step }];
       setUserLen(userRef.current.length);
@@ -413,7 +418,7 @@ export const RhythmPatternGame: React.FC<
         checkUserInput();
       }
     },
-    [checkUserInput, mode, pulseClapDemo, pulseHand, pulseMusicDemo, pulseShoulderDemo],
+    [checkUserInput, failCopy, mode, pulseClapDemo, pulseHand, pulseMusicDemo, pulseShoulderDemo],
   );
 
   const startRoundPlay = useCallback(() => {

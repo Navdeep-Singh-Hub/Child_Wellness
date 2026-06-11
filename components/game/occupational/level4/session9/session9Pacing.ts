@@ -8,7 +8,7 @@ export const SESSION4_9_PACING = {
   roundStartDelayMs: 400,
   matchTolerancePx: 62,
   sortTolerancePx: 68,
-  pullThresholdPx: 130,
+  pullThresholdPx: 100,
   balanceTargetYPct: 0.72,
   balanceTolerancePx: 90,
   balanceSpeedTolerance: 22,

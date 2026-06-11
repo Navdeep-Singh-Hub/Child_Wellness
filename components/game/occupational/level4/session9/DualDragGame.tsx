@@ -3,7 +3,12 @@
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import { distPx, randomMatchShape, useTraceSound } from '@/components/game/occupational/level4/session9/dualDragUtils';
+import {
+  createObjectPanGesture,
+  distPx,
+  randomMatchShape,
+  useTraceSound,
+} from '@/components/game/occupational/level4/session9/dualDragUtils';
 import { SESSION4_9_PACING } from '@/components/game/occupational/level4/session9/session9Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -13,13 +18,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
-  withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -290,43 +293,32 @@ export const DualDragGame: React.FC<
     [clearTimers],
   );
 
-  const leftPan = Gesture.Pan()
-    .runOnJS(true)
-    .onBegin(() => {
-      if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
-      leftScale.value = withTiming(1.12, { duration: 100 });
-    })
-    .onUpdate((e) => {
-      if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
-      leftX.value = Math.max(HALF, Math.min(playW.current - HALF, e.x));
-      leftY.value = Math.max(HALF, Math.min(playH.current - HALF, e.y));
-      updateInZone('left');
-    })
-    .onEnd(() => {
-      if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
-      leftScale.value = withTiming(1, { duration: 100 });
-      updateInZone('left');
-    });
+  const isDragActive = useCallback(
+    () => roundActiveRef.current && !roundCompleteRef.current && !doneRef.current,
+    [],
+  );
 
-  const rightPan = Gesture.Pan()
-    .runOnJS(true)
-    .onBegin(() => {
-      if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
-      rightScale.value = withTiming(1.12, { duration: 100 });
-    })
-    .onUpdate((e) => {
-      if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
-      rightX.value = Math.max(HALF, Math.min(playW.current - HALF, e.x));
-      rightY.value = Math.max(HALF, Math.min(playH.current - HALF, e.y));
-      updateInZone('right');
-    })
-    .onEnd(() => {
-      if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
-      rightScale.value = withTiming(1, { duration: 100 });
-      updateInZone('right');
-    });
+  const leftPan = createObjectPanGesture({
+    objX: leftX,
+    objY: leftY,
+    objScale: leftScale,
+    playW,
+    playH,
+    half: HALF,
+    isActive: isDragActive,
+    onUpdate: () => updateInZone('left'),
+  });
 
-  const dualGesture = Gesture.Simultaneous(leftPan, rightPan);
+  const rightPan = createObjectPanGesture({
+    objX: rightX,
+    objY: rightY,
+    objScale: rightScale,
+    playW,
+    playH,
+    half: HALF,
+    isActive: isDragActive,
+    onUpdate: () => updateInZone('right'),
+  });
 
   const leftEmoji = mode === 'shapeSort' ? '⭕' : mode === 'matchCenter' ? matchEmoji : '🔵';
   const rightEmoji = mode === 'shapeSort' ? '⬜' : mode === 'matchCenter' ? matchEmoji : '🔴';
@@ -393,76 +385,78 @@ export const DualDragGame: React.FC<
         ) : null}
       </View>
 
-      <GestureDetector gesture={dualGesture}>
-        <View
-          style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
-          onLayout={(e) => {
-            playW.current = e.nativeEvent.layout.width;
-            playH.current = e.nativeEvent.layout.height;
-            layoutPositions();
-          }}
-        >
-          {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
+      <View
+        style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
+        onLayout={(e) => {
+          playW.current = e.nativeEvent.layout.width;
+          playH.current = e.nativeEvent.layout.height;
+          layoutPositions();
+        }}
+      >
+        {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
 
-          {roundActive && mode === 'matchCenter' && (
+        {roundActive && mode === 'matchCenter' && (
+          <View
+            style={[
+              styles.zone,
+              styles.centerZone,
+              {
+                left: zoneLayout.center.x - 55,
+                top: zoneLayout.center.y - 55,
+                borderColor: T.zoneBorder,
+              },
+            ]}
+          >
+            <Text style={styles.zoneLabel}>MATCH</Text>
+          </View>
+        )}
+
+        {roundActive && mode !== 'matchCenter' && (
+          <>
             <View
               style={[
                 styles.zone,
-                styles.centerZone,
                 {
-                  left: zoneLayout.center.x - 55,
-                  top: zoneLayout.center.y - 55,
+                  left: zoneLayout.left.x - 48,
+                  top: zoneLayout.left.y - 48,
                   borderColor: T.zoneBorder,
                 },
               ]}
             >
-              <Text style={styles.zoneLabel}>MATCH</Text>
+              <Text style={styles.zoneEmoji}>{mode === 'shapeSort' ? '⭕' : '🎯'}</Text>
             </View>
-          )}
+            <View
+              style={[
+                styles.zone,
+                {
+                  left: zoneLayout.right.x - 48,
+                  top: zoneLayout.right.y - 48,
+                  borderColor: T.zoneBorder,
+                },
+              ]}
+            >
+              <Text style={styles.zoneEmoji}>{mode === 'shapeSort' ? '⬜' : '🎯'}</Text>
+            </View>
+          </>
+        )}
 
-          {roundActive && mode !== 'matchCenter' && (
-            <>
-              <View
-                style={[
-                  styles.zone,
-                  {
-                    left: zoneLayout.left.x - 48,
-                    top: zoneLayout.left.y - 48,
-                    borderColor: T.zoneBorder,
-                  },
-                ]}
-              >
-                <Text style={styles.zoneEmoji}>{mode === 'shapeSort' ? '⭕' : '🎯'}</Text>
-              </View>
-              <View
-                style={[
-                  styles.zone,
-                  {
-                    left: zoneLayout.right.x - 48,
-                    top: zoneLayout.right.y - 48,
-                    borderColor: T.zoneBorder,
-                  },
-                ]}
-              >
-                <Text style={styles.zoneEmoji}>{mode === 'shapeSort' ? '⬜' : '🎯'}</Text>
-              </View>
-            </>
-          )}
-
-          {roundActive && (
-            <>
+        {roundActive && (
+          <>
+            <GestureDetector gesture={leftPan}>
               <Animated.View style={[styles.obj, { backgroundColor: T.leftColor }, leftStyle]}>
                 <Text style={styles.objEmoji}>{leftEmoji}</Text>
               </Animated.View>
+            </GestureDetector>
+            <GestureDetector gesture={rightPan}>
               <Animated.View style={[styles.obj, { backgroundColor: T.rightColor }, rightStyle]}>
                 <Text style={styles.objEmoji}>{rightEmoji}</Text>
               </Animated.View>
-            </>
-          )}
+            </GestureDetector>
+          </>
+        )}
 
-          <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
-        </View>
-      </GestureDetector>
+        <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
+      </View>
     </SafeAreaView>
   );
 };

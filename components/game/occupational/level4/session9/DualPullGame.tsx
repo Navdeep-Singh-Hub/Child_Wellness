@@ -3,7 +3,7 @@
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import { distPx, useTraceSound } from '@/components/game/occupational/level4/session9/dualDragUtils';
+import { createObjectPanGesture, distPx, useTraceSound } from '@/components/game/occupational/level4/session9/dualDragUtils';
 import { SESSION4_9_PACING } from '@/components/game/occupational/level4/session9/session9Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -13,13 +13,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -271,45 +270,42 @@ export const DualPullGame: React.FC<
     [clearTimers],
   );
 
-  const leftPan = Gesture.Pan()
-    .runOnJS(true)
-    .onBegin(() => {
-      if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
-      leftScale.value = withTiming(1.12, { duration: 100 });
-    })
-    .onUpdate((e) => {
-      if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
-      leftX.value = Math.max(HANDLE, Math.min(playW.current * 0.48, e.x));
-      leftY.value = Math.max(playH.current * 0.28, Math.min(playH.current * 0.72, e.y));
-      updatePull('left');
-    })
-    .onEnd(() => {
-      if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
-      leftScale.value = withTiming(1, { duration: 100 });
+  const isDragActive = useCallback(
+    () => roundActiveRef.current && !roundCompleteRef.current && !doneRef.current,
+    [],
+  );
+
+  const leftPan = createObjectPanGesture({
+    objX: leftX,
+    objY: leftY,
+    objScale: leftScale,
+    playW,
+    playH,
+    half: HANDLE,
+    isActive: isDragActive,
+    clampX: (x, w, _h, half) => Math.max(half, Math.min(w * 0.48, x)),
+    clampY: (y, _w, h, _half) => Math.max(h * 0.28, Math.min(h * 0.72, y)),
+    onUpdate: () => updatePull('left'),
+    onEnd: () => {
       if (!leftPulledRef.current) snapBack('left');
-      updatePull('left');
-    });
+    },
+  });
 
-  const rightPan = Gesture.Pan()
-    .runOnJS(true)
-    .onBegin(() => {
-      if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
-      rightScale.value = withTiming(1.12, { duration: 100 });
-    })
-    .onUpdate((e) => {
-      if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
-      rightX.value = Math.max(playW.current * 0.52, Math.min(playW.current - HANDLE, e.x));
-      rightY.value = Math.max(playH.current * 0.28, Math.min(playH.current * 0.72, e.y));
-      updatePull('right');
-    })
-    .onEnd(() => {
-      if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
-      rightScale.value = withTiming(1, { duration: 100 });
+  const rightPan = createObjectPanGesture({
+    objX: rightX,
+    objY: rightY,
+    objScale: rightScale,
+    playW,
+    playH,
+    half: HANDLE,
+    isActive: isDragActive,
+    clampX: (x, w, _h, half) => Math.max(w * 0.52, Math.min(w - half, x)),
+    clampY: (y, _w, h, _half) => Math.max(h * 0.28, Math.min(h * 0.72, y)),
+    onUpdate: () => updatePull('right'),
+    onEnd: () => {
       if (!rightPulledRef.current) snapBack('right');
-      updatePull('right');
-    });
-
-  const dualGesture = Gesture.Simultaneous(leftPan, rightPan);
+    },
+  });
 
   if (showCongratulations && done && finalStats) {
     return (
@@ -373,32 +369,34 @@ export const DualPullGame: React.FC<
         ) : null}
       </View>
 
-      <GestureDetector gesture={dualGesture}>
-        <View
-          style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
-          onLayout={(e) => {
-            playW.current = e.nativeEvent.layout.width;
-            playH.current = e.nativeEvent.layout.height;
-            layoutHandles();
-          }}
-        >
-          {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
-          {roundActive && (
-            <View style={[styles.rope, { backgroundColor: T.accent, top: ropeY - 3 }]} />
-          )}
-          {roundActive && (
-            <>
+      <View
+        style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
+        onLayout={(e) => {
+          playW.current = e.nativeEvent.layout.width;
+          playH.current = e.nativeEvent.layout.height;
+          layoutHandles();
+        }}
+      >
+        {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
+        {roundActive && (
+          <View style={[styles.rope, { backgroundColor: T.accent, top: ropeY - 3 }]} />
+        )}
+        {roundActive && (
+          <>
+            <GestureDetector gesture={leftPan}>
               <Animated.View style={[styles.handle, { backgroundColor: T.leftColor }, leftStyle]}>
                 <Text style={styles.handleEmoji}>🪢</Text>
               </Animated.View>
+            </GestureDetector>
+            <GestureDetector gesture={rightPan}>
               <Animated.View style={[styles.handle, { backgroundColor: T.rightColor }, rightStyle]}>
                 <Text style={styles.handleEmoji}>🪢</Text>
               </Animated.View>
-            </>
-          )}
-          <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
-        </View>
-      </GestureDetector>
+            </GestureDetector>
+          </>
+        )}
+        <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
+      </View>
     </SafeAreaView>
   );
 };

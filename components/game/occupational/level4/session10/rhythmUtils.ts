@@ -20,9 +20,12 @@ export const validatePattern = <T extends string>(
 ): boolean => {
   if (actual.length !== expected.length) return false;
   for (let i = 0; i < expected.length; i++) {
-    const expectedTime = i * beatMs;
-    if (Math.abs(actual[i].time - expectedTime) > toleranceMs) return false;
     if (actual[i].step !== expected[i]) return false;
+  }
+  // Interval-based timing (forgiving start delay — matches Level 3 rhythm games).
+  for (let i = 1; i < expected.length; i++) {
+    const interval = actual[i].time - actual[i - 1].time;
+    if (Math.abs(interval - beatMs) > toleranceMs) return false;
   }
   return true;
 };
