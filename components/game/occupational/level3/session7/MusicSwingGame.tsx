@@ -1,28 +1,42 @@
-/** OT Level 3 · Session 7 · Game 5 — Music Swing · Theme: "Beat Swing" */
+/** OT Level 3 · Session 7 · Game 5 — Beat Swing */
 import { SwingMotionGame } from '@/components/game/occupational/level3/session7/SwingMotionGame';
+import { GAME_THEMES, JUNGLE_CHARACTERS, JUNGLE_SHELL } from '@/components/game/occupational/level3/session7/jungleSwingTheme';
 import React from 'react';
+
+const G = GAME_THEMES.musicSwing;
 
 const MusicSwingGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <SwingMotionGame
     {...props}
     mode="musicSwing"
     theme={{
-      title: 'Beat Swing', subtitle: 'Listen to beats, then swing on each one', emoji: '🎵',
-      gradient: ['#F5F3FF', '#EDE9FE', '#C4B5FD', '#8B5CF6'],
-      accent: '#8B5CF6', accentDark: '#6D28D9', objectEmoji: '🎶',
-      backText: '#5B21B6', backBorder: 'rgba(139,92,246,0.25)',
-      titleColor: '#4C1D95', subtitleColor: '#7C3AED', statLabel: '#8B5CF6', statValue: '#4C1D95',
-      statBorder: 'rgba(139,92,246,0.2)', playBorder: 'rgba(139,92,246,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#8B5CF6',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: ['#FAF5FF', '#F3E8FF', '#D8B4FE', '#9333EA'],
+      accent: '#A855F7',
+      accentDark: '#7E22CE',
+      objectEmoji: JUNGLE_CHARACTERS.sammy.emoji,
+      backText: '#6B21A8',
+      backBorder: 'rgba(168,85,247,0.25)',
+      titleColor: '#581C87',
+      subtitleColor: '#7E22CE',
+      statLabel: '#A855F7',
+      statValue: '#581C87',
+      statBorder: 'rgba(168,85,247,0.2)',
+      playBorder: 'rgba(168,85,247,0.25)',
+      playBg: JUNGLE_SHELL.playBg,
+      sparkleColor: JUNGLE_SHELL.sparkleColor,
+      hintText: G.hintText,
     }}
-    ttsIntro="Listen to four beats, then swing on each beat!"
-    ttsComplete="Rhythm swing champion!"
-    ttsMusicPrompt="Now swing with the music!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
+    ttsMusicPrompt="Now swing left and right on each beat!"
     ttsBeatMiss="Swing on the beat!"
-    ttsSwipeMore="Swing bigger!"
-    congratsMessage="Beat Swing Star!"
+    ttsSwipeMore="Swing farther on the beat!"
+    congratsMessage={G.congrats}
     logType="music-swing"
-    skillTags={['rhythm-imitation', 'timing', 'swinging-motion']}
+    skillTags={['rhythm-synchronization', 'motor-timing', 'auditory-processing', 'bilateral-coordination']}
   />
 );
 

@@ -1,23 +1,40 @@
-/**
- * Shared mirror / pose imitation game core for OT Level 3 Session 9.
- */
+/** Superhero Training Academy — OT Level 3 Session 9 pose imitation engine. */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
+import { MirrorHandGuide } from './MirrorHandGuide';
+import { SequenceStrip } from './SequenceStrip';
+import { SuperheroBadge } from './SuperheroBadge';
 import {
+  CHAIN_EMOJIS,
+  ChainMove,
   HAND_EMOJIS,
   HandSide,
-  MOVEMENT_EMOJIS,
-  Movement,
   POSE_EMOJIS,
   PoseType,
-  generatePattern,
+  chainLabel,
+  generateChainPattern,
+  handDisplayLabel,
+  imitationScore,
   mirrorHand,
   poseLabel,
   randomHand,
   randomPose,
   useTraceSound,
 } from '@/components/game/occupational/level3/session9/mirrorUtils';
-import { SESSION9_PACING } from '@/components/game/occupational/level3/session9/session9Pacing';
+import {
+  SESSION9_PACING,
+  confirmTimeLimitMs,
+  delayedShowMs,
+  delayedWaitMs,
+  difficultyTier,
+  fastPoseMs,
+  fastPosesPerRound,
+  handShowMs,
+  patternLength,
+  patternStepMs,
+  poseShowMs,
+} from '@/components/game/occupational/level3/session9/session9Pacing';
+import { usePoseAnalytics } from '@/components/game/occupational/level3/session9/usePoseAnalytics';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
@@ -40,6 +57,7 @@ const P = SESSION9_PACING;
 const SUCCESS = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const WARN = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
 const STAR = require('@/assets/icons/star.png');
+const VOICE_PRAISE = ['Super Copy!', 'Hero Level Move!', 'Perfect Pose!', 'Amazing Memory!', "You're Becoming a Superhero!"];
 
 export type MirrorPoseMode = 'copyPose' | 'handMirror' | 'delayedMirror' | 'fastCopy' | 'patternCopy';
 
@@ -61,6 +79,7 @@ export type MirrorPoseTheme = {
   playBorder: string;
   playBg: string;
   sparkleColor: string;
+  hintText: string;
 };
 
 export type MirrorPoseGameConfig = {
@@ -104,11 +123,25 @@ export const MirrorPoseGame: React.FC<
 }) => {
   const router = useRouter();
   const playSuccess = useTraceSound(SUCCESS);
+  const {
+    reset: resetAnalytics,
+    startRound: startAnalyticsRound,
+    recordSuccess,
+    recordError,
+    snapshot: analyticsSnapshot,
+    metaPayload: analyticsMeta,
+  } = usePoseAnalytics();
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
+  const [coins, setCoins] = useState(0);
   const [done, setDone] = useState(false);
-  const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const [finalStats, setFinalStats] = useState<{
+    correct: number;
+    total: number;
+    xp: number;
+    analytics: ReturnType<typeof analyticsSnapshot>;
+  } | null>(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [sparkleKey, setSparkleKey] = useState(0);
   const [roundActive, setRoundActive] = useState(false);
@@ -117,7 +150,8 @@ export const MirrorPoseGame: React.FC<
   const [phase, setPhase] = useState<'idle' | 'show' | 'wait' | 'copy' | 'demo'>('idle');
   const [currentPose, setCurrentPose] = useState<PoseType>('hands-up');
   const [screenHand, setScreenHand] = useState<HandSide>('left');
-  const [pattern, setPattern] = useState<Movement[]>([]);
+  const [pattern, setPattern] = useState<ChainMove[]>([]);
+  const [cueSuccess, setCueSuccess] = useState<boolean | undefined>(undefined);
   const [patternStep, setPatternStep] = useState(0);
   const [fastPoseIndex, setFastPoseIndex] = useState(0);
   const [displayEmoji, setDisplayEmoji] = useState('🙌');
@@ -131,7 +165,11 @@ export const MirrorPoseGame: React.FC<
   const canConfirmRef = useRef(false);
   const phaseRef = useRef(phase);
   const fastPoseIndexRef = useRef(0);
+  const fastPosesNeededRef = useRef(3);
+  const currentPoseRef = useRef<PoseType>('hands-up');
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const tier = difficultyTier(round, P.rounds);
 
   const cueScale = useSharedValue(0.7);
   const cueOpacity = useSharedValue(0);
@@ -164,7 +202,11 @@ export const MirrorPoseGame: React.FC<
     transform: [{ scale: waitPulse.value }],
   }));
 
-  const gameTotal = mode === 'fastCopy' ? P.rounds * P.fastPosesPerRound : P.rounds;
+  const gameTotal = mode === 'fastCopy' ? P.rounds * fastPosesPerRound(4) : P.rounds;
+
+  const praiseVoice = useCallback(() => {
+    speakTTS(VOICE_PRAISE[Math.floor(Math.random() * VOICE_PRAISE.length)]!, 0.78).catch(() => {});
+  }, []);
 
   const clearTimers = useCallback(() => {
     if (roundTimerRef.current) {
@@ -177,9 +219,9 @@ export const MirrorPoseGame: React.FC<
 
   const endGame = useCallback(
     (finalScore: number) => {
-      const total = gameTotal;
-      const xp = Math.round(finalScore * 15);
-      setFinalStats({ correct: finalScore, total, xp });
+      const snap = analyticsSnapshot();
+      const xp = Math.round(finalScore * 16 + snap.imitationScore * 0.18);
+      setFinalStats({ correct: finalScore, total: gameTotal, xp, analytics: snap });
       setDone(true);
       doneRef.current = true;
       clearTimers();
@@ -188,29 +230,48 @@ export const MirrorPoseGame: React.FC<
       recordGame(xp)
         .then(() =>
           logGameAndAward({
-            type: logType,
+            type: logType as any,
             correct: finalScore,
-            total,
-            accuracy: (finalScore / total) * 100,
+            total: gameTotal,
+            accuracy: snap.imitationScore,
             xpAwarded: xp,
+            durationMs: snap.durationMs,
+            responseTimeMs: snap.avgReactionMs,
             skillTags,
+            meta: analyticsMeta(),
           }),
         )
         .then(() => router.setParams({ refreshStats: Date.now().toString() }))
         .catch(console.error);
     },
-    [clearTimers, gameTotal, logType, router, skillTags, ttsComplete],
+    [analyticsMeta, analyticsSnapshot, clearTimers, gameTotal, logType, router, skillTags, ttsComplete],
   );
 
-  const bumpScore = useCallback(() => {
-    setSparkleKey(Date.now());
-    playSuccess();
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    setScore((s) => {
-      scoreRef.current = s + 1;
-      return s + 1;
-    });
-  }, [playSuccess]);
+  const bumpScore = useCallback(
+    (opts?: {
+      pose?: number;
+      imitation?: number;
+      lateral?: number;
+      sequence?: number;
+      memory?: number;
+      delayed?: number;
+      motor?: number;
+    }) => {
+      setSparkleKey(Date.now());
+      setCoins((c) => c + 5);
+      setCueSuccess(true);
+      recordSuccess(opts);
+      playSuccess();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      praiseVoice();
+      setScore((s) => {
+        scoreRef.current = s + 1;
+        return s + 1;
+      });
+      setTimeout(() => setCueSuccess(undefined), 650);
+    },
+    [playSuccess, praiseVoice, recordSuccess],
+  );
 
   const showCue = useCallback(
     (emoji: string, label: string) => {
@@ -227,12 +288,6 @@ export const MirrorPoseGame: React.FC<
   const hideCue = useCallback(() => {
     cueOpacity.value = withTiming(0, { duration: 220 });
   }, [cueOpacity]);
-
-  const enableConfirm = useCallback(() => {
-    setCanConfirm(true);
-    canConfirmRef.current = true;
-    setStatusHint('Do it, then tap the button!');
-  }, []);
 
   const advanceRound = useCallback(() => {
     clearTimers();
@@ -252,48 +307,87 @@ export const MirrorPoseGame: React.FC<
     roundTimerRef.current = setTimeout(() => setRound((r) => r + 1), P.nextRoundDelayMs);
   }, [clearTimers, cueOpacity, endGame]);
 
-  const completeRound = useCallback(() => {
-    if (roundCompleteRef.current || doneRef.current) return;
-    roundCompleteRef.current = true;
-    if (mode !== 'fastCopy') bumpScore();
-    cueScale.value = withSequence(withTiming(1.2, { duration: 160 }), withTiming(1, { duration: 160 }));
-    roundTimerRef.current = setTimeout(() => advanceRound(), 650);
-  }, [advanceRound, bumpScore, cueScale, mode]);
+  const scheduleConfirmLimit = useCallback(() => {
+    const limit = confirmTimeLimitMs(tier);
+    if (limit <= 0) return;
+    if (roundTimerRef.current) {
+      clearTimeout(roundTimerRef.current);
+      roundTimerRef.current = null;
+    }
+    roundTimerRef.current = setTimeout(() => {
+      if (!roundCompleteRef.current && canConfirmRef.current) {
+        recordError();
+        setCanConfirm(false);
+        canConfirmRef.current = false;
+        speakTTS('Time is up! Watch again next round.', 0.78).catch(() => {});
+        roundCompleteRef.current = true;
+        roundTimerRef.current = setTimeout(() => advanceRound(), 600);
+      }
+    }, limit);
+  }, [advanceRound, recordError, tier]);
+
+  const enableConfirm = useCallback(() => {
+    setCanConfirm(true);
+    canConfirmRef.current = true;
+    setStatusHint('Copy the pose, then tap Done!');
+    scheduleConfirmLimit();
+  }, [scheduleConfirmLimit]);
+
+  const completeRound = useCallback(
+    (opts?: {
+      pose?: number;
+      imitation?: number;
+      lateral?: number;
+      sequence?: number;
+      memory?: number;
+      delayed?: number;
+      motor?: number;
+    }) => {
+      if (roundCompleteRef.current || doneRef.current) return;
+      roundCompleteRef.current = true;
+      if (mode !== 'fastCopy') bumpScore(opts);
+      cueScale.value = withSequence(withTiming(1.2, { duration: 160 }), withTiming(1, { duration: 160 }));
+      roundTimerRef.current = setTimeout(() => advanceRound(), 650);
+    },
+    [advanceRound, bumpScore, cueScale, mode],
+  );
 
   const runPatternDemo = useCallback(
-    (steps: Movement[], index: number) => {
+    (steps: ChainMove[], index: number) => {
       if (index >= steps.length) {
         enableConfirm();
         speakTTS(ttsPatternCopy, 0.78).catch(() => {});
         setPhase('copy');
         phaseRef.current = 'copy';
-        setStatusHint('Repeat the pattern!');
+        setStatusHint('Repeat the move chain!');
         return;
       }
       const move = steps[index]!;
       setPatternStep(index);
-      showCue(MOVEMENT_EMOJIS[move], move.toUpperCase());
+      showCue(CHAIN_EMOJIS[move], chainLabel(move));
+      const stepMs = patternStepMs(tier);
       roundTimerRef.current = setTimeout(() => {
         hideCue();
         roundTimerRef.current = setTimeout(() => runPatternDemo(steps, index + 1), 180);
-      }, P.patternStepMs);
+      }, stepMs);
     },
-    [enableConfirm, hideCue, showCue, ttsPatternCopy],
+    [enableConfirm, hideCue, showCue, tier, ttsPatternCopy],
   );
 
   const startCopyPoseRound = useCallback(
     (pose: PoseType) => {
       setCurrentPose(pose);
+      currentPoseRef.current = pose;
       setPhase('show');
       showCue(POSE_EMOJIS[pose], poseLabel(pose));
-      setStatusHint('Watch the pose…');
-      speakTTS(poseLabel(pose), 0.78).catch(() => {});
+      setStatusHint('Watch Captain Motion…');
+      speakTTS(`Watch carefully. ${poseLabel(pose)}!`, 0.78).catch(() => {});
       roundTimerRef.current = setTimeout(() => {
         enableConfirm();
         speakTTS(ttsCopyPose, 0.78).catch(() => {});
-      }, P.poseShowMs);
+      }, poseShowMs(tier));
     },
-    [enableConfirm, showCue, ttsCopyPose],
+    [enableConfirm, showCue, tier, ttsCopyPose],
   );
 
   const startHandMirrorRound = useCallback(
@@ -301,20 +395,21 @@ export const MirrorPoseGame: React.FC<
       setScreenHand(side);
       setPhase('show');
       const child = mirrorHand(side);
-      showCue(HAND_EMOJIS[side], `Screen: ${side.toUpperCase()}`);
-      setStatusHint(`You raise: ${child.toUpperCase()}`);
-      speakTTS(`Screen shows ${side} hand. You raise your ${child} hand!`, 0.78).catch(() => {});
+      showCue(HAND_EMOJIS[side], handDisplayLabel(side));
+      setStatusHint(`You raise: ${child.toUpperCase()} hand`);
+      speakTTS(`Trainer raises ${side} hand. You raise your ${child} hand!`, 0.78).catch(() => {});
       roundTimerRef.current = setTimeout(() => {
         enableConfirm();
         speakTTS(ttsHandMirror, 0.78).catch(() => {});
-      }, P.handShowMs);
+      }, handShowMs(tier));
     },
-    [enableConfirm, showCue, ttsHandMirror],
+    [enableConfirm, showCue, tier, ttsHandMirror],
   );
 
   const startDelayedRound = useCallback(
     (pose: PoseType) => {
       setCurrentPose(pose);
+      currentPoseRef.current = pose;
       setPhase('show');
       showCue(POSE_EMOJIS[pose], poseLabel(pose));
       setStatusHint('Watch carefully…');
@@ -323,43 +418,60 @@ export const MirrorPoseGame: React.FC<
         hideCue();
         setPhase('wait');
         phaseRef.current = 'wait';
-        setStatusHint('Wait…');
+        setStatusHint('Remember the pose…');
         waitPulse.value = withSequence(withTiming(1.15, { duration: 500 }), withTiming(1, { duration: 500 }));
         speakTTS(ttsDelayedWait, 0.78).catch(() => {});
         roundTimerRef.current = setTimeout(() => {
           setPhase('copy');
           phaseRef.current = 'copy';
-          showCue(POSE_EMOJIS[pose], 'Copy now!');
+          setStatusHint('Copy from memory!');
           enableConfirm();
           speakTTS(ttsDelayedCopy, 0.78).catch(() => {});
-        }, P.delayedWaitMs);
-      }, P.delayedShowMs);
+        }, delayedWaitMs(tier));
+      }, delayedShowMs(tier));
     },
-    [enableConfirm, hideCue, showCue, ttsDelayedCopy, ttsDelayedWait, ttsDelayedWatch, waitPulse],
+    [enableConfirm, hideCue, tier, ttsDelayedCopy, ttsDelayedWait, ttsDelayedWatch, waitPulse],
   );
 
   const startFastPose = useCallback(() => {
-    const pose = randomPose();
+    const pose = randomPose(tier);
     setCurrentPose(pose);
+    currentPoseRef.current = pose;
     setPhase('show');
     showCue(POSE_EMOJIS[pose], poseLabel(pose));
-    setStatusHint(`Pose ${fastPoseIndexRef.current + 1}/${P.fastPosesPerRound}`);
+    setStatusHint(`Pose ${fastPoseIndexRef.current + 1}/${fastPosesNeededRef.current}`);
     speakTTS(poseLabel(pose), 0.85).catch(() => {});
     roundTimerRef.current = setTimeout(() => {
       enableConfirm();
       speakTTS(ttsFastPose, 0.85).catch(() => {});
-    }, P.fastPoseMs);
-  }, [enableConfirm, showCue, ttsFastPose]);
+    }, fastPoseMs(tier));
+  }, [enableConfirm, showCue, tier, ttsFastPose]);
+
+  const handleReplay = useCallback(() => {
+    if (!roundActiveRef.current || roundCompleteRef.current) return;
+    if (mode === 'copyPose' || mode === 'delayedMirror') {
+      const pose = currentPoseRef.current;
+      showCue(POSE_EMOJIS[pose], poseLabel(pose));
+      speakTTS(poseLabel(pose), 0.78).catch(() => {});
+    } else if (mode === 'handMirror') {
+      showCue(HAND_EMOJIS[screenHand], handDisplayLabel(screenHand));
+    } else if (mode === 'fastCopy') {
+      const pose = currentPoseRef.current;
+      showCue(POSE_EMOJIS[pose], poseLabel(pose));
+    }
+  }, [mode, screenHand, showCue]);
 
   const startRoundPlay = useCallback(() => {
     if (doneRef.current) return;
+    startAnalyticsRound();
     roundCompleteRef.current = false;
     setRoundActive(true);
     setCanConfirm(false);
     canConfirmRef.current = false;
+    fastPosesNeededRef.current = fastPosesPerRound(tier);
 
     if (mode === 'copyPose') {
-      startCopyPoseRound(randomPose());
+      startCopyPoseRound(randomPose(tier));
       return;
     }
     if (mode === 'handMirror') {
@@ -367,7 +479,7 @@ export const MirrorPoseGame: React.FC<
       return;
     }
     if (mode === 'delayedMirror') {
-      startDelayedRound(randomPose());
+      startDelayedRound(randomPose(tier));
       return;
     }
     if (mode === 'fastCopy') {
@@ -377,22 +489,34 @@ export const MirrorPoseGame: React.FC<
       return;
     }
     if (mode === 'patternCopy') {
-      const steps = generatePattern(P.patternLength);
+      const steps = generateChainPattern(patternLength(tier), tier);
       setPattern(steps);
       setPhase('demo');
       phaseRef.current = 'demo';
-      setStatusHint('Watch the pattern…');
+      setStatusHint('Watch the move chain…');
       roundTimerRef.current = setTimeout(() => runPatternDemo(steps, 0), 400);
     }
-  }, [mode, runPatternDemo, startCopyPoseRound, startDelayedRound, startFastPose, startHandMirrorRound]);
+  }, [
+    mode,
+    runPatternDemo,
+    startAnalyticsRound,
+    startCopyPoseRound,
+    startDelayedRound,
+    startFastPose,
+    startHandMirrorRound,
+    tier,
+  ]);
 
   useEffect(() => {
-    if (round === 1) speakTTS(ttsIntro, 0.78);
+    if (round === 1) {
+      resetAnalytics();
+      speakTTS(ttsIntro, 0.78);
+    }
     clearTimers();
     setRoundActive(false);
     roundTimerRef.current = setTimeout(() => startRoundPlay(), P.roundStartDelayMs);
     return clearTimers;
-  }, [round, startRoundPlay, ttsIntro, clearTimers]);
+  }, [round, startRoundPlay, ttsIntro, clearTimers, resetAnalytics]);
 
   useEffect(
     () => () => {
@@ -410,30 +534,42 @@ export const MirrorPoseGame: React.FC<
     setCanConfirm(false);
     canConfirmRef.current = false;
 
+    const scoreOpts = {
+      pose: imitationScore(tier, mode === 'fastCopy'),
+      imitation: imitationScore(tier, mode === 'fastCopy'),
+      lateral: mode === 'handMirror' ? imitationScore(tier) : undefined,
+      sequence: mode === 'patternCopy' ? imitationScore(tier) : undefined,
+      memory: mode === 'patternCopy' || mode === 'delayedMirror' ? imitationScore(tier) : undefined,
+      delayed: mode === 'delayedMirror' ? imitationScore(tier) : undefined,
+      motor: imitationScore(tier),
+    };
+
     if (mode === 'fastCopy') {
-      bumpScore();
+      bumpScore(scoreOpts);
       cueScale.value = withSequence(withTiming(1.15, { duration: 140 }), withTiming(1, { duration: 140 }));
-      if (fastPoseIndexRef.current < P.fastPosesPerRound - 1) {
+      if (fastPoseIndexRef.current < fastPosesNeededRef.current - 1) {
         const next = fastPoseIndexRef.current + 1;
         fastPoseIndexRef.current = next;
         setFastPoseIndex(next);
         roundTimerRef.current = setTimeout(() => startFastPose(), 360);
       } else {
-        completeRound();
+        completeRound(scoreOpts);
       }
       return;
     }
 
-    completeRound();
-  }, [bumpScore, completeRound, cueScale, mode, startFastPose]);
+    completeRound(scoreOpts);
+  }, [bumpScore, completeRound, cueScale, mode, startFastPose, tier]);
 
   if (showCongratulations && done && finalStats) {
+    const a = finalStats.analytics;
     return (
       <CongratulationsScreen
-        message={congratsMessage}
+        message={`${congratsMessage}\n🦸 Superhero Graduation Ceremony!\n🦸 ${a.imitationScore}% · 🧠 ${a.sequenceMemoryScore}%`}
         showButtons
         correct={finalStats.correct}
         total={finalStats.total}
+        accuracy={a.imitationScore}
         xpAwarded={finalStats.xp}
         onContinue={() => {
           stopAllSpeech();
@@ -448,10 +584,11 @@ export const MirrorPoseGame: React.FC<
       />
     );
   }
-  if (done && finalStats && !showCongratulations) return null;
+  if (done) return null;
 
   const showWait = mode === 'delayedMirror' && phase === 'wait';
   const showPatternReminder = mode === 'patternCopy' && phase === 'copy' && pattern.length > 0;
+  const showReplay = roundActive && (phase === 'show' || phase === 'copy') && mode !== 'patternCopy';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -486,7 +623,12 @@ export const MirrorPoseGame: React.FC<
             <Image source={STAR} style={styles.starIcon} />
             <Text style={[styles.statValue, { color: T.statValue }]}>{score}</Text>
           </View>
+          <View style={[styles.statPill, styles.coinPill, { borderColor: T.statBorder }]}>
+            <Text>🪙</Text>
+            <Text style={[styles.statValue, { color: T.statValue }]}>{coins}</Text>
+          </View>
         </View>
+        {roundActive && <SuperheroBadge visible label={T.hintText} success={cueSuccess} />}
         {roundActive && statusHint ? (
           <Text style={[styles.hint, { color: T.accentDark }]}>{statusHint}</Text>
         ) : null}
@@ -494,6 +636,10 @@ export const MirrorPoseGame: React.FC<
 
       <View style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}>
         {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
+
+        {roundActive && mode === 'handMirror' && phase === 'show' && (
+          <MirrorHandGuide visible screenSide={screenHand} />
+        )}
 
         {roundActive && showWait && (
           <Animated.View style={[styles.waitCue, waitStyle]}>
@@ -511,14 +657,12 @@ export const MirrorPoseGame: React.FC<
           </Animated.View>
         )}
 
-        {showPatternReminder && (
-          <View style={[styles.patternRow, { borderColor: T.playBorder }]}>
-            {pattern.map((m, i) => (
-              <Text key={`${m}-${i}`} style={styles.patternEmoji}>
-                {MOVEMENT_EMOJIS[m]}
-              </Text>
-            ))}
-          </View>
+        {showPatternReminder && <SequenceStrip moves={pattern} accent={T.accent} />}
+
+        {showReplay && (
+          <TouchableOpacity style={[styles.replayBtn, { borderColor: T.accent }]} onPress={handleReplay}>
+            <Text style={[styles.replayText, { color: T.accentDark }]}>🔁 Replay</Text>
+          </TouchableOpacity>
         )}
 
         {canConfirm && (
@@ -549,6 +693,7 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
   statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.7)', borderWidth: 1, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
   starPill: { backgroundColor: 'rgba(251,191,36,0.2)' },
+  coinPill: { backgroundColor: 'rgba(245,158,11,0.15)' },
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
@@ -577,17 +722,15 @@ const styles = StyleSheet.create({
   waitCue: { alignItems: 'center', marginBottom: 24 },
   waitEmoji: { fontSize: 72 },
   waitLabel: { fontSize: 18, fontWeight: '800', marginTop: 8 },
-  patternRow: {
-    flexDirection: 'row',
-    gap: 12,
+  replayBtn: {
+    paddingHorizontal: 18,
     paddingVertical: 10,
-    paddingHorizontal: 16,
     borderRadius: 16,
-    borderWidth: 1,
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    marginBottom: 16,
+    borderWidth: 2,
+    backgroundColor: 'rgba(255,255,255,0.75)',
+    marginBottom: 12,
   },
-  patternEmoji: { fontSize: 36 },
+  replayText: { fontSize: 15, fontWeight: '800' },
   confirmBtn: {
     paddingHorizontal: 28,
     paddingVertical: 16,

@@ -3,7 +3,11 @@
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import { createObjectPanGesture, useTraceSound } from '@/components/game/occupational/level4/session9/dualDragUtils';
+import {
+  createObjectPanGesture,
+  createSimultaneousDualPan,
+  useTraceSound,
+} from '@/components/game/occupational/level4/session9/dualDragUtils';
 import { SESSION4_9_PACING } from '@/components/game/occupational/level4/session9/session9Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -91,12 +95,8 @@ export const BalanceDualDragGame: React.FC<
   const roundActiveRef = useRef(false);
   const roundCompleteRef = useRef(false);
   const targetYRef = useRef(288);
-  const leftSpeedRef = useRef(0);
-  const rightSpeedRef = useRef(0);
-  const leftLastY = useRef(96);
-  const rightLastY = useRef(96);
-  const leftLastTime = useRef(Date.now());
-  const rightLastTime = useRef(Date.now());
+  const leftReachedAtRef = useRef<number | null>(null);
+  const rightReachedAtRef = useRef<number | null>(null);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playW = useRef(360);
   const playH = useRef(400);
@@ -150,12 +150,8 @@ export const BalanceDualDragGame: React.FC<
     leftY.value = h * 0.22;
     rightX.value = w * 0.75;
     rightY.value = h * 0.22;
-    leftLastY.current = leftY.value;
-    rightLastY.current = rightY.value;
-    leftLastTime.current = Date.now();
-    rightLastTime.current = Date.now();
-    leftSpeedRef.current = 0;
-    rightSpeedRef.current = 0;
+    leftReachedAtRef.current = null;
+    rightReachedAtRef.current = null;
   }, [leftX, leftY, rightX, rightY]);
 
   const endGame = useCallback(
@@ -215,27 +211,32 @@ export const BalanceDualDragGame: React.FC<
     roundTimerRef.current = setTimeout(() => advanceRound(), 650);
   }, [advanceRound, bumpScore]);
 
-  const trackSpeed = useCallback((side: 'left' | 'right', y: number) => {
-    const now = Date.now();
-    if (side === 'left') {
-      const dt = now - leftLastTime.current;
-      if (dt > 0) leftSpeedRef.current = (Math.abs(y - leftLastY.current) / dt) * 1000;
-      leftLastY.current = y;
-      leftLastTime.current = now;
-    } else {
-      const dt = now - rightLastTime.current;
-      if (dt > 0) rightSpeedRef.current = (Math.abs(y - rightLastY.current) / dt) * 1000;
-      rightLastY.current = y;
-      rightLastTime.current = now;
-    }
-  }, []);
-
   const checkBalance = useCallback(() => {
     if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
     const ty = targetYRef.current;
+    const now = Date.now();
     const leftAt = Math.abs(leftY.value - ty) <= P.balanceTolerancePx;
     const rightAt = Math.abs(rightY.value - ty) <= P.balanceTolerancePx;
-    if (leftAt && rightAt) completeRound();
+
+    if (leftAt) {
+      if (!leftReachedAtRef.current) leftReachedAtRef.current = now;
+    } else {
+      leftReachedAtRef.current = null;
+    }
+
+    if (rightAt) {
+      if (!rightReachedAtRef.current) rightReachedAtRef.current = now;
+    } else {
+      rightReachedAtRef.current = null;
+    }
+
+    if (
+      leftReachedAtRef.current &&
+      rightReachedAtRef.current &&
+      Math.abs(leftReachedAtRef.current - rightReachedAtRef.current) <= P.balanceSyncMs
+    ) {
+      completeRound();
+    }
   }, [completeRound, leftY, rightY]);
 
   const startRoundPlay = useCallback(() => {
@@ -278,10 +279,7 @@ export const BalanceDualDragGame: React.FC<
     half: HALF,
     isActive: isDragActive,
     clampX: (x, w, _h, half) => Math.max(half, Math.min(w * 0.5 - half, x)),
-    onUpdate: () => {
-      trackSpeed('left', leftY.value);
-      checkBalance();
-    },
+    onUpdate: () => checkBalance(),
   });
 
   const rightPan = createObjectPanGesture({
@@ -293,11 +291,10 @@ export const BalanceDualDragGame: React.FC<
     half: HALF,
     isActive: isDragActive,
     clampX: (x, w, _h, half) => Math.max(w * 0.5 + half, Math.min(w - half, x)),
-    onUpdate: () => {
-      trackSpeed('right', rightY.value);
-      checkBalance();
-    },
+    onUpdate: () => checkBalance(),
   });
+
+  const dualGesture = createSimultaneousDualPan(leftPan, rightPan);
 
   if (showCongratulations && done && finalStats) {
     return (
@@ -361,36 +358,34 @@ export const BalanceDualDragGame: React.FC<
         ) : null}
       </View>
 
-      <View
-        style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
-        onLayout={(e) => {
-          playW.current = e.nativeEvent.layout.width;
-          playH.current = e.nativeEvent.layout.height;
-          layoutRound();
-        }}
-      >
-        {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
-        {roundActive && (
-          <View style={[styles.balanceLine, { top: targetY - 2, borderColor: T.accent }]}>
-            <Text style={[styles.lineLabel, { color: T.accentDark }]}>BALANCE LINE</Text>
-          </View>
-        )}
-        {roundActive && (
-          <>
-            <GestureDetector gesture={leftPan}>
+      <GestureDetector gesture={dualGesture}>
+        <View
+          style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
+          onLayout={(e) => {
+            playW.current = e.nativeEvent.layout.width;
+            playH.current = e.nativeEvent.layout.height;
+            layoutRound();
+          }}
+        >
+          {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
+          {roundActive && (
+            <View style={[styles.balanceLine, { top: targetY - 2, borderColor: T.accent }]}>
+              <Text style={[styles.lineLabel, { color: T.accentDark }]}>BALANCE LINE</Text>
+            </View>
+          )}
+          {roundActive && (
+            <>
               <Animated.View style={[styles.obj, { backgroundColor: T.leftColor }, leftStyle]}>
                 <Text style={styles.objEmoji}>⚖️</Text>
               </Animated.View>
-            </GestureDetector>
-            <GestureDetector gesture={rightPan}>
               <Animated.View style={[styles.obj, { backgroundColor: T.rightColor }, rightStyle]}>
                 <Text style={styles.objEmoji}>⚖️</Text>
               </Animated.View>
-            </GestureDetector>
-          </>
-        )}
-        <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
-      </View>
+            </>
+          )}
+          <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
+        </View>
+      </GestureDetector>
     </SafeAreaView>
   );
 };

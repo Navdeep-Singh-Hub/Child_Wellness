@@ -14,7 +14,7 @@ import * as Haptics from 'expo-haptics';
 import React, { useCallback, useRef, useState } from 'react';
 import { Level2ChoiceTile } from '@/components/game/speech/level2-shared/Level2ChoiceTile';
 import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 export const DEFAULT_VOCAB_ROUNDS = 3;
 

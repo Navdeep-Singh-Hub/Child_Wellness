@@ -6,8 +6,8 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { clearScheduledSpeech, DEFAULT_TTS_RATE, speak as speakTTS, stopTTS } from '@/utils/tts';
+import { Level2ChoiceTile } from '@/components/game/speech/level2-shared/Level2ChoiceTile';
 import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
-import { speechLevel2ButtonStyles } from '@/components/game/speech/level2-shared/SpeechLevel2Shell';
 import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import {
   type Level2BaseShellProps,
@@ -161,13 +161,14 @@ export function PositionChoiceTile({
   selected?: boolean;
 }) {
   return (
-    <Pressable
-      style={[styles.choiceTile, selected && { borderColor: accent, borderWidth: 3 }]}
+    <Level2ChoiceTile
+      label={label}
+      emoji={emoji}
+      imageKey={imageKey}
+      accent={accent}
       onPress={onPress}
-    >
-      <Level2Picture imageKey={imageKey} emoji={emoji} size={speechLevel2ButtonStyles.emoji.fontSize} />
-      <Text style={[styles.choiceLabel, { color: accent }]}>{label}</Text>
-    </Pressable>
+      selected={selected}
+    />
   );
 }
 
@@ -202,7 +203,7 @@ export function PositionZone({
       onPress={onPress}
     >
       {(imageKey || emoji) ? (
-        <Level2Picture imageKey={imageKey} emoji={emoji} size={32} />
+        <Level2Picture imageKey={imageKey} emoji={emoji} variant="zone" />
       ) : null}
       <Text style={[styles.zoneLabel, { color: accent }]}>{label}</Text>
     </Pressable>
@@ -289,10 +290,10 @@ export function DragIntoZone({
           zoneLayout.current = e.nativeEvent.layout;
         }}
       >
-        <Level2Picture imageKey={zoneImageKey} emoji={zoneEmoji} size={48} />
+        <Level2Picture imageKey={zoneImageKey} emoji={zoneEmoji} variant="small" />
         <Text style={[styles.dropZoneLabel, { color: accent }]}>{zoneLabel}</Text>
         {inBox ? (
-          <Level2Picture imageKey={itemImageKey} emoji={itemEmoji} size={36} imageStyle={styles.inBoxPicture} />
+          <Level2Picture imageKey={itemImageKey} emoji={itemEmoji} variant="small" imageStyle={styles.inBoxPicture} />
         ) : null}
       </View>
       {!inBox ? (
@@ -304,7 +305,7 @@ export function DragIntoZone({
             itemSize.current = { width, height };
           }}
         >
-          <Level2Picture imageKey={itemImageKey} emoji={itemEmoji} size={44} />
+          <Level2Picture imageKey={itemImageKey} emoji={itemEmoji} variant="choice" />
         </View>
       ) : null}
       {!inBox ? (
@@ -315,21 +316,6 @@ export function DragIntoZone({
 }
 
 const styles = StyleSheet.create({
-  choiceTile: {
-    flex: 1,
-    minWidth: '42%',
-    maxWidth: '48%',
-    margin: 5,
-    minHeight: 110,
-    padding: 12,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    borderWidth: 2,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  choiceLabel: { ...speechLevel2ButtonStyles.label, marginTop: 6 },
   zone: {
     minWidth: 100,
     minHeight: 72,

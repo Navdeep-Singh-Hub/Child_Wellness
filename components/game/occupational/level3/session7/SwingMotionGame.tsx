@@ -1,16 +1,42 @@
 /**
- * Shared swinging-movement game core for OT Level 3 Session 7.
+ * Jungle Swing Adventure — OT Level 3 Session 7 swing & circular motion engine.
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import { SESSION7_PACING } from '@/components/game/occupational/level3/session7/session7Pacing';
+import { CircleProgressRing } from '@/components/game/occupational/level3/session7/components/CircleProgressRing';
+import { RhythmSwingCue } from '@/components/game/occupational/level3/session7/components/RhythmSwingCue';
+import { SwingGuideBadge } from '@/components/game/occupational/level3/session7/components/SwingGuideBadge';
+import { VineTargets } from '@/components/game/occupational/level3/session7/components/VineTargets';
 import {
-  SwingDir,
+  SESSION7_PACING,
+  circleMinProgress,
+  demoSwingMs,
+  difficultyTier,
+  monkeyMinSwipePx,
+  monkeySwingsNeeded,
+  musicBeatIntervalMs,
+  musicSwingToleranceMs,
+  musicSwingsNeeded,
+  pendulumDirChanges,
+  ropeSwingHalfMs,
+  ropeTimingWindowMs,
+  swipeThresholdPx,
+} from '@/components/game/occupational/level3/session7/session7Pacing';
+import {
+  type DiagonalDir,
+  type SwingDir,
+  buildVineSequence,
+  diagonalArrow,
+  isDiagonalSwipe,
   normalizeAngleDelta,
   onBeat,
+  scoreBeatTiming,
+  scoreCircleProgress,
+  scorePeakTiming,
   swipeDistance,
   useTraceSound,
 } from '@/components/game/occupational/level3/session7/swingUtils';
+import { useSwingAnalytics } from '@/components/game/occupational/level3/session7/useSwingAnalytics';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
@@ -36,6 +62,7 @@ const P = SESSION7_PACING;
 const SUCCESS = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const WARN = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
 const STAR = require('@/assets/icons/star.png');
+const VOICE_PRAISE = ['Awesome Swing!', 'Perfect Circle!', 'Great Motion!', 'Fantastic Control!', "You're a Jungle Champion!"];
 
 export type SwingMotionMode = 'pendulumCopy' | 'monkeySwing' | 'fanMotion' | 'ropeTiming' | 'musicSwing';
 
@@ -58,6 +85,7 @@ export type SwingMotionTheme = {
   playBorder: string;
   playBg: string;
   sparkleColor: string;
+  hintText: string;
 };
 
 export type SwingMotionGameConfig = {
@@ -100,11 +128,25 @@ export const SwingMotionGame: React.FC<
   const router = useRouter();
   const playSuccess = useTraceSound(SUCCESS);
   const playWarn = useTraceSound(WARN);
+  const {
+    reset: resetAnalytics,
+    startRound: startAnalyticsRound,
+    recordSuccess,
+    recordError,
+    snapshot: analyticsSnapshot,
+    metaPayload: analyticsMeta,
+  } = useSwingAnalytics();
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
+  const [coins, setCoins] = useState(0);
   const [done, setDone] = useState(false);
-  const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const [finalStats, setFinalStats] = useState<{
+    correct: number;
+    total: number;
+    xp: number;
+    analytics: ReturnType<typeof analyticsSnapshot>;
+  } | null>(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [sparkleKey, setSparkleKey] = useState(0);
   const [warnVisible, setWarnVisible] = useState(false);
@@ -113,6 +155,9 @@ export const SwingMotionGame: React.FC<
   const [phase, setPhase] = useState<'idle' | 'watch' | 'copy' | 'listen' | 'swing' | 'play'>('idle');
   const [fanProgress, setFanProgress] = useState(0);
   const [musicBeat, setMusicBeat] = useState(0);
+  const [cueSuccess, setCueSuccess] = useState<boolean | undefined>(undefined);
+  const [vineTarget, setVineTarget] = useState<DiagonalDir | null>(null);
+  const [musicTotal, setMusicTotal] = useState(4);
 
   const doneRef = useRef(false);
   const scoreRef = useRef(0);
@@ -139,6 +184,15 @@ export const SwingMotionGame: React.FC<
   const panStartX = useRef(0);
   const panStartY = useRef(0);
   const panDistRef = useRef(0);
+  const panTxRef = useRef(0);
+  const panTyRef = useRef(0);
+  const vineSequenceRef = useRef<DiagonalDir[]>([]);
+  const vineStepRef = useRef(0);
+  const musicIntervalRef = useRef(880);
+  const musicToleranceRef = useRef(320);
+  const musicNeededRef = useRef(4);
+  const fanMinRef = useRef(0.78);
+  const pendulumNeededRef = useRef(4);
 
   const objX = useSharedValue(P.pendulumCenterXPct);
   const objY = useSharedValue(P.pendulumCenterYPct);
@@ -148,6 +202,8 @@ export const SwingMotionGame: React.FC<
   const ropeAngle = useSharedValue(-30);
   const beatScale = useSharedValue(1);
   const fanRotation = useSharedValue(0);
+
+  const tier = difficultyTier(round, P.rounds);
 
   useEffect(() => {
     scoreRef.current = score;
@@ -209,10 +265,6 @@ export const SwingMotionGame: React.FC<
     ],
   }));
 
-  const beatStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: beatScale.value }],
-  }));
-
   const clearTimers = useCallback(() => {
     if (roundTimerRef.current) {
       clearTimeout(roundTimerRef.current);
@@ -228,11 +280,15 @@ export const SwingMotionGame: React.FC<
     cancelAnimation(objY);
   }, [demoX, objX, objY, ropeAngle]);
 
+  const praiseVoice = useCallback(() => {
+    speakTTS(VOICE_PRAISE[Math.floor(Math.random() * VOICE_PRAISE.length)]!, 0.78).catch(() => {});
+  }, []);
+
   const endGame = useCallback(
     (finalScore: number) => {
-      const total = P.rounds;
-      const xp = Math.round(finalScore * 15);
-      setFinalStats({ correct: finalScore, total, xp });
+      const snap = analyticsSnapshot();
+      const xp = Math.round(finalScore * 16 + snap.coordinationScore * 0.18);
+      setFinalStats({ correct: finalScore, total: P.rounds, xp, analytics: snap });
       setDone(true);
       doneRef.current = true;
       clearTimers();
@@ -241,39 +297,63 @@ export const SwingMotionGame: React.FC<
       recordGame(xp)
         .then(() =>
           logGameAndAward({
-            type: logType,
+            type: logType as any,
             correct: finalScore,
-            total,
-            accuracy: (finalScore / total) * 100,
+            total: P.rounds,
+            accuracy: snap.coordinationScore,
             xpAwarded: xp,
+            durationMs: snap.durationMs,
+            responseTimeMs: snap.avgReactionMs,
             skillTags,
+            meta: analyticsMeta(),
           }),
         )
         .then(() => router.setParams({ refreshStats: Date.now().toString() }))
         .catch(console.error);
     },
-    [clearTimers, logType, router, skillTags, ttsComplete],
+    [analyticsMeta, analyticsSnapshot, clearTimers, logType, router, skillTags, ttsComplete],
   );
 
-  const bumpScore = useCallback(() => {
-    setSparkleKey(Date.now());
-    playSuccess();
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    setScore((s) => {
-      scoreRef.current = s + 1;
-      return s + 1;
-    });
-  }, [playSuccess]);
+  const bumpScore = useCallback(
+    (opts?: {
+      swing?: number;
+      circular?: number;
+      smoothness?: number;
+      timing?: number;
+      rhythm?: number;
+      tracking?: number;
+      motor?: number;
+    }) => {
+      setSparkleKey(Date.now());
+      setCoins((c) => c + 5);
+      setCueSuccess(true);
+      recordSuccess(opts);
+      playSuccess();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      praiseVoice();
+      setScore((s) => {
+        scoreRef.current = s + 1;
+        return s + 1;
+      });
+      setTimeout(() => setCueSuccess(undefined), 650);
+    },
+    [playSuccess, praiseVoice, recordSuccess],
+  );
 
   const showWarn = useCallback(
     (msg: string) => {
+      recordError();
       playWarn();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      setCueSuccess(false);
       setWarnVisible(true);
-      setTimeout(() => setWarnVisible(false), 800);
+      setTimeout(() => {
+        setWarnVisible(false);
+        setCueSuccess(undefined);
+      }, 800);
       speakTTS(msg, 0.78).catch(() => {});
     },
-    [playWarn],
+    [playWarn, recordError],
   );
 
   const advanceRound = useCallback(() => {
@@ -283,6 +363,8 @@ export const SwingMotionGame: React.FC<
     setPhase('idle');
     setFanProgress(0);
     setMusicBeat(0);
+    setVineTarget(null);
+    vineStepRef.current = 0;
     userDirChangesRef.current = 0;
     userLastDirRef.current = null;
     monkeySwingsRef.current = 0;
@@ -303,14 +385,25 @@ export const SwingMotionGame: React.FC<
     roundTimerRef.current = setTimeout(() => setRound((r) => r + 1), P.nextRoundDelayMs);
   }, [clearTimers, endGame, fanRotation, mode, objRotate, objScale, objX, objY, demoX, ropeAngle]);
 
-  const completeRound = useCallback(() => {
-    if (roundCompleteRef.current || doneRef.current) return;
-    roundCompleteRef.current = true;
-    bumpScore();
-    objScale.value = withSequence(withTiming(1.22, { duration: 160 }), withTiming(1, { duration: 160 }));
-    if (mode === 'ropeTiming') cancelAnimation(ropeAngle);
-    roundTimerRef.current = setTimeout(() => advanceRound(), 650);
-  }, [advanceRound, bumpScore, mode, objScale, ropeAngle]);
+  const completeRound = useCallback(
+    (opts?: {
+      swing?: number;
+      circular?: number;
+      smoothness?: number;
+      timing?: number;
+      rhythm?: number;
+      tracking?: number;
+      motor?: number;
+    }) => {
+      if (roundCompleteRef.current || doneRef.current) return;
+      roundCompleteRef.current = true;
+      bumpScore(opts);
+      objScale.value = withSequence(withTiming(1.22, { duration: 160 }), withTiming(1, { duration: 160 }));
+      if (mode === 'ropeTiming') cancelAnimation(ropeAngle);
+      roundTimerRef.current = setTimeout(() => advanceRound(), 650);
+    },
+    [advanceRound, bumpScore, mode, objScale, ropeAngle],
+  );
 
   const beginCopyPhase = useCallback(() => {
     setPhase('copy');
@@ -322,7 +415,7 @@ export const SwingMotionGame: React.FC<
   const runDemoSwing = useCallback(() => {
     const left = P.pendulumCenterXPct - P.swingDistancePct;
     const right = P.pendulumCenterXPct + P.swingDistancePct;
-    const half = P.demoSwingMs;
+    const half = demoSwingMs(tier);
     demoX.value = P.pendulumCenterXPct;
     demoX.value = withSequence(
       withTiming(left, { duration: half }),
@@ -334,17 +427,18 @@ export const SwingMotionGame: React.FC<
         if (finished) runOnJS(beginCopyPhase)();
       }),
     );
-  }, [beginCopyPhase, demoX]);
+  }, [beginCopyPhase, demoX, tier]);
 
   const startRopeSwing = useCallback(() => {
+    const half = ropeSwingHalfMs(tier);
     lastPeakTimeRef.current = Date.now();
     ropeAngle.value = -30;
     ropeAngle.value = withRepeat(
-      withSequence(withTiming(30, { duration: P.ropeSwingHalfMs }), withTiming(-30, { duration: P.ropeSwingHalfMs })),
+      withSequence(withTiming(30, { duration: half }), withTiming(-30, { duration: half })),
       -1,
       false,
     );
-  }, [ropeAngle]);
+  }, [ropeAngle, tier]);
 
   const pulseBeat = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
@@ -353,7 +447,8 @@ export const SwingMotionGame: React.FC<
 
   const playMusicBeats = useCallback(
     (count: number) => {
-      if (count > P.musicSwingsNeeded || doneRef.current) {
+      const needed = musicNeededRef.current;
+      if (count > needed || doneRef.current) {
         setPhase('swing');
         phaseRef.current = 'swing';
         setStatusHint('Swing on each beat!');
@@ -363,16 +458,23 @@ export const SwingMotionGame: React.FC<
       pulseBeat();
       lastBeatTimeRef.current = Date.now();
       setMusicBeat(count);
-      beatTimerRef.current = setTimeout(() => playMusicBeats(count + 1), P.musicBeatIntervalMs);
+      beatTimerRef.current = setTimeout(() => playMusicBeats(count + 1), musicIntervalRef.current);
     },
     [pulseBeat, ttsMusicPrompt],
   );
 
   const startRoundPlay = useCallback(() => {
     if (doneRef.current) return;
+    startAnalyticsRound();
     roundCompleteRef.current = false;
     setRoundActive(true);
     objScale.value = 1;
+    pendulumNeededRef.current = pendulumDirChanges(tier);
+    fanMinRef.current = circleMinProgress(tier);
+    musicIntervalRef.current = musicBeatIntervalMs(tier);
+    musicToleranceRef.current = musicSwingToleranceMs(tier);
+    musicNeededRef.current = musicSwingsNeeded(tier);
+    setMusicTotal(musicNeededRef.current);
 
     if (mode === 'pendulumCopy') {
       setPhase('watch');
@@ -385,9 +487,18 @@ export const SwingMotionGame: React.FC<
       return;
     }
     if (mode === 'monkeySwing') {
+      const swings = monkeySwingsNeeded(tier);
+      vineSequenceRef.current = buildVineSequence(swings, tier);
+      vineStepRef.current = 0;
+      const first = vineSequenceRef.current[0] ?? 'ne';
+      setVineTarget(tier >= 3 ? first : null);
       setPhase('play');
       phaseRef.current = 'play';
-      setStatusHint(`Swing ${P.monkeySwingsNeeded} times on the vine!`);
+      setStatusHint(
+        tier >= 3
+          ? `Swipe ${diagonalArrow(first)} on the vine!`
+          : `Swing ${swings} times diagonally!`,
+      );
       objX.value = P.monkeyStartXPct;
       objY.value = P.monkeyStartYPct;
       monkeySwingsRef.current = 0;
@@ -418,15 +529,18 @@ export const SwingMotionGame: React.FC<
       objX.value = P.pendulumCenterXPct;
       beatTimerRef.current = setTimeout(() => playMusicBeats(1), 400);
     }
-  }, [fanRotation, mode, objScale, objX, objY, playMusicBeats, runDemoSwing, startRopeSwing]);
+  }, [fanRotation, mode, objScale, objX, objY, playMusicBeats, runDemoSwing, startAnalyticsRound, startRopeSwing, tier]);
 
   useEffect(() => {
-    if (round === 1) speakTTS(ttsIntro, 0.78);
+    if (round === 1) {
+      resetAnalytics();
+      speakTTS(ttsIntro, 0.78);
+    }
     clearTimers();
     setRoundActive(false);
     roundTimerRef.current = setTimeout(() => startRoundPlay(), P.roundStartDelayMs);
     return clearTimers;
-  }, [round, startRoundPlay, ttsIntro, clearTimers]);
+  }, [round, startRoundPlay, ttsIntro, clearTimers, resetAnalytics]);
 
   useEffect(
     () => () => {
@@ -445,8 +559,9 @@ export const SwingMotionGame: React.FC<
         userDirChangesRef.current++;
         userLastDirRef.current = dir;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-        if (userDirChangesRef.current >= P.minPendulumDirChanges) {
-          completeRound();
+        if (userDirChangesRef.current >= pendulumNeededRef.current) {
+          const swingScore = Math.min(100, 70 + userDirChangesRef.current * 8);
+          completeRound({ swing: swingScore, tracking: swingScore, smoothness: swingScore });
         }
       } else if (!userLastDirRef.current) {
         userLastDirRef.current = dir;
@@ -461,6 +576,8 @@ export const SwingMotionGame: React.FC<
       panStartX.current = x;
       panStartY.current = y;
       panDistRef.current = 0;
+      panTxRef.current = 0;
+      panTyRef.current = 0;
       userStartXPctRef.current = objX.value;
 
       if (mode === 'fanMotion' && phaseRef.current === 'play') {
@@ -480,6 +597,8 @@ export const SwingMotionGame: React.FC<
     (x: number, y: number, tx: number, ty: number) => {
       if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
       panDistRef.current = swipeDistance(tx, ty);
+      panTxRef.current = tx;
+      panTyRef.current = ty;
 
       if (mode === 'pendulumCopy' && phaseRef.current === 'copy') {
         const basePct = userStartXPctRef.current;
@@ -514,8 +633,9 @@ export const SwingMotionGame: React.FC<
           fanRotation.value = (angleProgressRef.current * 180) / Math.PI;
           lastAngleRef.current = currentAngle;
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-          if (prog >= P.fanMinProgress && !roundCompleteRef.current) {
-            completeRound();
+          if (prog >= fanMinRef.current && !roundCompleteRef.current) {
+            const circ = scoreCircleProgress(prog, fanMinRef.current);
+            completeRound({ circular: circ, smoothness: circ, motor: circ });
           }
         }
         return;
@@ -539,13 +659,23 @@ export const SwingMotionGame: React.FC<
     }
 
     if (mode === 'monkeySwing' && phaseRef.current === 'play') {
-      if (dist >= P.monkeyMinSwipePx) {
+      const minPx = monkeyMinSwipePx(tier);
+      const { ok, dir, score: diagScore } = isDiagonalSwipe(panTxRef.current, panTyRef.current, minPx);
+      const expected = vineSequenceRef.current[vineStepRef.current];
+      const dirOk = ok && (tier < 3 || dir === expected);
+      if (dirOk) {
         monkeySwingsRef.current++;
-        if (monkeySwingsRef.current >= P.monkeySwingsNeeded) {
-          completeRound();
+        vineStepRef.current++;
+        const next = vineSequenceRef.current[vineStepRef.current];
+        if (tier >= 3) setVineTarget(next ?? null);
+        if (monkeySwingsRef.current >= vineSequenceRef.current.length) {
+          completeRound({ swing: diagScore, motor: diagScore, tracking: diagScore });
         } else {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-          speakTTS(ttsSwingMore, 0.78).catch(() => {});
+          speakTTS(
+            tier >= 3 && next ? `Swipe ${diagonalArrow(next)}!` : ttsSwingMore,
+            0.78,
+          ).catch(() => {});
           roundTimerRef.current = setTimeout(() => {
             objX.value = withTiming(P.monkeyStartXPct, { duration: 350 });
             objY.value = withTiming(P.monkeyStartYPct, { duration: 350 });
@@ -553,7 +683,7 @@ export const SwingMotionGame: React.FC<
           }, 320);
         }
       } else {
-        showWarn(ttsSwipeMore);
+        showWarn(ok ? `Swipe ${expected ? diagonalArrow(expected) : 'diagonally'}!` : ttsSwipeMore);
         objX.value = withTiming(P.monkeyStartXPct, { duration: 280 });
         objY.value = withTiming(P.monkeyStartYPct, { duration: 280 });
         objRotate.value = withTiming(0, { duration: 280 });
@@ -562,7 +692,7 @@ export const SwingMotionGame: React.FC<
     }
 
     if (mode === 'fanMotion' && phaseRef.current === 'play') {
-      if (angleProgressRef.current / (2 * Math.PI) < P.fanMinProgress) {
+      if (angleProgressRef.current / (2 * Math.PI) < fanMinRef.current) {
         showWarn(ttsCircleMore);
         fanRotation.value = withTiming(0, { duration: 280 });
         angleProgressRef.current = 0;
@@ -573,14 +703,16 @@ export const SwingMotionGame: React.FC<
     }
 
     if (mode === 'ropeTiming' && phaseRef.current === 'play') {
-      if (dist < P.swipeThresholdPx) {
+      if (dist < swipeThresholdPx(tier)) {
         showWarn(ttsSwipeMore);
         return;
       }
       const now = Date.now();
       const sincePeak = Math.abs(now - lastPeakTimeRef.current);
-      if (sincePeak <= P.ropeTimingWindowMs / 2) {
-        completeRound();
+      const window = ropeTimingWindowMs(tier);
+      const { grade, score: timingScore } = scorePeakTiming(sincePeak, window);
+      if (grade !== 'miss') {
+        completeRound({ timing: timingScore, tracking: timingScore, motor: timingScore });
       } else {
         showWarn(ttsTimingMiss);
       }
@@ -588,19 +720,25 @@ export const SwingMotionGame: React.FC<
     }
 
     if (mode === 'musicSwing' && phaseRef.current === 'swing') {
-      if (dist < P.swipeThresholdPx) {
+      if (dist < swipeThresholdPx(tier)) {
         showWarn(ttsSwipeMore);
         objX.value = withTiming(P.pendulumCenterXPct, { duration: 250 });
         return;
       }
       const now = Date.now();
-      if (onBeat(now, lastBeatTimeRef.current, P.musicBeatIntervalMs, P.musicSwingToleranceMs)) {
+      const interval = musicIntervalRef.current;
+      const tol = musicToleranceRef.current;
+      if (onBeat(now, lastBeatTimeRef.current, interval, tol)) {
         musicSwingsRef.current++;
+        const since = (now - lastBeatTimeRef.current) % interval;
+        const diff = Math.min(since, interval - since);
+        const rhythmScore = scoreBeatTiming(diff, tol);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        if (musicSwingsRef.current >= P.musicSwingsNeeded) {
-          completeRound();
+        if (musicSwingsRef.current >= musicNeededRef.current) {
+          completeRound({ rhythm: rhythmScore, swing: rhythmScore, tracking: rhythmScore });
         } else {
           lastBeatTimeRef.current = now;
+          setMusicBeat(musicSwingsRef.current + 1);
         }
       } else {
         showWarn(ttsBeatMiss);
@@ -614,6 +752,7 @@ export const SwingMotionGame: React.FC<
     objX,
     objY,
     showWarn,
+    tier,
     ttsBeatMiss,
     ttsCircleMore,
     ttsSwingMore,
@@ -628,12 +767,14 @@ export const SwingMotionGame: React.FC<
     .onEnd(() => onPanEnd());
 
   if (showCongratulations && done && finalStats) {
+    const a = finalStats.analytics;
     return (
       <CongratulationsScreen
-        message={congratsMessage}
+        message={`${congratsMessage}\n🌴 Jungle Celebration Festival!\n🔄 ${a.swingAccuracy}% · 🌀 ${a.circularAccuracy}%`}
         showButtons
         correct={finalStats.correct}
         total={finalStats.total}
+        accuracy={a.coordinationScore}
         xpAwarded={finalStats.xp}
         onContinue={() => {
           stopAllSpeech();
@@ -648,7 +789,7 @@ export const SwingMotionGame: React.FC<
       />
     );
   }
-  if (done && finalStats && !showCongratulations) return null;
+  if (done) return null;
 
   const showDemo = mode === 'pendulumCopy' && phase === 'watch';
   const showObject =
@@ -690,7 +831,12 @@ export const SwingMotionGame: React.FC<
             <Image source={STAR} style={styles.starIcon} />
             <Text style={[styles.statValue, { color: T.statValue }]}>{score}</Text>
           </View>
+          <View style={[styles.statPill, styles.coinPill, { borderColor: T.statBorder }]}>
+            <Text>🪙</Text>
+            <Text style={[styles.statValue, { color: T.statValue }]}>{coins}</Text>
+          </View>
         </View>
+        {roundActive && <SwingGuideBadge visible label={T.hintText} success={cueSuccess} />}
         {roundActive && statusHint ? (
           <Text style={[styles.hint, { color: T.accentDark }]}>{statusHint}</Text>
         ) : null}
@@ -708,13 +854,18 @@ export const SwingMotionGame: React.FC<
         >
           {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
 
-          {mode === 'musicSwing' && phase === 'listen' && (
-            <Animated.View style={[styles.beatCue, beatStyle]}>
-              <Text style={styles.beatEmoji}>🎵</Text>
-              <Text style={[styles.beatLabel, { color: T.accentDark }]}>
-                Beat {musicBeat}/{P.musicSwingsNeeded}
-              </Text>
-            </Animated.View>
+          {mode === 'musicSwing' && (phase === 'listen' || phase === 'swing') && (
+            <RhythmSwingCue
+              visible
+              phase={phase === 'listen' ? 'listen' : 'swing'}
+              beatScale={beatScale}
+              beat={musicBeat}
+              total={musicTotal}
+            />
+          )}
+
+          {mode === 'monkeySwing' && roundActive && (
+            <VineTargets visible target={vineTarget} />
           )}
 
           {showDemo && (
@@ -728,14 +879,7 @@ export const SwingMotionGame: React.FC<
 
           {showFan && (
             <>
-              <View style={[styles.progressRing, { borderColor: T.accent }]}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    { backgroundColor: T.accent, width: `${Math.round(fanProgress * 100)}%` },
-                  ]}
-                />
-              </View>
+              <CircleProgressRing progress={fanProgress} accent={T.accent} label="Spin" />
               <Animated.View style={[styles.object, fanStyle]}>
                 <Text style={styles.objectEmoji}>{T.objectEmoji}</Text>
               </Animated.View>
@@ -783,6 +927,7 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
   statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.7)', borderWidth: 1, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
   starPill: { backgroundColor: 'rgba(251,191,36,0.2)' },
+  coinPill: { backgroundColor: 'rgba(245,158,11,0.15)' },
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
@@ -791,21 +936,6 @@ const styles = StyleSheet.create({
   demoLabel: { position: 'absolute', alignSelf: 'center', top: '18%', fontSize: 14, fontWeight: '800', textTransform: 'uppercase' },
   object: { position: 'absolute', width: 88, height: 88, alignItems: 'center', justifyContent: 'center' },
   objectEmoji: { fontSize: 64 },
-  beatCue: { position: 'absolute', alignSelf: 'center', top: '24%', alignItems: 'center' },
-  beatEmoji: { fontSize: 56 },
-  beatLabel: { fontSize: 14, fontWeight: '800', marginTop: 4 },
-  progressRing: {
-    position: 'absolute',
-    alignSelf: 'center',
-    top: '12%',
-    width: '70%',
-    height: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.5)',
-  },
-  progressFill: { height: '100%', borderRadius: 8 },
   ropeWrap: { flex: 1, alignItems: 'center', justifyContent: 'flex-start', paddingTop: '8%' },
   ropeAnchor: { width: 14, height: 14, borderRadius: 7, marginBottom: 4 },
   ropeArm: { alignItems: 'center', transformOrigin: 'top center' as never },

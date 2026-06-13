@@ -1,29 +1,41 @@
-/** OT Level 3 · Session 5 · Game 5 — Catch the Ball · Theme: "Quick Catch" */
+/** OT Level 3 · Session 5 · Game 5 — Quick Catch */
 import { HorizontalSwipeGame } from '@/components/game/occupational/level3/session5/HorizontalSwipeGame';
+import { GAME_THEMES, ROAD_CHARACTERS, ROAD_SHELL } from '@/components/game/occupational/level3/session5/roadKingdomTheme';
 import React from 'react';
+
+const G = GAME_THEMES.catchBall;
 
 const CatchTheBallGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <HorizontalSwipeGame
     {...props}
     mode="catchBall"
     theme={{
-      title: 'Quick Catch', subtitle: 'Ball from the left or right — swipe to catch!', emoji: '⚽',
-      gradient: ['#FEF2F2', '#FECACA', '#FCA5A5', '#EF4444'],
-      accent: '#EF4444', accentDark: '#B91C1C', objectEmoji: '⚽',
-      backText: '#991B1B', backBorder: 'rgba(239,68,68,0.25)',
-      titleColor: '#7F1D1D', subtitleColor: '#DC2626', statLabel: '#EF4444', statValue: '#7F1D1D',
-      statBorder: 'rgba(239,68,68,0.2)', playBorder: 'rgba(239,68,68,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#EF4444', hintText: 'Match the ball direction!',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: ['#F0FDF4', '#DCFCE7', '#86EFAC', '#16A34A'],
+      accent: '#22C55E',
+      accentDark: '#15803D',
+      objectEmoji: ROAD_CHARACTERS.bounce.emoji,
+      backText: '#166534',
+      backBorder: 'rgba(34,197,94,0.25)',
+      titleColor: '#14532D',
+      subtitleColor: '#15803D',
+      statLabel: '#22C55E',
+      statValue: '#14532D',
+      statBorder: 'rgba(34,197,94,0.2)',
+      playBorder: 'rgba(34,197,94,0.25)',
+      playBg: ROAD_SHELL.playBg,
+      sparkleColor: ROAD_SHELL.sparkleColor,
+      hintText: G.hintText,
     }}
-    ttsIntro="Watch which side the ball comes from and swipe that way to catch it!"
-    ttsComplete="Great catching!"
-    ttsLeft="Ball from the left — swipe left!"
-    ttsRight="Ball from the right — swipe right!"
-    ttsWrongLeft="The ball came from the left — swipe left!"
-    ttsWrongRight="The ball came from the right — swipe right!"
-    congratsMessage="Catch Champion!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
+    ttsLeft="Catch from the LEFT!"
+    ttsRight="Catch from the RIGHT!"
+    congratsMessage={G.congrats}
     logType="catch-the-ball"
-    skillTags={['reaction-time', 'direction-discrimination', 'lateral-movement']}
+    skillTags={['visual-tracking', 'reaction-timing', 'direction-recognition']}
   />
 );
 

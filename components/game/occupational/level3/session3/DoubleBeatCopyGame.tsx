@@ -1,25 +1,38 @@
-/** OT Level 3 · Session 3 · Game 2 — Double Beat Copy · Theme: "Two Beats" */
+/** OT Level 3 · Session 3 · Game 2 — Two Beats */
 import { DrumTapGame } from '@/components/game/occupational/level3/session3/DrumTapGame';
+import { GAME_THEMES, TEMPO_SHELL } from '@/components/game/occupational/level3/session3/tempoTownTheme';
 import React from 'react';
+
+const G = GAME_THEMES.doubleBeat;
 
 const DoubleBeatCopyGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <DrumTapGame
     {...props}
     mode="doubleBeat"
     theme={{
-      title: 'Two Beats', subtitle: 'Hear two beats — tap twice back', emoji: '🥁🥁',
-      gradient: ['#EFF6FF', '#DBEAFE', '#93C5FD', '#3B82F6'],
-      drumBg: '#2563EB', drumActive: '#1D4ED8',
-      backText: '#1E40AF', backBorder: 'rgba(59,130,246,0.25)',
-      titleColor: '#1E3A8A', subtitleColor: '#2563EB', statLabel: '#3B82F6', statValue: '#1E3A8A',
-      statBorder: 'rgba(59,130,246,0.2)', playBorder: 'rgba(59,130,246,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#3B82F6', hintText: 'Listen, then tap twice!',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: ['#FFF7ED', '#FFEDD5', '#FDBA74', '#EA580C'],
+      drumBg: '#EA580C',
+      drumActive: '#C2410C',
+      backText: TEMPO_SHELL.backText,
+      backBorder: 'rgba(234,88,12,0.25)',
+      titleColor: '#7C2D12',
+      subtitleColor: '#C2410C',
+      statLabel: '#EA580C',
+      statValue: '#7C2D12',
+      statBorder: 'rgba(234,88,12,0.2)',
+      playBorder: 'rgba(234,88,12,0.25)',
+      playBg: TEMPO_SHELL.playBg,
+      sparkleColor: TEMPO_SHELL.sparkleColor,
+      hintText: G.hintText,
     }}
-    ttsIntro="The drum plays twice. Tap the drum two times!"
-    ttsComplete="You copied every double beat!"
-    congratsMessage="Double Tapper!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
+    congratsMessage={G.congrats}
     logType="double-beat-copy"
-    skillTags={['rhythm', 'hand-coordination', 'working-memory']}
+    skillTags={['auditory-memory', 'sequencing', 'timing', 'rhythm-sync']}
   />
 );
 

@@ -13,9 +13,11 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getLevel2Sizes } from '@/components/game/speech/level2-shared/level2Layout';
 
 export type SpeechLevel2ShellProps = {
   title: string;
@@ -82,10 +84,19 @@ export function SpeechLevel2Shell({
     onSpeakStart?.();
   };
 
+  const { width: screenWidth } = useWindowDimensions();
+  const layout = getLevel2Sizes(screenWidth);
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <LinearGradient colors={gradient} style={styles.flex}>
-        <View style={[styles.header, { borderBottomColor: accent }]}>
+        <View
+          style={[
+            styles.header,
+            layout.isTablet && styles.headerTablet,
+            { borderBottomColor: accent },
+          ]}
+        >
           <TouchableOpacity
             onPress={() => {
               onClearSpeech();
@@ -99,10 +110,10 @@ export function SpeechLevel2Shell({
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
           <View style={styles.headerText}>
-            <Text style={styles.title} numberOfLines={2}>
+            <Text style={[styles.title, layout.isTablet && styles.titleTablet]} numberOfLines={2}>
               {title}
             </Text>
-            <Text style={styles.subtitle} numberOfLines={3}>
+            <Text style={[styles.subtitle, layout.isTablet && styles.subtitleTablet]} numberOfLines={3}>
               {subtitle}
             </Text>
           </View>
@@ -143,16 +154,22 @@ export function SpeechLevel2Shell({
           </ScrollView>
         ) : (
           <>
-            <View style={[styles.hintBar, { borderColor: accent }]}>
-              <Ionicons name="information-circle" size={22} color={accent} />
-              <Text style={styles.hintText}>{phaseHint}</Text>
+            <View
+              style={[
+                styles.hintBar,
+                layout.isTablet && styles.hintBarTablet,
+                { borderColor: accent },
+              ]}
+            >
+              <Ionicons name="information-circle" size={layout.isTablet ? 26 : 22} color={accent} />
+              <Text style={[styles.hintText, layout.isTablet && styles.hintTextTablet]}>{phaseHint}</Text>
             </View>
             {playHeaderExtra}
-            <View style={styles.playArea}>{children}</View>
+            <View style={[styles.playArea, { padding: layout.playPadding }]}>{children}</View>
           </>
         )}
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, layout.isTablet && styles.footerTablet]}>
           <View style={[styles.skillsPill, { borderColor: `${accent}55` }]}>
             <Text style={styles.skills}>{skills}</Text>
           </View>
@@ -177,7 +194,8 @@ export function SpeechLevel2Shell({
 export const speechLevel2ButtonStyles = StyleSheet.create({
   label: { fontSize: 17, fontWeight: '800', color: '#0F172A' },
   labelOn: { color: '#fff' },
-  emoji: { fontSize: 42 },
+  /** Base choice image size — Level2Picture scales this up on tablets automatically. */
+  emoji: { fontSize: 84 },
 });
 
 const styles = StyleSheet.create({
@@ -196,11 +214,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
+  headerTablet: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
   backBtn: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 12 },
   backText: { marginLeft: 6, fontWeight: '800', color: '#0F172A', fontSize: 17 },
   headerText: { marginLeft: 10, flex: 1 },
   title: { fontSize: 24, fontWeight: '900', color: '#0F172A', lineHeight: 30 },
+  titleTablet: { fontSize: 22, lineHeight: 28 },
   subtitle: { fontSize: 16, color: '#334155', marginTop: 4, lineHeight: 22, fontWeight: '600' },
+  subtitleTablet: { fontSize: 15, lineHeight: 20 },
   startScroll: { flex: 1 },
   startScrollContent: {
     paddingHorizontal: 20,
@@ -289,6 +313,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
+  hintBarTablet: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    paddingVertical: 10,
+  },
   hintText: {
     flex: 1,
     fontSize: 18,
@@ -296,13 +325,18 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     lineHeight: 24,
   },
-  playArea: { flex: 1, padding: 12 },
+  hintTextTablet: { fontSize: 17, lineHeight: 22 },
+  playArea: { flex: 1, justifyContent: 'center' },
   footer: {
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: Platform.OS === 'web' ? 16 : 24,
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.55)',
+  },
+  footerTablet: {
+    paddingTop: 6,
+    paddingBottom: Platform.OS === 'web' ? 12 : 16,
   },
   skillsPill: {
     backgroundColor: '#FFFFFF',

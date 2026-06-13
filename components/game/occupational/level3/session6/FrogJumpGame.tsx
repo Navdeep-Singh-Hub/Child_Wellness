@@ -1,26 +1,40 @@
-/** OT Level 3 · Session 6 · Game 1 — Frog Jump · Theme: "Leap Frog" */
+/** OT Level 3 · Session 6 · Game 1 — Leap Frog */
 import { JumpTapGame } from '@/components/game/occupational/level3/session6/JumpTapGame';
+import { GAME_THEMES, POND_CHARACTERS, POND_GRADIENT, POND_SHELL } from '@/components/game/occupational/level3/session6/jumpPondTheme';
 import React from 'react';
+
+const G = GAME_THEMES.frogJump;
 
 const FrogJumpGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <JumpTapGame
     {...props}
     mode="frogJump"
     theme={{
-      title: 'Leap Frog', subtitle: 'Tap twice to make the frog jump', emoji: '🐸',
-      gradient: ['#ECFDF5', '#D1FAE5', '#6EE7B7', '#22C55E'],
-      accent: '#22C55E', accentDark: '#15803D', objectEmoji: '🐸',
-      backText: '#166534', backBorder: 'rgba(34,197,94,0.25)',
-      titleColor: '#14532D', subtitleColor: '#16A34A', statLabel: '#22C55E', statValue: '#14532D',
-      statBorder: 'rgba(34,197,94,0.2)', playBorder: 'rgba(34,197,94,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#22C55E', hintText: 'Tap tap to jump!',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: POND_GRADIENT,
+      accent: POND_SHELL.accent,
+      accentDark: POND_SHELL.accentDark,
+      objectEmoji: POND_CHARACTERS.freddy.emoji,
+      backText: POND_SHELL.backText,
+      backBorder: POND_SHELL.backBorder,
+      titleColor: POND_SHELL.titleColor,
+      subtitleColor: POND_SHELL.subtitleColor,
+      statLabel: POND_SHELL.statLabel,
+      statValue: POND_SHELL.statValue,
+      statBorder: POND_SHELL.statBorder,
+      playBorder: POND_SHELL.playBorder,
+      playBg: POND_SHELL.playBg,
+      sparkleColor: POND_SHELL.sparkleColor,
+      hintText: G.hintText,
     }}
-    ttsIntro="Tap twice quickly to make the frog jump!"
-    ttsComplete="Great jumping!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
     ttsDoubleTap="Tap twice to jump!"
-    congratsMessage="Leap Master!"
+    congratsMessage={G.congrats}
     logType="frog-jump"
-    skillTags={['sequencing', 'motor-imitation', 'bilateral-tapping']}
+    skillTags={['sequencing', 'motor-imitation', 'bilateral-tapping', 'motor-planning']}
   />
 );
 

@@ -1,0 +1,132 @@
+/**
+ * Sky & Ground Adventure — OT Level 3 Session 4 theme tokens.
+ */
+
+export const SKY_CHARACTERS = {
+  benny: { id: 'benny', name: 'Benny Balloon', emoji: '🎈', color: '#F97316' },
+  bouncy: { id: 'bouncy', name: 'Bouncy Ball', emoji: '⚽', color: '#22C55E' },
+  ellie: { id: 'ellie', name: 'Ellie Elevator', emoji: '🛗', color: '#6366F1' },
+  rainy: { id: 'rainy', name: 'Rainy Cloud', emoji: '🌧️', color: '#38BDF8' },
+  eagle: { id: 'eagle', name: 'Sky Eagle', emoji: '🦅', color: '#EAB308' },
+} as const;
+
+export const SKY_GRADIENT: [string, string, string, string] = [
+  '#F0F9FF',
+  '#E0F2FE',
+  '#BAE6FD',
+  '#0284C7',
+];
+
+export const SKY_SHELL = {
+  gradient: SKY_GRADIENT,
+  backText: '#075985',
+  backBorder: 'rgba(2,132,199,0.25)',
+  titleColor: '#0C4A6E',
+  subtitleColor: '#0369A1',
+  statLabel: '#0284C7',
+  statValue: '#0C4A6E',
+  statBorder: 'rgba(2,132,199,0.2)',
+  playBorder: 'rgba(2,132,199,0.3)',
+  playBg: 'rgba(255,255,255,0.42)',
+  sparkleColor: '#FBBF24',
+  accent: '#0EA5E9',
+  accentDark: '#0369A1',
+  coinColor: '#F59E0B',
+  upColor: '#22C55E',
+  downColor: '#F97316',
+  skyTop: '#BAE6FD',
+  groundBottom: '#86EFAC',
+};
+
+export const GAME_THEMES = {
+  swipeUp: {
+    title: 'Lift Off',
+    subtitle: 'Help Benny Balloon fly into the sky!',
+    emoji: '🎈',
+    voiceIntro: 'Swipe UP to lift the balloons into the sky!',
+    voiceComplete: 'Amazing lifting! The sky is full of balloons!',
+    congrats: 'Lift Off Hero!',
+    hintText: 'Swipe UP!',
+  },
+  swipeDown: {
+    title: 'Gravity Drop',
+    subtitle: 'Swipe DOWN to land objects safely!',
+    emoji: '⚽',
+    voiceIntro: 'Swipe DOWN to drop balls and stars to the ground!',
+    voiceComplete: 'Perfect landings! Gravity mastered!',
+    congrats: 'Gravity Drop Pro!',
+    hintText: 'Swipe DOWN!',
+  },
+  elevator: {
+    title: 'Floor Express',
+    subtitle: 'Ride Ellie Elevator to the right floor!',
+    emoji: '🛗',
+    voiceIntro: 'Swipe UP or DOWN to reach the correct floor!',
+    voiceComplete: 'Elevator expert! Great floor navigation!',
+    congrats: 'Floor Express Captain!',
+    hintText: 'Match the floor direction!',
+  },
+  arrowMatch: {
+    title: 'Arrow Jump',
+    subtitle: 'Swipe the same way the arrow points!',
+    emoji: '⬆️',
+    voiceIntro: 'Watch the arrow and swipe UP or DOWN quickly!',
+    voiceComplete: 'Sharp reflexes! Arrow master!',
+    congrats: 'Arrow Jump Star!',
+    hintText: 'Match the arrow direction!',
+  },
+  rainCatch: {
+    title: 'Rain Reach',
+    subtitle: 'Reach up to catch magical raindrops!',
+    emoji: '🌧️',
+    voiceIntro: 'Swipe UP to catch raindrops before they fall!',
+    voiceComplete: 'Wonderful catching! Rain hero!',
+    congrats: 'Rain Reach Ranger!',
+    hintText: 'Swipe UP to catch!',
+  },
+  bigTap: {
+    title: 'Big Tap',
+    subtitle: 'Use BIG taps and gestures!',
+    emoji: '👆',
+    voiceIntro: 'Make BIG taps on the large glowing targets!',
+    voiceComplete: 'Powerful big movements!',
+    congrats: 'Big Tap Champion!',
+    hintText: 'BIG TAP!',
+  },
+  smallDot: {
+    title: 'Small Dot Touch',
+    subtitle: 'Touch tiny targets with precision!',
+    emoji: '🔵',
+    voiceIntro: 'Touch the tiny dots carefully and precisely!',
+    voiceComplete: 'Excellent precision control!',
+    congrats: 'Dot Touch Master!',
+    hintText: 'Tap the small dot!',
+  },
+  bigSmallSwitch: {
+    title: 'Big-Small Switch',
+    subtitle: 'Switch quickly between BIG and SMALL!',
+    emoji: '🔄',
+    voiceIntro: 'When you hear BIG, tap big. When SMALL, tap small!',
+    voiceComplete: 'Great switching and flexibility!',
+    congrats: 'Switch Star!',
+    hintText: 'Watch for BIG or SMALL!',
+  },
+  balloonInflate: {
+    title: 'Balloon Inflate',
+    subtitle: 'Grow or shrink Benny\'s balloon!',
+    emoji: '🎈',
+    voiceIntro: 'Stretch to make BIG, pinch to make SMALL!',
+    voiceComplete: 'Perfect balloon size control!',
+    congrats: 'Balloon Wizard!',
+    hintText: 'Pinch or stretch!',
+  },
+  compareMove: {
+    title: 'Compare & Move',
+    subtitle: 'Match your swipe size to the object!',
+    emoji: '🔄',
+    voiceIntro: 'Big object needs a BIG swipe. Small object needs a SMALL swipe!',
+    voiceComplete: 'Great comparison and movement scaling!',
+    congrats: 'Compare & Move Pro!',
+    hintText: 'Match object size with swipe!',
+  },
+} as const;

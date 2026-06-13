@@ -1,10 +1,8 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
 import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
-import { speechLevel2ButtonStyles } from '@/components/game/speech/level2-shared/SpeechLevel2Shell';
-
-const PICTURE_SIZE = speechLevel2ButtonStyles.emoji.fontSize;
+import { useLevel2Layout } from '@/components/game/speech/level2-shared/level2Layout';
 
 type Props = {
   label: string;
@@ -15,6 +13,8 @@ type Props = {
   selected?: boolean;
   dimmed?: boolean;
   small?: boolean;
+  wide?: boolean;
+  orderNum?: number;
   style?: object;
 };
 
@@ -28,46 +28,88 @@ export function Level2ChoiceTile({
   selected,
   dimmed,
   small,
+  wide,
+  orderNum,
   style,
 }: Props) {
+  const { sizes } = useLevel2Layout();
+
+  const tileStyle = {
+    minHeight: small ? sizes.tileMinHeight * 0.72 : sizes.tileMinHeight,
+    padding: sizes.tilePadding,
+    minWidth: wide
+      ? sizes.tileWideMinWidthPct
+      : small
+        ? sizes.tileSmallMinWidthPct
+        : sizes.tileMinWidthPct,
+    maxWidth: wide
+      ? sizes.tileWideMaxWidthPct
+      : small
+        ? sizes.tileSmallMaxWidthPct
+        : sizes.tileMaxWidthPct,
+  };
+
   return (
     <Pressable
       style={[
         styles.tile,
-        small && styles.tileSmall,
+        tileStyle,
         dimmed && styles.dimmed,
         selected && { backgroundColor: accent, borderColor: accent },
         style,
       ]}
       onPress={onPress}
     >
+      {orderNum != null ? (
+        <View style={[styles.orderBadge, { backgroundColor: accent }]}>
+          <Text style={styles.orderBadgeText}>{orderNum}</Text>
+        </View>
+      ) : null}
       <Level2Picture
         imageKey={imageKey}
         emoji={emoji}
-        size={small ? 34 : PICTURE_SIZE}
+        variant={small ? 'small' : 'choice'}
       />
-      <Text style={[styles.label, { color: selected ? '#fff' : accent }]}>{label}</Text>
+      <Text
+        style={[
+          styles.label,
+          { fontSize: sizes.labelFontSize, color: selected ? '#fff' : accent },
+        ]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   tile: {
-    flex: 1,
-    minWidth: '42%',
-    maxWidth: '48%',
-    margin: 5,
-    minHeight: 100,
-    padding: 14,
-    borderRadius: 16,
+    flexGrow: 1,
+    margin: 6,
+    borderRadius: 18,
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#CBD5E1',
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 2,
+    elevation: 3,
+    shadowColor: '#0F172A',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
   },
-  tileSmall: { minHeight: 80, minWidth: '28%', maxWidth: '32%' },
   dimmed: { opacity: 0.35 },
-  label: { ...speechLevel2ButtonStyles.label, marginTop: 6 },
+  label: { fontWeight: '800', marginTop: 8, textAlign: 'center' },
+  orderBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  orderBadgeText: { color: '#fff', fontWeight: '900', fontSize: 14 },
 });

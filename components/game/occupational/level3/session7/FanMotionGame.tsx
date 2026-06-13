@@ -1,26 +1,40 @@
-/** OT Level 3 · Session 7 · Game 3 — Fan Motion · Theme: "Spin Flow" */
+/** OT Level 3 · Session 7 · Game 3 — Spin Flow */
 import { SwingMotionGame } from '@/components/game/occupational/level3/session7/SwingMotionGame';
+import { GAME_THEMES, JUNGLE_CHARACTERS, JUNGLE_SHELL } from '@/components/game/occupational/level3/session7/jungleSwingTheme';
 import React from 'react';
+
+const G = GAME_THEMES.fanMotion;
 
 const FanMotionGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <SwingMotionGame
     {...props}
     mode="fanMotion"
     theme={{
-      title: 'Spin Flow', subtitle: 'Trace a full circle around the fan', emoji: '🌀',
-      gradient: ['#ECFDF5', '#D1FAE5', '#6EE7B7', '#22C55E'],
-      accent: '#22C55E', accentDark: '#15803D', objectEmoji: '🌀',
-      backText: '#166534', backBorder: 'rgba(34,197,94,0.25)',
-      titleColor: '#14532D', subtitleColor: '#16A34A', statLabel: '#22C55E', statValue: '#14532D',
-      statBorder: 'rgba(34,197,94,0.2)', playBorder: 'rgba(34,197,94,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#22C55E',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: ['#F0FDF4', '#DCFCE7', '#86EFAC', '#16A34A'],
+      accent: '#22C55E',
+      accentDark: '#15803D',
+      objectEmoji: JUNGLE_CHARACTERS.wizard.emoji,
+      backText: '#166534',
+      backBorder: 'rgba(34,197,94,0.25)',
+      titleColor: '#14532D',
+      subtitleColor: '#15803D',
+      statLabel: '#22C55E',
+      statValue: '#14532D',
+      statBorder: 'rgba(34,197,94,0.2)',
+      playBorder: 'rgba(34,197,94,0.25)',
+      playBg: JUNGLE_SHELL.playBg,
+      sparkleColor: JUNGLE_SHELL.sparkleColor,
+      hintText: G.hintText,
     }}
-    ttsIntro="Make a circular swinging motion! Trace a complete circle!"
-    ttsComplete="Perfect circular swings!"
-    ttsCircleMore="Trace a full circle around the fan!"
-    congratsMessage="Spin Flow Master!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
+    ttsCircleMore="Trace a full smooth circle!"
+    congratsMessage={G.congrats}
     logType="fan-motion"
-    skillTags={['circular-motion', 'swinging-motion', 'motor-planning']}
+    skillTags={['wrist-rotation', 'circular-tracing', 'fine-motor-control', 'gesture-smoothness']}
   />
 );
 

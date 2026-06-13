@@ -1,29 +1,41 @@
-/** OT Level 3 · Session 5 · Game 2 — Arrow Match · Theme: "Arrow Sync" */
+/** OT Level 3 · Session 5 · Game 2 — Arrow Sync */
 import { HorizontalSwipeGame } from '@/components/game/occupational/level3/session5/HorizontalSwipeGame';
+import { GAME_THEMES, ROAD_CHARACTERS, ROAD_SHELL } from '@/components/game/occupational/level3/session5/roadKingdomTheme';
 import React from 'react';
+
+const G = GAME_THEMES.arrowMatch;
 
 const ArrowMatchGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <HorizontalSwipeGame
     {...props}
     mode="arrowMatch"
     theme={{
-      title: 'Arrow Sync', subtitle: 'Swipe the same way the arrow points', emoji: '⬅️',
-      gradient: ['#FFFBEB', '#FEF3C7', '#FDE047', '#F59E0B'],
-      accent: '#F59E0B', accentDark: '#B45309', objectEmoji: '⬅️',
-      backText: '#92400E', backBorder: 'rgba(245,158,11,0.25)',
-      titleColor: '#78350F', subtitleColor: '#B45309', statLabel: '#F59E0B', statValue: '#78350F',
-      statBorder: 'rgba(245,158,11,0.2)', playBorder: 'rgba(245,158,11,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#F59E0B', hintText: 'Match the arrow!',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: ['#EFF6FF', '#DBEAFE', '#93C5FD', '#2563EB'],
+      accent: '#3B82F6',
+      accentDark: '#1D4ED8',
+      objectEmoji: '⬅️',
+      backText: ROAD_SHELL.backText,
+      backBorder: 'rgba(59,130,246,0.25)',
+      titleColor: '#1E3A8A',
+      subtitleColor: '#2563EB',
+      statLabel: '#3B82F6',
+      statValue: '#1E3A8A',
+      statBorder: 'rgba(59,130,246,0.2)',
+      playBorder: 'rgba(59,130,246,0.25)',
+      playBg: ROAD_SHELL.playBg,
+      sparkleColor: ROAD_SHELL.sparkleColor,
+      hintText: G.hintText,
     }}
-    ttsIntro="Swipe in the same direction the arrow points!"
-    ttsComplete="Perfect arrow matching!"
-    ttsLeft="Arrow points left — swipe left!"
-    ttsRight="Arrow points right — swipe right!"
-    ttsWrongLeft="The arrow points left — swipe left!"
-    ttsWrongRight="The arrow points right — swipe right!"
-    congratsMessage="Arrow Ace!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
+    ttsLeft="Swipe LEFT!"
+    ttsRight="Swipe RIGHT!"
+    congratsMessage={G.congrats}
     logType="arrow-match"
-    skillTags={['visual-motor-link', 'direction-matching', 'lateral-movement']}
+    skillTags={['reaction-speed', 'direction-recognition', 'visual-processing']}
   />
 );
 

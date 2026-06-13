@@ -1,16 +1,36 @@
 /**
- * Shared double-tap / jump imitation game core for OT Level 3 Session 6.
+ * Leap Lily Pad Kingdom — OT Level 3 Session 6 jump imitation engine.
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import { SESSION6_PACING } from '@/components/game/occupational/level3/session6/session6Pacing';
-import { randomJumpNumber, rhythmMatches, useTraceSound } from '@/components/game/occupational/level3/session6/jumpUtils';
+import { DoubleTapBadge } from '@/components/game/occupational/level3/session6/components/DoubleTapBadge';
+import { JumpCountBadge } from '@/components/game/occupational/level3/session6/components/JumpCountBadge';
+import { LilyPadTrack } from '@/components/game/occupational/level3/session6/components/LilyPadTrack';
+import { RhythmBeatCue } from '@/components/game/occupational/level3/session6/components/RhythmBeatCue';
+import {
+  randomJumpNumber,
+  rhythmMatches,
+  scoreDoubleTap,
+  useTraceSound,
+} from '@/components/game/occupational/level3/session6/jumpUtils';
+import {
+  SESSION6_PACING,
+  beatIntervalMs,
+  difficultyTier,
+  doubleTapMaxMs,
+  numberShowMs,
+  obstacleCrossMs,
+  rhythmBeatCount,
+  rhythmTapWindowMs,
+  rhythmToleranceMs,
+} from '@/components/game/occupational/level3/session6/session6Pacing';
+import { useJumpAnalytics } from '@/components/game/occupational/level3/session6/useJumpAnalytics';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { speak as speakTTS } from '@/utils/tts';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
@@ -27,6 +47,7 @@ const P = SESSION6_PACING;
 const SUCCESS = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const WARN = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
 const STAR = require('@/assets/icons/star.png');
+const VOICE_PRAISE = ['Great Jump!', 'Perfect Hop!', 'Awesome Timing!', 'You Got It!'];
 
 export type JumpTapMode = 'frogJump' | 'doubleTapOnly' | 'jumpCount' | 'obstacleJump' | 'rhythmJump';
 
@@ -92,11 +113,25 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
   const router = useRouter();
   const playSuccess = useTraceSound(SUCCESS);
   const playWarn = useTraceSound(WARN);
+  const {
+    reset: resetAnalytics,
+    startRound: startAnalyticsRound,
+    recordSuccess,
+    recordError,
+    snapshot: analyticsSnapshot,
+    metaPayload: analyticsMeta,
+  } = useJumpAnalytics();
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
+  const [coins, setCoins] = useState(0);
   const [done, setDone] = useState(false);
-  const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const [finalStats, setFinalStats] = useState<{
+    correct: number;
+    total: number;
+    xp: number;
+    analytics: ReturnType<typeof analyticsSnapshot>;
+  } | null>(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [sparkleKey, setSparkleKey] = useState(0);
   const [warnVisible, setWarnVisible] = useState(false);
@@ -104,7 +139,10 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
   const [statusHint, setStatusHint] = useState('');
   const [currentNumber, setCurrentNumber] = useState<number | null>(null);
   const [rhythmPhase, setRhythmPhase] = useState<'listen' | 'tap' | 'idle'>('idle');
+  const [rhythmBeatIdx, setRhythmBeatIdx] = useState(0);
+  const [rhythmBeatsTotal, setRhythmBeatsTotal] = useState(2);
   const [showObstacle, setShowObstacle] = useState(false);
+  const [cueSuccess, setCueSuccess] = useState<boolean | undefined>(undefined);
 
   const doneRef = useRef(false);
   const scoreRef = useRef(0);
@@ -116,6 +154,7 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
   const canTapRhythmRef = useRef(false);
   const jumpCountNumRef = useRef<number | null>(null);
   const jumpCountTappedRef = useRef(false);
+  const rhythmBeatsRef = useRef(2);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -123,9 +162,9 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
   const objScale = useSharedValue(1);
   const objPulse = useSharedValue(1);
   const obstacleX = useSharedValue(110);
-  const numberOpacity = useSharedValue(0);
-  const numberScale = useSharedValue(0.6);
   const beatScale = useSharedValue(1);
+
+  const tier = difficultyTier(round, P.rounds);
 
   useEffect(() => {
     scoreRef.current = score;
@@ -143,21 +182,6 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
     transform: [{ translateX: -48 }, { translateY: -48 }, { scale: objScale.value * objPulse.value }],
   }));
 
-  const obstacleStyle = useAnimatedStyle(() => ({
-    left: `${obstacleX.value}%`,
-    top: `${P.jumpDownPct + 8}%`,
-    transform: [{ translateX: -36 }, { translateY: -36 }],
-  }));
-
-  const numberStyle = useAnimatedStyle(() => ({
-    opacity: numberOpacity.value,
-    transform: [{ scale: numberScale.value }],
-  }));
-
-  const beatStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: beatScale.value }],
-  }));
-
   const clearTimers = useCallback(() => {
     if (roundTimerRef.current) {
       clearTimeout(roundTimerRef.current);
@@ -171,11 +195,15 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
     cancelAnimation(objY);
   }, [obstacleX, objY]);
 
+  const praiseVoice = useCallback(() => {
+    speakTTS(VOICE_PRAISE[Math.floor(Math.random() * VOICE_PRAISE.length)]!, 0.78).catch(() => {});
+  }, []);
+
   const endGame = useCallback(
     (finalScore: number) => {
-      const total = P.rounds;
-      const xp = Math.round(finalScore * 15);
-      setFinalStats({ correct: finalScore, total, xp });
+      const snap = analyticsSnapshot();
+      const xp = Math.round(finalScore * 16 + snap.jumpMasteryScore * 0.18);
+      setFinalStats({ correct: finalScore, total: P.rounds, xp, analytics: snap });
       setDone(true);
       doneRef.current = true;
       clearTimers();
@@ -184,47 +212,69 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
       recordGame(xp)
         .then(() =>
           logGameAndAward({
-            type: logType,
+            type: logType as any,
             correct: finalScore,
-            total,
-            accuracy: (finalScore / total) * 100,
+            total: P.rounds,
+            accuracy: snap.jumpMasteryScore,
             xpAwarded: xp,
+            durationMs: snap.durationMs,
+            responseTimeMs: snap.avgReactionMs,
             skillTags,
+            meta: analyticsMeta(),
           }),
         )
         .then(() => router.setParams({ refreshStats: Date.now().toString() }))
         .catch(console.error);
     },
-    [clearTimers, logType, router, skillTags, ttsComplete],
+    [analyticsMeta, analyticsSnapshot, clearTimers, logType, router, skillTags, ttsComplete],
   );
 
-  const bumpScore = useCallback(() => {
-    setSparkleKey(Date.now());
-    playSuccess();
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    setScore((s) => {
-      scoreRef.current = s + 1;
-      return s + 1;
-    });
-  }, [playSuccess]);
+  const bumpScore = useCallback(
+    (opts?: {
+      doubleTapScore?: number;
+      inhibition?: number;
+      rhythm?: number;
+      sequencing?: number;
+      motor?: number;
+    }) => {
+      setSparkleKey(Date.now());
+      setCoins((c) => c + 5);
+      setCueSuccess(true);
+      recordSuccess(opts);
+      playSuccess();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      praiseVoice();
+      setScore((s) => {
+        scoreRef.current = s + 1;
+        return s + 1;
+      });
+      setTimeout(() => setCueSuccess(undefined), 650);
+    },
+    [playSuccess, praiseVoice, recordSuccess],
+  );
 
   const playJumpAnim = useCallback(() => {
     objY.value = withSequence(
-      withTiming(P.jumpUpPct, { duration: 280 }),
-      withTiming(P.jumpDownPct, { duration: 280 }),
+      withTiming(P.jumpUpPct, { duration: 260 }),
+      withTiming(P.jumpDownPct, { duration: 260 }),
     );
-    objScale.value = withSequence(withTiming(1.28, { duration: 140 }), withTiming(1, { duration: 140 }));
+    objScale.value = withSequence(withTiming(1.3, { duration: 130 }), withTiming(1, { duration: 130 }));
   }, [objScale, objY]);
 
   const showWarn = useCallback(
-    (msg: string) => {
+    (msg: string, inhibitionFail = false) => {
+      recordError({ inhibitionFail });
       playWarn();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      setCueSuccess(false);
       setWarnVisible(true);
-      setTimeout(() => setWarnVisible(false), 800);
+      setTimeout(() => {
+        setWarnVisible(false);
+        setCueSuccess(undefined);
+      }, 800);
       speakTTS(msg, 0.78).catch(() => {});
     },
-    [playWarn],
+    [playWarn, recordError],
   );
 
   const advanceRound = useCallback(() => {
@@ -237,36 +287,45 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
     jumpCountTappedRef.current = false;
     setCurrentNumber(null);
     setRhythmPhase('idle');
+    setRhythmBeatIdx(0);
     setShowObstacle(false);
     objY.value = P.jumpDownPct;
     objScale.value = 1;
     obstacleX.value = 110;
-    numberOpacity.value = 0;
     if (roundRef.current >= P.rounds) {
       endGame(scoreRef.current);
       return;
     }
     roundTimerRef.current = setTimeout(() => setRound((r) => r + 1), P.nextRoundDelayMs);
-  }, [clearTimers, endGame, numberOpacity, objScale, objY, obstacleX]);
+  }, [clearTimers, endGame, objScale, objY, obstacleX]);
 
   const completeRound = useCallback(
-    (withJump = true) => {
+    (
+      withJump = true,
+      opts?: {
+        doubleTapScore?: number;
+        inhibition?: number;
+        rhythm?: number;
+        sequencing?: number;
+        motor?: number;
+      },
+    ) => {
       if (roundCompleteRef.current || doneRef.current) return;
       roundCompleteRef.current = true;
-      bumpScore();
+      bumpScore(opts);
       if (withJump) playJumpAnim();
       if (mode === 'obstacleJump') cancelAnimation(obstacleX);
-      roundTimerRef.current = setTimeout(() => advanceRound(), 650);
+      roundTimerRef.current = setTimeout(() => advanceRound(), 640);
     },
     [advanceRound, bumpScore, mode, obstacleX, playJumpAnim],
   );
 
   const failAndAdvance = useCallback(
-    (msg: string, withJump = false) => {
+    (msg: string, opts?: { withJump?: boolean; inhibitionFail?: boolean }) => {
       if (roundCompleteRef.current || doneRef.current) return;
       roundCompleteRef.current = true;
-      showWarn(msg);
-      if (withJump) playJumpAnim();
+      showWarn(msg, opts?.inhibitionFail);
+      if (opts?.withJump) playJumpAnim();
       if (mode === 'obstacleJump') cancelAnimation(obstacleX);
       roundTimerRef.current = setTimeout(() => advanceRound(), 700);
     },
@@ -283,110 +342,129 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
 
   const handleDoubleTapModes = useCallback(() => {
     const now = Date.now();
-    const maxDelay = mode === 'doubleTapOnly' ? P.strictDoubleTapMaxMs : P.doubleTapMaxMs;
+    const strict = mode === 'doubleTapOnly';
+    const maxDelay = doubleTapMaxMs(tier, strict);
 
     if (firstTapTimeRef.current === null) {
       firstTapTimeRef.current = now;
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       tapTimeoutRef.current = setTimeout(() => {
         resetDoubleTap();
-        showWarn(mode === 'doubleTapOnly' ? ttsSingleIgnored : ttsDoubleTap);
+        showWarn(strict ? ttsSingleIgnored : ttsDoubleTap);
       }, maxDelay);
       return;
     }
 
     const diff = now - firstTapTimeRef.current;
     resetDoubleTap();
-    if (diff <= maxDelay) {
-      completeRound(true);
+    const { ok, score: tapScore } = scoreDoubleTap(diff, maxDelay);
+    if (ok) {
+      const motor = mode === 'obstacleJump' ? tapScore : undefined;
+      const sequencing = mode === 'frogJump' || mode === 'doubleTapOnly' ? tapScore : undefined;
+      completeRound(true, { doubleTapScore: tapScore, motor, sequencing });
     } else {
-      showWarn(mode === 'doubleTapOnly' ? ttsSingleIgnored : ttsDoubleTap);
+      showWarn(strict ? ttsSingleIgnored : ttsDoubleTap);
     }
-  }, [completeRound, mode, resetDoubleTap, showWarn, ttsDoubleTap, ttsSingleIgnored]);
+  }, [completeRound, mode, resetDoubleTap, showWarn, tier, ttsDoubleTap, ttsSingleIgnored]);
 
   const finishJumpCountRound = useCallback(
     (num: number, tapped: boolean) => {
       if (roundCompleteRef.current || doneRef.current) return;
-      numberOpacity.value = withTiming(0, { duration: 200 });
+      setCurrentNumber(null);
       if (num === 2 && tapped) {
-        completeRound(true);
+        completeRound(true, { inhibition: 100, sequencing: 90 });
       } else if (num === 2 && !tapped) {
         failAndAdvance('Jump when you see number 2!');
       } else if (num !== 2 && !tapped) {
-        completeRound(false);
+        completeRound(false, { inhibition: 100 });
       } else {
-        failAndAdvance(ttsWrongNumber);
+        failAndAdvance(ttsWrongNumber, { withJump: true, inhibitionFail: true });
       }
     },
-    [completeRound, failAndAdvance, numberOpacity, ttsWrongNumber],
+    [completeRound, failAndAdvance, ttsWrongNumber],
   );
 
   const showJumpCountNumber = useCallback(() => {
-    const num = randomJumpNumber();
+    const num = randomJumpNumber(tier);
     jumpCountNumRef.current = num;
     jumpCountTappedRef.current = false;
     setCurrentNumber(num);
-    numberOpacity.value = 0;
-    numberScale.value = 0.6;
-    numberOpacity.value = withTiming(1, { duration: 250 });
-    numberScale.value = withSequence(withTiming(1.15, { duration: 180 }), withTiming(1, { duration: 120 }));
     speakTTS(num === 2 ? ttsNumberTwo : `${num}! ${ttsNumberOther}`, 0.78).catch(() => {});
     roundTimerRef.current = setTimeout(() => {
       finishJumpCountRound(num, jumpCountTappedRef.current);
-    }, P.numberShowMs);
-  }, [finishJumpCountRound, numberOpacity, numberScale, ttsNumberOther, ttsNumberTwo]);
+    }, numberShowMs(tier));
+  }, [finishJumpCountRound, tier, ttsNumberOther, ttsNumberTwo]);
 
   const pulseBeat = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    beatScale.value = withSequence(withTiming(1.45, { duration: 120 }), withTiming(1, { duration: 120 }));
+    beatScale.value = withSequence(withTiming(1.5, { duration: 110 }), withTiming(1, { duration: 110 }));
   }, [beatScale]);
 
-  const startRhythmRound = useCallback(() => {
-    setRhythmPhase('listen');
-    userTapsRef.current = [];
-    canTapRhythmRef.current = false;
-    setStatusHint('Listen to the beat…');
-    pulseBeat();
-    roundTimerRef.current = setTimeout(() => {
-      pulseBeat();
-      roundTimerRef.current = setTimeout(() => {
+  const scheduleRhythmBeats = useCallback(
+    (beatIdx: number, beatCount: number, interval: number) => {
+      if (beatIdx >= beatCount) {
         setRhythmPhase('tap');
         canTapRhythmRef.current = true;
-        setStatusHint('Your turn — tap tap!');
+        setStatusHint('Your turn — copy the beat!');
         speakTTS(ttsRhythmPrompt, 0.78).catch(() => {});
         roundTimerRef.current = setTimeout(() => {
           if (roundCompleteRef.current) return;
           canTapRhythmRef.current = false;
           const taps = userTapsRef.current;
-          if (taps.length === 2 && rhythmMatches(taps, P.beatIntervalMs, P.rhythmToleranceMs)) {
-            completeRound(true);
+          const tol = rhythmToleranceMs(tier);
+          if (rhythmMatches(taps, interval, tol, beatCount)) {
+            const rhythmScore = Math.max(70, 100 - Math.abs(taps.length - beatCount) * 15);
+            completeRound(true, { rhythm: rhythmScore, sequencing: rhythmScore });
           } else {
-            failAndAdvance(taps.length < 2 ? 'Tap twice!' : ttsRhythmFail);
+            failAndAdvance(taps.length < beatCount ? 'Tap the full rhythm!' : ttsRhythmFail);
           }
-        }, P.rhythmTapWindowMs);
-      }, 280);
-    }, P.beatIntervalMs);
-  }, [completeRound, failAndAdvance, pulseBeat, ttsRhythmFail, ttsRhythmPrompt]);
+        }, rhythmTapWindowMs(tier));
+        return;
+      }
+      setRhythmBeatIdx(beatIdx + 1);
+      pulseBeat();
+      roundTimerRef.current = setTimeout(
+        () => scheduleRhythmBeats(beatIdx + 1, beatCount, interval),
+        beatIdx === 0 ? 400 : interval,
+      );
+    },
+    [completeRound, failAndAdvance, pulseBeat, tier, ttsRhythmFail, ttsRhythmPrompt],
+  );
+
+  const startRhythmRound = useCallback(() => {
+    const beatCount = rhythmBeatCount(tier);
+    const interval = beatIntervalMs(tier);
+    rhythmBeatsRef.current = beatCount;
+    setRhythmBeatsTotal(beatCount);
+    setRhythmPhase('listen');
+    setRhythmBeatIdx(0);
+    userTapsRef.current = [];
+    canTapRhythmRef.current = false;
+    setStatusHint('Listen to the beat…');
+    scheduleRhythmBeats(0, beatCount, interval);
+  }, [scheduleRhythmBeats, tier]);
 
   const startObstacleRound = useCallback(() => {
     setShowObstacle(true);
     obstacleX.value = 110;
-    obstacleX.value = withTiming(-12, { duration: P.obstacleCrossMs });
+    const crossMs = obstacleCrossMs(tier);
+    obstacleX.value = withTiming(-12, { duration: crossMs });
     roundTimerRef.current = setTimeout(() => {
       if (!roundCompleteRef.current && roundActiveRef.current) {
         failAndAdvance(ttsObstacleMiss);
       }
-    }, P.obstacleCrossMs + 60);
-  }, [failAndAdvance, obstacleX, ttsObstacleMiss]);
+    }, crossMs + 80);
+  }, [failAndAdvance, obstacleX, tier, ttsObstacleMiss]);
 
   const startRoundPlay = useCallback(() => {
     if (doneRef.current) return;
+    startAnalyticsRound();
     roundCompleteRef.current = false;
     setRoundActive(true);
     objY.value = P.jumpDownPct;
     objScale.value = 1;
     objPulse.value = withRepeat(
-      withSequence(withTiming(1.06, { duration: 450 }), withTiming(1, { duration: 450 })),
+      withSequence(withTiming(1.06, { duration: 440 }), withTiming(1, { duration: 440 })),
       -1,
       true,
     );
@@ -421,6 +499,7 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
     objScale,
     objY,
     showJumpCountNumber,
+    startAnalyticsRound,
     startObstacleRound,
     startRhythmRound,
     ttsDoubleTap,
@@ -429,12 +508,15 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
   ]);
 
   useEffect(() => {
-    if (round === 1) speakTTS(ttsIntro, 0.78);
+    if (round === 1) {
+      resetAnalytics();
+      speakTTS(ttsIntro, 0.78);
+    }
     clearTimers();
     setRoundActive(false);
     roundTimerRef.current = setTimeout(() => startRoundPlay(), P.roundStartDelayMs);
     return clearTimers;
-  }, [round, startRoundPlay, ttsIntro, clearTimers]);
+  }, [round, startRoundPlay, ttsIntro, clearTimers, resetAnalytics]);
 
   useEffect(
     () => () => {
@@ -451,18 +533,14 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
     if (mode === 'jumpCount') {
       if (currentNumber === null || jumpCountTappedRef.current) return;
       jumpCountTappedRef.current = true;
+      if (roundTimerRef.current) {
+        clearTimeout(roundTimerRef.current);
+        roundTimerRef.current = null;
+      }
       if (currentNumber === 2) {
-        if (roundTimerRef.current) {
-          clearTimeout(roundTimerRef.current);
-          roundTimerRef.current = null;
-        }
-        completeRound(true);
+        completeRound(true, { inhibition: 100, sequencing: 95 });
       } else {
-        if (roundTimerRef.current) {
-          clearTimeout(roundTimerRef.current);
-          roundTimerRef.current = null;
-        }
-        failAndAdvance(ttsWrongNumber, true);
+        failAndAdvance(ttsWrongNumber, { withJump: true, inhibitionFail: true });
       }
       return;
     }
@@ -472,15 +550,19 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
       const now = Date.now();
       userTapsRef.current = [...userTapsRef.current, now];
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-      if (userTapsRef.current.length >= 2) {
+      const beatCount = rhythmBeatsRef.current;
+      if (userTapsRef.current.length >= beatCount) {
         canTapRhythmRef.current = false;
         if (roundTimerRef.current) {
           clearTimeout(roundTimerRef.current);
           roundTimerRef.current = null;
         }
         const taps = userTapsRef.current;
-        if (rhythmMatches(taps, P.beatIntervalMs, P.rhythmToleranceMs)) {
-          completeRound(true);
+        const interval = beatIntervalMs(tier);
+        const tol = rhythmToleranceMs(tier);
+        if (rhythmMatches(taps, interval, tol, beatCount)) {
+          const rhythmScore = 95;
+          completeRound(true, { rhythm: rhythmScore, sequencing: rhythmScore });
         } else {
           failAndAdvance(ttsRhythmFail);
         }
@@ -502,17 +584,23 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
     handleDoubleTapModes,
     mode,
     showObstacle,
+    tier,
     ttsRhythmFail,
     ttsWrongNumber,
   ]);
 
+  const showDoubleBadge =
+    roundActive && (mode === 'frogJump' || mode === 'doubleTapOnly' || mode === 'obstacleJump');
+
   if (showCongratulations && done && finalStats) {
+    const a = finalStats.analytics;
     return (
       <CongratulationsScreen
-        message={congratsMessage}
+        message={`${congratsMessage}\n🪷 Lily Pad Festival!\n👆👆 ${a.doubleTapAccuracy}% · 🎯 ${a.jumpMasteryScore}%`}
         showButtons
         correct={finalStats.correct}
         total={finalStats.total}
+        accuracy={a.jumpMasteryScore}
         xpAwarded={finalStats.xp}
         onContinue={() => {
           stopAllSpeech();
@@ -527,7 +615,7 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
       />
     );
   }
-  if (done && finalStats && !showCongratulations) return null;
+  if (done) return null;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -562,8 +650,13 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
             <Image source={STAR} style={styles.starIcon} />
             <Text style={[styles.statValue, { color: T.statValue }]}>{score}</Text>
           </View>
+          <View style={[styles.statPill, styles.coinPill, { borderColor: T.statBorder }]}>
+            <Text>🪙</Text>
+            <Text style={[styles.statValue, { color: T.statValue }]}>{coins}</Text>
+          </View>
         </View>
-        {roundActive && statusHint ? (
+        {showDoubleBadge && <DoubleTapBadge visible success={cueSuccess} label={T.hintText} />}
+        {roundActive && statusHint && mode !== 'jumpCount' ? (
           <Text style={[styles.hint, { color: T.accentDark }]}>{statusHint}</Text>
         ) : null}
       </View>
@@ -574,22 +667,25 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
       >
         {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
 
-        {roundActive && mode === 'rhythmJump' && rhythmPhase === 'listen' && (
-          <Animated.View style={[styles.beatCue, beatStyle]}>
-            <Text style={styles.beatEmoji}>🥁</Text>
-          </Animated.View>
+        <LilyPadTrack
+          obstacleX={obstacleX}
+          showObstacle={showObstacle && mode === 'obstacleJump'}
+          obstacleEmoji={T.obstacleEmoji ?? '🪨'}
+          lilyY={P.lilyPadY}
+        />
+
+        {roundActive && mode === 'rhythmJump' && (
+          <RhythmBeatCue
+            visible
+            phase={rhythmPhase}
+            beatScale={beatScale}
+            beatCount={rhythmBeatsTotal}
+            currentBeat={rhythmBeatIdx}
+          />
         )}
 
-        {roundActive && mode === 'jumpCount' && currentNumber !== null && (
-          <Animated.View style={[styles.numberBadge, { borderColor: T.accent }, numberStyle]}>
-            <Text style={[styles.numberText, { color: T.accentDark }]}>{currentNumber}</Text>
-          </Animated.View>
-        )}
-
-        {roundActive && showObstacle && (
-          <Animated.View style={[styles.obstacle, obstacleStyle]}>
-            <Text style={styles.obstacleEmoji}>{T.obstacleEmoji ?? '🪨'}</Text>
-          </Animated.View>
+        {roundActive && mode === 'jumpCount' && (
+          <JumpCountBadge number={currentNumber} visible={currentNumber !== null} success={cueSuccess} />
         )}
 
         {roundActive && (
@@ -613,39 +709,38 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
 const styles = StyleSheet.create({
   container: { flex: 1 },
   backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
-  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.75)', borderRadius: 24, borderWidth: 1 },
+  backInner: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(255,255,255,0.75)',
+    borderRadius: 24,
+    borderWidth: 1,
+  },
   backText: { fontWeight: '800', fontSize: 14 },
   header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
   title: { fontSize: 28, fontWeight: '900' },
   subtitle: { fontSize: 14, fontWeight: '600', marginTop: 4, marginBottom: 8, textAlign: 'center' },
   hint: { fontSize: 16, fontWeight: '800', marginBottom: 8, textAlign: 'center' },
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
-  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.7)', borderWidth: 1, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
+  statPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderWidth: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+  },
   starPill: { backgroundColor: 'rgba(251,191,36,0.2)' },
+  coinPill: { backgroundColor: 'rgba(245,158,11,0.15)' },
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
   playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, overflow: 'hidden' },
   waitText: { position: 'absolute', alignSelf: 'center', top: '45%', fontSize: 18, fontWeight: '700' },
-  object: { position: 'absolute', width: 96, height: 96, alignItems: 'center', justifyContent: 'center' },
+  object: { position: 'absolute', width: 96, height: 96, alignItems: 'center', justifyContent: 'center', zIndex: 6 },
   objectEmoji: { fontSize: 72 },
-  obstacle: { position: 'absolute', width: 72, height: 72, alignItems: 'center', justifyContent: 'center' },
-  obstacleEmoji: { fontSize: 56 },
-  numberBadge: {
-    position: 'absolute',
-    alignSelf: 'center',
-    top: '22%',
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    borderWidth: 3,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  numberText: { fontSize: 48, fontWeight: '900' },
-  beatCue: { position: 'absolute', alignSelf: 'center', top: '28%' },
-  beatEmoji: { fontSize: 72 },
   warnPill: {
     position: 'absolute',
     bottom: 16,

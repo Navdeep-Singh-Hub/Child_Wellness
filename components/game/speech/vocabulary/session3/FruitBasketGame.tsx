@@ -9,8 +9,9 @@ import {
   useVocabularySession,
 } from '@/components/game/speech/vocabulary/shared/vocabularyShared';
 import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
+import { Level2PlayGrid } from '@/components/game/speech/level2-shared/Level2PlayGrid';
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 type Props = { onBack: () => void; onComplete?: () => void };
 
@@ -69,10 +70,10 @@ export function FruitBasketGame({ onBack, onComplete }: Props) {
         phaseHint={`Fruits left: ${fruitsLeft} — tap each fruit`}
       >
         <View style={styles.basket}>
-          <Level2Picture imageKey="scene-fruit-basket" emoji="🧺" size={72} />
+          <Level2Picture imageKey="scene-fruit-basket" emoji="🧺" variant="hero" />
           <Text style={styles.basketLabel}>Fruit basket ({sorted.size}/2)</Text>
         </View>
-        <View style={styles.grid}>
+        <Level2PlayGrid>
           {ITEMS.map((item) => (
             <VocabTile
               key={item.id}
@@ -87,7 +88,7 @@ export function FruitBasketGame({ onBack, onComplete }: Props) {
               }}
             />
           ))}
-        </View>
+        </Level2PlayGrid>
       </VocabularyShell>
       <VocabularyOverlays
         showRoundSuccess={session.showRoundSuccess}
@@ -103,14 +104,15 @@ export function FruitBasketGame({ onBack, onComplete }: Props) {
 const styles = StyleSheet.create({
   basket: {
     alignSelf: 'center',
-    padding: 16,
-    borderRadius: 16,
+    padding: 20,
+    borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.9)',
     borderWidth: 2,
     borderColor: '#D97706',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+    width: '92%',
+    maxWidth: 520,
   },
-  basketLabel: { fontWeight: '800', color: '#92400E', marginTop: 4 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
+  basketLabel: { fontWeight: '800', color: '#92400E', marginTop: 8, fontSize: 18 },
 });

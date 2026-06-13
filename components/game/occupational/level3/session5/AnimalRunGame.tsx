@@ -1,29 +1,41 @@
-/** OT Level 3 · Session 5 · Game 3 — Animal Run · Theme: "Pet Dash" */
+/** OT Level 3 · Session 5 · Game 3 — Pet Dash */
 import { HorizontalSwipeGame } from '@/components/game/occupational/level3/session5/HorizontalSwipeGame';
+import { GAME_THEMES, ROAD_CHARACTERS, ROAD_SHELL } from '@/components/game/occupational/level3/session5/roadKingdomTheme';
 import React from 'react';
+
+const G = GAME_THEMES.animalRun;
 
 const AnimalRunGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <HorizontalSwipeGame
     {...props}
     mode="animalRun"
     theme={{
-      title: 'Pet Dash', subtitle: 'Send the animal left or right', emoji: '🐕',
-      gradient: ['#F5F3FF', '#EDE9FE', '#C4B5FD', '#8B5CF6'],
-      accent: '#8B5CF6', accentDark: '#6D28D9', objectEmoji: '🐕',
-      backText: '#5B21B6', backBorder: 'rgba(139,92,246,0.25)',
-      titleColor: '#4C1D95', subtitleColor: '#6D28D9', statLabel: '#8B5CF6', statValue: '#4C1D95',
-      statBorder: 'rgba(139,92,246,0.2)', playBorder: 'rgba(139,92,246,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#8B5CF6', hintText: 'Run the animal!',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: ['#FFFBEB', '#FEF3C7', '#FDE047', '#CA8A04'],
+      accent: '#EAB308',
+      accentDark: '#A16207',
+      objectEmoji: ROAD_CHARACTERS.dash.emoji,
+      backText: '#854D0E',
+      backBorder: 'rgba(234,179,8,0.25)',
+      titleColor: '#713F12',
+      subtitleColor: '#A16207',
+      statLabel: '#CA8A04',
+      statValue: '#713F12',
+      statBorder: 'rgba(202,138,4,0.2)',
+      playBorder: 'rgba(202,138,4,0.25)',
+      playBg: ROAD_SHELL.playBg,
+      sparkleColor: ROAD_SHELL.sparkleColor,
+      hintText: G.hintText,
     }}
-    ttsIntro="Move the animal left or right with your swipe!"
-    ttsComplete="The animals ran everywhere!"
-    ttsLeft="Move the animal to the left!"
-    ttsRight="Move the animal to the right!"
-    ttsWrongLeft="Swipe left!"
-    ttsWrongRight="Swipe right!"
-    congratsMessage="Pet Runner!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
+    ttsLeft="Send Dash LEFT!"
+    ttsRight="Send Dash RIGHT!"
+    congratsMessage={G.congrats}
     logType="animal-run"
-    skillTags={['bilateral-coordination', 'direction-discrimination', 'lateral-movement']}
+    skillTags={['direction-following', 'listening', 'motor-execution', 'bilateral-awareness']}
   />
 );
 

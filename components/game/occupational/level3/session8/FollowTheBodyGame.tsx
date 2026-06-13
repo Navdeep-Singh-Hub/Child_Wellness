@@ -1,28 +1,41 @@
-/** OT Level 3 · Session 8 · Game 4 — Follow the Body · Theme: "Copy Body" */
+/** OT Level 3 · Session 8 · Game 4 — Copy Body */
 import { BodyMapGame } from '@/components/game/occupational/level3/session8/BodyMapGame';
+import { GAME_THEMES, ROBO_SHELL } from '@/components/game/occupational/level3/session8/roboBodyTheme';
 import React from 'react';
+
+const G = GAME_THEMES.followBody;
 
 const FollowTheBodyGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <BodyMapGame
     {...props}
     mode="followBody"
     theme={{
-      title: 'Copy Body', subtitle: 'Watch the demo, then touch the same part', emoji: '👥',
-      gradient: ['#F5F3FF', '#EDE9FE', '#C4B5FD', '#8B5CF6'],
-      accent: '#8B5CF6', accentDark: '#6D28D9',
-      backText: '#5B21B6', backBorder: 'rgba(139,92,246,0.25)',
-      titleColor: '#4C1D95', subtitleColor: '#7C3AED', statLabel: '#8B5CF6', statValue: '#4C1D95',
-      statBorder: 'rgba(139,92,246,0.2)', playBorder: 'rgba(139,92,246,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#8B5CF6',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: ['#FAF5FF', '#F3E8FF', '#D8B4FE', '#9333EA'],
+      accent: '#A855F7',
+      accentDark: '#7E22CE',
+      backText: '#6B21A8',
+      backBorder: 'rgba(168,85,247,0.25)',
+      titleColor: '#581C87',
+      subtitleColor: '#7E22CE',
+      statLabel: '#A855F7',
+      statValue: '#581C87',
+      statBorder: 'rgba(168,85,247,0.2)',
+      playBorder: 'rgba(168,85,247,0.25)',
+      playBg: ROBO_SHELL.playBg,
+      sparkleColor: ROBO_SHELL.sparkleColor,
+      hintText: G.hintText,
     }}
-    ttsIntro="Watch which body part lights up, then copy it!"
-    ttsComplete="Great body copying!"
-    ttsFollowDemo="Watch which part is touched!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
+    ttsFollowDemo="Watch which part Professor Bot touches!"
     ttsFollowCopy="Now touch the same body part!"
-    ttsWrongPart="Try the part from the demo!"
-    congratsMessage="Copy Body Star!"
+    ttsWrongPart="Try the highlighted body part!"
+    congratsMessage={G.congrats}
     logType="follow-the-body"
-    skillTags={['imitation-skills', 'body-parts', 'following-instructions']}
+    skillTags={['observation', 'memory', 'body-awareness', 'imitation']}
   />
 );
 

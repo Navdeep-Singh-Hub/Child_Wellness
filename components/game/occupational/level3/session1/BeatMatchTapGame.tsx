@@ -1,28 +1,46 @@
-/** OT Level 3 · Session 1 · Game 1 — Beat Match Tap · Theme: "Beat Sync" */
+/** OT Level 3 · Session 1 · Game 1 — Beat Sync · Theme: "Musical Jungle" */
 import { RhythmGame } from '@/components/game/occupational/level3/session1/RhythmGame';
+import { GAME_THEMES, JUNGLE_SHELL } from '@/components/game/occupational/level3/session1/jungleTheme';
 import React from 'react';
+
+const G = GAME_THEMES.beatMatch;
+const S = JUNGLE_SHELL;
 
 const BeatMatchTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <RhythmGame
     {...props}
     mode="beatMatch"
     theme={{
-      title: 'Beat Sync', subtitle: 'Tap in time with the drum — speed ramps up!', emoji: '🥁',
-      gradient: ['#FFF7ED', '#FFEDD5', '#FDBA74', '#F97316'],
-      drumBg: '#EA580C', drumActive: '#C2410C', drumText: '#fff',
-      loudBtn: '#DC2626', softBtn: '#93C5FD',
-      backText: '#9A3412', backBorder: 'rgba(249,115,22,0.25)',
-      titleColor: '#7C2D12', subtitleColor: '#C2410C', statLabel: '#EA580C', statValue: '#7C2D12',
-      statBorder: 'rgba(249,115,22,0.2)', playBorder: 'rgba(249,115,22,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#F97316', hintText: 'Watch the circle shrink — tap when it gets small!',
-      choiceBg: 'rgba(255,255,255,0.85)', choiceBorder: 'rgba(249,115,22,0.3)', choiceText: '#7C2D12',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: S.gradient,
+      drumBg: G.drumBg,
+      drumActive: G.drumActive,
+      drumText: '#fff',
+      loudBtn: '#DC2626',
+      softBtn: '#93C5FD',
+      backText: S.backText,
+      backBorder: S.backBorder,
+      titleColor: S.titleColor,
+      subtitleColor: S.subtitleColor,
+      statLabel: S.statLabel,
+      statValue: S.statValue,
+      statBorder: S.statBorder,
+      playBorder: S.playBorder,
+      playBg: S.playBg,
+      sparkleColor: S.sparkleColor,
+      hintText: G.hintText,
+      choiceBg: 'rgba(255,255,255,0.9)',
+      choiceBorder: S.playBorder,
+      choiceText: S.titleColor,
     }}
-    ttsIntro="Tap the drum in time with each beat!"
-    ttsComplete="Great rhythm!"
-    ttsWrong="Try to tap with the beat!"
-    congratsMessage="Beat Master!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
+    ttsWrong="Tap right on the beat!"
+    congratsMessage={G.congrats}
     logType="beatMatchTap"
-    skillTags={['rhythm', 'timing', 'auditory-motor-integration']}
+    skillTags={['rhythm', 'timing', 'auditory-motor-integration', 'attention']}
   />
 );
 

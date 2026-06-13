@@ -1,24 +1,36 @@
 /**
- * Shared posture-based game core for OT Level 3 Session 10.
+ * Zen Animal Academy — OT Level 3 Session 10 posture & hold engine.
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
+import { BreathingBubble } from '@/components/game/occupational/level3/session10/components/BreathingBubble';
+import { HoldCrystalRing } from '@/components/game/occupational/level3/session10/components/HoldCrystalRing';
+import { ZenBadge } from '@/components/game/occupational/level3/session10/components/ZenBadge';
 import {
   ANIMAL_POSES,
-  AnimalPose,
   HOLD_POSES,
-  HoldPose,
   PostureCue,
   SHAPE_POSES,
-  ShapePose,
   YOGA_POSES,
+  holdQualityScore,
   randomAnimalPose,
   randomHoldPose,
   randomShapePose,
   randomYogaPose,
   useTraceSound,
 } from '@/components/game/occupational/level3/session10/postureUtils';
-import { SESSION10_PACING } from '@/components/game/occupational/level3/session10/session10Pacing';
+import {
+  SESSION10_PACING,
+  confirmWindowMs,
+  countIntervalMs,
+  countStart,
+  difficultyTier,
+  holdDurationMs,
+  holdPoseShowMs,
+  poseShowMs,
+} from '@/components/game/occupational/level3/session10/session10Pacing';
+import { usePostureAnalytics } from '@/components/game/occupational/level3/session10/usePostureAnalytics';
+import { LEVEL3_GRADUATION } from '@/components/game/occupational/level3/session10/zenAcademyTheme';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
@@ -31,6 +43,7 @@ import Animated, {
   cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
+  withRepeat,
   withSequence,
   withSpring,
   withTiming,
@@ -41,6 +54,13 @@ const P = SESSION10_PACING;
 const SUCCESS = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const WARN = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
 const STAR = require('@/assets/icons/star.png');
+const VOICE_PRAISE = [
+  'Wonderful Focus!',
+  'Excellent Balance!',
+  'Amazing Control!',
+  'Great Posture!',
+  'You Are a Zen Master!',
+];
 
 export type PostureMode = 'poseMatch' | 'animalPose' | 'shapePose' | 'freezePose' | 'countHold';
 
@@ -62,6 +82,7 @@ export type PostureTheme = {
   playBorder: string;
   playBg: string;
   sparkleColor: string;
+  hintText?: string;
 };
 
 export type PostureGameConfig = {
@@ -78,6 +99,7 @@ export type PostureGameConfig = {
   congratsMessage: string;
   logType: string;
   skillTags: string[];
+  showLevel3Graduation?: boolean;
 };
 
 const isHoldMode = (mode: PostureMode) => mode === 'freezePose' || mode === 'countHold';
@@ -92,23 +114,38 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
   ttsMiss = 'Try to match the pose!',
   ttsHold = 'Hold the pose!',
   ttsHoldDone = 'Perfect hold!',
-  confirmLabel = '✓ I did it!',
+  confirmLabel = '✅ Done',
   congratsMessage,
   logType,
   skillTags,
+  showLevel3Graduation = false,
   onBack,
   onComplete,
 }) => {
   const router = useRouter();
   const playSuccess = useTraceSound(SUCCESS);
   const playWarn = useTraceSound(WARN);
+  const {
+    reset: resetAnalytics,
+    startRound: startAnalyticsRound,
+    recordSuccess,
+    recordError,
+    snapshot: analyticsSnapshot,
+    metaPayload: analyticsMeta,
+  } = usePostureAnalytics();
 
   const totalRounds = isHoldMode(mode) ? P.holdRounds : P.confirmRounds;
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
+  const [coins, setCoins] = useState(0);
   const [done, setDone] = useState(false);
-  const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const [finalStats, setFinalStats] = useState<{
+    correct: number;
+    total: number;
+    xp: number;
+    analytics: ReturnType<typeof analyticsSnapshot>;
+  } | null>(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [sparkleKey, setSparkleKey] = useState(0);
   const [roundActive, setRoundActive] = useState(false);
@@ -117,7 +154,10 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
   const [isHolding, setIsHolding] = useState(false);
   const [holdProgress, setHoldProgress] = useState(0);
   const [countdown, setCountdown] = useState(5);
-  const [cue, setCue] = useState<PostureCue>({ emoji: '🙌', label: 'Arms up' });
+  const [cue, setCue] = useState<PostureCue>({ emoji: '🙆', label: 'Arms Up' });
+  const [cueSuccess, setCueSuccess] = useState<boolean | undefined>(undefined);
+  const [breathing, setBreathing] = useState(false);
+  const [holdTargetMs, setHoldTargetMs] = useState(P.holdDurationBaseMs);
 
   const doneRef = useRef(false);
   const scoreRef = useRef(0);
@@ -125,12 +165,14 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
   const roundActiveRef = useRef(false);
   const roundCompleteRef = useRef(false);
   const canConfirmRef = useRef(false);
+  const holdTargetRef = useRef(P.holdDurationBaseMs);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const introPlayedRef = useRef(false);
 
   const cueScale = useSharedValue(0.75);
   const cueOpacity = useSharedValue(0);
-  const holdBar = useSharedValue(0);
+  const bubbleScale = useSharedValue(0.85);
 
   useEffect(() => {
     scoreRef.current = score;
@@ -150,9 +192,9 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
     transform: [{ scale: cueScale.value }],
   }));
 
-  const holdBarStyle = useAnimatedStyle(() => ({
-    width: `${holdBar.value * 100}%`,
-  }));
+  const praiseVoice = useCallback(() => {
+    speakTTS(VOICE_PRAISE[Math.floor(Math.random() * VOICE_PRAISE.length)]!, 0.78).catch(() => {});
+  }, []);
 
   const clearTimers = useCallback(() => {
     if (roundTimerRef.current) {
@@ -164,14 +206,14 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
       holdTimerRef.current = null;
     }
     cancelAnimation(cueScale);
-    cancelAnimation(holdBar);
-  }, [cueScale, holdBar]);
+    cancelAnimation(bubbleScale);
+  }, [bubbleScale, cueScale]);
 
   const endGame = useCallback(
     (finalScore: number) => {
-      const total = totalRounds;
-      const xp = Math.round(finalScore * 15);
-      setFinalStats({ correct: finalScore, total, xp });
+      const snap = analyticsSnapshot();
+      const xp = Math.round(finalScore * 16 + snap.posturalControlRating * 0.2);
+      setFinalStats({ correct: finalScore, total: totalRounds, xp, analytics: snap });
       setDone(true);
       doneRef.current = true;
       clearTimers();
@@ -180,37 +222,50 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
       recordGame(xp)
         .then(() =>
           logGameAndAward({
-            type: logType,
+            type: logType as any,
             correct: finalScore,
-            total,
-            accuracy: (finalScore / total) * 100,
+            total: totalRounds,
+            accuracy: snap.posturalControlRating,
             xpAwarded: xp,
+            durationMs: snap.durationMs,
             skillTags,
+            meta: analyticsMeta(),
           }),
         )
         .then(() => router.setParams({ refreshStats: Date.now().toString() }))
         .catch(console.error);
     },
-    [clearTimers, logType, router, skillTags, totalRounds, ttsComplete],
+    [analyticsMeta, analyticsSnapshot, clearTimers, logType, router, skillTags, totalRounds, ttsComplete],
   );
 
-  const bumpScore = useCallback(() => {
-    setSparkleKey(Date.now());
-    playSuccess();
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    setScore((s) => {
-      scoreRef.current = s + 1;
-      return s + 1;
-    });
-  }, [playSuccess]);
+  const bumpScore = useCallback(
+    (opts?: Parameters<typeof recordSuccess>[0]) => {
+      setSparkleKey(Date.now());
+      setCoins((c) => c + 5);
+      setCueSuccess(true);
+      recordSuccess(opts);
+      playSuccess();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      praiseVoice();
+      setScore((s) => {
+        scoreRef.current = s + 1;
+        return s + 1;
+      });
+      setTimeout(() => setCueSuccess(undefined), 650);
+    },
+    [playSuccess, praiseVoice, recordSuccess],
+  );
 
   const showWarn = useCallback(
     (msg: string) => {
+      setCueSuccess(false);
+      recordError();
       playWarn();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
       speakTTS(msg, 0.78).catch(() => {});
+      setTimeout(() => setCueSuccess(undefined), 650);
     },
-    [playWarn],
+    [playWarn, recordError],
   );
 
   const showCueCard = useCallback(
@@ -232,24 +287,26 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
     canConfirmRef.current = false;
     setIsHolding(false);
     setHoldProgress(0);
-    setCountdown(5);
-    holdBar.value = 0;
+    setCountdown(countStart(1));
     cueOpacity.value = 0;
     if (roundRef.current >= totalRounds) {
       endGame(scoreRef.current);
       return;
     }
     roundTimerRef.current = setTimeout(() => setRound((r) => r + 1), P.nextRoundDelayMs);
-  }, [clearTimers, cueOpacity, endGame, holdBar, totalRounds]);
+  }, [clearTimers, cueOpacity, endGame, totalRounds]);
 
-  const completeRound = useCallback(() => {
-    if (roundCompleteRef.current || doneRef.current) return;
-    roundCompleteRef.current = true;
-    bumpScore();
-    cueScale.value = withSequence(withTiming(1.18, { duration: 160 }), withTiming(1, { duration: 160 }));
-    speakTTS(ttsHoldDone, 0.78).catch(() => {});
-    roundTimerRef.current = setTimeout(() => advanceRound(), 650);
-  }, [advanceRound, bumpScore, cueScale, ttsHoldDone]);
+  const completeRound = useCallback(
+    (opts?: Parameters<typeof recordSuccess>[0]) => {
+      if (roundCompleteRef.current || doneRef.current) return;
+      roundCompleteRef.current = true;
+      bumpScore(opts);
+      cueScale.value = withSequence(withTiming(1.18, { duration: 160 }), withTiming(1, { duration: 160 }));
+      speakTTS(ttsHoldDone, 0.78).catch(() => {});
+      roundTimerRef.current = setTimeout(() => advanceRound(), 650);
+    },
+    [advanceRound, bumpScore, cueScale, ttsHoldDone],
+  );
 
   const failRound = useCallback(() => {
     if (roundCompleteRef.current || doneRef.current) return;
@@ -259,13 +316,18 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
   }, [advanceRound, showWarn, ttsMiss]);
 
   const pickCue = useCallback((): PostureCue => {
-    if (mode === 'poseMatch') return YOGA_POSES[randomYogaPose()];
-    if (mode === 'animalPose') return ANIMAL_POSES[randomAnimalPose()];
-    if (mode === 'shapePose') return SHAPE_POSES[randomShapePose()];
-    return HOLD_POSES[randomHoldPose()];
-  }, [mode]);
+    const t = difficultyTier(roundRef.current, totalRounds);
+    if (mode === 'poseMatch') return YOGA_POSES[randomYogaPose(t)];
+    if (mode === 'animalPose') return ANIMAL_POSES[randomAnimalPose(t)];
+    if (mode === 'shapePose') return SHAPE_POSES[randomShapePose(t)];
+    return HOLD_POSES[randomHoldPose(t)];
+  }, [mode, totalRounds]);
 
   const startHoldTimer = useCallback(() => {
+    const t = difficultyTier(roundRef.current, totalRounds);
+    const targetMs = holdDurationMs(t);
+    holdTargetRef.current = targetMs;
+    setHoldTargetMs(targetMs);
     setIsHolding(true);
     setStatusHint('Hold steady…');
     speakTTS(ttsHold, 0.78).catch(() => {});
@@ -274,21 +336,31 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
       let elapsed = 0;
       holdTimerRef.current = setInterval(() => {
         elapsed += P.holdTickMs;
-        const prog = Math.min(1, elapsed / P.holdDurationMs);
+        const prog = Math.min(1, elapsed / targetMs);
         setHoldProgress(prog);
-        holdBar.value = prog;
-        if (elapsed >= P.holdDurationMs) {
+        if (elapsed >= targetMs) {
           clearInterval(holdTimerRef.current!);
           holdTimerRef.current = null;
-          completeRound();
+          const hq = holdQualityScore(elapsed, targetMs);
+          completeRound({
+            hold: hq,
+            stability: hq,
+            balance: Math.min(100, hq + 6),
+            regulation: hq,
+            core: hq,
+            posture: hq,
+            holdMs: elapsed,
+          });
         }
       }, P.holdTickMs);
       return;
     }
 
-    let count = 5;
+    const start = countStart(t);
+    let count = start;
     setCountdown(count);
-    speakTTS('5', 0.78).catch(() => {});
+    speakTTS(String(count), 0.78).catch(() => {});
+    const interval = countIntervalMs(t);
     holdTimerRef.current = setInterval(() => {
       count -= 1;
       setCountdown(count);
@@ -297,43 +369,57 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
       } else {
         clearInterval(holdTimerRef.current!);
         holdTimerRef.current = null;
-        completeRound();
+        const heldMs = start * interval;
+        const hq = holdQualityScore(heldMs, start * interval);
+        completeRound({
+          hold: hq,
+          stability: hq,
+          balance: Math.min(100, hq + 4),
+          regulation: hq,
+          core: hq,
+          posture: hq,
+          holdMs: heldMs,
+        });
       }
-    }, P.countIntervalMs);
-  }, [completeRound, holdBar, mode, ttsHold]);
+    }, interval);
+  }, [completeRound, mode, totalRounds, ttsHold]);
 
   const startConfirmRound = useCallback(
     (next: PostureCue) => {
+      const t = difficultyTier(roundRef.current, totalRounds);
       showCueCard(next);
       setStatusHint('Watch the pose…');
-      speakTTS(`${next.label}. ${ttsWatch}`, 0.78).catch(() => {});
+      const breath = next.breath ? ` ${next.breath}.` : '';
+      speakTTS(`${next.label}.${breath} ${ttsWatch}`, 0.78).catch(() => {});
       roundTimerRef.current = setTimeout(() => {
         setCanConfirm(true);
         canConfirmRef.current = true;
-        setStatusHint('Copy it, then tap done!');
+        setStatusHint('Copy it calmly, then tap Done!');
         speakTTS(ttsConfirm, 0.78).catch(() => {});
         roundTimerRef.current = setTimeout(() => {
           if (!roundCompleteRef.current && canConfirmRef.current) {
             failRound();
           }
-        }, P.confirmWindowMs);
-      }, P.poseShowMs);
+        }, confirmWindowMs(t));
+      }, poseShowMs(t));
     },
-    [failRound, showCueCard, ttsConfirm, ttsWatch],
+    [failRound, showCueCard, totalRounds, ttsConfirm, ttsWatch],
   );
 
   const startHoldRound = useCallback(
     (next: PostureCue) => {
+      const t = difficultyTier(roundRef.current, totalRounds);
       showCueCard(next);
       setStatusHint('Get ready…');
-      speakTTS(`Get ready! ${next.label}!`, 0.78).catch(() => {});
-      roundTimerRef.current = setTimeout(() => startHoldTimer(), P.holdPoseShowMs);
+      speakTTS(`Get ready! ${next.label}! Stay calm and steady.`, 0.78).catch(() => {});
+      roundTimerRef.current = setTimeout(() => startHoldTimer(), holdPoseShowMs(t));
     },
     [showCueCard, startHoldTimer],
   );
 
   const startRoundPlay = useCallback(() => {
     if (doneRef.current) return;
+    startAnalyticsRound();
     roundCompleteRef.current = false;
     setRoundActive(true);
     setCanConfirm(false);
@@ -342,15 +428,49 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
     const next = pickCue();
     if (isHoldMode(mode)) startHoldRound(next);
     else startConfirmRound(next);
-  }, [mode, pickCue, startConfirmRound, startHoldRound]);
+  }, [mode, pickCue, startAnalyticsRound, startConfirmRound, startHoldRound]);
+
+  const runBreathingIntro = useCallback(
+    (then: () => void) => {
+      setBreathing(true);
+      bubbleScale.value = withRepeat(
+        withSequence(withTiming(1.15, { duration: 900 }), withTiming(0.85, { duration: 900 })),
+        2,
+        false,
+      );
+      speakTTS('Take a slow breath. Stay calm and steady.', 0.78).catch(() => {});
+      roundTimerRef.current = setTimeout(() => {
+        setBreathing(false);
+        then();
+      }, P.breathingIntroMs);
+    },
+    [bubbleScale],
+  );
 
   useEffect(() => {
-    if (round === 1) speakTTS(ttsIntro, 0.78);
+    resetAnalytics();
+    introPlayedRef.current = false;
+  }, [resetAnalytics]);
+
+  useEffect(() => {
     clearTimers();
     setRoundActive(false);
-    roundTimerRef.current = setTimeout(() => startRoundPlay(), P.roundStartDelayMs);
+
+    const begin = () => {
+      if (round === 1 && !introPlayedRef.current) {
+        introPlayedRef.current = true;
+        speakTTS(ttsIntro, 0.78);
+        runBreathingIntro(() => {
+          roundTimerRef.current = setTimeout(() => startRoundPlay(), P.roundStartDelayMs);
+        });
+      } else {
+        roundTimerRef.current = setTimeout(() => startRoundPlay(), P.roundStartDelayMs);
+      }
+    };
+
+    begin();
     return clearTimers;
-  }, [round, startRoundPlay, ttsIntro, clearTimers]);
+  }, [round, startRoundPlay, ttsIntro, clearTimers, runBreathingIntro]);
 
   useEffect(
     () => () => {
@@ -369,16 +489,27 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
     }
     setCanConfirm(false);
     canConfirmRef.current = false;
-    completeRound();
+    const base = 82 + Math.floor(Math.random() * 14);
+    completeRound({
+      posture: base,
+      awareness: base + 2,
+      balance: base - 4,
+      stability: base,
+      regulation: base + 3,
+      core: base - 2,
+    });
   }, [completeRound]);
 
   if (showCongratulations && done && finalStats) {
+    const a = finalStats.analytics;
+    const grad = showLevel3Graduation ? LEVEL3_GRADUATION : '';
     return (
       <CongratulationsScreen
-        message={congratsMessage}
+        message={`${congratsMessage}${grad}\n🧘 ${a.posturalControlRating}% · 🌳 ${a.balanceScore}% · ⚡ ${a.stabilityScore}%`}
         showButtons
         correct={finalStats.correct}
         total={finalStats.total}
+        accuracy={a.posturalControlRating}
         xpAwarded={finalStats.xp}
         onContinue={() => {
           stopAllSpeech();
@@ -393,13 +524,16 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
       />
     );
   }
-  if (done && finalStats && !showCongratulations) return null;
+  if (done) return null;
 
-  const holdSecondsLeft = Math.max(0, ((1 - holdProgress) * P.holdDurationMs) / 1000).toFixed(1);
+  const holdSecondsLeft = Math.max(0, ((1 - holdProgress) * holdTargetMs) / 1000).toFixed(1);
+  const hintLabel = T.hintText ?? (isHoldMode(mode) ? '🧘 Hold steady!' : '🎯 Match the pose!');
 
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={T.gradient} locations={[0, 0.35, 0.75, 1]} style={StyleSheet.absoluteFillObject} />
+      <BreathingBubble visible={breathing} bubbleScale={bubbleScale} />
+
       <TouchableOpacity
         onPress={() => {
           stopAllSpeech();
@@ -430,30 +564,39 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
             <Image source={STAR} style={styles.starIcon} />
             <Text style={[styles.statValue, { color: T.statValue }]}>{score}</Text>
           </View>
+          <View style={[styles.statPill, styles.coinPill, { borderColor: T.statBorder }]}>
+            <Text>🪙</Text>
+            <Text style={[styles.statValue, { color: T.statValue }]}>{coins}</Text>
+          </View>
         </View>
+        {roundActive && <ZenBadge visible label={hintLabel} success={cueSuccess} />}
         {roundActive && statusHint ? (
           <Text style={[styles.hint, { color: T.accentDark }]}>{statusHint}</Text>
         ) : null}
       </View>
 
       <View style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}>
-        {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
+        {!roundActive && !breathing && (
+          <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>
+        )}
 
         {roundActive && (
           <Animated.View style={[styles.cueCard, { borderColor: T.accent }, cueStyle]}>
             <Text style={styles.cueEmoji}>{cue.emoji}</Text>
             <Text style={[styles.cueLabel, { color: T.accentDark }]}>{cue.label}</Text>
+            {cue.breath ? (
+              <Text style={[styles.breathHint, { color: T.subtitleColor }]}>🌬️ {cue.breath}</Text>
+            ) : null}
           </Animated.View>
         )}
 
         {roundActive && isHolding && mode === 'freezePose' && (
-          <View style={styles.holdBlock}>
-            <Text style={[styles.holdTime, { color: T.accentDark }]}>{holdSecondsLeft}s</Text>
-            <View style={[styles.holdTrack, { borderColor: T.accent }]}>
-              <Animated.View style={[styles.holdFill, { backgroundColor: T.accent }, holdBarStyle]} />
-            </View>
-            <Text style={[styles.holdLabel, { color: T.accentDark }]}>HOLD!</Text>
-          </View>
+          <HoldCrystalRing
+            visible
+            progress={holdProgress}
+            secondsLeft={holdSecondsLeft}
+            accent={T.accent}
+          />
         )}
 
         {roundActive && isHolding && mode === 'countHold' && (
@@ -491,6 +634,7 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
   statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.7)', borderWidth: 1, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
   starPill: { backgroundColor: 'rgba(251,191,36,0.2)' },
+  coinPill: { backgroundColor: 'rgba(245,158,11,0.15)' },
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
@@ -516,10 +660,7 @@ const styles = StyleSheet.create({
   },
   cueEmoji: { fontSize: 88 },
   cueLabel: { fontSize: 18, fontWeight: '800', marginTop: 8, textTransform: 'capitalize' },
-  holdBlock: { alignItems: 'center', width: '80%', marginBottom: 16 },
-  holdTrack: { width: '100%', height: 12, borderRadius: 8, borderWidth: 1, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.5)' },
-  holdFill: { height: '100%', borderRadius: 8 },
-  holdTime: { fontSize: 28, fontWeight: '900', marginBottom: 8 },
+  breathHint: { fontSize: 14, fontWeight: '700', marginTop: 6 },
   holdLabel: { fontSize: 16, fontWeight: '800', marginTop: 8 },
   countBlock: { alignItems: 'center', marginBottom: 16 },
   countNum: { fontSize: 64, fontWeight: '900' },
@@ -529,6 +670,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     minWidth: 260,
     marginTop: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   confirmText: { color: '#FFF', fontSize: 18, fontWeight: '800', textAlign: 'center' },
 });

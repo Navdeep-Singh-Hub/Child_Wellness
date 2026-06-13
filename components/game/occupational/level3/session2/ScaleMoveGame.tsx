@@ -1,27 +1,51 @@
 /**
- * Shared big vs small movement game core for OT Level 3 Session 2.
+ * Giant vs Tiny Kingdom — OT Level 3 Session 2 shared movement-scaling engine.
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import { SESSION2_PACING } from '@/components/game/occupational/level3/session2/session2Pacing';
+import { CreaturePinchView } from '@/components/game/occupational/level3/session2/components/CreaturePinchView';
+import { RoadTraceView } from '@/components/game/occupational/level3/session2/components/RoadTraceView';
+import { ScaleCueBadge } from '@/components/game/occupational/level3/session2/components/ScaleCueBadge';
+import { SizeTapGrid } from '@/components/game/occupational/level3/session2/components/SizeTapGrid';
+import { SwipeScalePanel } from '@/components/game/occupational/level3/session2/components/SwipeScalePanel';
+import { ThrowRangeArena } from '@/components/game/occupational/level3/session2/components/ThrowRangeArena';
 import {
+  SESSION2_PACING,
+  difficultyTier,
+  pathConfigForRound,
+  pinchTargets,
+  throwTargetForRound,
+  throwTargetMoves,
+  swipeThresholds,
+} from '@/components/game/occupational/level3/session2/session2Pacing';
+import {
+  ScaleMoveMode,
   ScaleTarget,
+  TapObject,
+  ThrowBasket,
+  basketLabel,
+  buildTapObjects,
+  correctTapObject,
+  pinchMatches,
   randomTarget,
   swipeMatches,
+  throwMatches,
+  throwVoiceCue,
   useTraceSound,
 } from '@/components/game/occupational/level3/session2/scaleUtils';
+import { useScaleAnalytics } from '@/components/game/occupational/level3/session2/useScaleAnalytics';
 import { logGameAndAward, recordGame } from '@/utils/api';
-import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { speak as speakTTS } from '@/utils/tts';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withSpring,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,8 +54,7 @@ const P = SESSION2_PACING;
 const SUCCESS = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const WARN = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
 const STAR = require('@/assets/icons/star.png');
-
-export type ScaleMoveMode = 'tap' | 'swipe' | 'pinch' | 'throw' | 'path';
+const VOICE_PRAISE = ['Fantastic!', 'Excellent!', "You're getting stronger!", 'Great control!'];
 
 export type ScaleMoveTheme = {
   title: string;
@@ -54,6 +77,7 @@ export type ScaleMoveTheme = {
   sparkleColor: string;
   hintText: string;
   objectEmoji?: string;
+  creatureEmoji?: string;
 };
 
 export type ScaleMoveGameConfig = {
@@ -86,49 +110,67 @@ export const ScaleMoveGame: React.FC<
   const router = useRouter();
   const playSuccess = useTraceSound(SUCCESS);
   const playWarn = useTraceSound(WARN);
+  const {
+    reset: resetAnalytics,
+    startRound: startAnalyticsRound,
+    recordSuccess,
+    recordError,
+    snapshot: analyticsSnapshot,
+    metaPayload: analyticsMeta,
+  } = useScaleAnalytics(mode);
 
-  const totalRounds = mode === 'tap' ? P.tapRounds : P.gestureRounds;
+  const totalRounds =
+    mode === 'tap'
+      ? P.tapRounds
+      : mode === 'swipe'
+        ? P.swipeRounds
+        : mode === 'pinch'
+          ? P.pinchRounds
+          : mode === 'throw'
+            ? P.throwRounds
+            : P.pathRounds;
 
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
+  const [coins, setCoins] = useState(0);
   const [done, setDone] = useState(false);
-  const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const [finalStats, setFinalStats] = useState<{
+    correct: number;
+    total: number;
+    xp: number;
+    analytics: ReturnType<typeof analyticsSnapshot>;
+  } | null>(null);
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [sparkleKey, setSparkleKey] = useState(0);
   const [warnVisible, setWarnVisible] = useState(false);
+  const [cueSuccess, setCueSuccess] = useState<boolean | undefined>(undefined);
 
   const [target, setTarget] = useState<ScaleTarget>('big');
   const [showCue, setShowCue] = useState(false);
   const [isActive, setIsActive] = useState(false);
+  const [tapObjects, setTapObjects] = useState<TapObject[]>([]);
   const [bigBarProgress, setBigBarProgress] = useState(0);
   const [smallBarProgress, setSmallBarProgress] = useState(0);
-  const [isWidePath, setIsWidePath] = useState(true);
-  const [pathProgress, setPathProgress] = useState(0);
-  const [isTracing, setIsTracing] = useState(false);
+  const [swipeTrail, setSwipeTrail] = useState<{ x: number; y: number; big: boolean }[]>([]);
+  const [pinchCelebrate, setPinchCelebrate] = useState(false);
+  const [throwBasket, setThrowBasket] = useState<ThrowBasket>('near');
+  const [throwMoving, setThrowMoving] = useState(false);
+  const [pathNarrow, setPathNarrow] = useState(false);
+  const [pathCurved, setPathCurved] = useState(false);
+  const [pathStroke, setPathStroke] = useState(P.widePathStroke);
+  const [pathTolerance, setPathTolerance] = useState(P.pathToleranceBase);
 
   const doneRef = useRef(false);
   const scoreRef = useRef(0);
   const roundRef = useRef(1);
   const targetRef = useRef<ScaleTarget>('big');
   const isActiveRef = useRef(false);
-  const isTracingRef = useRef(false);
-  const pathProgressRef = useRef(0);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const screenW = useRef(400);
-  const screenH = useRef(400);
-  const panStartX = useRef(0);
-  const panStartY = useRef(0);
+  const shakeX = useSharedValue(0);
 
-  const objScale = useSharedValue(1);
-  const pinchBase = useSharedValue(1);
-  const ballX = useSharedValue(50);
-  const ballY = useSharedValue(70);
-  const throwStartX = useSharedValue(50);
-  const throwStartY = useSharedValue(70);
-  const dragStartX = useSharedValue(0);
-  const dragStartY = useSharedValue(0);
-  const isDraggingRef = useRef(false);
-  const pathDoneRef = useRef(false);
+  const shakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeX.value }],
+  }));
 
   useEffect(() => {
     scoreRef.current = score;
@@ -142,12 +184,6 @@ export const ScaleMoveGame: React.FC<
   useEffect(() => {
     isActiveRef.current = isActive;
   }, [isActive]);
-  useEffect(() => {
-    isTracingRef.current = isTracing;
-  }, [isTracing]);
-  useEffect(() => {
-    pathProgressRef.current = pathProgress;
-  }, [pathProgress]);
 
   const clearRoundTimer = useCallback(() => {
     if (roundTimerRef.current) {
@@ -156,21 +192,25 @@ export const ScaleMoveGame: React.FC<
     }
   }, []);
 
-  const objAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: objScale.value }],
-  }));
+  const shakePlay = useCallback(() => {
+    shakeX.value = withSequence(
+      withSpring(8, { damping: 4 }),
+      withSpring(-8, { damping: 4 }),
+      withSpring(0),
+    );
+  }, [shakeX]);
 
-  const ballAnimStyle = useAnimatedStyle(() => ({
-    left: `${ballX.value}%`,
-    top: `${ballY.value}%`,
-    transform: [{ translateX: -25 }, { translateY: -25 }],
-  }));
+  const praiseVoice = useCallback(() => {
+    const msg = VOICE_PRAISE[Math.floor(Math.random() * VOICE_PRAISE.length)]!;
+    speakTTS(msg, 0.78).catch(() => {});
+  }, []);
 
   const endGame = useCallback(
     (finalScore: number) => {
       const total = totalRounds;
-      const xp = Math.round(finalScore * (mode === 'pinch' ? 20 : 18));
-      setFinalStats({ correct: finalScore, total, xp });
+      const snap = analyticsSnapshot();
+      const xp = Math.round(finalScore * (mode === 'path' ? 20 : 18) + snap.movementScaleAccuracy * 0.15);
+      setFinalStats({ correct: finalScore, total, xp, analytics: snap });
       setDone(true);
       doneRef.current = true;
       clearRoundTimer();
@@ -179,37 +219,50 @@ export const ScaleMoveGame: React.FC<
       recordGame(xp)
         .then(() =>
           logGameAndAward({
-            type: logType,
+            type: logType as any,
             correct: finalScore,
             total,
-            accuracy: (finalScore / total) * 100,
+            accuracy: snap.movementScaleAccuracy,
             xpAwarded: xp,
+            durationMs: snap.durationMs,
+            responseTimeMs: snap.avgReactionMs,
             skillTags,
+            meta: analyticsMeta(),
           }),
         )
         .then(() => router.setParams({ refreshStats: Date.now().toString() }))
         .catch(console.error);
     },
-    [clearRoundTimer, logType, mode, router, skillTags, totalRounds, ttsComplete],
+    [analyticsMeta, analyticsSnapshot, clearRoundTimer, logType, mode, router, skillTags, totalRounds, ttsComplete],
   );
 
   const bumpScore = useCallback(() => {
     setSparkleKey(Date.now());
+    setCoins((c) => c + 5);
+    setCueSuccess(true);
     playSuccess();
-    playSound('drum', 0.5, 1.0).catch(() => {});
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    praiseVoice();
     setScore((s) => {
-      scoreRef.current = s + 1;
-      return s + 1;
+      const next = s + 1;
+      scoreRef.current = next;
+      return next;
     });
-  }, [playSuccess]);
+    setTimeout(() => setCueSuccess(undefined), 700);
+  }, [playSuccess, praiseVoice]);
 
   const failAttempt = useCallback(() => {
+    recordError();
     playWarn();
+    shakePlay();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+    setCueSuccess(false);
     setWarnVisible(true);
-    setTimeout(() => setWarnVisible(false), 800);
-  }, [playWarn]);
+    setTimeout(() => {
+      setWarnVisible(false);
+      setCueSuccess(undefined);
+    }, 850);
+  }, [playWarn, recordError, shakePlay]);
 
   const advanceRound = useCallback(() => {
     clearRoundTimer();
@@ -217,62 +270,96 @@ export const ScaleMoveGame: React.FC<
     setShowCue(false);
     setBigBarProgress(0);
     setSmallBarProgress(0);
-    setPathProgress(0);
-    setIsTracing(false);
-    objScale.value = 1;
+    setSwipeTrail([]);
+    setPinchCelebrate(false);
 
     if (roundRef.current >= totalRounds) {
       endGame(scoreRef.current);
       return;
     }
     roundTimerRef.current = setTimeout(() => setRound((r) => r + 1), P.nextRoundDelayMs);
-  }, [clearRoundTimer, endGame, objScale, totalRounds]);
+  }, [clearRoundTimer, endGame, totalRounds]);
 
   const finishAttempt = useCallback(
-    (correct: boolean) => {
-      if (correct) bumpScore();
-      else failAttempt();
+    (correct: boolean, onSuccess?: () => void) => {
+      if (correct) {
+        onSuccess?.();
+        bumpScore();
+      } else {
+        failAttempt();
+      }
       setIsActive(false);
       setShowCue(false);
-      roundTimerRef.current = setTimeout(() => advanceRound(), mode === 'tap' ? 600 : P.nextRoundDelayMs);
+      roundTimerRef.current = setTimeout(() => advanceRound(), correct ? 650 : P.nextRoundDelayMs);
     },
-    [advanceRound, bumpScore, failAttempt, mode],
+    [advanceRound, bumpScore, failAttempt],
   );
 
   const setupRound = useCallback(() => {
     if (doneRef.current) return;
     clearRoundTimer();
+    startAnalyticsRound();
+    setCueSuccess(undefined);
 
     if (mode === 'path') {
-      pathDoneRef.current = false;
-      const wide = Math.random() > 0.5;
-      setIsWidePath(wide);
-      setPathProgress(0);
-      setIsTracing(false);
+      const cfg = pathConfigForRound(roundRef.current);
+      setPathNarrow(cfg.narrow);
+      setPathCurved(cfg.curved);
+      setPathStroke(cfg.stroke);
+      setPathTolerance(cfg.tolerance);
       setIsActive(true);
       setShowCue(true);
-      speakTTS(wide ? 'Trace the wide road!' : 'Trace the thin road!', 0.78).catch(() => {});
+      speakTTS(cfg.narrow ? 'Trace the narrow road!' : 'Trace the wide road!', 0.78).catch(() => {});
+      return;
+    }
+
+    if (mode === 'throw') {
+      const basket = throwTargetForRound(roundRef.current);
+      setThrowBasket(basket);
+      setThrowMoving(throwTargetMoves(roundRef.current));
+      setTarget(basket === 'near' ? 'small' : basket === 'far' ? 'big' : 'big');
+      setShowCue(true);
+      setIsActive(true);
+      speakTTS(throwVoiceCue(basket), 0.78).catch(() => {});
       return;
     }
 
     const nextTarget = randomTarget();
     setTarget(nextTarget);
+
+    if (mode === 'tap') {
+      const objs = buildTapObjects(roundRef.current, totalRounds);
+      setTapObjects([...objs].sort(() => Math.random() - 0.5));
+      setShowCue(false);
+      setIsActive(false);
+      roundTimerRef.current = setTimeout(() => {
+        setShowCue(true);
+        setIsActive(true);
+        speakTTS(nextTarget === 'big' ? ttsBig : ttsSmall, 0.78).catch(() => {});
+      }, P.cueDelayMs);
+      return;
+    }
+
     setShowCue(false);
     setBigBarProgress(0);
     setSmallBarProgress(0);
-    setIsActive(mode !== 'tap');
-    objScale.value = 1;
-    ballX.value = 50;
-    ballY.value = 70;
-    throwStartX.value = 50;
-    throwStartY.value = 70;
+    setSwipeTrail([]);
+    setIsActive(mode !== 'pinch');
 
     roundTimerRef.current = setTimeout(() => {
       setShowCue(true);
       setIsActive(true);
-      speakTTS(nextTarget === 'big' ? ttsBig : ttsSmall, 0.78).catch(() => {});
-    }, mode === 'tap' ? P.cueDelayMs : 0);
-  }, [ballX, ballY, clearRoundTimer, mode, objScale, throwStartX, throwStartY, ttsBig, ttsSmall]);
+      if (mode === 'pinch') {
+        speakTTS(nextTarget === 'big' ? 'Make the dragon BIG!' : 'Make the dragon SMALL!', 0.78).catch(() => {});
+      } else {
+        speakTTS(nextTarget === 'big' ? ttsBig : ttsSmall, 0.78).catch(() => {});
+      }
+    }, mode === 'pinch' ? 0 : 120);
+  }, [clearRoundTimer, mode, startAnalyticsRound, totalRounds, ttsBig, ttsSmall]);
+
+  useEffect(() => {
+    resetAnalytics();
+  }, [resetAnalytics]);
 
   useEffect(() => {
     if (round === 1 && !doneRef.current) speakTTS(ttsIntro, 0.78);
@@ -290,151 +377,87 @@ export const ScaleMoveGame: React.FC<
   );
 
   const handleTapChoice = useCallback(
-    (choice: ScaleTarget) => {
+    (id: string) => {
       if (!showCue || doneRef.current) return;
-      finishAttempt(choice === targetRef.current);
-    },
-    [finishAttempt, showCue],
-  );
-
-  const panSwipe = Gesture.Pan()
-    .runOnJS(true)
-    .onStart((evt) => {
-      if (!isActiveRef.current || doneRef.current) return;
-      panStartX.current = evt.x;
-      panStartY.current = evt.y;
-    })
-    .onUpdate((evt) => {
-      if (!isActiveRef.current || doneRef.current) return;
-      const dx = Math.abs(evt.x - panStartX.current);
-      const dy = Math.abs(evt.y - panStartY.current);
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      setBigBarProgress(Math.min(100, (dist / P.bigSwipeThreshold) * 100));
-      setSmallBarProgress(Math.min(100, (dist / P.smallSwipeThreshold) * 100));
-    })
-    .onEnd((evt) => {
-      if (!isActiveRef.current || doneRef.current) return;
-      const dx = Math.abs(evt.x - panStartX.current);
-      const dy = Math.abs(evt.y - panStartY.current);
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      finishAttempt(swipeMatches(dist, targetRef.current, P.bigSwipeThreshold, P.smallSwipeThreshold));
-    });
-
-  const pinchGesture = Gesture.Pinch()
-    .runOnJS(true)
-    .onBegin(() => {
-      pinchBase.value = objScale.value;
-    })
-    .onUpdate((evt) => {
-      if (!isActiveRef.current || doneRef.current) return;
-      objScale.value = Math.max(P.minScale, Math.min(P.maxScale, pinchBase.value * evt.scale));
-    })
-    .onEnd(() => {
-      if (!isActiveRef.current || doneRef.current) return;
-      const current = objScale.value;
-      const ok =
-        targetRef.current === 'big'
-          ? current >= P.targetBigScale
-          : current <= P.targetSmallScale;
-      objScale.value = withSpring(1);
+      const correctObj = correctTapObject(tapObjects, targetRef.current);
+      const ok = correctObj.id === id;
+      if (ok) recordSuccess();
       finishAttempt(ok);
-    });
-
-  const panThrow = Gesture.Pan()
-    .runOnJS(true)
-    .onStart((evt) => {
-      if (doneRef.current) return;
-      isDraggingRef.current = true;
-      dragStartX.value = (evt.x / screenW.current) * 100;
-      dragStartY.value = (evt.y / screenH.current) * 100;
-    })
-    .onUpdate((evt) => {
-      if (!isDraggingRef.current || doneRef.current) return;
-      ballX.value = (evt.x / screenW.current) * 100;
-      ballY.value = (evt.y / screenH.current) * 100;
-    })
-    .onEnd((evt) => {
-      if (!isDraggingRef.current || doneRef.current) return;
-      isDraggingRef.current = false;
-      const endX = (evt.x / screenW.current) * 100;
-      const endY = (evt.y / screenH.current) * 100;
-      const dx = Math.abs(endX - dragStartX.value) * (screenW.current / 100);
-      const dy = Math.abs(endY - dragStartY.value) * (screenH.current / 100);
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      ballX.value = withSpring(throwStartX.value);
-      ballY.value = withSpring(throwStartY.value);
-      finishAttempt(swipeMatches(dist, targetRef.current, P.bigThrowThreshold, P.smallThrowThreshold));
-    });
-
-  const pathWidth = isWidePath ? P.widePathWidth : P.thinPathWidth;
-  const pathWidthPct = isWidePath ? P.widePathWidthPct : P.thinPathWidthPct;
-
-  const checkOnPath = useCallback(
-    (x: number, y: number) => {
-      const dist = Math.abs(y - P.pathStartY);
-      return (
-        dist < pathWidthPct / 2 + P.pathTolerance &&
-        x >= Math.min(P.pathStartX, P.pathEndX) &&
-        x <= Math.max(P.pathStartX, P.pathEndX)
-      );
     },
-    [pathWidthPct],
+    [finishAttempt, recordSuccess, showCue, tapObjects],
   );
 
-  const calcPathProgress = useCallback((x: number) => {
-    const total = Math.abs(P.pathEndX - P.pathStartX);
-    const current = Math.abs(x - P.pathStartX);
-    return Math.min(100, Math.max(0, (current / total) * 100));
+  const tier = difficultyTier(round, totalRounds);
+  const pinchTarget = pinchTargets(tier);
+  const { big: bigSwipe } = swipeThresholds(tier);
+
+  const handleSwipeStart = useCallback((x: number, y: number) => {
+    setSwipeTrail([{ x, y, big: targetRef.current === 'big' }]);
   }, []);
 
-  const completePath = useCallback(() => {
-    if (pathDoneRef.current || doneRef.current) return;
-    pathDoneRef.current = true;
-    bumpScore();
-    setIsTracing(false);
-    setIsActive(false);
-    roundTimerRef.current = setTimeout(() => advanceRound(), P.nextRoundDelayMs);
-  }, [advanceRound, bumpScore]);
+  const handleSwipeMove = useCallback(
+    (x: number, y: number, dist: number) => {
+      setBigBarProgress(Math.min(100, (dist / bigSwipe) * 100));
+      setSmallBarProgress(Math.min(100, (dist / (bigSwipe * 0.5)) * 100));
+      setSwipeTrail((t) => [...t.slice(-24), { x, y, big: dist > bigSwipe * 0.55 }]);
+    },
+    [bigSwipe],
+  );
 
-  const panPath = Gesture.Pan()
-    .runOnJS(true)
-    .onStart((evt) => {
-      if (doneRef.current) return;
-      const x = (evt.x / screenW.current) * 100;
-      const y = (evt.y / screenH.current) * 100;
-      if (checkOnPath(x, y)) {
-        setIsTracing(true);
-        setPathProgress(calcPathProgress(x));
+  const handleSwipeEnd = useCallback(
+    (dist: number) => {
+      const { ok, score: swipeScore } = swipeMatches(dist, targetRef.current, tier);
+      if (ok) recordSuccess({ swipeScore });
+      finishAttempt(ok);
+    },
+    [finishAttempt, recordSuccess, tier],
+  );
+
+  const handlePinchEnd = useCallback(
+    (scale: number) => {
+      const { ok, score: pinchScore } = pinchMatches(scale, targetRef.current, tier);
+      if (ok) {
+        setPinchCelebrate(true);
+        if (targetRef.current === 'big') recordSuccess({ stretchScore: pinchScore });
+        else recordSuccess({ pinchScore });
       }
-    })
-    .onUpdate((evt) => {
-      if (!isTracingRef.current || doneRef.current) return;
-      const x = (evt.x / screenW.current) * 100;
-      const y = (evt.y / screenH.current) * 100;
-      if (checkOnPath(x, y)) {
-        const prog = calcPathProgress(x);
-        setPathProgress(prog);
-        if (prog >= 95) completePath();
-      } else {
-        setIsTracing(false);
-        setPathProgress(0);
-        failAttempt();
-      }
-    })
-    .onEnd(() => {
-      if (pathProgressRef.current < 95) {
-        setIsTracing(false);
-        setPathProgress(0);
-      }
-    });
+      finishAttempt(ok);
+    },
+    [finishAttempt, recordSuccess, tier],
+  );
+
+  const handleThrowEnd = useCallback(
+    (dist: number) => {
+      const { ok, score: throwScore } = throwMatches(dist, throwBasket, tier);
+      if (ok) recordSuccess({ throwScore });
+      finishAttempt(ok);
+    },
+    [finishAttempt, recordSuccess, throwBasket, tier],
+  );
+
+  const handlePathComplete = useCallback(
+    (accuracy: number, smoothness: number) => {
+      recordSuccess({ traceAcc: accuracy, traceSmooth: smoothness });
+      bumpScore();
+      setIsActive(false);
+      roundTimerRef.current = setTimeout(() => advanceRound(), P.nextRoundDelayMs);
+    },
+    [advanceRound, bumpScore, recordSuccess],
+  );
+
+  const handlePathExit = useCallback(() => {
+    failAttempt();
+  }, [failAttempt]);
 
   if (showCongratulations && done && finalStats) {
+    const a = finalStats.analytics;
     return (
       <CongratulationsScreen
-        message={congratsMessage}
+        message={`${congratsMessage}\n🏰 Giant Kingdom Restored!\n🎯 Accuracy ${a.movementScaleAccuracy}% · ⚡ ${a.avgReactionMs}ms`}
         showButtons
         correct={finalStats.correct}
         total={finalStats.total}
+        accuracy={a.movementScaleAccuracy}
         xpAwarded={finalStats.xp}
         onContinue={() => {
           stopAllSpeech();
@@ -451,146 +474,83 @@ export const ScaleMoveGame: React.FC<
   }
   if (done && finalStats && !showCongratulations) return null;
 
-  const cueLabel =
-    mode === 'path'
-      ? isWidePath
-        ? 'WIDE'
-        : 'THIN'
-      : showCue
-        ? target === 'big'
-          ? 'BIG'
-          : 'SMALL'
-        : '…';
+  const pathCue = pathNarrow ? 'narrow' : 'wide';
 
   const renderPlayArea = () => {
     if (mode === 'tap') {
       return (
-        <View style={styles.tapRow}>
-          <Pressable
-            onPress={() => handleTapChoice('big')}
-            style={[
-              styles.bigCircle,
-              { width: P.bigCircleSize, height: P.bigCircleSize, borderRadius: P.bigCircleSize / 2, backgroundColor: T.bigColor },
-              showCue && target === 'big' && styles.highlight,
-            ]}
-          >
-            <Text style={styles.circleLabel}>BIG</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => handleTapChoice('small')}
-            style={[
-              styles.smallCircle,
-              { width: P.smallCircleSize, height: P.smallCircleSize, borderRadius: P.smallCircleSize / 2, backgroundColor: T.smallColor },
-              showCue && target === 'small' && styles.highlight,
-            ]}
-          >
-            <Text style={[styles.circleLabel, { fontSize: 10 }]}>S</Text>
-          </Pressable>
-        </View>
+        <SizeTapGrid
+          objects={tapObjects}
+          showCue={showCue}
+          highlightTarget={showCue ? target : null}
+          bigColor={T.bigColor}
+          smallColor={T.smallColor}
+          onPick={handleTapChoice}
+          disabled={!isActive}
+        />
       );
     }
-
     if (mode === 'swipe') {
       return (
-        <GestureDetector gesture={panSwipe}>
-          <View style={styles.swipeArea}>
-            <View style={styles.barWrap}>
-              <Text style={[styles.barLabel, { color: T.titleColor }]}>BIG</Text>
-              <View style={styles.barBg}>
-                <View
-                  style={[
-                    styles.barFill,
-                    { width: `${bigBarProgress}%`, backgroundColor: target === 'big' ? T.accent : '#94A3B8' },
-                  ]}
-                />
-              </View>
-            </View>
-            <View style={[styles.swipeZone, { borderColor: T.accent }]}>
-              <Text style={[styles.swipeHint, { color: T.accentDark }]}>Swipe here!</Text>
-            </View>
-            <View style={styles.barWrap}>
-              <Text style={[styles.barLabel, { color: T.titleColor }]}>SMALL</Text>
-              <View style={styles.barBg}>
-                <View
-                  style={[
-                    styles.barFill,
-                    { width: `${smallBarProgress}%`, backgroundColor: target === 'small' ? T.accent : '#94A3B8' },
-                  ]}
-                />
-              </View>
-            </View>
-          </View>
-        </GestureDetector>
+        <SwipeScalePanel
+          target={target}
+          bigProgress={bigBarProgress}
+          smallProgress={smallBarProgress}
+          trail={swipeTrail}
+          accent={T.accent}
+          accentDark={T.accentDark}
+          titleColor={T.titleColor}
+          active={isActive && showCue}
+          onSwipeStart={handleSwipeStart}
+          onSwipeMove={handleSwipeMove}
+          onSwipeEnd={handleSwipeEnd}
+        />
       );
     }
-
     if (mode === 'pinch') {
       return (
-        <GestureDetector gesture={pinchGesture}>
-          <Animated.View style={[styles.objectWrap, objAnimStyle]}>
-            <View style={[styles.object, { backgroundColor: T.bigColor }]}>
-              <Text style={styles.objectEmoji}>{T.objectEmoji ?? '🎈'}</Text>
-            </View>
-          </Animated.View>
-        </GestureDetector>
+        <CreaturePinchView
+          emoji={T.objectEmoji ?? T.creatureEmoji ?? '🐉'}
+          target={target}
+          targetBig={pinchTarget.big}
+          targetSmall={pinchTarget.small}
+          minScale={P.minScale}
+          maxScale={P.maxScale}
+          baseSize={P.creatureSize}
+          bigColor={T.bigColor}
+          active={isActive && showCue}
+          celebrate={pinchCelebrate}
+          onScaleEnd={handlePinchEnd}
+        />
       );
     }
-
     if (mode === 'throw') {
       return (
-        <View
-          style={styles.throwArea}
-          onLayout={(e) => {
-            screenW.current = e.nativeEvent.layout.width;
-            screenH.current = e.nativeEvent.layout.height;
-          }}
-        >
-          <GestureDetector gesture={panThrow}>
-            <View style={StyleSheet.absoluteFill}>
-              <View
-                style={[
-                  styles.startDot,
-                  { left: `${throwStartX.value}%`, top: `${throwStartY.value}%`, backgroundColor: T.accent },
-                ]}
-              />
-              <Animated.View style={[styles.ball, ballAnimStyle, { backgroundColor: T.smallColor }]}>
-                <Text style={styles.objectEmoji}>{T.objectEmoji ?? '⚾'}</Text>
-              </Animated.View>
-            </View>
-          </GestureDetector>
-        </View>
+        <ThrowRangeArena
+          targetBasket={throwBasket}
+          ballEmoji={T.objectEmoji ?? '⚾'}
+          accent={T.accent}
+          smallColor={T.smallColor}
+          moving={throwMoving}
+          active={isActive && showCue}
+          onThrowEnd={handleThrowEnd}
+          onLayout={() => {}}
+        />
       );
     }
-
     return (
-      <View
-        style={styles.pathArea}
-        onLayout={(e) => {
-          screenW.current = e.nativeEvent.layout.width;
-          screenH.current = e.nativeEvent.layout.height;
-        }}
-      >
-        <GestureDetector gesture={panPath}>
-          <View style={StyleSheet.absoluteFill}>
-            <View style={[styles.pathDot, { left: `${P.pathStartX}%`, top: `${P.pathStartY}%`, backgroundColor: '#22C55E' }]} />
-            <View style={[styles.pathDot, { left: `${P.pathEndX}%`, top: `${P.pathEndY}%`, backgroundColor: '#EF4444' }]} />
-            <View
-              style={{
-                position: 'absolute',
-                left: `${P.pathStartX}%`,
-                top: `${P.pathStartY - pathWidth / 2}%`,
-                width: `${P.pathEndX - P.pathStartX}%`,
-                height: pathWidth,
-                backgroundColor: 'rgba(148,163,184,0.35)',
-                borderRadius: pathWidth / 2,
-              }}
-            />
-          </View>
-        </GestureDetector>
-        <View style={styles.pathProgressBg}>
-          <View style={[styles.pathProgressFill, { width: `${pathProgress}%`, backgroundColor: T.accent }]} />
-        </View>
-      </View>
+      <RoadTraceView
+        curved={pathCurved}
+        narrow={pathNarrow}
+        stroke={pathStroke}
+        tolerance={pathTolerance}
+        accent={T.accent}
+        active={isActive}
+        onProgress={() => {}}
+        onComplete={handlePathComplete}
+        onExit={handlePathExit}
+        onLayout={() => {}}
+      />
     );
   };
 
@@ -627,25 +587,35 @@ export const ScaleMoveGame: React.FC<
             <Image source={STAR} style={styles.starIcon} />
             <Text style={[styles.statValue, { color: T.statValue }]}>{score}</Text>
           </View>
+          <View style={[styles.statPill, styles.coinPill, { borderColor: T.statBorder }]}>
+            <Text style={styles.coinEmoji}>🪙</Text>
+            <Text style={[styles.statValue, { color: T.statValue }]}>{coins}</Text>
+          </View>
         </View>
-        {showCue && (
-          <Text style={[styles.cueText, { color: T.accentDark }]}>
-            {mode === 'path' ? `Trace the ${cueLabel} road!` : cueLabel}
-          </Text>
+        {showCue && mode === 'path' && (
+          <ScaleCueBadge visible target={pathCue as 'wide' | 'narrow'} success={cueSuccess} />
+        )}
+        {showCue && mode !== 'path' && mode !== 'throw' && (
+          <ScaleCueBadge visible target={target} success={cueSuccess} />
+        )}
+        {showCue && mode === 'throw' && (
+          <View style={[styles.throwCue, { borderColor: T.accent }]}>
+            <Text style={[styles.throwCueText, { color: T.accentDark }]}>{basketLabel(throwBasket)}</Text>
+          </View>
         )}
         {!showCue && mode === 'tap' && (
           <Text style={[styles.hint, { color: T.subtitleColor }]}>{T.hintText}</Text>
         )}
       </View>
 
-      <View style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}>
+      <Animated.View style={[styles.playArea, shakeStyle, { borderColor: T.playBorder, backgroundColor: T.playBg }]}>
         {renderPlayArea()}
         <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
-      </View>
+      </Animated.View>
 
       {warnVisible && (
         <View style={styles.warnPill}>
-          <Text style={styles.warnText}>Try again!</Text>
+          <Text style={styles.warnText}>Try again — match the size!</Text>
         </View>
       )}
     </SafeAreaView>
@@ -655,42 +625,46 @@ export const ScaleMoveGame: React.FC<
 const styles = StyleSheet.create({
   container: { flex: 1 },
   backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
-  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.75)', borderRadius: 24, borderWidth: 1 },
+  backInner: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(255,255,255,0.78)',
+    borderRadius: 24,
+    borderWidth: 1,
+  },
   backText: { fontWeight: '800', fontSize: 14 },
   header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
-  title: { fontSize: 28, fontWeight: '900' },
+  title: { fontSize: 26, fontWeight: '900', textAlign: 'center' },
   subtitle: { fontSize: 14, fontWeight: '600', marginTop: 4, marginBottom: 8, textAlign: 'center' },
   hint: { fontSize: 13, fontWeight: '600', marginBottom: 8, textAlign: 'center' },
-  cueText: { fontSize: 40, fontWeight: '900', marginBottom: 8 },
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
-  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.7)', borderWidth: 1, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
-  starPill: { backgroundColor: 'rgba(251,191,36,0.2)' },
-  statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
-  statValue: { fontSize: 20, fontWeight: '900' },
-  starIcon: { width: 18, height: 18, resizeMode: 'contain' },
-  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', padding: 16 },
-  tapRow: { flexDirection: 'row', gap: 40, alignItems: 'center' },
-  bigCircle: { alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: 'rgba(255,255,255,0.85)' },
-  smallCircle: { alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.85)' },
-  highlight: { borderColor: '#10B981', transform: [{ scale: 1.08 }] },
-  circleLabel: { fontSize: 14, fontWeight: '900', color: '#fff' },
-  swipeArea: { width: '100%', height: 360, justifyContent: 'space-around' },
-  barWrap: { width: '100%', alignItems: 'center' },
-  barLabel: { fontSize: 14, fontWeight: '800', marginBottom: 6 },
-  barBg: { width: '85%', height: 36, backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 18, overflow: 'hidden' },
-  barFill: { height: '100%', borderRadius: 18 },
-  swipeZone: { width: '100%', height: 120, borderRadius: 16, borderWidth: 2, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.35)' },
-  swipeHint: { fontSize: 16, fontWeight: '800' },
-  objectWrap: { width: 200, height: 200, alignItems: 'center', justifyContent: 'center' },
-  object: { width: 200, height: 200, borderRadius: 100, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: 'rgba(255,255,255,0.85)' },
-  objectEmoji: { fontSize: 72 },
-  throwArea: { width: '100%', height: 360, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.35)', overflow: 'hidden' },
-  ball: { position: 'absolute', width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff' },
-  startDot: { position: 'absolute', width: 18, height: 18, borderRadius: 9, transform: [{ translateX: -9 }, { translateY: -9 }], borderWidth: 2, borderColor: '#fff', zIndex: 2 },
-  pathArea: { width: '100%', height: 360, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.35)', overflow: 'hidden' },
-  pathDot: { position: 'absolute', width: 18, height: 18, borderRadius: 9, transform: [{ translateX: -9 }, { translateY: -9 }], borderWidth: 2, borderColor: '#fff', zIndex: 2 },
-  pathProgressBg: { position: 'absolute', bottom: 12, left: 16, right: 16, height: 8, backgroundColor: 'rgba(255,255,255,0.5)', borderRadius: 4, overflow: 'hidden' },
-  pathProgressFill: { height: '100%', borderRadius: 4 },
+  statsRow: { flexDirection: 'row', gap: 8, marginBottom: 8, flexWrap: 'wrap', justifyContent: 'center' },
+  statPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    borderWidth: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.22)' },
+  coinPill: { backgroundColor: 'rgba(245,158,11,0.18)' },
+  statLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
+  statValue: { fontSize: 18, fontWeight: '900' },
+  starIcon: { width: 16, height: 16, resizeMode: 'contain' },
+  coinEmoji: { fontSize: 14 },
+  playArea: {
+    flex: 1,
+    marginHorizontal: 8,
+    marginBottom: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    overflow: 'hidden',
+  },
   warnPill: {
     position: 'absolute',
     bottom: 16,
@@ -703,6 +677,15 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(239,68,68,0.25)',
   },
   warnText: { fontSize: 13, fontWeight: '700', color: '#B91C1C' },
+  throwCue: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 18,
+    borderWidth: 2,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    marginBottom: 6,
+  },
+  throwCueText: { fontSize: 28, fontWeight: '900', letterSpacing: 1 },
 });
 
 export default ScaleMoveGame;

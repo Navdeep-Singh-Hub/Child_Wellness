@@ -3,7 +3,12 @@
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import { createObjectPanGesture, distPx, useTraceSound } from '@/components/game/occupational/level4/session9/dualDragUtils';
+import {
+  createObjectPanGesture,
+  createSimultaneousDualPan,
+  distPx,
+  useTraceSound,
+} from '@/components/game/occupational/level4/session9/dualDragUtils';
 import { SESSION4_9_PACING } from '@/components/game/occupational/level4/session9/session9Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -283,7 +288,7 @@ export const DualPullGame: React.FC<
     playH,
     half: HANDLE,
     isActive: isDragActive,
-    clampX: (x, w, _h, half) => Math.max(half, Math.min(w * 0.48, x)),
+    clampX: (x, _w, _h, half) => Math.max(half, Math.min(leftStart.current.x, x)),
     clampY: (y, _w, h, _half) => Math.max(h * 0.28, Math.min(h * 0.72, y)),
     onUpdate: () => updatePull('left'),
     onEnd: () => {
@@ -299,13 +304,15 @@ export const DualPullGame: React.FC<
     playH,
     half: HANDLE,
     isActive: isDragActive,
-    clampX: (x, w, _h, half) => Math.max(w * 0.52, Math.min(w - half, x)),
+    clampX: (x, w, _h, half) => Math.max(rightStart.current.x, Math.min(w - half, x)),
     clampY: (y, _w, h, _half) => Math.max(h * 0.28, Math.min(h * 0.72, y)),
     onUpdate: () => updatePull('right'),
     onEnd: () => {
       if (!rightPulledRef.current) snapBack('right');
     },
   });
+
+  const dualGesture = createSimultaneousDualPan(leftPan, rightPan);
 
   if (showCongratulations && done && finalStats) {
     return (
@@ -369,34 +376,32 @@ export const DualPullGame: React.FC<
         ) : null}
       </View>
 
-      <View
-        style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
-        onLayout={(e) => {
-          playW.current = e.nativeEvent.layout.width;
-          playH.current = e.nativeEvent.layout.height;
-          layoutHandles();
-        }}
-      >
-        {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
-        {roundActive && (
-          <View style={[styles.rope, { backgroundColor: T.accent, top: ropeY - 3 }]} />
-        )}
-        {roundActive && (
-          <>
-            <GestureDetector gesture={leftPan}>
+      <GestureDetector gesture={dualGesture}>
+        <View
+          style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
+          onLayout={(e) => {
+            playW.current = e.nativeEvent.layout.width;
+            playH.current = e.nativeEvent.layout.height;
+            layoutHandles();
+          }}
+        >
+          {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
+          {roundActive && (
+            <View style={[styles.rope, { backgroundColor: T.accent, top: ropeY - 3 }]} />
+          )}
+          {roundActive && (
+            <>
               <Animated.View style={[styles.handle, { backgroundColor: T.leftColor }, leftStyle]}>
                 <Text style={styles.handleEmoji}>🪢</Text>
               </Animated.View>
-            </GestureDetector>
-            <GestureDetector gesture={rightPan}>
               <Animated.View style={[styles.handle, { backgroundColor: T.rightColor }, rightStyle]}>
                 <Text style={styles.handleEmoji}>🪢</Text>
               </Animated.View>
-            </GestureDetector>
-          </>
-        )}
-        <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
-      </View>
+            </>
+          )}
+          <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
+        </View>
+      </GestureDetector>
     </SafeAreaView>
   );
 };

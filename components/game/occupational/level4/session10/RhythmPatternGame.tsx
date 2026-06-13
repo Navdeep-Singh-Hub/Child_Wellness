@@ -13,7 +13,8 @@ import {
   speedBeatMs,
   speedToleranceMs,
   useTraceSound,
-  validatePattern,
+  validatePatternTiming,
+  validateSteps,
 } from '@/components/game/occupational/level4/session10/rhythmUtils';
 import {
   CLAP_PATTERNS,
@@ -188,6 +189,7 @@ export const RhythmPatternGame: React.FC<
   const beatMsRef = useRef(P.clapBeatMs);
   const copyStartRef = useRef(0);
   const beatTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const playPatternRef = useRef<(steps: readonly RhythmStep[], beatMs: number) => void>(() => {});
 
   const leftScale = useSharedValue(1);
   const rightScale = useSharedValue(1);
@@ -301,14 +303,24 @@ export const RhythmPatternGame: React.FC<
     });
   }, [playSuccess, ttsSuccess]);
 
-  const failCopy = useCallback(() => {
-    playWarn();
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-    speakTTS(ttsFail, 0.78).catch(() => {});
-    userRef.current = [];
-    setUserLen(0);
-    copyStartRef.current = Date.now();
-  }, [playWarn, ttsFail]);
+  const failCopy = useCallback(
+    (options?: { replay?: boolean; hint?: string }) => {
+      playWarn();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      speakTTS(ttsFail, 0.78).catch(() => {});
+      userRef.current = [];
+      setUserLen(0);
+      copyStartRef.current = Date.now();
+      if (options?.hint) setStatusHint(options.hint);
+
+      if (options?.replay) {
+        const steps = patternRef.current;
+        const beatMs = beatMsRef.current;
+        setTimeout(() => playPatternRef.current(steps, beatMs), 450);
+      }
+    },
+    [playWarn, ttsFail],
+  );
 
   const advanceRound = useCallback(() => {
     clearBeatTimers();
@@ -376,16 +388,30 @@ export const RhythmPatternGame: React.FC<
     [beatPulse, clearBeatTimers, mode, pulseClapDemo, pulseHand, pulseMusicDemo, pulseShoulderDemo, startCopyPhase, ttsListen],
   );
 
+  playPatternRef.current = playPattern;
+
   const checkUserInput = useCallback(() => {
     const expected = patternRef.current;
     const actual = userRef.current;
-    const tol = toleranceForMode(mode, beatMsRef.current);
-    if (validatePattern(expected, actual, beatMsRef.current, tol)) {
-      bumpScore();
-      setTimeout(() => advanceRound(), 650);
-    } else {
-      failCopy();
+    if (!validateSteps(expected, actual)) {
+      failCopy({ hint: 'Copy the same pattern!' });
+      return;
     }
+
+    const needsTiming = mode === 'memory' || mode === 'speed';
+    if (needsTiming) {
+      const tol = toleranceForMode(mode, beatMsRef.current);
+      if (!validatePatternTiming(actual, beatMsRef.current, tol)) {
+        failCopy({
+          replay: true,
+          hint: 'Match the rhythm — listen and try again!',
+        });
+        return;
+      }
+    }
+
+    bumpScore();
+    setTimeout(() => advanceRound(), 650);
   }, [advanceRound, bumpScore, failCopy, mode]);
 
   const recordStep = useCallback(

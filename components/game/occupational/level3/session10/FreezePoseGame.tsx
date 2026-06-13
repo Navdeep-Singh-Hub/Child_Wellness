@@ -1,27 +1,41 @@
-/** OT Level 3 · Session 10 · Game 4 — Freeze Pose · Theme: "Statue Hold" */
+/** OT Level 3 · Session 10 · Game 4 — Statue Hold · Zen Animal Academy */
 import { PostureGame } from '@/components/game/occupational/level3/session10/PostureGame';
+import { GAME_THEMES, ZEN_SHELL } from '@/components/game/occupational/level3/session10/zenAcademyTheme';
 import React from 'react';
+
+const G = GAME_THEMES.freezePose;
 
 const FreezePoseGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <PostureGame
     {...props}
     mode="freezePose"
     theme={{
-      title: 'Statue Hold', subtitle: 'Hold each pose until the bar fills', emoji: '🧊',
-      gradient: ['#F0F9FF', '#E0F2FE', '#7DD3FC', '#0EA5E9'],
-      accent: '#0EA5E9', accentDark: '#0369A1', confirmBg: '#0284C7',
-      backText: '#075985', backBorder: 'rgba(14,165,233,0.25)',
-      titleColor: '#0C4A6E', subtitleColor: '#0284C7', statLabel: '#0EA5E9', statValue: '#0C4A6E',
-      statBorder: 'rgba(14,165,233,0.2)', playBorder: 'rgba(14,165,233,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#0EA5E9',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: ['#ECFEFF', '#CFFAFE', '#67E8F9', '#0891B2'],
+      accent: '#0891B2',
+      accentDark: '#0E7490',
+      confirmBg: '#0E7490',
+      backText: ZEN_SHELL.backText,
+      backBorder: ZEN_SHELL.backBorder,
+      titleColor: '#164E63',
+      subtitleColor: '#0891B2',
+      statLabel: ZEN_SHELL.statLabel,
+      statValue: ZEN_SHELL.statValue,
+      statBorder: ZEN_SHELL.statBorder,
+      playBorder: ZEN_SHELL.playBorder,
+      playBg: ZEN_SHELL.playBg,
+      sparkleColor: '#22D3EE',
+      hintText: G.hintText,
     }}
-    ttsIntro="Hold each pose steady like a statue until the timer finishes!"
-    ttsComplete="Statue hold champion!"
-    ttsHold="Hold the pose!"
-    ttsHoldDone="Perfect hold!"
-    congratsMessage="Statue Hold Star!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
+    ttsHold="Hold your pose like a statue!"
+    ttsHoldDone="Excellent statue hold!"
+    congratsMessage={G.congrats}
     logType="freeze-pose"
-    skillTags={['balance', 'strength', 'posture']}
+    skillTags={['postural-endurance', 'self-control', 'sustained-attention', 'stability']}
   />
 );
 

@@ -5,6 +5,7 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
 import {
   createObjectPanGesture,
+  createSimultaneousDualPan,
   distPx,
   randomMatchShape,
   useTraceSound,
@@ -320,6 +321,8 @@ export const DualDragGame: React.FC<
     onUpdate: () => updateInZone('right'),
   });
 
+  const dualGesture = createSimultaneousDualPan(leftPan, rightPan);
+
   const leftEmoji = mode === 'shapeSort' ? '⭕' : mode === 'matchCenter' ? matchEmoji : '🔵';
   const rightEmoji = mode === 'shapeSort' ? '⬜' : mode === 'matchCenter' ? matchEmoji : '🔴';
 
@@ -385,78 +388,76 @@ export const DualDragGame: React.FC<
         ) : null}
       </View>
 
-      <View
-        style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
-        onLayout={(e) => {
-          playW.current = e.nativeEvent.layout.width;
-          playH.current = e.nativeEvent.layout.height;
-          layoutPositions();
-        }}
-      >
-        {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
+      <GestureDetector gesture={dualGesture}>
+        <View
+          style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
+          onLayout={(e) => {
+            playW.current = e.nativeEvent.layout.width;
+            playH.current = e.nativeEvent.layout.height;
+            layoutPositions();
+          }}
+        >
+          {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
 
-        {roundActive && mode === 'matchCenter' && (
-          <View
-            style={[
-              styles.zone,
-              styles.centerZone,
-              {
-                left: zoneLayout.center.x - 55,
-                top: zoneLayout.center.y - 55,
-                borderColor: T.zoneBorder,
-              },
-            ]}
-          >
-            <Text style={styles.zoneLabel}>MATCH</Text>
-          </View>
-        )}
-
-        {roundActive && mode !== 'matchCenter' && (
-          <>
+          {roundActive && mode === 'matchCenter' && (
             <View
               style={[
                 styles.zone,
+                styles.centerZone,
                 {
-                  left: zoneLayout.left.x - 48,
-                  top: zoneLayout.left.y - 48,
+                  left: zoneLayout.center.x - 55,
+                  top: zoneLayout.center.y - 55,
                   borderColor: T.zoneBorder,
                 },
               ]}
             >
-              <Text style={styles.zoneEmoji}>{mode === 'shapeSort' ? '⭕' : '🎯'}</Text>
+              <Text style={styles.zoneLabel}>MATCH</Text>
             </View>
-            <View
-              style={[
-                styles.zone,
-                {
-                  left: zoneLayout.right.x - 48,
-                  top: zoneLayout.right.y - 48,
-                  borderColor: T.zoneBorder,
-                },
-              ]}
-            >
-              <Text style={styles.zoneEmoji}>{mode === 'shapeSort' ? '⬜' : '🎯'}</Text>
-            </View>
-          </>
-        )}
+          )}
 
-        {roundActive && (
-          <>
-            <GestureDetector gesture={leftPan}>
+          {roundActive && mode !== 'matchCenter' && (
+            <>
+              <View
+                style={[
+                  styles.zone,
+                  {
+                    left: zoneLayout.left.x - 48,
+                    top: zoneLayout.left.y - 48,
+                    borderColor: T.zoneBorder,
+                  },
+                ]}
+              >
+                <Text style={styles.zoneEmoji}>{mode === 'shapeSort' ? '⭕' : '🎯'}</Text>
+              </View>
+              <View
+                style={[
+                  styles.zone,
+                  {
+                    left: zoneLayout.right.x - 48,
+                    top: zoneLayout.right.y - 48,
+                    borderColor: T.zoneBorder,
+                  },
+                ]}
+              >
+                <Text style={styles.zoneEmoji}>{mode === 'shapeSort' ? '⬜' : '🎯'}</Text>
+              </View>
+            </>
+          )}
+
+          {roundActive && (
+            <>
               <Animated.View style={[styles.obj, { backgroundColor: T.leftColor }, leftStyle]}>
                 <Text style={styles.objEmoji}>{leftEmoji}</Text>
               </Animated.View>
-            </GestureDetector>
-            <GestureDetector gesture={rightPan}>
               <Animated.View style={[styles.obj, { backgroundColor: T.rightColor }, rightStyle]}>
                 <Text style={styles.objEmoji}>{rightEmoji}</Text>
               </Animated.View>
-            </GestureDetector>
-          </>
-        )}
+            </>
+          )}
 
-        <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
-      </View>
+          <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
+        </View>
+      </GestureDetector>
     </SafeAreaView>
   );
 };

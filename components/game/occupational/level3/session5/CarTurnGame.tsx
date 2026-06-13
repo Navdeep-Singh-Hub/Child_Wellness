@@ -1,29 +1,43 @@
-/** OT Level 3 · Session 5 · Game 1 — Car Turn · Theme: "Road Turn" */
+/** OT Level 3 · Session 5 · Game 1 — Road Turn */
 import { HorizontalSwipeGame } from '@/components/game/occupational/level3/session5/HorizontalSwipeGame';
+import { GAME_THEMES, ROAD_CHARACTERS, ROAD_GRADIENT, ROAD_SHELL } from '@/components/game/occupational/level3/session5/roadKingdomTheme';
 import React from 'react';
+
+const G = GAME_THEMES.carTurn;
 
 const CarTurnGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <HorizontalSwipeGame
     {...props}
     mode="carTurn"
     theme={{
-      title: 'Road Turn', subtitle: 'Swipe left or right to turn the car', emoji: '🚗',
-      gradient: ['#EFF6FF', '#DBEAFE', '#93C5FD', '#3B82F6'],
-      accent: '#3B82F6', accentDark: '#1D4ED8', objectEmoji: '🚗',
-      backText: '#1E40AF', backBorder: 'rgba(59,130,246,0.25)',
-      titleColor: '#1E3A8A', subtitleColor: '#2563EB', statLabel: '#3B82F6', statValue: '#1E3A8A',
-      statBorder: 'rgba(59,130,246,0.2)', playBorder: 'rgba(59,130,246,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#3B82F6', hintText: 'Match the turn direction!',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: ROAD_GRADIENT,
+      accent: ROAD_SHELL.accent,
+      accentDark: ROAD_SHELL.accentDark,
+      objectEmoji: ROAD_CHARACTERS.rocky.emoji,
+      backText: ROAD_SHELL.backText,
+      backBorder: ROAD_SHELL.backBorder,
+      titleColor: ROAD_SHELL.titleColor,
+      subtitleColor: ROAD_SHELL.subtitleColor,
+      statLabel: ROAD_SHELL.statLabel,
+      statValue: ROAD_SHELL.statValue,
+      statBorder: ROAD_SHELL.statBorder,
+      playBorder: ROAD_SHELL.playBorder,
+      playBg: ROAD_SHELL.playBg,
+      sparkleColor: ROAD_SHELL.sparkleColor,
+      hintText: G.hintText,
     }}
-    ttsIntro="Swipe left to turn left, swipe right to turn right!"
-    ttsComplete="Great driving!"
-    ttsLeft="Swipe left to turn the car left!"
-    ttsRight="Swipe right to turn the car right!"
-    ttsWrongLeft="Try swiping left!"
-    ttsWrongRight="Try swiping right!"
-    congratsMessage="Road Master!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
+    ttsLeft="Swipe LEFT to turn!"
+    ttsRight="Swipe RIGHT to turn!"
+    ttsWrongLeft="Bump! Try swiping LEFT!"
+    ttsWrongRight="Bump! Try swiping RIGHT!"
+    congratsMessage={G.congrats}
     logType="car-turn"
-    skillTags={['direction-discrimination', 'lateral-movement', 'motor-planning']}
+    skillTags={['direction-following', 'motor-planning', 'visual-tracking', 'lateral-awareness']}
   />
 );
 

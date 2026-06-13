@@ -1,25 +1,38 @@
-/** OT Level 3 · Session 3 · Game 1 — Single Beat Tap · Theme: "One Beat" */
+/** OT Level 3 · Session 3 · Game 1 — One Beat */
 import { DrumTapGame } from '@/components/game/occupational/level3/session3/DrumTapGame';
+import { GAME_THEMES, TEMPO_GRADIENT, TEMPO_SHELL } from '@/components/game/occupational/level3/session3/tempoTownTheme';
 import React from 'react';
+
+const G = GAME_THEMES.singleBeat;
 
 const SingleBeatTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <DrumTapGame
     {...props}
     mode="singleBeat"
     theme={{
-      title: 'One Beat', subtitle: 'One drum beat — tap once!', emoji: '🥁',
-      gradient: ['#FFF7ED', '#FFEDD5', '#FDBA74', '#F97316'],
-      drumBg: '#EA580C', drumActive: '#C2410C',
-      backText: '#9A3412', backBorder: 'rgba(249,115,22,0.25)',
-      titleColor: '#7C2D12', subtitleColor: '#C2410C', statLabel: '#EA580C', statValue: '#7C2D12',
-      statBorder: 'rgba(249,115,22,0.2)', playBorder: 'rgba(249,115,22,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#F97316', hintText: 'Tap once when you hear the beat!',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: TEMPO_GRADIENT,
+      drumBg: TEMPO_SHELL.drumBg,
+      drumActive: TEMPO_SHELL.drumActive,
+      backText: TEMPO_SHELL.backText,
+      backBorder: TEMPO_SHELL.backBorder,
+      titleColor: TEMPO_SHELL.titleColor,
+      subtitleColor: TEMPO_SHELL.subtitleColor,
+      statLabel: TEMPO_SHELL.statLabel,
+      statValue: TEMPO_SHELL.statValue,
+      statBorder: TEMPO_SHELL.statBorder,
+      playBorder: TEMPO_SHELL.playBorder,
+      playBg: TEMPO_SHELL.playBg,
+      sparkleColor: TEMPO_SHELL.sparkleColor,
+      hintText: G.hintText,
     }}
-    ttsIntro="Listen for one drum beat, then tap the drum once!"
-    ttsComplete="Great single beat tapping!"
-    congratsMessage="Beat Tapper!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
+    congratsMessage={G.congrats}
     logType="single-beat-tap"
-    skillTags={['timing', 'cause-effect', 'focus']}
+    skillTags={['timing', 'impulse-control', 'attention', 'rhythm-sync']}
   />
 );
 

@@ -1,27 +1,44 @@
-/** OT Level 3 · Session 2 · Game 1 — Big Tap vs Small Tap · Theme: "Size Tap" */
+/** OT Level 3 · Session 2 · Game 1 — Size Tap · Giant vs Tiny Kingdom */
 import { ScaleMoveGame } from '@/components/game/occupational/level3/session2/ScaleMoveGame';
+import { GAME_THEMES, KINGDOM_CHARACTERS, KINGDOM_GRADIENT, KINGDOM_SHELL } from '@/components/game/occupational/level3/session2/kingdomTheme';
 import React from 'react';
+
+const G = GAME_THEMES.tap;
+const C = KINGDOM_CHARACTERS.gogo;
 
 const BigTapSmallTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <ScaleMoveGame
     {...props}
     mode="tap"
     theme={{
-      title: 'Size Tap', subtitle: 'Tap the big circle for BIG, tiny for SMALL', emoji: '👆',
-      gradient: ['#EFF6FF', '#DBEAFE', '#93C5FD', '#3B82F6'],
-      accent: '#3B82F6', accentDark: '#1D4ED8', bigColor: '#2563EB', smallColor: '#F59E0B',
-      backText: '#1E40AF', backBorder: 'rgba(59,130,246,0.25)',
-      titleColor: '#1E3A8A', subtitleColor: '#2563EB', statLabel: '#3B82F6', statValue: '#1E3A8A',
-      statBorder: 'rgba(59,130,246,0.2)', playBorder: 'rgba(59,130,246,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#3B82F6', hintText: 'Wait for the cue, then tap the right size!',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: KINGDOM_GRADIENT,
+      accent: KINGDOM_SHELL.accent,
+      accentDark: KINGDOM_SHELL.accentDark,
+      bigColor: KINGDOM_SHELL.giantColor,
+      smallColor: KINGDOM_SHELL.tinyColor,
+      backText: KINGDOM_SHELL.backText,
+      backBorder: KINGDOM_SHELL.backBorder,
+      titleColor: KINGDOM_SHELL.titleColor,
+      subtitleColor: KINGDOM_SHELL.subtitleColor,
+      statLabel: KINGDOM_SHELL.statLabel,
+      statValue: KINGDOM_SHELL.statValue,
+      statBorder: KINGDOM_SHELL.statBorder,
+      playBorder: KINGDOM_SHELL.playBorder,
+      playBg: KINGDOM_SHELL.playBg,
+      sparkleColor: KINGDOM_SHELL.sparkleColor,
+      hintText: G.hintText,
+      creatureEmoji: C.emoji,
     }}
-    ttsIntro="Tap the big circle when you hear BIG, and the small circle when you hear SMALL!"
-    ttsComplete="Great size tapping!"
-    ttsBig="BIG!"
-    ttsSmall="SMALL!"
-    congratsMessage="Size Tap Star!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
+    ttsBig="Tap the BIG circle!"
+    ttsSmall="Tap the SMALL circle!"
+    congratsMessage={G.congrats}
     logType="bigTapSmallTap"
-    skillTags={['motor-planning', 'size-discrimination', 'eye-hand-coordination']}
+    skillTags={['motor-planning', 'size-discrimination', 'visual-motor-integration', 'attention']}
   />
 );
 

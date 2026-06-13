@@ -6,8 +6,7 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { clearScheduledSpeech, DEFAULT_TTS_RATE, speak as speakTTS, stopTTS } from '@/utils/tts';
-import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
-import { speechLevel2ButtonStyles } from '@/components/game/speech/level2-shared/SpeechLevel2Shell';
+import { Level2ChoiceTile } from '@/components/game/speech/level2-shared/Level2ChoiceTile';
 import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import {
   type Level2BaseShellProps,
@@ -15,7 +14,7 @@ import {
 } from '@/components/game/speech/level2-shared/level2ShellProps';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 export const DEFAULT_COMMUNITY_ROUNDS = 3;
 
@@ -163,36 +162,14 @@ export function CommunityChoiceTile({
   dimmed?: boolean;
 }) {
   return (
-    <Pressable
-      style={[
-        styles.choiceTile,
-        selected && { borderColor: accent, borderWidth: 3 },
-        dimmed && styles.choiceDimmed,
-      ]}
+    <Level2ChoiceTile
+      label={label}
+      emoji={emoji}
+      imageKey={imageKey}
+      accent={accent}
       onPress={onPress}
-    >
-      <Level2Picture imageKey={imageKey} emoji={emoji} size={speechLevel2ButtonStyles.emoji.fontSize} />
-      <Text style={[styles.choiceLabel, { color: accent }]}>{label}</Text>
-    </Pressable>
+      selected={selected}
+      dimmed={dimmed}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  choiceTile: {
-    flex: 1,
-    minWidth: '42%',
-    maxWidth: '48%',
-    margin: 5,
-    minHeight: 108,
-    padding: 14,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#CBD5E1',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 2,
-  },
-  choiceDimmed: { opacity: 0.35 },
-  choiceLabel: { ...speechLevel2ButtonStyles.label, marginTop: 6, textAlign: 'center' },
-});

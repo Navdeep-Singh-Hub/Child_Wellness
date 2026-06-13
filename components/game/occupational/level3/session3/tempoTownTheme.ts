@@ -1,0 +1,132 @@
+/**
+ * Tempo Town Adventure — OT Level 3 Session 3 theme tokens.
+ */
+
+export const TEMPO_CHARACTERS = {
+  toby: { id: 'toby', name: 'Toby', role: 'Turtle', emoji: '🐢', color: '#22C55E' },
+  ruby: { id: 'ruby', name: 'Ruby', role: 'Rabbit', emoji: '🐰', color: '#F472B6' },
+  captain: { id: 'captain', name: 'Captain Signal', role: 'Traffic Controller', emoji: '🚦', color: '#EF4444' },
+  beatBot: { id: 'beatBot', name: 'Beat Bot', role: 'Rhythm Trainer', emoji: '🥁', color: '#F97316' },
+  melody: { id: 'melody', name: 'Melody Bird', role: 'Music Guide', emoji: '🎵', color: '#8B5CF6' },
+} as const;
+
+export const TEMPO_GRADIENT: [string, string, string, string] = [
+  '#F0F9FF',
+  '#E0F2FE',
+  '#7DD3FC',
+  '#0284C7',
+];
+
+export const TEMPO_SHELL = {
+  gradient: TEMPO_GRADIENT,
+  backText: '#075985',
+  backBorder: 'rgba(2,132,199,0.25)',
+  titleColor: '#0C4A6E',
+  subtitleColor: '#0369A1',
+  statLabel: '#0284C7',
+  statValue: '#0C4A6E',
+  statBorder: 'rgba(2,132,199,0.2)',
+  playBorder: 'rgba(2,132,199,0.3)',
+  playBg: 'rgba(255,255,255,0.42)',
+  sparkleColor: '#FBBF24',
+  accent: '#0EA5E9',
+  accentDark: '#0369A1',
+  coinColor: '#F59E0B',
+  fastColor: '#EF4444',
+  slowColor: '#22C55E',
+  drumBg: '#EA580C',
+  drumActive: '#C2410C',
+};
+
+export const GAME_THEMES = {
+  singleBeat: {
+    title: 'One Beat',
+    subtitle: 'Beat Bot plays once — you tap once!',
+    emoji: '🥁',
+    voiceIntro: 'Tap exactly once for every beat. No extra taps!',
+    voiceComplete: 'Excellent timing! One beat mastered!',
+    congrats: 'One Beat Champion!',
+    hintText: 'Listen… tap once on the beat!',
+  },
+  doubleBeat: {
+    title: 'Two Beats',
+    subtitle: 'Hear two beats — tap twice!',
+    emoji: '🥁🥁',
+    voiceIntro: 'Listen for two drum beats, then tap twice!',
+    voiceComplete: 'Great sequencing and timing!',
+    congrats: 'Two Beat Star!',
+    hintText: 'Wait for both beats, then tap tap!',
+  },
+  pauseTap: {
+    title: 'Wait & Tap',
+    subtitle: 'Beat, pause… then tap!',
+    emoji: '⏸️',
+    voiceIntro: 'Wait through the pause. Do not tap early!',
+    voiceComplete: 'Amazing self-control!',
+    congrats: 'Wait & Tap Pro!',
+    hintText: 'Resist tapping during the pause!',
+  },
+  fastBeat: {
+    title: 'Beat Sprint',
+    subtitle: 'Beats get faster — keep up!',
+    emoji: '⚡',
+    voiceIntro: 'Tap in sync as the drum speeds up!',
+    voiceComplete: 'Incredible rhythm tracking!',
+    congrats: 'Beat Sprint Hero!',
+    hintText: 'Stay with the accelerating beat!',
+  },
+  slowBeat: {
+    title: 'Calm Beats',
+    subtitle: 'Tap gently with slow, calm rhythms.',
+    emoji: '🧘',
+    voiceIntro: 'Breathe slowly and tap gently on each calm beat.',
+    voiceComplete: 'Beautiful calm control!',
+    congrats: 'Calm Beats Master!',
+    hintText: 'Slow and gentle — no rushing!',
+  },
+  dragSlow: {
+    title: 'Slow & Steady',
+    subtitle: 'Help Toby reach the finish — slowly!',
+    emoji: '🐢',
+    voiceIntro: 'Drag Toby slowly to the finish. Too fast makes him stumble!',
+    voiceComplete: 'Slow and steady wins!',
+    congrats: 'Turtle Trekker!',
+    hintText: 'Move slowly and stay in control!',
+  },
+  dragFast: {
+    title: 'Quick Hop',
+    subtitle: 'Hop Ruby through checkpoints before time runs out!',
+    emoji: '🐰',
+    voiceIntro: 'Move Ruby quickly through every checkpoint!',
+    voiceComplete: 'Quick and accurate hopping!',
+    congrats: 'Quick Hop Champion!',
+    hintText: 'Fast but careful — beat the timer!',
+  },
+  speedMatch: {
+    title: 'Match the Pace',
+    subtitle: 'Drag at the same speed as the guide!',
+    emoji: '🐢',
+    voiceIntro: 'Watch the guide move, then match its speed!',
+    voiceComplete: 'Perfect pace matching!',
+    congrats: 'Pace Matcher!',
+    hintText: 'Match the character speed exactly!',
+  },
+  trafficLight: {
+    title: 'Light Rules',
+    subtitle: 'Follow Captain Signal — fast, slow, or stop!',
+    emoji: '🚦',
+    voiceIntro: 'Green means go fast! Yellow means go slow! Red means stop!',
+    voiceComplete: 'Great rule following!',
+    congrats: 'Signal Star!',
+    hintText: 'Watch the light and move correctly!',
+  },
+  musicSpeed: {
+    title: 'Move to Music',
+    subtitle: 'Swipe to Melody Bird\'s tempo!',
+    emoji: '🎵',
+    voiceIntro: 'Match your swipe speed to the music tempo!',
+    voiceComplete: 'Wonderful rhythm synchronization!',
+    congrats: 'Music Mover!',
+    hintText: 'Slow, medium, or fast — match the music!',
+  },
+} as const;

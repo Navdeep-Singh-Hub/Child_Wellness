@@ -1,15 +1,20 @@
 /**
- * Helpers for OT Level 3 Session 3 speed games.
+ * Re-exports for OT Level 3 Session 3 speed/tempo helpers.
  */
+export {
+  randomSpeed,
+  swipeMatchesMusic,
+  swipeMatchesTraffic,
+  dragPaceMatches,
+  type SpeedKind,
+  useTraceSound,
+} from '@/components/game/occupational/level3/session3/tempoUtils';
 
-export type SpeedKind = 'fast' | 'slow';
-
-export const randomSpeed = (): SpeedKind => (Math.random() > 0.5 ? 'fast' : 'slow');
-
+/** @deprecated Use swipeMatchesTraffic or swipeMatchesMusic */
 export const swipeSpeedOk = (
   swipeMs: number,
   distance: number,
-  target: SpeedKind,
+  target: 'fast' | 'slow',
   fastMaxMs: number,
   slowMinMs: number,
   minDist: number,
@@ -18,5 +23,3 @@ export const swipeSpeedOk = (
   if (target === 'fast') return swipeMs <= fastMaxMs;
   return swipeMs >= slowMinMs;
 };
-
-export { useTraceSound } from '@/components/game/occupational/level2/session2/traceUtils';

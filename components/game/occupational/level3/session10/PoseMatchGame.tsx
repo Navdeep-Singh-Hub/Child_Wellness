@@ -1,29 +1,43 @@
-/** OT Level 3 · Session 10 · Game 1 — Pose Match · Theme: "Posture Match" */
+/** OT Level 3 · Session 10 · Game 1 — Posture Match · Zen Animal Academy */
 import { PostureGame } from '@/components/game/occupational/level3/session10/PostureGame';
+import { GAME_THEMES, ZEN_SHELL } from '@/components/game/occupational/level3/session10/zenAcademyTheme';
 import React from 'react';
+
+const G = GAME_THEMES.poseMatch;
 
 const PoseMatchGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <PostureGame
     {...props}
     mode="poseMatch"
     theme={{
-      title: 'Posture Match', subtitle: 'Match the yoga pose on screen', emoji: '🎯',
-      gradient: ['#EFF6FF', '#DBEAFE', '#93C5FD', '#3B82F6'],
-      accent: '#3B82F6', accentDark: '#1D4ED8', confirmBg: '#2563EB',
-      backText: '#1E40AF', backBorder: 'rgba(59,130,246,0.25)',
-      titleColor: '#1E3A8A', subtitleColor: '#2563EB', statLabel: '#3B82F6', statValue: '#1E3A8A',
-      statBorder: 'rgba(59,130,246,0.2)', playBorder: 'rgba(59,130,246,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#3B82F6',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: ZEN_SHELL.gradient,
+      accent: ZEN_SHELL.accent,
+      accentDark: ZEN_SHELL.accentDark,
+      confirmBg: ZEN_SHELL.confirmBg,
+      backText: ZEN_SHELL.backText,
+      backBorder: ZEN_SHELL.backBorder,
+      titleColor: ZEN_SHELL.titleColor,
+      subtitleColor: ZEN_SHELL.subtitleColor,
+      statLabel: ZEN_SHELL.statLabel,
+      statValue: ZEN_SHELL.statValue,
+      statBorder: ZEN_SHELL.statBorder,
+      playBorder: ZEN_SHELL.playBorder,
+      playBg: ZEN_SHELL.playBg,
+      sparkleColor: ZEN_SHELL.sparkleColor,
+      hintText: G.hintText,
     }}
-    ttsIntro="Watch each yoga pose, copy it with your body, then tap done!"
-    ttsComplete="Great posture matching!"
-    ttsWatch="Watch this pose!"
-    ttsConfirm="Match the same posture!"
-    ttsMiss="Try to match the pose!"
-    confirmLabel="✓ I matched it!"
-    congratsMessage="Posture Match Star!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
+    ttsWatch="Watch Master Owl's pose!"
+    ttsConfirm="Copy the posture, then tap Done!"
+    ttsMiss="Try to match the pose calmly!"
+    confirmLabel="✅ Done"
+    congratsMessage={G.congrats}
     logType="pose-match"
-    skillTags={['precision', 'focus', 'posture-matching']}
+    skillTags={['postural-control', 'body-awareness', 'observation', 'focus']}
   />
 );
 

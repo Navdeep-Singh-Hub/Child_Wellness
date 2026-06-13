@@ -6,7 +6,7 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { clearScheduledSpeech, DEFAULT_TTS_RATE, speak as speakTTS, stopTTS } from '@/utils/tts';
-import { Level2Picture } from '@/components/game/speech/level2-shared/Level2Picture';
+import { Level2ChoiceTile } from '@/components/game/speech/level2-shared/Level2ChoiceTile';
 import type { Level2ImageKey } from '@/components/game/speech/level2-shared/speechLevel2Assets';
 import {
   type Level2BaseShellProps,
@@ -14,7 +14,7 @@ import {
 } from '@/components/game/speech/level2-shared/level2ShellProps';
 import * as Haptics from 'expo-haptics';
 import React, { useCallback, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 export const DEFAULT_SEQUENCE_ROUNDS = 3;
 
@@ -164,51 +164,16 @@ export function SequenceChoiceTile({
   dimmed?: boolean;
 }) {
   return (
-    <Pressable
-      style={[
-        styles.choiceTile,
-        selected && { borderColor: accent, borderWidth: 3 },
-        dimmed && styles.choiceDimmed,
-      ]}
+    <Level2ChoiceTile
+      label={label}
+      emoji={emoji}
+      imageKey={imageKey}
+      accent={accent}
       onPress={onPress}
-    >
-      {orderNum != null ? (
-        <View style={[styles.orderBadge, { backgroundColor: accent }]}>
-          <Text style={styles.orderBadgeText}>{orderNum}</Text>
-        </View>
-      ) : null}
-      <Level2Picture imageKey={imageKey} emoji={emoji} size={36} />
-      <Text style={[styles.choiceLabel, { color: accent }]}>{label}</Text>
-    </Pressable>
+      selected={selected}
+      orderNum={orderNum}
+      dimmed={dimmed}
+      small
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  choiceTile: {
-    flex: 1,
-    minWidth: '30%',
-    maxWidth: '32%',
-    margin: 4,
-    minHeight: 96,
-    padding: 10,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    borderWidth: 2,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  choiceDimmed: { opacity: 0.4 },
-  choiceLabel: { fontSize: 11, fontWeight: '800', marginTop: 4, textAlign: 'center' },
-  orderBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  orderBadgeText: { color: '#fff', fontWeight: '900', fontSize: 12 },
-});

@@ -1,30 +1,45 @@
-/** OT Level 3 · Session 3 · Game 10 — Music Speed Control · Theme: "Move to Music" */
+/** OT Level 3 · Session 3 · Game 10 — Move to Music */
 import { SpeedGame } from '@/components/game/occupational/level3/session3/SpeedGame';
+import { GAME_THEMES, TEMPO_CHARACTERS, TEMPO_SHELL } from '@/components/game/occupational/level3/session3/tempoTownTheme';
 import React from 'react';
+
+const G = GAME_THEMES.musicSpeed;
 
 const MusicSpeedControlGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <SpeedGame
     {...props}
     mode="musicSpeed"
     theme={{
-      title: 'Move to Music', subtitle: 'Fast music = fast swipe, slow music = slow swipe', emoji: '🎵',
-      gradient: ['#F5F3FF', '#EDE9FE', '#C4B5FD', '#8B5CF6'],
-      accent: '#8B5CF6', accentDark: '#6D28D9', characterEmoji: '🎵',
-      backText: '#5B21B6', backBorder: 'rgba(139,92,246,0.25)',
-      titleColor: '#4C1D95', subtitleColor: '#7C3AED', statLabel: '#8B5CF6', statValue: '#4C1D95',
-      statBorder: 'rgba(139,92,246,0.2)', playBorder: 'rgba(139,92,246,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#8B5CF6', hintText: 'Move with the music tempo!',
-      fastColor: '#F59E0B', slowColor: '#6366F1',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: ['#FAF5FF', '#F3E8FF', '#D8B4FE', '#9333EA'],
+      accent: '#A855F7',
+      accentDark: '#7E22CE',
+      characterEmoji: TEMPO_CHARACTERS.melody.emoji,
+      backText: '#6B21A8',
+      backBorder: 'rgba(168,85,247,0.25)',
+      titleColor: '#581C87',
+      subtitleColor: '#7E22CE',
+      statLabel: '#A855F7',
+      statValue: '#581C87',
+      statBorder: 'rgba(168,85,247,0.2)',
+      playBorder: 'rgba(168,85,247,0.25)',
+      playBg: TEMPO_SHELL.playBg,
+      sparkleColor: TEMPO_SHELL.sparkleColor,
+      hintText: G.hintText,
+      fastColor: TEMPO_SHELL.fastColor,
+      slowColor: TEMPO_SHELL.slowColor,
     }}
-    ttsIntro="When music is fast, move fast! When music is slow, move slow!"
-    ttsComplete="Great music movement!"
-    ttsFast="Fast music! Move fast!"
-    ttsSlow="Slow music! Move slow!"
-    ttsTooFast="That swipe was too fast for slow music!"
-    ttsTooSlow="That swipe was too slow for fast music!"
-    congratsMessage="Music Mover!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
+    ttsFast="Fast music — swipe quickly!"
+    ttsSlow="Slow music — swipe slowly!"
+    ttsTooFast="Too fast for this music!"
+    ttsTooSlow="Too slow — match the beat!"
+    congratsMessage={G.congrats}
     logType="music-speed-control"
-    skillTags={['auditory-motor-integration', 'speed-control', 'rhythm']}
+    skillTags={['rhythm-synchronization', 'movement-timing', 'auditory-processing', 'motor-planning']}
   />
 );
 

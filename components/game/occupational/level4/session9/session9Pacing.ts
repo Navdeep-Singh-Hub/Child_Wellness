@@ -8,9 +8,10 @@ export const SESSION4_9_PACING = {
   roundStartDelayMs: 400,
   matchTolerancePx: 62,
   sortTolerancePx: 68,
-  pullThresholdPx: 100,
+  pullThresholdPx: 72,
   balanceTargetYPct: 0.72,
   balanceTolerancePx: 90,
   balanceSpeedTolerance: 22,
+  balanceSyncMs: 900,
   objHalfPx: 38,
 } as const;

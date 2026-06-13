@@ -27,7 +27,10 @@ export type ObjectPanConfig = {
   clampY?: ClampFn;
 };
 
-/** Pan bound to one draggable object so two fingers can move left/right independently. */
+/**
+ * Pan bound to one draggable object. Uses absolute touch coords inside the play area
+ * so two Pan gestures composed with Gesture.Simultaneous can track two fingers.
+ */
 export const createObjectPanGesture = ({
   objX,
   objY,
@@ -40,23 +43,20 @@ export const createObjectPanGesture = ({
   onEnd,
   clampX = clampXDefault,
   clampY = clampYDefault,
-}: ObjectPanConfig) => {
-  const dragStart = { x: 0, y: 0 };
-
-  return Gesture.Pan()
+}: ObjectPanConfig) =>
+  Gesture.Pan()
     .runOnJS(true)
+    .maxPointers(1)
     .onBegin(() => {
       if (!isActive()) return;
       objScale.value = withTiming(1.12, { duration: 100 });
-      dragStart.x = objX.value;
-      dragStart.y = objY.value;
     })
     .onUpdate((e) => {
       if (!isActive()) return;
       const w = playW.current;
       const h = playH.current;
-      objX.value = clampX(dragStart.x + e.translationX, w, h, half);
-      objY.value = clampY(dragStart.y + e.translationY, w, h, half);
+      objX.value = clampX(e.x, w, h, half);
+      objY.value = clampY(e.y, w, h, half);
       onUpdate();
     })
     .onEnd(() => {
@@ -65,7 +65,12 @@ export const createObjectPanGesture = ({
       onUpdate();
       onEnd?.();
     });
-};
+
+/** Compose left + right pans so both hands can drag at the same time. */
+export const createSimultaneousDualPan = (
+  left: ReturnType<typeof createObjectPanGesture>,
+  right: ReturnType<typeof createObjectPanGesture>,
+) => Gesture.Simultaneous(left, right);
 
 export type MatchShape = 'circle' | 'square' | 'triangle' | 'star';
 
