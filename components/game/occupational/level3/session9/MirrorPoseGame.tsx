@@ -168,6 +168,7 @@ export const MirrorPoseGame: React.FC<
   const fastPosesNeededRef = useRef(3);
   const currentPoseRef = useRef<PoseType>('hands-up');
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startRoundPlayRef = useRef<() => void>(() => {});
 
   const tier = difficultyTier(round, P.rounds);
 
@@ -319,12 +320,11 @@ export const MirrorPoseGame: React.FC<
         recordError();
         setCanConfirm(false);
         canConfirmRef.current = false;
-        speakTTS('Time is up! Watch again next round.', 0.78).catch(() => {});
-        roundCompleteRef.current = true;
-        roundTimerRef.current = setTimeout(() => advanceRound(), 600);
+        speakTTS('Time is up! Try again!', 0.78).catch(() => {});
+        roundTimerRef.current = setTimeout(() => startRoundPlayRef.current(), 700);
       }
     }, limit);
-  }, [advanceRound, recordError, tier]);
+  }, [recordError, tier]);
 
   const enableConfirm = useCallback(() => {
     setCanConfirm(true);
@@ -506,6 +506,8 @@ export const MirrorPoseGame: React.FC<
     startHandMirrorRound,
     tier,
   ]);
+
+  startRoundPlayRef.current = startRoundPlay;
 
   useEffect(() => {
     if (round === 1) {

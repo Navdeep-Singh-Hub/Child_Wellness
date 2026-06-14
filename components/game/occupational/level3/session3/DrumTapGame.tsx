@@ -223,6 +223,13 @@ export const DrumTapGame: React.FC<
     setPulseKey((k) => k + 1);
   }, []);
 
+  const runRoundRef = useRef<() => void>(() => {});
+
+  const retryRound = useCallback(() => {
+    if (doneRef.current) return;
+    schedule(() => runRoundRef.current(), P.nextRoundDelayMs);
+  }, [schedule]);
+
   const advanceRound = useCallback(() => {
     clearTimers();
     setCanTap(false);
@@ -266,11 +273,11 @@ export const DrumTapGame: React.FC<
           setCanTap(false);
           canTapRef.current = false;
           failTap('late');
-          advanceRound();
+          retryRound();
         }
       }, window);
     }, 80);
-  }, [advanceRound, failTap, mode, pulseBeat, schedule, totalRounds]);
+  }, [failTap, mode, pulseBeat, retryRound, schedule, totalRounds]);
 
   const startDoubleBeat = useCallback(() => {
     const spacing = doubleBeatSpacing(roundRef.current, totalRounds);
@@ -293,12 +300,12 @@ export const DrumTapGame: React.FC<
             setCanTap(false);
             canTapRef.current = false;
             failTap('miss');
-            advanceRound();
+            retryRound();
           }
         }, spacing * 2.2);
       }, 200);
     }, spacing);
-  }, [advanceRound, failTap, pulseBeat, schedule, totalRounds]);
+  }, [failTap, pulseBeat, retryRound, schedule, totalRounds]);
 
   const startPauseTap = useCallback(() => {
     const wait = pauseWaitForRound(roundRef.current, totalRounds);
@@ -324,12 +331,12 @@ export const DrumTapGame: React.FC<
             setCanTap(false);
             canTapRef.current = false;
             failTap('late');
-            advanceRound();
+            retryRound();
           }
         }, bpmToInterval(80) * P.tapWindowRatio);
       }, wait);
     }, P.pauseBeatMs);
-  }, [advanceRound, failTap, pulseBeat, schedule, totalRounds]);
+  }, [failTap, pulseBeat, retryRound, schedule, totalRounds]);
 
   const playSprintBeat = useCallback(() => {
     if (doneRef.current) return;
@@ -382,6 +389,8 @@ export const DrumTapGame: React.FC<
     else startFastBeat();
   }, [mode, startAnalyticsRound, startDoubleBeat, startFastBeat, startPauseTap, startSingleBeat]);
 
+  runRoundRef.current = runRound;
+
   useEffect(() => {
     resetAnalytics();
   }, [resetAnalytics]);
@@ -430,7 +439,7 @@ export const DrumTapGame: React.FC<
         const grade = gradeTapTiming(spacing - expected);
         if (grade === 'miss' || grade === 'late' || grade === 'early') {
           failTap(grade);
-          advanceRound();
+          retryRound();
         } else {
           finishRoundSuccess(grade);
         }
@@ -451,7 +460,7 @@ export const DrumTapGame: React.FC<
       canTapRef.current = false;
       clearTimers();
       failTap('early');
-      advanceRound();
+      retryRound();
       return;
     }
 
@@ -464,7 +473,7 @@ export const DrumTapGame: React.FC<
       setCanTap(false);
       canTapRef.current = false;
       clearTimers();
-      advanceRound();
+      retryRound();
       return;
     }
     lastTapRef.current = now;
@@ -487,7 +496,7 @@ export const DrumTapGame: React.FC<
 
     if (grade === 'miss' || grade === 'late') {
       failTap(grade);
-      advanceRound();
+      retryRound();
     } else {
       finishRoundSuccess(grade);
     }

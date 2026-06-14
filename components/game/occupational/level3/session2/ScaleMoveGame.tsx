@@ -166,6 +166,7 @@ export const ScaleMoveGame: React.FC<
   const targetRef = useRef<ScaleTarget>('big');
   const isActiveRef = useRef(false);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const setupRoundRef = useRef<() => void>(() => {});
   const shakeX = useSharedValue(0);
 
   const shakeStyle = useAnimatedStyle(() => ({
@@ -285,12 +286,15 @@ export const ScaleMoveGame: React.FC<
       if (correct) {
         onSuccess?.();
         bumpScore();
-      } else {
-        failAttempt();
+        setIsActive(false);
+        setShowCue(false);
+        roundTimerRef.current = setTimeout(() => advanceRound(), 650);
+        return;
       }
+      failAttempt();
       setIsActive(false);
       setShowCue(false);
-      roundTimerRef.current = setTimeout(() => advanceRound(), correct ? 650 : P.nextRoundDelayMs);
+      roundTimerRef.current = setTimeout(() => setupRoundRef.current(), P.nextRoundDelayMs);
     },
     [advanceRound, bumpScore, failAttempt],
   );
@@ -356,6 +360,8 @@ export const ScaleMoveGame: React.FC<
       }
     }, mode === 'pinch' ? 0 : 120);
   }, [clearRoundTimer, mode, startAnalyticsRound, totalRounds, ttsBig, ttsSmall]);
+
+  setupRoundRef.current = setupRound;
 
   useEffect(() => {
     resetAnalytics();
@@ -445,8 +451,10 @@ export const ScaleMoveGame: React.FC<
     [advanceRound, bumpScore, recordSuccess],
   );
 
-  const handlePathExit = useCallback(() => {
+  const handlePathFail = useCallback(() => {
     failAttempt();
+    speakTTS('Drive from green to red and stay on the road!', 0.78).catch(() => {});
+    roundTimerRef.current = setTimeout(() => setupRoundRef.current(), P.nextRoundDelayMs);
   }, [failAttempt]);
 
   if (showCongratulations && done && finalStats) {
@@ -540,6 +548,7 @@ export const ScaleMoveGame: React.FC<
     }
     return (
       <RoadTraceView
+        roundKey={round}
         curved={pathCurved}
         narrow={pathNarrow}
         stroke={pathStroke}
@@ -548,7 +557,7 @@ export const ScaleMoveGame: React.FC<
         active={isActive}
         onProgress={() => {}}
         onComplete={handlePathComplete}
-        onExit={handlePathExit}
+        onFail={handlePathFail}
         onLayout={() => {}}
       />
     );
@@ -615,7 +624,9 @@ export const ScaleMoveGame: React.FC<
 
       {warnVisible && (
         <View style={styles.warnPill}>
-          <Text style={styles.warnText}>Try again — match the size!</Text>
+          <Text style={styles.warnText}>
+            {mode === 'path' ? 'Try again — trace the full road!' : 'Try again — match the size!'}
+          </Text>
         </View>
       )}
     </SafeAreaView>

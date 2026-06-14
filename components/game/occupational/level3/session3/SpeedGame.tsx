@@ -161,6 +161,7 @@ export const SpeedGame: React.FC<
   const musicTempoRef = useRef<MusicTempo>('medium');
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startRoundPlayRef = useRef<() => void>(() => {});
   const trackW = useRef(300);
   const panStartTime = useRef(0);
   const lastMoveTime = useRef(0);
@@ -321,6 +322,15 @@ export const SpeedGame: React.FC<
     setTimeout(() => setStumbleFlash(false), 500);
   }, [dragX, failAttempt, ttsTooFast]);
 
+  const retryCurrentRound = useCallback(() => {
+    roundCompleteRef.current = false;
+    hasSwipedRef.current = false;
+    checkpointRef.current = 0;
+    setMatchPct(0);
+    setTimerPct(100);
+    roundTimerRef.current = setTimeout(() => startRoundPlayRef.current(), 700);
+  }, []);
+
   const tryFinishDrag = useCallback(
     (x: number) => {
       if (roundCompleteRef.current || !roundActiveRef.current) return;
@@ -363,10 +373,10 @@ export const SpeedGame: React.FC<
       if (elapsed >= limit && !roundCompleteRef.current) {
         clearRoundTimer();
         failAttempt(ttsTooSlow);
-        advanceRound();
+        retryCurrentRound();
       }
     }, 80);
-  }, [advanceRound, clearRoundTimer, failAttempt, totalRounds, ttsTooSlow]);
+  }, [clearRoundTimer, failAttempt, retryCurrentRound, totalRounds, ttsTooSlow]);
 
   const startRoundPlay = useCallback(() => {
     if (doneRef.current) return;
@@ -412,6 +422,8 @@ export const SpeedGame: React.FC<
 
     speakTTS(ttsSlow, 0.78).catch(() => {});
   }, [dragX, mode, runUpperReference, startAnalyticsRound, startRabbitTimer, ttsFast, ttsSlow, ttsStop, upperX]);
+
+  startRoundPlayRef.current = startRoundPlay;
 
   useEffect(() => {
     resetAnalytics();
@@ -476,24 +488,20 @@ export const SpeedGame: React.FC<
       if (next >= finishDrag()) {
         if (mode === 'dragSlow' && elapsed < P.slowMinDragMs) {
           failAttempt(ttsTooFast);
-          dragX.value = 0;
-          currentDragX.current = 0;
+          retryCurrentRound();
         } else if (mode === 'dragFast' && elapsed > P.fastMaxDragMs) {
           failAttempt(ttsTooSlow);
-          dragX.value = 0;
-          currentDragX.current = 0;
+          retryCurrentRound();
         } else if (mode === 'speedMatch') {
           const diff = Math.abs(elapsed - targetDurationRef.current);
           if (!dragPaceMatches(elapsed, targetDurationRef.current, P.paceToleranceMs)) {
             failAttempt(diff > 0 ? ttsTooSlow : ttsTooFast);
+            retryCurrentRound();
           }
-          dragX.value = 0;
-          currentDragX.current = 0;
         }
       } else if (mode === 'dragFast' && checkpointRef.current < P.checkpointCount) {
         failAttempt(ttsTooSlow);
-        dragX.value = 0;
-        currentDragX.current = 0;
+        retryCurrentRound();
       } else {
         dragX.value = 0;
         currentDragX.current = 0;
@@ -535,6 +543,7 @@ export const SpeedGame: React.FC<
               ? ttsTooSlow
               : ttsTooFast,
         );
+        retryCurrentRound();
       }
     });
 

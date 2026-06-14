@@ -33,12 +33,14 @@ export const SESSION2_PACING = {
   smallThrowMax: 90,
   throwTierMultiplier: [1.3, 1.1, 1.0, 0.9] as const,
 
-  /** Path tracing */
-  widePathStroke: 28,
-  narrowPathStroke: 12,
-  pathToleranceBase: 5.5,
-  pathToleranceWideBonus: 2.5,
-  pathCompletePct: 94,
+  /** Path tracing — stroke widths are SVG viewBox units (0–100), not pixels */
+  widePathStroke: 16,
+  narrowPathStroke: 6,
+  pathToleranceBase: 5,
+  pathToleranceWideBonus: 4,
+  pathCompletePct: 92,
+  pathEndTolerance: 10,
+  pathMinProgress: 0.85,
   pathWarnIntervalMs: 700,
 
   /** Throw baskets (% from left, % from top) */

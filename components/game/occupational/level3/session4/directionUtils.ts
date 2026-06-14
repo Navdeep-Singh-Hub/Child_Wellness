@@ -48,6 +48,16 @@ export function floorToPct(floor: number, maxFloor: number) {
   return SESSION4_PACING.elevatorGroundPct - ((floor - 1) / Math.max(maxFloor - 1, 1)) * range;
 }
 
+export function elevatorHitTolerance(floors: number) {
+  const range = SESSION4_PACING.elevatorGroundPct - SESSION4_PACING.elevatorTopPct;
+  return Math.max(6, range / Math.max(floors - 1, 1) * 0.42);
+}
+
+export function elevatorAtTarget(yPct: number, target: number, floors: number) {
+  const targetPct = floorToPct(target, floors);
+  return Math.abs(yPct - targetPct) <= elevatorHitTolerance(floors);
+}
+
 export function swipeMatchesSize(
   distance: number,
   target: SizeKind,

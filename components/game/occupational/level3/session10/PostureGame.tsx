@@ -167,6 +167,7 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
   const canConfirmRef = useRef(false);
   const holdTargetRef = useRef(P.holdDurationBaseMs);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startRoundPlayRef = useRef<() => void>(() => {});
   const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const introPlayedRef = useRef(false);
 
@@ -309,11 +310,11 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
   );
 
   const failRound = useCallback(() => {
-    if (roundCompleteRef.current || doneRef.current) return;
-    roundCompleteRef.current = true;
+    if (doneRef.current) return;
     showWarn(ttsMiss);
-    roundTimerRef.current = setTimeout(() => advanceRound(), 700);
-  }, [advanceRound, showWarn, ttsMiss]);
+    roundCompleteRef.current = false;
+    roundTimerRef.current = setTimeout(() => startRoundPlayRef.current(), 700);
+  }, [showWarn, ttsMiss]);
 
   const pickCue = useCallback((): PostureCue => {
     const t = difficultyTier(roundRef.current, totalRounds);
@@ -429,6 +430,8 @@ export const PostureGame: React.FC<PostureGameConfig & { onBack?: () => void; on
     if (isHoldMode(mode)) startHoldRound(next);
     else startConfirmRound(next);
   }, [mode, pickCue, startAnalyticsRound, startConfirmRound, startHoldRound]);
+
+  startRoundPlayRef.current = startRoundPlay;
 
   const runBreathingIntro = useCallback(
     (then: () => void) => {

@@ -189,6 +189,7 @@ export const BodyMapGame: React.FC<BodyMapGameConfig & { onBack?: () => void; on
   const puzzleMatchRef = useRef(52);
   const placedRef = useRef<Set<PuzzlePart>>(new Set());
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startRoundPlayRef = useRef<() => void>(() => {});
   const roundStartRef = useRef(Date.now());
   const playW = useRef(360);
   const playH = useRef(480);
@@ -482,11 +483,10 @@ export const BodyMapGame: React.FC<BodyMapGameConfig & { onBack?: () => void; on
     roundTimerRef.current = setTimeout(() => {
       if (!roundCompleteRef.current && roundActiveRef.current) {
         showWarn('Time is up! Try again!');
-        roundTimerRef.current = setTimeout(() => advanceRound(), 600);
-        roundCompleteRef.current = true;
+        roundTimerRef.current = setTimeout(() => startRoundPlayRef.current(), 600);
       }
     }, limit);
-  }, [advanceRound, showWarn, tier]);
+  }, [showWarn, tier]);
 
   const startRoundPlay = useCallback(() => {
     if (doneRef.current) return;
@@ -551,8 +551,7 @@ export const BodyMapGame: React.FC<BodyMapGameConfig & { onBack?: () => void; on
         roundTimerRef.current = setTimeout(() => {
           if (!roundCompleteRef.current && roundActiveRef.current) {
             showWarn('Build faster next time!');
-            roundCompleteRef.current = true;
-            roundTimerRef.current = setTimeout(() => advanceRound(), 600);
+            roundTimerRef.current = setTimeout(() => startRoundPlayRef.current(), 600);
           }
         }, limit);
       }
@@ -567,9 +566,10 @@ export const BodyMapGame: React.FC<BodyMapGameConfig & { onBack?: () => void; on
     tier,
     triggerFlash,
     ttsFlash,
-    advanceRound,
     showWarn,
   ]);
+
+  startRoundPlayRef.current = startRoundPlay;
 
   useEffect(() => {
     if (round === 1) {

@@ -32,6 +32,7 @@ export function ThrowRangeArena({
   onLayout,
 }: Props) {
   const P = SESSION2_PACING;
+  const targetBasketX = basketX(targetBasket);
   const ballX = useSharedValue(P.ballStartX);
   const ballY = useSharedValue(P.ballStartY);
   const basketOffset = useSharedValue(0);
@@ -60,7 +61,7 @@ export function ThrowRangeArena({
   }));
 
   const basketStyle = useAnimatedStyle(() => ({
-    left: `${basketX(targetBasket) + basketOffset.value}%`,
+    left: `${targetBasketX + basketOffset.value}%`,
   }));
 
   const pan = Gesture.Pan()
@@ -87,7 +88,7 @@ export function ThrowRangeArena({
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       flying.value = withTiming(1, { duration: 450 });
-      ballX.value = withSpring(basketX(targetBasket));
+      ballX.value = withSpring(targetBasketX);
       ballY.value = withSpring(P.basketY + 8, {}, () => {
         ballX.value = withSpring(P.ballStartX);
         ballY.value = withSpring(P.ballStartY);

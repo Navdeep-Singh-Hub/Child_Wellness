@@ -234,11 +234,15 @@ export const SizeGestureGame: React.FC<
       if (ok) {
         recordSuccess({ sizeScore: opts?.sizeScore, precision: opts?.precision });
         bumpScore();
-      } else failAttempt();
+        setShowCue(false);
+        setTimeout(() => advanceRound(), 600);
+        return;
+      }
+      failAttempt();
       setShowCue(false);
-      setTimeout(() => advanceRound(), ok ? 600 : P.nextRoundDelayMs);
+      setTimeout(() => setupRound(), P.nextRoundDelayMs);
     },
-    [advanceRound, bumpScore, failAttempt, recordSuccess],
+    [advanceRound, bumpScore, failAttempt, recordSuccess, setupRound],
   );
 
   const setupRound = useCallback(() => {
