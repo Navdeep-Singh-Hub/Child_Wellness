@@ -470,17 +470,12 @@ import SlowTurtleMoveGame from '@/components/game/occupational/level3/session3/S
 import SpeedMatchGame from '@/components/game/occupational/level3/session3/SpeedMatchGame';
 import TrafficLightGame from '@/components/game/occupational/level3/session3/TrafficLightGame';
 
-// Occupational Therapy Level 3 Session 4: Big vs Small Movements & Up-Down Gestures
+// Occupational Therapy Level 3 Session 4: Up-Down Gestures
 import BallDropGame from '@/components/game/occupational/level3/session4/BallDropGame';
-import BalloonInflateL3S4Game from '@/components/game/occupational/level3/session4/BalloonInflateGame';
 import BalloonUpGame from '@/components/game/occupational/level3/session4/BalloonUpGame';
-import BigSmallSwitchGame from '@/components/game/occupational/level3/session4/BigSmallSwitchGame';
-import BigTapL3S4Game from '@/components/game/occupational/level3/session4/BigTapGame';
-import CompareAndMoveGame from '@/components/game/occupational/level3/session4/CompareAndMoveGame';
 import ElevatorGame from '@/components/game/occupational/level3/session4/ElevatorGame';
 import JumpArrowGame from '@/components/game/occupational/level3/session4/JumpArrowGame';
 import RainCatchGame from '@/components/game/occupational/level3/session4/RainCatchGame';
-import SmallDotTouchGame from '@/components/game/occupational/level3/session4/SmallDotTouchGame';
 
 // Occupational Therapy Level 3 Session 5: Left-Right Swipes
 import AnimalRunGame from '@/components/game/occupational/level3/session5/AnimalRunGame';
@@ -1248,11 +1243,6 @@ type GameKey =
   | 'speed-match'
   | 'traffic-light-game'
   | 'music-speed-control'
-  | 'big-tap-l3s4'
-  | 'small-dot-touch'
-  | 'big-small-switch'
-  | 'balloon-inflate-l3s4'
-  | 'compare-and-move'
   | 'balloon-up'
   | 'ball-drop'
   | 'elevator-game'
@@ -2741,18 +2731,6 @@ export default function SessionGamesScreen() {
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 2;
   const isBigPathTraceAvailable =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 2;
-
-  // Level 3 Session 4 folder: Big vs Small (alternate set)
-  const isBigTapL3S4Available =
-    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 4;
-  const isSmallDotTouchAvailable =
-    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 4;
-  const isBigSmallSwitchAvailable =
-    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 4;
-  const isBalloonInflateL3S4Available =
-    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 4;
-  const isCompareAndMoveAvailable =
-    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 4;
 
   // Level 3 Session 3: Fast vs Slow Movements + Tap with Rhythm
   const isSingleBeatTapAvailable =
@@ -7092,46 +7070,6 @@ export default function SessionGamesScreen() {
       color: '#38BDF8',
       available: isRainCatchAvailable,
     },
-    {
-      id: 'big-tap-l3s4',
-      title: 'Big Tap',
-      emoji: '👆',
-      description: 'Tap or swipe the big circle on the full screen. Develops large muscle movement.',
-      color: '#3B82F6',
-      available: isBigTapL3S4Available,
-    },
-    {
-      id: 'small-dot-touch',
-      title: 'Small Dot Touch',
-      emoji: '🔵',
-      description: 'Touch the small dot on screen. Develops precision and finger control.',
-      color: '#F59E0B',
-      available: isSmallDotTouchAvailable,
-    },
-    {
-      id: 'big-small-switch',
-      title: 'Big-Small Switch',
-      emoji: '🔄',
-      description: 'Sometimes big, sometimes small — react to the right size. Builds size differentiation.',
-      color: '#8B5CF6',
-      available: isBigSmallSwitchAvailable,
-    },
-    {
-      id: 'balloon-inflate-l3s4',
-      title: 'Balloon Inflate',
-      emoji: '🎈',
-      description: 'Swipe to make the balloon big or small. Develops pressure control.',
-      color: '#EF4444',
-      available: isBalloonInflateL3S4Available,
-    },
-    {
-      id: 'compare-and-move',
-      title: 'Compare & Move',
-      emoji: '🔄',
-      description: 'Big object needs a big swipe, small object needs a small swipe.',
-      color: '#10B981',
-      available: isCompareAndMoveAvailable,
-    },
     // Level 3 Session 5: Left-Right Swipes
     {
       id: 'car-turn',
@@ -9871,26 +9809,6 @@ export default function SessionGamesScreen() {
 
   if (currentGame === 'rain-catch') {
     return <RainCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
-  if (currentGame === 'big-tap-l3s4') {
-    return <BigTapL3S4Game onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
-  if (currentGame === 'small-dot-touch') {
-    return <SmallDotTouchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
-  if (currentGame === 'big-small-switch') {
-    return <BigSmallSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
-  if (currentGame === 'balloon-inflate-l3s4') {
-    return <BalloonInflateL3S4Game onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
-  if (currentGame === 'compare-and-move') {
-    return <CompareAndMoveGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 3 Session 5 games - Left-Right Swipes

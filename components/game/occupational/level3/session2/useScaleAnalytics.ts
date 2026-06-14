@@ -108,7 +108,7 @@ export function useScaleAnalytics(mode: ScaleMoveMode) {
     const s = snapshot();
     return {
       scaleAnalytics: s,
-      mode,
+      scaleMode: mode,
       movementScaleAccuracy: s.movementScaleAccuracy,
       swipeDistanceControl: s.swipeDistanceControl,
       pinchPrecision: s.pinchPrecision,

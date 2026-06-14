@@ -602,9 +602,10 @@ export const RhythmGame: React.FC<
         failTap();
         userTapsRef.current = [];
         setUserTapCount(0);
+        scheduleTimeout(() => playCopyPattern(), P.nextRoundDelayMs);
       }
     }
-  }, [advanceRound, bumpScore, failTap, pulseDrum]);
+  }, [failTap, bumpScore, advanceRound, playCopyPattern, pulseDrum, scheduleTimeout]);
 
   const handleLoudSoftTap = useCallback(
     (vol: VolumeKind) => {

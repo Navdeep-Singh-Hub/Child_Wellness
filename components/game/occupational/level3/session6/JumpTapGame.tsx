@@ -157,6 +157,7 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
   const rhythmBeatsRef = useRef(2);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startRoundPlayRef = useRef<() => void>(() => {});
 
   const objY = useSharedValue(P.jumpDownPct);
   const objScale = useSharedValue(1);
@@ -322,14 +323,26 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
 
   const failAndAdvance = useCallback(
     (msg: string, opts?: { withJump?: boolean; inhibitionFail?: boolean }) => {
-      if (roundCompleteRef.current || doneRef.current) return;
-      roundCompleteRef.current = true;
+      if (doneRef.current) return;
       showWarn(msg, opts?.inhibitionFail);
       if (opts?.withJump) playJumpAnim();
-      if (mode === 'obstacleJump') cancelAnimation(obstacleX);
-      roundTimerRef.current = setTimeout(() => advanceRound(), 700);
+      if (mode === 'obstacleJump') {
+        cancelAnimation(obstacleX);
+        setShowObstacle(false);
+      }
+      roundCompleteRef.current = false;
+      userTapsRef.current = [];
+      canTapRhythmRef.current = false;
+      setRhythmPhase('idle');
+      if (roundTimerRef.current) {
+        clearTimeout(roundTimerRef.current);
+        roundTimerRef.current = null;
+      }
+      roundTimerRef.current = setTimeout(() => {
+        if (!doneRef.current) startRoundPlayRef.current();
+      }, 700);
     },
-    [advanceRound, mode, obstacleX, playJumpAnim, showWarn],
+    [mode, obstacleX, playJumpAnim, showWarn],
   );
 
   const resetDoubleTap = useCallback(() => {
@@ -367,21 +380,45 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
     }
   }, [completeRound, mode, resetDoubleTap, showWarn, tier, ttsDoubleTap, ttsSingleIgnored]);
 
+  const finishJumpCountRoundRef = useRef<(num: number, tapped: boolean) => void>(() => {});
+  const showJumpCountNumberRef = useRef<() => void>(() => {});
+
+  const retryJumpCountRound = useCallback(
+    (msg: string, opts?: { withJump?: boolean; inhibitionFail?: boolean }) => {
+      if (doneRef.current || !roundActiveRef.current) return;
+      showWarn(msg, opts?.inhibitionFail);
+      if (opts?.withJump) playJumpAnim();
+      setCurrentNumber(null);
+      jumpCountTappedRef.current = false;
+      roundCompleteRef.current = false;
+      if (roundTimerRef.current) {
+        clearTimeout(roundTimerRef.current);
+        roundTimerRef.current = null;
+      }
+      roundTimerRef.current = setTimeout(() => {
+        if (roundActiveRef.current && !roundCompleteRef.current && !doneRef.current) {
+          showJumpCountNumberRef.current();
+        }
+      }, 900);
+    },
+    [playJumpAnim, showWarn],
+  );
+
   const finishJumpCountRound = useCallback(
     (num: number, tapped: boolean) => {
       if (roundCompleteRef.current || doneRef.current) return;
       setCurrentNumber(null);
       if (num === 2 && tapped) {
         completeRound(true, { inhibition: 100, sequencing: 90 });
-      } else if (num === 2 && !tapped) {
-        failAndAdvance('Jump when you see number 2!');
       } else if (num !== 2 && !tapped) {
         completeRound(false, { inhibition: 100 });
+      } else if (num === 2 && !tapped) {
+        retryJumpCountRound('Jump when you see number 2!');
       } else {
-        failAndAdvance(ttsWrongNumber, { withJump: true, inhibitionFail: true });
+        retryJumpCountRound(ttsWrongNumber, { withJump: true, inhibitionFail: true });
       }
     },
-    [completeRound, failAndAdvance, ttsWrongNumber],
+    [completeRound, retryJumpCountRound, ttsWrongNumber],
   );
 
   const showJumpCountNumber = useCallback(() => {
@@ -391,9 +428,12 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
     setCurrentNumber(num);
     speakTTS(num === 2 ? ttsNumberTwo : `${num}! ${ttsNumberOther}`, 0.78).catch(() => {});
     roundTimerRef.current = setTimeout(() => {
-      finishJumpCountRound(num, jumpCountTappedRef.current);
+      finishJumpCountRoundRef.current(num, jumpCountTappedRef.current);
     }, numberShowMs(tier));
-  }, [finishJumpCountRound, tier, ttsNumberOther, ttsNumberTwo]);
+  }, [tier, ttsNumberOther, ttsNumberTwo]);
+
+  finishJumpCountRoundRef.current = finishJumpCountRound;
+  showJumpCountNumberRef.current = showJumpCountNumber;
 
   const pulseBeat = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
@@ -507,6 +547,8 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
     ttsSingleIgnored,
   ]);
 
+  startRoundPlayRef.current = startRoundPlay;
+
   useEffect(() => {
     if (round === 1) {
       resetAnalytics();
@@ -540,7 +582,7 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
       if (currentNumber === 2) {
         completeRound(true, { inhibition: 100, sequencing: 95 });
       } else {
-        failAndAdvance(ttsWrongNumber, { withJump: true, inhibitionFail: true });
+        retryJumpCountRound(ttsWrongNumber, { withJump: true, inhibitionFail: true });
       }
       return;
     }
@@ -583,6 +625,7 @@ export const JumpTapGame: React.FC<JumpTapGameConfig & { onBack?: () => void; on
     failAndAdvance,
     handleDoubleTapModes,
     mode,
+    retryJumpCountRound,
     showObstacle,
     tier,
     ttsRhythmFail,

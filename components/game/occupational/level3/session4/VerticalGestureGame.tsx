@@ -15,6 +15,7 @@ import {
 } from '@/components/game/occupational/level3/session4/session4Pacing';
 import {
   VerticalDir,
+  elevatorAtTarget,
   elevatorTarget,
   floorToPct,
   randomVerticalDir,
@@ -299,7 +300,7 @@ export const VerticalGestureGame: React.FC<
     startAnalyticsRound();
     roundCompleteRef.current = false;
     setRoundActive(true);
-    setBalloonCount(balloonCountForRound(roundRef.current));
+    setBalloonCount(mode === 'swipeUp' ? balloonCountForRound(roundRef.current) : 1);
 
     if (mode === 'arrowMatch') {
       const dir = randomVerticalDir();
@@ -379,17 +380,59 @@ export const VerticalGestureGame: React.FC<
     .runOnJS(true)
     .onUpdate((e) => {
       if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
+
+      if (mode === 'elevator') {
+        const eState = elevatorRef.current;
+        const startPct = floorToPct(eState.current, eState.floors);
+        const targetPct = floorToPct(eState.target, eState.floors);
+        const minPct = Math.min(startPct, targetPct);
+        const maxPct = Math.max(startPct, targetPct);
+        const next = startPct + (e.translationY / playH.current) * 100;
+        objY.value = Math.max(minPct, Math.min(maxPct, next));
+        return;
+      }
+
       const need = getRequiredDir();
       if (need === 'up' && e.translationY < 0) {
-        const base = mode === 'elevator' ? floorToPct(elevatorRef.current.current, elevatorRef.current.floors) : P.objectStartDownPct;
-        objY.value = Math.max(P.objectEndUpPct, base + (e.translationY / playH.current) * 100);
+        objY.value = Math.max(P.objectEndUpPct, P.objectStartDownPct + (e.translationY / playH.current) * 100);
       } else if (need === 'down' && e.translationY > 0) {
-        const base = mode === 'elevator' ? floorToPct(elevatorRef.current.current, elevatorRef.current.floors) : P.objectStartUpPct;
-        objY.value = Math.min(P.objectEndDownPct, base + (e.translationY / playH.current) * 50);
+        objY.value = Math.min(P.objectEndDownPct, P.objectStartUpPct + (e.translationY / playH.current) * 100);
       }
     })
     .onEnd((e) => {
       if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
+
+      if (mode === 'elevator') {
+        const eState = elevatorRef.current;
+        const targetPct = floorToPct(eState.target, eState.floors);
+        const currentPct = floorToPct(eState.current, eState.floors);
+
+        if (elevatorAtTarget(objY.value, eState.target, eState.floors)) {
+          objY.value = withTiming(targetPct, { duration: 180 });
+          const score = Math.max(
+            75,
+            100 - Math.round(Math.abs(objY.value - targetPct) * 4),
+          );
+          completeRound(eState.dir, score);
+          return;
+        }
+
+        objY.value = withSpring(currentPct, { damping: 14, stiffness: 180 });
+        const wrongDir =
+          (eState.dir === 'up' && e.translationY > swipeThreshold(tier) * 0.35) ||
+          (eState.dir === 'down' && e.translationY < -swipeThreshold(tier) * 0.35);
+
+        if (wrongDir) {
+          failAttempt(eState.dir);
+          return;
+        }
+
+        setWarnVisible(true);
+        speakTTS(`Drag all the way to Floor ${eState.target}!`, 0.78).catch(() => {});
+        setTimeout(() => setWarnVisible(false), 900);
+        return;
+      }
+
       const dist = Math.sqrt(e.translationX ** 2 + e.translationY ** 2);
       const need = getRequiredDir();
       const { ok, score: swipeScore } = swipeMatchesDir(e.translationX, e.translationY, dist, need, tier);
@@ -512,7 +555,9 @@ export const VerticalGestureGame: React.FC<
 
       {warnVisible && (
         <View style={styles.warnPill}>
-          <Text style={styles.warnText}>Try again — check direction!</Text>
+          <Text style={styles.warnText}>
+            {mode === 'elevator' ? 'Drag to the target floor!' : 'Try again — check direction!'}
+          </Text>
         </View>
       )}
     </SafeAreaView>

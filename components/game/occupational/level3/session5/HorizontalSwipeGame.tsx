@@ -156,6 +156,7 @@ export const HorizontalSwipeGame: React.FC<
   const seqStepRef = useRef(0);
   const mirrorActiveRef = useRef(true);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startRoundPlayRef = useRef<() => void>(() => {});
   const playW = useRef(360);
 
   const objX = useSharedValue(P.objectCenterPct);
@@ -344,10 +345,18 @@ export const HorizontalSwipeGame: React.FC<
     roundTimerRef.current = setTimeout(() => {
       if (!roundCompleteRef.current && roundActiveRef.current) {
         failAttempt(ballFromRef.current);
-        roundTimerRef.current = setTimeout(() => advanceRound(), 550);
+        speakTTS(
+          ballFromRef.current === 'left' ? 'Catch from the LEFT!' : 'Catch from the RIGHT!',
+          0.78,
+        ).catch(() => {});
+        roundTimerRef.current = setTimeout(() => {
+          if (!roundCompleteRef.current && roundActiveRef.current) {
+            startBallFall();
+          }
+        }, 650);
       }
     }, fallMs + 60);
-  }, [advanceRound, failAttempt, objX, objY, ballOpacity, ball2Opacity]);
+  }, [failAttempt, objX, objY, ballOpacity, ball2Opacity]);
 
   const currentNeed = useCallback((): HorizontalDir => {
     if (mode === 'arrowMatch' && sequenceRef.current.length > 1) {
@@ -356,6 +365,11 @@ export const HorizontalSwipeGame: React.FC<
     if (mode === 'catchBall') return ballFromRef.current;
     return targetDirRef.current;
   }, [mode]);
+
+  const retryCurrentRound = useCallback(() => {
+    roundCompleteRef.current = false;
+    roundTimerRef.current = setTimeout(() => startRoundPlayRef.current(), 650);
+  }, []);
 
   const handleSwipe = useCallback(
     (deltaX: number, deltaY: number, dist: number) => {
@@ -371,9 +385,7 @@ export const HorizontalSwipeGame: React.FC<
             clearTimers();
             completeRound(oppositeDir(swipeDir), s, { mirror: true });
           } else if (dist >= swipeThreshold(tier) * 0.45) {
-            clearTimers();
             failAttempt(swipeDir);
-            roundTimerRef.current = setTimeout(() => advanceRound(), 550);
           }
         } else {
           const needDir = targetDirRef.current;
@@ -381,9 +393,7 @@ export const HorizontalSwipeGame: React.FC<
             clearTimers();
             completeRound(needDir, swipeScore);
           } else if (dist >= swipeThreshold(tier) * 0.45) {
-            clearTimers();
             failAttempt(needDir);
-            roundTimerRef.current = setTimeout(() => advanceRound(), 550);
           }
         }
         return;
@@ -407,7 +417,7 @@ export const HorizontalSwipeGame: React.FC<
         } else {
           clearTimers();
           failAttempt(need);
-          roundTimerRef.current = setTimeout(() => advanceRound(), 550);
+          retryCurrentRound();
         }
         return;
       }
@@ -416,14 +426,25 @@ export const HorizontalSwipeGame: React.FC<
         if (mode === 'catchBall') clearTimers();
         completeRound(need, swipeScore, { tracking: swipeScore });
       } else if (dist >= swipeThreshold(tier) * 0.45) {
-        if (mode === 'catchBall') clearTimers();
-        failAttempt(need);
-        if (mode !== 'carTurn' && mode !== 'animalRun') {
-          roundTimerRef.current = setTimeout(() => advanceRound(), 550);
+        if (mode === 'catchBall') {
+          clearTimers();
+          failAttempt(need);
+          roundTimerRef.current = setTimeout(() => {
+            if (!roundCompleteRef.current && roundActiveRef.current) {
+              startBallFall();
+            }
+          }, 650);
+        } else if (mode === 'carTurn' || mode === 'animalRun') {
+          failAttempt(need);
+          retryCurrentRound();
+        } else {
+          clearTimers();
+          failAttempt(need);
+          retryCurrentRound();
         }
       }
     },
-    [advanceRound, completeRound, currentNeed, failAttempt, mode, tier, ttsLeft, ttsRight],
+    [completeRound, currentNeed, failAttempt, mode, retryCurrentRound, startBallFall, tier, ttsLeft, ttsRight],
   );
 
   const startRoundPlay = useCallback(() => {
@@ -456,8 +477,11 @@ export const HorizontalSwipeGame: React.FC<
       }
       roundTimerRef.current = setTimeout(() => {
         if (!roundCompleteRef.current && roundActiveRef.current) {
-          failAttempt('left');
-          advanceRound();
+          setWarnVisible(true);
+          speakTTS('Swipe left or right to move!', 0.78).catch(() => {});
+          objX.value = withTiming(P.objectCenterPct, { duration: 250 });
+          objRotate.value = withTiming(0, { duration: 200 });
+          setTimeout(() => setWarnVisible(false), 900);
         }
       }, P.reactionWindowMs);
       return;
@@ -509,6 +533,8 @@ export const HorizontalSwipeGame: React.FC<
     setStatusHint(dir === 'left' ? 'Turn LEFT!' : 'Turn RIGHT!');
     speakTTS(dir === 'left' ? ttsLeft : ttsRight, 0.78).catch(() => {});
   }, [cuePulse, mode, objScale, objX, objY, startAnalyticsRound, startBallFall, tier, ttsLeft, ttsMirror, ttsRight]);
+
+  startRoundPlayRef.current = startRoundPlay;
 
   useEffect(() => {
     resetAnalytics();
