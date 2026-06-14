@@ -526,7 +526,7 @@ import DirectionSwitchGame from '@/components/game/occupational/level7/session3/
 import GoLeftGoRightGame from '@/components/game/occupational/level7/session3/GoLeftGoRightGame';
 import PirateTurnHuntGame from '@/components/game/occupational/level7/session3/PirateTurnHuntGame';
 import TurnAroundQuestGame from '@/components/game/occupational/level7/session3/TurnAroundQuestGame';
-import FollowTheArrowGame from '@/components/game/occupational/level7/session3/FollowTheArrowGame';
+import MagicalArrowSequenceGame from '@/components/game/occupational/level7/session3/FollowTheArrowGame';
 // Occupational Therapy Level 7 Session 4: Rotational Processing (camera/pose)
 import TornadoTurnGame from '@/components/game/occupational/level7/session4/TornadoTurnGame';
 import SpinAndStopGame from '@/components/game/occupational/level7/session4/SpinAndStopGame';
@@ -9091,9 +9091,9 @@ export default function SessionGamesScreen() {
     // Level 5 Session 4: Visual Focus
     {
       id: 'find-the-star',
-      title: 'Find the Star',
+      title: 'Find the Stars',
       emoji: '⭐',
-      description: 'Many objects me star. Visual scanning!',
+      description: 'Many objects me saare stars dhoondo. Visual scanning!',
       color: '#FCD34D',
       available: isFindTheStarAvailable,
     },
@@ -9101,7 +9101,7 @@ export default function SessionGamesScreen() {
       id: 'memory-flash',
       title: 'Memory Flash',
       emoji: '💫',
-      description: 'Object flash → find. Visual memory!',
+      description: 'Saare objects saath, phir ek flash. Visual memory!',
       color: '#8B5CF6',
       available: isMemoryFlashAvailable,
     },
@@ -11277,7 +11277,7 @@ export default function SessionGamesScreen() {
   }
 
   if (currentGame === 'magical-arrow-sequence') {
-    return <FollowTheArrowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+    return <MagicalArrowSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 7 Session 4 games - Rotational Processing (camera/pose detection)

@@ -260,6 +260,7 @@ const DistractionModeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           const size = obj.isTarget ? TARGET_SIZE : DISTRACTION_SIZE;
           return (
             <View
+              pointerEvents="none"
               key={obj.id}
               style={[
                 styles.object,

@@ -16,7 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -30,6 +30,8 @@ const P = SESSION5_1_PACING;
 const SUCCESS = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const STAR = require('@/assets/icons/star.png');
 const HALF = P.targetHalfPx;
+const TAP_TOLERANCE =
+  Platform.OS === 'android' ? P.tapTolerancePx + 14 : P.tapTolerancePx;
 
 export type MovingTargetMode = 'bounce' | 'erratic' | 'zigzag';
 
@@ -113,6 +115,14 @@ export const MovingTargetTapGame: React.FC<
   const objX = useSharedValue(180);
   const objY = useSharedValue(200);
   const objScale = useSharedValue(1);
+  const objPosRef = useRef({ x: 180, y: 200 });
+
+  const syncObjPos = useCallback(
+    (x: number, y: number) => {
+      objPosRef.current = { x, y };
+    },
+    [],
+  );
 
   useEffect(() => {
     scoreRef.current = score;
@@ -211,16 +221,20 @@ export const MovingTargetTapGame: React.FC<
       zigzagDir.current = 1;
       objX.value = pad;
       objY.value = h * 0.5;
+      syncObjPos(pad, h * 0.5);
     } else {
-      objX.value = randomInRange(pad, w - pad);
-      objY.value = randomInRange(pad + 40, h - pad);
+      const x = randomInRange(pad, w - pad);
+      const y = randomInRange(pad + 40, h - pad);
+      objX.value = x;
+      objY.value = y;
+      syncObjPos(x, y);
       dirX.current = Math.random() > 0.5 ? 1 : -1;
       dirY.current = Math.random() > 0.5 ? 1 : -1;
       speedX.current = randomInRange(P.bounceSpeedMin, P.bounceSpeedMax);
       speedY.current = randomInRange(P.bounceSpeedMin, P.bounceSpeedMax);
       lastChange.current = Date.now();
     }
-  }, [mode, objX, objY]);
+  }, [mode, objX, objY, syncObjPos]);
 
   const tickMove = useCallback(() => {
     if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
@@ -239,6 +253,7 @@ export const MovingTargetTapGame: React.FC<
         zigzagDir.current = 1;
         zigzagPhase.current = pad;
       }
+      syncObjPos(objX.value, objY.value);
       return;
     }
 
@@ -265,7 +280,8 @@ export const MovingTargetTapGame: React.FC<
     }
     objX.value = nx;
     objY.value = ny;
-  }, [mode, objX, objY]);
+    syncObjPos(nx, ny);
+  }, [mode, objX, objY, syncObjPos]);
 
   const startMovement = useCallback(() => {
     clearTimers();
@@ -302,13 +318,14 @@ export const MovingTargetTapGame: React.FC<
   const handleTap = useCallback(
     (locationX: number, locationY: number) => {
       if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
-      if (distPx(locationX, locationY, objX.value, objY.value) <= P.tapTolerancePx + HALF) {
+      const { x, y } = objPosRef.current;
+      if (distPx(locationX, locationY, x, y) <= TAP_TOLERANCE + HALF) {
         completeRound();
       } else {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       }
     },
-    [completeRound, objX, objY],
+    [completeRound],
   );
 
   if (showCongratulations && done && finalStats) {
@@ -383,7 +400,10 @@ export const MovingTargetTapGame: React.FC<
       >
         {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
         {roundActive && (
-          <Animated.View style={[styles.object, { backgroundColor: T.objectBg }, objStyle]}>
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.object, { backgroundColor: T.objectBg }, objStyle]}
+          >
             <Text style={styles.objectEmoji}>{T.objectEmoji}</Text>
           </Animated.View>
         )}

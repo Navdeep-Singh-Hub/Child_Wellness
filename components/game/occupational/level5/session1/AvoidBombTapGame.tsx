@@ -12,7 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,6 +22,8 @@ const STAR = require('@/assets/icons/star.png');
 const TARGET_HALF = P.targetHalfBombPx;
 const BOMB_HALF = P.bombHalfPx;
 const MIN_SEP = 150;
+const TAP_TOLERANCE =
+  Platform.OS === 'android' ? P.tapTolerancePx + 14 : P.tapTolerancePx;
 
 type Entity = { id: string; x: number; y: number };
 
@@ -270,7 +272,7 @@ export const AvoidBombTapGame: React.FC<
       if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current || !target) return;
 
       for (const bomb of bombs) {
-        if (distPx(locationX, locationY, bomb.x, bomb.y) <= P.tapTolerancePx + BOMB_HALF) {
+        if (distPx(locationX, locationY, bomb.x, bomb.y) <= TAP_TOLERANCE + BOMB_HALF) {
           setBombFlashId(bomb.id);
           setTimeout(() => setBombFlashId(null), 200);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
@@ -279,7 +281,7 @@ export const AvoidBombTapGame: React.FC<
         }
       }
 
-      if (distPx(locationX, locationY, target.x, target.y) <= P.tapTolerancePx + TARGET_HALF) {
+      if (distPx(locationX, locationY, target.x, target.y) <= TAP_TOLERANCE + TARGET_HALF) {
         completeRound();
       } else {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -361,6 +363,7 @@ export const AvoidBombTapGame: React.FC<
         {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
         {roundActive && target && (
           <Animated.View
+            pointerEvents="none"
             style={[
               styles.target,
               { backgroundColor: T.targetBg, left: target.x - TARGET_HALF, top: target.y - TARGET_HALF },

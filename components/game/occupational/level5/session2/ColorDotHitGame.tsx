@@ -4,22 +4,21 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Dimensions,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    Pressable,
+  Dimensions,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const TOTAL_ROUNDS = 10;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const DOT_SIZE = 60;
-const TOLERANCE = 50;
 
 const COLORS = [
   { name: 'Red', emoji: '🔴', color: '#EF4444' },
@@ -27,7 +26,7 @@ const COLORS = [
   { name: 'Green', emoji: '🟢', color: '#10B981' },
   { name: 'Yellow', emoji: '🟡', color: '#FCD34D' },
   { name: 'Purple', emoji: '🟣', color: '#8B5CF6' },
-];
+] as const;
 
 interface Dot {
   id: string;
@@ -37,6 +36,20 @@ interface Dot {
   scale: number;
 }
 
+type RoundData = {
+  targetColorIndex: number;
+  dots: Dot[];
+};
+
+const shuffle = <T,>(items: T[]): T[] => {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j]!, copy[i]!];
+  }
+  return copy;
+};
+
 const ColorDotHitGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const router = useRouter();
   const [showInfo, setShowInfo] = useState(true);
@@ -44,130 +57,158 @@ const ColorDotHitGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  
-  const [dots, setDots] = useState<Dot[]>([]);
-  const [targetColorIndex, setTargetColorIndex] = useState<number | null>(null);
+  const [roundData, setRoundData] = useState<RoundData | null>(null);
+
   const screenWidth = useRef(SCREEN_WIDTH);
   const screenHeight = useRef(SCREEN_HEIGHT);
-  const hasSpokenRef = useRef(false);
+  const colorDeckRef = useRef<number[]>([]);
+  const advancingRef = useRef(false);
 
-  const generateDots = useCallback(() => {
-    const newDots: Dot[] = [];
-    const targetIdx = Math.floor(Math.random() * COLORS.length);
-    setTargetColorIndex(targetIdx);
+  const refillColorDeck = useCallback(() => {
+    colorDeckRef.current = shuffle(COLORS.map((_, idx) => idx));
+  }, []);
 
-    // Generate 3-4 dots with different colors
+  const nextTargetColor = useCallback(() => {
+    if (colorDeckRef.current.length === 0) {
+      refillColorDeck();
+    }
+    return colorDeckRef.current.pop()!;
+  }, [refillColorDeck]);
+
+  const buildRound = useCallback((): RoundData => {
+    const targetIdx = nextTargetColor();
     const dotCount = 3 + Math.floor(Math.random() * 2);
-    const usedIndices = new Set<number>();
-    usedIndices.add(targetIdx);
+    const distractorPool = COLORS.map((_, idx) => idx).filter((idx) => idx !== targetIdx);
+    const shuffledDistractors = shuffle(distractorPool);
 
-    for (let i = 0; i < dotCount; i++) {
-      let colorIdx;
-      do {
-        colorIdx = Math.floor(Math.random() * COLORS.length);
-      } while (usedIndices.has(colorIdx) && usedIndices.size < COLORS.length);
-      usedIndices.add(colorIdx);
+    const randomPos = () => ({
+      x: Math.random() * (screenWidth.current - DOT_SIZE) + DOT_SIZE / 2,
+      y: Math.random() * (screenHeight.current - DOT_SIZE - 200) + DOT_SIZE / 2 + 100,
+    });
 
-      newDots.push({
-        id: `dot-${i}`,
-        x: Math.random() * (screenWidth.current - DOT_SIZE) + DOT_SIZE / 2,
-        y: Math.random() * (screenHeight.current - DOT_SIZE - 200) + DOT_SIZE / 2 + 100,
+    const targetPos = randomPos();
+    const dots: Dot[] = [
+      {
+        id: `dot-target-${Date.now()}`,
+        x: targetPos.x,
+        y: targetPos.y,
+        colorIndex: targetIdx,
+        scale: 1,
+      },
+    ];
+
+    for (let i = 1; i < dotCount; i++) {
+      const colorIdx = shuffledDistractors[(i - 1) % shuffledDistractors.length]!;
+      const pos = randomPos();
+      dots.push({
+        id: `dot-${i}-${Date.now()}-${Math.random()}`,
+        x: pos.x,
+        y: pos.y,
         colorIndex: colorIdx,
         scale: 1,
       });
     }
 
-    setDots(newDots);
-  }, []);
+    return {
+      targetColorIndex: targetIdx,
+      dots: shuffle(dots),
+    };
+  }, [nextTargetColor]);
 
-  const handleDotTap = useCallback((dotId: string, dotColorIndex: number) => {
-    if (done || targetColorIndex === null || dots.length === 0) return;
-    
-    const isCorrect = dotColorIndex === targetColorIndex;
-    
-    if (isCorrect) {
-      setDots((prev) => prev.map((d) => 
-        d.id === dotId ? { ...d, scale: 1.5 } : d
-      ));
-      setTimeout(() => {
-        setDots((prev) => prev.map((d) => 
-          d.id === dotId ? { ...d, scale: 1 } : d
-        ));
-      }, 200);
+  const startRound = useCallback(() => {
+    advancingRef.current = false;
+    const data = buildRound();
+    setRoundData(data);
 
-      setScore((s) => {
-        const newScore = s + 1;
-        if (newScore >= TOTAL_ROUNDS) {
-          setTimeout(() => {
-            endGame(newScore);
-          }, 1000);
-        } else {
-          setTimeout(() => {
-            setRound((r) => r + 1);
-            generateDots();
-          }, 1500);
-        }
-        return newScore;
-      });
+    stopTTS();
+    setTimeout(() => {
+      speakTTS(`Tap the ${COLORS[data.targetColorIndex].name.toLowerCase()} dot!`, 0.8, 'en-US');
+    }, 350);
+  }, [buildRound]);
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      speakTTS(`Correct! ${COLORS[targetColorIndex].name}!`, 0.9, 'en-US' );
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-      speakTTS('Try the correct color!', 0.8, 'en-US' );
-    }
-  }, [done, dots, targetColorIndex, generateDots]);
+  const endGame = useCallback(
+    async (finalScore: number) => {
+      const total = TOTAL_ROUNDS;
+      const xp = finalScore * 15;
+      const accuracy = (finalScore / total) * 100;
 
-  const endGame = useCallback(async (finalScore: number) => {
-    const total = TOTAL_ROUNDS;
-    const xp = finalScore * 15;
-    const accuracy = (finalScore / total) * 100;
+      setFinalStats({ correct: finalScore, total, xp });
+      setDone(true);
 
-    setFinalStats({ correct: finalScore, total, xp });
-    setDone(true);
+      try {
+        await logGameAndAward({
+          type: 'color-dot-hit',
+          correct: finalScore,
+          total,
+          accuracy,
+          xpAwarded: xp,
+          skillTags: ['visual-discrimination', 'color-recognition', 'attention'],
+        });
+        router.setParams({ refreshStats: Date.now().toString() });
+      } catch (error) {
+        console.error('Failed to log game:', error);
+      }
+    },
+    [router],
+  );
 
-    try {
-      await logGameAndAward({
-        type: 'color-dot-hit',
-        correct: finalScore,
-        total,
-        accuracy,
-        xpAwarded: xp,
-        skillTags: ['visual-discrimination', 'color-recognition', 'attention'],
-      });
-      router.setParams({ refreshStats: Date.now().toString() });
-    } catch (error) {
-      console.error('Failed to log game:', error);
-    }
-  }, [router]);
+  const handleDotTap = useCallback(
+    (dotId: string, dotColorIndex: number) => {
+      if (done || !roundData || advancingRef.current) return;
+
+      const isCorrect = dotColorIndex === roundData.targetColorIndex;
+
+      if (isCorrect) {
+        advancingRef.current = true;
+
+        setRoundData((prev) =>
+          prev
+            ? {
+                ...prev,
+                dots: prev.dots.map((d) => (d.id === dotId ? { ...d, scale: 1.5 } : d)),
+              }
+            : prev,
+        );
+
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speakTTS(`Correct! ${COLORS[roundData.targetColorIndex].name}!`, 0.9, 'en-US');
+
+        setScore((s) => {
+          const newScore = s + 1;
+          if (newScore >= TOTAL_ROUNDS) {
+            setTimeout(() => endGame(newScore), 900);
+          } else {
+            setTimeout(() => setRound((r) => r + 1), 900);
+          }
+          return newScore;
+        });
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+        speakTTS('Try the correct color!', 0.8, 'en-US');
+      }
+    },
+    [done, endGame, roundData],
+  );
 
   useEffect(() => {
     if (!showInfo && !done) {
-      // Stop any ongoing TTS when new round starts
-      stopTTS();
-      if (round === 1) {
-        hasSpokenRef.current = false;
-      }
-      generateDots();
-      setTimeout(() => {
-        if (targetColorIndex !== null && !hasSpokenRef.current) {
-          hasSpokenRef.current = true;
-          speakTTS(`Tap the ${COLORS[targetColorIndex].name.toLowerCase()} dot!`, 0.8, 'en-US' );
-        }
-      }, 500);
+      startRound();
     }
-  }, [showInfo, round, done, generateDots, targetColorIndex]);
+  }, [showInfo, round, done, startRound]);
 
   useEffect(() => {
     return () => {
       try {
         stopTTS();
-      } catch (e) {
+      } catch {
         // Ignore errors
       }
       cleanupSounds();
     };
   }, []);
+
+  const targetColorIndex = roundData?.targetColorIndex ?? null;
+  const dots = roundData?.dots ?? [];
 
   if (showInfo) {
     return (
@@ -178,6 +219,7 @@ const ColorDotHitGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         skills={['Visual discrimination']}
         suitableFor="Children learning color recognition and visual discrimination"
         onStart={() => {
+          refillColorDeck();
           setShowInfo(false);
         }}
         onBack={() => {
@@ -202,11 +244,13 @@ const ColorDotHitGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             onBack?.();
           }}
           onPlayAgain={() => {
+            refillColorDeck();
+            advancingRef.current = false;
             setRound(1);
             setScore(0);
             setDone(false);
             setFinalStats(null);
-            generateDots();
+            setRoundData(null);
           }}
         />
       </SafeAreaView>
@@ -231,9 +275,17 @@ const ColorDotHitGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <Text style={styles.subtitle}>
           Round {round}/{TOTAL_ROUNDS} • 🎨 Score: {score}
         </Text>
-        <Text style={styles.instruction}>
-          {targetColorIndex !== null && `Tap the ${COLORS[targetColorIndex].name.toLowerCase()} dot!`}
-        </Text>
+        {targetColorIndex !== null && (
+          <>
+            <Text style={styles.instruction}>
+              Tap the {COLORS[targetColorIndex].emoji} {COLORS[targetColorIndex].name.toLowerCase()} dot!
+            </Text>
+            <View style={[styles.targetSwatch, { backgroundColor: COLORS[targetColorIndex].color }]}>
+              <Text style={styles.targetSwatchEmoji}>{COLORS[targetColorIndex].emoji}</Text>
+              <Text style={styles.targetSwatchLabel}>{COLORS[targetColorIndex].name}</Text>
+            </View>
+          </>
+        )}
       </View>
 
       <View
@@ -254,8 +306,8 @@ const ColorDotHitGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 top: dot.y - DOT_SIZE / 2,
                 backgroundColor: COLORS[dot.colorIndex].color,
                 transform: [{ scale: dot.scale }],
-                borderWidth: dot.colorIndex === targetColorIndex ? 4 : 2,
-                borderColor: dot.colorIndex === targetColorIndex ? '#000' : '#fff',
+                borderWidth: 2,
+                borderColor: '#fff',
               },
             ]}
           >
@@ -265,12 +317,8 @@ const ColorDotHitGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Skills: Visual discrimination
-        </Text>
-        <Text style={styles.footerSubtext}>
-          Tap the correct color dot!
-        </Text>
+        <Text style={styles.footerText}>Skills: Visual discrimination</Text>
+        <Text style={styles.footerSubtext}>Tap the correct color dot!</Text>
       </View>
     </SafeAreaView>
   );
@@ -317,6 +365,28 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
     fontWeight: '600',
     textAlign: 'center',
+    marginBottom: 8,
+  },
+  targetSwatch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.9)',
+  },
+  targetSwatchEmoji: {
+    fontSize: 22,
+  },
+  targetSwatchLabel: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.25)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   gameArea: {
     flex: 1,

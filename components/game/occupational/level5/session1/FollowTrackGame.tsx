@@ -356,10 +356,10 @@ export const FollowTrackGame: React.FC<
           {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
           {roundActive && (
             <>
-              <Animated.View style={[styles.target, { backgroundColor: T.targetBg }, targetStyle]}>
+              <Animated.View pointerEvents="none" style={[styles.target, { backgroundColor: T.targetBg }, targetStyle]}>
                 <Text style={styles.targetEmoji}>{T.targetEmoji}</Text>
               </Animated.View>
-              <Animated.View style={[styles.finger, { backgroundColor: T.fingerColor }, fingerStyle]} />
+              <Animated.View pointerEvents="none" style={[styles.finger, { backgroundColor: T.fingerColor }, fingerStyle]} />
             </>
           )}
           <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />

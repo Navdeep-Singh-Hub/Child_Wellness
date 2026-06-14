@@ -244,6 +244,7 @@ const NearVsFarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           const size = target.isNear ? NEAR_SIZE : FAR_SIZE;
           return (
             <View
+              pointerEvents="none"
               key={target.id}
               style={[
                 styles.target,

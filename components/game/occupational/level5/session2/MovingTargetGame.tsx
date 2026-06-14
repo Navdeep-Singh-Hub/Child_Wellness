@@ -1,208 +1,325 @@
 import GameInfoScreen from '@/components/game/GameInfoScreen';
 import ResultCard from '@/components/game/ResultCard';
+import { isTapNearTarget } from '@/components/game/occupational/level5/shared/movingTargetTouch';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { isTapNearTarget } from '@/components/game/occupational/level5/shared/movingTargetTouch';
 import {
-    Dimensions,
-    GestureResponderEvent,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  GestureResponderEvent,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
 } from 'react-native-reanimated';
 
 const TOTAL_ROUNDS = 10;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const DOT_SIZE = 50;
-const TOLERANCE = 50;
-const SPEED = 0.5; // Slow speed for better visibility and control
+const MOVE_TICK_MS = 16;
 
-interface MovingDot {
-  id: string;
-  x: number;
-  y: number;
-  directionX: number;
-  directionY: number;
-  scale: number;
-}
+type RoundSettings = {
+  dotSize: number;
+  speed: number;
+  tolerance: number;
+};
+
+const getRoundSettings = (roundNum: number): RoundSettings => {
+  if (roundNum <= 2) {
+    return { dotSize: 68, speed: 0.9, tolerance: Platform.OS === 'android' ? 74 : 64 };
+  }
+  if (roundNum <= 4) {
+    return { dotSize: 60, speed: 1.4, tolerance: Platform.OS === 'android' ? 66 : 56 };
+  }
+  if (roundNum <= 7) {
+    return { dotSize: 54, speed: 1.9, tolerance: Platform.OS === 'android' ? 60 : 52 };
+  }
+  return { dotSize: 48, speed: 2.4, tolerance: Platform.OS === 'android' ? 54 : 48 };
+};
+
+const randomInRange = (min: number, max: number) => min + Math.random() * (max - min);
 
 const MovingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const router = useRouter();
   const [showInfo, setShowInfo] = useState(true);
-  const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  
-  const [dot, setDot] = useState<MovingDot | null>(null);
+  const [dotVisible, setDotVisible] = useState(false);
+  const [roundSettings, setRoundSettings] = useState<RoundSettings>(() => getRoundSettings(1));
+
   const screenWidth = useRef(SCREEN_WIDTH);
   const screenHeight = useRef(SCREEN_HEIGHT);
-  const animationRef = useRef<number | null>(null);
+  const moveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const roundStartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasSpokenRef = useRef(false);
+  const doneRef = useRef(false);
+  const roundActiveRef = useRef(false);
+  const hitLockedRef = useRef(false);
+  const scoreRef = useRef(0);
+  const dotPosRef = useRef({ x: SCREEN_WIDTH * 0.5, y: SCREEN_HEIGHT * 0.45 });
+  const dirX = useRef(0.9);
+  const dirY = useRef(0.9);
+  const speedRef = useRef(0.9);
+  const dotSizeRef = useRef(68);
+  const toleranceRef = useRef(64);
 
-  const generateDot = useCallback(() => {
-    const newDot: MovingDot = {
-      id: `dot-${Date.now()}`,
-      x: Math.random() * (screenWidth.current - DOT_SIZE) + DOT_SIZE / 2,
-      y: Math.random() * (screenHeight.current - DOT_SIZE - 200) + DOT_SIZE / 2 + 100,
-      directionX: (Math.random() > 0.5 ? 1 : -1) * SPEED,
-      directionY: (Math.random() > 0.5 ? 1 : -1) * SPEED,
-      scale: 1,
-    };
-    setDot(newDot);
+  const dotX = useSharedValue(SCREEN_WIDTH * 0.5);
+  const dotY = useSharedValue(SCREEN_HEIGHT * 0.45);
+  const dotScale = useSharedValue(1);
+
+  const displayRound = Math.min(score + 1, TOTAL_ROUNDS);
+
+  const dotStyle = useAnimatedStyle(() => ({
+    left: dotX.value - dotSizeRef.current / 2,
+    top: dotY.value - dotSizeRef.current / 2,
+    width: dotSizeRef.current,
+    height: dotSizeRef.current,
+    borderRadius: dotSizeRef.current / 2,
+    transform: [{ scale: dotScale.value }],
+  }));
+
+  const clearMoveTimer = useCallback(() => {
+    if (moveTimerRef.current) {
+      clearInterval(moveTimerRef.current);
+      moveTimerRef.current = null;
+    }
+    cancelAnimation(dotScale);
+  }, [dotScale]);
+
+  const clearRoundStartTimer = useCallback(() => {
+    if (roundStartTimerRef.current) {
+      clearTimeout(roundStartTimerRef.current);
+      roundStartTimerRef.current = null;
+    }
   }, []);
 
-  const moveDot = useCallback(() => {
-    if (!dot || done) return;
+  const clearAdvanceTimer = useCallback(() => {
+    if (advanceTimerRef.current) {
+      clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
+  }, []);
 
-    const move = () => {
-      setDot((prev) => {
-        if (!prev) return null;
-        
-        let newX = prev.x + prev.directionX;
-        let newY = prev.y + prev.directionY;
-        let newDirX = prev.directionX;
-        let newDirY = prev.directionY;
+  const clearAllTimers = useCallback(() => {
+    clearMoveTimer();
+    clearRoundStartTimer();
+    clearAdvanceTimer();
+  }, [clearAdvanceTimer, clearMoveTimer, clearRoundStartTimer]);
 
-        // Bounce off walls
-        if (newX <= DOT_SIZE / 2 || newX >= screenWidth.current - DOT_SIZE / 2) {
-          newDirX *= -1;
-          newX = Math.max(DOT_SIZE / 2, Math.min(screenWidth.current - DOT_SIZE / 2, newX));
-        }
-        if (newY <= DOT_SIZE / 2 + 100 || newY >= screenHeight.current - DOT_SIZE / 2 - 100) {
-          newDirY *= -1;
-          newY = Math.max(DOT_SIZE / 2 + 100, Math.min(screenHeight.current - DOT_SIZE / 2 - 100, newY));
-        }
+  const syncDotPos = useCallback((x: number, y: number) => {
+    dotPosRef.current = { x, y };
+  }, []);
 
-        return {
-          ...prev,
-          x: newX,
-          y: newY,
-          directionX: newDirX,
-          directionY: newDirY,
-        };
-      });
-    };
+  const applyRoundSettings = useCallback((roundNum: number) => {
+    const settings = getRoundSettings(roundNum);
+    speedRef.current = settings.speed;
+    dotSizeRef.current = settings.dotSize;
+    toleranceRef.current = settings.tolerance;
+    setRoundSettings(settings);
+  }, []);
 
-    const interval = setInterval(move, 30); // Slower update for better visibility
-    animationRef.current = interval as unknown as number;
-  }, [dot, done]);
+  const placeDot = useCallback(
+    (roundNum: number) => {
+      applyRoundSettings(roundNum);
+      const w = screenWidth.current;
+      const h = screenHeight.current;
+      const pad = dotSizeRef.current / 2;
+      const topPad = pad + 8;
+      const bottomPad = h - pad - 8;
+      const speed = speedRef.current;
 
-  const handleDotHit = useCallback(() => {
-    if (done || !dot) return;
+      const x = randomInRange(pad, w - pad);
+      const y = randomInRange(topPad, bottomPad);
 
-    // Hit!
-    setDot((prev) => prev ? { ...prev, scale: 1.8 } : null);
-    setTimeout(() => {
-      setDot((prev) => prev ? { ...prev, scale: 1 } : null);
-    }, 200);
+      const angle = Math.random() * Math.PI * 2;
+      dirX.current = Math.cos(angle) * speed;
+      dirY.current = Math.sin(angle) * speed;
 
-    if (animationRef.current) {
-      clearInterval(animationRef.current);
-      animationRef.current = null;
+      dotX.value = x;
+      dotY.value = y;
+      dotScale.value = 1;
+      syncDotPos(x, y);
+      hitLockedRef.current = false;
+      setDotVisible(true);
+      roundActiveRef.current = true;
+    },
+    [applyRoundSettings, dotX, dotY, dotScale, syncDotPos],
+  );
+
+  const tickMove = useCallback(() => {
+    if (!roundActiveRef.current || doneRef.current) return;
+
+    const w = screenWidth.current;
+    const h = screenHeight.current;
+    const pad = dotSizeRef.current / 2;
+    const topPad = pad + 8;
+    const bottomPad = h - pad - 8;
+
+    let nx = dotX.value + dirX.current;
+    let ny = dotY.value + dirY.current;
+
+    if (nx <= pad) {
+      nx = pad + 1;
+      dirX.current = Math.abs(dirX.current);
+    } else if (nx >= w - pad) {
+      nx = w - pad - 1;
+      dirX.current = -Math.abs(dirX.current);
     }
 
-    setScore((s) => {
-      const newScore = s + 1;
-      if (newScore >= TOTAL_ROUNDS) {
-        setTimeout(() => {
-          endGame(newScore);
-        }, 1000);
-      } else {
-        setTimeout(() => {
-          setRound((r) => r + 1);
-          generateDot();
-        }, 1500);
+    if (ny <= topPad) {
+      ny = topPad + 1;
+      dirY.current = Math.abs(dirY.current);
+    } else if (ny >= bottomPad) {
+      ny = bottomPad - 1;
+      dirY.current = -Math.abs(dirY.current);
+    }
+
+    dotX.value = nx;
+    dotY.value = ny;
+    syncDotPos(nx, ny);
+  }, [dotX, dotY, syncDotPos]);
+
+  const startMovement = useCallback(() => {
+    clearMoveTimer();
+    moveTimerRef.current = setInterval(tickMove, MOVE_TICK_MS);
+  }, [clearMoveTimer, tickMove]);
+
+  const endGame = useCallback(
+    async (finalScore: number) => {
+      const total = TOTAL_ROUNDS;
+      const xp = finalScore * 15;
+      const accuracy = (finalScore / total) * 100;
+
+      doneRef.current = true;
+      roundActiveRef.current = false;
+      clearAllTimers();
+      setDotVisible(false);
+
+      setFinalStats({ correct: finalScore, total, xp });
+      setDone(true);
+
+      try {
+        await logGameAndAward({
+          type: 'moving-target',
+          correct: finalScore,
+          total,
+          accuracy,
+          xpAwarded: xp,
+          skillTags: ['timing-control', 'hand-eye-coordination', 'reaction-time'],
+        });
+        router.setParams({ refreshStats: Date.now().toString() });
+      } catch (error) {
+        console.error('Failed to log game:', error);
       }
-      return newScore;
-    });
+    },
+    [clearAllTimers, router],
+  );
+
+  const scheduleAfterHit = useCallback(
+    (newScore: number) => {
+      roundActiveRef.current = false;
+      clearMoveTimer();
+      setDotVisible(false);
+
+      if (newScore >= TOTAL_ROUNDS) {
+        advanceTimerRef.current = setTimeout(() => endGame(newScore), 700);
+      }
+    },
+    [clearMoveTimer, endGame],
+  );
+
+  const handleDotHit = useCallback(() => {
+    if (doneRef.current || !roundActiveRef.current || hitLockedRef.current) return;
+
+    hitLockedRef.current = true;
+
+    dotScale.value = withSequence(
+      withTiming(1.5, { duration: 120 }),
+      withTiming(1, { duration: 120 }),
+    );
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    speakTTS('Great timing!', 0.9, 'en-US' );
-  }, [done, dot, generateDot]);
+    speakTTS('Great timing!', 0.9, 'en-US');
+
+    const newScore = scoreRef.current + 1;
+    scoreRef.current = newScore;
+    setScore(newScore);
+    scheduleAfterHit(newScore);
+  }, [dotScale, scheduleAfterHit]);
 
   const handleGameTap = useCallback(
     (event: GestureResponderEvent) => {
-      if (done || !dot) return;
-      if (isTapNearTarget(event, dot.x, dot.y, DOT_SIZE, TOLERANCE)) {
+      if (doneRef.current || !roundActiveRef.current || !dotVisible || hitLockedRef.current) return;
+      const { x, y } = dotPosRef.current;
+      if (isTapNearTarget(event, x, y, dotSizeRef.current, toleranceRef.current)) {
         handleDotHit();
+      } else {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       }
     },
-    [done, dot, handleDotHit],
+    [dotVisible, handleDotHit],
   );
 
-  const endGame = useCallback(async (finalScore: number) => {
-    const total = TOTAL_ROUNDS;
-    const xp = finalScore * 15;
-    const accuracy = (finalScore / total) * 100;
-
-    if (animationRef.current) {
-      clearInterval(animationRef.current);
-      animationRef.current = null;
-    }
-
-    setFinalStats({ correct: finalScore, total, xp });
-    setDone(true);
-
-    try {
-      await logGameAndAward({
-        type: 'moving-target',
-        correct: finalScore,
-        total,
-        accuracy,
-        xpAwarded: xp,
-        skillTags: ['timing-control', 'hand-eye-coordination', 'reaction-time'],
-      });
-      router.setParams({ refreshStats: Date.now().toString() });
-    } catch (error) {
-      console.error('Failed to log game:', error);
-    }
-  }, [router]);
+  const startRound = useCallback(
+    (roundNum: number) => {
+      if (doneRef.current) return;
+      stopTTS();
+      placeDot(roundNum);
+      startMovement();
+      if (!hasSpokenRef.current) {
+        hasSpokenRef.current = true;
+        speakTTS('Tap the moving dot!', 0.8, 'en-US');
+      } else if (roundNum <= 3) {
+        speakTTS('Nice! Keep tapping the dot.', 0.78, 'en-US');
+      }
+    },
+    [placeDot, startMovement],
+  );
 
   useEffect(() => {
-    if (!showInfo && !done) {
-      // Stop any ongoing TTS when new round starts
-      stopTTS();
-      if (round === 1) {
-        hasSpokenRef.current = false;
-      }
-      generateDot();
-      setTimeout(() => {
-        moveDot();
-        // Only speak once when game starts, not on every round
-        if (!hasSpokenRef.current) {
-          hasSpokenRef.current = true;
-          speakTTS('Tap the moving dot!', 0.8, 'en-US' );
-        }
-      }, 500);
+    scoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
+    if (!showInfo && !done && !dotVisible) {
+      const roundNum = score + 1;
+      if (roundNum > TOTAL_ROUNDS) return;
+      clearRoundStartTimer();
+      const delay = score === 0 ? 450 : 700;
+      roundStartTimerRef.current = setTimeout(() => startRound(roundNum), delay);
+      return clearRoundStartTimer;
     }
-  }, [showInfo, round, done, generateDot, moveDot]);
+  }, [showInfo, score, done, dotVisible, startRound, clearRoundStartTimer]);
+
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
 
   useEffect(() => {
     return () => {
       try {
         stopTTS();
-      } catch (e) {
+      } catch {
         // Ignore errors
       }
       cleanupSounds();
-      if (animationRef.current) {
-        clearInterval(animationRef.current);
-      }
+      clearAllTimers();
     };
-  }, []);
+  }, [clearAllTimers]);
 
   if (showInfo) {
     return (
@@ -237,11 +354,14 @@ const MovingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             onBack?.();
           }}
           onPlayAgain={() => {
-            setRound(1);
+            doneRef.current = false;
+            scoreRef.current = 0;
+            hitLockedRef.current = false;
             setScore(0);
             setDone(false);
             setFinalStats(null);
-            generateDot();
+            hasSpokenRef.current = false;
+            setDotVisible(false);
           }}
         />
       </SafeAreaView>
@@ -255,6 +375,7 @@ const MovingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         onPress={() => {
           stopAllSpeech();
           cleanupSounds();
+          clearAllTimers();
           onBack?.();
         }}
       >
@@ -264,11 +385,14 @@ const MovingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <View style={styles.header}>
         <Text style={styles.title}>Moving Target</Text>
         <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • ⚫ Score: {score}
+          Round {displayRound}/{TOTAL_ROUNDS} • ⚫ Score: {score}
         </Text>
         <Text style={styles.instruction}>
-          Tap the moving dot!
+          {displayRound <= 2 ? 'Tap the slow, big dot!' : 'Tap the moving dot!'}
         </Text>
+        {displayRound <= 3 && (
+          <Text style={styles.easyHint}>Warm-up round — take your time</Text>
+        )}
       </View>
 
       <Pressable
@@ -279,29 +403,19 @@ const MovingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         }}
         onPress={handleGameTap}
       >
-        {dot && (
-          <View
-            pointerEvents="none"
-            style={[
-              styles.dot,
-              {
-                left: dot.x - DOT_SIZE / 2,
-                top: dot.y - DOT_SIZE / 2,
-                transform: [{ scale: dot.scale }],
-              },
-            ]}
-          >
-            <Text style={styles.dotEmoji}>⚫</Text>
-          </View>
+        {dotVisible && (
+          <Animated.View pointerEvents="none" style={[styles.dot, dotStyle]}>
+            <Text style={[styles.dotEmoji, { fontSize: Math.round(roundSettings.dotSize * 0.55) }]}>
+              ⚫
+            </Text>
+          </Animated.View>
         )}
       </Pressable>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Skills: Timing control
-        </Text>
+        <Text style={styles.footerText}>Skills: Timing control</Text>
         <Text style={styles.footerSubtext}>
-          Tap the moving dot!
+          {displayRound <= 4 ? 'Starts slow, then speeds up!' : 'Tap the moving dot!'}
         </Text>
       </View>
     </SafeAreaView>
@@ -350,16 +464,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+  easyHint: {
+    marginTop: 6,
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   gameArea: {
     flex: 1,
     position: 'relative',
     marginVertical: 40,
+    overflow: 'hidden',
   },
   dot: {
     position: 'absolute',
-    width: DOT_SIZE,
-    height: DOT_SIZE,
-    borderRadius: DOT_SIZE / 2,
     backgroundColor: '#1F2937',
     justifyContent: 'center',
     alignItems: 'center',

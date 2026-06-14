@@ -4,25 +4,30 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Dimensions,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const TOTAL_ROUNDS = 10;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const OBJECT_SIZE = 50;
-const TOLERANCE = 50;
-const OBJECT_COUNT = 8;
+const MIN_GAP = 56;
 
-const OBJECTS = ['⭐', '🔴', '🔵', '🟢', '🟡', '🟣', '⚫', '⚪', '🔶', '🔷', '💎', '🎈'];
+const DISTRACTORS = ['🔴', '🔵', '🟢', '🟡', '🟣', '⚫', '⚪', '🔶', '🔷', '💎', '🎈', '🌙', '🔺'];
+
+const getStarsForRound = (round: number) => {
+  if (round <= 2) return 2;
+  if (round <= 5) return 3;
+  return 4;
+};
 
 interface GameObject {
   id: string;
@@ -30,8 +35,18 @@ interface GameObject {
   y: number;
   emoji: string;
   isStar: boolean;
+  found: boolean;
   scale: number;
 }
+
+const shuffle = <T,>(items: T[]): T[] => {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j]!, copy[i]!];
+  }
+  return copy;
+};
 
 const FindTheStarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const router = useRouter();
@@ -40,139 +55,191 @@ const FindTheStarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  
   const [objects, setObjects] = useState<GameObject[]>([]);
+  const [starsNeeded, setStarsNeeded] = useState(2);
+  const [starsFound, setStarsFound] = useState(0);
+
   const screenWidth = useRef(SCREEN_WIDTH);
   const screenHeight = useRef(SCREEN_HEIGHT);
-  const endGameRef = useRef<((finalScore: number) => Promise<void>) | null>(null);
+  const doneRef = useRef(false);
+  const advancingRef = useRef(false);
+  const scoreRef = useRef(0);
+  const roundRef = useRef(1);
+  const starsFoundRef = useRef(0);
+  const starsNeededRef = useRef(2);
 
-  const generateObjects = useCallback(() => {
-    const newObjects: GameObject[] = [];
-    const usedPositions = new Set<string>();
-    
-    // Generate one star
-    let starX, starY;
-    do {
-      starX = Math.random() * (screenWidth.current - OBJECT_SIZE) + OBJECT_SIZE / 2;
-      starY = Math.random() * (screenHeight.current - OBJECT_SIZE - 200) + OBJECT_SIZE / 2 + 100;
-    } while (usedPositions.has(`${Math.floor(starX / 50)}-${Math.floor(starY / 50)}`));
-    usedPositions.add(`${Math.floor(starX / 50)}-${Math.floor(starY / 50)}`);
-    
-    newObjects.push({
-      id: 'star-1',
-      x: starX,
-      y: starY,
-      emoji: '⭐',
-      isStar: true,
-      scale: 1,
-    });
+  const placeObject = useCallback((usedPositions: { x: number; y: number }[]) => {
+    const w = screenWidth.current;
+    const h = screenHeight.current;
+    let attempts = 0;
 
-    // Generate other objects
-    const otherObjects = OBJECTS.filter(e => e !== '⭐');
-    for (let i = 0; i < OBJECT_COUNT - 1; i++) {
-      let objX, objY;
-      let attempts = 0;
-      do {
-        objX = Math.random() * (screenWidth.current - OBJECT_SIZE) + OBJECT_SIZE / 2;
-        objY = Math.random() * (screenHeight.current - OBJECT_SIZE - 200) + OBJECT_SIZE / 2 + 100;
-        attempts++;
-      } while (usedPositions.has(`${Math.floor(objX / 50)}-${Math.floor(objY / 50)}`) && attempts < 20);
-      
-      usedPositions.add(`${Math.floor(objX / 50)}-${Math.floor(objY / 50)}`);
-      
-      newObjects.push({
-        id: `obj-${i}`,
-        x: objX,
-        y: objY,
-        emoji: otherObjects[Math.floor(Math.random() * otherObjects.length)],
-        isStar: false,
-        scale: 1,
-      });
+    while (attempts < 40) {
+      const x = Math.random() * (w - OBJECT_SIZE) + OBJECT_SIZE / 2;
+      const y = Math.random() * (h - OBJECT_SIZE - 200) + OBJECT_SIZE / 2 + 100;
+      const tooClose = usedPositions.some(
+        (pos) => Math.hypot(pos.x - x, pos.y - y) < MIN_GAP,
+      );
+      if (!tooClose) {
+        usedPositions.push({ x, y });
+        return { x, y };
+      }
+      attempts++;
     }
 
-    // Shuffle array
-    for (let i = newObjects.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [newObjects[i], newObjects[j]] = [newObjects[j], newObjects[i]];
-    }
-
-    setObjects(newObjects);
+    const x = Math.random() * (w - OBJECT_SIZE) + OBJECT_SIZE / 2;
+    const y = Math.random() * (h - OBJECT_SIZE - 200) + OBJECT_SIZE / 2 + 100;
+    usedPositions.push({ x, y });
+    return { x, y };
   }, []);
 
-  const handleObjectTap = useCallback((obj: { id: string; isStar: boolean }) => {
-    if (done) return;
-    
-    if (obj.isStar) {
-      // Found the star!
-      setObjects((prev) => prev.map((o) => 
-        o.id === obj.id ? { ...o, scale: 1.5 } : o
-      ));
+  const generateObjects = useCallback(
+    (roundNum: number) => {
+      const starCount = getStarsForRound(roundNum);
+      const distractorCount = 5 + starCount;
+      const usedPositions: { x: number; y: number }[] = [];
+      const newObjects: GameObject[] = [];
+
+      for (let i = 0; i < starCount; i++) {
+        const { x, y } = placeObject(usedPositions);
+        newObjects.push({
+          id: `star-${roundNum}-${i}-${Date.now()}`,
+          x,
+          y,
+          emoji: '⭐',
+          isStar: true,
+          found: false,
+          scale: 1,
+        });
+      }
+
+      const distractorEmojis = shuffle(DISTRACTORS).slice(0, distractorCount);
+      distractorEmojis.forEach((emoji, i) => {
+        const { x, y } = placeObject(usedPositions);
+        newObjects.push({
+          id: `obj-${roundNum}-${i}-${Date.now()}`,
+          x,
+          y,
+          emoji,
+          isStar: false,
+          found: false,
+          scale: 1,
+        });
+      });
+
+      setStarsNeeded(starCount);
+      setStarsFound(0);
+      starsNeededRef.current = starCount;
+      starsFoundRef.current = 0;
+      advancingRef.current = false;
+      setObjects(shuffle(newObjects));
+
+      stopTTS();
       setTimeout(() => {
-        setObjects((prev) => prev.map((o) => 
-          o.id === obj.id ? { ...o, scale: 1 } : o
-        ));
-      }, 200);
+        const starWord = starCount === 1 ? 'star' : 'stars';
+        speakTTS(`Find all ${starCount} ${starWord}!`, 0.8, 'en-US');
+      }, 400);
+    },
+    [placeObject],
+  );
 
-      setScore((s) => {
-        const newScore = s + 1;
-        if (newScore >= TOTAL_ROUNDS) {
-          setTimeout(() => {
-            if (endGameRef.current) {
-              endGameRef.current(newScore);
-            }
-          }, 1000);
+  const endGame = useCallback(
+    async (finalScore: number) => {
+      const total = TOTAL_ROUNDS;
+      const xp = finalScore * 15;
+      const accuracy = (finalScore / total) * 100;
+
+      setFinalStats({ correct: finalScore, total, xp });
+      setDone(true);
+      doneRef.current = true;
+
+      try {
+        await logGameAndAward({
+          type: 'find-the-star',
+          correct: finalScore,
+          total,
+          accuracy,
+          xpAwarded: xp,
+          skillTags: ['visual-scanning', 'attention', 'object-recognition'],
+        });
+        router.setParams({ refreshStats: Date.now().toString() });
+      } catch (error) {
+        console.error('Failed to log game:', error);
+      }
+    },
+    [router],
+  );
+
+  const completeRound = useCallback(() => {
+    if (advancingRef.current || doneRef.current) return;
+    advancingRef.current = true;
+
+    const newScore = scoreRef.current + 1;
+    scoreRef.current = newScore;
+    setScore(newScore);
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    speakTTS('All stars found!', 0.9, 'en-US');
+
+    if (newScore >= TOTAL_ROUNDS) {
+      setTimeout(() => endGame(newScore), 900);
+      return;
+    }
+
+    setTimeout(() => {
+      const nextRound = roundRef.current + 1;
+      roundRef.current = nextRound;
+      setRound(nextRound);
+    }, 900);
+  }, [endGame]);
+
+  const handleObjectTap = useCallback(
+    (obj: GameObject) => {
+      if (doneRef.current || advancingRef.current || obj.found) return;
+
+      if (obj.isStar) {
+        setObjects((prev) =>
+          prev.map((o) => (o.id === obj.id ? { ...o, scale: 1.45, found: true } : o)),
+        );
+
+        setTimeout(() => {
+          setObjects((prev) =>
+            prev.map((o) => (o.id === obj.id ? { ...o, scale: 1 } : o)),
+          );
+        }, 180);
+
+        const foundAfterTap = starsFoundRef.current + 1;
+        starsFoundRef.current = foundAfterTap;
+        setStarsFound(foundAfterTap);
+
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+
+        const needed = starsNeededRef.current;
+        if (foundAfterTap >= needed) {
+          completeRound();
         } else {
-          setTimeout(() => {
-            setRound((r) => r + 1);
-            generateObjects();
-          }, 1500);
+          const remaining = needed - foundAfterTap;
+          const remainingWord = remaining === 1 ? 'star' : 'stars';
+          speakTTS(`${remaining} more ${remainingWord} to find!`, 0.85, 'en-US');
         }
-        return newScore;
-      });
-
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      speakTTS('Star found!', 0.9, 'en-US' );
-    } else {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-      speakTTS('Find the star!', 0.8, 'en-US' );
-    }
-  }, [done, generateObjects]);
-
-  const endGame = useCallback(async (finalScore: number) => {
-    const total = TOTAL_ROUNDS;
-    const xp = finalScore * 15;
-    const accuracy = (finalScore / total) * 100;
-
-    setFinalStats({ correct: finalScore, total, xp });
-    setDone(true);
-
-    try {
-      await logGameAndAward({
-        type: 'find-the-star',
-        correct: finalScore,
-        total,
-        accuracy,
-        xpAwarded: xp,
-        skillTags: ['visual-scanning', 'attention', 'object-recognition'],
-      });
-      router.setParams({ refreshStats: Date.now().toString() });
-    } catch (error) {
-      console.error('Failed to log game:', error);
-    }
-  }, [router]);
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+        speakTTS('Find the stars, not that one!', 0.8, 'en-US');
+      }
+    },
+    [completeRound],
+  );
 
   useEffect(() => {
-    endGameRef.current = endGame;
-  }, [endGame]);
+    scoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
 
   useEffect(() => {
     if (!showInfo && !done) {
-      // Stop any ongoing TTS when new round starts
-      stopTTS();
-      generateObjects();
-      setTimeout(() => {
-        speakTTS('Find the star among all objects!', 0.8, 'en-US' );
-      }, 500);
+      generateObjects(round);
     }
   }, [showInfo, round, done, generateObjects]);
 
@@ -180,19 +247,21 @@ const FindTheStarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return () => {
       try {
         stopTTS();
-      } catch (e) {
+      } catch {
         // Ignore errors
       }
       cleanupSounds();
     };
   }, []);
 
+  const visibleObjects = objects.filter((obj) => !(obj.isStar && obj.found));
+
   if (showInfo) {
     return (
       <GameInfoScreen
-        title="Find the Star"
+        title="Find the Stars"
         emoji="⭐"
-        description="Find the star among many objects! Build your visual scanning skills."
+        description="Find every star hidden among the objects! Each round has more stars to spot."
         skills={['Visual scanning']}
         suitableFor="Children learning visual scanning and attention skills"
         onStart={() => {
@@ -220,11 +289,17 @@ const FindTheStarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             onBack?.();
           }}
           onPlayAgain={() => {
+            doneRef.current = false;
+            advancingRef.current = false;
+            scoreRef.current = 0;
+            roundRef.current = 1;
             setRound(1);
             setScore(0);
             setDone(false);
             setFinalStats(null);
-            generateObjects();
+            setObjects([]);
+            setStarsFound(0);
+            setStarsNeeded(2);
           }}
         />
       </SafeAreaView>
@@ -245,13 +320,18 @@ const FindTheStarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       </TouchableOpacity>
 
       <View style={styles.header}>
-        <Text style={styles.title}>Find the Star</Text>
+        <Text style={styles.title}>Find the Stars</Text>
         <Text style={styles.subtitle}>
           Round {round}/{TOTAL_ROUNDS} • ⭐ Score: {score}
         </Text>
         <Text style={styles.instruction}>
-          Find the star among all objects!
+          Find all {starsNeeded} stars hidden below!
         </Text>
+        <View style={styles.progressPill}>
+          <Text style={styles.progressText}>
+            Stars found: {starsFound}/{starsNeeded}
+          </Text>
+        </View>
       </View>
 
       <View
@@ -261,12 +341,13 @@ const FindTheStarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           screenHeight.current = e.nativeEvent.layout.height;
         }}
       >
-        {objects.map((obj) => (
+        {visibleObjects.map((obj) => (
           <Pressable
             key={obj.id}
             onPress={() => handleObjectTap(obj)}
             style={[
               styles.object,
+              obj.isStar && styles.starObject,
               {
                 left: obj.x - OBJECT_SIZE / 2,
                 top: obj.y - OBJECT_SIZE / 2,
@@ -280,11 +361,9 @@ const FindTheStarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Skills: Visual scanning
-        </Text>
+        <Text style={styles.footerText}>Skills: Visual scanning</Text>
         <Text style={styles.footerSubtext}>
-          Find the star among all objects!
+          Tap every star. Wrong objects do not count.
         </Text>
       </View>
     </SafeAreaView>
@@ -332,6 +411,20 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
     fontWeight: '600',
     textAlign: 'center',
+    marginBottom: 8,
+  },
+  progressPill: {
+    backgroundColor: 'rgba(252,211,77,0.35)',
+    borderColor: '#F59E0B',
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 18,
+  },
+  progressText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#92400E',
   },
   gameArea: {
     flex: 1,
@@ -353,6 +446,10 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
+  },
+  starObject: {
+    borderColor: '#F59E0B',
+    backgroundColor: '#FFFBEB',
   },
   objectEmoji: {
     fontSize: 30,
