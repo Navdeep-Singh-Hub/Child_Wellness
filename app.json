@@ -24,7 +24,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your camera for jaw awareness exercises. All processing happens locally on your device.",
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your camera for posture and movement therapy games. All processing happens locally on your device.",
         "NSMicrophoneUsageDescription": "$(PRODUCT_NAME) needs access to your microphone for voice activation speech therapy games. Audio is processed on your device."
       }
     },
@@ -75,8 +75,14 @@
       [
         "react-native-vision-camera",
         {
-          "cameraPermissionText": "$(PRODUCT_NAME) needs access to your camera for jaw awareness exercises. All processing happens locally on your device.",
+          "cameraPermissionText": "$(PRODUCT_NAME) needs access to your camera for posture, movement and speech therapy games. All processing happens locally on your device.",
           "enableFrameProcessors": true
+        }
+      ],
+      [
+        "react-native-mediapipe-posedetection",
+        {
+          "assetsPaths": ["./assets/models/"]
         }
       ],
       [

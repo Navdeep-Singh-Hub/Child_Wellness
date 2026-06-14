@@ -449,6 +449,126 @@ import CopyMyRhythmGame from '@/components/game/occupational/level3/session1/Cop
 import InstrumentChoiceGame from '@/components/game/occupational/level3/session1/InstrumentChoiceGame';
 import LoudSoftRhythmGame from '@/components/game/occupational/level3/session1/LoudSoftRhythmGame';
 import StopGoDrumGame from '@/components/game/occupational/level3/session1/StopGoDrumGame';
+// Occupational Therapy Level 6 Session 1: Sitting Posture Control (camera/pose)
+import SuperheroPowerSitGame from '@/components/game/occupational/level6/session1/SuperheroPowerSitGame';
+import CrownKeeperGame from '@/components/game/occupational/level6/session1/CrownKeeperGame';
+import StatueKingdomGame from '@/components/game/occupational/level6/session1/StatueKingdomGame';
+import SitTallFreezeGame from '@/components/game/occupational/level6/session1/SitTallFreezeGame';
+import StarReachMissionGame from '@/components/game/occupational/level6/session1/StarReachMissionGame';
+// Occupational Therapy Level 6 Session 2: Standing Posture Control (camera/pose)
+import TallTreeGame from '@/components/game/occupational/level6/session2/TallTreeGame';
+import SoldierStandGame from '@/components/game/occupational/level6/session2/SoldierStandGame';
+import StatueGuardGame from '@/components/game/occupational/level6/session2/StatueGuardGame';
+import GrowTallerGame from '@/components/game/occupational/level6/session2/GrowTallerGame';
+import FreezeBalanceGame from '@/components/game/occupational/level6/session2/FreezeBalanceGame';
+// Occupational Therapy Level 6 Session 3: Head & Neck Stability (camera/pose)
+import RocketWatchGame from '@/components/game/occupational/level6/session3/RocketWatchGame';
+import LookAndHoldGame from '@/components/game/occupational/level6/session3/LookAndHoldGame';
+import SkyGroundExplorerGame from '@/components/game/occupational/level6/session3/SkyGroundExplorerGame';
+import KeepTheCrownGame from '@/components/game/occupational/level6/session3/KeepTheCrownGame';
+import StarTrackerGame from '@/components/game/occupational/level6/session3/StarTrackerGame';
+// Occupational Therapy Level 6 Session 4: Static Balance (camera/pose)
+import FlamingoStandGame from '@/components/game/occupational/level6/session4/FlamingoStandGame';
+import OneFootIslandGame from '@/components/game/occupational/level6/session4/OneFootIslandGame';
+import BalanceStatueGame from '@/components/game/occupational/level6/session4/BalanceStatueGame';
+import StarBalanceHoldGame from '@/components/game/occupational/level6/session4/StarBalanceHoldGame';
+import FreezeHeroGame from '@/components/game/occupational/level6/session4/FreezeHeroGame';
+// Occupational Therapy Level 6 Session 5: Weight Shifting (camera/pose)
+import AppleReachGame from '@/components/game/occupational/level6/session5/AppleReachGame';
+import SideStarCatchGame from '@/components/game/occupational/level6/session5/SideStarCatchGame';
+import TreasureLeanGame from '@/components/game/occupational/level6/session5/TreasureLeanGame';
+import BridgeBalanceGame from '@/components/game/occupational/level6/session5/BridgeBalanceGame';
+import MagicScaleGame from '@/components/game/occupational/level6/session5/MagicScaleGame';
+// Occupational Therapy Level 6 Session 6: Dynamic Balance (camera/pose)
+import SteppingStonesGame from '@/components/game/occupational/level6/session6/SteppingStonesGame';
+import CrossTheBridgeGame from '@/components/game/occupational/level6/session6/CrossTheBridgeGame';
+import RiverCrossingGame from '@/components/game/occupational/level6/session6/RiverCrossingGame';
+import AdventureTrailGame from '@/components/game/occupational/level6/session6/AdventureTrailGame';
+import BalanceJourneyGame from '@/components/game/occupational/level6/session6/BalanceJourneyGame';
+// Occupational Therapy Level 6 Session 7: Trunk Rotation & Reaching (camera/pose)
+import ApplePickerGame from '@/components/game/occupational/level6/session7/ApplePickerGame';
+import PirateTreasureReachGame from '@/components/game/occupational/level6/session7/PirateTreasureReachGame';
+import TurnAndTouchGame from '@/components/game/occupational/level6/session7/TurnAndTouchGame';
+import CrossBodyCatchGame from '@/components/game/occupational/level6/session7/CrossBodyCatchGame';
+import TwistingStarHuntGame from '@/components/game/occupational/level6/session7/TwistingStarHuntGame';
+// Occupational Therapy Level 6 Session 8: Animal Walks & Core Activation (camera/pose)
+import BearWalkAdventureGame from '@/components/game/occupational/level6/session8/BearWalkAdventureGame';
+import CrabWalkChallengeGame from '@/components/game/occupational/level6/session8/CrabWalkChallengeGame';
+import SealPushGame from '@/components/game/occupational/level6/session8/SealPushGame';
+import TurtleCrawlGame from '@/components/game/occupational/level6/session8/TurtleCrawlGame';
+import GorillaMarchGame from '@/components/game/occupational/level6/session8/GorillaMarchGame';
+// Occupational Therapy Level 6 Session 9: Postural Endurance (camera/pose)
+import SuperheroHoldGame from '@/components/game/occupational/level6/session9/SuperheroHoldGame';
+import AirplaneHoldGame from '@/components/game/occupational/level6/session9/AirplaneHoldGame';
+import BridgeHoldGame from '@/components/game/occupational/level6/session9/BridgeHoldGame';
+import TallTreeChallengeGame from '@/components/game/occupational/level6/session9/TallTreeChallengeGame';
+import LongestStatueGame from '@/components/game/occupational/level6/session9/LongestStatueGame';
+// Occupational Therapy Level 6 Session 10: Integrated Core Challenge (camera/pose)
+import JungleAdventureGame from '@/components/game/occupational/level6/session10/JungleAdventureGame';
+import PirateMissionGame from '@/components/game/occupational/level6/session10/PirateMissionGame';
+import SpaceExplorerGame from '@/components/game/occupational/level6/session10/SpaceExplorerGame';
+import MountainRescueGame from '@/components/game/occupational/level6/session10/MountainRescueGame';
+import OTObstacleCourseGame from '@/components/game/occupational/level6/session10/OTObstacleCourseGame';
+// Occupational Therapy Level 7 Session 1: Linear Vestibular Movement (camera/pose)
+import TrainTracksGame from '@/components/game/occupational/level7/session1/TrainTracksGame';
+import RocketLaunchGame from '@/components/game/occupational/level7/session1/RocketLaunchGame';
+import RainbowRunGame from '@/components/game/occupational/level7/session1/RainbowRunGame';
+import WaveWalkerGame from '@/components/game/occupational/level7/session1/WaveWalkerGame';
+import AdventurePathGame from '@/components/game/occupational/level7/session1/AdventurePathGame';
+// Occupational Therapy Level 7 Session 2: Head Movement & Vestibular Activation (camera/pose)
+import LookUpExplorerGame from '@/components/game/occupational/level7/session2/LookUpExplorerGame';
+import SkyGroundMissionGame from '@/components/game/occupational/level7/session2/SkyGroundMissionGame';
+import HelicopterWatchGame from '@/components/game/occupational/level7/session2/HelicopterWatchGame';
+import VestibularStarTrackerGame from '@/components/game/occupational/level7/session2/VestibularStarTrackerGame';
+import TurnAndFindGame from '@/components/game/occupational/level7/session2/TurnAndFindGame';
+// Occupational Therapy Level 7 Session 3: Direction Changes (camera/pose)
+import DirectionSwitchGame from '@/components/game/occupational/level7/session3/DirectionSwitchGame';
+import GoLeftGoRightGame from '@/components/game/occupational/level7/session3/GoLeftGoRightGame';
+import PirateTurnHuntGame from '@/components/game/occupational/level7/session3/PirateTurnHuntGame';
+import TurnAroundQuestGame from '@/components/game/occupational/level7/session3/TurnAroundQuestGame';
+import FollowTheArrowGame from '@/components/game/occupational/level7/session3/FollowTheArrowGame';
+// Occupational Therapy Level 7 Session 4: Rotational Processing (camera/pose)
+import TornadoTurnGame from '@/components/game/occupational/level7/session4/TornadoTurnGame';
+import SpinAndStopGame from '@/components/game/occupational/level7/session4/SpinAndStopGame';
+import HelicopterPilotGame from '@/components/game/occupational/level7/session4/HelicopterPilotGame';
+import OrbitHuntGame from '@/components/game/occupational/level7/session4/OrbitHuntGame';
+import TurnAndPointGame from '@/components/game/occupational/level7/session4/TurnAndPointGame';
+// Occupational Therapy Level 7 Session 5: Dynamic Standing Balance
+import BalanceBridgeGame from '@/components/game/occupational/level7/session5/BalanceBridgeGame';
+import SteppingStonesL7Game from '@/components/game/occupational/level7/session5/SteppingStonesGame';
+import IslandHopperGame from '@/components/game/occupational/level7/session5/IslandHopperGame';
+import RiverCrossingL7Game from '@/components/game/occupational/level7/session5/RiverCrossingL7Game';
+import StarTrailGame from '@/components/game/occupational/level7/session5/StarTrailGame';
+// Occupational Therapy Level 7 Session 6: Visual-Vestibular Integration
+import RocketFollowGame from '@/components/game/occupational/level7/session6/RocketFollowGame';
+import ButterflyChaseGame from '@/components/game/occupational/level7/session6/ButterflyChaseGame';
+import BalloonDriftGame from '@/components/game/occupational/level7/session6/BalloonDriftGame';
+import UFOWatchGame from '@/components/game/occupational/level7/session6/UFOWatchGame';
+import OrbitTrackerGame from '@/components/game/occupational/level7/session6/OrbitTrackerGame';
+// Occupational Therapy Level 7 Session 7: Balance Reactions
+import FreezeBalanceL7Game from '@/components/game/occupational/level7/session7/FreezeBalanceL7Game';
+import WaveRiderGame from '@/components/game/occupational/level7/session7/WaveRiderGame';
+import SurfChallengeGame from '@/components/game/occupational/level7/session7/SurfChallengeGame';
+import ObstacleBalanceGame from '@/components/game/occupational/level7/session7/ObstacleBalanceGame';
+import RecoveryMasterGame from '@/components/game/occupational/level7/session7/RecoveryMasterGame';
+// Occupational Therapy Level 7 Session 8: Vestibular Sequencing
+import FollowMyStepsGame from '@/components/game/occupational/level7/session8/FollowMyStepsGame';
+import MovementPatternCopyGame from '@/components/game/occupational/level7/session8/MovementPatternCopyGame';
+import StarSequencePathGame from '@/components/game/occupational/level7/session8/StarSequencePathGame';
+import SpaceMissionGame from '@/components/game/occupational/level7/session8/SpaceMissionGame';
+import PirateJourneyGame from '@/components/game/occupational/level7/session8/PirateJourneyGame';
+// Occupational Therapy Level 7 Session 9: Vestibular Endurance
+import LongTrailWalkGame from '@/components/game/occupational/level7/session9/LongTrailWalkGame';
+import RainbowJourneyGame from '@/components/game/occupational/level7/session9/RainbowJourneyGame';
+import ForestExplorerGame from '@/components/game/occupational/level7/session9/ForestExplorerGame';
+import EndlessTracksGame from '@/components/game/occupational/level7/session9/EndlessTracksGame';
+import BalanceMarathonGame from '@/components/game/occupational/level7/session9/BalanceMarathonGame';
+// Occupational Therapy Level 7 Session 10: Vestibular Challenge Course
+import PirateIslandChallengeGame from '@/components/game/occupational/level7/session10/PirateIslandChallengeGame';
+import SpaceExplorerCourseGame from '@/components/game/occupational/level7/session10/SpaceExplorerCourseGame';
+import JungleExpeditionGame from '@/components/game/occupational/level7/session10/JungleExpeditionGame';
+import MountainAdventureGame from '@/components/game/occupational/level7/session10/MountainAdventureGame';
+import VestibularChampionGame from '@/components/game/occupational/level7/session10/VestibularChampionGame';
 // Level 3 Session 1 games that are in session3 folder (Tap with Rhythm)
 import DoubleBeatCopyGame from '@/components/game/occupational/level3/session3/DoubleBeatCopyGame';
 import FastBeatChallengeGame from '@/components/game/occupational/level3/session3/FastBeatChallengeGame';
@@ -1233,6 +1353,106 @@ type GameKey =
   | 'stop-go-drum'
   | 'loud-soft-rhythm'
   | 'instrument-choice'
+  | 'superhero-power-sit'
+  | 'crown-keeper'
+  | 'statue-kingdom'
+  | 'sit-tall-freeze'
+  | 'star-reach-mission'
+  | 'tall-tree'
+  | 'soldier-stand'
+  | 'statue-guard'
+  | 'grow-taller'
+  | 'freeze-balance'
+  | 'rocket-watch'
+  | 'look-and-hold'
+  | 'sky-ground-explorer'
+  | 'keep-the-crown'
+  | 'star-tracker'
+  | 'flamingo-stand'
+  | 'one-foot-island'
+  | 'balance-statue'
+  | 'star-balance-hold'
+  | 'freeze-hero'
+  | 'apple-reach'
+  | 'side-star-catch'
+  | 'treasure-lean'
+  | 'bridge-balance'
+  | 'magic-scale'
+  | 'stepping-stones'
+  | 'cross-the-bridge'
+  | 'river-crossing'
+  | 'adventure-trail'
+  | 'balance-journey'
+  | 'apple-picker'
+  | 'pirate-treasure-reach'
+  | 'turn-and-touch'
+  | 'cross-body-catch'
+  | 'twisting-star-hunt'
+  | 'bear-walk-adventure'
+  | 'crab-walk-challenge'
+  | 'seal-push'
+  | 'turtle-crawl'
+  | 'gorilla-march'
+  | 'superhero-hold'
+  | 'airplane-hold'
+  | 'bridge-hold'
+  | 'tall-tree-challenge'
+  | 'longest-statue'
+  | 'jungle-adventure'
+  | 'pirate-mission'
+  | 'space-explorer'
+  | 'mountain-rescue'
+  | 'ot-obstacle-course'
+  | 'train-tracks'
+  | 'rocket-launch'
+  | 'rainbow-run'
+  | 'wave-walker'
+  | 'adventure-path'
+  | 'look-up-explorer'
+  | 'sky-ground-mission'
+  | 'helicopter-watch'
+  | 'vestibular-star-tracker'
+  | 'turn-and-find'
+  | 'direction-switch'
+  | 'go-left-go-right'
+  | 'pirate-turn-hunt'
+  | 'turn-around-quest'
+  | 'magical-arrow-sequence'
+  | 'tornado-turn'
+  | 'spin-and-stop'
+  | 'helicopter-pilot'
+  | 'orbit-hunt'
+  | 'turn-and-point'
+  | 'balance-bridge'
+  | 'stepping-stones-l7'
+  | 'island-hopper'
+  | 'river-crossing-l7'
+  | 'star-trail'
+  | 'rocket-follow'
+  | 'butterfly-chase'
+  | 'balloon-drift'
+  | 'ufo-watch'
+  | 'orbit-tracker'
+  | 'freeze-balance-l7'
+  | 'wave-rider'
+  | 'surf-challenge'
+  | 'obstacle-balance'
+  | 'recovery-master'
+  | 'follow-my-steps'
+  | 'movement-pattern-copy'
+  | 'star-sequence-path'
+  | 'space-mission'
+  | 'pirate-journey'
+  | 'long-trail-walk'
+  | 'rainbow-journey'
+  | 'forest-explorer'
+  | 'endless-tracks'
+  | 'balance-marathon'
+  | 'pirate-island'
+  | 'space-explorer-course'
+  | 'jungle-expedition'
+  | 'mountain-adventure'
+  | 'vestibular-champion'
   | 'big-swipe-small-swipe'
   | 'big-tap-small-tap'
   | 'stretch-pinch'
@@ -2729,6 +2949,246 @@ export default function SessionGamesScreen() {
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 1;
   const isInstrumentChoiceAvailable =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 1;
+
+  // Level 6 Session 1 games - Occupational Therapy (Sitting Posture Control · camera/pose)
+  const isSuperheroPowerSitAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 1;
+  const isCrownKeeperAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 1;
+  const isStatueKingdomAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 1;
+  const isSitTallFreezeAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 1;
+  const isStarReachMissionAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 1;
+
+  // Level 6 Session 2 games - Occupational Therapy (Standing Posture Control · camera/pose)
+  const isTallTreeAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 2;
+  const isSoldierStandAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 2;
+  const isStatueGuardAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 2;
+  const isGrowTallerAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 2;
+  const isFreezeBalanceAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 2;
+
+  // Level 6 Session 3 games - Occupational Therapy (Head & Neck Stability · camera/pose)
+  const isRocketWatchAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 3;
+  const isLookAndHoldAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 3;
+  const isSkyGroundExplorerAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 3;
+  const isKeepTheCrownAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 3;
+  const isStarTrackerAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 3;
+
+  // Level 6 Session 4 games - Occupational Therapy (Static Balance · camera/pose)
+  const isFlamingoStandAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 4;
+  const isOneFootIslandAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 4;
+  const isBalanceStatueAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 4;
+  const isStarBalanceHoldAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 4;
+  const isFreezeHeroAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 4;
+
+  // Level 6 Session 5 games - Occupational Therapy (Weight Shifting · camera/pose)
+  const isAppleReachAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 5;
+  const isSideStarCatchAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 5;
+  const isTreasureLeanAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 5;
+  const isBridgeBalanceAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 5;
+  const isMagicScaleAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 5;
+
+  // Level 6 Session 6 games - Occupational Therapy (Dynamic Balance · camera/pose)
+  const isSteppingStonesAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 6;
+  const isCrossTheBridgeAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 6;
+  const isRiverCrossingAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 6;
+  const isAdventureTrailAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 6;
+  const isBalanceJourneyAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 6;
+
+  // Level 6 Session 7 games - Occupational Therapy (Trunk Rotation & Reaching · camera/pose)
+  const isApplePickerAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 7;
+  const isPirateTreasureReachAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 7;
+  const isTurnAndTouchAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 7;
+  const isCrossBodyCatchAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 7;
+  const isTwistingStarHuntAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 7;
+
+  // Level 6 Session 8 games - Occupational Therapy (Animal Walks & Core Activation · camera/pose)
+  const isBearWalkAdventureAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 8;
+  const isCrabWalkChallengeAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 8;
+  const isSealPushAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 8;
+  const isTurtleCrawlAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 8;
+  const isGorillaMarchAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 8;
+
+  // Level 6 Session 9 games - Occupational Therapy (Postural Endurance · camera/pose)
+  const isSuperheroHoldAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 9;
+  const isAirplaneHoldAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 9;
+  const isBridgeHoldAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 9;
+  const isTallTreeChallengeAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 9;
+  const isLongestStatueAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 9;
+
+  // Level 6 Session 10 games - Occupational Therapy (Integrated Core Challenge · camera/pose)
+  const isJungleAdventureAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 10;
+  const isPirateMissionAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 10;
+  const isSpaceExplorerAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 10;
+  const isMountainRescueAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 10;
+  const isOTObstacleCourseAvailable =
+    therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 10;
+
+  // Level 7 Session 1 games - Occupational Therapy (Linear Vestibular Movement · camera/pose)
+  const isTrainTracksAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 1;
+  const isRocketLaunchAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 1;
+  const isRainbowRunAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 1;
+  const isWaveWalkerAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 1;
+  const isAdventurePathAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 1;
+
+  // Level 7 Session 2 games - Occupational Therapy (Head Movement & Vestibular Activation · camera/pose)
+  const isLookUpExplorerAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 2;
+  const isSkyGroundMissionAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 2;
+  const isHelicopterWatchAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 2;
+  const isVestibularStarTrackerAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 2;
+  const isTurnAndFindAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 2;
+
+  // Level 7 Session 3 games - Occupational Therapy (Direction Changes · camera/pose)
+  const isDirectionSwitchAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 3;
+  const isGoLeftGoRightAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 3;
+  const isPirateTurnHuntAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 3;
+  const isTurnAroundQuestAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 3;
+  const isMagicalArrowSequenceAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 3;
+
+  // Level 7 Session 4 games - Occupational Therapy (Rotational Processing · camera/pose)
+  const isTornadoTurnAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 4;
+  const isSpinAndStopAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 4;
+  const isHelicopterPilotAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 4;
+  const isOrbitHuntAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 4;
+  const isTurnAndPointAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 4;
+
+  // Occupational Therapy Level 7 Session 5: Dynamic Standing Balance
+  const isBalanceBridgeAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 5;
+  const isSteppingStonesL7Available =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 5;
+  const isIslandHopperAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 5;
+  const isRiverCrossingL7Available =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 5;
+  const isStarTrailAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 5;
+
+  // Occupational Therapy Level 7 Session 6: Visual-Vestibular Integration
+  const isRocketFollowAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 6;
+  const isButterflyChaseAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 6;
+  const isBalloonDriftAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 6;
+  const isUFOWatchAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 6;
+  const isOrbitTrackerAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 6;
+
+  // Occupational Therapy Level 7 Session 7: Balance Reactions
+  const isFreezeBalanceL7Available =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 7;
+  const isWaveRiderAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 7;
+  const isSurfChallengeAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 7;
+  const isObstacleBalanceAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 7;
+  const isRecoveryMasterAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 7;
+
+  // Occupational Therapy Level 7 Session 8: Vestibular Sequencing
+  const isFollowMyStepsAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 8;
+  const isMovementPatternCopyAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 8;
+  const isStarSequencePathAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 8;
+  const isSpaceMissionAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 8;
+  const isPirateJourneyAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 8;
+
+  // Occupational Therapy Level 7 Session 9: Vestibular Endurance
+  const isLongTrailWalkAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 9;
+  const isRainbowJourneyAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 9;
+  const isForestExplorerAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 9;
+  const isEndlessTracksAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 9;
+  const isBalanceMarathonAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 9;
+
+  // Occupational Therapy Level 7 Session 10: Vestibular Challenge Course
+  const isPirateIslandAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 10;
+  const isSpaceExplorerCourseAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 10;
+  const isJungleExpeditionAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 10;
+  const isMountainAdventureAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 10;
+  const isVestibularChampionAvailable =
+    therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 10;
 
   // Level 3 Session 2 games - Occupational Therapy (Big vs Small Movements)
   const isBigTapSmallTapAvailable =
@@ -6929,6 +7389,826 @@ export default function SessionGamesScreen() {
       color: '#10B981',
       available: isInstrumentChoiceAvailable,
     },
+    // Occupational Therapy Level 6 Session 1: Sitting Posture Control (camera tracks posture)
+    {
+      id: 'superhero-power-sit',
+      title: 'Superhero Power Sit',
+      emoji: '⚡',
+      description: 'Sit up tall to charge your super power — slouching drains it! Camera tracks upright sitting and core activation.',
+      color: '#F59E0B',
+      available: isSuperheroPowerSitAvailable,
+    },
+    {
+      id: 'crown-keeper',
+      title: 'Crown Keeper',
+      emoji: '👑',
+      description: 'Keep your head steady and tall to protect the magic crown. Camera tracks head control and neck stability.',
+      color: '#F472B6',
+      available: isCrownKeeperAvailable,
+    },
+    {
+      id: 'statue-kingdom',
+      title: 'Statue Kingdom',
+      emoji: '🗿',
+      description: 'Freeze like a royal statue while distractions appear. Camera tracks stillness, postural endurance and motor inhibition.',
+      color: '#22D3EE',
+      available: isStatueKingdomAvailable,
+    },
+    {
+      id: 'sit-tall-freeze',
+      title: 'Sit Tall Freeze',
+      emoji: '🚦',
+      description: 'Green = sit tall, Yellow = ready, Red = freeze. Camera tracks reaction speed and posture quality.',
+      color: '#34D399',
+      available: isSitTallFreezeAvailable,
+    },
+    {
+      id: 'star-reach-mission',
+      title: 'Star Reach Mission',
+      emoji: '🌟',
+      description: 'Reach left, right and high to catch stars while staying balanced. Camera tracks trunk movement and weight shifting.',
+      color: '#A78BFA',
+      available: isStarReachMissionAvailable,
+    },
+    // Occupational Therapy Level 6 Session 2: Standing Posture Control (camera tracks standing posture)
+    {
+      id: 'tall-tree',
+      title: 'Tall Tree',
+      emoji: '🌳',
+      description: 'Stand up tall to grow a magical tree — leaves and birds appear! Camera tracks standing posture and body alignment.',
+      color: '#22C55E',
+      available: isTallTreeAvailable,
+    },
+    {
+      id: 'soldier-stand',
+      title: 'Soldier Stand',
+      emoji: '💂',
+      description: 'Be a royal guard — follow standing commands with perfect posture. Camera tracks alignment and shoulder symmetry.',
+      color: '#F59E0B',
+      available: isSoldierStandAvailable,
+    },
+    {
+      id: 'statue-guard',
+      title: 'Statue Guard',
+      emoji: '🗽',
+      description: 'Stand frozen like a giant statue while distractions appear. Camera tracks body sway, head and arm movement.',
+      color: '#22D3EE',
+      available: isStatueGuardAvailable,
+    },
+    {
+      id: 'grow-taller',
+      title: 'Grow Taller',
+      emoji: '🎈',
+      description: 'Stretch up tall to float a balloon to the clouds. Camera tracks trunk extension and shoulder elevation.',
+      color: '#F472B6',
+      available: isGrowTallerAvailable,
+    },
+    {
+      id: 'freeze-balance',
+      title: 'Freeze & Balance',
+      emoji: '🧊',
+      description: 'Move and march, then freeze and balance when signaled. Camera tracks reaction speed, balance and stability.',
+      color: '#A78BFA',
+      available: isFreezeBalanceAvailable,
+    },
+    // Occupational Therapy Level 6 Session 3: Head & Neck Stability (camera tracks head movement)
+    {
+      id: 'rocket-watch',
+      title: 'Rocket Watch',
+      emoji: '🚀',
+      description: 'Follow a flying rocket using only your head while keeping your body still. Camera tracks head tracking and trunk compensation.',
+      color: '#38BDF8',
+      available: isRocketWatchAvailable,
+    },
+    {
+      id: 'look-and-hold',
+      title: 'Look & Hold',
+      emoji: '🏰',
+      description: 'Be a castle lookout — look left, right, up and down and hold each look. Camera tracks head angle and neck alignment.',
+      color: '#F59E0B',
+      available: isLookAndHoldAvailable,
+    },
+    {
+      id: 'sky-ground-explorer',
+      title: 'Sky-Ground Explorer',
+      emoji: '🌤️',
+      description: 'Look up at the clouds and down at the flowers without moving your body. Camera tracks vertical head movement and range.',
+      color: '#34D399',
+      available: isSkyGroundExplorerAvailable,
+    },
+    {
+      id: 'keep-the-crown',
+      title: 'Keep The Crown',
+      emoji: '👑',
+      description: 'Turn your head smoothly in every direction without dropping the crown. Camera tracks neck alignment and movement smoothness.',
+      color: '#F472B6',
+      available: isKeepTheCrownAvailable,
+    },
+    {
+      id: 'star-tracker',
+      title: 'Star Tracker',
+      emoji: '🌟',
+      description: 'Follow stars moving across the night sky with your head. Camera tracks smooth pursuit and head-eye coordination.',
+      color: '#A78BFA',
+      available: isStarTrackerAvailable,
+    },
+    // Occupational Therapy Level 6 Session 4: Static Balance (camera tracks single-leg balance)
+    {
+      id: 'flamingo-stand',
+      title: 'Flamingo Stand',
+      emoji: '🦩',
+      description: 'Stand on one leg like a flamingo and collect fish & stars. Camera tracks balance time, body sway and alignment.',
+      color: '#F472B6',
+      available: isFlamingoStandAvailable,
+    },
+    {
+      id: 'one-foot-island',
+      title: 'One Foot Island',
+      emoji: '🏝️',
+      description: 'Balance on one foot on each floating island without stepping off. Camera tracks foot placement, sway and stability.',
+      color: '#38BDF8',
+      available: isOneFootIslandAvailable,
+    },
+    {
+      id: 'balance-statue',
+      title: 'Balance Statue',
+      emoji: '🗿',
+      description: 'Hold magical standing poses and stay perfectly still while ignoring distractions. Camera tracks body movement and sway.',
+      color: '#A78BFA',
+      available: isBalanceStatueAvailable,
+    },
+    {
+      id: 'star-balance-hold',
+      title: 'Star Balance Hold',
+      emoji: '🌟',
+      description: 'Reach your arms to the stars while holding your balance on the platform. Camera tracks arm position, trunk stability and balance.',
+      color: '#FBBF24',
+      available: isStarBalanceHoldAvailable,
+    },
+    {
+      id: 'freeze-hero',
+      title: 'Freeze Hero',
+      emoji: '🦸',
+      description: 'Move like a hero, then freeze and balance the instant danger appears. Camera tracks reaction speed, balance and alignment.',
+      color: '#34D399',
+      available: isFreezeHeroAvailable,
+    },
+    // Occupational Therapy Level 6 Session 5: Weight Shifting (camera tracks center-of-mass)
+    {
+      id: 'apple-reach',
+      title: 'Apple Reach',
+      emoji: '🍎',
+      description: 'Lean left and right to pick apples while keeping your balance. Camera tracks trunk movement, weight transfer and balance.',
+      color: '#EF4444',
+      available: isAppleReachAvailable,
+    },
+    {
+      id: 'side-star-catch',
+      title: 'Side Star Catch',
+      emoji: '⭐',
+      description: 'Shift side to side to catch falling stars without losing balance. Camera tracks center-of-mass movement and stability.',
+      color: '#FBBF24',
+      available: isSideStarCatchAvailable,
+    },
+    {
+      id: 'treasure-lean',
+      title: 'Treasure Lean',
+      emoji: '🏴‍☠️',
+      description: 'Lean to grab pirate treasure, then steady yourself back to center. Camera tracks lean angle, trunk control and recovery.',
+      color: '#F59E0B',
+      available: isTreasureLeanAvailable,
+    },
+    {
+      id: 'bridge-balance',
+      title: 'Bridge Balance',
+      emoji: '🌉',
+      description: 'Shift your weight onto each stepping stone to cross the magic bridge. Camera tracks weight-transfer patterns and balance.',
+      color: '#38BDF8',
+      available: isBridgeBalanceAvailable,
+    },
+    {
+      id: 'magic-scale',
+      title: 'Magic Scale',
+      emoji: '⚖️',
+      description: 'Shift your weight until the magic scale is perfectly level. Camera tracks body alignment and weight distribution.',
+      color: '#A78BFA',
+      available: isMagicScaleAvailable,
+    },
+    // Occupational Therapy Level 6 Session 6: Dynamic Balance (camera tracks stepping & turning)
+    {
+      id: 'stepping-stones',
+      title: 'Stepping Stones',
+      emoji: '🪨',
+      description: 'Step from stone to stone to cross the river, balancing after each step. Camera tracks foot placement and balance.',
+      color: '#38BDF8',
+      available: isSteppingStonesAvailable,
+    },
+    {
+      id: 'cross-the-bridge',
+      title: 'Cross The Bridge',
+      emoji: '🌉',
+      description: 'Walk heel-to-toe across the narrow bridge to the castle. Camera tracks body sway, path accuracy and posture.',
+      color: '#A78BFA',
+      available: isCrossTheBridgeAvailable,
+    },
+    {
+      id: 'river-crossing',
+      title: 'River Crossing',
+      emoji: '🌊',
+      description: 'Hop between safe islands and land with steady balance and recovery. Camera tracks landing stability and stepping accuracy.',
+      color: '#22D3EE',
+      available: isRiverCrossingAvailable,
+    },
+    {
+      id: 'adventure-trail',
+      title: 'Adventure Trail',
+      emoji: '🚶',
+      description: 'Follow the forest trail arrows — step, turn and stop in sequence. Camera tracks movement sequence, posture and balance.',
+      color: '#84CC16',
+      available: isAdventureTrailAvailable,
+    },
+    {
+      id: 'balance-journey',
+      title: 'Balance Journey',
+      emoji: '🏆',
+      description: 'The grand challenge — navigate a course of stepping, turning and stopping tasks. Camera tracks whole-body movement and balance.',
+      color: '#FBBF24',
+      available: isBalanceJourneyAvailable,
+    },
+    // Occupational Therapy Level 6 Session 7: Trunk Rotation & Reaching (camera tracks rotation & reach)
+    {
+      id: 'apple-picker',
+      title: 'Apple Picker',
+      emoji: '🍎',
+      description: 'Rotate and reach left and right to pick apples while keeping balance. Camera tracks trunk rotation, posture and balance.',
+      color: '#EF4444',
+      available: isApplePickerAvailable,
+    },
+    {
+      id: 'pirate-treasure-reach',
+      title: 'Pirate Treasure Reach',
+      emoji: '🏴‍☠️',
+      description: 'Reach across your body to collect hidden treasure. Camera tracks cross-midline reach, trunk movement and stability.',
+      color: '#F59E0B',
+      available: isPirateTreasureReachAvailable,
+    },
+    {
+      id: 'turn-and-touch',
+      title: 'Turn & Touch',
+      emoji: '🎯',
+      description: 'Turn your body and touch magical targets in different directions. Camera tracks rotation, accuracy and balance.',
+      color: '#22D3EE',
+      available: isTurnAndTouchAvailable,
+    },
+    {
+      id: 'cross-body-catch',
+      title: 'Cross-Body Catch',
+      emoji: '🤾',
+      description: 'Reach across your body to catch energy balls from different directions. Camera tracks reach timing, trunk rotation and balance.',
+      color: '#A78BFA',
+      available: isCrossBodyCatchAvailable,
+    },
+    {
+      id: 'twisting-star-hunt',
+      title: 'Twisting Star Hunt',
+      emoji: '⭐',
+      description: 'Rotate and reach in every direction to collect stars across the galaxy. Camera tracks rotation range, posture and smoothness.',
+      color: '#E879F9',
+      available: isTwistingStarHuntAvailable,
+    },
+    // Occupational Therapy Level 6 Session 8: Animal Walks & Core Activation (camera tracks movement & posture)
+    {
+      id: 'bear-walk-adventure',
+      title: 'Bear Walk Adventure',
+      emoji: '🐻',
+      description: 'Walk on hands and feet through the forest collecting honey. Camera tracks body posture, movement quality and endurance.',
+      color: '#F59E0B',
+      available: isBearWalkAdventureAvailable,
+    },
+    {
+      id: 'crab-walk-challenge',
+      title: 'Crab Walk Challenge',
+      emoji: '🦀',
+      description: 'Crab walk across the beach between the markers. Camera tracks hip position, trunk stability and movement control.',
+      color: '#22D3EE',
+      available: isCrabWalkChallengeAvailable,
+    },
+    {
+      id: 'seal-push',
+      title: 'Seal Push',
+      emoji: '🦭',
+      description: 'Push forward with your arms and slide across the ice. Camera tracks arm movement, trunk control and posture.',
+      color: '#60A5FA',
+      available: isSealPushAvailable,
+    },
+    {
+      id: 'turtle-crawl',
+      title: 'Turtle Crawl',
+      emoji: '🐢',
+      description: 'Crawl slowly and steadily along the jungle path. Camera tracks crawling pattern, body alignment and endurance.',
+      color: '#34D399',
+      available: isTurtleCrawlAvailable,
+    },
+    {
+      id: 'gorilla-march',
+      title: 'Gorilla March',
+      emoji: '🦍',
+      description: 'March with big stomps and lift your knees high. Camera tracks movement intensity, posture and coordination.',
+      color: '#A16207',
+      available: isGorillaMarchAvailable,
+    },
+    // Occupational Therapy Level 6 Session 9: Postural Endurance (camera tracks hold quality & stillness)
+    {
+      id: 'superhero-hold',
+      title: 'Superhero Hold',
+      emoji: '🦸',
+      description: 'Hold a powerful superhero pose for increasing durations to charge your energy. Camera tracks posture quality and hold duration.',
+      color: '#EF4444',
+      available: isSuperheroHoldAvailable,
+    },
+    {
+      id: 'airplane-hold',
+      title: 'Airplane Hold',
+      emoji: '✈️',
+      description: 'Stretch your arms wide and hold an airplane pose as long as you can. Camera tracks arm position, trunk stability and sway.',
+      color: '#38BDF8',
+      available: isAirplaneHoldAvailable,
+    },
+    {
+      id: 'bridge-hold',
+      title: 'Bridge Hold',
+      emoji: '🌉',
+      description: 'Hold a strong bridge position so the animals can cross safely. Camera tracks hip position, alignment and hold duration.',
+      color: '#34D399',
+      available: isBridgeHoldAvailable,
+    },
+    {
+      id: 'tall-tree-challenge',
+      title: 'Tall Tree Challenge',
+      emoji: '🌳',
+      description: 'Stand tall and steady while weather challenges try to sway you. Camera tracks body alignment, sway and endurance.',
+      color: '#22C55E',
+      available: isTallTreeChallengeAvailable,
+    },
+    {
+      id: 'longest-statue',
+      title: 'Longest Statue',
+      emoji: '🗿',
+      description: 'Stay perfectly still while distractions try to break your focus. Camera tracks body movement, sway and posture changes.',
+      color: '#A78BFA',
+      available: isLongestStatueAvailable,
+    },
+    // Occupational Therapy Level 6 Session 10: Integrated Core Challenge (camera tracks full-body skills)
+    {
+      id: 'jungle-adventure',
+      title: 'Jungle Adventure',
+      emoji: '🌴',
+      description: 'Explore the jungle, completing balance, reaching and movement tasks to collect treasures. Camera tracks posture, balance and movement.',
+      color: '#FACC15',
+      available: isJungleAdventureAvailable,
+    },
+    {
+      id: 'pirate-mission',
+      title: 'Pirate Mission',
+      emoji: '🏴‍☠️',
+      description: 'Help the pirates recover treasure by navigating markers, reaching and balancing. Camera tracks balance, trunk control and posture.',
+      color: '#F59E0B',
+      available: isPirateMissionAvailable,
+    },
+    {
+      id: 'space-explorer',
+      title: 'Space Explorer',
+      emoji: '🚀',
+      description: 'Travel through space collecting crystals with head control, balance and movement tasks. Camera tracks head movement, balance and alignment.',
+      color: '#22D3EE',
+      available: isSpaceExplorerAvailable,
+    },
+    {
+      id: 'mountain-rescue',
+      title: 'Mountain Rescue',
+      emoji: '⛰️',
+      description: 'Rescue trapped animals through a sequence of reaching, balancing and movement tasks. Camera tracks coordination, posture and endurance.',
+      color: '#FDE68A',
+      available: isMountainRescueAvailable,
+    },
+    {
+      id: 'ot-obstacle-course',
+      title: 'OT Obstacle Course',
+      emoji: '🏆',
+      description: 'The grand finale — perform sitting, standing, balance, reaching and movement activities in sequence to become an OT Champion!',
+      color: '#FBBF24',
+      available: isOTObstacleCourseAvailable,
+    },
+    // Occupational Therapy Level 7 Session 1: Linear Vestibular Movement (camera tracks walking & balance)
+    {
+      id: 'train-tracks',
+      title: 'Train Tracks',
+      emoji: '🚂',
+      description: 'Drive a train forward along floor markers — collect passengers at each station. Camera tracks walking path, posture and balance.',
+      color: '#F59E0B',
+      available: isTrainTracksAvailable,
+    },
+    {
+      id: 'rocket-launch',
+      title: 'Rocket Launch',
+      emoji: '🚀',
+      description: 'Step forward through launch zones to power the rocket into space. Camera tracks movement distance, posture and stepping accuracy.',
+      color: '#38BDF8',
+      available: isRocketLaunchAvailable,
+    },
+    {
+      id: 'rainbow-run',
+      title: 'Rainbow Run',
+      emoji: '🌈',
+      description: 'Follow a rainbow path marker by marker to find hidden treasure. Camera tracks movement pattern, balance and body alignment.',
+      color: '#A855F7',
+      available: isRainbowRunAvailable,
+    },
+    {
+      id: 'wave-walker',
+      title: 'Wave Walker',
+      emoji: '🌊',
+      description: 'Walk across gentle ocean waves while staying balanced. Camera tracks balance, stepping control and posture as waves shift.',
+      color: '#22D3EE',
+      available: isWaveWalkerAvailable,
+    },
+    {
+      id: 'adventure-path',
+      title: 'Adventure Path',
+      emoji: '🏃',
+      description: 'Explore a jungle trail — follow arrows and markers through movement challenges. Camera tracks walking pattern, posture and balance.',
+      color: '#84CC16',
+      available: isAdventurePathAvailable,
+    },
+    // Occupational Therapy Level 7 Session 2: Head Movement & Vestibular Activation (camera tracks head & posture)
+    {
+      id: 'look-up-explorer',
+      title: 'Look Up Explorer',
+      emoji: '👀',
+      description: 'Explore the sky looking for hidden treasures. Camera tracks head angle, neck movement and posture.',
+      color: '#38BDF8',
+      available: isLookUpExplorerAvailable,
+    },
+    {
+      id: 'sky-ground-mission',
+      title: 'Sky-Ground Mission',
+      emoji: '🌞',
+      description: 'Alternate looking up at the sky and down at the ground for clues. Camera tracks head range, speed and body stability.',
+      color: '#F59E0B',
+      available: isSkyGroundMissionAvailable,
+    },
+    {
+      id: 'helicopter-watch',
+      title: 'Helicopter Watch',
+      emoji: '🚁',
+      description: 'Follow helicopters across the sky with smooth head tracking. Camera tracks accuracy, head movement and trunk compensation.',
+      color: '#22D3EE',
+      available: isHelicopterWatchAvailable,
+    },
+    {
+      id: 'vestibular-star-tracker',
+      title: 'Star Tracker',
+      emoji: '⭐',
+      description: 'Follow magical stars moving in different directions. Camera tracks head orientation, tracking quality and posture.',
+      color: '#A78BFA',
+      available: isVestibularStarTrackerAvailable,
+    },
+    {
+      id: 'turn-and-find',
+      title: 'Turn & Find',
+      emoji: '🎯',
+      description: 'Turn your head left and right to find hidden targets. Camera tracks head rotation, search speed and body stability.',
+      color: '#F472B6',
+      available: isTurnAndFindAvailable,
+    },
+    // Occupational Therapy Level 7 Session 3: Direction Changes (camera tracks shifts, turns & balance)
+    {
+      id: 'direction-switch',
+      title: 'Direction Switch',
+      emoji: '↔️',
+      description: 'Follow magical arrows and instantly change direction in the maze. Camera tracks direction changes, reaction speed and balance.',
+      color: '#A78BFA',
+      available: isDirectionSwitchAvailable,
+    },
+    {
+      id: 'go-left-go-right',
+      title: 'Go Left Go Right',
+      emoji: '🚦',
+      description: 'Navigate traffic — move left or right on the signal. Camera tracks movement accuracy, timing and posture.',
+      color: '#34D399',
+      available: isGoLeftGoRightAvailable,
+    },
+    {
+      id: 'pirate-turn-hunt',
+      title: 'Pirate Turn Hunt',
+      emoji: '🏴‍☠️',
+      description: 'Turn and move toward pirate treasure in different directions. Camera tracks turning accuracy, balance and control.',
+      color: '#F59E0B',
+      available: isPirateTurnHuntAvailable,
+    },
+    {
+      id: 'turn-around-quest',
+      title: 'Turn Around Quest',
+      emoji: '🔄',
+      description: 'Perform 90° and 180° turns to discover hidden kingdom objects. Camera tracks turning angle, stability and posture.',
+      color: '#38BDF8',
+      available: isTurnAroundQuestAvailable,
+    },
+    {
+      id: 'magical-arrow-sequence',
+      title: 'Follow The Arrow',
+      emoji: '🎯',
+      description: 'Follow a sequence of magical arrows in changing directions. Camera tracks movement sequence, accuracy and balance.',
+      color: '#F472B6',
+      available: isMagicalArrowSequenceAvailable,
+    },
+    // Occupational Therapy Level 7 Session 4: Rotational Processing (camera tracks rotation & balance)
+    {
+      id: 'tornado-turn',
+      title: 'Tornado Turn',
+      emoji: '🌀',
+      description: 'Spin slowly like a tornado, then STOP on command. Camera tracks rotation angle, speed and postural stability.',
+      color: '#A78BFA',
+      available: isTornadoTurnAvailable,
+    },
+    {
+      id: 'spin-and-stop',
+      title: 'Spin & Stop',
+      emoji: '🔄',
+      description: 'Spin the magic wheel slowly and freeze when the target appears. Camera tracks reaction time, turning control and balance.',
+      color: '#F472B6',
+      available: isSpinAndStopAvailable,
+    },
+    {
+      id: 'helicopter-pilot',
+      title: 'Helicopter Pilot',
+      emoji: '🚁',
+      description: 'Rotate toward checkpoints while maintaining balance. Camera tracks head movement, body rotation and stability.',
+      color: '#38BDF8',
+      available: isHelicopterPilotAvailable,
+    },
+    {
+      id: 'orbit-hunt',
+      title: 'Orbit Hunt',
+      emoji: '⭐',
+      description: 'Turn to catch stars orbiting around you. Camera tracks rotation range, tracking accuracy and balance.',
+      color: '#FBBF24',
+      available: isOrbitHuntAvailable,
+    },
+    {
+      id: 'turn-and-point',
+      title: 'Turn & Point',
+      emoji: '🎯',
+      description: 'Turn your body, then point your head at hidden targets. Camera tracks turning accuracy, pointing and posture.',
+      color: '#34D399',
+      available: isTurnAndPointAvailable,
+    },
+    // Occupational Therapy Level 7 Session 5: Dynamic Standing Balance
+    {
+      id: 'balance-bridge',
+      title: 'Balance Bridge',
+      emoji: '🌉',
+      description: 'Walk heel-to-toe across the magical bridge to the castle. Camera tracks body sway, posture and path accuracy.',
+      color: '#A78BFA',
+      available: isBalanceBridgeAvailable,
+    },
+    {
+      id: 'stepping-stones-l7',
+      title: 'Stepping Stones',
+      emoji: '🪨',
+      description: 'Step from stone to stone across the river while keeping balance. Camera tracks foot placement, balance and movement control.',
+      color: '#38BDF8',
+      available: isSteppingStonesL7Available,
+    },
+    {
+      id: 'island-hopper',
+      title: 'Island Hopper',
+      emoji: '🏝️',
+      description: 'Hop between islands to collect treasures and avoid the water. Camera tracks movement transitions, balance and posture.',
+      color: '#34D399',
+      available: isIslandHopperAvailable,
+    },
+    {
+      id: 'river-crossing-l7',
+      title: 'River Crossing',
+      emoji: '🌊',
+      description: 'Cross the fast river by following changing paths and recovering balance. Camera tracks balance reactions, stepping and posture.',
+      color: '#22D3EE',
+      available: isRiverCrossingL7Available,
+    },
+    {
+      id: 'star-trail',
+      title: 'Star Trail',
+      emoji: '⭐',
+      description: 'Follow the star trail through space — walk, turn and reach for stars. Camera tracks movement quality, posture and balance.',
+      color: '#FBBF24',
+      available: isStarTrailAvailable,
+    },
+    // Occupational Therapy Level 7 Session 6: Visual-Vestibular Integration
+    {
+      id: 'rocket-follow',
+      title: 'Rocket Follow',
+      emoji: '🚀',
+      description: 'Track a rocket traveling through space while you keep moving. Camera tracks head tracking, posture and movement accuracy.',
+      color: '#818CF8',
+      available: isRocketFollowAvailable,
+    },
+    {
+      id: 'butterfly-chase',
+      title: 'Butterfly Chase',
+      emoji: '🦋',
+      description: 'Catch magical butterflies flying around the garden. Camera tracks smooth head movement, tracking quality and stability.',
+      color: '#34D399',
+      available: isButterflyChaseAvailable,
+    },
+    {
+      id: 'balloon-drift',
+      title: 'Balloon Drift',
+      emoji: '🎈',
+      description: 'Follow drifting balloons across the sky without losing balance. Camera tracks eye-head coordination, movement path and posture.',
+      color: '#FB7185',
+      available: isBalloonDriftAvailable,
+    },
+    {
+      id: 'ufo-watch',
+      title: 'UFO Watch',
+      emoji: '🛸',
+      description: 'Track UFOs moving in changing directions and speeds. Camera tracks tracking accuracy, head control and posture.',
+      color: '#22D3EE',
+      available: isUFOWatchAvailable,
+    },
+    {
+      id: 'orbit-tracker',
+      title: 'Orbit Tracker',
+      emoji: '⭐',
+      description: 'Follow stars orbiting a galaxy in circular and diagonal patterns. Camera tracks head movement, tracking smoothness and body stability.',
+      color: '#FBBF24',
+      available: isOrbitTrackerAvailable,
+    },
+    // Occupational Therapy Level 7 Session 7: Balance Reactions
+    {
+      id: 'freeze-balance-l7',
+      title: 'Freeze Balance',
+      emoji: '⚡',
+      description: 'Move like a superhero, then freeze in a balanced position when danger appears. Camera tracks reaction time, posture and stability.',
+      color: '#FBBF24',
+      available: isFreezeBalanceL7Available,
+    },
+    {
+      id: 'wave-rider',
+      title: 'Wave Rider',
+      emoji: '🌊',
+      description: 'Ride ocean waves by shifting your weight to stay balanced. Camera tracks weight shifting, balance and posture.',
+      color: '#22D3EE',
+      available: isWaveRiderAvailable,
+    },
+    {
+      id: 'surf-challenge',
+      title: 'Surf Challenge',
+      emoji: '🏄',
+      description: 'Respond to sudden changes in movement direction while staying upright. Camera tracks recovery speed, posture and balance.',
+      color: '#38BDF8',
+      available: isSurfChallengeAvailable,
+    },
+    {
+      id: 'obstacle-balance',
+      title: 'Obstacle Balance',
+      emoji: '🚧',
+      description: 'Step around obstacles while keeping postural control. Camera tracks foot placement, posture and balance reactions.',
+      color: '#34D399',
+      available: isObstacleBalanceAvailable,
+    },
+    {
+      id: 'recovery-master',
+      title: 'Recovery Master',
+      emoji: '🏆',
+      description: 'Complete a series of balance recovery challenges with increasing difficulty. Camera tracks stability, reaction quality and movement control.',
+      color: '#FBBF24',
+      available: isRecoveryMasterAvailable,
+    },
+    // Occupational Therapy Level 7 Session 8: Vestibular Sequencing
+    {
+      id: 'follow-my-steps',
+      title: 'Follow My Steps',
+      emoji: '👣',
+      description: 'Follow movement sequences across floor markers in order. Camera tracks movement accuracy, posture and balance.',
+      color: '#C084FC',
+      available: isFollowMyStepsAvailable,
+    },
+    {
+      id: 'movement-pattern-copy',
+      title: 'Movement Pattern Copy',
+      emoji: '🎯',
+      description: 'Copy increasingly complex movement patterns. Camera tracks movement accuracy, posture and balance.',
+      color: '#F472B6',
+      available: isMovementPatternCopyAvailable,
+    },
+    {
+      id: 'star-sequence-path',
+      title: 'Star Sequence Path',
+      emoji: '⭐',
+      description: 'Collect stars in the correct movement order. Camera tracks movement accuracy, posture and balance.',
+      color: '#FBBF24',
+      available: isStarSequencePathAvailable,
+    },
+    {
+      id: 'space-mission',
+      title: 'Space Mission',
+      emoji: '🚀',
+      description: 'Complete a sequence of movement commands in space. Camera tracks movement accuracy, posture and balance.',
+      color: '#818CF8',
+      available: isSpaceMissionAvailable,
+    },
+    {
+      id: 'pirate-journey',
+      title: 'Pirate Journey',
+      emoji: '🏴',
+      description: 'Follow a treasure map using directional sequences. Camera tracks movement accuracy, posture and balance.',
+      color: '#34D399',
+      available: isPirateJourneyAvailable,
+    },
+    // Occupational Therapy Level 7 Session 9: Vestibular Endurance
+    {
+      id: 'long-trail-walk',
+      title: 'Long Trail Walk',
+      emoji: '🚶',
+      description: 'Maintain movement and balance over longer distances. Camera tracks movement accuracy, posture and balance.',
+      color: '#34D399',
+      available: isLongTrailWalkAvailable,
+    },
+    {
+      id: 'rainbow-journey',
+      title: 'Rainbow Journey',
+      emoji: '🌈',
+      description: 'Travel through a long colorful movement path. Camera tracks movement accuracy, posture and balance.',
+      color: '#F472B6',
+      available: isRainbowJourneyAvailable,
+    },
+    {
+      id: 'forest-explorer',
+      title: 'Forest Explorer',
+      emoji: '🏞️',
+      description: 'Navigate a forest while sustaining posture and balance. Camera tracks movement accuracy, posture and balance.',
+      color: '#22C55E',
+      available: isForestExplorerAvailable,
+    },
+    {
+      id: 'endless-tracks',
+      title: 'Endless Tracks',
+      emoji: '🚂',
+      description: 'Keep moving through changing train routes. Camera tracks movement accuracy, posture and balance.',
+      color: '#38BDF8',
+      available: isEndlessTracksAvailable,
+    },
+    {
+      id: 'balance-marathon',
+      title: 'Balance Marathon',
+      emoji: '⭐',
+      description: 'Complete extended balance and movement challenges. Camera tracks movement accuracy, posture and balance.',
+      color: '#FBBF24',
+      available: isBalanceMarathonAvailable,
+    },
+    // Occupational Therapy Level 7 Session 10: Vestibular Challenge Course
+    {
+      id: 'pirate-island',
+      title: 'Pirate Island Challenge',
+      emoji: '🏴',
+      description: 'Complete a vestibular treasure-hunt course. Camera tracks movement accuracy, posture and balance.',
+      color: '#34D399',
+      available: isPirateIslandAvailable,
+    },
+    {
+      id: 'space-explorer-course',
+      title: 'Space Explorer Course',
+      emoji: '🚀',
+      description: 'Navigate space-themed balance missions. Camera tracks movement accuracy, posture and balance.',
+      color: '#818CF8',
+      available: isSpaceExplorerCourseAvailable,
+    },
+    {
+      id: 'jungle-expedition',
+      title: 'Jungle Expedition',
+      emoji: '🌴',
+      description: 'Cross jungle obstacles using vestibular skills. Camera tracks movement accuracy, posture and balance.',
+      color: '#22C55E',
+      available: isJungleExpeditionAvailable,
+    },
+    {
+      id: 'mountain-adventure',
+      title: 'Mountain Adventure',
+      emoji: '⛰️',
+      description: 'Climb, turn and balance through mountain paths. Camera tracks movement accuracy, posture and balance.',
+      color: '#38BDF8',
+      available: isMountainAdventureAvailable,
+    },
+    {
+      id: 'vestibular-champion',
+      title: 'Vestibular Champion',
+      emoji: '🏆',
+      description: 'The final integrated vestibular obstacle course. Camera tracks movement accuracy, posture and balance.',
+      color: '#FBBF24',
+      available: isVestibularChampionAvailable,
+    },
     // Occupational Therapy Level 3 Session 2: Big vs Small Movements
     {
       id: 'big-tap-small-tap',
@@ -9787,6 +11067,426 @@ export default function SessionGamesScreen() {
 
   if (currentGame === 'instrument-choice') {
     return <InstrumentChoiceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 1 games - Sitting Posture Control (camera/pose detection)
+  if (currentGame === 'superhero-power-sit') {
+    return <SuperheroPowerSitGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'crown-keeper') {
+    return <CrownKeeperGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'statue-kingdom') {
+    return <StatueKingdomGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sit-tall-freeze') {
+    return <SitTallFreezeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'star-reach-mission') {
+    return <StarReachMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 2 games - Standing Posture Control (camera/pose detection)
+  if (currentGame === 'tall-tree') {
+    return <TallTreeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'soldier-stand') {
+    return <SoldierStandGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'statue-guard') {
+    return <StatueGuardGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'grow-taller') {
+    return <GrowTallerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'freeze-balance') {
+    return <FreezeBalanceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 3 games - Head & Neck Stability (camera/pose detection)
+  if (currentGame === 'rocket-watch') {
+    return <RocketWatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'look-and-hold') {
+    return <LookAndHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sky-ground-explorer') {
+    return <SkyGroundExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'keep-the-crown') {
+    return <KeepTheCrownGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'star-tracker') {
+    return <StarTrackerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 4 games - Static Balance (camera/pose detection)
+  if (currentGame === 'flamingo-stand') {
+    return <FlamingoStandGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'one-foot-island') {
+    return <OneFootIslandGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'balance-statue') {
+    return <BalanceStatueGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'star-balance-hold') {
+    return <StarBalanceHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'freeze-hero') {
+    return <FreezeHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 5 games - Weight Shifting (camera/pose detection)
+  if (currentGame === 'apple-reach') {
+    return <AppleReachGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'side-star-catch') {
+    return <SideStarCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'treasure-lean') {
+    return <TreasureLeanGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'bridge-balance') {
+    return <BridgeBalanceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'magic-scale') {
+    return <MagicScaleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 6 games - Dynamic Balance (camera/pose detection)
+  if (currentGame === 'stepping-stones') {
+    return <SteppingStonesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'cross-the-bridge') {
+    return <CrossTheBridgeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'river-crossing') {
+    return <RiverCrossingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'adventure-trail') {
+    return <AdventureTrailGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'balance-journey') {
+    return <BalanceJourneyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 7 games - Trunk Rotation & Reaching (camera/pose detection)
+  if (currentGame === 'apple-picker') {
+    return <ApplePickerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pirate-treasure-reach') {
+    return <PirateTreasureReachGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'turn-and-touch') {
+    return <TurnAndTouchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'cross-body-catch') {
+    return <CrossBodyCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'twisting-star-hunt') {
+    return <TwistingStarHuntGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 8 games - Animal Walks & Core Activation (camera/pose detection)
+  if (currentGame === 'bear-walk-adventure') {
+    return <BearWalkAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'crab-walk-challenge') {
+    return <CrabWalkChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'seal-push') {
+    return <SealPushGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'turtle-crawl') {
+    return <TurtleCrawlGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'gorilla-march') {
+    return <GorillaMarchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 9 games - Postural Endurance (camera/pose detection)
+  if (currentGame === 'superhero-hold') {
+    return <SuperheroHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'airplane-hold') {
+    return <AirplaneHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'bridge-hold') {
+    return <BridgeHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tall-tree-challenge') {
+    return <TallTreeChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'longest-statue') {
+    return <LongestStatueGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 10 games - Integrated Core Challenge (camera/pose detection)
+  if (currentGame === 'jungle-adventure') {
+    return <JungleAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pirate-mission') {
+    return <PirateMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'space-explorer') {
+    return <SpaceExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mountain-rescue') {
+    return <MountainRescueGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'ot-obstacle-course') {
+    return <OTObstacleCourseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 1 games - Linear Vestibular Movement (camera/pose detection)
+  if (currentGame === 'train-tracks') {
+    return <TrainTracksGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rocket-launch') {
+    return <RocketLaunchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rainbow-run') {
+    return <RainbowRunGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'wave-walker') {
+    return <WaveWalkerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'adventure-path') {
+    return <AdventurePathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 2 games - Head Movement & Vestibular Activation (camera/pose detection)
+  if (currentGame === 'look-up-explorer') {
+    return <LookUpExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sky-ground-mission') {
+    return <SkyGroundMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'helicopter-watch') {
+    return <HelicopterWatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'vestibular-star-tracker') {
+    return <VestibularStarTrackerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'turn-and-find') {
+    return <TurnAndFindGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 3 games - Direction Changes (camera/pose detection)
+  if (currentGame === 'direction-switch') {
+    return <DirectionSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'go-left-go-right') {
+    return <GoLeftGoRightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pirate-turn-hunt') {
+    return <PirateTurnHuntGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'turn-around-quest') {
+    return <TurnAroundQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'magical-arrow-sequence') {
+    return <FollowTheArrowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 4 games - Rotational Processing (camera/pose detection)
+  if (currentGame === 'tornado-turn') {
+    return <TornadoTurnGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'spin-and-stop') {
+    return <SpinAndStopGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'helicopter-pilot') {
+    return <HelicopterPilotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'orbit-hunt') {
+    return <OrbitHuntGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'turn-and-point') {
+    return <TurnAndPointGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 5 games - Dynamic Standing Balance (camera/pose detection)
+  if (currentGame === 'balance-bridge') {
+    return <BalanceBridgeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'stepping-stones-l7') {
+    return <SteppingStonesL7Game onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'island-hopper') {
+    return <IslandHopperGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'river-crossing-l7') {
+    return <RiverCrossingL7Game onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'star-trail') {
+    return <StarTrailGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 6 games - Visual-Vestibular Integration (camera/pose detection)
+  if (currentGame === 'rocket-follow') {
+    return <RocketFollowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'butterfly-chase') {
+    return <ButterflyChaseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'balloon-drift') {
+    return <BalloonDriftGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'ufo-watch') {
+    return <UFOWatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'orbit-tracker') {
+    return <OrbitTrackerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 7 games - Balance Reactions (camera/pose detection)
+  if (currentGame === 'freeze-balance-l7') {
+    return <FreezeBalanceL7Game onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'wave-rider') {
+    return <WaveRiderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'surf-challenge') {
+    return <SurfChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'obstacle-balance') {
+    return <ObstacleBalanceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'recovery-master') {
+    return <RecoveryMasterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 8 games - Vestibular Sequencing (camera/pose detection)
+  if (currentGame === 'follow-my-steps') {
+    return <FollowMyStepsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'movement-pattern-copy') {
+    return <MovementPatternCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'star-sequence-path') {
+    return <StarSequencePathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'space-mission') {
+    return <SpaceMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pirate-journey') {
+    return <PirateJourneyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 9 games - Vestibular Endurance (camera/pose detection)
+  if (currentGame === 'long-trail-walk') {
+    return <LongTrailWalkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rainbow-journey') {
+    return <RainbowJourneyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'forest-explorer') {
+    return <ForestExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'endless-tracks') {
+    return <EndlessTracksGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'balance-marathon') {
+    return <BalanceMarathonGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 10 games - Vestibular Challenge Course (camera/pose detection)
+  if (currentGame === 'pirate-island') {
+    return <PirateIslandChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'space-explorer-course') {
+    return <SpaceExplorerCourseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'jungle-expedition') {
+    return <JungleExpeditionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mountain-adventure') {
+    return <MountainAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'vestibular-champion') {
+    return <VestibularChampionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 3 Session 2 games - Big vs Small Movements

@@ -7,9 +7,26 @@ const config = getDefaultConfig(__dirname);
 // Lower parallelism during `expo export` to reduce peak RAM (Vercel / CI OOM)
 config.maxWorkers = process.env.CI ? 2 : Math.max(2, require('os').cpus().length - 1);
 
+// Ignore native build artifacts (CMake/Gradle) so the Metro file watcher doesn't
+// crash with ENOENT when a concurrent `expo run:android` build creates and deletes
+// temp folders under node_modules/*/android/.cxx and android/.cxx|build.
+const escapeForRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const NATIVE_BUILD_IGNORE = new RegExp(
+  [
+    `${escapeForRegExp(path.sep)}\\.cxx${escapeForRegExp(path.sep)}`,
+    `${escapeForRegExp(path.join('android', 'build'))}${escapeForRegExp(path.sep)}`,
+    `${escapeForRegExp(path.join('android', '.gradle'))}${escapeForRegExp(path.sep)}`,
+  ].join('|'),
+);
+config.resolver.blockList = config.resolver.blockList
+  ? [].concat(config.resolver.blockList, NATIVE_BUILD_IGNORE)
+  : [NATIVE_BUILD_IGNORE];
+config.watchFolders = config.watchFolders || [];
+
 const WEB_NATIVE_STUBS = new Set([
   'react-native-vision-camera',
   'react-native-vision-camera-face-detector',
+  'react-native-mediapipe-posedetection',
   'react-native-worklets-core',
   'react-native-razorpay',
   '@mediapipe/tasks-vision',
