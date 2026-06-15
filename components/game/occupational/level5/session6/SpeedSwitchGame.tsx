@@ -143,6 +143,16 @@ const SpeedSwitchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     speakTTS('Great adaptation!', 0.9, 'en-US' );
   }, [done, ballScale]);
 
+  const handleGameTap = useCallback(
+    (event: GestureResponderEvent) => {
+      if (done) return;
+      if (isTapNearTarget(event, ballX.value, ballY.value, BALL_SIZE, TOLERANCE)) {
+        handleBallTap();
+      }
+    },
+    [done, ballX, ballY, handleBallTap],
+  );
+
   const endGame = useCallback(async (finalScore: number) => {
     const total = TOTAL_ROUNDS;
     const xp = finalScore * 15;

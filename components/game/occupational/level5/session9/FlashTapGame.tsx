@@ -8,6 +8,7 @@ import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Dimensions,
+    Pressable,
     SafeAreaView,
     StyleSheet,
     Text,
