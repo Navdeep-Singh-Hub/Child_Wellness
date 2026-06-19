@@ -2,7 +2,9 @@
  * Shared pan-drag midline pass core for OT Level 4 Session 6.
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
-import { SparkleBurst } from '@/components/game/FX';
+import { ResultToast, SparkleBurst } from '@/components/game/FX';
+import { AimPassPlayArea } from '@/components/game/occupational/level4/session6/AimPassPlayArea';
+import { DetourPassPlayArea } from '@/components/game/occupational/level4/session6/DetourPassPlayArea';
 import { distPx, useTraceSound } from '@/components/game/occupational/level4/session6/midlineUtils';
 import { SESSION4_6_PACING } from '@/components/game/occupational/level4/session6/session6Pacing';
 import { logGameAndAward, recordGame } from '@/utils/api';
@@ -62,6 +64,8 @@ export type MidlineDragPassGameConfig = {
   ttsComplete: string;
   ttsDrag?: string;
   ttsMiss?: string;
+  ttsCross?: string;
+  ttsDetourCross?: string;
   ttsObstacle?: string;
   ttsSuccess?: string;
   congratsMessage: string;
@@ -78,6 +82,8 @@ export const MidlineDragPassGame: React.FC<
   ttsComplete,
   ttsDrag = 'Drag the ball across your body to the target!',
   ttsMiss = 'Drag to the target across your body!',
+  ttsCross = 'Cross the line first!',
+  ttsDetourCross = 'Go around via the right side!',
   ttsObstacle = 'Hit obstacle! Go around it!',
   ttsSuccess = 'Perfect pass!',
   congratsMessage,
@@ -98,8 +104,22 @@ export const MidlineDragPassGame: React.FC<
   const [sparkleKey, setSparkleKey] = useState(0);
   const [roundActive, setRoundActive] = useState(false);
   const [statusHint, setStatusHint] = useState('');
-  const [targetPos, setTargetPos] = useState({ x: 288, y: 96 });
-  const [obstaclePos, setObstaclePos] = useState({ x: 180, y: 200 });
+  const [roundLayout, setRoundLayout] = useState<{
+    start: { x: number; y: number };
+    target: { x: number; y: number };
+    obstacle: { x: number; y: number };
+  } | null>(null);
+  const [successToast, setSuccessToast] = useState(false);
+  const [kickOffVisible, setKickOffVisible] = useState(false);
+  const [warnVisible, setWarnVisible] = useState(false);
+  const [warnMessage, setWarnMessage] = useState('Try again!');
+  const [midlineCrossed, setMidlineCrossed] = useState(false);
+  const [aimKey, setAimKey] = useState(0);
+  const [detourKey, setDetourKey] = useState(0);
+
+  const isAimPass = mode === 'targetPass';
+  const isDetourPass = mode === 'obstaclePass';
+  const isThemedDrag = isAimPass || isDetourPass;
 
   const doneRef = useRef(false);
   const scoreRef = useRef(0);
@@ -107,6 +127,8 @@ export const MidlineDragPassGame: React.FC<
   const roundActiveRef = useRef(false);
   const roundCompleteRef = useRef(false);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const kickOffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playW = useRef(360);
   const playH = useRef(400);
   const startX = useRef(64);
@@ -115,11 +137,15 @@ export const MidlineDragPassGame: React.FC<
   const targetY = useRef(96);
   const obstacleX = useRef(180);
   const obstacleY = useRef(200);
+  const crossedMidlineRef = useRef(false);
+  const midlineX = useRef(180);
 
   const ballX = useSharedValue(64);
   const ballY = useSharedValue(288);
   const ballScale = useSharedValue(1);
   const targetScale = useSharedValue(1);
+  const kickOffOpacity = useSharedValue(0);
+  const playShake = useSharedValue(0);
 
   useEffect(() => {
     scoreRef.current = score;
@@ -141,29 +167,70 @@ export const MidlineDragPassGame: React.FC<
     transform: [{ scale: targetScale.value }],
   }));
 
+  const kickOffStyle = useAnimatedStyle(() => ({
+    opacity: kickOffOpacity.value,
+    transform: [{ scale: 0.9 + kickOffOpacity.value * 0.1 }],
+  }));
+
+  const playShakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: playShake.value }],
+  }));
+
   const clearTimers = useCallback(() => {
     if (roundTimerRef.current) {
       clearTimeout(roundTimerRef.current);
       roundTimerRef.current = null;
     }
+    if (kickOffTimerRef.current) {
+      clearTimeout(kickOffTimerRef.current);
+      kickOffTimerRef.current = null;
+    }
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
     cancelAnimation(ballX);
     cancelAnimation(ballY);
-  }, [ballX, ballY]);
+    cancelAnimation(kickOffOpacity);
+    cancelAnimation(playShake);
+  }, [ballX, ballY, kickOffOpacity, playShake]);
 
   const layoutRound = useCallback(() => {
-    const w = playW.current;
-    const h = playH.current;
-    startX.current = w * P.ballStartXPct;
-    startY.current = h * P.ballStartYPct;
-    targetX.current = w * (0.72 + Math.random() * 0.18);
-    targetY.current = h * (0.18 + Math.random() * 0.28);
-    if (mode === 'obstaclePass') {
-      obstacleX.current = w * (0.42 + Math.random() * 0.16);
-      obstacleY.current = h * (0.38 + Math.random() * 0.2);
-    }
-    ballX.value = startX.current;
-    ballY.value = startY.current;
+    const w = Math.max(playW.current, 1);
+    const h = Math.max(playH.current, 1);
+    const start = { x: w * P.ballStartXPct, y: h * P.ballStartYPct };
+    const target =
+      mode === 'obstaclePass'
+        ? {
+            x: w * P.obstaclePassTargetXPct,
+            y: h * P.obstaclePassTargetYPct,
+          }
+        : {
+            x: w * P.targetPassXPct,
+            y: start.y,
+          };
+    const obstacle =
+      mode === 'obstaclePass'
+        ? {
+            x: w * P.obstaclePassObstacleXPct,
+            y: h * P.obstaclePassObstacleYPct,
+          }
+        : { x: w * 0.5, y: h * 0.5 };
+
+    startX.current = start.x;
+    startY.current = start.y;
+    targetX.current = target.x;
+    targetY.current = target.y;
+    obstacleX.current = obstacle.x;
+    obstacleY.current = obstacle.y;
+    midlineX.current = w * P.midlineXPct;
+    crossedMidlineRef.current = false;
+    setMidlineCrossed(false);
+
+    ballX.value = start.x;
+    ballY.value = start.y;
     targetScale.value = 1;
+    setRoundLayout({ start, target, obstacle });
   }, [ballX, ballY, mode, targetScale]);
 
   const endGame = useCallback(
@@ -209,6 +276,8 @@ export const MidlineDragPassGame: React.FC<
     ballX.value = withSpring(startX.current, { damping: 14, stiffness: 160 });
     ballY.value = withSpring(startY.current, { damping: 14, stiffness: 160 });
     ballScale.value = withTiming(1, { duration: 120 });
+    crossedMidlineRef.current = false;
+    setMidlineCrossed(false);
   }, [ballScale, ballX, ballY]);
 
   const showWarn = useCallback(
@@ -216,8 +285,19 @@ export const MidlineDragPassGame: React.FC<
       playWarn();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
       speakTTS(msg, 0.78).catch(() => {});
+      if (isThemedDrag) {
+        setWarnMessage(msg);
+        setWarnVisible(true);
+        playShake.value = withSequence(
+          withTiming(-8, { duration: 50 }),
+          withTiming(8, { duration: 50 }),
+          withTiming(-6, { duration: 50 }),
+          withTiming(0, { duration: 50 }),
+        );
+        toastTimerRef.current = setTimeout(() => setWarnVisible(false), 1200);
+      }
     },
-    [playWarn],
+    [isThemedDrag, playShake, playWarn],
   );
 
   const advanceRound = useCallback(() => {
@@ -236,22 +316,65 @@ export const MidlineDragPassGame: React.FC<
     roundCompleteRef.current = true;
     targetScale.value = withSequence(withTiming(1.25, { duration: 140 }), withTiming(1, { duration: 140 }));
     bumpScore();
+    if (isAimPass) {
+      setSuccessToast(true);
+      setAimKey(Date.now());
+      toastTimerRef.current = setTimeout(() => setSuccessToast(false), 900);
+    }
+    if (isDetourPass) {
+      setSuccessToast(true);
+      setDetourKey(Date.now());
+      toastTimerRef.current = setTimeout(() => setSuccessToast(false), 900);
+    }
     roundTimerRef.current = setTimeout(() => advanceRound(), 650);
-  }, [advanceRound, bumpScore, targetScale]);
+  }, [advanceRound, bumpScore, isAimPass, isDetourPass, targetScale]);
+
+  const tryCatch = useCallback(() => {
+    if (roundCompleteRef.current || doneRef.current || !roundActiveRef.current) return;
+    if (!crossedMidlineRef.current) return;
+    const hitTarget = distPx(ballX.value, ballY.value, targetX.current, targetY.current) <= P.matchTolerancePx;
+    if (hitTarget) completeRound();
+  }, [ballX, ballY, completeRound]);
+
+  const hitsObstacle = useCallback(() => {
+    return distPx(ballX.value, ballY.value, obstacleX.current, obstacleY.current) <= P.obstacleRadiusPx;
+  }, [ballX, ballY]);
 
   const startRoundPlay = useCallback(() => {
     if (doneRef.current) return;
     roundCompleteRef.current = false;
-    setRoundActive(true);
     layoutRound();
-    setStatusHint('Drag across the midline!');
+    setRoundActive(true);
+    if (isThemedDrag) {
+      setSuccessToast(false);
+      setWarnVisible(false);
+    }
+    setStatusHint(
+      isAimPass
+        ? '🎯 Drag left → cross midline → hit bullseye!'
+        : isDetourPass
+          ? '🚧 Go UP → around barrier → GOAL!'
+          : mode === 'targetPass'
+            ? 'Slide ball left → right!'
+            : 'Go UP, then RIGHT around the barrier → GOAL!',
+    );
     speakTTS(ttsDrag, 0.78).catch(() => {});
-  }, [layoutRound, ttsDrag]);
+    if (isThemedDrag) {
+      setKickOffVisible(true);
+      kickOffOpacity.value = withSequence(
+        withTiming(1, { duration: 200 }),
+        withTiming(1, { duration: 700 }),
+        withTiming(0, { duration: 350 }),
+      );
+      kickOffTimerRef.current = setTimeout(() => setKickOffVisible(false), 1300);
+    }
+  }, [isAimPass, isDetourPass, isThemedDrag, kickOffOpacity, layoutRound, mode, ttsDrag]);
 
   useEffect(() => {
     if (round === 1) speakTTS(ttsIntro, 0.78);
     clearTimers();
     setRoundActive(false);
+    setRoundLayout(null);
     roundTimerRef.current = setTimeout(() => startRoundPlay(), P.roundStartDelayMs);
     return clearTimers;
   }, [round, startRoundPlay, ttsIntro, clearTimers]);
@@ -269,33 +392,55 @@ export const MidlineDragPassGame: React.FC<
     .runOnJS(true)
     .onBegin(() => {
       if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
+      crossedMidlineRef.current = ballX.value > midlineX.current;
       ballScale.value = withTiming(1.15, { duration: 100 });
     })
     .onUpdate((e) => {
       if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
       ballX.value = Math.max(BALL_HALF, Math.min(playW.current - BALL_HALF, e.x));
-      ballY.value = Math.max(BALL_HALF, Math.min(playH.current - BALL_HALF, e.y));
+      if (mode === 'targetPass') {
+        ballY.value = startY.current;
+      } else {
+        ballY.value = Math.max(BALL_HALF, Math.min(playH.current - BALL_HALF, e.y));
+      }
+      if (ballX.value > midlineX.current) {
+        crossedMidlineRef.current = true;
+        if (isThemedDrag) setMidlineCrossed(true);
+      }
+
+      if (mode === 'obstaclePass' && hitsObstacle()) {
+        showWarn(ttsObstacle);
+        resetBall();
+        crossedMidlineRef.current = false;
+        return;
+      }
+
+      tryCatch();
     })
     .onEnd(() => {
       if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
       ballScale.value = withTiming(1, { duration: 100 });
 
-      if (mode === 'obstaclePass') {
-        const hitObstacle = distPx(ballX.value, ballY.value, obstacleX.current, obstacleY.current) <= P.obstacleRadiusPx;
-        if (hitObstacle) {
-          showWarn(ttsObstacle);
-          resetBall();
-          return;
-        }
+      if (mode === 'obstaclePass' && hitsObstacle()) {
+        showWarn(ttsObstacle);
+        resetBall();
+        crossedMidlineRef.current = false;
+        return;
       }
 
       const hitTarget = distPx(ballX.value, ballY.value, targetX.current, targetY.current) <= P.matchTolerancePx;
       if (hitTarget) {
+        if (!crossedMidlineRef.current) {
+          showWarn(isDetourPass ? ttsDetourCross : isAimPass ? ttsCross : 'Cross the line first!');
+          resetBall();
+          return;
+        }
         completeRound();
         return;
       }
       showWarn(ttsMiss);
       resetBall();
+      crossedMidlineRef.current = false;
     });
 
   if (showCongratulations && done && finalStats) {
@@ -358,11 +503,31 @@ export const MidlineDragPassGame: React.FC<
         {roundActive && statusHint ? (
           <Text style={[styles.hint, { color: T.accentDark }]}>{statusHint}</Text>
         ) : null}
+        {isThemedDrag && (
+          <View style={[styles.roundTrack, isDetourPass && styles.detourRoundTrack, { borderColor: T.accent }]}>
+            <View style={[styles.roundFill, { width: `${(round / P.rounds) * 100}%`, backgroundColor: T.accent }]} />
+          </View>
+        )}
+        {isAimPass && (
+          <View style={styles.headerDeco}>
+            <Text style={styles.decoEmoji}>⚽</Text>
+            <Text style={[styles.decoArrow, { color: T.accent }]}>→</Text>
+            <Text style={styles.decoEmoji}>🎯</Text>
+          </View>
+        )}
+        {isDetourPass && (
+          <View style={styles.headerDeco}>
+            <Text style={styles.decoEmoji}>↑</Text>
+            <Text style={[styles.decoArrow, { color: T.accent }]}>🚧</Text>
+            <Text style={styles.decoEmoji}>🎯</Text>
+          </View>
+        )}
       </View>
 
       <GestureDetector gesture={panGesture}>
+        <Animated.View style={[styles.playAreaWrap, isThemedDrag && playShakeStyle]}>
         <View
-          style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
+          style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }, isThemedDrag && styles.playAreaThemed]}
           onLayout={(e) => {
             playW.current = e.nativeEvent.layout.width;
             playH.current = e.nativeEvent.layout.height;
@@ -371,45 +536,182 @@ export const MidlineDragPassGame: React.FC<
         >
           {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
 
-          {roundActive && (
+          {isAimPass && (
+            <AimPassPlayArea
+              roundActive={roundActive}
+              showGuide={isAimPass && round <= 2}
+              midlineCrossed={midlineCrossed}
+              aimKey={aimKey}
+            />
+          )}
+
+          {isDetourPass && (
+            <DetourPassPlayArea
+              roundActive={roundActive}
+              showGuide={isDetourPass && round <= 2}
+              midlineCrossed={midlineCrossed}
+              detourKey={detourKey}
+            />
+          )}
+
+          {roundActive && roundLayout && (
             <>
-              <View style={[styles.midline, { backgroundColor: T.midlineColor }]} />
-              <View style={[styles.startZone, { borderColor: T.accent }]}>
-                <Text style={[styles.zoneLabel, { color: T.accentDark }]}>START</Text>
-              </View>
+              {!isThemedDrag && (
+                <>
+                  <View style={[styles.sideLabel, styles.leftLabel, { color: T.accentDark }]}>START</View>
+                  <View style={[styles.sideLabel, styles.rightLabel, { color: T.accentDark }]}>TARGET</View>
+                </>
+              )}
+              {!isThemedDrag && <View style={[styles.midline, { backgroundColor: T.midlineColor }]} />}
+              {mode === 'targetPass' && !isThemedDrag && (
+                <View
+                  style={[
+                    styles.passLane,
+                    {
+                      top: roundLayout.start.y - 6,
+                      borderColor: T.accent,
+                      backgroundColor: `${T.accent}18`,
+                    },
+                  ]}
+                />
+              )}
+              {mode === 'obstaclePass' && roundLayout && !isDetourPass && (
+                <>
+                  {(() => {
+                    const pathY = roundLayout.obstacle.y - P.obstacleRadiusPx - 22;
+                    return (
+                      <>
+                        <View
+                          style={[
+                            styles.detourSegment,
+                            {
+                              left: roundLayout.start.x - 2,
+                              top: pathY,
+                              height: Math.max(20, roundLayout.start.y - pathY),
+                              width: 4,
+                              borderColor: T.accent,
+                            },
+                          ]}
+                        />
+                        <View
+                          style={[
+                            styles.detourSegment,
+                            {
+                              left: roundLayout.start.x,
+                              top: pathY - 2,
+                              width: Math.max(40, roundLayout.target.x - roundLayout.start.x),
+                              height: 4,
+                              borderColor: T.accent,
+                            },
+                          ]}
+                        />
+                      </>
+                    );
+                  })()}
+                  <Text
+                    style={[
+                      styles.detourHint,
+                      { left: roundLayout.obstacle.x - 28, top: roundLayout.obstacle.y - 54, color: T.accentDark },
+                    ]}
+                  >
+                    go around ↑
+                  </Text>
+                </>
+              )}
+              {!isThemedDrag && (
+                <Text style={[styles.midlineHint, { color: T.accent, top: mode === 'obstaclePass' ? '38%' : '62%' }]}>
+                  {mode === 'obstaclePass' ? 'cross here →' : 'cross →'}
+                </Text>
+              )}
+              {!isThemedDrag && (
+                <View
+                  style={[
+                    styles.startZone,
+                    {
+                      left: roundLayout.start.x - 36,
+                      top: roundLayout.start.y - 36,
+                      borderColor: T.accent,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.zoneLabel, { color: T.accentDark }]}>START</Text>
+                </View>
+              )}
               <Animated.View
                 style={[
                   styles.target,
+                  isAimPass && styles.aimTarget,
+                  isDetourPass && styles.detourTarget,
                   targetStyle,
-                  { left: targetPos.x - 40, top: targetPos.y - 40, borderColor: T.accent },
+                  {
+                    left: roundLayout.target.x - 40,
+                    top: roundLayout.target.y - 40,
+                    borderColor: T.accent,
+                  },
                 ]}
               >
                 <Text style={styles.targetEmoji}>{T.targetEmoji}</Text>
+                <Text style={[styles.targetLabel, { color: T.accentDark }]}>
+                  {isAimPass ? 'BULLSEYE' : isDetourPass ? 'GOAL' : 'GOAL'}
+                </Text>
               </Animated.View>
               {mode === 'obstaclePass' && (
                 <View
                   style={[
                     styles.obstacle,
+                    isDetourPass && styles.detourObstacle,
                     {
-                      left: obstaclePos.x - P.obstacleRadiusPx,
-                      top: obstaclePos.y - P.obstacleRadiusPx,
+                      left: roundLayout.obstacle.x - P.obstacleRadiusPx,
+                      top: roundLayout.obstacle.y - P.obstacleRadiusPx,
                       width: P.obstacleRadiusPx * 2,
                       height: P.obstacleRadiusPx * 2,
                     },
                   ]}
                 >
                   <Text style={styles.obstacleEmoji}>{T.obstacleEmoji}</Text>
+                  <Text style={styles.obstacleLabel}>{isDetourPass ? 'BLOCK' : 'BLOCK'}</Text>
                 </View>
               )}
-              <Animated.View style={[styles.ball, ballStyle]}>
+              <Animated.View style={[styles.ball, isAimPass && styles.aimBall, isDetourPass && styles.detourBall, ballStyle]}>
                 <Text style={styles.ballEmoji}>{T.ballEmoji}</Text>
               </Animated.View>
             </>
           )}
 
-          <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
+        {kickOffVisible && isAimPass ? (
+          <Animated.View style={[styles.kickOffBanner, kickOffStyle]} pointerEvents="none">
+            <Text style={styles.kickOffText}>🎯 AIM PASS!</Text>
+          </Animated.View>
+        ) : null}
+        {kickOffVisible && isDetourPass ? (
+          <Animated.View style={[styles.kickOffBanner, styles.detourKickOff, kickOffStyle]} pointerEvents="none">
+            <Text style={[styles.kickOffText, styles.detourKickOffText]}>🚧 DETOUR PASS!</Text>
+          </Animated.View>
+        ) : null}
+
+        <SparkleBurst
+          key={sparkleKey}
+          visible={sparkleKey > 0}
+          color={T.sparkleColor}
+          count={isThemedDrag ? 16 : 10}
+          size={isThemedDrag ? 8 : 6}
+        />
+        {isAimPass && <ResultToast text="BULLSEYE!" type="ok" show={successToast} />}
+        {isDetourPass && <ResultToast text="DETOUR!" type="ok" show={successToast} />}
         </View>
+        </Animated.View>
       </GestureDetector>
+
+      {warnVisible && isAimPass && (
+        <View style={styles.aimWarnPill}>
+          <Text style={styles.aimWarnText}>{warnMessage}</Text>
+        </View>
+      )}
+      {warnVisible && isDetourPass && (
+        <View style={styles.detourWarnPill}>
+          <Text style={styles.detourWarnText}>{warnMessage}</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -429,13 +731,55 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  roundTrack: { width: '70%', height: 8, borderRadius: 6, borderWidth: 1, overflow: 'hidden', marginBottom: 6, backgroundColor: 'rgba(69,10,10,0.55)' },
+  detourRoundTrack: { backgroundColor: 'rgba(6,78,59,0.55)' },
+  roundFill: { height: '100%', borderRadius: 6 },
+  headerDeco: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
+  decoEmoji: { fontSize: 16 },
+  decoArrow: { fontSize: 18, fontWeight: '900' },
+  playAreaWrap: { flex: 1 },
   playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1 },
+  playAreaThemed: { overflow: 'hidden' },
   waitText: { position: 'absolute', alignSelf: 'center', top: '45%', fontSize: 18, fontWeight: '700' },
-  midline: { position: 'absolute', left: '50%', top: 12, bottom: 12, width: 3, marginLeft: -1.5, borderRadius: 2 },
+  midline: { position: 'absolute', left: '50%', top: 12, bottom: 12, width: 4, marginLeft: -2, borderRadius: 2 },
+  passLane: {
+    position: 'absolute',
+    left: '8%',
+    right: '8%',
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
+  detourSegment: {
+    position: 'absolute',
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderRadius: 2,
+    opacity: 0.6,
+    backgroundColor: 'transparent',
+  },
+  detourHint: { position: 'absolute', fontSize: 10, fontWeight: '800' },
+  midlineHint: {
+    position: 'absolute',
+    left: '50%',
+    top: '62%',
+    marginLeft: 6,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  sideLabel: {
+    position: 'absolute',
+    top: 14,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    opacity: 0.7,
+  },
+  leftLabel: { left: 16 },
+  rightLabel: { right: 16 },
   startZone: {
     position: 'absolute',
-    left: 12,
-    bottom: 12,
     width: 72,
     height: 72,
     borderRadius: 16,
@@ -443,6 +787,7 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.35)',
   },
   zoneLabel: { fontSize: 10, fontWeight: '800' },
   target: {
@@ -455,16 +800,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  targetEmoji: { fontSize: 36 },
+  targetEmoji: { fontSize: 30 },
+  targetLabel: { fontSize: 9, fontWeight: '900', marginTop: 2 },
+  aimTarget: {
+    zIndex: 4,
+    backgroundColor: 'rgba(69,10,10,0.85)',
+    borderColor: '#FBBF24',
+    shadowColor: '#FBBF24',
+    shadowOpacity: 0.55,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  detourTarget: {
+    zIndex: 4,
+    backgroundColor: 'rgba(6,78,59,0.88)',
+    borderColor: '#34D399',
+    shadowColor: '#10B981',
+    shadowOpacity: 0.55,
+    shadowRadius: 12,
+    elevation: 8,
+  },
   obstacle: {
     position: 'absolute',
     borderRadius: 999,
     backgroundColor: 'rgba(239,68,68,0.85)',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
+    zIndex: 3,
   },
-  obstacleEmoji: { fontSize: 36 },
+  detourObstacle: {
+    backgroundColor: 'rgba(120,53,15,0.92)',
+    borderWidth: 3,
+    borderColor: '#FBBF24',
+    shadowColor: '#FBBF24',
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  obstacleEmoji: { fontSize: 28 },
+  obstacleLabel: { fontSize: 8, fontWeight: '900', color: '#fff', marginTop: 2 },
   ball: {
     position: 'absolute',
     width: 56,
@@ -475,7 +849,62 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 5,
   },
+  aimBall: {
+    borderWidth: 2,
+    borderColor: '#FBBF24',
+    shadowColor: '#EF4444',
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+  },
+  detourBall: {
+    backgroundColor: 'rgba(52,211,153,0.95)',
+    borderWidth: 2,
+    borderColor: '#FBBF24',
+    shadowColor: '#10B981',
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+  },
   ballEmoji: { fontSize: 32 },
+  kickOffBanner: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: '14%',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    backgroundColor: 'rgba(69,10,10,0.92)',
+    borderWidth: 2,
+    borderColor: '#EF4444',
+    zIndex: 6,
+  },
+  kickOffText: { fontSize: 22, fontWeight: '900', color: '#FECACA', letterSpacing: 1 },
+  detourKickOff: {
+    backgroundColor: 'rgba(6,78,59,0.92)',
+    borderColor: '#10B981',
+  },
+  detourKickOffText: { color: '#A7F3D0' },
+  aimWarnPill: {
+    alignSelf: 'center',
+    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: 'rgba(69,10,10,0.92)',
+    borderWidth: 1,
+    borderColor: '#EF4444',
+  },
+  aimWarnText: { fontSize: 14, fontWeight: '800', color: '#FECACA', textAlign: 'center' },
+  detourWarnPill: {
+    alignSelf: 'center',
+    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: 'rgba(6,78,59,0.92)',
+    borderWidth: 1,
+    borderColor: '#10B981',
+  },
+  detourWarnText: { fontSize: 14, fontWeight: '800', color: '#A7F3D0', textAlign: 'center' },
 });
 
 export default MidlineDragPassGame;

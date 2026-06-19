@@ -1,5 +1,6 @@
-/** OT Level 4 · Session 3 · Game 5 — Diagonal Match · Theme: "Corner Match" */
+/** OT Level 4 · Session 3 · Game 5 — Diagonal Match · Theme: "Corner Match" · Prism Vault */
 import { DiagonalDragGame } from '@/components/game/occupational/level4/session3/DiagonalDragGame';
+import { CORNER_MATCH_THEME as C } from '@/components/game/occupational/level4/session3/session3Theme';
 import React from 'react';
 
 const DiagonalMatchGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,19 +8,32 @@ const DiagonalMatchGame: React.FC<{ onBack?: () => void; onComplete?: () => void
     {...props}
     mode="colorMatch"
     theme={{
-      title: 'Corner Match', subtitle: 'Drag matching colors to the opposite corner', emoji: '🎯',
-      gradient: ['#FFFBEB', '#FEF3C7', '#FCD34D', '#F59E0B'],
-      accent: '#F59E0B', accentDark: '#B45309', draggableEmoji: '🔴', targetEmoji: '🔴',
-      backText: '#92400E', backBorder: 'rgba(245,158,11,0.25)',
-      titleColor: '#78350F', subtitleColor: '#D97706', statLabel: '#F59E0B', statValue: '#78350F',
-      statBorder: 'rgba(245,158,11,0.2)', playBorder: 'rgba(245,158,11,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#F59E0B', zoneBorder: 'rgba(245,158,11,0.45)',
+      title: C.title,
+      subtitle: C.subtitle,
+      emoji: C.emoji,
+      gradient: C.gradient,
+      accent: C.accent,
+      accentDark: C.accentDark,
+      draggableEmoji: '💎',
+      targetEmoji: '💎',
+      backText: C.backText,
+      backBorder: C.backBorder,
+      titleColor: C.titleColor,
+      subtitleColor: C.subtitleColor,
+      statLabel: C.statLabel,
+      statValue: C.statValue,
+      statBorder: C.statBorder,
+      playBorder: C.playBorder,
+      playBg: C.playBg,
+      sparkleColor: C.sparkleColor,
+      zoneBorder: C.zoneBorder,
     }}
-    ttsIntro="Drag the matching color to the opposite corner!"
-    ttsComplete="Perfect corner matching!"
-    ttsDrag="Match the color at the opposite corner!"
-    ttsMiss="Drag to the matching corner!"
-    congratsMessage="Corner Match Hero!"
+    ttsIntro={C.voiceIntro}
+    ttsComplete={C.voiceComplete}
+    ttsDrag={C.voiceDrag}
+    ttsMiss={C.voiceMiss}
+    ttsGoal={C.voiceMatched}
+    congratsMessage={C.congrats}
     logType="diagonal-match"
     skillTags={['spatial-awareness', 'diagonal-drag']}
   />

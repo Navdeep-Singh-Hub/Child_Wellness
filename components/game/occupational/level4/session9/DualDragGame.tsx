@@ -2,7 +2,10 @@
  * Shared two-hand simultaneous drag core for OT Level 4 Session 9.
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
-import { SparkleBurst } from '@/components/game/FX';
+import { ResultToast, SparkleBurst } from '@/components/game/FX';
+import { BoxSortPlayArea } from '@/components/game/occupational/level4/session9/BoxSortPlayArea';
+import { PairMatchPlayArea } from '@/components/game/occupational/level4/session9/PairMatchPlayArea';
+import { TwinDragPlayArea } from '@/components/game/occupational/level4/session9/TwinDragPlayArea';
 import {
   createObjectPanGesture,
   createSimultaneousDualPan,
@@ -24,6 +27,8 @@ import Animated, {
   cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
+  withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -95,7 +100,17 @@ export const DualDragGame: React.FC<
   const [roundActive, setRoundActive] = useState(false);
   const [statusHint, setStatusHint] = useState('');
   const [matchEmoji, setMatchEmoji] = useState('⭕');
+  const [successToast, setSuccessToast] = useState(false);
+  const [kickOffVisible, setKickOffVisible] = useState(false);
+  const [twinKey, setTwinKey] = useState(0);
+  const [pairKey, setPairKey] = useState(0);
+  const [sortKey, setSortKey] = useState(0);
   const [zoneLayout, setZoneLayout] = useState({ left: { x: 72, y: 288 }, right: { x: 288, y: 288 }, center: { x: 180, y: 260 } });
+
+  const isTwinDrag = mode === 'dualTarget';
+  const isPairMatch = mode === 'matchCenter';
+  const isBoxSort = mode === 'shapeSort';
+  const isThemedDual = isTwinDrag || isPairMatch || isBoxSort;
 
   const doneRef = useRef(false);
   const scoreRef = useRef(0);
@@ -105,6 +120,8 @@ export const DualDragGame: React.FC<
   const leftInRef = useRef(false);
   const rightInRef = useRef(false);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const kickOffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playW = useRef(360);
   const playH = useRef(400);
   const leftStart = useRef({ x: 72, y: 96 });
@@ -119,6 +136,8 @@ export const DualDragGame: React.FC<
   const rightX = useSharedValue(288);
   const rightY = useSharedValue(96);
   const rightScale = useSharedValue(1);
+  const playShake = useSharedValue(0);
+  const kickOffOpacity = useSharedValue(0);
 
   useEffect(() => {
     scoreRef.current = score;
@@ -140,17 +159,34 @@ export const DualDragGame: React.FC<
     top: rightY.value - HALF,
     transform: [{ scale: rightScale.value }],
   }));
+  const playShakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: playShake.value }],
+  }));
+  const kickOffStyle = useAnimatedStyle(() => ({
+    opacity: kickOffOpacity.value,
+    transform: [{ scale: 0.9 + kickOffOpacity.value * 0.1 }],
+  }));
 
   const clearTimers = useCallback(() => {
     if (roundTimerRef.current) {
       clearTimeout(roundTimerRef.current);
       roundTimerRef.current = null;
     }
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+    if (kickOffTimerRef.current) {
+      clearTimeout(kickOffTimerRef.current);
+      kickOffTimerRef.current = null;
+    }
     cancelAnimation(leftX);
     cancelAnimation(leftY);
     cancelAnimation(rightX);
     cancelAnimation(rightY);
-  }, [leftX, leftY, rightX, rightY]);
+    cancelAnimation(playShake);
+    cancelAnimation(kickOffOpacity);
+  }, [kickOffOpacity, leftX, leftY, playShake, rightX, rightY]);
 
   const layoutPositions = useCallback(() => {
     const w = playW.current;
@@ -235,8 +271,23 @@ export const DualDragGame: React.FC<
     if (roundCompleteRef.current || doneRef.current) return;
     roundCompleteRef.current = true;
     bumpScore();
+    if (isTwinDrag) {
+      setSuccessToast(true);
+      setTwinKey(Date.now());
+      toastTimerRef.current = setTimeout(() => setSuccessToast(false), 900);
+    }
+    if (isPairMatch) {
+      setSuccessToast(true);
+      setPairKey(Date.now());
+      toastTimerRef.current = setTimeout(() => setSuccessToast(false), 900);
+    }
+    if (isBoxSort) {
+      setSuccessToast(true);
+      setSortKey(Date.now());
+      toastTimerRef.current = setTimeout(() => setSuccessToast(false), 900);
+    }
     roundTimerRef.current = setTimeout(() => advanceRound(), 650);
-  }, [advanceRound, bumpScore]);
+  }, [advanceRound, bumpScore, isBoxSort, isPairMatch, isTwinDrag]);
 
   const checkCompletion = useCallback(() => {
     if (!roundActiveRef.current || roundCompleteRef.current || doneRef.current) return;
@@ -274,8 +325,18 @@ export const DualDragGame: React.FC<
           ? 'Drag both shapes to the center!'
           : 'Drag both objects to their targets!';
     setStatusHint(hint);
+    if (isThemedDual) {
+      setSuccessToast(false);
+      setKickOffVisible(true);
+      kickOffOpacity.value = withSequence(
+        withTiming(1, { duration: 200 }),
+        withTiming(1, { duration: 700 }),
+        withTiming(0, { duration: 350 }),
+      );
+      kickOffTimerRef.current = setTimeout(() => setKickOffVisible(false), 1300);
+    }
     speakTTS(ttsCue, 0.78).catch(() => {});
-  }, [layoutPositions, mode, ttsCue]);
+  }, [isThemedDual, kickOffOpacity, layoutPositions, mode, ttsCue]);
 
   useEffect(() => {
     if (round === 1) speakTTS(ttsIntro, 0.78);
@@ -386,11 +447,46 @@ export const DualDragGame: React.FC<
         {roundActive && statusHint ? (
           <Text style={[styles.hint, { color: T.accentDark }]}>{statusHint}</Text>
         ) : null}
+        {isThemedDual && (
+          <View
+            style={[
+              styles.roundTrack,
+              isTwinDrag && styles.twinRoundTrack,
+              isPairMatch && styles.pairRoundTrack,
+              isBoxSort && styles.sortRoundTrack,
+              { borderColor: T.accent },
+            ]}
+          >
+            <View style={[styles.roundFill, { width: `${(round / P.rounds) * 100}%`, backgroundColor: T.accent }]} />
+          </View>
+        )}
+        {isTwinDrag && (
+          <View style={styles.headerDeco}>
+            <Text style={styles.decoEmoji}>🔵</Text>
+            <Text style={[styles.decoArrow, { color: T.accent }]}>🤲</Text>
+            <Text style={styles.decoEmoji}>🔴</Text>
+          </View>
+        )}
+        {isPairMatch && (
+          <View style={styles.headerDeco}>
+            <Text style={styles.decoEmoji}>{matchEmoji}</Text>
+            <Text style={[styles.decoArrow, { color: T.accent }]}>🤝</Text>
+            <Text style={styles.decoEmoji}>{matchEmoji}</Text>
+          </View>
+        )}
+        {isBoxSort && (
+          <View style={styles.headerDeco}>
+            <Text style={styles.decoEmoji}>⭕</Text>
+            <Text style={[styles.decoArrow, { color: T.accent }]}>📦</Text>
+            <Text style={styles.decoEmoji}>⬜</Text>
+          </View>
+        )}
       </View>
 
       <GestureDetector gesture={dualGesture}>
+        <Animated.View style={[styles.playAreaWrap, isThemedDual && playShakeStyle]}>
         <View
-          style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
+          style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }, isThemedDual && styles.playAreaThemed]}
           onLayout={(e) => {
             playW.current = e.nativeEvent.layout.width;
             playH.current = e.nativeEvent.layout.height;
@@ -399,11 +495,41 @@ export const DualDragGame: React.FC<
         >
           {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
 
+          {isTwinDrag && (
+            <TwinDragPlayArea
+              roundActive={roundActive}
+              showGuide={isTwinDrag && round <= 2}
+              twinKey={twinKey}
+              leftZone={zoneLayout.left}
+              rightZone={zoneLayout.right}
+            />
+          )}
+
+          {isPairMatch && (
+            <PairMatchPlayArea
+              roundActive={roundActive}
+              showGuide={isPairMatch && round <= 2}
+              pairKey={pairKey}
+              centerZone={zoneLayout.center}
+            />
+          )}
+
+          {isBoxSort && (
+            <BoxSortPlayArea
+              roundActive={roundActive}
+              showGuide={isBoxSort && round <= 2}
+              sortKey={sortKey}
+              leftZone={zoneLayout.left}
+              rightZone={zoneLayout.right}
+            />
+          )}
+
           {roundActive && mode === 'matchCenter' && (
             <View
               style={[
                 styles.zone,
                 styles.centerZone,
+                isPairMatch && styles.pairCenterZone,
                 {
                   left: zoneLayout.center.x - 55,
                   top: zoneLayout.center.y - 55,
@@ -411,7 +537,14 @@ export const DualDragGame: React.FC<
                 },
               ]}
             >
-              <Text style={styles.zoneLabel}>MATCH</Text>
+              {isPairMatch ? (
+                <>
+                  <Text style={styles.zoneEmoji}>{matchEmoji}</Text>
+                  <Text style={styles.pairZoneLabel}>MERGE</Text>
+                </>
+              ) : (
+                <Text style={styles.zoneLabel}>MATCH</Text>
+              )}
             </View>
           )}
 
@@ -420,6 +553,9 @@ export const DualDragGame: React.FC<
               <View
                 style={[
                   styles.zone,
+                  isTwinDrag && styles.twinZone,
+                  isBoxSort && styles.sortZone,
+                  isBoxSort && styles.circleSortZone,
                   {
                     left: zoneLayout.left.x - 48,
                     top: zoneLayout.left.y - 48,
@@ -427,11 +563,21 @@ export const DualDragGame: React.FC<
                   },
                 ]}
               >
-                <Text style={styles.zoneEmoji}>{mode === 'shapeSort' ? '⭕' : '🎯'}</Text>
+                {isBoxSort ? (
+                  <>
+                    <Text style={styles.zoneEmoji}>⭕</Text>
+                    <Text style={styles.sortZoneLabel}>CIRCLE</Text>
+                  </>
+                ) : (
+                  <Text style={styles.zoneEmoji}>{mode === 'shapeSort' ? '⭕' : '🎯'}</Text>
+                )}
               </View>
               <View
                 style={[
                   styles.zone,
+                  isTwinDrag && styles.twinZone,
+                  isBoxSort && styles.sortZone,
+                  isBoxSort && styles.squareSortZone,
                   {
                     left: zoneLayout.right.x - 48,
                     top: zoneLayout.right.y - 48,
@@ -439,24 +585,75 @@ export const DualDragGame: React.FC<
                   },
                 ]}
               >
-                <Text style={styles.zoneEmoji}>{mode === 'shapeSort' ? '⬜' : '🎯'}</Text>
+                {isBoxSort ? (
+                  <>
+                    <Text style={styles.zoneEmoji}>⬜</Text>
+                    <Text style={styles.sortZoneLabel}>SQUARE</Text>
+                  </>
+                ) : (
+                  <Text style={styles.zoneEmoji}>{mode === 'shapeSort' ? '⬜' : '🎯'}</Text>
+                )}
               </View>
             </>
           )}
 
           {roundActive && (
             <>
-              <Animated.View style={[styles.obj, { backgroundColor: T.leftColor }, leftStyle]}>
+              <Animated.View
+                style={[
+                  styles.obj,
+                  { backgroundColor: T.leftColor },
+                  isTwinDrag && styles.twinObj,
+                  isPairMatch && styles.pairObj,
+                  isBoxSort && styles.sortObj,
+                  leftStyle,
+                ]}
+              >
                 <Text style={styles.objEmoji}>{leftEmoji}</Text>
               </Animated.View>
-              <Animated.View style={[styles.obj, { backgroundColor: T.rightColor }, rightStyle]}>
+              <Animated.View
+                style={[
+                  styles.obj,
+                  { backgroundColor: T.rightColor },
+                  isTwinDrag && styles.twinObj,
+                  isPairMatch && styles.pairObj,
+                  isBoxSort && styles.sortObj,
+                  rightStyle,
+                ]}
+              >
                 <Text style={styles.objEmoji}>{rightEmoji}</Text>
               </Animated.View>
             </>
           )}
 
-          <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
+          {kickOffVisible && isTwinDrag ? (
+            <Animated.View style={[styles.kickOffBanner, kickOffStyle]} pointerEvents="none">
+              <Text style={styles.kickOffText}>🤲 TWIN DRAG!</Text>
+            </Animated.View>
+          ) : null}
+          {kickOffVisible && isPairMatch ? (
+            <Animated.View style={[styles.kickOffBanner, styles.pairKickOff, kickOffStyle]} pointerEvents="none">
+              <Text style={[styles.kickOffText, styles.pairKickOffText]}>🤝 PAIR MATCH!</Text>
+            </Animated.View>
+          ) : null}
+          {kickOffVisible && isBoxSort ? (
+            <Animated.View style={[styles.kickOffBanner, styles.sortKickOff, kickOffStyle]} pointerEvents="none">
+              <Text style={[styles.kickOffText, styles.sortKickOffText]}>📦 BOX SORT!</Text>
+            </Animated.View>
+          ) : null}
+
+          <SparkleBurst
+            key={sparkleKey}
+            visible={sparkleKey > 0}
+            color={T.sparkleColor}
+            count={isThemedDual ? 16 : 10}
+            size={isThemedDual ? 8 : 6}
+          />
+          {isTwinDrag && <ResultToast text="BOTH!" type="ok" show={successToast} />}
+          {isPairMatch && <ResultToast text="MATCH!" type="ok" show={successToast} />}
+          {isBoxSort && <ResultToast text="SORTED!" type="ok" show={successToast} />}
         </View>
+        </Animated.View>
       </GestureDetector>
     </SafeAreaView>
   );
@@ -477,7 +674,25 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  roundTrack: {
+    width: '70%',
+    height: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 6,
+    backgroundColor: 'rgba(12,25,41,0.55)',
+  },
+  twinRoundTrack: { backgroundColor: 'rgba(12,25,41,0.55)' },
+  pairRoundTrack: { backgroundColor: 'rgba(5,46,22,0.55)' },
+  sortRoundTrack: { backgroundColor: 'rgba(46,16,101,0.55)' },
+  roundFill: { height: '100%', borderRadius: 6 },
+  headerDeco: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  decoEmoji: { fontSize: 20 },
+  decoArrow: { fontSize: 18, fontWeight: '900' },
+  playAreaWrap: { flex: 1 },
   playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1 },
+  playAreaThemed: { borderWidth: 2, overflow: 'hidden', justifyContent: 'center' },
   waitText: { position: 'absolute', alignSelf: 'center', top: '45%', fontSize: 18, fontWeight: '700' },
   zone: {
     position: 'absolute',
@@ -491,8 +706,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.45)',
   },
   centerZone: { width: 110, height: 110, borderRadius: 55 },
+  pairCenterZone: {
+    backgroundColor: 'rgba(5,46,22,0.65)',
+    zIndex: 3,
+    borderWidth: 3,
+  },
   zoneLabel: { fontSize: 11, fontWeight: '800', color: '#64748B' },
+  pairZoneLabel: { fontSize: 9, fontWeight: '900', color: '#BBF7D0', marginTop: 2, letterSpacing: 1 },
   zoneEmoji: { fontSize: 32 },
+  twinZone: {
+    backgroundColor: 'rgba(12,25,41,0.55)',
+    zIndex: 3,
+  },
+  sortZone: {
+    backgroundColor: 'rgba(46,16,101,0.65)',
+    zIndex: 3,
+    borderWidth: 3,
+  },
+  circleSortZone: { borderColor: 'rgba(129,140,248,0.55)' },
+  squareSortZone: { borderColor: 'rgba(45,212,191,0.55)' },
+  sortZoneLabel: { fontSize: 9, fontWeight: '900', color: '#DDD6FE', marginTop: 2, letterSpacing: 0.5 },
   obj: {
     position: 'absolute',
     width: HALF * 2,
@@ -505,6 +738,53 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.7)',
   },
   objEmoji: { fontSize: 34 },
+  twinObj: {
+    borderColor: 'rgba(191,219,254,0.55)',
+    shadowColor: '#60A5FA',
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+    zIndex: 5,
+  },
+  pairObj: {
+    borderColor: 'rgba(187,247,208,0.55)',
+    shadowColor: '#4ADE80',
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+    zIndex: 5,
+  },
+  sortObj: {
+    borderColor: 'rgba(221,214,254,0.55)',
+    shadowColor: '#A78BFA',
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+    zIndex: 5,
+  },
+  kickOffBanner: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: '12%',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    backgroundColor: 'rgba(12,25,41,0.92)',
+    borderWidth: 2,
+    borderColor: '#60A5FA',
+    zIndex: 6,
+  },
+  kickOffText: { fontSize: 22, fontWeight: '900', color: '#BFDBFE', letterSpacing: 1 },
+  pairKickOff: {
+    backgroundColor: 'rgba(5,46,22,0.92)',
+    borderColor: '#4ADE80',
+  },
+  pairKickOffText: { color: '#BBF7D0' },
+  sortKickOff: {
+    backgroundColor: 'rgba(46,16,101,0.92)',
+    borderColor: '#A78BFA',
+  },
+  sortKickOffText: { color: '#DDD6FE' },
 });
 
 export default DualDragGame;

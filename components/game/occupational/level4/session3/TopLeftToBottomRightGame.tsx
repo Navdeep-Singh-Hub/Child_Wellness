@@ -1,5 +1,6 @@
-/** OT Level 4 · Session 3 · Game 1 — Top-Left to Bottom-Right · Theme: "Diagonal Dash" */
+/** OT Level 4 · Session 3 · Game 1 — Top-Left to Bottom-Right · Theme: "Diagonal Dash" · Mountain Trail */
 import { DiagonalDragGame } from '@/components/game/occupational/level4/session3/DiagonalDragGame';
+import { DIAGONAL_DASH_THEME as D } from '@/components/game/occupational/level4/session3/session3Theme';
 import React from 'react';
 
 const TopLeftToBottomRightGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,19 +8,32 @@ const TopLeftToBottomRightGame: React.FC<{ onBack?: () => void; onComplete?: () 
     {...props}
     mode="cornerDrag"
     theme={{
-      title: 'Diagonal Dash', subtitle: 'Drag from top-left to bottom-right', emoji: '↘️',
-      gradient: ['#EFF6FF', '#DBEAFE', '#93C5FD', '#3B82F6'],
-      accent: '#3B82F6', accentDark: '#1D4ED8', draggableEmoji: '📦', targetEmoji: '🎯',
-      backText: '#1E40AF', backBorder: 'rgba(59,130,246,0.25)',
-      titleColor: '#1E3A8A', subtitleColor: '#2563EB', statLabel: '#3B82F6', statValue: '#1E3A8A',
-      statBorder: 'rgba(59,130,246,0.2)', playBorder: 'rgba(59,130,246,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#3B82F6', zoneBorder: 'rgba(59,130,246,0.45)',
+      title: D.title,
+      subtitle: D.subtitle,
+      emoji: D.emoji,
+      gradient: D.gradient,
+      accent: D.accent,
+      accentDark: D.accentDark,
+      draggableEmoji: D.draggableEmoji,
+      targetEmoji: D.targetEmoji,
+      backText: '#E0F2FE',
+      backBorder: 'rgba(56,189,248,0.38)',
+      titleColor: '#F0F9FF',
+      subtitleColor: 'rgba(186,230,253,0.9)',
+      statLabel: 'rgba(186,230,253,0.75)',
+      statValue: '#FFFFFF',
+      statBorder: 'rgba(56,189,248,0.32)',
+      playBorder: D.playBorder,
+      playBg: D.playBg,
+      sparkleColor: D.sparkleColor,
+      zoneBorder: D.zoneBorder,
     }}
-    ttsIntro="Drag diagonally from the top-left to the bottom-right!"
-    ttsComplete="Great diagonal dashing!"
-    ttsDrag="Drag to the bottom-right corner!"
-    ttsMiss="Try the bottom-right corner!"
-    congratsMessage="Diagonal Dash Star!"
+    ttsIntro={D.voiceIntro}
+    ttsComplete={D.voiceComplete}
+    ttsDrag={D.voiceDrag}
+    ttsMiss={D.voiceMiss}
+    ttsGoal={D.voiceLanded}
+    congratsMessage={D.congrats}
     logType="top-left-bottom-right"
     skillTags={['midline-crossing', 'reading-prep', 'diagonal-drag']}
   />

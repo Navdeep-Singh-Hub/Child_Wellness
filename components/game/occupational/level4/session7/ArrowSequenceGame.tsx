@@ -1,24 +1,37 @@
 /** OT Level 4 · Session 7 · Game 4 — Arrow Sequence · Theme: "Arrow Chain" */
 import { CrossBodySequenceGame } from '@/components/game/occupational/level4/session7/CrossBodySequenceGame';
+import { ARROW_CHAIN_THEME as T } from '@/components/game/occupational/level4/session7/session7Theme';
 import React from 'react';
 
 const ArrowSequenceGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <CrossBodySequenceGame
     {...props}
     theme={{
-      title: 'Arrow Chain', subtitle: 'Watch 3 arrows, then tap in order', emoji: '➡️',
-      gradient: ['#ECFDF5', '#D1FAE5', '#6EE7B7', '#10B981'],
-      accent: '#10B981', accentDark: '#047857', leftColor: '#10B981', rightColor: '#EF4444',
-      backText: '#065F46', backBorder: 'rgba(16,185,129,0.25)',
-      titleColor: '#064E3B', subtitleColor: '#047857', statLabel: '#059669', statValue: '#064E3B',
-      statBorder: 'rgba(16,185,129,0.2)', playBorder: 'rgba(16,185,129,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#10B981',
+      title: T.title,
+      subtitle: T.subtitle,
+      emoji: T.emoji,
+      gradient: T.gradient,
+      accent: T.accent,
+      accentDark: T.accentDark,
+      leftColor: T.leftColor,
+      rightColor: T.rightColor,
+      backText: T.backText,
+      backBorder: T.backBorder,
+      titleColor: T.titleColor,
+      subtitleColor: T.subtitleColor,
+      statLabel: T.statLabel,
+      statValue: T.statValue,
+      statBorder: T.statBorder,
+      playBorder: T.playBorder,
+      playBg: T.playBg,
+      sparkleColor: T.sparkleColor,
     }}
-    ttsIntro="Watch the arrow sequence, then tap each with the opposite hand!"
-    ttsComplete="Great sequence following!"
-    ttsCue="Follow the arrow chain!"
-    ttsSuccess="Perfect sequence!"
-    congratsMessage="Arrow Chain Star!"
+    ttsIntro={T.voiceIntro}
+    ttsComplete={T.voiceComplete}
+    ttsCue={T.voiceCue}
+    ttsSuccess={T.voiceSuccess}
+    ttsWrong={T.voiceWrong}
+    congratsMessage={T.congrats}
     logType="arrow-sequence"
     skillTags={['memory', 'movement', 'sequence-following', 'cross-body-coordination']}
   />

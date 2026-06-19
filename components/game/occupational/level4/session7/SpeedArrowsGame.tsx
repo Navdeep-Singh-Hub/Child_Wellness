@@ -1,5 +1,6 @@
 /** OT Level 4 · Session 7 · Game 5 — Speed Arrows · Theme: "Flash Cross" */
 import { CrossBodyArrowGame } from '@/components/game/occupational/level4/session7/CrossBodyArrowGame';
+import { FLASH_CROSS_THEME as T } from '@/components/game/occupational/level4/session7/session7Theme';
 import React from 'react';
 
 const SpeedArrowsGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,19 +8,32 @@ const SpeedArrowsGame: React.FC<{ onBack?: () => void; onComplete?: () => void }
     {...props}
     mode="speed"
     theme={{
-      title: 'Flash Cross', subtitle: 'React fast — arrows get quicker!', emoji: '⚡',
-      gradient: ['#FFFBEB', '#FEF3C7', '#FCD34D', '#F59E0B'],
-      accent: '#F59E0B', accentDark: '#B45309', leftColor: '#F59E0B', rightColor: '#EF4444',
-      backText: '#92400E', backBorder: 'rgba(245,158,11,0.25)',
-      titleColor: '#78350F', subtitleColor: '#B45309', statLabel: '#D97706', statValue: '#78350F',
-      statBorder: 'rgba(245,158,11,0.2)', playBorder: 'rgba(245,158,11,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#F59E0B',
+      title: T.title,
+      subtitle: T.subtitle,
+      emoji: T.emoji,
+      gradient: T.gradient,
+      accent: T.accent,
+      accentDark: T.accentDark,
+      leftColor: T.leftColor,
+      rightColor: T.rightColor,
+      backText: T.backText,
+      backBorder: T.backBorder,
+      titleColor: T.titleColor,
+      subtitleColor: T.subtitleColor,
+      statLabel: T.statLabel,
+      statValue: T.statValue,
+      statBorder: T.statBorder,
+      playBorder: T.playBorder,
+      playBg: T.playBg,
+      sparkleColor: T.sparkleColor,
     }}
-    ttsIntro="Arrows flash faster each round — use the opposite hand!"
-    ttsComplete="Lightning fast cross-body skills!"
-    ttsCue="React quickly with the opposite hand!"
-    ttsSuccess="Fast and correct!"
-    congratsMessage="Flash Cross Star!"
+    ttsIntro={T.voiceIntro}
+    ttsComplete={T.voiceComplete}
+    ttsCue={T.voiceCue}
+    ttsSuccess={T.voiceSuccess}
+    ttsWrong={T.voiceWrong}
+    ttsTooSlow={T.voiceTooSlow}
+    congratsMessage={T.congrats}
     logType="speed-arrows"
     skillTags={['reaction-speed', 'cross-body-coordination', 'visual-motor']}
   />

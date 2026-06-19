@@ -15,6 +15,7 @@ export const SESSION4_3_PACING = {
   zigzagStartYPct: 0.22,
   zigzagEndYPct: 0.78,
   xPathOffsetPct: 0.28,
-  catchFallSpeed: 2.5,
-  catchTolerancePx: 65,
+  catchFallSpeed: 2.2,
+  catchTolerancePx: 78,
+  catcherYPct: 0.78,
 } as const;

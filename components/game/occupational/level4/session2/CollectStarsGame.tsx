@@ -1,5 +1,6 @@
-/** OT Level 4 · Session 2 · Game 2 — Collect Stars · Theme: "Star Sweep" */
+/** OT Level 4 · Session 2 · Game 2 — Collect Stars · Theme: "Star Sweep" · Cosmic Galaxy */
 import { ReverseHorizontalDragGame } from '@/components/game/occupational/level4/session2/ReverseHorizontalDragGame';
+import { STAR_SWEEP_THEME as S } from '@/components/game/occupational/level4/session2/session2Theme';
 import React from 'react';
 
 const CollectStarsGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,19 +8,32 @@ const CollectStarsGame: React.FC<{ onBack?: () => void; onComplete?: () => void 
     {...props}
     mode="collectStars"
     theme={{
-      title: 'Star Sweep', subtitle: 'Drag stars into the bag on the left', emoji: '⭐',
-      gradient: ['#FFFBEB', '#FEF3C7', '#FCD34D', '#F59E0B'],
-      accent: '#F59E0B', accentDark: '#B45309', draggableEmoji: '⭐', targetEmoji: '🎒',
-      backText: '#92400E', backBorder: 'rgba(245,158,11,0.25)',
-      titleColor: '#78350F', subtitleColor: '#D97706', statLabel: '#F59E0B', statValue: '#78350F',
-      statBorder: 'rgba(245,158,11,0.2)', playBorder: 'rgba(245,158,11,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#F59E0B', zoneBorder: 'rgba(245,158,11,0.45)',
+      title: S.title,
+      subtitle: S.subtitle,
+      emoji: S.emoji,
+      gradient: S.gradient,
+      accent: S.accent,
+      accentDark: S.accentDark,
+      draggableEmoji: S.draggableEmoji,
+      targetEmoji: S.targetEmoji,
+      backText: '#EDE9FE',
+      backBorder: 'rgba(196,181,253,0.38)',
+      titleColor: '#F5F3FF',
+      subtitleColor: 'rgba(221,214,254,0.9)',
+      statLabel: 'rgba(221,214,254,0.75)',
+      statValue: '#FFFFFF',
+      statBorder: 'rgba(196,181,253,0.32)',
+      playBorder: S.playBorder,
+      playBg: S.playBg,
+      sparkleColor: S.sparkleColor,
+      zoneBorder: S.zoneBorder,
     }}
-    ttsIntro="Drag stars from the right into the bag on the left!"
-    ttsComplete="All stars collected!"
-    ttsDrag="Sweep the star to the bag!"
-    ttsMiss="Drag the star to the left bag!"
-    congratsMessage="Star Sweep Hero!"
+    ttsIntro={S.voiceIntro}
+    ttsComplete={S.voiceComplete}
+    ttsDrag={S.voiceDrag}
+    ttsMiss={S.voiceMiss}
+    ttsGoal={S.voiceCaught}
+    congratsMessage={S.congrats}
     logType="collect-stars"
     skillTags={['cross-body-reach', 'drag-right-left']}
   />

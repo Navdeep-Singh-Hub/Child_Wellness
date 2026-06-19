@@ -1,5 +1,6 @@
-/** OT Level 4 · Session 4 · Game 1 — Double Circle Tap · Theme: "Twin Tap" */
+/** OT Level 4 · Session 4 · Game 1 — Double Circle Tap · Theme: "Twin Tap" · Sync Arena */
 import { DualTapGame } from '@/components/game/occupational/level4/session4/DualTapGame';
+import { TWIN_TAP_THEME as T } from '@/components/game/occupational/level4/session4/session4Theme';
 import React from 'react';
 
 const DoubleCircleTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,19 +8,34 @@ const DoubleCircleTapGame: React.FC<{ onBack?: () => void; onComplete?: () => vo
     {...props}
     mode="circles"
     theme={{
-      title: 'Twin Tap', subtitle: 'Tap both circles at the same time', emoji: '⭕',
-      gradient: ['#EFF6FF', '#DBEAFE', '#93C5FD', '#3B82F6'],
-      accent: '#3B82F6', accentDark: '#1D4ED8', leftColor: '#3B82F6', rightColor: '#EF4444',
-      leftEmoji: '👈', rightEmoji: '👉', targetStyle: 'circle',
-      backText: '#1E40AF', backBorder: 'rgba(59,130,246,0.25)',
-      titleColor: '#1E3A8A', subtitleColor: '#2563EB', statLabel: '#3B82F6', statValue: '#1E3A8A',
-      statBorder: 'rgba(59,130,246,0.2)', playBorder: 'rgba(59,130,246,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#3B82F6',
+      title: T.title,
+      subtitle: T.subtitle,
+      emoji: T.emoji,
+      gradient: T.gradient,
+      accent: T.accent,
+      accentDark: T.accentDark,
+      leftColor: T.leftColor,
+      rightColor: T.rightColor,
+      leftEmoji: T.leftEmoji,
+      rightEmoji: T.rightEmoji,
+      targetStyle: 'circle',
+      backText: T.backText,
+      backBorder: T.backBorder,
+      titleColor: T.titleColor,
+      subtitleColor: T.subtitleColor,
+      statLabel: T.statLabel,
+      statValue: T.statValue,
+      statBorder: T.statBorder,
+      playBorder: T.playBorder,
+      playBg: T.playBg,
+      sparkleColor: T.sparkleColor,
     }}
-    ttsIntro="Tap both circles with both hands at the same time!"
-    ttsComplete="Great twin tapping!"
-    ttsCue="Tap both circles together!"
-    congratsMessage="Twin Tap Star!"
+    ttsIntro={T.voiceIntro}
+    ttsComplete={T.voiceComplete}
+    ttsCue={T.voiceCue}
+    ttsSuccess={T.voiceSuccess}
+    ttsMiss={T.voiceMiss}
+    congratsMessage={T.congrats}
     logType="double-circle-tap"
     skillTags={['bilateral-coordination', 'two-hand-tap']}
   />

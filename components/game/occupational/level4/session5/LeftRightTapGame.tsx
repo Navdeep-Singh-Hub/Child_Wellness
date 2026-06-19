@@ -1,5 +1,6 @@
-/** OT Level 4 · Session 5 · Game 1 — Left-Right Tap · Theme: "Switch Tap" */
+/** OT Level 4 · Session 5 · Game 1 — Left-Right Tap · Theme: "Switch Tap" · Relay Track */
 import { AlternateTapGame } from '@/components/game/occupational/level4/session5/AlternateTapGame';
+import { SWITCH_TAP_THEME as T } from '@/components/game/occupational/level4/session5/session5Theme';
 import React from 'react';
 
 const LeftRightTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,20 +8,34 @@ const LeftRightTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void 
     {...props}
     mode="sequence"
     theme={{
-      title: 'Switch Tap', subtitle: 'Alternate left then right', emoji: '👆',
-      gradient: ['#EFF6FF', '#DBEAFE', '#93C5FD', '#3B82F6'],
-      accent: '#3B82F6', accentDark: '#1D4ED8', leftColor: '#3B82F6', rightColor: '#EF4444',
-      leftEmoji: '👈', rightEmoji: '👉', targetStyle: 'circle',
-      backText: '#1E40AF', backBorder: 'rgba(59,130,246,0.25)',
-      titleColor: '#1E3A8A', subtitleColor: '#2563EB', statLabel: '#3B82F6', statValue: '#1E3A8A',
-      statBorder: 'rgba(59,130,246,0.2)', playBorder: 'rgba(59,130,246,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#3B82F6',
+      title: T.title,
+      subtitle: T.subtitle,
+      emoji: T.emoji,
+      gradient: T.gradient,
+      accent: T.accent,
+      accentDark: T.accentDark,
+      leftColor: T.leftColor,
+      rightColor: T.rightColor,
+      leftEmoji: T.leftEmoji,
+      rightEmoji: T.rightEmoji,
+      targetStyle: 'circle',
+      backText: T.backText,
+      backBorder: T.backBorder,
+      titleColor: T.titleColor,
+      subtitleColor: T.subtitleColor,
+      statLabel: T.statLabel,
+      statValue: T.statValue,
+      statBorder: T.statBorder,
+      playBorder: T.playBorder,
+      playBg: T.playBg,
+      sparkleColor: T.sparkleColor,
     }}
-    ttsIntro="Tap left, then right, alternating!"
-    ttsComplete="Great switching!"
-    ttsCue="Tap left, then right, alternating!"
-    ttsSuccess="Perfect sequence!"
-    congratsMessage="Switch Tap Star!"
+    ttsIntro={T.voiceIntro}
+    ttsComplete={T.voiceComplete}
+    ttsCue={T.voiceCue}
+    ttsSuccess={T.voiceSuccess}
+    ttsWrong={T.voiceWrong}
+    congratsMessage={T.congrats}
     logType="left-right-tap"
     skillTags={['sequencing', 'alternating-hands', 'left-right-coordination']}
   />

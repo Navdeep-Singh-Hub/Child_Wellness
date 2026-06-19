@@ -2,7 +2,12 @@
  * Shared cross-body rhythm imitation core for OT Level 4 Session 10.
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
-import { SparkleBurst } from '@/components/game/FX';
+import { ResultToast, SparkleBurst } from '@/components/game/FX';
+import { BeatMirrorPlayArea } from '@/components/game/occupational/level4/session10/BeatMirrorPlayArea';
+import { CrossClapPlayArea } from '@/components/game/occupational/level4/session10/CrossClapPlayArea';
+import { FastBeatPlayArea } from '@/components/game/occupational/level4/session10/FastBeatPlayArea';
+import { RhythmRecallPlayArea } from '@/components/game/occupational/level4/session10/RhythmRecallPlayArea';
+import { ShoulderTapPlayArea } from '@/components/game/occupational/level4/session10/ShoulderTapPlayArea';
 import {
   ClapStep,
   MusicStep,
@@ -179,6 +184,22 @@ export const RhythmPatternGame: React.FC<
   const [beatDisplay, setBeatDisplay] = useState(0);
   const [patternLen, setPatternLen] = useState(0);
   const [userLen, setUserLen] = useState(0);
+  const [successToast, setSuccessToast] = useState(false);
+  const [kickOffVisible, setKickOffVisible] = useState(false);
+  const [warnVisible, setWarnVisible] = useState(false);
+  const [warnMessage, setWarnMessage] = useState('Try again!');
+  const [clapKey, setClapKey] = useState(0);
+  const [shoulderKey, setShoulderKey] = useState(0);
+  const [mirrorKey, setMirrorKey] = useState(0);
+  const [recallKey, setRecallKey] = useState(0);
+  const [fastKey, setFastKey] = useState(0);
+
+  const isCrossClap = mode === 'clapCross';
+  const isShoulderTap = mode === 'shoulderCross';
+  const isBeatMirror = mode === 'musicBeat';
+  const isRhythmRecall = mode === 'memory';
+  const isFastBeat = mode === 'speed';
+  const isThemedRhythm = isCrossClap || isShoulderTap || isBeatMirror || isRhythmRecall || isFastBeat;
 
   const doneRef = useRef(false);
   const scoreRef = useRef(0);
@@ -189,6 +210,8 @@ export const RhythmPatternGame: React.FC<
   const beatMsRef = useRef(P.clapBeatMs);
   const copyStartRef = useRef(0);
   const beatTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const kickOffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playPatternRef = useRef<(steps: readonly RhythmStep[], beatMs: number) => void>(() => {});
 
   const leftScale = useSharedValue(1);
@@ -196,6 +219,8 @@ export const RhythmPatternGame: React.FC<
   const leftShoulder = useSharedValue(1);
   const rightShoulder = useSharedValue(1);
   const beatPulse = useSharedValue(0);
+  const playShake = useSharedValue(0);
+  const kickOffOpacity = useSharedValue(0);
 
   useEffect(() => {
     scoreRef.current = score;
@@ -212,16 +237,33 @@ export const RhythmPatternGame: React.FC<
   const leftShoulderStyle = useAnimatedStyle(() => ({ transform: [{ scale: leftShoulder.value }] }));
   const rightShoulderStyle = useAnimatedStyle(() => ({ transform: [{ scale: rightShoulder.value }] }));
   const beatStyle = useAnimatedStyle(() => ({ opacity: 0.35 + beatPulse.value * 0.65 }));
+  const playShakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: playShake.value }],
+  }));
+  const kickOffStyle = useAnimatedStyle(() => ({
+    opacity: kickOffOpacity.value,
+    transform: [{ scale: 0.9 + kickOffOpacity.value * 0.1 }],
+  }));
 
   const clearBeatTimers = useCallback(() => {
     beatTimersRef.current.forEach((t) => clearTimeout(t));
     beatTimersRef.current = [];
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+    if (kickOffTimerRef.current) {
+      clearTimeout(kickOffTimerRef.current);
+      kickOffTimerRef.current = null;
+    }
     cancelAnimation(leftScale);
     cancelAnimation(rightScale);
     cancelAnimation(leftShoulder);
     cancelAnimation(rightShoulder);
     cancelAnimation(beatPulse);
-  }, [beatPulse, leftScale, leftShoulder, rightScale, rightShoulder]);
+    cancelAnimation(playShake);
+    cancelAnimation(kickOffOpacity);
+  }, [beatPulse, kickOffOpacity, leftScale, leftShoulder, playShake, rightScale, rightShoulder]);
 
   const pulseHand = useCallback(
     (side: 'left' | 'right' | 'both') => {
@@ -297,11 +339,36 @@ export const RhythmPatternGame: React.FC<
     playSuccess();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     speakTTS(ttsSuccess, 0.78).catch(() => {});
+    if (isCrossClap) {
+      setSuccessToast(true);
+      setClapKey(Date.now());
+      toastTimerRef.current = setTimeout(() => setSuccessToast(false), 900);
+    }
+    if (isShoulderTap) {
+      setSuccessToast(true);
+      setShoulderKey(Date.now());
+      toastTimerRef.current = setTimeout(() => setSuccessToast(false), 900);
+    }
+    if (isBeatMirror) {
+      setSuccessToast(true);
+      setMirrorKey(Date.now());
+      toastTimerRef.current = setTimeout(() => setSuccessToast(false), 900);
+    }
+    if (isRhythmRecall) {
+      setSuccessToast(true);
+      setRecallKey(Date.now());
+      toastTimerRef.current = setTimeout(() => setSuccessToast(false), 900);
+    }
+    if (isFastBeat) {
+      setSuccessToast(true);
+      setFastKey(Date.now());
+      toastTimerRef.current = setTimeout(() => setSuccessToast(false), 900);
+    }
     setScore((s) => {
       scoreRef.current = s + 1;
       return s + 1;
     });
-  }, [playSuccess, ttsSuccess]);
+  }, [isBeatMirror, isCrossClap, isFastBeat, isRhythmRecall, isShoulderTap, playSuccess, ttsSuccess]);
 
   const failCopy = useCallback(
     (options?: { replay?: boolean; hint?: string }) => {
@@ -311,7 +378,19 @@ export const RhythmPatternGame: React.FC<
       userRef.current = [];
       setUserLen(0);
       copyStartRef.current = Date.now();
+      const hint = options?.hint ?? 'Try again!';
       if (options?.hint) setStatusHint(options.hint);
+      if (isThemedRhythm) {
+        setWarnMessage(hint);
+        setWarnVisible(true);
+        playShake.value = withSequence(
+          withTiming(-8, { duration: 50 }),
+          withTiming(8, { duration: 50 }),
+          withTiming(-6, { duration: 50 }),
+          withTiming(0, { duration: 50 }),
+        );
+        toastTimerRef.current = setTimeout(() => setWarnVisible(false), 1200);
+      }
 
       if (options?.replay) {
         const steps = patternRef.current;
@@ -319,7 +398,7 @@ export const RhythmPatternGame: React.FC<
         setTimeout(() => playPatternRef.current(steps, beatMs), 450);
       }
     },
-    [playWarn, ttsFail],
+    [isThemedRhythm, playShake, playWarn, ttsFail],
   );
 
   const advanceRound = useCallback(() => {
@@ -456,8 +535,19 @@ export const RhythmPatternGame: React.FC<
     setPatternLen(steps.length);
     userRef.current = [];
     setUserLen(0);
+    if (isThemedRhythm) {
+      setSuccessToast(false);
+      setWarnVisible(false);
+      setKickOffVisible(true);
+      kickOffOpacity.value = withSequence(
+        withTiming(1, { duration: 200 }),
+        withTiming(1, { duration: 700 }),
+        withTiming(0, { duration: 350 }),
+      );
+      kickOffTimerRef.current = setTimeout(() => setKickOffVisible(false), 1300);
+    }
     playPattern(steps, beatMs);
-  }, [mode, playPattern]);
+  }, [isThemedRhythm, kickOffOpacity, mode, playPattern]);
 
   useEffect(() => {
     if (round === 1) speakTTS(ttsIntro, 0.78);
@@ -536,7 +626,57 @@ export const RhythmPatternGame: React.FC<
           </View>
         </View>
         {statusHint ? <Text style={[styles.hint, { color: T.accentDark }]}>{statusHint}</Text> : null}
-        {phase === 'listen' && patternLen > 0 && (
+        {isThemedRhythm && (
+          <View
+            style={[
+              styles.roundTrack,
+              isCrossClap && styles.clapRoundTrack,
+              isShoulderTap && styles.shoulderRoundTrack,
+              isBeatMirror && styles.mirrorRoundTrack,
+              isRhythmRecall && styles.recallRoundTrack,
+              isFastBeat && styles.fastRoundTrack,
+              { borderColor: T.accent },
+            ]}
+          >
+            <View style={[styles.roundFill, { width: `${(round / totalRounds) * 100}%`, backgroundColor: T.accent }]} />
+          </View>
+        )}
+        {isCrossClap && (
+          <View style={styles.headerDeco}>
+            <Text style={styles.decoEmoji}>👏</Text>
+            <Text style={[styles.decoArrow, { color: T.accent }]}>↔</Text>
+            <Text style={styles.decoEmoji}>👏</Text>
+          </View>
+        )}
+        {isShoulderTap && (
+          <View style={styles.headerDeco}>
+            <Text style={styles.decoEmoji}>👉</Text>
+            <Text style={[styles.decoArrow, { color: T.accent }]}>🫲</Text>
+            <Text style={styles.decoEmoji}>🫱</Text>
+          </View>
+        )}
+        {isBeatMirror && (
+          <View style={styles.headerDeco}>
+            <Text style={styles.decoEmoji}>👈</Text>
+            <Text style={[styles.decoArrow, { color: T.accent }]}>🎵</Text>
+            <Text style={styles.decoEmoji}>👉</Text>
+          </View>
+        )}
+        {isRhythmRecall && (
+          <View style={styles.headerDeco}>
+            <Text style={styles.decoEmoji}>👂</Text>
+            <Text style={[styles.decoArrow, { color: T.accent }]}>🧠</Text>
+            <Text style={styles.decoEmoji}>🔁</Text>
+          </View>
+        )}
+        {isFastBeat && (
+          <View style={styles.headerDeco}>
+            <Text style={styles.decoEmoji}>⚡</Text>
+            <Text style={[styles.decoArrow, { color: T.accent }]}>🎵</Text>
+            <Text style={styles.decoEmoji}>⚡</Text>
+          </View>
+        )}
+        {phase === 'listen' && patternLen > 0 && !isThemedRhythm && (
           <Animated.View style={[styles.beatBadge, beatStyle]}>
             <Text style={styles.beatText}>
               Beat {beatDisplay}/{patternLen}
@@ -550,81 +690,283 @@ export const RhythmPatternGame: React.FC<
         )}
       </View>
 
-      <View style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}>
-        {phase === 'remember' && (
-          <Text style={[styles.rememberText, { color: T.accentDark }]}>🧠 Remember…</Text>
-        )}
+      <Animated.View style={[styles.playAreaWrap, isThemedRhythm && playShakeStyle]}>
+        <View
+          style={[
+            styles.playArea,
+            { borderColor: T.playBorder, backgroundColor: T.playBg },
+            isThemedRhythm && styles.playAreaThemed,
+          ]}
+        >
+          {isCrossClap && (
+            <CrossClapPlayArea
+              phase={phase}
+              showGuide={isCrossClap && round <= 2}
+              clapKey={clapKey}
+              beatDisplay={beatDisplay}
+              patternLen={patternLen}
+            />
+          )}
 
-        {mode === 'shoulderCross' && (
-          <View style={styles.shoulderRow}>
-            <Animated.View style={[styles.shoulder, leftShoulderStyle]}>
-              <Text style={styles.shoulderEmoji}>🫲</Text>
+          {isShoulderTap && (
+            <ShoulderTapPlayArea
+              phase={phase}
+              showGuide={isShoulderTap && round <= 2}
+              shoulderKey={shoulderKey}
+              beatDisplay={beatDisplay}
+              patternLen={patternLen}
+            />
+          )}
+
+          {isBeatMirror && (
+            <BeatMirrorPlayArea
+              phase={phase}
+              showGuide={isBeatMirror && round <= 2}
+              mirrorKey={mirrorKey}
+              beatDisplay={beatDisplay}
+              patternLen={patternLen}
+            />
+          )}
+
+          {isRhythmRecall && (
+            <RhythmRecallPlayArea
+              phase={phase}
+              showGuide={isRhythmRecall && round <= 2}
+              recallKey={recallKey}
+              beatDisplay={beatDisplay}
+              patternLen={patternLen}
+            />
+          )}
+
+          {isFastBeat && (
+            <FastBeatPlayArea
+              phase={phase}
+              showGuide={isFastBeat && round <= 2}
+              fastKey={fastKey}
+              beatDisplay={beatDisplay}
+              patternLen={patternLen}
+              round={round}
+              totalRounds={totalRounds}
+            />
+          )}
+
+          {phase === 'remember' && !isThemedRhythm && (
+            <Text style={[styles.rememberText, { color: T.accentDark }]}>🧠 Remember…</Text>
+          )}
+          {phase === 'remember' && isThemedRhythm && !isRhythmRecall && (
+            <Text style={[styles.rememberTextThemed, { color: T.accentDark }]}>🧠 Remember…</Text>
+          )}
+
+          {mode === 'shoulderCross' && (
+            <View style={[styles.shoulderRow, isShoulderTap && styles.shoulderRowThemed]}>
+              <Animated.View style={[styles.shoulder, isShoulderTap && styles.shoulderThemed, leftShoulderStyle]}>
+                <Text style={styles.shoulderEmoji}>🫲</Text>
+              </Animated.View>
+              <Animated.View style={[styles.shoulder, isShoulderTap && styles.shoulderThemed, rightShoulderStyle]}>
+                <Text style={styles.shoulderEmoji}>🫱</Text>
+              </Animated.View>
+            </View>
+          )}
+
+          <View style={styles.handsRow}>
+            <Animated.View
+              style={[
+                styles.hand,
+                { backgroundColor: T.leftColor },
+                isCrossClap && styles.clapHand,
+                isShoulderTap && styles.shoulderHand,
+                isBeatMirror && styles.mirrorHand,
+                isRhythmRecall && styles.recallHand,
+                isFastBeat && styles.fastHand,
+                leftStyle,
+              ]}
+            >
+              <Text style={styles.handEmoji}>👈</Text>
             </Animated.View>
-            <Animated.View style={[styles.shoulder, rightShoulderStyle]}>
-              <Text style={styles.shoulderEmoji}>🫱</Text>
+            <Animated.View
+              style={[
+                styles.hand,
+                { backgroundColor: T.rightColor },
+                isCrossClap && styles.clapHand,
+                isShoulderTap && styles.shoulderHand,
+                isBeatMirror && styles.mirrorHand,
+                isRhythmRecall && styles.recallHand,
+                isFastBeat && styles.fastHand,
+                rightStyle,
+              ]}
+            >
+              <Text style={styles.handEmoji}>👉</Text>
             </Animated.View>
           </View>
-        )}
 
-        <View style={styles.handsRow}>
-          <Animated.View style={[styles.hand, { backgroundColor: T.leftColor }, leftStyle]}>
-            <Text style={styles.handEmoji}>👈</Text>
-          </Animated.View>
-          <Animated.View style={[styles.hand, { backgroundColor: T.rightColor }, rightStyle]}>
-            <Text style={styles.handEmoji}>👉</Text>
-          </Animated.View>
+          {canInput && (
+            <View style={styles.inputRow}>
+              {mode === 'clapCross' && (
+                <>
+                  <TouchableOpacity
+                    style={[styles.inputBtn, isCrossClap && styles.clapInputBtn]}
+                    onPress={() => recordStep('left' as ClapStep)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.inputLabel, isCrossClap && styles.clapInputLabel]}>👏 LEFT</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.inputBtn, isCrossClap && styles.clapInputBtn]}
+                    onPress={() => recordStep('right' as ClapStep)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.inputLabel, isCrossClap && styles.clapInputLabel]}>RIGHT 👏</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+              {mode === 'shoulderCross' && (
+                <>
+                  <TouchableOpacity
+                    style={[styles.inputBtn, isShoulderTap && styles.shoulderInputBtn]}
+                    onPress={() => recordStep('right-to-left' as ShoulderStep)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.inputLabel, isShoulderTap && styles.shoulderInputLabel]}>👉 → 🫲</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.inputBtn, isShoulderTap && styles.shoulderInputBtn]}
+                    onPress={() => recordStep('left-to-right' as ShoulderStep)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.inputLabel, isShoulderTap && styles.shoulderInputLabel]}>👈 → 🫱</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+              {mode === 'musicBeat' && (
+                <>
+                  <TouchableOpacity
+                    style={[styles.inputBtn, isBeatMirror && styles.mirrorInputBtn]}
+                    onPress={() => recordStep('left-hand' as MusicStep)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.inputLabel, isBeatMirror && styles.mirrorInputLabel]}>👈</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.inputBtn, isBeatMirror && styles.mirrorInputBtnBoth]}
+                    onPress={() => recordStep('both-hands' as MusicStep)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.inputLabel, isBeatMirror && styles.mirrorInputLabel]}>🙌</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.inputBtn, isBeatMirror && styles.mirrorInputBtn]}
+                    onPress={() => recordStep('right-hand' as MusicStep)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.inputLabel, isBeatMirror && styles.mirrorInputLabel]}>👉</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+              {mode === 'memory' && (
+                <>
+                  <TouchableOpacity
+                    style={[styles.inputBtn, isRhythmRecall && styles.recallInputBtn]}
+                    onPress={() => recordStep('left' as SideStep)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.inputLabel, isRhythmRecall && styles.recallInputLabel]}>👈 LEFT</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.inputBtn, isRhythmRecall && styles.recallInputBtn]}
+                    onPress={() => recordStep('right' as SideStep)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.inputLabel, isRhythmRecall && styles.recallInputLabel]}>RIGHT 👉</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+              {mode === 'speed' && (
+                <>
+                  <TouchableOpacity
+                    style={[styles.inputBtn, isFastBeat && styles.fastInputBtn]}
+                    onPress={() => recordStep('left' as SideStep)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.inputLabel, isFastBeat && styles.fastInputLabel]}>👈 LEFT</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.inputBtn, isFastBeat && styles.fastInputBtn]}
+                    onPress={() => recordStep('right' as SideStep)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.inputLabel, isFastBeat && styles.fastInputLabel]}>RIGHT 👉</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          )}
+
+          {kickOffVisible && isCrossClap ? (
+            <Animated.View style={[styles.kickOffBanner, kickOffStyle]} pointerEvents="none">
+              <Text style={styles.kickOffText}>👏 CROSS CLAP!</Text>
+            </Animated.View>
+          ) : null}
+          {kickOffVisible && isShoulderTap ? (
+            <Animated.View style={[styles.kickOffBanner, styles.shoulderKickOff, kickOffStyle]} pointerEvents="none">
+              <Text style={[styles.kickOffText, styles.shoulderKickOffText]}>👆 SHOULDER TAP!</Text>
+            </Animated.View>
+          ) : null}
+          {kickOffVisible && isBeatMirror ? (
+            <Animated.View style={[styles.kickOffBanner, styles.mirrorKickOff, kickOffStyle]} pointerEvents="none">
+              <Text style={[styles.kickOffText, styles.mirrorKickOffText]}>🎵 BEAT MIRROR!</Text>
+            </Animated.View>
+          ) : null}
+          {kickOffVisible && isRhythmRecall ? (
+            <Animated.View style={[styles.kickOffBanner, styles.recallKickOff, kickOffStyle]} pointerEvents="none">
+              <Text style={[styles.kickOffText, styles.recallKickOffText]}>🧠 RHYTHM RECALL!</Text>
+            </Animated.View>
+          ) : null}
+          {kickOffVisible && isFastBeat ? (
+            <Animated.View style={[styles.kickOffBanner, styles.fastKickOff, kickOffStyle]} pointerEvents="none">
+              <Text style={[styles.kickOffText, styles.fastKickOffText]}>⚡ FAST BEAT!</Text>
+            </Animated.View>
+          ) : null}
+
+          <SparkleBurst
+            key={sparkleKey}
+            visible={sparkleKey > 0}
+            color={T.sparkleColor}
+            count={isThemedRhythm ? 16 : 10}
+            size={isThemedRhythm ? 8 : 6}
+          />
+          {isCrossClap && <ResultToast text="CLAP!" type="ok" show={successToast} />}
+          {isShoulderTap && <ResultToast text="TAP!" type="ok" show={successToast} />}
+          {isBeatMirror && <ResultToast text="BEAT!" type="ok" show={successToast} />}
+          {isRhythmRecall && <ResultToast text="RECALL!" type="ok" show={successToast} />}
+          {isFastBeat && <ResultToast text="FAST!" type="ok" show={successToast} />}
         </View>
+      </Animated.View>
 
-        {canInput && (
-          <View style={styles.inputRow}>
-            {mode === 'clapCross' && (
-              <>
-                <TouchableOpacity style={styles.inputBtn} onPress={() => recordStep('left' as ClapStep)} activeOpacity={0.85}>
-                  <Text style={styles.inputLabel}>👏 LEFT</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.inputBtn} onPress={() => recordStep('right' as ClapStep)} activeOpacity={0.85}>
-                  <Text style={styles.inputLabel}>RIGHT 👏</Text>
-                </TouchableOpacity>
-              </>
-            )}
-            {mode === 'shoulderCross' && (
-              <>
-                <TouchableOpacity style={styles.inputBtn} onPress={() => recordStep('right-to-left' as ShoulderStep)} activeOpacity={0.85}>
-                  <Text style={styles.inputLabel}>👉 → 🫲</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.inputBtn} onPress={() => recordStep('left-to-right' as ShoulderStep)} activeOpacity={0.85}>
-                  <Text style={styles.inputLabel}>👈 → 🫱</Text>
-                </TouchableOpacity>
-              </>
-            )}
-            {mode === 'musicBeat' && (
-              <>
-                <TouchableOpacity style={styles.inputBtn} onPress={() => recordStep('left-hand' as MusicStep)} activeOpacity={0.85}>
-                  <Text style={styles.inputLabel}>👈</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.inputBtn} onPress={() => recordStep('both-hands' as MusicStep)} activeOpacity={0.85}>
-                  <Text style={styles.inputLabel}>🙌</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.inputBtn} onPress={() => recordStep('right-hand' as MusicStep)} activeOpacity={0.85}>
-                  <Text style={styles.inputLabel}>👉</Text>
-                </TouchableOpacity>
-              </>
-            )}
-            {(mode === 'memory' || mode === 'speed') && (
-              <>
-                <TouchableOpacity style={styles.inputBtn} onPress={() => recordStep('left' as SideStep)} activeOpacity={0.85}>
-                  <Text style={styles.inputLabel}>👈 LEFT</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.inputBtn} onPress={() => recordStep('right' as SideStep)} activeOpacity={0.85}>
-                  <Text style={styles.inputLabel}>RIGHT 👉</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        )}
-
-        <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
-      </View>
+      {warnVisible && isCrossClap && (
+        <View style={styles.clapWarnPill}>
+          <Text style={styles.clapWarnText}>{warnMessage}</Text>
+        </View>
+      )}
+      {warnVisible && isShoulderTap && (
+        <View style={styles.shoulderWarnPill}>
+          <Text style={styles.shoulderWarnText}>{warnMessage}</Text>
+        </View>
+      )}
+      {warnVisible && isBeatMirror && (
+        <View style={styles.mirrorWarnPill}>
+          <Text style={styles.mirrorWarnText}>{warnMessage}</Text>
+        </View>
+      )}
+      {warnVisible && isRhythmRecall && (
+        <View style={styles.recallWarnPill}>
+          <Text style={styles.recallWarnText}>{warnMessage}</Text>
+        </View>
+      )}
+      {warnVisible && isFastBeat && (
+        <View style={styles.fastWarnPill}>
+          <Text style={styles.fastWarnText}>{warnMessage}</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -653,17 +995,140 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  roundTrack: {
+    width: '70%',
+    height: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 6,
+    backgroundColor: 'rgba(12,25,41,0.55)',
+  },
+  clapRoundTrack: { backgroundColor: 'rgba(12,25,41,0.55)' },
+  shoulderRoundTrack: { backgroundColor: 'rgba(5,46,22,0.55)' },
+  mirrorRoundTrack: { backgroundColor: 'rgba(46,16,101,0.55)' },
+  recallRoundTrack: { backgroundColor: 'rgba(66,32,6,0.55)' },
+  fastRoundTrack: { backgroundColor: 'rgba(69,10,10,0.55)' },
+  roundFill: { height: '100%', borderRadius: 6 },
+  headerDeco: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  decoEmoji: { fontSize: 20 },
+  decoArrow: { fontSize: 18, fontWeight: '900' },
+  playAreaWrap: { flex: 1 },
   playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  playAreaThemed: { borderWidth: 2, overflow: 'hidden' },
   rememberText: { position: 'absolute', top: 24, fontSize: 22, fontWeight: '900' },
-  shoulderRow: { position: 'absolute', top: 48, flexDirection: 'row', width: '80%', justifyContent: 'space-between' },
+  rememberTextThemed: { position: 'absolute', top: 24, fontSize: 22, fontWeight: '900', zIndex: 5 },
+  shoulderRow: { position: 'absolute', top: 48, flexDirection: 'row', width: '80%', justifyContent: 'space-between', zIndex: 5 },
+  shoulderRowThemed: { top: 56 },
   shoulder: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.8)', alignItems: 'center', justifyContent: 'center' },
+  shoulderThemed: {
+    backgroundColor: 'rgba(5,46,22,0.75)',
+    borderWidth: 2,
+    borderColor: 'rgba(74,222,128,0.45)',
+    shadowColor: '#4ADE80',
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+  },
   shoulderEmoji: { fontSize: 28 },
   handsRow: { flexDirection: 'row', gap: 40, marginBottom: 24 },
   hand: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.7)' },
+  clapHand: { zIndex: 5, borderColor: 'rgba(191,219,254,0.55)', shadowColor: '#60A5FA', shadowOpacity: 0.35, shadowRadius: 8, elevation: 4 },
+  shoulderHand: { zIndex: 5, borderColor: 'rgba(187,247,208,0.55)', shadowColor: '#4ADE80', shadowOpacity: 0.35, shadowRadius: 8, elevation: 4 },
+  mirrorHand: { zIndex: 5, borderColor: 'rgba(221,214,254,0.55)', shadowColor: '#A78BFA', shadowOpacity: 0.35, shadowRadius: 8, elevation: 4 },
+  recallHand: { zIndex: 5, borderColor: 'rgba(253,230,138,0.55)', shadowColor: '#FBBF24', shadowOpacity: 0.35, shadowRadius: 8, elevation: 4 },
+  fastHand: { zIndex: 5, borderColor: 'rgba(254,202,202,0.55)', shadowColor: '#EF4444', shadowOpacity: 0.35, shadowRadius: 8, elevation: 4 },
   handEmoji: { fontSize: 40 },
-  inputRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, paddingHorizontal: 12 },
+  inputRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, paddingHorizontal: 12, zIndex: 5 },
   inputBtn: { backgroundColor: 'rgba(255,255,255,0.85)', paddingHorizontal: 18, paddingVertical: 12, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(148,163,184,0.35)' },
+  clapInputBtn: { backgroundColor: 'rgba(12,25,41,0.85)', borderColor: 'rgba(96,165,250,0.45)' },
   inputLabel: { fontWeight: '800', fontSize: 14, color: '#334155' },
+  clapInputLabel: { color: '#BFDBFE' },
+  shoulderInputBtn: { backgroundColor: 'rgba(5,46,22,0.85)', borderColor: 'rgba(74,222,128,0.45)' },
+  shoulderInputLabel: { color: '#BBF7D0' },
+  mirrorInputBtn: { backgroundColor: 'rgba(46,16,101,0.85)', borderColor: 'rgba(139,92,246,0.45)' },
+  mirrorInputBtnBoth: { backgroundColor: 'rgba(46,16,101,0.85)', borderColor: 'rgba(244,114,182,0.45)' },
+  mirrorInputLabel: { color: '#DDD6FE', fontSize: 18 },
+  recallInputBtn: { backgroundColor: 'rgba(66,32,6,0.85)', borderColor: 'rgba(251,191,36,0.45)' },
+  recallInputLabel: { color: '#FDE68A' },
+  fastInputBtn: { backgroundColor: 'rgba(69,10,10,0.85)', borderColor: 'rgba(239,68,68,0.45)' },
+  fastInputLabel: { color: '#FECACA' },
+  kickOffBanner: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: '8%',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    backgroundColor: 'rgba(12,25,41,0.92)',
+    borderWidth: 2,
+    borderColor: '#60A5FA',
+    zIndex: 6,
+  },
+  kickOffText: { fontSize: 22, fontWeight: '900', color: '#BFDBFE', letterSpacing: 1 },
+  clapWarnPill: {
+    alignSelf: 'center',
+    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: 'rgba(12,25,41,0.92)',
+    borderWidth: 1,
+    borderColor: '#60A5FA',
+  },
+  clapWarnText: { fontSize: 14, fontWeight: '800', color: '#BFDBFE', textAlign: 'center' },
+  shoulderKickOff: { backgroundColor: 'rgba(5,46,22,0.92)', borderColor: '#4ADE80' },
+  shoulderKickOffText: { color: '#BBF7D0' },
+  shoulderWarnPill: {
+    alignSelf: 'center',
+    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: 'rgba(5,46,22,0.92)',
+    borderWidth: 1,
+    borderColor: '#4ADE80',
+  },
+  shoulderWarnText: { fontSize: 14, fontWeight: '800', color: '#BBF7D0', textAlign: 'center' },
+  mirrorKickOff: { backgroundColor: 'rgba(46,16,101,0.92)', borderColor: '#A78BFA' },
+  mirrorKickOffText: { color: '#DDD6FE' },
+  mirrorWarnPill: {
+    alignSelf: 'center',
+    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: 'rgba(46,16,101,0.92)',
+    borderWidth: 1,
+    borderColor: '#A78BFA',
+  },
+  mirrorWarnText: { fontSize: 14, fontWeight: '800', color: '#DDD6FE', textAlign: 'center' },
+  recallKickOff: { backgroundColor: 'rgba(66,32,6,0.92)', borderColor: '#FBBF24' },
+  recallKickOffText: { color: '#FDE68A' },
+  recallWarnPill: {
+    alignSelf: 'center',
+    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: 'rgba(66,32,6,0.92)',
+    borderWidth: 1,
+    borderColor: '#FBBF24',
+  },
+  recallWarnText: { fontSize: 14, fontWeight: '800', color: '#FDE68A', textAlign: 'center' },
+  fastKickOff: { backgroundColor: 'rgba(69,10,10,0.92)', borderColor: '#EF4444' },
+  fastKickOffText: { color: '#FECACA' },
+  fastWarnPill: {
+    alignSelf: 'center',
+    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: 'rgba(69,10,10,0.92)',
+    borderWidth: 1,
+    borderColor: '#EF4444',
+  },
+  fastWarnText: { fontSize: 14, fontWeight: '800', color: '#FECACA', textAlign: 'center' },
 });
 
 export default RhythmPatternGame;

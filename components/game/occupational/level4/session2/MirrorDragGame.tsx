@@ -1,5 +1,6 @@
-/** OT Level 4 · Session 2 · Game 3 — Mirror Drag · Theme: "Cross Reach" */
+/** OT Level 4 · Session 2 · Game 4 — Mirror Drag · Theme: "Cross Reach" · Mirror Studio */
 import { ReverseHorizontalDragGame } from '@/components/game/occupational/level4/session2/ReverseHorizontalDragGame';
+import { CROSS_REACH_THEME as C } from '@/components/game/occupational/level4/session2/session2Theme';
 import React from 'react';
 
 const MirrorDragGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,19 +8,32 @@ const MirrorDragGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
     {...props}
     mode="mirrorDrag"
     theme={{
-      title: 'Cross Reach', subtitle: 'Use your right hand to drag to the left', emoji: '👋',
-      gradient: ['#ECFDF5', '#D1FAE5', '#6EE7B7', '#10B981'],
-      accent: '#10B981', accentDark: '#047857', draggableEmoji: '👉', targetEmoji: '🎯',
-      backText: '#065F46', backBorder: 'rgba(16,185,129,0.25)',
-      titleColor: '#064E3B', subtitleColor: '#059669', statLabel: '#10B981', statValue: '#064E3B',
-      statBorder: 'rgba(16,185,129,0.2)', playBorder: 'rgba(16,185,129,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#10B981', zoneBorder: 'rgba(16,185,129,0.45)',
+      title: C.title,
+      subtitle: C.subtitle,
+      emoji: C.emoji,
+      gradient: C.gradient,
+      accent: C.accent,
+      accentDark: C.accentDark,
+      draggableEmoji: C.draggableEmoji,
+      targetEmoji: C.targetEmoji,
+      backText: '#E0F2FE',
+      backBorder: 'rgba(56,189,248,0.38)',
+      titleColor: '#F0F9FF',
+      subtitleColor: 'rgba(186,230,253,0.9)',
+      statLabel: 'rgba(186,230,253,0.75)',
+      statValue: '#FFFFFF',
+      statBorder: 'rgba(56,189,248,0.32)',
+      playBorder: C.playBorder,
+      playBg: C.playBg,
+      sparkleColor: C.sparkleColor,
+      zoneBorder: C.zoneBorder,
     }}
-    ttsIntro="Use your right hand to drag from right to the left target!"
-    ttsComplete="Perfect cross-body reaching!"
-    ttsDrag="Reach across to the left target!"
-    ttsMiss="Drag to the left target!"
-    congratsMessage="Cross Reach Pro!"
+    ttsIntro={C.voiceIntro}
+    ttsComplete={C.voiceComplete}
+    ttsDrag={C.voiceDrag}
+    ttsMiss={C.voiceMiss}
+    ttsGoal={C.voiceReached}
+    congratsMessage={C.congrats}
     logType="mirror-drag"
     skillTags={['brain-hand-sync', 'drag-right-left']}
   />

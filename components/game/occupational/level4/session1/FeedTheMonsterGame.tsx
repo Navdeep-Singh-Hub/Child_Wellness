@@ -1,5 +1,6 @@
-/** OT Level 4 · Session 1 · Game 2 — Feed the Monster · Theme: "Monster Feed" */
+/** OT Level 4 · Session 1 · Game 2 — Feed the Monster · Theme: "Monster Munch" */
 import { HorizontalDragGame } from '@/components/game/occupational/level4/session1/HorizontalDragGame';
+import { MONSTER_FEED_THEME as M } from '@/components/game/occupational/level4/session1/session1Theme';
 import React from 'react';
 
 const FeedTheMonsterGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,18 +8,32 @@ const FeedTheMonsterGame: React.FC<{ onBack?: () => void; onComplete?: () => voi
     {...props}
     mode="feedMonster"
     theme={{
-      title: 'Monster Feed', subtitle: 'Drag food to the hungry monster', emoji: '👹',
-      gradient: ['#FFFBEB', '#FEF3C7', '#FCD34D', '#F59E0B'],
-      accent: '#F59E0B', accentDark: '#B45309', draggableEmoji: '🍎', targetEmoji: '👹',
-      backText: '#92400E', backBorder: 'rgba(245,158,11,0.25)',
-      titleColor: '#78350F', subtitleColor: '#D97706', statLabel: '#F59E0B', statValue: '#78350F',
-      statBorder: 'rgba(245,158,11,0.2)', playBorder: 'rgba(245,158,11,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#F59E0B', zoneBorder: 'rgba(245,158,11,0.45)',
+      title: M.title,
+      subtitle: M.subtitle,
+      emoji: M.emoji,
+      gradient: M.gradient,
+      accent: M.accent,
+      accentDark: M.accentDark,
+      draggableEmoji: M.draggableEmoji,
+      targetEmoji: M.targetEmoji,
+      backText: '#FDF4FF',
+      backBorder: 'rgba(244,114,182,0.35)',
+      titleColor: '#FAF5FF',
+      subtitleColor: 'rgba(233,213,255,0.9)',
+      statLabel: 'rgba(233,213,255,0.75)',
+      statValue: '#FFFFFF',
+      statBorder: 'rgba(244,114,182,0.3)',
+      playBorder: M.playBorder,
+      playBg: M.playBg,
+      sparkleColor: M.sparkleColor,
+      zoneBorder: M.zoneBorder,
     }}
-    ttsIntro="Drag the food from left to feed the monster on the right!"
-    ttsComplete="Monster is full!"
-    ttsDrag="Feed the monster!"
-    congratsMessage="Monster Feed Hero!"
+    ttsIntro={M.voiceIntro}
+    ttsComplete={M.voiceComplete}
+    ttsDrag={M.voiceDrag}
+    ttsMiss={M.voiceMiss}
+    ttsGoal={M.voiceYum}
+    congratsMessage={M.congrats}
     logType="feed-monster"
     skillTags={['direction-control', 'arm-coordination', 'drag-left-right']}
   />

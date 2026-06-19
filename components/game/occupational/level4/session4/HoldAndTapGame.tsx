@@ -1,10 +1,12 @@
 /**
- * Hold one hand, tap with the other — OT Level 4 Session 4.
+ * Hold one hand, tap with the other — OT Level 4 Session 4 · Game 5.
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
-import { SparkleBurst } from '@/components/game/FX';
+import { ResultToast, SparkleBurst } from '@/components/game/FX';
+import { HoldHitPlayArea } from '@/components/game/occupational/level4/session4/HoldHitPlayArea';
 import { useTraceSound } from '@/components/game/occupational/level4/session4/dualTapUtils';
 import { SESSION4_4_PACING } from '@/components/game/occupational/level4/session4/session4Pacing';
+import { HOLD_HIT_THEME as T } from '@/components/game/occupational/level4/session4/session4Theme';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { speak as speakTTS } from '@/utils/tts';
@@ -27,25 +29,6 @@ const P = SESSION4_4_PACING;
 const SUCCESS = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const STAR = require('@/assets/icons/star.png');
 
-const THEME = {
-  title: 'Hold & Hit',
-  subtitle: 'Hold with one hand, tap with the other',
-  emoji: '🤲',
-  gradient: ['#ECFDF5', '#D1FAE5', '#6EE7B7', '#10B981'] as [string, string, string, string],
-  accent: '#10B981',
-  accentDark: '#047857',
-  backText: '#065F46',
-  backBorder: 'rgba(16,185,129,0.25)',
-  titleColor: '#064E3B',
-  subtitleColor: '#059669',
-  statLabel: '#10B981',
-  statValue: '#064E3B',
-  statBorder: 'rgba(16,185,129,0.2)',
-  playBorder: 'rgba(16,185,129,0.25)',
-  playBg: 'rgba(255,255,255,0.35)',
-  sparkleColor: '#10B981',
-};
-
 const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({
   onBack,
   onComplete,
@@ -64,6 +47,10 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
   const [holdProgress, setHoldProgress] = useState(0);
   const [tapCount, setTapCount] = useState(0);
   const [isHolding, setIsHolding] = useState(false);
+  const [successToast, setSuccessToast] = useState(false);
+  const [kickOffVisible, setKickOffVisible] = useState(false);
+  const [hitKey, setHitKey] = useState(0);
+  const [warnVisible, setWarnVisible] = useState(false);
 
   const doneRef = useRef(false);
   const scoreRef = useRef(0);
@@ -73,9 +60,13 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
   const holdProgressRef = useRef(0);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const kickOffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const holdScale = useSharedValue(1);
   const tapScale = useSharedValue(1);
+  const kickOffOpacity = useSharedValue(0);
+  const playShake = useSharedValue(0);
 
   useEffect(() => {
     scoreRef.current = score;
@@ -92,6 +83,13 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
 
   const holdStyle = useAnimatedStyle(() => ({ transform: [{ scale: holdScale.value }] }));
   const tapStyle = useAnimatedStyle(() => ({ transform: [{ scale: tapScale.value }] }));
+  const kickOffStyle = useAnimatedStyle(() => ({
+    opacity: kickOffOpacity.value,
+    transform: [{ scale: 0.9 + kickOffOpacity.value * 0.1 }],
+  }));
+  const playShakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: playShake.value }],
+  }));
 
   const clearTimers = useCallback(() => {
     if (roundTimerRef.current) {
@@ -102,9 +100,19 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
       clearInterval(progressTimerRef.current);
       progressTimerRef.current = null;
     }
+    if (kickOffTimerRef.current) {
+      clearTimeout(kickOffTimerRef.current);
+      kickOffTimerRef.current = null;
+    }
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
     cancelAnimation(holdScale);
     cancelAnimation(tapScale);
-  }, [holdScale, tapScale]);
+    cancelAnimation(kickOffOpacity);
+    cancelAnimation(playShake);
+  }, [holdScale, kickOffOpacity, playShake, tapScale]);
 
   const endGame = useCallback(
     (finalScore: number) => {
@@ -115,7 +123,7 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
       doneRef.current = true;
       clearTimers();
       setShowCongratulations(true);
-      speakTTS('Amazing hand independence!', 0.78);
+      speakTTS(T.voiceComplete, 0.78);
       recordGame(xp)
         .then(() =>
           logGameAndAward({
@@ -139,6 +147,8 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
     setIsHolding(false);
     isHoldingRef.current = false;
     roundCompleteRef.current = false;
+    setSuccessToast(false);
+    setWarnVisible(false);
     if (roundRef.current >= P.rounds) {
       endGame(scoreRef.current);
       return;
@@ -146,24 +156,32 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
     roundTimerRef.current = setTimeout(() => setRound((r) => r + 1), P.nextRoundDelayMs);
   }, [clearTimers, endGame]);
 
-  const resetRound = useCallback((side: 'left' | 'right') => {
-    setHoldProgress(0);
-    holdProgressRef.current = 0;
-    setTapCount(0);
-    setIsHolding(false);
-    isHoldingRef.current = false;
-    setHoldSide(side);
-    holdScale.value = withSpring(1);
-    tapScale.value = withSpring(1);
-  }, [holdScale, tapScale]);
+  const resetRound = useCallback(
+    (side: 'left' | 'right') => {
+      setHoldProgress(0);
+      holdProgressRef.current = 0;
+      setTapCount(0);
+      setIsHolding(false);
+      isHoldingRef.current = false;
+      setHoldSide(side);
+      setSuccessToast(false);
+      setWarnVisible(false);
+      holdScale.value = withSpring(1);
+      tapScale.value = withSpring(1);
+    },
+    [holdScale, tapScale],
+  );
 
   const completeRound = useCallback(() => {
     if (roundCompleteRef.current || doneRef.current) return;
     roundCompleteRef.current = true;
     setSparkleKey(Date.now());
+    setSuccessToast(true);
+    setHitKey(Date.now());
+    toastTimerRef.current = setTimeout(() => setSuccessToast(false), 900);
     playSuccess();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    speakTTS('Perfect hand independence!', 0.78).catch(() => {});
+    speakTTS(T.voiceSuccess, 0.78).catch(() => {});
     setScore((s) => {
       scoreRef.current = s + 1;
       return s + 1;
@@ -178,14 +196,18 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
     setRoundActive(true);
     const side: 'left' | 'right' = Math.random() < 0.5 ? 'left' : 'right';
     resetRound(side);
-    speakTTS(
-      side === 'left' ? 'Hold with your left hand, tap with your right!' : 'Hold with your right hand, tap with your left!',
-      0.78,
-    ).catch(() => {});
-  }, [resetRound]);
+    setKickOffVisible(true);
+    kickOffOpacity.value = withSequence(
+      withTiming(1, { duration: 200 }),
+      withTiming(1, { duration: 700 }),
+      withTiming(0, { duration: 350 }),
+    );
+    kickOffTimerRef.current = setTimeout(() => setKickOffVisible(false), 1300);
+    speakTTS(side === 'left' ? T.voiceHoldLeft : T.voiceHoldRight, 0.78).catch(() => {});
+  }, [kickOffOpacity, resetRound]);
 
   useEffect(() => {
-    if (round === 1) speakTTS('Hold with one hand and tap with the other!', 0.78);
+    if (round === 1) speakTTS(T.voiceIntro, 0.78);
     clearTimers();
     setRoundActive(false);
     roundTimerRef.current = setTimeout(() => startRoundPlay(), P.roundStartDelayMs);
@@ -205,6 +227,7 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
     if (!roundActive || doneRef.current || isHoldingRef.current) return;
     setIsHolding(true);
     isHoldingRef.current = true;
+    setWarnVisible(false);
     holdScale.value = withSpring(1.12);
     let progress = 0;
     progressTimerRef.current = setInterval(() => {
@@ -213,7 +236,7 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
       setHoldProgress(progress);
       if (progress >= P.holdDurationMs) {
         if (progressTimerRef.current) clearInterval(progressTimerRef.current);
-        speakTTS('Now tap!', 0.78).catch(() => {});
+        speakTTS(T.voiceNowTap, 0.78).catch(() => {});
       }
     }, P.holdTickMs);
   }, [holdScale, roundActive]);
@@ -229,8 +252,16 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
       clearInterval(progressTimerRef.current);
       progressTimerRef.current = null;
     }
-    speakTTS('Keep holding!', 0.78).catch(() => {});
-  }, [holdScale]);
+    setWarnVisible(true);
+    playShake.value = withSequence(
+      withTiming(-8, { duration: 50 }),
+      withTiming(8, { duration: 50 }),
+      withTiming(-6, { duration: 50 }),
+      withTiming(0, { duration: 50 }),
+    );
+    toastTimerRef.current = setTimeout(() => setWarnVisible(false), 1200);
+    speakTTS(T.voiceKeepHolding, 0.78).catch(() => {});
+  }, [holdScale, playShake]);
 
   const handleTap = useCallback(() => {
     if (!roundActive || !isHoldingRef.current || holdProgressRef.current < P.holdDurationMs) return;
@@ -246,7 +277,7 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
   if (showCongratulations && done && finalStats) {
     return (
       <CongratulationsScreen
-        message="Hold & Hit Hero!"
+        message={T.congrats}
         showButtons
         correct={finalStats.correct}
         total={finalStats.total}
@@ -266,9 +297,35 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
   }
   if (done && finalStats && !showCongratulations) return null;
 
-  const T = THEME;
   const holdPct = Math.min(100, (holdProgress / P.holdDurationMs) * 100);
   const canTap = isHolding && holdProgress >= P.holdDurationMs;
+  const roundPct = (round / P.rounds) * 100;
+  const showGuide = round <= 2;
+
+  const renderHoldBtn = () => (
+    <TouchableOpacity onPressIn={handleHoldStart} onPressOut={handleHoldEnd} activeOpacity={0.85}>
+      <Animated.View style={[styles.holdBtn, holdStyle]}>
+        <LinearGradient colors={['#14B8A6', '#0D9488', '#0F766E']} style={styles.btnGradient}>
+          <Text style={styles.btnEmoji}>{holdSide === 'left' ? '👈' : '👉'}</Text>
+          <Text style={styles.btnLabel}>ANCHOR</Text>
+        </LinearGradient>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+
+  const renderTapBtn = () => (
+    <TouchableOpacity onPress={handleTap} activeOpacity={0.85} disabled={!canTap}>
+      <Animated.View style={[styles.tapBtn, tapStyle, !canTap && styles.disabled]}>
+        <LinearGradient
+          colors={canTap ? ['#FCD34D', '#F59E0B', '#D97706'] : ['#57534E', '#44403C', '#292524']}
+          style={styles.btnGradient}
+        >
+          <Text style={styles.btnEmoji}>{holdSide === 'left' ? '👉' : '👈'}</Text>
+          <Text style={styles.btnLabel}>STRIKE</Text>
+        </LinearGradient>
+      </Animated.View>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -306,9 +363,12 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
         </View>
         {roundActive && (
           <Text style={[styles.hint, { color: T.accentDark }]}>
-            {holdSide === 'left' ? 'Hold LEFT · Tap RIGHT' : 'Hold RIGHT · Tap LEFT'}
+            {holdSide === 'left' ? '⚓ Hold LEFT · ⚡ Strike RIGHT' : '⚡ Strike LEFT · ⚓ Hold RIGHT'}
           </Text>
         )}
+        <View style={[styles.roundTrack, { borderColor: T.accent }]}>
+          <View style={[styles.roundFill, { width: `${roundPct}%`, backgroundColor: T.accent }]} />
+        </View>
         {isHolding && (
           <View style={[styles.progressTrack, { borderColor: T.accent }]}>
             <View style={[styles.progressFill, { width: `${holdPct}%`, backgroundColor: T.accent }]} />
@@ -316,52 +376,64 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
         )}
         {roundActive && (
           <Text style={[styles.tapCount, { color: T.accentDark }]}>
-            Taps: {tapCount}/{P.targetTaps}
+            Strikes: {tapCount}/{P.targetTaps}
           </Text>
         )}
+        <View style={styles.headerDeco}>
+          <Text style={styles.decoHand}>🤲</Text>
+          <Text style={[styles.decoPulse, { color: T.accent }]}>⚡</Text>
+          <Text style={styles.decoHand}>🤲</Text>
+        </View>
       </View>
 
-      <View style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}>
-        {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
+      <Animated.View style={[styles.playAreaWrap, playShakeStyle]}>
+        <View style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}>
+          {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
 
-        {roundActive && (
-          <View style={styles.handsRow}>
-            {holdSide === 'left' ? (
-              <>
-                <TouchableOpacity onPressIn={handleHoldStart} onPressOut={handleHoldEnd} activeOpacity={0.85}>
-                  <Animated.View style={[styles.holdBtn, styles.holdBlue, holdStyle]}>
-                    <Text style={styles.btnEmoji}>👈</Text>
-                    <Text style={styles.btnLabel}>HOLD</Text>
-                  </Animated.View>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleTap} activeOpacity={0.85} disabled={!canTap}>
-                  <Animated.View style={[styles.tapBtn, styles.tapGold, tapStyle, !canTap && styles.disabled]}>
-                    <Text style={styles.btnEmoji}>👉</Text>
-                    <Text style={styles.btnLabel}>TAP</Text>
-                  </Animated.View>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <TouchableOpacity onPress={handleTap} activeOpacity={0.85} disabled={!canTap}>
-                  <Animated.View style={[styles.tapBtn, styles.tapGreen, tapStyle, !canTap && styles.disabled]}>
-                    <Text style={styles.btnEmoji}>👈</Text>
-                    <Text style={styles.btnLabel}>TAP</Text>
-                  </Animated.View>
-                </TouchableOpacity>
-                <TouchableOpacity onPressIn={handleHoldStart} onPressOut={handleHoldEnd} activeOpacity={0.85}>
-                  <Animated.View style={[styles.holdBtn, styles.holdRed, holdStyle]}>
-                    <Text style={styles.btnEmoji}>👉</Text>
-                    <Text style={styles.btnLabel}>HOLD</Text>
-                  </Animated.View>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        )}
+          <HoldHitPlayArea
+            roundActive={roundActive}
+            showGuide={showGuide}
+            holdSide={holdSide}
+            isHolding={isHolding}
+            holdPct={holdPct}
+            canTap={canTap}
+            tapCount={tapCount}
+            targetTaps={P.targetTaps}
+            hitKey={hitKey}
+          />
 
-        <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
-      </View>
+          {roundActive && (
+            <View style={styles.handsRow}>
+              {holdSide === 'left' ? (
+                <>
+                  {renderHoldBtn()}
+                  {renderTapBtn()}
+                </>
+              ) : (
+                <>
+                  {renderTapBtn()}
+                  {renderHoldBtn()}
+                </>
+              )}
+            </View>
+          )}
+
+          {kickOffVisible ? (
+            <Animated.View style={[styles.kickOffBanner, kickOffStyle]} pointerEvents="none">
+              <Text style={styles.kickOffText}>🤲 SPLIT HAND!</Text>
+            </Animated.View>
+          ) : null}
+
+          <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} count={16} size={8} />
+          <ResultToast text="HIT!" type="ok" show={successToast} />
+        </View>
+      </Animated.View>
+
+      {warnVisible && (
+        <View style={styles.warnPill}>
+          <Text style={styles.warnText}>{T.voiceKeepHolding}</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -369,49 +441,84 @@ const HoldAndTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
 const styles = StyleSheet.create({
   container: { flex: 1 },
   backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
-  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.75)', borderRadius: 24, borderWidth: 1 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(12,26,31,0.75)', borderRadius: 24, borderWidth: 1 },
   backText: { fontWeight: '800', fontSize: 14 },
   header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
   title: { fontSize: 28, fontWeight: '900' },
   subtitle: { fontSize: 14, fontWeight: '600', marginTop: 4, marginBottom: 8, textAlign: 'center' },
-  hint: { fontSize: 15, fontWeight: '800', marginBottom: 6 },
-  tapCount: { fontSize: 14, fontWeight: '800', marginBottom: 8 },
+  hint: { fontSize: 15, fontWeight: '800', marginBottom: 6, textAlign: 'center' },
+  tapCount: { fontSize: 14, fontWeight: '800', marginBottom: 6 },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
-  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.7)', borderWidth: 1, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
-  starPill: { backgroundColor: 'rgba(251,191,36,0.2)' },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(12,26,31,0.55)', borderWidth: 1, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  starPill: { backgroundColor: 'rgba(251,191,36,0.15)' },
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
-  progressTrack: { width: '70%', height: 8, borderRadius: 8, borderWidth: 1, overflow: 'hidden', marginBottom: 8, backgroundColor: 'rgba(255,255,255,0.5)' },
+  roundTrack: { width: '70%', height: 8, borderRadius: 6, borderWidth: 1, overflow: 'hidden', marginBottom: 6, backgroundColor: 'rgba(12,26,31,0.45)' },
+  roundFill: { height: '100%', borderRadius: 6 },
+  progressTrack: { width: '70%', height: 10, borderRadius: 8, borderWidth: 1, overflow: 'hidden', marginBottom: 8, backgroundColor: 'rgba(12,26,31,0.45)' },
   progressFill: { height: '100%', borderRadius: 8 },
-  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, justifyContent: 'center' },
+  headerDeco: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2, marginBottom: 4 },
+  decoHand: { fontSize: 16 },
+  decoPulse: { fontSize: 14, fontWeight: '900' },
+  playAreaWrap: { flex: 1 },
+  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, justifyContent: 'center', overflow: 'hidden' },
   waitText: { position: 'absolute', alignSelf: 'center', top: '45%', fontSize: 18, fontWeight: '700' },
-  handsRow: { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 24 },
+  handsRow: { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 24, zIndex: 2 },
   holdBtn: {
     width: 118,
     height: 118,
     borderRadius: 59,
+    overflow: 'hidden',
     borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.7)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: T.anchorGlow,
+    shadowColor: T.anchorGlow,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  holdBlue: { backgroundColor: '#3B82F6' },
-  holdRed: { backgroundColor: '#EF4444' },
   tapBtn: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    overflow: 'hidden',
     borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.7)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: T.strikeGlow,
+    shadowColor: T.strikeGlow,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 6,
   },
-  tapGold: { backgroundColor: '#F59E0B' },
-  tapGreen: { backgroundColor: '#10B981' },
-  disabled: { opacity: 0.45 },
-  btnEmoji: { fontSize: 40, marginBottom: 4 },
-  btnLabel: { fontSize: 11, fontWeight: '800', color: '#fff' },
+  btnGradient: { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', borderRadius: 59 },
+  disabled: { opacity: 0.5, borderColor: 'rgba(148,163,184,0.4)' },
+  btnEmoji: { fontSize: 36, marginBottom: 4 },
+  btnLabel: { fontSize: 10, fontWeight: '900', color: '#fff', letterSpacing: 1.2 },
+  kickOffBanner: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: '16%',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    backgroundColor: 'rgba(12,26,31,0.9)',
+    borderWidth: 2,
+    borderColor: T.anchorGlow,
+    zIndex: 3,
+  },
+  kickOffText: { fontSize: 22, fontWeight: '900', color: T.anchorGlow, letterSpacing: 1 },
+  warnPill: {
+    alignSelf: 'center',
+    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: 'rgba(15,23,42,0.92)',
+    borderWidth: 1,
+    borderColor: T.strikeGlow,
+  },
+  warnText: { fontSize: 14, fontWeight: '800', color: T.accentDark, textAlign: 'center' },
 });
 
 export default HoldAndTapGame;

@@ -2,14 +2,14 @@
  * Cross-body arrow sequence core for OT Level 4 Session 7.
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
-import { SparkleBurst } from '@/components/game/FX';
+import { ResultToast, SparkleBurst } from '@/components/game/FX';
+import { ArrowChainPlayArea } from '@/components/game/occupational/level4/session7/ArrowChainPlayArea';
 import {
   ArrowDirection,
   Hand,
   arrowEmoji,
   crossBodyHand,
   handLabel,
-  randomDirection,
   useTraceSound,
 } from '@/components/game/occupational/level4/session7/arrowUtils';
 import { SESSION4_7_PACING } from '@/components/game/occupational/level4/session7/session7Pacing';
@@ -46,14 +46,24 @@ const SeqArrowSlot: React.FC<{
   emoji: string;
   active: boolean;
   accent: string;
-}> = ({ opacity, scale, left, emoji, active, accent }) => {
+  themed?: boolean;
+}> = ({ opacity, scale, left, emoji, active, accent, themed }) => {
   const style = useAnimatedStyle(() => ({
     opacity: opacity.value,
     transform: [{ scale: scale.value }],
   }));
   return (
     <Animated.View
-      style={[styles.seqArrow, style, { left, borderColor: active ? accent : 'rgba(255,255,255,0.5)' }]}
+      style={[
+        styles.seqArrow,
+        themed && styles.chainSeqArrow,
+        style,
+        {
+          left,
+          borderColor: active ? accent : themed ? 'rgba(52,211,153,0.35)' : 'rgba(255,255,255,0.5)',
+        },
+        active && themed && styles.chainSeqArrowActive,
+      ]}
     >
       <Text style={styles.arrowEmoji}>{emoji}</Text>
     </Animated.View>
@@ -87,6 +97,7 @@ export type CrossBodySequenceGameConfig = {
   ttsComplete: string;
   ttsCue?: string;
   ttsSuccess?: string;
+  ttsWrong?: string;
   congratsMessage: string;
   logType: string;
   skillTags: string[];
@@ -100,6 +111,7 @@ export const CrossBodySequenceGame: React.FC<
   ttsComplete,
   ttsCue = 'Follow the arrow sequence!',
   ttsSuccess = 'Perfect sequence!',
+  ttsWrong = 'Wrong hand — watch the chain again!',
   congratsMessage,
   logType,
   skillTags,
@@ -122,6 +134,11 @@ export const CrossBodySequenceGame: React.FC<
   const [revealedCount, setRevealedCount] = useState(0);
   const [stepIndex, setStepIndex] = useState(0);
   const [inputReady, setInputReady] = useState(false);
+  const [successToast, setSuccessToast] = useState(false);
+  const [kickOffVisible, setKickOffVisible] = useState(false);
+  const [warnVisible, setWarnVisible] = useState(false);
+  const [warnMessage, setWarnMessage] = useState('Try again!');
+  const [chainKey, setChainKey] = useState(0);
 
   const doneRef = useRef(false);
   const scoreRef = useRef(0);
@@ -131,19 +148,26 @@ export const CrossBodySequenceGame: React.FC<
   const sequenceRef = useRef<SeqItem[]>([]);
   const stepRef = useRef(0);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const kickOffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const revealTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const playW = useRef(360);
 
   const leftScale = useSharedValue(1);
   const rightScale = useSharedValue(1);
+  const playShake = useSharedValue(0);
+  const kickOffOpacity = useSharedValue(0);
   const arrowOpacity0 = useSharedValue(0);
   const arrowOpacity1 = useSharedValue(0);
   const arrowOpacity2 = useSharedValue(0);
   const arrowScale0 = useSharedValue(0.5);
   const arrowScale1 = useSharedValue(0.5);
   const arrowScale2 = useSharedValue(0.5);
-  const arrowOpacities = [arrowOpacity0, arrowOpacity1, arrowOpacity2];
-  const arrowScales = [arrowScale0, arrowScale1, arrowScale2];
+  const arrowOpacitiesRef = useRef([arrowOpacity0, arrowOpacity1, arrowOpacity2]);
+  const arrowScalesRef = useRef([arrowScale0, arrowScale1, arrowScale2]);
+  const arrowOpacities = arrowOpacitiesRef.current;
+  const arrowScales = arrowScalesRef.current;
+  const startRoundPlayRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     scoreRef.current = score;
@@ -163,17 +187,34 @@ export const CrossBodySequenceGame: React.FC<
 
   const leftStyle = useAnimatedStyle(() => ({ transform: [{ scale: leftScale.value }] }));
   const rightStyle = useAnimatedStyle(() => ({ transform: [{ scale: rightScale.value }] }));
+  const playShakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: playShake.value }],
+  }));
+  const kickOffStyle = useAnimatedStyle(() => ({
+    opacity: kickOffOpacity.value,
+    transform: [{ scale: 0.9 + kickOffOpacity.value * 0.1 }],
+  }));
 
   const clearTimers = useCallback(() => {
     if (roundTimerRef.current) {
       clearTimeout(roundTimerRef.current);
       roundTimerRef.current = null;
     }
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+    if (kickOffTimerRef.current) {
+      clearTimeout(kickOffTimerRef.current);
+      kickOffTimerRef.current = null;
+    }
     revealTimersRef.current.forEach((t) => clearTimeout(t));
     revealTimersRef.current = [];
-    arrowOpacities.forEach((o) => cancelAnimation(o));
-    arrowScales.forEach((s) => cancelAnimation(s));
-  }, [arrowOpacities, arrowScales]);
+    arrowOpacitiesRef.current.forEach((o) => cancelAnimation(o));
+    arrowScalesRef.current.forEach((s) => cancelAnimation(s));
+    cancelAnimation(playShake);
+    cancelAnimation(kickOffOpacity);
+  }, [kickOffOpacity, playShake]);
 
   const endGame = useCallback(
     (finalScore: number) => {
@@ -219,8 +260,17 @@ export const CrossBodySequenceGame: React.FC<
       playWarn();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
       speakTTS(msg, 0.78).catch(() => {});
+      setWarnMessage(msg);
+      setWarnVisible(true);
+      playShake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-6, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+      toastTimerRef.current = setTimeout(() => setWarnVisible(false), 1200);
     },
-    [playWarn],
+    [playShake, playWarn],
   );
 
   const advanceRound = useCallback(() => {
@@ -241,54 +291,70 @@ export const CrossBodySequenceGame: React.FC<
     roundCompleteRef.current = true;
     setInputReady(false);
     bumpScore();
+    setSuccessToast(true);
+    setChainKey(Date.now());
+    toastTimerRef.current = setTimeout(() => setSuccessToast(false), 900);
     roundTimerRef.current = setTimeout(() => advanceRound(), 650);
   }, [advanceRound, bumpScore]);
 
   const buildSequence = useCallback((): SeqItem[] => {
-    const slots = [0.2, 0.5, 0.8].slice(0, P.sequenceLength);
-    return slots.map((pct, id) => {
-      const dir = randomDirection();
-      return { id, direction: dir, expectedHand: crossBodyHand(dir) };
+    const dirs: ArrowDirection[] = ['left', 'right'];
+    return Array.from({ length: P.sequenceLength }, (_, id) => {
+      const direction = dirs[Math.floor(Math.random() * dirs.length)]!;
+      return { id, direction, expectedHand: crossBodyHand(direction) };
     });
   }, []);
 
-  const revealSequence = useCallback(
-    (seq: SeqItem[]) => {
-      setRevealedCount(0);
-      setStepIndex(0);
-      setInputReady(false);
-      seq.forEach((_, i) => {
-        arrowOpacities[i].value = 0;
-        arrowScales[i].value = 0.5;
-      });
-      seq.forEach((_, i) => {
-        const t = setTimeout(() => {
-          arrowOpacities[i].value = withTiming(1, { duration: P.arrowRevealMs });
-          arrowScales[i].value = withSpring(1);
-          setRevealedCount(i + 1);
-        }, i * P.sequenceStepMs);
-        revealTimersRef.current.push(t);
-      });
-      const doneT = setTimeout(() => {
-        setInputReady(true);
-        setStatusHint(`Step 1/${seq.length} — use ${handLabel(seq[0].expectedHand)}!`);
-        speakTTS('Follow the sequence!', 0.78).catch(() => {});
-      }, seq.length * P.sequenceStepMs + P.sequenceRevealGapMs);
-      revealTimersRef.current.push(doneT);
-    },
-    [arrowOpacities, arrowScales],
-  );
+  const revealSequence = useCallback((seq: SeqItem[]) => {
+    setRevealedCount(0);
+    setStepIndex(0);
+    stepRef.current = 0;
+    setInputReady(false);
+    setStatusHint('Watch the arrows…');
+    arrowOpacitiesRef.current.forEach((opacity, i) => {
+      opacity.value = 0;
+      arrowScalesRef.current[i]!.value = 0.5;
+    });
+    seq.forEach((_, i) => {
+      const t = setTimeout(() => {
+        arrowOpacitiesRef.current[i]!.value = withTiming(1, { duration: P.arrowRevealMs });
+        arrowScalesRef.current[i]!.value = withSpring(1);
+        setRevealedCount(i + 1);
+      }, i * P.sequenceStepMs);
+      revealTimersRef.current.push(t);
+    });
+    const doneT = setTimeout(() => {
+      setInputReady(true);
+      const first = seq[0];
+      if (!first) return;
+      setKickOffVisible(true);
+      kickOffOpacity.value = withSequence(
+        withTiming(1, { duration: 200 }),
+        withTiming(1, { duration: 700 }),
+        withTiming(0, { duration: 350 }),
+      );
+      kickOffTimerRef.current = setTimeout(() => setKickOffVisible(false), 1300);
+      setStatusHint(
+        `Step 1/${seq.length}: ⬅️=RIGHT hand, ➡️=LEFT hand — tap ${handLabel(first.expectedHand)}!`,
+      );
+      speakTTS(`Tap ${handLabel(first.expectedHand)} hand!`, 0.78).catch(() => {});
+    }, seq.length * P.sequenceStepMs + P.sequenceRevealGapMs);
+    revealTimersRef.current.push(doneT);
+  }, [kickOffOpacity]);
 
   const startRoundPlay = useCallback(() => {
     if (doneRef.current) return;
     const seq = buildSequence();
     setSequence(seq);
     sequenceRef.current = seq;
-    setRoundActive(true);
     roundCompleteRef.current = false;
-    speakTTS(ttsCue, 0.78).catch(() => {});
+    setSuccessToast(false);
+    setWarnVisible(false);
+    setRoundActive(true);
     revealSequence(seq);
-  }, [buildSequence, revealSequence, ttsCue]);
+  }, [buildSequence, revealSequence]);
+
+  startRoundPlayRef.current = startRoundPlay;
 
   const handleHand = useCallback(
     (hand: Hand) => {
@@ -301,10 +367,12 @@ export const CrossBodySequenceGame: React.FC<
       if (hand !== item.expectedHand) {
         const scale = hand === 'left' ? leftScale : rightScale;
         scale.value = withSequence(withSpring(0.88), withSpring(1));
-        showWarn(`Use your ${handLabel(item.expectedHand)} hand!`);
+        showWarn(ttsWrong);
         setStepIndex(0);
         stepRef.current = 0;
-        setStatusHint(`Restart — step 1/${seq.length}`);
+        setInputReady(false);
+        setStatusHint('Watch again…');
+        revealSequence(seq);
         return;
       }
 
@@ -317,18 +385,20 @@ export const CrossBodySequenceGame: React.FC<
       }
       setStepIndex(next);
       stepRef.current = next;
-      setStatusHint(`Step ${next + 1}/${seq.length} — use ${handLabel(seq[next].expectedHand)}!`);
+      setStatusHint(`Step ${next + 1}/${seq.length} — tap ${handLabel(seq[next]!.expectedHand)}!`);
     },
-    [completeRound, inputReady, leftScale, rightScale, showWarn],
+    [completeRound, inputReady, leftScale, revealSequence, rightScale, showWarn, ttsWrong],
   );
 
   useEffect(() => {
     if (round === 1) speakTTS(ttsIntro, 0.78);
     clearTimers();
     setRoundActive(false);
-    roundTimerRef.current = setTimeout(() => startRoundPlay(), P.roundStartDelayMs);
+    setInputReady(false);
+    setSequence([]);
+    roundTimerRef.current = setTimeout(() => startRoundPlayRef.current(), P.roundStartDelayMs);
     return clearTimers;
-  }, [round, startRoundPlay, ttsIntro, clearTimers]);
+  }, [round, ttsIntro, clearTimers]);
 
   useEffect(
     () => () => {
@@ -405,15 +475,36 @@ export const CrossBodySequenceGame: React.FC<
         {roundActive && statusHint ? (
           <Text style={[styles.hint, { color: T.accentDark }]}>{statusHint}</Text>
         ) : null}
+        <View style={[styles.roundTrack, { borderColor: T.accent }]}>
+          <View style={[styles.roundFill, { width: `${(round / P.sequenceRounds) * 100}%`, backgroundColor: T.accent }]} />
+        </View>
+        <View style={styles.headerDeco}>
+          <Text style={styles.decoEmoji}>1</Text>
+          <Text style={[styles.decoArrow, { color: T.accent }]}>→</Text>
+          <Text style={styles.decoEmoji}>2</Text>
+          <Text style={[styles.decoArrow, { color: T.accent }]}>→</Text>
+          <Text style={styles.decoEmoji}>3</Text>
+        </View>
       </View>
 
+      <Animated.View style={[styles.playAreaWrap, playShakeStyle]}>
       <View
-        style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
+        style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }, styles.playAreaThemed]}
         onLayout={(e) => {
           playW.current = e.nativeEvent.layout.width;
         }}
       >
         {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
+
+        <ArrowChainPlayArea
+          roundActive={roundActive}
+          showGuide={round <= 2}
+          chainKey={chainKey}
+          revealedCount={revealedCount}
+          sequenceLength={sequence.length}
+          stepIndex={stepIndex}
+          inputReady={inputReady}
+        />
 
         {roundActive && (
           <View style={styles.seqRow}>
@@ -426,6 +517,7 @@ export const CrossBodySequenceGame: React.FC<
                 emoji={arrowEmoji(item.direction)}
                 active={inputReady && stepIndex === i}
                 accent={T.accent}
+                themed
               />
             ))}
           </View>
@@ -434,13 +526,29 @@ export const CrossBodySequenceGame: React.FC<
         {roundActive && inputReady && (
           <View style={styles.handsRow}>
             <TouchableOpacity onPress={() => handleHand('left')} activeOpacity={0.85}>
-              <Animated.View style={[styles.hand, { backgroundColor: T.leftColor }, leftStyle]}>
+              <Animated.View
+                style={[
+                  styles.hand,
+                  { backgroundColor: T.leftColor },
+                  leftStyle,
+                  styles.chainHand,
+                  sequence[stepIndex]?.expectedHand === 'left' && styles.chainHandActive,
+                ]}
+              >
                 <Text style={styles.handEmoji}>👈</Text>
                 <Text style={styles.handLabel}>LEFT</Text>
               </Animated.View>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => handleHand('right')} activeOpacity={0.85}>
-              <Animated.View style={[styles.hand, { backgroundColor: T.rightColor }, rightStyle]}>
+              <Animated.View
+                style={[
+                  styles.hand,
+                  { backgroundColor: T.rightColor },
+                  rightStyle,
+                  styles.chainHand,
+                  sequence[stepIndex]?.expectedHand === 'right' && styles.chainHandActive,
+                ]}
+              >
                 <Text style={styles.handEmoji}>👉</Text>
                 <Text style={styles.handLabel}>RIGHT</Text>
               </Animated.View>
@@ -448,12 +556,22 @@ export const CrossBodySequenceGame: React.FC<
           </View>
         )}
 
-        {roundActive && !inputReady && revealedCount > 0 && (
-          <Text style={[styles.revealText, { color: T.subtitleColor }]}>Watch the sequence…</Text>
-        )}
+        {kickOffVisible ? (
+          <Animated.View style={[styles.kickOffBanner, kickOffStyle]} pointerEvents="none">
+            <Text style={styles.kickOffText}>🔗 TAP CHAIN!</Text>
+          </Animated.View>
+        ) : null}
 
-        <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
+        <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} count={16} size={8} />
+        <ResultToast text="CHAIN!" type="ok" show={successToast} />
       </View>
+      </Animated.View>
+
+      {warnVisible && (
+        <View style={styles.chainWarnPill}>
+          <Text style={styles.chainWarnText}>{warnMessage}</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -461,21 +579,36 @@ export const CrossBodySequenceGame: React.FC<
 const styles = StyleSheet.create({
   container: { flex: 1 },
   backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
-  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.75)', borderRadius: 24, borderWidth: 1 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(2,44,34,0.75)', borderRadius: 24, borderWidth: 1 },
   backText: { fontWeight: '800', fontSize: 14 },
   header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
   title: { fontSize: 28, fontWeight: '900' },
   subtitle: { fontSize: 14, fontWeight: '600', marginTop: 4, marginBottom: 8, textAlign: 'center' },
   hint: { fontSize: 15, fontWeight: '800', marginBottom: 8, textAlign: 'center' },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
-  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.7)', borderWidth: 1, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(2,44,34,0.55)', borderWidth: 1, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
   starPill: { backgroundColor: 'rgba(251,191,36,0.2)' },
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
-  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, justifyContent: 'flex-end', paddingBottom: 24 },
-  waitText: { position: 'absolute', alignSelf: 'center', top: '42%', fontSize: 18, fontWeight: '700' },
-  seqRow: { position: 'absolute', top: 48, left: 0, right: 0, height: 90 },
+  roundTrack: {
+    width: '70%',
+    height: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 6,
+    backgroundColor: 'rgba(2,44,34,0.55)',
+  },
+  roundFill: { height: '100%', borderRadius: 6 },
+  headerDeco: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  decoEmoji: { fontSize: 16, fontWeight: '900', color: '#A7F3D0' },
+  decoArrow: { fontSize: 14, fontWeight: '900' },
+  playAreaWrap: { flex: 1 },
+  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, justifyContent: 'flex-end', paddingBottom: 24, overflow: 'hidden' },
+  playAreaThemed: { borderWidth: 2 },
+  waitText: { position: 'absolute', alignSelf: 'center', top: '42%', fontSize: 18, fontWeight: '700', zIndex: 2 },
+  seqRow: { position: 'absolute', top: 48, left: 0, right: 0, height: 90, zIndex: 4 },
   seqArrow: {
     position: 'absolute',
     top: 0,
@@ -487,9 +620,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  chainSeqArrow: {
+    backgroundColor: 'rgba(2,44,34,0.92)',
+    shadowColor: '#34D399',
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  chainSeqArrowActive: {
+    borderColor: '#FDE047',
+    borderWidth: 4,
+    shadowColor: '#FDE047',
+    shadowOpacity: 0.65,
+    shadowRadius: 12,
+    elevation: 8,
+  },
   arrowEmoji: { fontSize: 40 },
-  revealText: { position: 'absolute', alignSelf: 'center', top: '55%', fontSize: 16, fontWeight: '700' },
-  handsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingHorizontal: 12 },
+  handsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingHorizontal: 12, zIndex: 4 },
   hand: {
     width: 112,
     height: 112,
@@ -499,8 +646,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  chainHand: {
+    borderColor: 'rgba(167,243,208,0.5)',
+    shadowColor: '#34D399',
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  chainHandActive: {
+    borderColor: '#FDE047',
+    borderWidth: 5,
+    shadowColor: '#FDE047',
+    shadowOpacity: 0.85,
+    shadowRadius: 12,
+    elevation: 10,
+  },
   handEmoji: { fontSize: 40, marginBottom: 2 },
   handLabel: { fontSize: 10, fontWeight: '800', color: '#fff' },
+  kickOffBanner: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: '14%',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    backgroundColor: 'rgba(2,44,34,0.92)',
+    borderWidth: 2,
+    borderColor: '#34D399',
+    zIndex: 6,
+  },
+  kickOffText: { fontSize: 22, fontWeight: '900', color: '#A7F3D0', letterSpacing: 1 },
+  chainWarnPill: {
+    alignSelf: 'center',
+    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: 'rgba(2,44,34,0.92)',
+    borderWidth: 1,
+    borderColor: '#34D399',
+  },
+  chainWarnText: { fontSize: 14, fontWeight: '800', color: '#A7F3D0', textAlign: 'center' },
 });
 
 export default CrossBodySequenceGame;

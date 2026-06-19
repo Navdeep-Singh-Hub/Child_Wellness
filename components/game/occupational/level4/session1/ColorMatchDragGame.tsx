@@ -1,5 +1,6 @@
-/** OT Level 4 · Session 1 · Game 4 — Color Match Drag · Theme: "Color Slide" */
+/** OT Level 4 · Session 1 · Game 4 — Color Match Drag · Theme: "Color Slide" · Paint Studio */
 import { HorizontalDragGame } from '@/components/game/occupational/level4/session1/HorizontalDragGame';
+import { COLOR_SLIDE_THEME as C } from '@/components/game/occupational/level4/session1/session1Theme';
 import React from 'react';
 
 const ColorMatchDragGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,19 +8,33 @@ const ColorMatchDragGame: React.FC<{ onBack?: () => void; onComplete?: () => voi
     {...props}
     mode="colorMatch"
     theme={{
-      title: 'Color Slide', subtitle: 'Drag the color to its matching zone', emoji: '🎨',
-      gradient: ['#ECFDF5', '#D1FAE5', '#6EE7B7', '#22C55E'],
-      accent: '#22C55E', accentDark: '#15803D', draggableEmoji: '🔴', targetEmoji: '🎯',
-      backText: '#166534', backBorder: 'rgba(34,197,94,0.25)',
-      titleColor: '#14532D', subtitleColor: '#16A34A', statLabel: '#22C55E', statValue: '#14532D',
-      statBorder: 'rgba(34,197,94,0.2)', playBorder: 'rgba(34,197,94,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#22C55E', zoneBorder: 'rgba(34,197,94,0.45)',
+      title: C.title,
+      subtitle: C.subtitle,
+      emoji: C.emoji,
+      gradient: C.gradient,
+      accent: C.accent,
+      accentDark: C.accentDark,
+      draggableEmoji: C.draggableEmoji,
+      targetEmoji: C.targetEmoji,
+      backText: '#831843',
+      backBorder: 'rgba(236,72,153,0.35)',
+      titleColor: '#500724',
+      subtitleColor: '#9D174D',
+      statLabel: '#BE185D',
+      statValue: '#500724',
+      statBorder: 'rgba(236,72,153,0.25)',
+      playBorder: C.playBorder,
+      playBg: C.playBg,
+      sparkleColor: C.sparkleColor,
+      zoneBorder: C.zoneBorder,
     }}
-    ttsIntro="Match the color on the left to the same color on the right!"
-    ttsComplete="Color matching master!"
-    ttsDrag="Slide to the matching color!"
-    ttsColorWrong="Match the same color!"
-    congratsMessage="Color Slide Star!"
+    ttsIntro={C.voiceIntro}
+    ttsComplete={C.voiceComplete}
+    ttsDrag={C.voiceDrag}
+    ttsMiss={C.voiceMiss}
+    ttsColorWrong={C.voiceWrong}
+    ttsGoal={C.voiceMatch}
+    congratsMessage={C.congrats}
     logType="color-match-drag"
     skillTags={['visual-matching', 'motor', 'drag-left-right']}
   />

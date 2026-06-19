@@ -1,5 +1,6 @@
-/** OT Level 4 · Session 6 · Game 1 — Hand-to-Hand Pass · Theme: "Hand Swap" */
+/** OT Level 4 · Session 6 · Game 1 — Hand-to-Hand Pass · Theme: "Hand Swap" · Midline Bridge */
 import { MidlinePassGame } from '@/components/game/occupational/level4/session6/MidlinePassGame';
+import { HAND_SWAP_THEME as T } from '@/components/game/occupational/level4/session6/session6Theme';
 import React from 'react';
 
 const HandToHandPassGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,19 +8,32 @@ const HandToHandPassGame: React.FC<{ onBack?: () => void; onComplete?: () => voi
     {...props}
     mode="handPass"
     theme={{
-      title: 'Hand Swap', subtitle: 'Pass the ball left ↔ right across midline', emoji: '🤲',
-      gradient: ['#EFF6FF', '#DBEAFE', '#93C5FD', '#3B82F6'],
-      accent: '#3B82F6', accentDark: '#1D4ED8', ballEmoji: '⚽',
-      backText: '#1E40AF', backBorder: 'rgba(59,130,246,0.25)',
-      titleColor: '#1E3A8A', subtitleColor: '#2563EB', statLabel: '#3B82F6', statValue: '#1E3A8A',
-      statBorder: 'rgba(59,130,246,0.2)', playBorder: 'rgba(59,130,246,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#3B82F6',
+      title: T.title,
+      subtitle: T.subtitle,
+      emoji: T.emoji,
+      gradient: T.gradient,
+      accent: T.accent,
+      accentDark: T.accentDark,
+      ballEmoji: T.ballEmoji,
+      backText: T.backText,
+      backBorder: T.backBorder,
+      titleColor: T.titleColor,
+      subtitleColor: T.subtitleColor,
+      statLabel: T.statLabel,
+      statValue: T.statValue,
+      statBorder: T.statBorder,
+      playBorder: T.playBorder,
+      playBg: T.playBg,
+      sparkleColor: T.sparkleColor,
+      leftColor: T.leftColor,
+      rightColor: T.rightColor,
     }}
-    ttsIntro="Pass the ball from left hand to right hand, then back!"
-    ttsComplete="Great hand swapping!"
-    ttsCue="Tap the hand with the ball to pass across your body!"
-    ttsSuccess="Perfect pass!"
-    congratsMessage="Hand Swap Star!"
+    ttsIntro={T.voiceIntro}
+    ttsComplete={T.voiceComplete}
+    ttsCue={T.voiceCue}
+    ttsSuccess={T.voiceSuccess}
+    ttsWrong={T.voiceWrong}
+    congratsMessage={T.congrats}
     logType="hand-to-hand-pass"
     skillTags={['midline-awareness', 'hand-coordination', 'ball-pass']}
   />

@@ -2,7 +2,8 @@
  * Cross-body arrow swipe core for OT Level 4 Session 7.
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
-import { SparkleBurst } from '@/components/game/FX';
+import { ResultToast, SparkleBurst } from '@/components/game/FX';
+import { SwipeCrossPlayArea } from '@/components/game/occupational/level4/session7/SwipeCrossPlayArea';
 import {
   ArrowDirection,
   arrowEmoji,
@@ -25,6 +26,7 @@ import Animated, {
   cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
@@ -96,6 +98,11 @@ export const CrossBodySwipeGame: React.FC<
   const [arrowDir, setArrowDir] = useState<ArrowDirection>('left');
   const [expectedSwipe, setExpectedSwipe] = useState<ArrowDirection>('right');
   const [showArrow, setShowArrow] = useState(false);
+  const [successToast, setSuccessToast] = useState(false);
+  const [kickOffVisible, setKickOffVisible] = useState(false);
+  const [warnVisible, setWarnVisible] = useState(false);
+  const [warnMessage, setWarnMessage] = useState('Try again!');
+  const [swipeKey, setSwipeKey] = useState(0);
 
   const doneRef = useRef(false);
   const scoreRef = useRef(0);
@@ -105,11 +112,15 @@ export const CrossBodySwipeGame: React.FC<
   const expectedSwipeRef = useRef<ArrowDirection>('right');
   const canSwipeRef = useRef(false);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const kickOffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startX = useRef(0);
   const startY = useRef(0);
 
   const arrowScale = useSharedValue(0.5);
   const arrowOpacity = useSharedValue(0);
+  const playShake = useSharedValue(0);
+  const kickOffOpacity = useSharedValue(0);
 
   useEffect(() => {
     scoreRef.current = score;
@@ -125,15 +136,32 @@ export const CrossBodySwipeGame: React.FC<
     opacity: arrowOpacity.value,
     transform: [{ scale: arrowScale.value }],
   }));
+  const playShakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: playShake.value }],
+  }));
+  const kickOffStyle = useAnimatedStyle(() => ({
+    opacity: kickOffOpacity.value,
+    transform: [{ scale: 0.9 + kickOffOpacity.value * 0.1 }],
+  }));
 
   const clearTimers = useCallback(() => {
     if (roundTimerRef.current) {
       clearTimeout(roundTimerRef.current);
       roundTimerRef.current = null;
     }
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+    if (kickOffTimerRef.current) {
+      clearTimeout(kickOffTimerRef.current);
+      kickOffTimerRef.current = null;
+    }
     cancelAnimation(arrowOpacity);
     cancelAnimation(arrowScale);
-  }, [arrowOpacity, arrowScale]);
+    cancelAnimation(playShake);
+    cancelAnimation(kickOffOpacity);
+  }, [arrowOpacity, arrowScale, kickOffOpacity, playShake]);
 
   const endGame = useCallback(
     (finalScore: number) => {
@@ -179,8 +207,17 @@ export const CrossBodySwipeGame: React.FC<
       playWarn();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
       speakTTS(msg, 0.78).catch(() => {});
+      setWarnMessage(msg);
+      setWarnVisible(true);
+      playShake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-6, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+      toastTimerRef.current = setTimeout(() => setWarnVisible(false), 1200);
     },
-    [playWarn],
+    [playShake, playWarn],
   );
 
   const advanceRound = useCallback(() => {
@@ -202,6 +239,9 @@ export const CrossBodySwipeGame: React.FC<
     arrowOpacity.value = withTiming(0, { duration: 180 });
     setShowArrow(false);
     bumpScore();
+    setSuccessToast(true);
+    setSwipeKey(Date.now());
+    toastTimerRef.current = setTimeout(() => setSuccessToast(false), 900);
     roundTimerRef.current = setTimeout(() => advanceRound(), 650);
   }, [advanceRound, arrowOpacity, bumpScore]);
 
@@ -226,9 +266,18 @@ export const CrossBodySwipeGame: React.FC<
   const startRoundPlay = useCallback(() => {
     if (doneRef.current) return;
     setRoundActive(true);
+    setSuccessToast(false);
+    setWarnVisible(false);
     speakTTS(ttsCue, 0.78).catch(() => {});
+    setKickOffVisible(true);
+    kickOffOpacity.value = withSequence(
+      withTiming(1, { duration: 200 }),
+      withTiming(1, { duration: 700 }),
+      withTiming(0, { duration: 350 }),
+    );
+    kickOffTimerRef.current = setTimeout(() => setKickOffVisible(false), 1300);
     revealArrow();
-  }, [revealArrow, ttsCue]);
+  }, [kickOffOpacity, revealArrow, ttsCue]);
 
   useEffect(() => {
     if (round === 1) speakTTS(ttsIntro, 0.78);
@@ -335,22 +384,50 @@ export const CrossBodySwipeGame: React.FC<
         {roundActive && statusHint ? (
           <Text style={[styles.hint, { color: T.accentDark }]}>{statusHint}</Text>
         ) : null}
+        <View style={[styles.roundTrack, { borderColor: T.accent }]}>
+          <View style={[styles.roundFill, { width: `${(round / P.swipeRounds) * 100}%`, backgroundColor: T.accent }]} />
+        </View>
+        <View style={styles.headerDeco}>
+          <Text style={styles.decoEmoji}>⬅️</Text>
+          <Text style={[styles.decoArrow, { color: T.accent }]}>↔</Text>
+          <Text style={styles.decoEmoji}>➡️</Text>
+        </View>
       </View>
 
       <GestureDetector gesture={panGesture}>
-        <View style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}>
-          {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
-          {roundActive && showArrow && (
-            <Animated.View style={[styles.arrow, arrowStyle]}>
-              <Text style={styles.arrowEmoji}>{arrowEmoji(arrowDir)}</Text>
-            </Animated.View>
-          )}
-          {roundActive && (
-            <Text style={[styles.swipeHint, { color: T.subtitleColor }]}>Swipe across your body ↕↔</Text>
-          )}
-          <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
-        </View>
+        <Animated.View style={[styles.playAreaWrap, playShakeStyle]}>
+          <View style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }, styles.playAreaThemed]}>
+            {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
+
+            <SwipeCrossPlayArea
+              roundActive={roundActive}
+              showGuide={round <= 2}
+              swipeKey={swipeKey}
+            />
+
+            {roundActive && showArrow && (
+              <Animated.View style={[styles.arrow, styles.swipeArrow, arrowStyle]}>
+                <Text style={styles.arrowEmoji}>{arrowEmoji(arrowDir)}</Text>
+              </Animated.View>
+            )}
+
+            {kickOffVisible ? (
+              <Animated.View style={[styles.kickOffBanner, kickOffStyle]} pointerEvents="none">
+                <Text style={styles.kickOffText}>➡️ SWIPE CROSS!</Text>
+              </Animated.View>
+            ) : null}
+
+            <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} count={16} size={8} />
+            <ResultToast text="SWIPE!" type="ok" show={successToast} />
+          </View>
+        </Animated.View>
       </GestureDetector>
+
+      {warnVisible && (
+        <View style={styles.swipeWarnPill}>
+          <Text style={styles.swipeWarnText}>{warnMessage}</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -358,20 +435,35 @@ export const CrossBodySwipeGame: React.FC<
 const styles = StyleSheet.create({
   container: { flex: 1 },
   backBtn: { position: 'absolute', top: 50, left: 16, zIndex: 10 },
-  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.75)', borderRadius: 24, borderWidth: 1 },
+  backInner: { paddingHorizontal: 18, paddingVertical: 10, backgroundColor: 'rgba(69,10,10,0.75)', borderRadius: 24, borderWidth: 1 },
   backText: { fontWeight: '800', fontSize: 14 },
   header: { alignItems: 'center', marginTop: 64, paddingHorizontal: 16 },
   title: { fontSize: 28, fontWeight: '900' },
   subtitle: { fontSize: 14, fontWeight: '600', marginTop: 4, marginBottom: 8, textAlign: 'center' },
-  hint: { fontSize: 15, fontWeight: '800', marginBottom: 8, textAlign: 'center' },
+  hint: { fontSize: 15, fontWeight: '800', marginBottom: 4, textAlign: 'center' },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 8 },
-  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.7)', borderWidth: 1, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+  statPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(69,10,10,0.55)', borderWidth: 1, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
   starPill: { backgroundColor: 'rgba(251,191,36,0.2)' },
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
-  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  waitText: { fontSize: 18, fontWeight: '700' },
+  roundTrack: {
+    width: '70%',
+    height: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 6,
+    backgroundColor: 'rgba(69,10,10,0.55)',
+  },
+  roundFill: { height: '100%', borderRadius: 6 },
+  headerDeco: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  decoEmoji: { fontSize: 20 },
+  decoArrow: { fontSize: 18, fontWeight: '900' },
+  playAreaWrap: { flex: 1 },
+  playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  playAreaThemed: { borderWidth: 2 },
+  waitText: { fontSize: 18, fontWeight: '700', zIndex: 2 },
   arrow: {
     width: 120,
     height: 120,
@@ -380,9 +472,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
+    zIndex: 4,
+  },
+  swipeArrow: {
+    backgroundColor: 'rgba(69,10,10,0.92)',
+    borderWidth: 3,
+    borderColor: '#F87171',
+    shadowColor: '#F87171',
+    shadowOpacity: 0.55,
+    shadowRadius: 12,
+    elevation: 8,
   },
   arrowEmoji: { fontSize: 60 },
-  swipeHint: { position: 'absolute', bottom: 20, fontSize: 13, fontWeight: '700' },
+  kickOffBanner: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: '14%',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    backgroundColor: 'rgba(69,10,10,0.92)',
+    borderWidth: 2,
+    borderColor: '#F87171',
+    zIndex: 6,
+  },
+  kickOffText: { fontSize: 22, fontWeight: '900', color: '#FECACA', letterSpacing: 1 },
+  swipeWarnPill: {
+    alignSelf: 'center',
+    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: 'rgba(69,10,10,0.92)',
+    borderWidth: 1,
+    borderColor: '#F87171',
+  },
+  swipeWarnText: { fontSize: 14, fontWeight: '800', color: '#FECACA', textAlign: 'center' },
 });
 
 export default CrossBodySwipeGame;

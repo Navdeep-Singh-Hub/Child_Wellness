@@ -1,5 +1,6 @@
-/** OT Level 4 · Session 1 · Game 1 — Ball Transfer · Theme: "Goal Pass" */
+/** OT Level 4 · Session 1 · Game 1 — Ball Transfer · Theme: "Goal Pass" · Stadium Striker */
 import { HorizontalDragGame } from '@/components/game/occupational/level4/session1/HorizontalDragGame';
+import { GOAL_PASS_THEME as G } from '@/components/game/occupational/level4/session1/session1Theme';
 import React from 'react';
 
 const BallTransferGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,18 +8,32 @@ const BallTransferGame: React.FC<{ onBack?: () => void; onComplete?: () => void 
     {...props}
     mode="ballTransfer"
     theme={{
-      title: 'Goal Pass', subtitle: 'Drag the ball from left to right', emoji: '⚽',
-      gradient: ['#EFF6FF', '#DBEAFE', '#93C5FD', '#3B82F6'],
-      accent: '#3B82F6', accentDark: '#1D4ED8', draggableEmoji: '⚽', targetEmoji: '🥅',
-      backText: '#1E40AF', backBorder: 'rgba(59,130,246,0.25)',
-      titleColor: '#1E3A8A', subtitleColor: '#2563EB', statLabel: '#3B82F6', statValue: '#1E3A8A',
-      statBorder: 'rgba(59,130,246,0.2)', playBorder: 'rgba(59,130,246,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#3B82F6', zoneBorder: 'rgba(59,130,246,0.45)',
+      title: G.title,
+      subtitle: G.subtitle,
+      emoji: G.emoji,
+      gradient: G.gradient,
+      accent: G.accent,
+      accentDark: G.accentDark,
+      draggableEmoji: G.draggableEmoji,
+      targetEmoji: G.targetEmoji,
+      backText: '#E2E8F0',
+      backBorder: 'rgba(255,255,255,0.22)',
+      titleColor: '#F8FAFC',
+      subtitleColor: 'rgba(226,232,240,0.88)',
+      statLabel: 'rgba(226,232,240,0.75)',
+      statValue: '#FFFFFF',
+      statBorder: 'rgba(255,255,255,0.22)',
+      playBorder: G.playBorder,
+      playBg: G.playBg,
+      sparkleColor: G.sparkleColor,
+      zoneBorder: G.zoneBorder,
     }}
-    ttsIntro="Drag the ball from the left zone to the right zone!"
-    ttsComplete="Great ball passing!"
-    ttsDrag="Drag the ball to the right!"
-    congratsMessage="Goal Pass Star!"
+    ttsIntro={G.voiceIntro}
+    ttsComplete={G.voiceComplete}
+    ttsDrag={G.voiceDrag}
+    ttsMiss={G.voiceMiss}
+    ttsGoal={G.voiceGoal}
+    congratsMessage={G.congrats}
     logType="ball-transfer"
     skillTags={['midline-crossing', 'brain-hemispheres', 'drag-left-right']}
   />

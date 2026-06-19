@@ -1,5 +1,6 @@
-/** OT Level 4 · Session 4 · Game 4 — Light Up Targets · Theme: "Flash Tap" */
+/** OT Level 4 · Session 4 · Game 4 — Light Up Targets · Theme: "Flash Tap" · Reaction Grid */
 import { DualTapGame } from '@/components/game/occupational/level4/session4/DualTapGame';
+import { FLASH_TAP_THEME as T } from '@/components/game/occupational/level4/session4/session4Theme';
 import React from 'react';
 
 const LightUpTargetsGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,20 +8,36 @@ const LightUpTargetsGame: React.FC<{ onBack?: () => void; onComplete?: () => voi
     {...props}
     mode="lights"
     theme={{
-      title: 'Flash Tap', subtitle: 'Tap both targets when they light up', emoji: '💡',
-      gradient: ['#FEF2F2', '#FECACA', '#FCA5A5', '#EF4444'],
-      accent: '#EF4444', accentDark: '#B91C1C', leftColor: '#3B82F6', rightColor: '#EF4444',
-      leftEmoji: '💡', rightEmoji: '💡', targetStyle: 'circle',
-      backText: '#991B1B', backBorder: 'rgba(239,68,68,0.25)',
-      titleColor: '#7F1D1D', subtitleColor: '#DC2626', statLabel: '#EF4444', statValue: '#7F1D1D',
-      statBorder: 'rgba(239,68,68,0.2)', playBorder: 'rgba(239,68,68,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#EF4444',
+      title: T.title,
+      subtitle: T.subtitle,
+      emoji: T.emoji,
+      gradient: T.gradient,
+      accent: T.accent,
+      accentDark: T.accentDark,
+      leftColor: T.leftColor,
+      rightColor: T.rightColor,
+      leftEmoji: T.leftEmoji,
+      rightEmoji: T.rightEmoji,
+      targetStyle: 'circle',
+      backText: T.backText,
+      backBorder: T.backBorder,
+      titleColor: T.titleColor,
+      subtitleColor: T.subtitleColor,
+      statLabel: T.statLabel,
+      statValue: T.statValue,
+      statBorder: T.statBorder,
+      playBorder: T.playBorder,
+      playBg: T.playBg,
+      sparkleColor: T.sparkleColor,
     }}
-    ttsIntro="Watch for the lights, then tap both targets fast!"
-    ttsComplete="Lightning fast reactions!"
-    ttsCue="Tap both targets now!"
-    ttsSuccess="Fast reaction!"
-    congratsMessage="Flash Tap Hero!"
+    ttsIntro={T.voiceIntro}
+    ttsComplete={T.voiceComplete}
+    ttsCue={T.voiceCue}
+    ttsSuccess={T.voiceSuccess}
+    ttsMiss={T.voiceMiss}
+    ttsTooSlow={T.voiceTooSlow}
+    ttsWatch={T.voiceWatch}
+    congratsMessage={T.congrats}
     logType="light-up-targets"
     skillTags={['reaction-timing', 'two-hand-tap']}
   />

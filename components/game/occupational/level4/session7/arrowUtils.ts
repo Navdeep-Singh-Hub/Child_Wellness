@@ -25,11 +25,12 @@ export const arrowEmoji = (dir: ArrowDirection): string => {
   }
 };
 
-/** Left arrow → right hand, right arrow → left hand; up/down random cross-body. */
+/** Left arrow → right hand, right arrow → left hand; up/down use fixed cross-body mapping. */
 export const crossBodyHand = (dir: ArrowDirection): Hand => {
   if (dir === 'left') return 'right';
   if (dir === 'right') return 'left';
-  return Math.random() < 0.5 ? 'left' : 'right';
+  if (dir === 'up') return 'right';
+  return 'left';
 };
 
 /** Cross-body swipe: opposite horizontal, inverted vertical. */

@@ -1,5 +1,6 @@
-/** OT Level 4 · Session 6 · Game 5 — Obstacle Pass · Theme: "Detour Pass" */
+/** OT Level 4 · Session 6 · Game 5 — Obstacle Pass · Theme: "Detour Pass" · Construction Site */
 import { MidlineDragPassGame } from '@/components/game/occupational/level4/session6/MidlineDragPassGame';
+import { DETOUR_PASS_THEME as T } from '@/components/game/occupational/level4/session6/session6Theme';
 import React from 'react';
 
 const ObstaclePassGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,21 +8,35 @@ const ObstaclePassGame: React.FC<{ onBack?: () => void; onComplete?: () => void 
     {...props}
     mode="obstaclePass"
     theme={{
-      title: 'Detour Pass', subtitle: 'Go around the obstacle to the target', emoji: '🚧',
-      gradient: ['#ECFDF5', '#D1FAE5', '#6EE7B7', '#10B981'],
-      accent: '#10B981', accentDark: '#047857', ballEmoji: '⚽', targetEmoji: '🎯', obstacleEmoji: '🚧',
-      backText: '#065F46', backBorder: 'rgba(16,185,129,0.25)',
-      titleColor: '#064E3B', subtitleColor: '#047857', statLabel: '#059669', statValue: '#064E3B',
-      statBorder: 'rgba(16,185,129,0.2)', playBorder: 'rgba(16,185,129,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#10B981', midlineColor: 'rgba(16,185,129,0.35)',
+      title: T.title,
+      subtitle: T.subtitle,
+      emoji: T.emoji,
+      gradient: T.gradient,
+      accent: T.accent,
+      accentDark: T.accentDark,
+      ballEmoji: T.ballEmoji,
+      targetEmoji: T.targetEmoji,
+      obstacleEmoji: T.obstacleEmoji,
+      backText: T.backText,
+      backBorder: T.backBorder,
+      titleColor: T.titleColor,
+      subtitleColor: T.subtitleColor,
+      statLabel: T.statLabel,
+      statValue: T.statValue,
+      statBorder: T.statBorder,
+      playBorder: T.playBorder,
+      playBg: T.playBg,
+      sparkleColor: T.sparkleColor,
+      midlineColor: T.midlineColor,
     }}
-    ttsIntro="Drag around the obstacle to reach the target!"
-    ttsComplete="Great detour passing!"
-    ttsDrag="Drag around the obstacle to the target!"
-    ttsMiss="Drag around the obstacle to the target!"
-    ttsObstacle="Hit obstacle! Go around it!"
-    ttsSuccess="Perfect! You avoided the obstacle!"
-    congratsMessage="Detour Pass Star!"
+    ttsIntro={T.voiceIntro}
+    ttsComplete={T.voiceComplete}
+    ttsDrag={T.voiceDrag}
+    ttsMiss={T.voiceMiss}
+    ttsObstacle={T.voiceObstacle}
+    ttsDetourCross={T.voiceDetourCross}
+    ttsSuccess={T.voiceSuccess}
+    congratsMessage={T.congrats}
     logType="obstacle-pass"
     skillTags={['planning-skill', 'obstacle-avoidance', 'midline-crossing']}
   />

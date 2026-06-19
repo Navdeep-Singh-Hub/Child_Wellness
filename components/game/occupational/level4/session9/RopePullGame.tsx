@@ -1,24 +1,36 @@
 /** OT Level 4 · Session 9 · Game 4 — Rope Pull · Theme: "Tug Rope" */
 import { DualPullGame } from '@/components/game/occupational/level4/session9/DualPullGame';
+import { TUG_ROPE_THEME as T } from '@/components/game/occupational/level4/session9/session9Theme';
 import React from 'react';
 
 const RopePullGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
   <DualPullGame
     {...props}
     theme={{
-      title: 'Tug Rope', subtitle: 'Pull both handles outward together!', emoji: '🪢',
-      gradient: ['#FFFBEB', '#FEF3C7', '#FCD34D', '#F59E0B'],
-      accent: '#F59E0B', accentDark: '#B45309', leftColor: '#F59E0B', rightColor: '#EF4444',
-      backText: '#92400E', backBorder: 'rgba(245,158,11,0.25)',
-      titleColor: '#78350F', subtitleColor: '#B45309', statLabel: '#D97706', statValue: '#78350F',
-      statBorder: 'rgba(245,158,11,0.2)', playBorder: 'rgba(245,158,11,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#F59E0B',
+      title: T.title,
+      subtitle: T.subtitle,
+      emoji: T.emoji,
+      gradient: T.gradient,
+      accent: T.accent,
+      accentDark: T.accentDark,
+      leftColor: T.leftColor,
+      rightColor: T.rightColor,
+      backText: T.backText,
+      backBorder: T.backBorder,
+      titleColor: T.titleColor,
+      subtitleColor: T.subtitleColor,
+      statLabel: T.statLabel,
+      statValue: T.statValue,
+      statBorder: T.statBorder,
+      playBorder: T.playBorder,
+      playBg: T.playBg,
+      sparkleColor: T.sparkleColor,
     }}
-    ttsIntro="Pull both rope handles outward at the same time!"
-    ttsComplete="Great rope pulling!"
-    ttsCue="Pull both handles outward!"
-    ttsSuccess="Perfect pull!"
-    congratsMessage="Tug Rope Star!"
+    ttsIntro={T.voiceIntro}
+    ttsComplete={T.voiceComplete}
+    ttsCue={T.voiceCue}
+    ttsSuccess={T.voiceSuccess}
+    congratsMessage={T.congrats}
     logType="rope-pull"
     skillTags={['upper-body-integration', 'simultaneous-pulling', 'bilateral-coordination']}
   />

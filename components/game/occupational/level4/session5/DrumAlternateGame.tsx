@@ -1,5 +1,6 @@
-/** OT Level 4 · Session 5 · Game 3 — Drum Alternate · Theme: "Rhythm Switch" */
+/** OT Level 4 · Session 5 · Game 4 — Drum Alternate · Theme: "Rhythm Switch" · Jazz Stage */
 import { AlternateTapGame } from '@/components/game/occupational/level4/session5/AlternateTapGame';
+import { RHYTHM_SWITCH_THEME as T } from '@/components/game/occupational/level4/session5/session5Theme';
 import React from 'react';
 
 const DrumAlternateGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,20 +8,34 @@ const DrumAlternateGame: React.FC<{ onBack?: () => void; onComplete?: () => void
     {...props}
     mode="beat"
     theme={{
-      title: 'Rhythm Switch', subtitle: 'Alternate left and right drums', emoji: '🥁',
-      gradient: ['#FFFBEB', '#FEF3C7', '#FCD34D', '#F59E0B'],
-      accent: '#F59E0B', accentDark: '#B45309', leftColor: '#F59E0B', rightColor: '#EF4444',
-      leftEmoji: '🥁', rightEmoji: '🥁', targetStyle: 'drum',
-      backText: '#92400E', backBorder: 'rgba(245,158,11,0.25)',
-      titleColor: '#78350F', subtitleColor: '#D97706', statLabel: '#F59E0B', statValue: '#78350F',
-      statBorder: 'rgba(245,158,11,0.2)', playBorder: 'rgba(245,158,11,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#F59E0B',
+      title: T.title,
+      subtitle: T.subtitle,
+      emoji: T.emoji,
+      gradient: T.gradient,
+      accent: T.accent,
+      accentDark: T.accentDark,
+      leftColor: T.leftColor,
+      rightColor: T.rightColor,
+      leftEmoji: T.leftEmoji,
+      rightEmoji: T.rightEmoji,
+      targetStyle: 'drum',
+      backText: T.backText,
+      backBorder: T.backBorder,
+      titleColor: T.titleColor,
+      subtitleColor: T.subtitleColor,
+      statLabel: T.statLabel,
+      statValue: T.statValue,
+      statBorder: T.statBorder,
+      playBorder: T.playBorder,
+      playBg: T.playBg,
+      sparkleColor: T.sparkleColor,
     }}
-    ttsIntro="Tap left drum, then right drum, alternating!"
-    ttsComplete="Great rhythm switching!"
-    ttsCue="Follow the beat and alternate!"
-    ttsSuccess="Perfect rhythm!"
-    congratsMessage="Rhythm Switch Master!"
+    ttsIntro={T.voiceIntro}
+    ttsComplete={T.voiceComplete}
+    ttsCue={T.voiceCue}
+    ttsSuccess={T.voiceSuccess}
+    ttsWrong={T.voiceWrong}
+    congratsMessage={T.congrats}
     logType="drum-alternate"
     skillTags={['rhythm-control', 'alternating-hands', 'coordination']}
   />

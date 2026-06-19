@@ -2,7 +2,8 @@
  * Balanced-pace two-hand drag core for OT Level 4 Session 9.
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
-import { SparkleBurst } from '@/components/game/FX';
+import { ResultToast, SparkleBurst } from '@/components/game/FX';
+import { EvenPullPlayArea } from '@/components/game/occupational/level4/session9/EvenPullPlayArea';
 import {
   createObjectPanGesture,
   createSimultaneousDualPan,
@@ -22,6 +23,8 @@ import Animated, {
   cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
+  withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -88,6 +91,9 @@ export const BalanceDualDragGame: React.FC<
   const [roundActive, setRoundActive] = useState(false);
   const [statusHint, setStatusHint] = useState('');
   const [targetY, setTargetY] = useState(288);
+  const [successToast, setSuccessToast] = useState(false);
+  const [kickOffVisible, setKickOffVisible] = useState(false);
+  const [balanceKey, setBalanceKey] = useState(0);
 
   const doneRef = useRef(false);
   const scoreRef = useRef(0);
@@ -98,6 +104,8 @@ export const BalanceDualDragGame: React.FC<
   const leftReachedAtRef = useRef<number | null>(null);
   const rightReachedAtRef = useRef<number | null>(null);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const kickOffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playW = useRef(360);
   const playH = useRef(400);
 
@@ -107,6 +115,8 @@ export const BalanceDualDragGame: React.FC<
   const rightX = useSharedValue(270);
   const rightY = useSharedValue(96);
   const rightScale = useSharedValue(1);
+  const playShake = useSharedValue(0);
+  const kickOffOpacity = useSharedValue(0);
 
   useEffect(() => {
     scoreRef.current = score;
@@ -128,17 +138,34 @@ export const BalanceDualDragGame: React.FC<
     top: rightY.value - HALF,
     transform: [{ scale: rightScale.value }],
   }));
+  const playShakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: playShake.value }],
+  }));
+  const kickOffStyle = useAnimatedStyle(() => ({
+    opacity: kickOffOpacity.value,
+    transform: [{ scale: 0.9 + kickOffOpacity.value * 0.1 }],
+  }));
 
   const clearTimers = useCallback(() => {
     if (roundTimerRef.current) {
       clearTimeout(roundTimerRef.current);
       roundTimerRef.current = null;
     }
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+    if (kickOffTimerRef.current) {
+      clearTimeout(kickOffTimerRef.current);
+      kickOffTimerRef.current = null;
+    }
     cancelAnimation(leftX);
     cancelAnimation(leftY);
     cancelAnimation(rightX);
     cancelAnimation(rightY);
-  }, [leftX, leftY, rightX, rightY]);
+    cancelAnimation(playShake);
+    cancelAnimation(kickOffOpacity);
+  }, [kickOffOpacity, leftX, leftY, playShake, rightX, rightY]);
 
   const layoutRound = useCallback(() => {
     const w = playW.current;
@@ -208,6 +235,9 @@ export const BalanceDualDragGame: React.FC<
     if (roundCompleteRef.current || doneRef.current) return;
     roundCompleteRef.current = true;
     bumpScore();
+    setSuccessToast(true);
+    setBalanceKey(Date.now());
+    toastTimerRef.current = setTimeout(() => setSuccessToast(false), 900);
     roundTimerRef.current = setTimeout(() => advanceRound(), 650);
   }, [advanceRound, bumpScore]);
 
@@ -245,8 +275,16 @@ export const BalanceDualDragGame: React.FC<
     setRoundActive(true);
     layoutRound();
     setStatusHint('Drag both down at the same pace!');
+    setSuccessToast(false);
+    setKickOffVisible(true);
+    kickOffOpacity.value = withSequence(
+      withTiming(1, { duration: 200 }),
+      withTiming(1, { duration: 700 }),
+      withTiming(0, { duration: 350 }),
+    );
+    kickOffTimerRef.current = setTimeout(() => setKickOffVisible(false), 1300);
     speakTTS(ttsCue, 0.78).catch(() => {});
-  }, [layoutRound, ttsCue]);
+  }, [kickOffOpacity, layoutRound, ttsCue]);
 
   useEffect(() => {
     if (round === 1) speakTTS(ttsIntro, 0.78);
@@ -356,11 +394,20 @@ export const BalanceDualDragGame: React.FC<
         {roundActive && statusHint ? (
           <Text style={[styles.hint, { color: T.accentDark }]}>{statusHint}</Text>
         ) : null}
+        <View style={[styles.roundTrack, { borderColor: T.accent }]}>
+          <View style={[styles.roundFill, { width: `${(round / P.rounds) * 100}%`, backgroundColor: T.accent }]} />
+        </View>
+        <View style={styles.headerDeco}>
+          <Text style={styles.decoEmoji}>🔴</Text>
+          <Text style={[styles.decoArrow, { color: T.accent }]}>⚖️</Text>
+          <Text style={styles.decoEmoji}>🔵</Text>
+        </View>
       </View>
 
       <GestureDetector gesture={dualGesture}>
+        <Animated.View style={[styles.playAreaWrap, playShakeStyle]}>
         <View
-          style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
+          style={[styles.playArea, styles.playAreaThemed, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
           onLayout={(e) => {
             playW.current = e.nativeEvent.layout.width;
             playH.current = e.nativeEvent.layout.height;
@@ -368,23 +415,40 @@ export const BalanceDualDragGame: React.FC<
           }}
         >
           {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
+
+          <EvenPullPlayArea
+            roundActive={roundActive}
+            showGuide={round <= 2}
+            balanceKey={balanceKey}
+            targetY={targetY}
+          />
+
           {roundActive && (
-            <View style={[styles.balanceLine, { top: targetY - 2, borderColor: T.accent }]}>
+            <View style={[styles.balanceLine, styles.balanceLineThemed, { top: targetY - 2, borderColor: T.accent }]}>
               <Text style={[styles.lineLabel, { color: T.accentDark }]}>BALANCE LINE</Text>
             </View>
           )}
           {roundActive && (
             <>
-              <Animated.View style={[styles.obj, { backgroundColor: T.leftColor }, leftStyle]}>
+              <Animated.View style={[styles.obj, styles.objThemed, { backgroundColor: T.leftColor }, leftStyle]}>
                 <Text style={styles.objEmoji}>⚖️</Text>
               </Animated.View>
-              <Animated.View style={[styles.obj, { backgroundColor: T.rightColor }, rightStyle]}>
+              <Animated.View style={[styles.obj, styles.objThemed, { backgroundColor: T.rightColor }, rightStyle]}>
                 <Text style={styles.objEmoji}>⚖️</Text>
               </Animated.View>
             </>
           )}
-          <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
+
+          {kickOffVisible ? (
+            <Animated.View style={[styles.kickOffBanner, kickOffStyle]} pointerEvents="none">
+              <Text style={styles.kickOffText}>⚖️ EVEN PULL!</Text>
+            </Animated.View>
+          ) : null}
+
+          <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} count={16} size={8} />
+          <ResultToast text="BALANCE!" type="ok" show={successToast} />
         </View>
+        </Animated.View>
       </GestureDetector>
     </SafeAreaView>
   );
@@ -405,8 +469,23 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  roundTrack: {
+    width: '70%',
+    height: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 6,
+    backgroundColor: 'rgba(26,10,20,0.55)',
+  },
+  roundFill: { height: '100%', borderRadius: 6 },
+  headerDeco: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  decoEmoji: { fontSize: 20 },
+  decoArrow: { fontSize: 18, fontWeight: '900' },
+  playAreaWrap: { flex: 1 },
   playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1 },
-  waitText: { position: 'absolute', alignSelf: 'center', top: '45%', fontSize: 18, fontWeight: '700' },
+  playAreaThemed: { borderWidth: 2, overflow: 'hidden' },
+  waitText: { position: 'absolute', alignSelf: 'center', top: '45%', fontSize: 18, fontWeight: '700', zIndex: 2 },
   balanceLine: {
     position: 'absolute',
     left: 12,
@@ -417,6 +496,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   lineLabel: { position: 'absolute', top: -18, fontSize: 10, fontWeight: '800' },
+  balanceLineThemed: {
+    zIndex: 4,
+    borderTopWidth: 3,
+    backgroundColor: 'rgba(251,113,133,0.15)',
+  },
   obj: {
     position: 'absolute',
     width: HALF * 2,
@@ -429,6 +513,26 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.7)',
   },
   objEmoji: { fontSize: 30 },
+  objThemed: {
+    borderColor: 'rgba(254,205,211,0.55)',
+    shadowColor: '#FB7185',
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  kickOffBanner: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: '12%',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    backgroundColor: 'rgba(26,10,20,0.92)',
+    borderWidth: 2,
+    borderColor: '#FB7185',
+    zIndex: 6,
+  },
+  kickOffText: { fontSize: 22, fontWeight: '900', color: '#FECDD3', letterSpacing: 1 },
 });
 
 export default BalanceDualDragGame;

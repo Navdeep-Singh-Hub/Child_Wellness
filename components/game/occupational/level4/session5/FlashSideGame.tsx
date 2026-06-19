@@ -1,5 +1,6 @@
-/** OT Level 4 · Session 5 · Game 4 — Flash Side · Theme: "Flash Pick" */
+/** OT Level 4 · Session 5 · Game 3 — Flash Side · Theme: "Flash Pick" · Decision Arena */
 import { AlternateTapGame } from '@/components/game/occupational/level4/session5/AlternateTapGame';
+import { FLASH_PICK_THEME as T } from '@/components/game/occupational/level4/session5/session5Theme';
 import React from 'react';
 
 const FlashSideGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,20 +8,36 @@ const FlashSideGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
     {...props}
     mode="flash"
     theme={{
-      title: 'Flash Pick', subtitle: 'Tap the side that flashes', emoji: '⚡',
-      gradient: ['#FEF2F2', '#FECACA', '#FCA5A5', '#EF4444'],
-      accent: '#EF4444', accentDark: '#B91C1C', leftColor: '#3B82F6', rightColor: '#EF4444',
-      leftEmoji: '👈', rightEmoji: '👉', targetStyle: 'panel',
-      backText: '#991B1B', backBorder: 'rgba(239,68,68,0.25)',
-      titleColor: '#7F1D1D', subtitleColor: '#DC2626', statLabel: '#EF4444', statValue: '#7F1D1D',
-      statBorder: 'rgba(239,68,68,0.2)', playBorder: 'rgba(239,68,68,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#EF4444',
+      title: T.title,
+      subtitle: T.subtitle,
+      emoji: T.emoji,
+      gradient: T.gradient,
+      accent: T.accent,
+      accentDark: T.accentDark,
+      leftColor: T.leftColor,
+      rightColor: T.rightColor,
+      leftEmoji: T.leftEmoji,
+      rightEmoji: T.rightEmoji,
+      targetStyle: 'panel',
+      backText: T.backText,
+      backBorder: T.backBorder,
+      titleColor: T.titleColor,
+      subtitleColor: T.subtitleColor,
+      statLabel: T.statLabel,
+      statValue: T.statValue,
+      statBorder: T.statBorder,
+      playBorder: T.playBorder,
+      playBg: T.playBg,
+      sparkleColor: T.sparkleColor,
     }}
-    ttsIntro="When a side flashes, tap it with the same hand!"
-    ttsComplete="Lightning fast picks!"
-    ttsSuccess="Perfect pick!"
-    ttsWrong="Wrong side!"
-    congratsMessage="Flash Pick Hero!"
+    ttsIntro={T.voiceIntro}
+    ttsComplete={T.voiceComplete}
+    ttsCue={T.voiceCue}
+    ttsSuccess={T.voiceSuccess}
+    ttsWrong={T.voiceWrong}
+    ttsTooSlow={T.voiceTooSlow}
+    ttsWatch={T.voiceWatch}
+    congratsMessage={T.congrats}
     logType="flash-side"
     skillTags={['decision-making', 'reaction-time', 'hand-selection']}
   />

@@ -1,5 +1,6 @@
-/** OT Level 4 · Session 6 · Game 2 — Throw & Catch · Theme: "Toss & Grab" */
+/** OT Level 4 · Session 6 · Game 2 — Throw & Catch · Theme: "Toss & Grab" · Tennis Court */
 import { MidlinePassGame } from '@/components/game/occupational/level4/session6/MidlinePassGame';
+import { TOSS_GRAB_THEME as T } from '@/components/game/occupational/level4/session6/session6Theme';
 import React from 'react';
 
 const ThrowCatchGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
@@ -7,19 +8,33 @@ const ThrowCatchGame: React.FC<{ onBack?: () => void; onComplete?: () => void }>
     {...props}
     mode="throwCatch"
     theme={{
-      title: 'Toss & Grab', subtitle: 'Throw left, catch right across midline', emoji: '🎾',
-      gradient: ['#FFFBEB', '#FEF3C7', '#FCD34D', '#F59E0B'],
-      accent: '#F59E0B', accentDark: '#B45309', ballEmoji: '🎾',
-      backText: '#92400E', backBorder: 'rgba(245,158,11,0.25)',
-      titleColor: '#78350F', subtitleColor: '#B45309', statLabel: '#D97706', statValue: '#78350F',
-      statBorder: 'rgba(245,158,11,0.2)', playBorder: 'rgba(245,158,11,0.25)', playBg: 'rgba(255,255,255,0.35)',
-      sparkleColor: '#F59E0B',
+      title: T.title,
+      subtitle: T.subtitle,
+      emoji: T.emoji,
+      gradient: T.gradient,
+      accent: T.accent,
+      accentDark: T.accentDark,
+      ballEmoji: T.ballEmoji,
+      leftColor: T.leftColor,
+      rightColor: T.rightColor,
+      backText: T.backText,
+      backBorder: T.backBorder,
+      titleColor: T.titleColor,
+      subtitleColor: T.subtitleColor,
+      statLabel: T.statLabel,
+      statValue: T.statValue,
+      statBorder: T.statBorder,
+      playBorder: T.playBorder,
+      playBg: T.playBg,
+      sparkleColor: T.sparkleColor,
     }}
-    ttsIntro="Throw with your left hand and catch with your right!"
-    ttsComplete="Amazing toss and grab!"
-    ttsCue="Tap left to throw, then right to catch!"
-    ttsSuccess="Great catch!"
-    congratsMessage="Toss & Grab Star!"
+    ttsIntro={T.voiceIntro}
+    ttsComplete={T.voiceComplete}
+    ttsCue={T.voiceCue}
+    ttsSuccess={T.voiceSuccess}
+    ttsWrong={T.voiceWrong}
+    ttsMiss={T.voiceMiss}
+    congratsMessage={T.congrats}
     logType="throw-catch"
     skillTags={['hand-coordination', 'timing', 'throw-catch']}
   />

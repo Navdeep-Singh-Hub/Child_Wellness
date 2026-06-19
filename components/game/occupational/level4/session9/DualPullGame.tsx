@@ -2,7 +2,8 @@
  * Two-hand rope pull core for OT Level 4 Session 9.
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
-import { SparkleBurst } from '@/components/game/FX';
+import { ResultToast, SparkleBurst } from '@/components/game/FX';
+import { TugRopePlayArea } from '@/components/game/occupational/level4/session9/TugRopePlayArea';
 import {
   createObjectPanGesture,
   createSimultaneousDualPan,
@@ -23,7 +24,9 @@ import Animated, {
   cancelAnimation,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -90,6 +93,9 @@ export const DualPullGame: React.FC<
   const [roundActive, setRoundActive] = useState(false);
   const [statusHint, setStatusHint] = useState('');
   const [ropeY, setRopeY] = useState(200);
+  const [successToast, setSuccessToast] = useState(false);
+  const [kickOffVisible, setKickOffVisible] = useState(false);
+  const [tugKey, setTugKey] = useState(0);
 
   const doneRef = useRef(false);
   const scoreRef = useRef(0);
@@ -99,6 +105,8 @@ export const DualPullGame: React.FC<
   const leftPulledRef = useRef(false);
   const rightPulledRef = useRef(false);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const kickOffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playW = useRef(360);
   const playH = useRef(400);
   const leftStart = useRef({ x: 72, y: 200 });
@@ -110,6 +118,8 @@ export const DualPullGame: React.FC<
   const rightX = useSharedValue(288);
   const rightY = useSharedValue(200);
   const rightScale = useSharedValue(1);
+  const playShake = useSharedValue(0);
+  const kickOffOpacity = useSharedValue(0);
 
   useEffect(() => {
     scoreRef.current = score;
@@ -131,17 +141,34 @@ export const DualPullGame: React.FC<
     top: rightY.value - HANDLE,
     transform: [{ scale: rightScale.value }],
   }));
+  const playShakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: playShake.value }],
+  }));
+  const kickOffStyle = useAnimatedStyle(() => ({
+    opacity: kickOffOpacity.value,
+    transform: [{ scale: 0.9 + kickOffOpacity.value * 0.1 }],
+  }));
 
   const clearTimers = useCallback(() => {
     if (roundTimerRef.current) {
       clearTimeout(roundTimerRef.current);
       roundTimerRef.current = null;
     }
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+    if (kickOffTimerRef.current) {
+      clearTimeout(kickOffTimerRef.current);
+      kickOffTimerRef.current = null;
+    }
     cancelAnimation(leftX);
     cancelAnimation(leftY);
     cancelAnimation(rightX);
     cancelAnimation(rightY);
-  }, [leftX, leftY, rightX, rightY]);
+    cancelAnimation(playShake);
+    cancelAnimation(kickOffOpacity);
+  }, [kickOffOpacity, leftX, leftY, playShake, rightX, rightY]);
 
   const layoutHandles = useCallback(() => {
     const w = playW.current;
@@ -211,6 +238,9 @@ export const DualPullGame: React.FC<
     if (roundCompleteRef.current || doneRef.current) return;
     roundCompleteRef.current = true;
     bumpScore();
+    setSuccessToast(true);
+    setTugKey(Date.now());
+    toastTimerRef.current = setTimeout(() => setSuccessToast(false), 900);
     roundTimerRef.current = setTimeout(() => advanceRound(), 650);
   }, [advanceRound, bumpScore]);
 
@@ -255,8 +285,16 @@ export const DualPullGame: React.FC<
     leftPulledRef.current = false;
     rightPulledRef.current = false;
     setStatusHint('Pull both handles outward!');
+    setSuccessToast(false);
+    setKickOffVisible(true);
+    kickOffOpacity.value = withSequence(
+      withTiming(1, { duration: 200 }),
+      withTiming(1, { duration: 700 }),
+      withTiming(0, { duration: 350 }),
+    );
+    kickOffTimerRef.current = setTimeout(() => setKickOffVisible(false), 1300);
     speakTTS(ttsCue, 0.78).catch(() => {});
-  }, [layoutHandles, ttsCue]);
+  }, [kickOffOpacity, layoutHandles, ttsCue]);
 
   useEffect(() => {
     if (round === 1) speakTTS(ttsIntro, 0.78);
@@ -374,11 +412,20 @@ export const DualPullGame: React.FC<
         {roundActive && statusHint ? (
           <Text style={[styles.hint, { color: T.accentDark }]}>{statusHint}</Text>
         ) : null}
+        <View style={[styles.roundTrack, { borderColor: T.accent }]}>
+          <View style={[styles.roundFill, { width: `${(round / P.rounds) * 100}%`, backgroundColor: T.accent }]} />
+        </View>
+        <View style={styles.headerDeco}>
+          <Text style={styles.decoEmoji}>🪢</Text>
+          <Text style={[styles.decoArrow, { color: T.accent }]}>↔</Text>
+          <Text style={styles.decoEmoji}>🪢</Text>
+        </View>
       </View>
 
       <GestureDetector gesture={dualGesture}>
+        <Animated.View style={[styles.playAreaWrap, playShakeStyle]}>
         <View
-          style={[styles.playArea, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
+          style={[styles.playArea, styles.playAreaThemed, { borderColor: T.playBorder, backgroundColor: T.playBg }]}
           onLayout={(e) => {
             playW.current = e.nativeEvent.layout.width;
             playH.current = e.nativeEvent.layout.height;
@@ -386,21 +433,38 @@ export const DualPullGame: React.FC<
           }}
         >
           {!roundActive && <Text style={[styles.waitText, { color: T.subtitleColor }]}>Get ready…</Text>}
+
+          <TugRopePlayArea
+            roundActive={roundActive}
+            showGuide={round <= 2}
+            tugKey={tugKey}
+            ropeY={ropeY}
+          />
+
           {roundActive && (
-            <View style={[styles.rope, { backgroundColor: T.accent, top: ropeY - 3 }]} />
+            <View style={[styles.rope, styles.ropeThemed, { backgroundColor: T.accent, top: ropeY - 4 }]} />
           )}
           {roundActive && (
             <>
-              <Animated.View style={[styles.handle, { backgroundColor: T.leftColor }, leftStyle]}>
+              <Animated.View style={[styles.handle, styles.handleThemed, { backgroundColor: T.leftColor }, leftStyle]}>
                 <Text style={styles.handleEmoji}>🪢</Text>
               </Animated.View>
-              <Animated.View style={[styles.handle, { backgroundColor: T.rightColor }, rightStyle]}>
+              <Animated.View style={[styles.handle, styles.handleThemed, { backgroundColor: T.rightColor }, rightStyle]}>
                 <Text style={styles.handleEmoji}>🪢</Text>
               </Animated.View>
             </>
           )}
-          <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} />
+
+          {kickOffVisible ? (
+            <Animated.View style={[styles.kickOffBanner, kickOffStyle]} pointerEvents="none">
+              <Text style={styles.kickOffText}>🪢 TUG ROPE!</Text>
+            </Animated.View>
+          ) : null}
+
+          <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.sparkleColor} count={16} size={8} />
+          <ResultToast text="TUG!" type="ok" show={successToast} />
         </View>
+        </Animated.View>
       </GestureDetector>
     </SafeAreaView>
   );
@@ -421,9 +485,25 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   statValue: { fontSize: 20, fontWeight: '900' },
   starIcon: { width: 18, height: 18, resizeMode: 'contain' },
+  roundTrack: {
+    width: '70%',
+    height: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 6,
+    backgroundColor: 'rgba(66,32,6,0.55)',
+  },
+  roundFill: { height: '100%', borderRadius: 6 },
+  headerDeco: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  decoEmoji: { fontSize: 20 },
+  decoArrow: { fontSize: 18, fontWeight: '900' },
+  playAreaWrap: { flex: 1 },
   playArea: { flex: 1, marginHorizontal: 8, marginBottom: 16, borderRadius: 20, borderWidth: 1 },
-  waitText: { position: 'absolute', alignSelf: 'center', top: '45%', fontSize: 18, fontWeight: '700' },
-  rope: { position: 'absolute', left: '12%', right: '12%', height: 6, borderRadius: 3 },
+  playAreaThemed: { borderWidth: 2, overflow: 'hidden' },
+  waitText: { position: 'absolute', alignSelf: 'center', top: '45%', fontSize: 18, fontWeight: '700', zIndex: 2 },
+  rope: { position: 'absolute', left: '12%', right: '12%', height: 6, borderRadius: 3, zIndex: 4 },
+  ropeThemed: { height: 8, shadowColor: '#FBBF24', shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 },
   handle: {
     position: 'absolute',
     width: HANDLE * 2,
@@ -436,6 +516,26 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.7)',
   },
   handleEmoji: { fontSize: 30 },
+  handleThemed: {
+    borderColor: 'rgba(253,230,138,0.55)',
+    shadowColor: '#FBBF24',
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  kickOffBanner: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: '12%',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    backgroundColor: 'rgba(66,32,6,0.92)',
+    borderWidth: 2,
+    borderColor: '#FBBF24',
+    zIndex: 6,
+  },
+  kickOffText: { fontSize: 22, fontWeight: '900', color: '#FDE68A', letterSpacing: 1 },
 });
 
 export default DualPullGame;
