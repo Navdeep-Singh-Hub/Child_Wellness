@@ -34,6 +34,7 @@ import { SESSION1_PACING } from '@/components/game/occupational/level6/session1/
 import { usePostureAnalytics } from '@/components/game/occupational/level6/session1/usePostureAnalytics';
 import { HERO_SHELL, POSTURE_GAME_THEMES, type PostureMode } from '@/components/game/occupational/level6/session1/superheroTheme';
 import { usePoseDetection } from '@/hooks/usePoseDetection';
+import { friendlyPoseError } from '@/hooks/usePoseDetectionNative';
 import { poseStageNativeProps } from '@/components/game/occupational/level6/session1/poseStageProps';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -76,7 +77,17 @@ export const PostureControlGame: React.FC<{
 
   const [active, setActive] = useState(true);
   const poseDetection = usePoseDetection(active);
-  const { metrics, present, isDetecting, hasCamera, cameraSupported, error, previewContainerId } = poseDetection;
+  const {
+    metrics,
+    present,
+    isDetecting,
+    hasCamera,
+    cameraSupported,
+    permissionGranted,
+    error,
+    previewContainerId,
+    requestCameraAccess,
+  } = poseDetection;
 
   const {
     reset: resetAnalytics,
@@ -113,7 +124,7 @@ export const PostureControlGame: React.FC<{
   const [showCongrats, setShowCongrats] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number; accuracy: number } | null>(null);
 
-  const usingCamera = cameraSupported && !forceFallback;
+  const camLive = hasCamera && !forceFallback;
 
   // ── Refs ──
   const metricsRef = useRef<PostureMetrics>(EMPTY_METRICS);
@@ -124,7 +135,8 @@ export const PostureControlGame: React.FC<{
   const roundRef = useRef(1);
   const scoreRef = useRef(0);
   const doneRef = useRef(false);
-  const usingCameraRef = useRef(usingCamera);
+  const camLiveRef = useRef(camLive);
+  const hasCameraRef = useRef(hasCamera);
 
   const tickTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -163,8 +175,11 @@ export const PostureControlGame: React.FC<{
     scoreRef.current = score;
   }, [score]);
   useEffect(() => {
-    usingCameraRef.current = usingCamera;
-  }, [usingCamera]);
+    camLiveRef.current = camLive;
+  }, [camLive]);
+  useEffect(() => {
+    hasCameraRef.current = hasCamera;
+  }, [hasCamera]);
 
   // ── Helpers ──
   const schedule = useCallback((fn: () => void, ms: number) => {
@@ -340,7 +355,7 @@ export const PostureControlGame: React.FC<{
           : P.freezeRedMsMin + Math.random() * (P.freezeRedMsMax - P.freezeRedMsMin);
       schedule(() => {
         if (doneRef.current) return;
-        const ratio = freezeTotalRef.current > 0 ? freezeHitRef.current / freezeTotalRef.current : usingCameraRef.current ? 0 : 1;
+        const ratio = freezeTotalRef.current > 0 ? freezeHitRef.current / freezeTotalRef.current : camLiveRef.current ? 0 : 1;
         const correct = ratio >= 0.5;
         const reaction = freezeReactedRef.current ? freezeReactedRef.current - freezeOnsetRef.current : undefined;
         recordFreeze(correct, reaction);
@@ -366,7 +381,7 @@ export const PostureControlGame: React.FC<{
     // Fallback / safety: auto-catch on timeout so play never stalls.
     schedule(() => {
       if (doneRef.current || !reachActiveRef.current) return;
-      if (!usingCameraRef.current) {
+      if (!camLiveRef.current) {
         catchStar();
       } else {
         reachActiveRef.current = false;
@@ -409,7 +424,7 @@ export const PostureControlGame: React.FC<{
 
     const m = metricsRef.current;
     const base = baselineRef.current;
-    const cam = usingCameraRef.current;
+    const cam = camLiveRef.current;
 
     // Derived signals (camera) or assumed-compliant (fallback).
     const up = cam ? uprightScore(m, base) : 0.85;
@@ -579,9 +594,32 @@ export const PostureControlGame: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleStart = useCallback(() => {
+  const handleStart = useCallback(async () => {
+    if (forceFallback) {
+      beginCalibration();
+      return;
+    }
+    if (cameraSupported) {
+      const granted = await requestCameraAccess();
+      if (!granted) {
+        setCoachCue('Allow camera access to track your posture.');
+        speakTTS('Please allow camera access.', 0.8).catch(() => {});
+        return;
+      }
+      // Allow React to re-render with permission + MediapipeCamera props before calibrating.
+      await new Promise((r) => setTimeout(r, 150));
+      const deadline = Date.now() + 6000;
+      while (!hasCameraRef.current && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      if (!hasCameraRef.current) {
+        setCoachCue('Body tracking did not start. Tap Retry or play guided mode.');
+        speakTTS('Camera tracking is not ready yet.', 0.8).catch(() => {});
+        return;
+      }
+    }
     beginCalibration();
-  }, [beginCalibration]);
+  }, [beginCalibration, cameraSupported, forceFallback, requestCameraAccess]);
 
   const handleBack = useCallback(() => {
     setActive(false);
@@ -643,7 +681,8 @@ export const PostureControlGame: React.FC<{
           <CameraStage
             {...poseStageNativeProps(poseDetection)}
             previewContainerId={previewContainerId}
-            cameraSupported={usingCamera}
+            cameraSupported={cameraSupported}
+            permissionGranted={permissionGranted}
             hasCamera={hasCamera}
             present={present}
             isDetecting={isDetecting}
@@ -654,7 +693,7 @@ export const PostureControlGame: React.FC<{
             coachCue={phase === 'play' || phase === 'calibrate' ? coachCue : ''}
           >
             {phase === 'play' && mode === 'powerSit' && (
-              <PowerMeter power={power} charging={quality >= P.powerUprightThreshold || !usingCamera} accent={T.accent} />
+              <PowerMeter power={power} charging={quality >= P.powerUprightThreshold || !camLive} accent={T.accent} />
             )}
             {phase === 'play' && mode === 'crown' && (
               <>
@@ -695,7 +734,7 @@ export const PostureControlGame: React.FC<{
           <View style={styles.bottomPanel}>
             {cameraSupported && error ? (
               <>
-                <Text style={styles.errorText}>{error}</Text>
+                <Text style={styles.errorText}>{friendlyPoseError(error)}</Text>
                 <View style={styles.btnRow}>
                   <Pressable style={[styles.primaryBtn, { backgroundColor: T.accent }]} onPress={() => setActive(true)}>
                     <Text style={styles.primaryBtnText}>Retry Camera</Text>
@@ -705,27 +744,37 @@ export const PostureControlGame: React.FC<{
                   </Pressable>
                 </View>
               </>
+            ) : !cameraSupported ? (
+              <>
+                <Text style={styles.introText}>{friendlyPoseError(error)}</Text>
+                <Pressable
+                  style={[styles.primaryBtn, { backgroundColor: T.accent }]}
+                  onPress={() => {
+                    setForceFallback(true);
+                    handleStart();
+                  }}
+                >
+                  <Text style={styles.primaryBtnText}>{T.hero} Play Guided Mode</Text>
+                </Pressable>
+              </>
             ) : (
               <>
                 <Text style={styles.introText}>
-                  {cameraSupported
-                    ? hasCamera
+                  {!permissionGranted
+                    ? 'Tap Start Mission — you will be asked to allow camera access.'
+                    : hasCamera
                       ? 'Sit where the camera can see your head and shoulders.'
-                      : 'Starting camera…'
-                    : 'Guided mode: follow the coach and sit tall!'}
+                      : 'Loading body tracking…'}
                 </Text>
                 <Pressable
-                  style={[styles.primaryBtn, { backgroundColor: T.accent, opacity: cameraSupported && !hasCamera ? 0.6 : 1 }]}
-                  disabled={cameraSupported && !hasCamera}
+                  style={[styles.primaryBtn, { backgroundColor: T.accent }]}
                   onPress={handleStart}
                 >
                   <Text style={styles.primaryBtnText}>{T.hero} Start Mission</Text>
                 </Pressable>
-                {cameraSupported && (
-                  <Pressable style={styles.linkBtn} onPress={() => { setForceFallback(true); handleStart(); }}>
-                    <Text style={styles.linkText}>No camera? Play guided mode</Text>
-                  </Pressable>
-                )}
+                <Pressable style={styles.linkBtn} onPress={() => { setForceFallback(true); beginCalibration(); }}>
+                  <Text style={styles.linkText}>No camera? Play guided mode</Text>
+                </Pressable>
               </>
             )}
           </View>

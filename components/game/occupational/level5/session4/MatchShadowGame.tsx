@@ -1,33 +1,27 @@
-import GameInfoScreen from '@/components/game/GameInfoScreen';
-import ResultCard from '@/components/game/ResultCard';
+import { ThemedObjectTile } from '@/components/game/occupational/level5/session4/VisualFocusVisuals';
+import { useVisualFocusExit, VisualFocusShell } from '@/components/game/occupational/level5/session4/VisualFocusShell';
+import { SESSION5_4_PACING } from '@/components/game/occupational/level5/session4/session4Pacing';
+import { MATCH_SHADOW_COPY, MATCH_SHADOW_THEME } from '@/components/game/occupational/level5/session4/visualFocusThemes';
 import { logGameAndAward } from '@/utils/api';
-import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { cleanupSounds } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Dimensions,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const TOTAL_ROUNDS = 8;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const OBJECT_SIZE = 60;
-const SHADOW_SIZE = 60;
-const TOLERANCE = 50;
+const OBJECT_SIZE = 64;
+const SHADOW_SIZE = 64;
 
 const OBJECTS = [
-  { emoji: '🐱', shadow: '⬛' },
-  { emoji: '🐶', shadow: '⬛' },
-  { emoji: '🐰', shadow: '⬛' },
-  { emoji: '🐻', shadow: '⬛' },
-  { emoji: '🐸', shadow: '⬛' },
-  { emoji: '🦁', shadow: '⬛' },
+  { emoji: '🐱', label: 'cat' },
+  { emoji: '🐶', label: 'dog' },
+  { emoji: '🐰', label: 'bunny' },
+  { emoji: '🐻', label: 'bear' },
+  { emoji: '🐸', label: 'frog' },
+  { emoji: '🦁', label: 'lion' },
 ];
 
 interface GameObject {
@@ -37,236 +31,180 @@ interface GameObject {
   emoji: string;
   isShadow: boolean;
   matched: boolean;
+  isCorrectShadow: boolean;
 }
 
-const MatchShadowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const MatchShadowGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
+  const handleExit = useVisualFocusExit(onBack);
   const [showInfo, setShowInfo] = useState(true);
+  const [showCongrats, setShowCongrats] = useState(false);
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  
   const [objects, setObjects] = useState<GameObject[]>([]);
   const [selectedObject, setSelectedObject] = useState<GameObject | null>(null);
+
   const screenWidth = useRef(SCREEN_WIDTH);
   const screenHeight = useRef(SCREEN_HEIGHT);
   const endGameRef = useRef<(score: number) => Promise<void>>();
 
   const generateRound = useCallback(() => {
-    const selectedObj = OBJECTS[Math.floor(Math.random() * OBJECTS.length)];
+    const selectedObj = OBJECTS[Math.floor(Math.random() * OBJECTS.length)]!;
     const newObjects: GameObject[] = [];
 
-    // Create object
     newObjects.push({
       id: 'obj-1',
       x: Math.random() * (screenWidth.current - OBJECT_SIZE) + OBJECT_SIZE / 2,
-      y: Math.random() * (screenHeight.current / 2 - OBJECT_SIZE - 100) + OBJECT_SIZE / 2 + 100,
+      y: Math.random() * (screenHeight.current / 2 - OBJECT_SIZE - 20) + OBJECT_SIZE / 2 + 10,
       emoji: selectedObj.emoji,
       isShadow: false,
       matched: false,
+      isCorrectShadow: false,
     });
 
-    // Create correct shadow
     newObjects.push({
       id: 'shadow-correct',
       x: Math.random() * (screenWidth.current - SHADOW_SIZE) + SHADOW_SIZE / 2,
-      y: screenHeight.current / 2 + Math.random() * (screenHeight.current / 2 - SHADOW_SIZE - 100) + SHADOW_SIZE / 2,
-      emoji: selectedObj.shadow,
+      y: screenHeight.current / 2 + Math.random() * (screenHeight.current / 2 - SHADOW_SIZE - 20) + SHADOW_SIZE / 2,
+      emoji: selectedObj.emoji,
       isShadow: true,
       matched: false,
+      isCorrectShadow: true,
     });
 
-    // Create wrong shadows
-    const wrongObjects = OBJECTS.filter(o => o.emoji !== selectedObj.emoji);
+    const wrongObjects = OBJECTS.filter((o) => o.emoji !== selectedObj.emoji);
     for (let i = 0; i < 2; i++) {
-      const wrongObj = wrongObjects[Math.floor(Math.random() * wrongObjects.length)];
+      const wrongObj = wrongObjects[Math.floor(Math.random() * wrongObjects.length)]!;
       newObjects.push({
         id: `shadow-wrong-${i}`,
         x: Math.random() * (screenWidth.current - SHADOW_SIZE) + SHADOW_SIZE / 2,
-        y: screenHeight.current / 2 + Math.random() * (screenHeight.current / 2 - SHADOW_SIZE - 100) + SHADOW_SIZE / 2,
-        emoji: wrongObj.shadow,
+        y: screenHeight.current / 2 + Math.random() * (screenHeight.current / 2 - SHADOW_SIZE - 20) + SHADOW_SIZE / 2,
+        emoji: wrongObj.emoji,
         isShadow: true,
         matched: false,
+        isCorrectShadow: false,
       });
     }
 
-    // Shuffle shadows
-    const shadows = newObjects.filter(o => o.isShadow);
-    const object = newObjects.find(o => !o.isShadow)!;
+    const shadows = newObjects.filter((o) => o.isShadow);
+    const object = newObjects.find((o) => !o.isShadow)!;
     for (let i = shadows.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [shadows[i], shadows[j]] = [shadows[j], shadows[i]];
+      [shadows[i], shadows[j]] = [shadows[j]!, shadows[i]!];
     }
 
     setObjects([object, ...shadows]);
     setSelectedObject(null);
   }, []);
 
-  const handleObjectTap = useCallback((obj: GameObject) => {
-    if (done || obj.matched) return;
-    
-    if (!obj.isShadow) {
-      // Selected the object
-      setSelectedObject(obj);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    } else if (selectedObject) {
-      // Selected a shadow - check if it matches
-      const object = objects.find(o => !o.isShadow && !o.matched);
-      if (object) {
-        // Check if this is the correct shadow
-        const isCorrect = obj.id === 'shadow-correct';
-        
-        if (isCorrect) {
-          setObjects((prev) => prev.map((o) => 
-            (o.id === object.id || o.id === obj.id) ? { ...o, matched: true } : o
-          ));
-          
-          setScore((s) => {
-            const newScore = s + 1;
-            if (newScore >= TOTAL_ROUNDS) {
-              setTimeout(() => {
-                if (endGameRef.current) {
-                  endGameRef.current(newScore);
-                }
-              }, 1000);
-            } else {
-              setTimeout(() => {
-                setRound((r) => r + 1);
-                generateRound();
-              }, 1500);
-            }
-            return newScore;
-          });
+  const handleObjectTap = useCallback(
+    (obj: GameObject) => {
+      if (done || obj.matched) return;
 
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-          speakTTS('Perfect match!', 0.9, 'en-US' );
-        } else {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-          speakTTS('Try again!', 0.8, 'en-US' );
+      if (!obj.isShadow) {
+        setSelectedObject(obj);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      } else if (selectedObject) {
+        const object = objects.find((o) => !o.isShadow && !o.matched);
+        if (object) {
+          if (obj.isCorrectShadow) {
+            setObjects((prev) =>
+              prev.map((o) => (o.id === object.id || o.id === obj.id ? { ...o, matched: true } : o)),
+            );
+
+            setScore((s) => {
+              const newScore = s + 1;
+              if (newScore >= TOTAL_ROUNDS) {
+                setTimeout(() => endGameRef.current?.(newScore), 1000);
+              } else {
+                setTimeout(() => {
+                  setRound((r) => r + 1);
+                  generateRound();
+                }, 1500);
+              }
+              return newScore;
+            });
+
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+            speakTTS('Perfect match!', 0.9, 'en-US');
+          } else {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+            speakTTS('Try again!', 0.8, 'en-US');
+          }
+          setSelectedObject(null);
         }
-        setSelectedObject(null);
       }
-    }
-  }, [done, objects, selectedObject, generateRound]);
+    },
+    [done, objects, selectedObject, generateRound],
+  );
 
-  const endGame = useCallback(async (finalScore: number) => {
-    const total = TOTAL_ROUNDS;
-    const xp = finalScore * 15;
-    const accuracy = (finalScore / total) * 100;
+  const endGame = useCallback(
+    async (finalScore: number) => {
+      const total = TOTAL_ROUNDS;
+      const xp = finalScore * SESSION5_4_PACING.xpPerScore;
+      const accuracy = (finalScore / total) * 100;
 
-    setFinalStats({ correct: finalScore, total, xp });
-    setDone(true);
+      setFinalStats({ correct: finalScore, total, xp });
+      setDone(true);
+      setShowCongrats(true);
 
-    try {
-      await logGameAndAward({
-        type: 'match-shadow',
-        correct: finalScore,
-        total,
-        accuracy,
-        xpAwarded: xp,
-        skillTags: ['depth-perception', 'visual-matching', 'spatial-awareness'],
-      });
-      router.setParams({ refreshStats: Date.now().toString() });
-    } catch (error) {
-      console.error('Failed to log game:', error);
-    }
-  }, [router]);
+      try {
+        await logGameAndAward({
+          type: MATCH_SHADOW_COPY.logType,
+          correct: finalScore,
+          total,
+          accuracy,
+          xpAwarded: xp,
+          skillTags: [...MATCH_SHADOW_COPY.skillTags],
+        });
+        router.setParams({ refreshStats: Date.now().toString() });
+      } catch (error) {
+        console.error('Failed to log game:', error);
+      }
+    },
+    [router],
+  );
 
-  // Store endGame in ref to avoid closure issues
   useEffect(() => {
     endGameRef.current = endGame;
   }, [endGame]);
 
   useEffect(() => {
     if (!showInfo && !done) {
-      // Stop any ongoing TTS when new round starts
       stopTTS();
       generateRound();
-      setTimeout(() => {
-        speakTTS('Match the object with its shadow!', 0.8, 'en-US' );
-      }, 500);
+      setTimeout(() => speakTTS('Tap the animal, then its shadow!', 0.8, 'en-US'), 500);
     }
   }, [showInfo, round, done, generateRound]);
 
-  useEffect(() => {
-    return () => {
-      try {
-        stopTTS();
-      } catch (e) {
-        // Ignore errors
-      }
-      cleanupSounds();
-    };
+  useEffect(() => () => {
+    try { stopTTS(); } catch { /* ignore */ }
+    cleanupSounds();
   }, []);
 
-  if (showInfo) {
-    return (
-      <GameInfoScreen
-        title="Match Shadow"
-        emoji="🕳️"
-        description="Match the object with its shadow! Build depth perception."
-        skills={['Depth perception']}
-        suitableFor="Children learning visual matching and depth perception"
-        onStart={() => {
-          setShowInfo(false);
-        }}
-        onBack={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
-    );
-  }
-
-  if (done && finalStats) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ResultCard
-          correct={finalStats.correct}
-          total={finalStats.total}
-          xpAwarded={finalStats.xp}
-          onHome={() => {
-            stopAllSpeech();
-            cleanupSounds();
-            onBack?.();
-          }}
-          onPlayAgain={() => {
-            setRound(1);
-            setScore(0);
-            setDone(false);
-            setFinalStats(null);
-            generateRound();
-          }}
-        />
-      </SafeAreaView>
-    );
-  }
+  const hint = selectedObject ? 'Now tap the matching shadow!' : 'Tap an animal on stage';
 
   return (
-    <SafeAreaView style={styles.container}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      >
-        <Text style={styles.backButtonText}>← Back</Text>
-      </TouchableOpacity>
-
-      <View style={styles.header}>
-        <Text style={styles.title}>Match Shadow</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 🕳️ Score: {score}
-        </Text>
-        <Text style={styles.instruction}>
-          Match the object with its shadow!
-        </Text>
-      </View>
-
+    <VisualFocusShell
+      theme={MATCH_SHADOW_THEME}
+      copy={MATCH_SHADOW_COPY}
+      showInfo={showInfo}
+      showCongrats={showCongrats}
+      done={done}
+      finalStats={finalStats}
+      round={round}
+      totalRounds={TOTAL_ROUNDS}
+      score={score}
+      hint={hint}
+      showHint
+      onStart={() => setShowInfo(false)}
+      onExit={handleExit}
+      onContinue={onComplete}
+      onBack={onBack}
+    >
+      <View style={styles.stageDivider} />
       <View
         style={styles.gameArea}
         onLayout={(e) => {
@@ -274,134 +212,83 @@ const MatchShadowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           screenHeight.current = e.nativeEvent.layout.height;
         }}
       >
-        {objects.map((obj) => (
-          <TouchableOpacity
-            key={obj.id}
-            activeOpacity={0.7}
-            onPress={() => handleObjectTap(obj)}
-            disabled={obj.matched}
-            style={[
-              styles.object,
-              obj.isShadow ? styles.shadow : styles.regularObject,
-              {
-                left: obj.x - (obj.isShadow ? SHADOW_SIZE : OBJECT_SIZE) / 2,
-                top: obj.y - (obj.isShadow ? SHADOW_SIZE : OBJECT_SIZE) / 2,
-                width: obj.isShadow ? SHADOW_SIZE : OBJECT_SIZE,
-                height: obj.isShadow ? SHADOW_SIZE : OBJECT_SIZE,
-                opacity: obj.matched ? 0.3 : 1,
-                borderColor: selectedObject && !obj.isShadow && obj.id === selectedObject.id ? '#3B82F6' : '#E2E8F0',
-                borderWidth: selectedObject && !obj.isShadow && obj.id === selectedObject.id ? 4 : 2,
-                zIndex: obj.matched ? 1 : 10,
-              },
-            ]}
-          >
-            <Text style={styles.objectEmoji}>{obj.emoji}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        {objects.map((obj) => {
+          const size = obj.isShadow ? SHADOW_SIZE : OBJECT_SIZE;
+          const selected = selectedObject && !obj.isShadow && obj.id === selectedObject.id;
 
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Skills: Depth perception
-        </Text>
-        <Text style={styles.footerSubtext}>
-          Match the object with its shadow!
-        </Text>
+          if (obj.isShadow) {
+            return (
+              <TouchableOpacity
+                key={obj.id}
+                activeOpacity={0.75}
+                onPress={() => handleObjectTap(obj)}
+                disabled={obj.matched}
+                style={[
+                  styles.shadowTile,
+                  {
+                    left: obj.x - size / 2,
+                    top: obj.y - size / 2,
+                    width: size,
+                    height: size,
+                    opacity: obj.matched ? 0.25 : 1,
+                  },
+                ]}
+              >
+                <Text style={styles.shadowEmoji}>{obj.emoji}</Text>
+              </TouchableOpacity>
+            );
+          }
+
+          return (
+            <TouchableOpacity
+              key={obj.id}
+              activeOpacity={0.75}
+              onPress={() => handleObjectTap(obj)}
+              disabled={obj.matched}
+              style={[
+                styles.tilePress,
+                {
+                  left: obj.x - size / 2,
+                  top: obj.y - size / 2,
+                  opacity: obj.matched ? 0.3 : 1,
+                },
+              ]}
+            >
+              <ThemedObjectTile size={size} highlight={!!selected} accentColor={MATCH_SHADOW_THEME.accent}>
+                <Text style={styles.objectEmoji}>{obj.emoji}</Text>
+              </ThemedObjectTile>
+            </TouchableOpacity>
+          );
+        })}
       </View>
-    </SafeAreaView>
+    </VisualFocusShell>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-  },
-  backButton: {
+  stageDivider: {
     position: 'absolute',
-    top: 50,
     left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    right: 16,
+    top: '48%',
+    height: 2,
+    backgroundColor: 'rgba(244,114,182,0.25)',
+    zIndex: 2,
   },
-  backButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  header: {
-    marginTop: 80,
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#475569',
-    marginBottom: 12,
-  },
-  instruction: {
-    fontSize: 16,
-    color: '#3B82F6',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  gameArea: {
-    flex: 1,
-    position: 'relative',
-    marginVertical: 40,
-    width: '100%',
-    height: '100%',
-  },
-  object: {
+  gameArea: { flex: 1, position: 'relative' },
+  tilePress: { position: 'absolute', zIndex: 10 },
+  objectEmoji: { fontSize: 32 },
+  shadowTile: {
     position: 'absolute',
+    borderRadius: 32,
+    backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
+    borderWidth: 2,
+    borderColor: 'rgba(244,114,182,0.4)',
+    zIndex: 10,
   },
-  regularObject: {
-    width: OBJECT_SIZE,
-    height: OBJECT_SIZE,
-    borderRadius: OBJECT_SIZE / 2,
-    backgroundColor: '#FFFFFF',
-  },
-  shadow: {
-    width: SHADOW_SIZE,
-    height: SHADOW_SIZE,
-    borderRadius: SHADOW_SIZE / 2,
-    backgroundColor: '#1F2937',
-  },
-  objectEmoji: {
-    fontSize: 30,
-  },
-  footer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  footerSubtext: {
-    fontSize: 12,
-    color: '#64748B',
-    textAlign: 'center',
-  },
+  shadowEmoji: { fontSize: 30, opacity: 0.15 },
 });
 
 export default MatchShadowGame;

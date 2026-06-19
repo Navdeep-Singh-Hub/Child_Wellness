@@ -1,146 +1,138 @@
-import GameInfoScreen from '@/components/game/GameInfoScreen';
-import ResultCard from '@/components/game/ResultCard';
+import { isTapNearTarget } from '@/components/game/occupational/level5/shared/movingTargetTouch';
+import { BigCountdown, GlowingTarget } from '@/components/game/occupational/level5/session6/SpeedMatchVisuals';
+import { SpeedMatchShell, useSpeedMatchExit } from '@/components/game/occupational/level5/session6/SpeedMatchShell';
+import { getSpeedMatchTheme } from '@/components/game/occupational/level5/session6/speedMatchThemes';
+import { SESSION5_6_PACING as P } from '@/components/game/occupational/level5/session6/session6Pacing';
 import { logGameAndAward } from '@/utils/api';
-import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { cleanupSounds } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Dimensions,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming,
-} from 'react-native-reanimated';
+import { Dimensions, GestureResponderEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 
-const TOTAL_ROUNDS = 8;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const TARGET_SIZE = 70;
+const TARGET_SIZE = 72;
 const TOLERANCE = 50;
-const COUNTDOWN_TIME = 3000; // 3 seconds
+const LOG_TYPE = 'countdown-hit';
 
-const CountdownHitGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const CountdownHitGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
+  const { theme, copy } = getSpeedMatchTheme(LOG_TYPE);
+  const handleExit = useSpeedMatchExit(onBack);
+
   const [showInfo, setShowInfo] = useState(true);
+  const [showCongrats, setShowCongrats] = useState(false);
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [countdown, setCountdown] = useState(3);
   const [targetVisible, setTargetVisible] = useState(false);
-  
-  const targetX = useSharedValue(SCREEN_WIDTH * 0.5);
-  const targetY = useSharedValue(SCREEN_HEIGHT * 0.5);
-  const targetScale = useSharedValue(1);
-  const targetOpacity = useSharedValue(0);
+  const [targetPos, setTargetPos] = useState({ x: SCREEN_WIDTH * 0.5, y: SCREEN_HEIGHT * 0.5 });
+
   const screenWidth = useRef(SCREEN_WIDTH);
   const screenHeight = useRef(SCREEN_HEIGHT);
-  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const endGameRef = useRef<((finalScore: number) => Promise<void>) | null>(null);
+
+  const clearTimers = useCallback(() => {
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+  }, []);
+
+  const endGame = useCallback(
+    async (finalScore: number) => {
+      clearTimers();
+      const total = P.timedRounds;
+      const xp = finalScore * P.timedXp;
+      setFinalStats({ correct: finalScore, total, xp });
+      setDone(true);
+      setShowCongrats(true);
+
+      try {
+        await logGameAndAward({
+          type: LOG_TYPE,
+          correct: finalScore,
+          total,
+          accuracy: (finalScore / total) * 100,
+          xpAwarded: xp,
+          skillTags: ['anticipation', 'timing', 'countdown-response'],
+        });
+        router.setParams({ refreshStats: Date.now().toString() });
+      } catch (error) {
+        console.error('Failed to log game:', error);
+      }
+    },
+    [clearTimers, router],
+  );
+
+  useEffect(() => {
+    endGameRef.current = endGame;
+  }, [endGame]);
+
+  const revealTarget = useCallback(() => {
+    const x = Math.random() * (screenWidth.current - TARGET_SIZE) + TARGET_SIZE / 2;
+    const y = Math.random() * (screenHeight.current - TARGET_SIZE - 40) + TARGET_SIZE / 2 + 20;
+    setTargetPos({ x, y });
+    setTargetVisible(true);
+    speakTTS('Tap now!', 0.9, 'en-US');
+  }, []);
 
   const startRound = useCallback(() => {
-    // Stop any ongoing TTS when new round starts
+    clearTimers();
     stopTTS();
     setCountdown(3);
     setTargetVisible(false);
-    targetOpacity.value = 0;
-    
+
     let currentCount = 3;
-    const countdownInterval = setInterval(() => {
-      currentCount--;
+    speakTTS('3', 0.9, 'en-US');
+
+    countdownTimerRef.current = setInterval(() => {
+      currentCount -= 1;
       setCountdown(currentCount);
-      speakTTS(currentCount.toString(), 0.9, 'en-US' );
-      
-      if (currentCount === 0) {
-        clearInterval(countdownInterval);
-        // Show target
-        targetX.value = Math.random() * (screenWidth.current - TARGET_SIZE) + TARGET_SIZE / 2;
-        targetY.value = Math.random() * (screenHeight.current - TARGET_SIZE - 200) + TARGET_SIZE / 2 + 100;
-        targetOpacity.value = withTiming(1, { duration: 300 });
-        targetScale.value = withSpring(1.2, {}, () => {
-          targetScale.value = withSpring(1);
-        });
-        setTargetVisible(true);
-        speakTTS('Tap now!', 0.9, 'en-US' );
+
+      if (currentCount > 0) {
+        speakTTS(currentCount.toString(), 0.9, 'en-US');
+        return;
       }
+
+      clearTimers();
+      setCountdown(0);
+      revealTarget();
     }, 1000);
-    
-    countdownTimerRef.current = countdownInterval;
-  }, [targetX, targetY, targetOpacity, targetScale]);
+  }, [clearTimers, revealTarget]);
 
-  const handleTap = useCallback((event: { nativeEvent: { locationX: number; locationY: number } }) => {
-    if (done || !targetVisible) return;
-    
-    const tapX = event.nativeEvent.locationX;
-    const tapY = event.nativeEvent.locationY;
-    
-    const distance = Math.sqrt(
-      Math.pow(tapX - targetX.value, 2) + Math.pow(tapY - targetY.value, 2)
-    );
+  const onHitSuccess = useCallback(() => {
+    setTargetVisible(false);
 
-    if (distance <= TOLERANCE + TARGET_SIZE / 2) {
-      targetOpacity.value = withTiming(0, { duration: 200 });
-      setTargetVisible(false);
+    setScore((s) => {
+      const newScore = s + 1;
+      if (newScore >= P.timedRounds) {
+        setTimeout(() => endGameRef.current?.(newScore), 900);
+      } else {
+        setTimeout(() => setRound((r) => r + 1), 1200);
+      }
+      return newScore;
+    });
 
-      setScore((s) => {
-        const newScore = s + 1;
-        if (newScore >= TOTAL_ROUNDS) {
-          if (countdownTimerRef.current) {
-            clearInterval(countdownTimerRef.current);
-          }
-          setTimeout(() => {
-            endGame(newScore);
-          }, 1000);
-        } else {
-          setTimeout(() => {
-            setRound((r) => r + 1);
-            startRound();
-          }, 1500);
-        }
-        return newScore;
-      });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    speakTTS('Perfect timing!', 0.9, 'en-US');
+  }, []);
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      speakTTS('Perfect timing!', 0.9, 'en-US' );
-    } else {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    }
-  }, [done, targetVisible, targetX, targetY, targetOpacity, startRound]);
-
-  const endGame = useCallback(async (finalScore: number) => {
-    const total = TOTAL_ROUNDS;
-    const xp = finalScore * 18;
-    const accuracy = (finalScore / total) * 100;
-
-    if (countdownTimerRef.current) {
-      clearInterval(countdownTimerRef.current);
-    }
-
-    setFinalStats({ correct: finalScore, total, xp });
-    setDone(true);
-
-    try {
-      await logGameAndAward({
-        type: 'countdown-hit',
-        correct: finalScore,
-        total,
-        accuracy,
-        xpAwarded: xp,
-        skillTags: ['anticipation', 'timing', 'countdown-response'],
-      });
-      router.setParams({ refreshStats: Date.now().toString() });
-    } catch (error) {
-      console.error('Failed to log game:', error);
-    }
-  }, [router]);
+  const handleTap = useCallback(
+    (event: GestureResponderEvent) => {
+      if (done || !targetVisible) return;
+      if (isTapNearTarget(event, targetPos.x, targetPos.y, TARGET_SIZE, TOLERANCE)) {
+        onHitSuccess();
+      } else {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      }
+    },
+    [done, onHitSuccess, targetPos.x, targetPos.y, targetVisible],
+  );
 
   useEffect(() => {
     if (!showInfo && !done) {
@@ -148,99 +140,35 @@ const CountdownHitGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   }, [showInfo, round, done, startRound]);
 
-  useEffect(() => {
-    return () => {
-      try {
-        stopTTS();
-      } catch (e) {
-        // Ignore errors
-      }
-      cleanupSounds();
-      if (countdownTimerRef.current) {
-        clearInterval(countdownTimerRef.current);
-      }
-    };
-  }, []);
+  useEffect(() => () => {
+    try { stopTTS(); } catch { /* ignore */ }
+    cleanupSounds();
+    clearTimers();
+  }, [clearTimers]);
 
-  const targetStyle = useAnimatedStyle(() => ({
-    left: targetX.value - TARGET_SIZE / 2,
-    top: targetY.value - TARGET_SIZE / 2,
-    transform: [{ scale: targetScale.value }],
-    opacity: targetOpacity.value,
-  }));
-
-  if (showInfo) {
-    return (
-      <GameInfoScreen
-        title="Countdown Hit"
-        emoji="⏰"
-        description="Wait for the countdown, then tap! Build anticipation."
-        skills={['Anticipation']}
-        suitableFor="Children learning anticipation and timing"
-        onStart={() => {
-          setShowInfo(false);
-        }}
-        onBack={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
-    );
-  }
-
-  if (done && finalStats) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ResultCard
-          correct={finalStats.correct}
-          total={finalStats.total}
-          xpAwarded={finalStats.xp}
-          onHome={() => {
-            stopAllSpeech();
-            cleanupSounds();
-            onBack?.();
-          }}
-          onPlayAgain={() => {
-            setRound(1);
-            setScore(0);
-            setDone(false);
-            setFinalStats(null);
-            startRound();
-          }}
-        />
-      </SafeAreaView>
-    );
-  }
+  const hint = targetVisible ? '🎯 TAP NOW!' : countdown > 0 ? `Wait… ${countdown}` : 'Get ready…';
 
   return (
-    <SafeAreaView style={styles.container}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      >
-        <Text style={styles.backButtonText}>← Back</Text>
-      </TouchableOpacity>
-
-      <View style={styles.header}>
-        <Text style={styles.title}>Countdown Hit</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • ⏰ Score: {score}
-        </Text>
-        <View style={styles.countdownContainer}>
-          {!targetVisible && countdown > 0 && (
-            <Text style={styles.countdownText}>{countdown}</Text>
-          )}
-          {targetVisible && (
-            <Text style={styles.tapText}>TAP NOW!</Text>
-          )}
-        </View>
-      </View>
-
+    <SpeedMatchShell
+      theme={theme}
+      copy={copy}
+      showInfo={showInfo}
+      showCongrats={showCongrats}
+      done={done}
+      finalStats={finalStats}
+      round={round}
+      totalRounds={P.timedRounds}
+      score={score}
+      hint={hint}
+      showHint
+      onStart={() => setShowInfo(false)}
+      onExit={() => {
+        clearTimers();
+        handleExit();
+      }}
+      onContinue={onComplete}
+      onBack={onBack}
+    >
       <Pressable
         style={styles.gameArea}
         onLayout={(e) => {
@@ -249,114 +177,35 @@ const CountdownHitGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         }}
         onPress={handleTap}
       >
-        <Animated.View style={[styles.target, targetStyle]} pointerEvents="none">
-          <Text style={styles.targetEmoji}>🎯</Text>
-        </Animated.View>
+        {!targetVisible && countdown > 0 && (
+          <View style={styles.cdCenter} pointerEvents="none">
+            <BigCountdown value={countdown} accent={theme.accent} />
+          </View>
+        )}
+        {targetVisible && (
+          <View
+            style={[styles.targetWrap, { left: targetPos.x - TARGET_SIZE / 2, top: targetPos.y - TARGET_SIZE / 2 }]}
+            pointerEvents="none"
+          >
+            <GlowingTarget size={TARGET_SIZE} color={theme.accent} emoji="🎯" urgent />
+          </View>
+        )}
+        {targetVisible && (
+          <View style={styles.strikeBanner} pointerEvents="none">
+            <Text style={[styles.strikeText, { color: theme.cue }]}>STRIKE!</Text>
+          </View>
+        )}
       </Pressable>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Skills: Anticipation
-        </Text>
-        <Text style={styles.footerSubtext}>
-          Wait for countdown, then tap!
-        </Text>
-      </View>
-    </SafeAreaView>
+    </SpeedMatchShell>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  header: {
-    marginTop: 80,
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#475569',
-    marginBottom: 12,
-  },
-  countdownContainer: {
-    height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  countdownText: {
-    fontSize: 48,
-    fontWeight: '900',
-    color: '#EF4444',
-  },
-  tapText: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#10B981',
-  },
-  gameArea: {
-    flex: 1,
-    position: 'relative',
-    marginVertical: 40,
-  },
-  target: {
-    position: 'absolute',
-    width: TARGET_SIZE,
-    height: TARGET_SIZE,
-    borderRadius: TARGET_SIZE / 2,
-    backgroundColor: '#F59E0B',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 4,
-    borderColor: '#D97706',
-    shadowColor: '#F59E0B',
-    shadowOpacity: 0.6,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
-  },
-  targetEmoji: {
-    fontSize: 40,
-  },
-  footer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  footerSubtext: {
-    fontSize: 12,
-    color: '#64748B',
-    textAlign: 'center',
-  },
+  gameArea: { flex: 1, position: 'relative' },
+  cdCenter: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', zIndex: 5 },
+  targetWrap: { position: 'absolute', zIndex: 10 },
+  strikeBanner: { position: 'absolute', top: 16, alignSelf: 'center', left: 0, right: 0, alignItems: 'center' },
+  strikeText: { fontSize: 22, fontWeight: '900', letterSpacing: 2 },
 });
 
 export default CountdownHitGame;

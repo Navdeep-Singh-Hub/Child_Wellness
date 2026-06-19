@@ -515,6 +515,66 @@ import RocketLaunchGame from '@/components/game/occupational/level7/session1/Roc
 import RainbowRunGame from '@/components/game/occupational/level7/session1/RainbowRunGame';
 import WaveWalkerGame from '@/components/game/occupational/level7/session1/WaveWalkerGame';
 import AdventurePathGame from '@/components/game/occupational/level7/session1/AdventurePathGame';
+// Occupational Therapy Level 8 Session 1: Single-Step Motor Planning (camera/pose)
+import TouchTheTargetGame from '@/components/game/occupational/level8/session1/TouchTheTargetGame';
+import ReachTheStarGame from '@/components/game/occupational/level8/session1/ReachTheStarGame';
+import MoveToTheSpotGame from '@/components/game/occupational/level8/session1/MoveToTheSpotGame';
+import LaunchTheRocketGame from '@/components/game/occupational/level8/session1/LaunchTheRocketGame';
+import PlaceTheBoxGame from '@/components/game/occupational/level8/session1/PlaceTheBoxGame';
+// Occupational Therapy Level 8 Session 2: Two-Step Motor Planning (camera/pose)
+import ClapThenJumpGame from '@/components/game/occupational/level8/session2/ClapThenJumpGame';
+import TouchThenTurnGame from '@/components/game/occupational/level8/session2/TouchThenTurnGame';
+import ReachThenFreezeGame from '@/components/game/occupational/level8/session2/ReachThenFreezeGame';
+import LaunchThenCatchGame from '@/components/game/occupational/level8/session2/LaunchThenCatchGame';
+import PickAndPlaceGame from '@/components/game/occupational/level8/session2/PickAndPlaceGame';
+// Occupational Therapy Level 8 Session 3: Multi-Step Sequencing (camera/pose)
+import ActionChainGame from '@/components/game/occupational/level8/session3/ActionChainGame';
+import StarSequenceGame from '@/components/game/occupational/level8/session3/StarSequenceGame';
+import MissionStepsGame from '@/components/game/occupational/level8/session3/MissionStepsGame';
+import PirateCommandsGame from '@/components/game/occupational/level8/session3/PirateCommandsGame';
+import RainbowSequenceGame from '@/components/game/occupational/level8/session3/RainbowSequenceGame';
+// Occupational Therapy Level 8 Session 4: Motor Imitation (camera/pose)
+import RobotCopyGame from '@/components/game/occupational/level8/session4/RobotCopyGame';
+import AnimalCopyGame from '@/components/game/occupational/level8/session4/AnimalCopyGame';
+import DanceMirrorGame from '@/components/game/occupational/level8/session4/DanceMirrorGame';
+import PoseMatchGameL8 from '@/components/game/occupational/level8/session4/PoseMatchGame';
+import QuickCopyGame from '@/components/game/occupational/level8/session4/QuickCopyGame';
+// Occupational Therapy Level 8 Session 5: Body Position Planning (camera/pose)
+import HighReachGame from '@/components/game/occupational/level8/session5/HighReachGame';
+import LowReachGame from '@/components/game/occupational/level8/session5/LowReachGame';
+import SideReachGame from '@/components/game/occupational/level8/session5/SideReachGame';
+import TurnPositionGame from '@/components/game/occupational/level8/session5/TurnPositionGame';
+import ShapeBodyGame from '@/components/game/occupational/level8/session5/ShapeBodyGame';
+// Occupational Therapy Level 8 Session 6: Obstacle Navigation (camera/pose)
+import JunglePathGame from '@/components/game/occupational/level8/session6/JunglePathGame';
+import LavaEscapeGame from '@/components/game/occupational/level8/session6/LavaEscapeGame';
+import MountainRouteGame from '@/components/game/occupational/level8/session6/MountainRouteGame';
+import SpaceMazeGame from '@/components/game/occupational/level8/session6/SpaceMazeGame';
+import PirateIslandGame from '@/components/game/occupational/level8/session6/PirateIslandGame';
+// Occupational Therapy Level 8 Session 7: Bilateral Motor Planning (camera/pose)
+import TwinMovesGame from '@/components/game/occupational/level8/session7/TwinMovesGame';
+import CrossClapGame from '@/components/game/occupational/level8/session7/CrossClapGame';
+import BearPatternGame from '@/components/game/occupational/level8/session7/BearPatternGame';
+import MirrorHandsGame from '@/components/game/occupational/level8/session7/MirrorHandsGame';
+import DualActionGame from '@/components/game/occupational/level8/session7/DualActionGame';
+// Occupational Therapy Level 8 Session 8: Movement Problem Solving (camera/pose)
+import FindTheRouteGame from '@/components/game/occupational/level8/session8/FindTheRouteGame';
+import OpenThePathGame from '@/components/game/occupational/level8/session8/OpenThePathGame';
+import MovementPuzzleGame from '@/components/game/occupational/level8/session8/MovementPuzzleGame';
+import RescueMissionGame from '@/components/game/occupational/level8/session8/RescueMissionGame';
+import EscapeCourseGame from '@/components/game/occupational/level8/session8/EscapeCourseGame';
+// Occupational Therapy Level 8 Session 9: Novel Motor Challenges (camera/pose)
+import AlienMovesGame from '@/components/game/occupational/level8/session9/AlienMovesGame';
+import RobotFactoryGame from '@/components/game/occupational/level8/session9/RobotFactoryGame';
+import MysteryIslandGame from '@/components/game/occupational/level8/session9/MysteryIslandGame';
+import SurpriseActionsGame from '@/components/game/occupational/level8/session9/SurpriseActionsGame';
+import ChallengeQuestGame from '@/components/game/occupational/level8/session9/ChallengeQuestGame';
+// Occupational Therapy Level 8 Session 10: Praxis Adventure (camera/pose)
+import JungleExpeditionPraxisGame from '@/components/game/occupational/level8/session10/JungleExpeditionPraxisGame';
+import SpaceExplorerPraxisGame from '@/components/game/occupational/level8/session10/SpaceExplorerPraxisGame';
+import PirateTreasureHuntGame from '@/components/game/occupational/level8/session10/PirateTreasureHuntGame';
+import MountainMissionGame from '@/components/game/occupational/level8/session10/MountainMissionGame';
+import PraxisChampionGame from '@/components/game/occupational/level8/session10/PraxisChampionGame';
 // Occupational Therapy Level 7 Session 2: Head Movement & Vestibular Activation (camera/pose)
 import LookUpExplorerGame from '@/components/game/occupational/level7/session2/LookUpExplorerGame';
 import SkyGroundMissionGame from '@/components/game/occupational/level7/session2/SkyGroundMissionGame';
@@ -636,7 +696,7 @@ import PatternCopyGame from '@/components/game/occupational/level3/session9/Patt
 import AnimalPoseGame from '@/components/game/occupational/level3/session10/AnimalPoseGame';
 import CountHoldGame from '@/components/game/occupational/level3/session10/CountHoldGame';
 import FreezePoseGame from '@/components/game/occupational/level3/session10/FreezePoseGame';
-import PoseMatchGame from '@/components/game/occupational/level3/session10/PoseMatchGame';
+import PoseMatchGameL3 from '@/components/game/occupational/level3/session10/PoseMatchGame';
 import ShapePoseGame from '@/components/game/occupational/level3/session10/ShapePoseGame';
 
 // Occupational Therapy Level 4 Session 1: Drag Object Left → Right
@@ -724,6 +784,11 @@ import SmallTargetGame from '@/components/game/occupational/level5/session2/Smal
 import TimedTargetGame from '@/components/game/occupational/level5/session2/TimedTargetGame';
 
 // Occupational Therapy Level 5 Session 3: Drag to Track
+import CometChaseGame from '@/components/game/occupational/level5/session3/CometChaseGame';
+import LightningDragGame from '@/components/game/occupational/level5/session3/LightningDragGame';
+import RiverBoatDragGame from '@/components/game/occupational/level5/session3/RiverBoatDragGame';
+import RocketDragGame from '@/components/game/occupational/level5/session3/RocketDragGame';
+import TrainTrackDragGame from '@/components/game/occupational/level5/session3/TrainTrackDragGame';
 
 // Occupational Therapy Level 5 Session 4: Visual Focus
 import FindTheStarGame from '@/components/game/occupational/level5/session4/FindTheStarGame';
@@ -734,6 +799,10 @@ import WhatMovedGame from '@/components/game/occupational/level5/session4/WhatMo
 
 // Occupational Therapy Level 5 Session 5: Moving Eye Control
 import SideEyeTrackGame from '@/components/game/occupational/level5/session5/SideEyeTrackGame';
+import UpDownTrackGame from '@/components/game/occupational/level5/session5/UpDownTrackGame';
+import CircularTrackGame from '@/components/game/occupational/level5/session5/CircularTrackGame';
+import JumpTrackGame from '@/components/game/occupational/level5/session5/JumpTrackGame';
+import MultiDotGame from '@/components/game/occupational/level5/session5/MultiDotGame';
 
 // Occupational Therapy Level 5 Session 6: Speed Matching
 import CountdownHitGame from '@/components/game/occupational/level5/session6/CountdownHitGame';
@@ -743,7 +812,23 @@ import SlowCatchGame from '@/components/game/occupational/level5/session6/SlowCa
 import SpeedSwitchGame from '@/components/game/occupational/level5/session6/SpeedSwitchGame';
 
 // Occupational Therapy Level 5 Session 7: Depth & Distance
-import NearVsFarGame from '@/components/game/occupational/level5/session7/NearVsFarGame';
+import DepthDistanceGame from '@/components/game/occupational/level5/session7/DepthDistanceGame';
+import {
+  DEPTH_SHRINKING_TARGET,
+  FALLING_OBJECTS,
+  NEAR_VS_FAR,
+  THREE_LAYER_TAP,
+  ZOOM_TOUCH,
+  type DepthGameConfig,
+} from '@/components/game/occupational/level5/session7/depthDistanceConfig';
+
+const L5_SESSION7_DEPTH_CONFIGS: Record<string, DepthGameConfig> = {
+  'near-vs-far': NEAR_VS_FAR,
+  'zoom-touch': ZOOM_TOUCH,
+  'falling-objects': FALLING_OBJECTS,
+  'depth-shrinking-target': DEPTH_SHRINKING_TARGET,
+  '3-layer-tap': THREE_LAYER_TAP,
+};
 
 // Occupational Therapy Level 5 Session 8: Multi-Object Tracking
 import DistractionModeGame from '@/components/game/occupational/level5/session8/DistractionModeGame';
@@ -758,6 +843,13 @@ import GoStopGame from '@/components/game/occupational/level5/session9/GoStopGam
 import QuickChoiceGame from '@/components/game/occupational/level5/session9/QuickChoiceGame';
 import SoundLightGame from '@/components/game/occupational/level5/session9/SoundLightGame';
 import SurprisePopGame from '@/components/game/occupational/level5/session9/SurprisePopGame';
+
+// Occupational Therapy Level 5 Session 10: Integrated Visual Challenge
+import PursuitComboGame from '@/components/game/occupational/level5/session10/PursuitComboGame';
+import FocusRelayGame from '@/components/game/occupational/level5/session10/FocusRelayGame';
+import DepthMixGame from '@/components/game/occupational/level5/session10/DepthMixGame';
+import ReactionRelayGame from '@/components/game/occupational/level5/session10/ReactionRelayGame';
+import EagleEyeQuestGame from '@/components/game/occupational/level5/session10/EagleEyeQuestGame';
 
 // Speech Therapy Level 2 Session 3 (Airflow Games)
 import { BalloonInflateGame } from '@/components/game/speech/level2/session3/BalloonInflateGame';
@@ -1403,6 +1495,56 @@ type GameKey =
   | 'rainbow-run'
   | 'wave-walker'
   | 'adventure-path'
+  | 'touch-the-target'
+  | 'reach-the-star'
+  | 'move-to-the-spot'
+  | 'launch-the-rocket'
+  | 'place-the-box'
+  | 'clap-then-jump'
+  | 'touch-then-turn'
+  | 'reach-then-freeze'
+  | 'launch-then-catch'
+  | 'pick-and-place'
+  | 'action-chain'
+  | 'star-sequence'
+  | 'mission-steps'
+  | 'pirate-commands'
+  | 'rainbow-sequence'
+  | 'robot-copy'
+  | 'animal-copy'
+  | 'dance-mirror'
+  | 'pose-match'
+  | 'quick-copy'
+  | 'high-reach'
+  | 'low-reach'
+  | 'side-reach'
+  | 'turn-position'
+  | 'shape-body'
+  | 'jungle-path'
+  | 'lava-escape'
+  | 'mountain-route'
+  | 'space-maze'
+  | 'pirate-island'
+  | 'twin-moves'
+  | 'cross-clap'
+  | 'bear-pattern'
+  | 'mirror-hands'
+  | 'dual-action'
+  | 'find-the-route'
+  | 'open-the-path'
+  | 'movement-puzzle'
+  | 'rescue-mission'
+  | 'escape-course'
+  | 'alien-moves'
+  | 'robot-factory'
+  | 'mystery-island'
+  | 'surprise-actions'
+  | 'challenge-quest'
+  | 'praxis-jungle-expedition'
+  | 'praxis-space-explorer'
+  | 'praxis-pirate-treasure'
+  | 'praxis-mountain-mission'
+  | 'praxis-champion'
   | 'look-up-explorer'
   | 'sky-ground-mission'
   | 'helicopter-watch'
@@ -1443,7 +1585,7 @@ type GameKey =
   | 'forest-explorer'
   | 'endless-tracks'
   | 'balance-marathon'
-  | 'pirate-island'
+  | 'pirate-island-challenge'
   | 'space-explorer-course'
   | 'jungle-expedition'
   | 'mountain-adventure'
@@ -1497,7 +1639,7 @@ type GameKey =
   | 'animal-pose'
   | 'shape-pose'
   | 'count-hold'
-  | 'pose-match'
+  | 'posture-match'
   | 'ball-transfer'
   | 'feed-the-monster'
   | 'road-crossing'
@@ -1621,6 +1763,11 @@ type GameKey =
   | 'small-target'
   | 'moving-target'
   | 'timed-target'
+  | 'drag-rocket'
+  | 'drag-train'
+  | 'drag-comet'
+  | 'drag-river'
+  | 'drag-lightning'
   | 'find-the-star'
   | 'memory-flash'
   | 'match-shadow'
@@ -1639,7 +1786,7 @@ type GameKey =
   | 'near-vs-far'
   | 'zoom-touch'
   | 'falling-objects'
-  | 'shrinking-target'
+  | 'depth-shrinking-target'
   | '3-layer-tap'
   | 'follow-red'
   | 'two-moving-balls'
@@ -1651,6 +1798,11 @@ type GameKey =
   | 'surprise-pop'
   | 'sound-light'
   | 'quick-choice'
+  | 'pursuit-combo'
+  | 'focus-relay'
+  | 'depth-mix'
+  | 'reaction-relay'
+  | 'eagle-eye-quest'
   // Special Education - The Matcher (Session 2)
   | 'sound-to-picture'
   | 'letter-to-sound'
@@ -3072,6 +3224,126 @@ export default function SessionGamesScreen() {
   const isAdventurePathAvailable =
     therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 1;
 
+  // Level 8 Session 1 games - Occupational Therapy (Single-Step Motor Planning · camera/pose)
+  const isTouchTheTargetAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 1;
+  const isReachTheStarAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 1;
+  const isMoveToTheSpotAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 1;
+  const isLaunchTheRocketAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 1;
+  const isPlaceTheBoxAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 1;
+
+  // Level 8 Session 2 games - Occupational Therapy (Two-Step Motor Planning · camera/pose)
+  const isClapThenJumpAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 2;
+  const isTouchThenTurnAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 2;
+  const isReachThenFreezeAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 2;
+  const isLaunchThenCatchAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 2;
+  const isPickAndPlaceAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 2;
+
+  // Level 8 Session 3 games - Occupational Therapy (Multi-Step Sequencing · camera/pose)
+  const isActionChainAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 3;
+  const isStarSequenceAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 3;
+  const isMissionStepsAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 3;
+  const isPirateCommandsAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 3;
+  const isRainbowSequenceAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 3;
+
+  // Level 8 Session 4 games - Occupational Therapy (Motor Imitation · camera/pose)
+  const isRobotCopyAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 4;
+  const isAnimalCopyAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 4;
+  const isDanceMirrorAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 4;
+  const isMotorPoseMatchAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 4;
+  const isQuickCopyAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 4;
+
+  // Level 8 Session 5 games - Occupational Therapy (Body Position Planning · camera/pose)
+  const isHighReachAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 5;
+  const isLowReachAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 5;
+  const isSideReachAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 5;
+  const isTurnPositionAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 5;
+  const isShapeBodyAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 5;
+
+  // Level 8 Session 6 games - Occupational Therapy (Obstacle Navigation · camera/pose)
+  const isJunglePathAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 6;
+  const isLavaEscapeAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 6;
+  const isMountainRouteAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 6;
+  const isSpaceMazeAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 6;
+  const isPirateIslandNavAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 6;
+
+  // Level 8 Session 7 games - Occupational Therapy (Bilateral Motor Planning · camera/pose)
+  const isTwinMovesAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 7;
+  const isCrossClapAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 7;
+  const isBearPatternAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 7;
+  const isMirrorHandsAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 7;
+  const isDualActionAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 7;
+
+  // Level 8 Session 8 games - Occupational Therapy (Movement Problem Solving · camera/pose)
+  const isFindTheRouteAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 8;
+  const isOpenThePathAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 8;
+  const isMovementPuzzleAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 8;
+  const isRescueMissionAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 8;
+  const isEscapeCourseAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 8;
+
+  // Level 8 Session 9 games - Occupational Therapy (Novel Motor Challenges · camera/pose)
+  const isAlienMovesAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 9;
+  const isRobotFactoryAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 9;
+  const isMysteryIslandAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 9;
+  const isSurpriseActionsAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 9;
+  const isChallengeQuestAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 9;
+
+  // Level 8 Session 10 games - Occupational Therapy (Praxis Adventure · camera/pose)
+  const isPraxisJungleExpeditionAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 10;
+  const isPraxisSpaceExplorerAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 10;
+  const isPraxisPirateTreasureAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 10;
+  const isPraxisMountainMissionAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 10;
+  const isPraxisChampionAvailable =
+    therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 10;
+
   // Level 7 Session 2 games - Occupational Therapy (Head Movement & Vestibular Activation · camera/pose)
   const isLookUpExplorerAvailable =
     therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 2;
@@ -3169,7 +3441,7 @@ export default function SessionGamesScreen() {
     therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 9;
 
   // Occupational Therapy Level 7 Session 10: Vestibular Challenge Course
-  const isPirateIslandAvailable =
+  const isPirateIslandChallengeAvailable =
     therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 10;
   const isSpaceExplorerCourseAvailable =
     therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 10;
@@ -3300,7 +3572,7 @@ export default function SessionGamesScreen() {
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 10;
   const isCountHoldAvailable =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 10;
-  const isPoseMatchAvailable =
+  const isZenPoseMatchAvailable =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 10;
 
   // Level 4 Session 1: Drag Object Left → Right
@@ -3447,6 +3719,17 @@ export default function SessionGamesScreen() {
   const isTimedTargetAvailable =
     therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 2;
 
+  // Level 5 Session 3: Drag to Track
+  const isDragRocketAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 3;
+  const isDragTrainAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 3;
+  const isDragCometAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 3;
+  const isDragRiverAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 3;
+  const isDragLightningAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 3;
 
   // Level 5 Session 4: Visual Focus
   const isFindTheStarAvailable =
@@ -3519,6 +3802,18 @@ export default function SessionGamesScreen() {
     therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 9;
   const isQuickChoiceAvailable =
     therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 9;
+
+  // Level 5 Session 10: Integrated Visual Challenge
+  const isPursuitComboAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 10;
+  const isFocusRelayAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 10;
+  const isDepthMixAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 10;
+  const isReactionRelayAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 10;
+  const isEagleEyeQuestAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 10;
 
   // Level 2 Session 3 games - Speech Therapy (Airflow Games)
   const isBlowTheBubbleAvailable =
@@ -7818,6 +8113,411 @@ export default function SessionGamesScreen() {
       color: '#84CC16',
       available: isAdventurePathAvailable,
     },
+    // Occupational Therapy Level 8 Session 1: Single-Step Motor Planning (camera tracks reach, posture & coordination)
+    {
+      id: 'touch-the-target',
+      title: 'Touch The Target',
+      emoji: '🎯',
+      description: 'Plan your move, then reach out and touch each glowing target. Camera tracks reach accuracy, posture and movement quality.',
+      color: '#F472B6',
+      available: isTouchTheTargetAvailable,
+    },
+    {
+      id: 'reach-the-star',
+      title: 'Reach The Star',
+      emoji: '⭐',
+      description: 'Stretch up high to grab each twinkling star. Camera tracks overhead reach, balance and coordination.',
+      color: '#FBBF24',
+      available: isReachTheStarAvailable,
+    },
+    {
+      id: 'move-to-the-spot',
+      title: 'Move To The Spot',
+      emoji: '👣',
+      description: 'Plan your steps and shift your whole body onto each glowing spot. Camera tracks weight-shift, posture and motor planning.',
+      color: '#34D399',
+      available: isMoveToTheSpotAvailable,
+    },
+    {
+      id: 'launch-the-rocket',
+      title: 'Launch The Rocket',
+      emoji: '🚀',
+      description: 'Raise both arms up high together to blast the rocket into space. Camera tracks bilateral coordination and movement quality.',
+      color: '#38BDF8',
+      available: isLaunchTheRocketAvailable,
+    },
+    {
+      id: 'place-the-box',
+      title: 'Place The Box',
+      emoji: '📦',
+      description: 'Reach to grab the box, then carry your reach over to place it on the shelf. Camera tracks sequencing, reach accuracy and praxis.',
+      color: '#FB923C',
+      available: isPlaceTheBoxAvailable,
+    },
+    // Occupational Therapy Level 8 Session 2: Two-Step Motor Planning (camera tracks sequenced movement & coordination)
+    {
+      id: 'clap-then-jump',
+      title: 'Clap Then Jump',
+      emoji: '👏',
+      description: 'Plan two moves — first clap your hands, then jump up high. Camera tracks the sequence, coordination and movement quality.',
+      color: '#F472B6',
+      available: isClapThenJumpAvailable,
+    },
+    {
+      id: 'touch-then-turn',
+      title: 'Touch Then Turn',
+      emoji: '🎯',
+      description: 'Plan two moves — touch the target, then turn your body sideways. Camera tracks reach accuracy, body rotation and sequencing.',
+      color: '#38BDF8',
+      available: isTouchThenTurnAvailable,
+    },
+    {
+      id: 'reach-then-freeze',
+      title: 'Reach Then Freeze',
+      emoji: '⭐',
+      description: 'Plan two moves — reach up to the star, then freeze like a statue. Camera tracks reach, postural control and self-regulation.',
+      color: '#FBBF24',
+      available: isReachThenFreezeAvailable,
+    },
+    {
+      id: 'launch-then-catch',
+      title: 'Launch Then Catch',
+      emoji: '🚀',
+      description: 'Plan two moves — raise both arms to launch, then bring hands together to catch. Camera tracks bilateral coordination and timing.',
+      color: '#34D399',
+      available: isLaunchThenCatchAvailable,
+    },
+    {
+      id: 'pick-and-place',
+      title: 'Pick And Place',
+      emoji: '📦',
+      description: 'Plan two reaches — pick up the box, then place it on the shelf. Camera tracks sequencing, reach accuracy and praxis.',
+      color: '#FB923C',
+      available: isPickAndPlaceAvailable,
+    },
+    // Occupational Therapy Level 8 Session 3: Multi-Step Sequencing (camera tracks ordered movement chains)
+    {
+      id: 'action-chain',
+      title: 'Action Chain',
+      emoji: '🔗',
+      description: 'Memorise a chain of moves, then perform every action in the right order. Camera tracks sequencing, coordination and movement quality.',
+      color: '#22D3EE',
+      available: isActionChainAvailable,
+    },
+    {
+      id: 'star-sequence',
+      title: 'Star Sequence',
+      emoji: '🌟',
+      description: 'Reach a chain of stars in the exact order they light up. Camera tracks reach accuracy, visual sequencing and motor planning.',
+      color: '#FBBF24',
+      available: isStarSequenceAvailable,
+    },
+    {
+      id: 'mission-steps',
+      title: 'Mission Steps',
+      emoji: '🛰️',
+      description: 'Complete each step of the launch mission in order. Camera tracks ordered movement, coordination and movement quality.',
+      color: '#38BDF8',
+      available: isMissionStepsAvailable,
+    },
+    {
+      id: 'pirate-commands',
+      title: 'Pirate Commands',
+      emoji: '🏴‍☠️',
+      description: 'Follow the captain’s command list in order, matey! Camera tracks sequencing, body awareness and movement quality.',
+      color: '#F59E0B',
+      available: isPirateCommandsAvailable,
+    },
+    {
+      id: 'rainbow-sequence',
+      title: 'Rainbow Sequence',
+      emoji: '🌈',
+      description: 'Touch the rainbow colours in the order they glow. Camera tracks reach accuracy, visual sequencing and praxis.',
+      color: '#A855F7',
+      available: isRainbowSequenceAvailable,
+    },
+    // Occupational Therapy Level 8 Session 4: Motor Imitation (camera tracks copied poses & movement quality)
+    {
+      id: 'robot-copy',
+      title: 'Robot Copy',
+      emoji: '🤖',
+      description: 'Watch each robot move and copy its pose exactly with your body. Camera tracks imitation accuracy, posture and coordination.',
+      color: '#38BDF8',
+      available: isRobotCopyAvailable,
+    },
+    {
+      id: 'animal-copy',
+      title: 'Animal Copy',
+      emoji: '🦁',
+      description: 'Copy each animal shape with your whole body — wings, ears and more. Camera tracks imitation accuracy and body awareness.',
+      color: '#84CC16',
+      available: isAnimalCopyAvailable,
+    },
+    {
+      id: 'dance-mirror',
+      title: 'Dance Mirror',
+      emoji: '💃',
+      description: 'Mirror the dancer’s moves and strike each pose to the beat. Camera tracks imitation, rhythm and coordination.',
+      color: '#EC4899',
+      available: isDanceMirrorAvailable,
+    },
+    {
+      available: isMotorPoseMatchAvailable,
+    },
+    {
+      id: 'quick-copy',
+      title: 'Quick Copy',
+      emoji: '⚡',
+      description: 'Copy each pose as fast as you can before the clock runs out. Camera tracks reaction speed, imitation and movement quality.',
+      color: '#FBBF24',
+      available: isQuickCopyAvailable,
+    },
+    // Occupational Therapy Level 8 Session 5: Body Position Planning (camera tracks body position & movement quality)
+    {
+      id: 'high-reach',
+      title: 'High Reach',
+      emoji: '🙌',
+      description: 'Plan and stretch your whole body up high to reach the sky targets. Camera tracks overhead reach, posture and movement quality.',
+      color: '#38BDF8',
+      available: isHighReachAvailable,
+    },
+    {
+      id: 'low-reach',
+      title: 'Low Reach',
+      emoji: '🌱',
+      description: 'Plan and bend your body down low to reach ground treasures. Camera tracks low reach, posture and motor planning.',
+      color: '#84CC16',
+      available: isLowReachAvailable,
+    },
+    {
+      id: 'side-reach',
+      title: 'Side Reach',
+      emoji: '↔️',
+      description: 'Plan and reach your arm out to each glowing side. Camera tracks lateral reach, balance and coordination.',
+      color: '#06B6D4',
+      available: isSideReachAvailable,
+    },
+    {
+      id: 'turn-position',
+      title: 'Turn Position',
+      emoji: '🌀',
+      description: 'Plan and turn your body sideways to face the glowing planet. Camera tracks body rotation, posture and motor planning.',
+      color: '#A855F7',
+      available: isTurnPositionAvailable,
+    },
+    {
+      id: 'shape-body',
+      title: 'Shape Body',
+      emoji: '✨',
+      description: 'Plan and shape your whole body into stars, towers and balls. Camera tracks body shapes, posture and movement quality.',
+      color: '#F472B6',
+      available: isShapeBodyAvailable,
+    },
+    // Occupational Therapy Level 8 Session 6: Obstacle Navigation (camera tracks trail navigation & movement quality)
+    {
+      id: 'jungle-path',
+      title: 'Jungle Path',
+      emoji: '🌴',
+      description: 'Navigate the wild jungle trail — duck under vines, jump logs and climb branches. Camera tracks obstacle navigation and coordination.',
+      color: '#22C55E',
+      available: isJunglePathAvailable,
+    },
+    {
+      id: 'lava-escape',
+      title: 'Lava Escape',
+      emoji: '🌋',
+      description: 'Escape the erupting volcano — duck heat, jump gaps and balance on rocks. Camera tracks motor planning and movement quality.',
+      color: '#F97316',
+      available: isLavaEscapeAvailable,
+    },
+    {
+      id: 'mountain-route',
+      title: 'Mountain Route',
+      emoji: '⛰️',
+      description: 'Climb the mountain route — reach high, turn at passes and balance on ledges. Camera tracks body position and coordination.',
+      color: '#94A3B8',
+      available: isMountainRouteAvailable,
+    },
+    {
+      id: 'space-maze',
+      title: 'Space Maze',
+      emoji: '🚀',
+      description: 'Weave through the space maze — dodge asteroids, turn at portals and boost jump. Camera tracks navigation accuracy and praxis.',
+      color: '#818CF8',
+      available: isSpaceMazeAvailable,
+    },
+    {
+      id: 'pirate-island',
+      title: 'Pirate Island',
+      emoji: '🏴‍☠️',
+      description: 'Cross the pirate island — balance planks, dodge traps and reach treasure. Camera tracks sequencing and movement quality.',
+      color: '#F59E0B',
+      available: isPirateIslandNavAvailable,
+    },
+    // Occupational Therapy Level 8 Session 7: Bilateral Motor Planning (camera tracks two-sided coordination)
+    {
+      id: 'twin-moves',
+      title: 'Twin Moves',
+      emoji: '👯',
+      description: 'Move BOTH arms together — same twin move on each side. Camera tracks bilateral coordination and movement quality.',
+      color: '#38BDF8',
+      available: isTwinMovesAvailable,
+    },
+    {
+      id: 'cross-clap',
+      title: 'Cross Clap',
+      emoji: '✖️',
+      description: 'Cross your arms and clap across your body. Camera tracks midline crossing, bilateral planning and praxis.',
+      color: '#F472B6',
+      available: isCrossClapAvailable,
+    },
+    {
+      id: 'bear-pattern',
+      title: 'Bear Pattern',
+      emoji: '🐻',
+      description: 'Make the bear crawl shape with both paws and your body. Camera tracks bilateral motor planning and body awareness.',
+      color: '#D97706',
+      available: isBearPatternAvailable,
+    },
+    {
+      id: 'mirror-hands',
+      title: 'Mirror Hands',
+      emoji: '🪞',
+      description: 'Put each hand in a different mirror position — left and right opposite. Camera tracks asymmetric bilateral coordination.',
+      color: '#A855F7',
+      available: isMirrorHandsAvailable,
+    },
+    {
+      id: 'dual-action',
+      title: 'Dual Action',
+      emoji: '⚡',
+      description: 'Do TWO different moves at once — one with each hand. Camera tracks dual-action planning and coordination.',
+      color: '#22D3EE',
+      available: isDualActionAvailable,
+    },
+    // Occupational Therapy Level 8 Session 8: Movement Problem Solving (camera tracks puzzle-solving & movement quality)
+    {
+      id: 'find-the-route',
+      title: 'Find The Route',
+      emoji: '🗺️',
+      description: 'Read the map clue and pick the right move to find the route. Camera tracks problem-solving, motor planning and coordination.',
+      color: '#38BDF8',
+      available: isFindTheRouteAvailable,
+    },
+    {
+      id: 'open-the-path',
+      title: 'Open The Path',
+      emoji: '🔓',
+      description: 'Solve each lock clue and perform the key move to open the path. Camera tracks praxis, sequencing and movement quality.',
+      color: '#FBBF24',
+      available: isOpenThePathAvailable,
+    },
+    {
+      id: 'movement-puzzle',
+      title: 'Movement Puzzle',
+      emoji: '🧩',
+      description: 'Read the puzzle clue and figure out which body move solves it. Camera tracks motor planning and body awareness.',
+      color: '#A855F7',
+      available: isMovementPuzzleAvailable,
+    },
+    {
+      id: 'rescue-mission',
+      title: 'Rescue Mission',
+      emoji: '🚁',
+      description: 'Read each rescue clue and perform the hero move to save the day. Camera tracks problem-solving and coordination.',
+      color: '#F472B6',
+      available: isRescueMissionAvailable,
+    },
+    {
+      id: 'escape-course',
+      title: 'Escape Course',
+      emoji: '🚪',
+      description: 'Crack each escape room code with the right body move. Camera tracks sequencing, praxis and movement quality.',
+      color: '#34D399',
+      available: isEscapeCourseAvailable,
+    },
+    // Occupational Therapy Level 8 Session 9: Novel Motor Challenges (camera tracks unfamiliar composite moves)
+    {
+      id: 'alien-moves',
+      title: 'Alien Moves',
+      emoji: '👽',
+      description: 'Copy weird brand-new alien body moves — arms up and lean, float and wiggle! Camera tracks novel motor planning and coordination.',
+      color: '#84CC16',
+      available: isAlienMovesAvailable,
+    },
+    {
+      id: 'robot-factory',
+      title: 'Robot Factory',
+      emoji: '🏭',
+      description: 'Build robots with strange factory moves — power build, fold mode and spinner arms. Camera tracks praxis and movement quality.',
+      color: '#94A3B8',
+      available: isRobotFactoryAvailable,
+    },
+    {
+      id: 'mystery-island',
+      title: 'Mystery Island',
+      emoji: '🏝️',
+      description: 'Discover secret island moves nobody has seen before — flamingo, crab and palm wave. Camera tracks body awareness and motor planning.',
+      color: '#F59E0B',
+      available: isMysteryIslandAvailable,
+    },
+    {
+      id: 'surprise-actions',
+      title: 'Surprise Actions',
+      emoji: '🎁',
+      description: 'Wait for the surprise reveal, then do the mystery move fast! Camera tracks flexible motor planning and reaction.',
+      color: '#EC4899',
+      available: isSurpriseActionsAvailable,
+    },
+    {
+      id: 'challenge-quest',
+      title: 'Challenge Quest',
+      emoji: '🏆',
+      description: 'The ultimate novel-move quest with surprise combos. Camera tracks problem-solving, praxis and movement quality.',
+      color: '#8B5CF6',
+      available: isChallengeQuestAvailable,
+    },
+    // Occupational Therapy Level 8 Session 10: Praxis Adventure (camera tracks integrated praxis expedition)
+    {
+      id: 'praxis-jungle-expedition',
+      title: 'Jungle Expedition',
+      emoji: '🌴',
+      description: 'Cross the jungle trail — plan and execute every praxis mission in one epic adventure! Camera tracks accuracy, completion and movement quality.',
+      color: '#22C55E',
+      available: isPraxisJungleExpeditionAvailable,
+    },
+    {
+      id: 'praxis-space-explorer',
+      title: 'Space Explorer',
+      emoji: '🚀',
+      description: 'Blast through galaxy missions mixing reach, chain, imitate and novel moves. Camera tracks motor planning and coordination.',
+      color: '#818CF8',
+      available: isPraxisSpaceExplorerAvailable,
+    },
+    {
+      id: 'praxis-pirate-treasure',
+      title: 'Pirate Treasure Hunt',
+      emoji: '🏴‍☠️',
+      description: 'Follow the treasure map through praxis challenges — balance, turn, cross-clap and more! Camera tracks sequencing and body awareness.',
+      color: '#F59E0B',
+      available: isPraxisPirateTreasureAvailable,
+    },
+    {
+      id: 'praxis-mountain-mission',
+      title: 'Mountain Mission',
+      emoji: '⛰️',
+      description: 'Climb the mountain beat by beat — integrated motor planning from base to summit. Camera tracks posture and movement quality.',
+      color: '#38BDF8',
+      available: isPraxisMountainMissionAvailable,
+    },
+    {
+      id: 'praxis-champion',
+      title: 'Praxis Champion',
+      emoji: '👑',
+      description: 'The Level 8 grand finale — every praxis skill in one champion quest! Camera tracks accuracy, completion and movement quality.',
+      color: '#FBBF24',
+      available: isPraxisChampionAvailable,
+    },
     // Occupational Therapy Level 7 Session 2: Head Movement & Vestibular Activation (camera tracks head & posture)
     {
       id: 'look-up-explorer',
@@ -8148,12 +8848,12 @@ export default function SessionGamesScreen() {
     },
     // Occupational Therapy Level 7 Session 10: Vestibular Challenge Course
     {
-      id: 'pirate-island',
+      id: 'pirate-island-challenge',
       title: 'Pirate Island Challenge',
       emoji: '🏴',
       description: 'Complete a vestibular treasure-hunt course. Camera tracks movement accuracy, posture and balance.',
       color: '#34D399',
-      available: isPirateIslandAvailable,
+      available: isPirateIslandChallengeAvailable,
     },
     {
       id: 'space-explorer-course',
@@ -8557,12 +9257,12 @@ export default function SessionGamesScreen() {
     },
     // Level 3 Session 10: Posture-Based Games
     {
-      id: 'pose-match',
+      id: 'posture-match',
       title: 'Posture Match',
       emoji: '🎯',
       description: 'Match each yoga pose on screen. Builds precision and focus.',
       color: '#3B82F6',
-      available: isPoseMatchAvailable,
+      available: isZenPoseMatchAvailable,
     },
     {
       id: 'animal-pose',
@@ -9088,6 +9788,47 @@ export default function SessionGamesScreen() {
       color: '#10B981',
       available: isTimedTargetAvailable,
     },
+    // Level 5 Session 3: Drag to Track
+    {
+      id: 'drag-rocket',
+      title: 'Rocket Drag',
+      emoji: '🚀',
+      description: 'Finger se rocket follow. Smooth pursuit!',
+      color: '#6366F1',
+      available: isDragRocketAvailable,
+    },
+    {
+      id: 'drag-train',
+      title: 'Train Track',
+      emoji: '🚂',
+      description: 'Train ko track pe drag. Circular pursuit!',
+      color: '#F59E0B',
+      available: isDragTrainAvailable,
+    },
+    {
+      id: 'drag-comet',
+      title: 'Comet Chase',
+      emoji: '☄️',
+      description: 'Comet figure-8 path. Complex tracking!',
+      color: '#8B5CF6',
+      available: isDragCometAvailable,
+    },
+    {
+      id: 'drag-river',
+      title: 'River Boat',
+      emoji: '⛵',
+      description: 'Boat up-down river. Vertical drag track!',
+      color: '#06B6D4',
+      available: isDragRiverAvailable,
+    },
+    {
+      id: 'drag-lightning',
+      title: 'Lightning Drag',
+      emoji: '⚡',
+      description: 'Zigzag lightning follow. Fast pursuit!',
+      color: '#EAB308',
+      available: isDragLightningAvailable,
+    },
     // Level 5 Session 4: Visual Focus
     {
       id: 'find-the-star',
@@ -9237,7 +9978,7 @@ export default function SessionGamesScreen() {
       available: isFallingObjectsAvailable,
     },
     {
-      id: 'shrinking-target',
+      id: 'depth-shrinking-target',
       title: 'Shrinking Target',
       emoji: '🎯',
       description: 'Target chhota hota. Precision!',
@@ -9333,6 +10074,47 @@ export default function SessionGamesScreen() {
       description: '2 options. Decision speed!',
       color: '#6366F1',
       available: isQuickChoiceAvailable,
+    },
+    // Level 5 Session 10: Integrated Visual Challenge
+    {
+      id: 'pursuit-combo',
+      title: 'Comet Chase',
+      emoji: '☄️',
+      description: 'Chase + flash relay. Pursuit combo!',
+      color: '#6366F1',
+      available: isPursuitComboAvailable,
+    },
+    {
+      id: 'focus-relay',
+      title: 'Focus Fortress',
+      emoji: '🏰',
+      description: 'Target filter + GO/STOP. Focus relay!',
+      color: '#14B8A6',
+      available: isFocusRelayAvailable,
+    },
+    {
+      id: 'depth-mix',
+      title: 'Canyon Rally',
+      emoji: '🏜️',
+      description: 'Near/far + chase mix. Depth relay!',
+      color: '#F97316',
+      available: isDepthMixAvailable,
+    },
+    {
+      id: 'reaction-relay',
+      title: 'Storm Relay',
+      emoji: '🌩️',
+      description: 'Flash, stop & speed mix. Reaction relay!',
+      color: '#EC4899',
+      available: isReactionRelayAvailable,
+    },
+    {
+      id: 'eagle-eye-quest',
+      title: 'Eagle Eye Quest',
+      emoji: '🦅',
+      description: 'All visual skills. Grand finale!',
+      color: '#EAB308',
+      available: isEagleEyeQuestAvailable,
     },
   ];
 
@@ -11238,6 +12020,216 @@ export default function SessionGamesScreen() {
     return <AdventurePathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
+  // Level 8 Session 1 games - Single-Step Motor Planning (camera/pose detection)
+  if (currentGame === 'touch-the-target') {
+    return <TouchTheTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'reach-the-star') {
+    return <ReachTheStarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'move-to-the-spot') {
+    return <MoveToTheSpotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'launch-the-rocket') {
+    return <LaunchTheRocketGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'place-the-box') {
+    return <PlaceTheBoxGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 2 games - Two-Step Motor Planning (camera/pose detection)
+  if (currentGame === 'clap-then-jump') {
+    return <ClapThenJumpGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'touch-then-turn') {
+    return <TouchThenTurnGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'reach-then-freeze') {
+    return <ReachThenFreezeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'launch-then-catch') {
+    return <LaunchThenCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pick-and-place') {
+    return <PickAndPlaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 3 games - Multi-Step Sequencing (camera/pose detection)
+  if (currentGame === 'action-chain') {
+    return <ActionChainGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'star-sequence') {
+    return <StarSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mission-steps') {
+    return <MissionStepsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pirate-commands') {
+    return <PirateCommandsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rainbow-sequence') {
+    return <RainbowSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 4 games - Motor Imitation (camera/pose detection)
+  if (currentGame === 'robot-copy') {
+    return <RobotCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'animal-copy') {
+    return <AnimalCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'dance-mirror') {
+    return <DanceMirrorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pose-match') {
+    return <PoseMatchGameL8 onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'quick-copy') {
+    return <QuickCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 5 games - Body Position Planning (camera/pose detection)
+  if (currentGame === 'high-reach') {
+    return <HighReachGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'low-reach') {
+    return <LowReachGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'side-reach') {
+    return <SideReachGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'turn-position') {
+    return <TurnPositionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'shape-body') {
+    return <ShapeBodyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 6 games - Obstacle Navigation (camera/pose detection)
+  if (currentGame === 'jungle-path') {
+    return <JunglePathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'lava-escape') {
+    return <LavaEscapeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mountain-route') {
+    return <MountainRouteGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'space-maze') {
+    return <SpaceMazeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pirate-island') {
+    return <PirateIslandGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 7 games - Bilateral Motor Planning (camera/pose detection)
+  if (currentGame === 'twin-moves') {
+    return <TwinMovesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'cross-clap') {
+    return <CrossClapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'bear-pattern') {
+    return <BearPatternGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mirror-hands') {
+    return <MirrorHandsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'dual-action') {
+    return <DualActionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 8 games - Movement Problem Solving (camera/pose detection)
+  if (currentGame === 'find-the-route') {
+    return <FindTheRouteGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'open-the-path') {
+    return <OpenThePathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'movement-puzzle') {
+    return <MovementPuzzleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rescue-mission') {
+    return <RescueMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'escape-course') {
+    return <EscapeCourseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 9 games - Novel Motor Challenges (camera/pose detection)
+  if (currentGame === 'alien-moves') {
+    return <AlienMovesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'robot-factory') {
+    return <RobotFactoryGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mystery-island') {
+    return <MysteryIslandGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'surprise-actions') {
+    return <SurpriseActionsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'challenge-quest') {
+    return <ChallengeQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 10 games - Praxis Adventure (camera/pose detection)
+  if (currentGame === 'praxis-jungle-expedition') {
+    return <JungleExpeditionPraxisGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'praxis-space-explorer') {
+    return <SpaceExplorerPraxisGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'praxis-pirate-treasure') {
+    return <PirateTreasureHuntGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'praxis-mountain-mission') {
+    return <MountainMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'praxis-champion') {
+    return <PraxisChampionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
   // Level 7 Session 2 games - Head Movement & Vestibular Activation (camera/pose detection)
   if (currentGame === 'look-up-explorer') {
     return <LookUpExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
@@ -11407,7 +12399,7 @@ export default function SessionGamesScreen() {
   }
 
   // Level 7 Session 10 games - Vestibular Challenge Course (camera/pose detection)
-  if (currentGame === 'pirate-island') {
+  if (currentGame === 'pirate-island-challenge') {
     return <PirateIslandChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
@@ -11617,6 +12609,10 @@ export default function SessionGamesScreen() {
   }
 
   // Level 3 Session 10 games - Posture-Based Games
+  if (currentGame === 'posture-match') {
+    return <PoseMatchGameL3 onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
   if (currentGame === 'freeze-pose') {
     return <FreezePoseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
@@ -11631,10 +12627,6 @@ export default function SessionGamesScreen() {
 
   if (currentGame === 'count-hold') {
     return <CountHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
-  if (currentGame === 'pose-match') {
-    return <PoseMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 4 Session 1 games - Drag Object Left → Right
@@ -11890,6 +12882,26 @@ export default function SessionGamesScreen() {
     return <TimedTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
+  // Level 5 Session 3: Drag to Track
+  if (currentGame === 'drag-rocket') {
+    return <RocketDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'drag-train') {
+    return <TrainTrackDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'drag-comet') {
+    return <CometChaseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'drag-river') {
+    return <RiverBoatDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'drag-lightning') {
+    return <LightningDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
 
   // Level 5 Session 4: Visual Focus
   if (currentGame === 'find-the-star') {
@@ -11918,19 +12930,19 @@ export default function SessionGamesScreen() {
   }
 
   if (currentGame === 'up-down-track') {
-    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+    return <UpDownTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'circular-track') {
-    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+    return <CircularTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jump-track') {
-    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+    return <JumpTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'multi-dot') {
-    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+    return <MultiDotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 5 Session 6: Speed Matching
@@ -11954,25 +12966,17 @@ export default function SessionGamesScreen() {
     return <CountdownHitGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Level 5 Session 7: Depth & Distance
-  if (currentGame === 'near-vs-far') {
-    return <NearVsFarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
-  if (currentGame === 'zoom-touch') {
-    return <NearVsFarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
-  if (currentGame === 'falling-objects') {
-    return <NearVsFarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
-  if (currentGame === 'shrinking-target') {
-    return <NearVsFarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
-  }
-
-  if (currentGame === '3-layer-tap') {
-    return <NearVsFarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  // Level 5 Session 7: Depth & Distance — route by game id → config (key forces remount per game)
+  const l5s7DepthConfig = L5_SESSION7_DEPTH_CONFIGS[currentGame];
+  if (l5s7DepthConfig) {
+    return (
+      <DepthDistanceGame
+        key={currentGame}
+        config={l5s7DepthConfig}
+        onBack={() => setCurrentGame('menu')}
+        onComplete={handleContinue}
+      />
+    );
   }
 
   // Level 5 Session 8: Multi-Object Tracking
@@ -12015,6 +13019,27 @@ export default function SessionGamesScreen() {
 
   if (currentGame === 'quick-choice') {
     return <QuickChoiceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 5 Session 10: Integrated Visual Challenge
+  if (currentGame === 'pursuit-combo') {
+    return <PursuitComboGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'focus-relay') {
+    return <FocusRelayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'depth-mix') {
+    return <DepthMixGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'reaction-relay') {
+    return <ReactionRelayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'eagle-eye-quest') {
+    return <EagleEyeQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Therapy display label for breadcrumb

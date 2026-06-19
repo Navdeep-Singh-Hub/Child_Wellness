@@ -1,64 +1,65 @@
-import GameInfoScreen from '@/components/game/GameInfoScreen';
-import ResultCard from '@/components/game/ResultCard';
+import { RoundCountdownOverlay } from '@/components/game/occupational/level5/session2/shared/Session2UI';
+import { ReactionShell, useReactionExit } from '@/components/game/occupational/level5/session9/ReactionShell';
+import { SESSION5_9_PACING } from '@/components/game/occupational/level5/session9/session9Pacing';
+import { FlashBurst } from '@/components/game/occupational/level5/session9/VisualReactionVisuals';
+import { FLASH_TAP_COPY, FLASH_TAP_THEME } from '@/components/game/occupational/level5/session9/visualReactionThemes';
 import { logGameAndAward } from '@/utils/api';
-import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { cleanupSounds } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Dimensions,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
-import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
-    withSpring,
-} from 'react-native-reanimated';
+import { Dimensions, Pressable, StyleSheet } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
-const TOTAL_ROUNDS = 10;
+const TOTAL_ROUNDS = SESSION5_9_PACING.standardRounds;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const FLASH_SIZE = 150;
 const TOLERANCE = 80;
-const FLASH_DURATION = 500; // 500ms flash
+const FLASH_DURATION = 500;
 
-const FlashTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const FlashTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
+  const exit = useReactionExit(onBack);
   const [showInfo, setShowInfo] = useState(true);
+  const [showCountdown, setShowCountdown] = useState(false);
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  
+
   const flashX = useSharedValue(SCREEN_WIDTH * 0.5);
   const flashY = useSharedValue(SCREEN_HEIGHT * 0.5);
   const flashOpacity = useSharedValue(0);
   const flashScale = useSharedValue(1);
   const screenWidth = useRef(SCREEN_WIDTH);
   const screenHeight = useRef(SCREEN_HEIGHT);
-  const flashTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [flashActive, setFlashActive] = useState(false);
+  const startedRef = useRef(false);
+
+  const endGame = useCallback(async (finalScore: number) => {
+    const total = TOTAL_ROUNDS;
+    const xp = finalScore * SESSION5_9_PACING.standardXp;
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    setFinalStats({ correct: finalScore, total, xp });
+    setDone(true);
+    try {
+      await logGameAndAward({
+        type: 'flash-tap', correct: finalScore, total, accuracy: (finalScore / total) * 100, xpAwarded: xp,
+        skillTags: ['reflex', 'reaction-time', 'visual-response'],
+      });
+      router.setParams({ refreshStats: Date.now().toString() });
+    } catch (e) { console.error(e); }
+  }, [router]);
 
   const showFlash = useCallback(() => {
     flashX.value = Math.random() * (screenWidth.current - FLASH_SIZE) + FLASH_SIZE / 2;
-    flashY.value = Math.random() * (screenHeight.current - FLASH_SIZE - 200) + FLASH_SIZE / 2 + 100;
-    
+    flashY.value = Math.random() * (screenHeight.current - FLASH_SIZE - 80) + FLASH_SIZE / 2 + 40;
     flashOpacity.value = withTiming(1, { duration: 100 });
-    flashScale.value = withSpring(1.2, {}, () => {
-      flashScale.value = withSpring(1);
-    });
+    flashScale.value = withSpring(1.2, {}, () => { flashScale.value = withSpring(1); });
     setFlashActive(true);
-
-    // Hide flash after duration
-    if (flashTimerRef.current) {
-      clearTimeout(flashTimerRef.current);
-    }
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
     flashTimerRef.current = setTimeout(() => {
       flashOpacity.value = withTiming(0, { duration: 200 });
       setFlashActive(false);
@@ -67,276 +68,77 @@ const FlashTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const handleTap = useCallback((event: { nativeEvent: { locationX: number; locationY: number } }) => {
     if (done || !flashActive) return;
-    
-    const tapX = event.nativeEvent.locationX;
-    const tapY = event.nativeEvent.locationY;
-    
-    const distance = Math.sqrt(
-      Math.pow(tapX - flashX.value, 2) + Math.pow(tapY - flashY.value, 2)
-    );
-
+    const { locationX: tapX, locationY: tapY } = event.nativeEvent;
+    const distance = Math.hypot(tapX - flashX.value, tapY - flashY.value);
     if (distance <= TOLERANCE + FLASH_SIZE / 2) {
-      if (flashTimerRef.current) {
-        clearTimeout(flashTimerRef.current);
-      }
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
       flashOpacity.value = withTiming(0, { duration: 200 });
       setFlashActive(false);
-
       setScore((s) => {
         const newScore = s + 1;
-        if (newScore >= TOTAL_ROUNDS) {
-          setTimeout(() => {
-            endGame(newScore);
-          }, 1000);
-        } else {
-          setTimeout(() => {
-            setRound((r) => r + 1);
-            setTimeout(() => showFlash(), 1000);
-          }, 1500);
-        }
+        if (newScore >= TOTAL_ROUNDS) setTimeout(() => endGame(newScore), 800);
+        else setTimeout(() => { setRound((r) => r + 1); setTimeout(showFlash, 900); }, 1200);
         return newScore;
       });
-
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      speakTTS('Fast reflex!', 0.9, 'en-US' );
+      speakTTS('Fast reflex!', 0.9, 'en-US');
     } else {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
-  }, [done, flashActive, flashX, flashY, flashOpacity, showFlash]);
-
-  const endGame = useCallback(async (finalScore: number) => {
-    const total = TOTAL_ROUNDS;
-    const xp = finalScore * 15;
-    const accuracy = (finalScore / total) * 100;
-
-    if (flashTimerRef.current) {
-      clearTimeout(flashTimerRef.current);
-    }
-
-    setFinalStats({ correct: finalScore, total, xp });
-    setDone(true);
-
-    try {
-      await logGameAndAward({
-        type: 'flash-tap',
-        correct: finalScore,
-        total,
-        accuracy,
-        xpAwarded: xp,
-        skillTags: ['reflex', 'reaction-time', 'visual-response'],
-      });
-      router.setParams({ refreshStats: Date.now().toString() });
-    } catch (error) {
-      console.error('Failed to log game:', error);
-    }
-  }, [router]);
+  }, [done, flashActive, flashX, flashY, flashOpacity, showFlash, endGame]);
 
   useEffect(() => {
-    if (!showInfo && !done) {
-      // Stop any ongoing TTS when new round starts
-      stopTTS();
-      setTimeout(() => {
-        showFlash();
-        speakTTS('Tap when light flashes!', 0.8, 'en-US' );
-      }, 1000);
+    if (!showInfo && !done && !showCountdown && !startedRef.current) {
+      startedRef.current = true;
+      setShowCountdown(true);
     }
-  }, [showInfo, round, done, showFlash]);
+  }, [showInfo, done, showCountdown]);
 
-  useEffect(() => {
-    return () => {
-      try {
-        stopTTS();
-      } catch (e) {
-        // Ignore errors
-      }
-      cleanupSounds();
-      if (flashTimerRef.current) {
-        clearTimeout(flashTimerRef.current);
-      }
-    };
+  useEffect(() => () => {
+    stopTTS();
+    cleanupSounds();
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
   }, []);
 
   const flashStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
     left: flashX.value - FLASH_SIZE / 2,
     top: flashY.value - FLASH_SIZE / 2,
     opacity: flashOpacity.value,
     transform: [{ scale: flashScale.value }],
   }));
 
-  if (showInfo) {
-    return (
-      <GameInfoScreen
-        title="Flash Tap"
-        emoji="💡"
-        description="Tap quickly when the light flashes! Build reflex."
-        skills={['Reflex']}
-        suitableFor="Children learning fast reflexes and reaction time"
-        onStart={() => {
-          setShowInfo(false);
-        }}
-        onBack={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
-    );
-  }
-
-  if (done && finalStats) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ResultCard
-          correct={finalStats.correct}
-          total={finalStats.total}
-          xpAwarded={finalStats.xp}
-          onHome={() => {
-            stopAllSpeech();
-            cleanupSounds();
-            onBack?.();
-          }}
-          onPlayAgain={() => {
-            setRound(1);
-            setScore(0);
-            setDone(false);
-            setFinalStats(null);
-            showFlash();
-          }}
-        />
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.container}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      >
-        <Text style={styles.backButtonText}>← Back</Text>
-      </TouchableOpacity>
-
-      <View style={styles.header}>
-        <Text style={styles.title}>Flash Tap</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 💡 Score: {score}
-        </Text>
-        <Text style={styles.instruction}>
-          Tap when light flashes!
-        </Text>
-      </View>
-
+    <ReactionShell
+      theme={FLASH_TAP_THEME} copy={FLASH_TAP_COPY}
+      showInfo={showInfo} showCongrats done={done} finalStats={finalStats}
+      round={round} totalRounds={TOTAL_ROUNDS} score={score}
+      hint="Tap when the light flashes!" showHint={!showInfo && !done}
+      onStart={() => setShowInfo(false)} onExit={exit} onContinue={onComplete} onBack={onBack}
+    >
       <Pressable
         style={styles.gameArea}
-        onLayout={(e) => {
-          screenWidth.current = e.nativeEvent.layout.width;
-          screenHeight.current = e.nativeEvent.layout.height;
-        }}
+        onLayout={(e) => { screenWidth.current = e.nativeEvent.layout.width; screenHeight.current = e.nativeEvent.layout.height; }}
         onPress={handleTap}
       >
-        <Animated.View style={[styles.flash, flashStyle]} pointerEvents="none">
-          <Text style={styles.flashEmoji}>💡</Text>
+        <Animated.View style={flashStyle} pointerEvents="none">
+          <FlashBurst size={FLASH_SIZE} color="#FACC15" emoji="💡" />
         </Animated.View>
       </Pressable>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Skills: Reflex
-        </Text>
-        <Text style={styles.footerSubtext}>
-          Tap quickly when the light flashes!
-        </Text>
-      </View>
-    </SafeAreaView>
+      {showCountdown && (
+        <RoundCountdownOverlay
+          accent={FLASH_TAP_THEME.accent}
+          onDone={() => {
+            setShowCountdown(false);
+            stopTTS();
+            showFlash();
+            speakTTS('Tap when light flashes!', 0.8, 'en-US');
+          }}
+        />
+      )}
+    </ReactionShell>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  header: {
-    marginTop: 80,
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#475569',
-    marginBottom: 12,
-  },
-  instruction: {
-    fontSize: 16,
-    color: '#3B82F6',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  gameArea: {
-    flex: 1,
-    position: 'relative',
-    marginVertical: 40,
-  },
-  flash: {
-    position: 'absolute',
-    width: FLASH_SIZE,
-    height: FLASH_SIZE,
-    borderRadius: FLASH_SIZE / 2,
-    backgroundColor: '#FCD34D',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 4,
-    borderColor: '#F59E0B',
-    shadowColor: '#FCD34D',
-    shadowOpacity: 0.8,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 15,
-  },
-  flashEmoji: {
-    fontSize: 60,
-  },
-  footer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  footerSubtext: {
-    fontSize: 12,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-});
-
+const styles = StyleSheet.create({ gameArea: { flex: 1, position: 'relative' } });
 export default FlashTapGame;

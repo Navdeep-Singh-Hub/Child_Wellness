@@ -1,10 +1,6 @@
 /**
  * Native (APK) full-body pose detection via react-native-mediapipe-posedetection +
- * react-native-vision-camera frame processors. Feeds the same 33 BlazePose
- * landmarks into computeMetrics() as the web MediaPipe hook.
- *
- * Requires a dev-client / release build with the native module linked:
- *   npx expo run:android
+ * react-native-vision-camera frame processors.
  */
 import {
   computeMetrics,
@@ -12,62 +8,115 @@ import {
   type PostureMetrics,
 } from '@/components/game/occupational/level6/session1/poseUtils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform } from 'react-native';
-import type { PoseDetectionResult } from '@/hooks/poseDetectionTypes';
+import { Platform, TurboModuleRegistry } from 'react-native';
+import type { MediapipePoseSolution, PoseDetectionResult } from '@/hooks/poseDetectionTypes';
 
 const MODEL_FILE = 'pose_landmarker_lite.task';
 const PREVIEW_ID = 'pose-preview-container';
 
-type MpSolution = {
-  frameProcessor: unknown;
-  cameraViewLayoutChangeHandler: (event: unknown) => void;
-} | null;
+export const POSE_NATIVE_REBUILD_MSG =
+  'Body tracking is not in this app build. Play guided mode, or reinstall with: npx expo run:android';
 
-/** Stable no-op when vision-camera isn't available. */
+/** True when the native MediapipePoseDetection TurboModule is registered in the APK. */
+function isNativePoseModuleLinked(): boolean {
+  if (Platform.OS === 'web') return false;
+  try {
+    return TurboModuleRegistry.get('MediapipePosedetection') != null;
+  } catch {
+    return false;
+  }
+}
+
+export function friendlyPoseError(raw?: string): string {
+  if (!raw) return POSE_NATIVE_REBUILD_MSG;
+  if (/TurboModule|MediapipePose|native binary|not registered/i.test(raw)) return POSE_NATIVE_REBUILD_MSG;
+  return raw;
+}
+
+type MpSolution = MediapipePoseSolution | null;
+
 function useCameraDeviceStub(_position: 'front' | 'back'): null {
   return null;
 }
 
-/** Stable no-op when the native module isn't linked (Expo Go). */
+function useCameraPermissionStub() {
+  return { hasPermission: false, requestPermission: async () => false };
+}
+
+function useExpoCameraPermissionsStub(): [{ granted: boolean } | null, () => Promise<{ granted: boolean }>] {
+  return [null, async () => ({ granted: false })];
+}
+
 function useMediapipePoseStub(): MpSolution {
   return null;
 }
 
-// Conditional native imports — unavailable on web / Expo Go without native build.
 let useCameraDevice: ((position: 'front' | 'back') => unknown) | null = null;
-let Camera: { requestCameraPermission: () => Promise<string>; getCameraPermissionStatus?: () => string } | null = null;
-let useMediapipePoseDetection: ((...args: unknown[]) => unknown) | null = null;
+let useCameraPermission: (() => { hasPermission: boolean; requestPermission: () => Promise<boolean> }) | null = null;
+let useExpoCameraPermissions: (() => [{ granted: boolean } | null, () => Promise<{ granted: boolean }>]) | null = null;
+let useMediapipePoseDetection: ((...args: unknown[]) => MpSolution) | null = null;
 let RunningMode: { LIVE_STREAM: unknown } | null = null;
 let Delegate: { GPU: unknown; CPU: unknown } | null = null;
+let poseModuleLoadError: string | undefined;
 
 if (Platform.OS !== 'web') {
   try {
     const visionCamera = require('react-native-vision-camera');
     useCameraDevice = visionCamera.useCameraDevice;
-    Camera = visionCamera.Camera;
+    useCameraPermission = visionCamera.useCameraPermission;
   } catch (e) {
     console.warn('[pose-native] vision-camera unavailable:', e);
   }
+
   try {
-    const mp = require('react-native-mediapipe-posedetection');
-    useMediapipePoseDetection = mp.usePoseDetection;
-    RunningMode = mp.RunningMode;
-    Delegate = mp.Delegate;
+    const expoCamera = require('expo-camera');
+    useExpoCameraPermissions = expoCamera.useCameraPermissions;
   } catch (e) {
-    console.warn('[pose-native] mediapipe-posedetection unavailable — rebuild dev client:', e);
+    console.warn('[pose-native] expo-camera permissions unavailable:', e);
+  }
+
+  if (isNativePoseModuleLinked()) {
+    try {
+      const mp = require('react-native-mediapipe-posedetection');
+      useMediapipePoseDetection = mp.usePoseDetection;
+      RunningMode = mp.RunningMode;
+      Delegate = mp.Delegate;
+    } catch (e) {
+      poseModuleLoadError = friendlyPoseError(e instanceof Error ? e.message : undefined);
+      console.warn('[pose-native] mediapipe-posedetection unavailable:', e);
+    }
+  } else {
+    poseModuleLoadError = POSE_NATIVE_REBUILD_MSG;
+    console.warn('[pose-native] MediapipePoseDetection TurboModule not registered — rebuild the dev client APK.');
   }
 }
+
+const modulesAvailable = Boolean(
+  useMediapipePoseDetection && RunningMode && Delegate && (useCameraPermission || useExpoCameraPermissions),
+);
 
 export function usePoseDetectionNative(isActive: boolean = true): PoseDetectionResult {
   const [pose, setPose] = useState<PoseLandmark[] | null>(null);
   const [isDetecting, setIsDetecting] = useState(false);
-  const [permissionGranted, setPermissionGranted] = useState(false);
-  const [error, setError] = useState<string | undefined>(undefined);
-  const [moduleReady, setModuleReady] = useState(
-    Boolean(useMediapipePoseDetection && RunningMode && Delegate && useCameraDevice),
+  const [error, setError] = useState<string | undefined>(
+    poseModuleLoadError ? friendlyPoseError(poseModuleLoadError) : undefined,
   );
+  const [permissionGranted, setPermissionGranted] = useState(false);
+
+  const { hasPermission: visionPermission, requestPermission: requestVisionPermission } = (
+    useCameraPermission ?? useCameraPermissionStub
+  )();
+  const [expoPermission, requestExpoPermission] = (useExpoCameraPermissions ?? useExpoCameraPermissionsStub)();
 
   const device = (useCameraDevice ?? useCameraDeviceStub)('front') as unknown;
+
+  useEffect(() => {
+    const granted = Boolean(visionPermission || expoPermission?.granted);
+    setPermissionGranted(granted);
+    if (granted) {
+      setError((prev) => (prev === poseModuleLoadError ? prev : undefined));
+    }
+  }, [visionPermission, expoPermission?.granted]);
 
   const onResults = useCallback((result: { landmarks?: PoseLandmark[][] }) => {
     const lm = result?.landmarks?.[0];
@@ -82,11 +131,10 @@ export function usePoseDetectionNative(isActive: boolean = true): PoseDetectionR
 
   const onError = useCallback((err: { message?: string }) => {
     console.warn('[pose-native] detection error:', err?.message);
-    setError(err?.message ?? 'Body tracking error. Try rebuilding the app.');
+    setError(err?.message ?? 'Body tracking error. Try guided mode or rebuild the app.');
     setIsDetecting(false);
   }, []);
 
-  // Mediapipe hook — always invoked (stub when module missing) to satisfy Rules of Hooks.
   const useMP = (useMediapipePoseDetection ?? useMediapipePoseStub) as (
     callbacks: { onResults: (r: { landmarks?: PoseLandmark[][] }) => void; onError: (e: { message?: string }) => void },
     mode: unknown,
@@ -103,51 +151,70 @@ export function usePoseDetectionNative(isActive: boolean = true): PoseDetectionR
       minPoseDetectionConfidence: 0.4,
       minPosePresenceConfidence: 0.4,
       minTrackingConfidence: 0.4,
-      delegate: Delegate?.GPU ?? 1,
+      delegate: Delegate?.GPU ?? Delegate?.CPU ?? 1,
       mirrorMode: 'mirror-front-only',
       shouldOutputSegmentationMasks: false,
     },
   );
 
-  useEffect(() => {
-    if (!isActive || !Camera?.requestCameraPermission) return;
+  const requestCameraAccess = useCallback(async () => {
+    if (!modulesAvailable) return false;
 
-    const existing = Camera.getCameraPermissionStatus?.();
-    if (existing === 'denied' || existing === 'restricted') {
-      setPermissionGranted(false);
-      setError('Camera permission is required. Enable it in Settings.');
-      return;
+    if (visionPermission || expoPermission?.granted) {
+      setPermissionGranted(true);
+      return true;
     }
 
-    let cancelled = false;
-    (async () => {
+    let granted = false;
+
+    if (requestVisionPermission) {
       try {
-        const status = await Camera!.requestCameraPermission();
-        if (cancelled) return;
-        const granted = status === 'granted';
-        setPermissionGranted(granted);
-        if (!granted) setError('Camera permission is required. Enable it in Settings.');
-        else setError(undefined);
+        granted = await requestVisionPermission();
       } catch {
-        if (!cancelled) setError('Could not request camera permission.');
+        granted = false;
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [isActive]);
+    }
+
+    if (!granted && requestExpoPermission) {
+      try {
+        const result = await requestExpoPermission();
+        granted = Boolean(result?.granted);
+      } catch {
+        granted = false;
+      }
+    }
+
+    setPermissionGranted(granted);
+    if (!granted) {
+      setError('Camera permission is required. Allow camera in the popup or in Settings.');
+    } else {
+      setError(undefined);
+    }
+    return granted;
+  }, [expoPermission?.granted, requestExpoPermission, requestVisionPermission, visionPermission]);
 
   useEffect(() => {
-    if (!useMediapipePoseDetection) {
-      setModuleReady(false);
-      setError('Body tracking needs a native rebuild. Run: npx expo run:android');
+    if (!modulesAvailable) {
+      setError(friendlyPoseError(poseModuleLoadError));
     }
   }, []);
 
+  // Auto-request camera access once the hook is active so games that don't
+  // explicitly call requestCameraAccess() (e.g. older sessions) still light up
+  // the live camera. Games can also call requestCameraAccess() on a user tap.
+  useEffect(() => {
+    if (isActive && modulesAvailable && !permissionGranted) {
+      requestCameraAccess().catch(() => {});
+    }
+  }, [isActive, permissionGranted, requestCameraAccess]);
+
   const metrics = useMemo<PostureMetrics>(() => computeMetrics(pose), [pose]);
 
-  const hasCamera = Boolean(device && mpSolution?.frameProcessor && permissionGranted && moduleReady);
-  const cameraSupported = moduleReady;
+  const hasFrameProcessor = Boolean(mpSolution?.frameProcessor);
+  const hasCamera = Boolean(
+    modulesAvailable && permissionGranted && hasFrameProcessor && (device || mpSolution),
+  );
+  const cameraSupported = modulesAvailable;
 
   return {
     metrics,
@@ -155,11 +222,14 @@ export function usePoseDetectionNative(isActive: boolean = true): PoseDetectionR
     isDetecting: isActive && isDetecting,
     hasCamera,
     cameraSupported,
-    error: hasCamera ? undefined : error,
+    permissionGranted,
+    error: hasCamera ? undefined : error ? friendlyPoseError(error) : undefined,
     previewContainerId: PREVIEW_ID,
+    requestCameraAccess,
     visionDevice: device,
     frameProcessor: mpSolution?.frameProcessor ?? null,
     cameraLayoutHandler: mpSolution?.cameraViewLayoutChangeHandler,
     cameraActive: isActive && hasCamera,
+    mediapipeSolution: mpSolution,
   };
 }

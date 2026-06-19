@@ -2,32 +2,32 @@ import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import Auth0 from "react-native-auth0";
+import type {
+  ClearSessionParameters,
+  NativeAuthorizeOptions,
+  NativeClearSessionOptions,
+  WebAuthorizeParameters,
+} from "react-native-auth0";
 
 // Base64 URL decode helper (works in both web and React Native)
 function base64UrlDecode(str: string): string {
-  // Add padding if needed
   let padded = str + '='.repeat((4 - (str.length % 4)) % 4);
-  // Replace URL-safe characters
   padded = padded.replace(/-/g, '+').replace(/_/g, '/');
-  
-  // Use atob if available (web)
+
   if (typeof atob !== 'undefined') {
     return atob(padded);
   }
-  
-  // React Native: Try using global Buffer if available (Node.js environment)
+
   if (typeof Buffer !== 'undefined') {
     return Buffer.from(padded, 'base64').toString('utf-8');
   }
-  
-  // If neither is available, throw error to trigger API fallback
+
   throw new Error('Base64 decoding not available');
 }
 
 type Session = { accessToken?: string; idToken?: string; profile?: any };
 
 const extra = (Constants as any).expoConfig?.extra ?? {};
-// Strip protocol if present (react-native-auth0 requires hostname only)
 const stripProtocol = (url: string) => {
   if (!url) return url;
   return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
@@ -39,15 +39,80 @@ const clientId =
   (process.env.EXPO_PUBLIC_AUTH0_CLIENT_ID_NATIVE as string) || (extra.AUTH0_CLIENT_ID_NATIVE as string);
 const audience =
   (process.env.EXPO_PUBLIC_AUTH0_AUDIENCE as string) || (extra.AUTH0_AUDIENCE as string) || undefined;
+const isDevVariant = extra.appVariant === 'development';
+const auth0CallbackPackage =
+  (extra.auth0CallbackPackage as string) ||
+  (Constants as any).expoConfig?.android?.package ||
+  'com.anonymous.childwellness';
 
 if (!domain || !clientId) {
   console.error("Auth0 native config missing. domain:", domain, "clientId:", clientId);
   throw new Error("Auth0 native: missing domain or clientId (check EXPO_PUBLIC_* or expo.extra)");
 }
 
-console.log("Auth0 Native - Domain:", domain, "ClientId:", clientId?.substring(0, 10) + "...");
-
 const auth0 = new Auth0({ domain, clientId });
+
+function getAuth0Scheme(packageId: string): string {
+  return `${packageId}.auth0`;
+}
+
+function getAuth0CallbackUrl(packageId: string): string {
+  return `${getAuth0Scheme(packageId)}://${domain}/android/${packageId}/callback`;
+}
+
+function getAuth0LogoutUrl(packageId: string): string {
+  return `${getAuth0Scheme(packageId)}://${domain}/android/${packageId}/logout`;
+}
+
+function getWebAuthParams(extraParams: WebAuthorizeParameters = {}): {
+  parameters: WebAuthorizeParameters;
+  options: NativeAuthorizeOptions;
+} {
+  const parameters: WebAuthorizeParameters = {
+    scope: "openid profile email offline_access",
+    ...(audience ? { audience } : {}),
+    ...extraParams,
+  };
+  const options: NativeAuthorizeOptions = {};
+
+  if (isDevVariant) {
+    parameters.redirectUrl = getAuth0CallbackUrl(auth0CallbackPackage);
+    options.customScheme = getAuth0Scheme(auth0CallbackPackage);
+  }
+
+  return { parameters, options };
+}
+
+function getClearSessionParams(): {
+  parameters: ClearSessionParameters;
+  options: NativeClearSessionOptions;
+} {
+  const parameters: ClearSessionParameters = {};
+  const options: NativeClearSessionOptions = {};
+
+  if (isDevVariant) {
+    parameters.returnToUrl = getAuth0LogoutUrl(auth0CallbackPackage);
+    options.customScheme = getAuth0Scheme(auth0CallbackPackage);
+  }
+
+  return { parameters, options };
+}
+
+async function decodeProfileFromAuthResult(res: { accessToken?: string; idToken?: string }) {
+  if (res.idToken) {
+    try {
+      const parts = res.idToken.split('.');
+      if (parts.length === 3) {
+        const decodedStr = base64UrlDecode(parts[1]);
+        return JSON.parse(decodedStr);
+      }
+    } catch (e) {
+      console.warn('Failed to decode ID token, falling back to userInfo API:', e);
+    }
+  }
+
+  return auth0.auth.userInfo({ token: res.accessToken! });
+}
 
 const Ctx = createContext<{
   session: Session | null;
@@ -72,38 +137,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async () => {
-    console.log("=== AUTH0 LOGIN DEBUG ===");
-    console.log("Redirect URI: using react-native-auth0 default callback");
-    console.log("Domain:", domain);
-    console.log("ClientId:", clientId?.substring(0, 15) + "...");
-    console.log("=========================");
-    const res = await auth0.webAuth.authorize({
-      scope: "openid profile email offline_access",
-      ...(audience ? { audience } : {}),
-    });
-    
-    // Decode profile from ID token instead of making an extra API call
-    // This is much faster - no network request needed
-    let profile: any = null;
-    if (res.idToken) {
-      try {
-        // Decode JWT token (base64url decode the payload)
-        const parts = res.idToken.split('.');
-        if (parts.length === 3) {
-          const payload = parts[1];
-          const decodedStr = base64UrlDecode(payload);
-          profile = JSON.parse(decodedStr);
-        }
-      } catch (e) {
-        console.warn('Failed to decode ID token, falling back to userInfo API:', e);
-        // Fallback to API call only if decoding fails
-        profile = await auth0.auth.userInfo({ token: res.accessToken! });
-      }
-    } else {
-      // No ID token, fallback to API call
-      profile = await auth0.auth.userInfo({ token: res.accessToken! });
+    const { parameters, options } = getWebAuthParams();
+    if (isDevVariant) {
+      console.log("Auth0 dev build using production callback:", parameters.redirectUrl);
     }
-    
+
+    const res = await auth0.webAuth.authorize(parameters, options);
+    const profile = await decodeProfileFromAuthResult(res);
     const next = { accessToken: res.accessToken, idToken: res.idToken, profile };
     setSession(next);
     await SecureStore.setItemAsync("cw.session", JSON.stringify(next));
@@ -111,7 +151,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      await auth0.webAuth.clearSession();
+      const { parameters, options } = getClearSessionParams();
+      await auth0.webAuth.clearSession(parameters, options);
     } catch {
       // best-effort: still clear local state
     }
@@ -120,32 +161,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signup = async (emailHint?: string) => {
-    console.log("Auth0 Signup - Redirect URI: using react-native-auth0 default callback");
-    const res = await auth0.webAuth.authorize({
-      scope: "openid profile email offline_access",
-      ...(audience ? { audience } : {}),
+    const { parameters, options } = getWebAuthParams({
       screen_hint: "signup",
       login_hint: emailHint || "",
     });
-    
-    // Decode profile from ID token instead of making an extra API call
-    let profile: any = null;
-    if (res.idToken) {
-      try {
-        const parts = res.idToken.split('.');
-        if (parts.length === 3) {
-          const payload = parts[1];
-          const decodedStr = base64UrlDecode(payload);
-          profile = JSON.parse(decodedStr);
-        }
-      } catch (e) {
-        console.warn('Failed to decode ID token, falling back to userInfo API:', e);
-        profile = await auth0.auth.userInfo({ token: res.accessToken! });
-      }
-    } else {
-      profile = await auth0.auth.userInfo({ token: res.accessToken! });
-    }
-    
+
+    const res = await auth0.webAuth.authorize(parameters, options);
+    const profile = await decodeProfileFromAuthResult(res);
     const next = { accessToken: res.accessToken, idToken: res.idToken, profile };
     setSession(next);
     await SecureStore.setItemAsync("cw.session", JSON.stringify(next));

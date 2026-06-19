@@ -3,16 +3,22 @@ COPY AND PASTE THESE EXACT VALUES INTO AUTH0:
 ==========================================
 ALLOWED CALLBACK URLS
 ==========================================
-ChildWellness:///callback,childwellness://callback,com.anonymous.ChildWellness://callback
+ChildWellness:///callback,childwellness://callback,com.anonymous.ChildWellness://callback,com.anonymous.childwellness.auth0://child-wellness.us.auth0.com/android/com.anonymous.childwellness/callback,com.anonymous.childwellness.dev.auth0://child-wellness.us.auth0.com/android/com.anonymous.childwellness.dev/callback,ChildWellness-dev:///callback
 
 IMPORTANT: NO SPACES after commas!
+
+Dev build (ChildWellness Dev) requires:
+com.anonymous.childwellness.dev.auth0://child-wellness.us.auth0.com/android/com.anonymous.childwellness.dev/callback
 
 ==========================================
 ALLOWED LOGOUT URLS
 ==========================================
-ChildWellness:///logout,childwellness://logout,com.anonymous.ChildWellness://logout
+ChildWellness:///logout,childwellness://logout,com.anonymous.ChildWellness://logout,com.anonymous.childwellness.auth0://child-wellness.us.auth0.com/android/com.anonymous.childwellness/logout,com.anonymous.childwellness.dev.auth0://child-wellness.us.auth0.com/android/com.anonymous.childwellness.dev/logout,ChildWellness-dev:///logout
 
 IMPORTANT: NO SPACES after commas! Make sure these end with /logout, NOT /callback!
+
+Dev build logout:
+com.anonymous.childwellness.dev.auth0://child-wellness.us.auth0.com/android/com.anonymous.childwellness.dev/logout
 
 ==========================================
 APPLICATION LOGIN URI

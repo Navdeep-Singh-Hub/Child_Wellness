@@ -1,367 +1,138 @@
-import GameInfoScreen from '@/components/game/GameInfoScreen';
-import ResultCard from '@/components/game/ResultCard';
+import { RoundCountdownOverlay } from '@/components/game/occupational/level5/session2/shared/Session2UI';
+import { ReactionShell, useReactionExit } from '@/components/game/occupational/level5/session9/ReactionShell';
+import { SESSION5_9_PACING } from '@/components/game/occupational/level5/session9/session9Pacing';
+import { SignalButton } from '@/components/game/occupational/level5/session9/VisualReactionVisuals';
+import { GO_STOP_COPY, GO_STOP_THEME } from '@/components/game/occupational/level5/session9/visualReactionThemes';
 import { logGameAndAward } from '@/utils/api';
-import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { cleanupSounds } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
+import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    Dimensions,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Dimensions, Pressable, StyleSheet, View } from 'react-native';
 
-const TOTAL_ROUNDS = 10;
+const TOTAL_ROUNDS = SESSION5_9_PACING.standardRounds;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BUTTON_SIZE = 120;
 const TOLERANCE = 60;
 
-const GoStopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const GoStopGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
+  const exit = useReactionExit(onBack);
   const [showInfo, setShowInfo] = useState(true);
+  const [showCountdown, setShowCountdown] = useState(false);
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  
   const [showGo, setShowGo] = useState(false);
   const [showStop, setShowStop] = useState(false);
   const screenWidth = useRef(SCREEN_WIDTH);
   const screenHeight = useRef(SCREEN_HEIGHT);
-  const buttonTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const buttonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startedRef = useRef(false);
+
+  const endGame = useCallback(async (finalScore: number) => {
+    const total = TOTAL_ROUNDS;
+    const xp = finalScore * SESSION5_9_PACING.standardXp;
+    if (buttonTimerRef.current) clearTimeout(buttonTimerRef.current);
+    setFinalStats({ correct: finalScore, total, xp });
+    setDone(true);
+    try {
+      await logGameAndAward({
+        type: 'go-stop', correct: finalScore, total, accuracy: (finalScore / total) * 100, xpAwarded: xp,
+        skillTags: ['inhibition', 'impulse-control', 'response-inhibition'],
+      });
+      router.setParams({ refreshStats: Date.now().toString() });
+    } catch (e) { console.error(e); }
+  }, [router]);
 
   const showButton = useCallback(() => {
     const isGo = Math.random() > 0.5;
-    
-    if (isGo) {
-      setShowGo(true);
-      setShowStop(false);
-      speakTTS('Go!', 0.9, 'en-US' );
-    } else {
-      setShowGo(false);
-      setShowStop(true);
-      speakTTS('Stop!', 0.9, 'en-US' );
-    }
-
-    // Hide after 2 seconds
-    if (buttonTimerRef.current) {
-      clearTimeout(buttonTimerRef.current);
-    }
-    buttonTimerRef.current = setTimeout(() => {
-      setShowGo(false);
-      setShowStop(false);
-    }, 2000);
+    setShowGo(isGo);
+    setShowStop(!isGo);
+    speakTTS(isGo ? 'Go!' : 'Stop!', 0.9, 'en-US');
+    if (buttonTimerRef.current) clearTimeout(buttonTimerRef.current);
+    buttonTimerRef.current = setTimeout(() => { setShowGo(false); setShowStop(false); }, 2000);
   }, []);
 
   const handleTap = useCallback((event: { nativeEvent: { locationX: number; locationY: number } }) => {
     if (done) return;
-    
-    const tapX = event.nativeEvent.locationX;
-    const tapY = event.nativeEvent.locationY;
+    const { locationX: tapX, locationY: tapY } = event.nativeEvent;
     const centerX = screenWidth.current / 2;
     const centerY = screenHeight.current / 2;
-    
-    const distance = Math.sqrt(
-      Math.pow(tapX - centerX, 2) + Math.pow(tapY - centerY, 2)
-    );
+    if (Math.hypot(tapX - centerX, tapY - centerY) > TOLERANCE + BUTTON_SIZE / 2) return;
 
-    if (distance <= TOLERANCE + BUTTON_SIZE / 2) {
-      if (showGo) {
-        // Correct - tapped Go
-        if (buttonTimerRef.current) {
-          clearTimeout(buttonTimerRef.current);
-        }
-        setShowGo(false);
-
-        setScore((s) => {
-          const newScore = s + 1;
-          if (newScore >= TOTAL_ROUNDS) {
-            setTimeout(() => {
-              endGame(newScore);
-            }, 1000);
-          } else {
-            setTimeout(() => {
-              setRound((r) => r + 1);
-              setTimeout(() => showButton(), 1000);
-            }, 1500);
-          }
-          return newScore;
-        });
-
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        speakTTS('Good!', 0.9, 'en-US' );
-      } else if (showStop) {
-        // Wrong - tapped when Stop was shown
-        if (buttonTimerRef.current) {
-          clearTimeout(buttonTimerRef.current);
-        }
-        setShowStop(false);
-
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-        speakTTS('Stop means no tap!', 0.8, 'en-US' );
-        
-        setTimeout(() => {
-          setRound((r) => r + 1);
-          setTimeout(() => showButton(), 1000);
-        }, 1500);
-      }
-    }
-  }, [done, showGo, showStop, showButton]);
-
-  const endGame = useCallback(async (finalScore: number) => {
-    const total = TOTAL_ROUNDS;
-    const xp = finalScore * 15;
-    const accuracy = (finalScore / total) * 100;
-
-    if (buttonTimerRef.current) {
-      clearTimeout(buttonTimerRef.current);
-    }
-
-    setFinalStats({ correct: finalScore, total, xp });
-    setDone(true);
-
-    try {
-      await logGameAndAward({
-        type: 'go-stop',
-        correct: finalScore,
-        total,
-        accuracy,
-        xpAwarded: xp,
-        skillTags: ['inhibition', 'impulse-control', 'response-inhibition'],
+    if (showGo) {
+      if (buttonTimerRef.current) clearTimeout(buttonTimerRef.current);
+      setShowGo(false);
+      setScore((s) => {
+        const newScore = s + 1;
+        if (newScore >= TOTAL_ROUNDS) setTimeout(() => endGame(newScore), 800);
+        else setTimeout(() => { setRound((r) => r + 1); setTimeout(showButton, 900); }, 1200);
+        return newScore;
       });
-      router.setParams({ refreshStats: Date.now().toString() });
-    } catch (error) {
-      console.error('Failed to log game:', error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      speakTTS('Good!', 0.9, 'en-US');
+    } else if (showStop) {
+      if (buttonTimerRef.current) clearTimeout(buttonTimerRef.current);
+      setShowStop(false);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+      speakTTS('Stop means no tap!', 0.8, 'en-US');
+      setTimeout(() => { setRound((r) => r + 1); setTimeout(showButton, 900); }, 1200);
     }
-  }, [router]);
+  }, [done, showGo, showStop, showButton, endGame]);
 
   useEffect(() => {
-    if (!showInfo && !done) {
-      // Stop any ongoing TTS when new round starts
-      stopTTS();
-      setTimeout(() => {
-        showButton();
-        speakTTS('Green tap, red no tap!', { rate: 0.8, language: 'en-US' });
-      }, 1000);
+    if (!showInfo && !done && !showCountdown && !startedRef.current) {
+      startedRef.current = true;
+      setShowCountdown(true);
     }
-  }, [showInfo, round, done, showButton]);
+  }, [showInfo, done, showCountdown]);
 
-  useEffect(() => {
-    return () => {
-      try {
-        stopTTS();
-      } catch (e) {
-        // Ignore errors
-      }
-      cleanupSounds();
-      if (buttonTimerRef.current) {
-        clearTimeout(buttonTimerRef.current);
-      }
-    };
+  useEffect(() => () => {
+    stopTTS();
+    cleanupSounds();
+    if (buttonTimerRef.current) clearTimeout(buttonTimerRef.current);
   }, []);
 
-  if (showInfo) {
-    return (
-      <GameInfoScreen
-        title="Go / Stop"
-        emoji="🚦"
-        description="Green tap, red no tap! Build inhibition."
-        skills={['Inhibition']}
-        suitableFor="Children learning impulse control and response inhibition"
-        onStart={() => {
-          setShowInfo(false);
-        }}
-        onBack={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
-    );
-  }
-
-  if (done && finalStats) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ResultCard
-          correct={finalStats.correct}
-          total={finalStats.total}
-          xpAwarded={finalStats.xp}
-          onHome={() => {
-            stopAllSpeech();
-            cleanupSounds();
-            onBack?.();
-          }}
-          onPlayAgain={() => {
-            setRound(1);
-            setScore(0);
-            setDone(false);
-            setFinalStats(null);
-            showButton();
-          }}
-        />
-      </SafeAreaView>
-    );
-  }
+  const hint = showGo ? 'TAP!' : showStop ? "DON'T TAP!" : 'Get ready...';
 
   return (
-    <SafeAreaView style={styles.container}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      >
-        <Text style={styles.backButtonText}>← Back</Text>
-      </TouchableOpacity>
-
-      <View style={styles.header}>
-        <Text style={styles.title}>Go / Stop</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • 🚦 Score: {score}
-        </Text>
-        <Text style={styles.instruction}>
-          {showGo ? 'TAP!' : showStop ? 'DON\'T TAP!' : 'Get ready...'}
-        </Text>
-      </View>
-
+    <ReactionShell
+      theme={GO_STOP_THEME} copy={GO_STOP_COPY}
+      showInfo={showInfo} showCongrats done={done} finalStats={finalStats}
+      round={round} totalRounds={TOTAL_ROUNDS} score={score}
+      hint={hint} showHint={!showInfo && !done}
+      onStart={() => setShowInfo(false)} onExit={exit} onContinue={onComplete} onBack={onBack}
+    >
       <Pressable
         style={styles.gameArea}
-        onLayout={(e) => {
-          screenWidth.current = e.nativeEvent.layout.width;
-          screenHeight.current = e.nativeEvent.layout.height;
-        }}
+        onLayout={(e) => { screenWidth.current = e.nativeEvent.layout.width; screenHeight.current = e.nativeEvent.layout.height; }}
         onPress={handleTap}
       >
-        {showGo && (
-          <View pointerEvents="none" style={[styles.button, styles.goButton]}>
-            <Text style={styles.buttonEmoji}>🟢</Text>
-            <Text style={styles.buttonText}>GO</Text>
-          </View>
-        )}
-        {showStop && (
-          <View pointerEvents="none" style={[styles.button, styles.stopButton]}>
-            <Text style={styles.buttonEmoji}>🔴</Text>
-            <Text style={styles.buttonText}>STOP</Text>
-          </View>
-        )}
+        <View style={styles.center} pointerEvents="none">
+          {showGo && <SignalButton type="go" size={BUTTON_SIZE} />}
+          {showStop && <SignalButton type="stop" size={BUTTON_SIZE} />}
+        </View>
       </Pressable>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Skills: Inhibition
-        </Text>
-        <Text style={styles.footerSubtext}>
-          Green tap, red no tap!
-        </Text>
-      </View>
-    </SafeAreaView>
+      {showCountdown && (
+        <RoundCountdownOverlay
+          accent={GO_STOP_THEME.accent}
+          onDone={() => {
+            setShowCountdown(false);
+            stopTTS();
+            showButton();
+            speakTTS('Green tap, red no tap!', 0.8, 'en-US');
+          }}
+        />
+      )}
+    </ReactionShell>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  header: {
-    marginTop: 80,
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#475569',
-    marginBottom: 12,
-  },
-  instruction: {
-    fontSize: 16,
-    color: '#3B82F6',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  gameArea: {
-    flex: 1,
-    position: 'relative',
-    marginVertical: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  button: {
-    width: BUTTON_SIZE,
-    height: BUTTON_SIZE,
-    borderRadius: BUTTON_SIZE / 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
-  },
-  goButton: {
-    backgroundColor: '#10B981',
-    borderWidth: 4,
-    borderColor: '#059669',
-  },
-  stopButton: {
-    backgroundColor: '#EF4444',
-    borderWidth: 4,
-    borderColor: '#DC2626',
-  },
-  buttonEmoji: {
-    fontSize: 40,
-    marginBottom: 4,
-  },
-  buttonText: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: '#FFFFFF',
-  },
-  footer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  footerSubtext: {
-    fontSize: 12,
-    color: '#64748B',
-    textAlign: 'center',
-  },
+  gameArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: { justifyContent: 'center', alignItems: 'center' },
 });
-
 export default GoStopGame;

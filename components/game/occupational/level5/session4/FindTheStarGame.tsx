@@ -1,20 +1,14 @@
-import GameInfoScreen from '@/components/game/GameInfoScreen';
-import ResultCard from '@/components/game/ResultCard';
+import { ThemedObjectTile } from '@/components/game/occupational/level5/session4/VisualFocusVisuals';
+import { useVisualFocusExit, VisualFocusShell } from '@/components/game/occupational/level5/session4/VisualFocusShell';
+import { SESSION5_4_PACING } from '@/components/game/occupational/level5/session4/session4Pacing';
+import { FIND_STAR_COPY, FIND_STAR_THEME } from '@/components/game/occupational/level5/session4/visualFocusThemes';
 import { logGameAndAward } from '@/utils/api';
-import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { cleanupSounds } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Dimensions,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 
 const TOTAL_ROUNDS = 10;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -48,9 +42,11 @@ const shuffle = <T,>(items: T[]): T[] => {
   return copy;
 };
 
-const FindTheStarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+const FindTheStarGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => {
   const router = useRouter();
+  const handleExit = useVisualFocusExit(onBack);
   const [showInfo, setShowInfo] = useState(true);
+  const [showCongrats, setShowCongrats] = useState(false);
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
@@ -75,10 +71,8 @@ const FindTheStarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     while (attempts < 40) {
       const x = Math.random() * (w - OBJECT_SIZE) + OBJECT_SIZE / 2;
-      const y = Math.random() * (h - OBJECT_SIZE - 200) + OBJECT_SIZE / 2 + 100;
-      const tooClose = usedPositions.some(
-        (pos) => Math.hypot(pos.x - x, pos.y - y) < MIN_GAP,
-      );
+      const y = Math.random() * (h - OBJECT_SIZE - 40) + OBJECT_SIZE / 2 + 20;
+      const tooClose = usedPositions.some((pos) => Math.hypot(pos.x - x, pos.y - y) < MIN_GAP);
       if (!tooClose) {
         usedPositions.push({ x, y });
         return { x, y };
@@ -87,7 +81,7 @@ const FindTheStarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
 
     const x = Math.random() * (w - OBJECT_SIZE) + OBJECT_SIZE / 2;
-    const y = Math.random() * (h - OBJECT_SIZE - 200) + OBJECT_SIZE / 2 + 100;
+    const y = Math.random() * (h - OBJECT_SIZE - 40) + OBJECT_SIZE / 2 + 20;
     usedPositions.push({ x, y });
     return { x, y };
   }, []);
@@ -145,21 +139,22 @@ const FindTheStarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const endGame = useCallback(
     async (finalScore: number) => {
       const total = TOTAL_ROUNDS;
-      const xp = finalScore * 15;
+      const xp = finalScore * SESSION5_4_PACING.xpPerScore;
       const accuracy = (finalScore / total) * 100;
 
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
+      setShowCongrats(true);
       doneRef.current = true;
 
       try {
         await logGameAndAward({
-          type: 'find-the-star',
+          type: FIND_STAR_COPY.logType,
           correct: finalScore,
           total,
           accuracy,
           xpAwarded: xp,
-          skillTags: ['visual-scanning', 'attention', 'object-recognition'],
+          skillTags: [...FIND_STAR_COPY.skillTags],
         });
         router.setParams({ refreshStats: Date.now().toString() });
       } catch (error) {
@@ -243,97 +238,32 @@ const FindTheStarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   }, [showInfo, round, done, generateObjects]);
 
-  useEffect(() => {
-    return () => {
-      try {
-        stopTTS();
-      } catch {
-        // Ignore errors
-      }
-      cleanupSounds();
-    };
+  useEffect(() => () => {
+    try { stopTTS(); } catch { /* ignore */ }
+    cleanupSounds();
   }, []);
 
   const visibleObjects = objects.filter((obj) => !(obj.isStar && obj.found));
-
-  if (showInfo) {
-    return (
-      <GameInfoScreen
-        title="Find the Stars"
-        emoji="⭐"
-        description="Find every star hidden among the objects! Each round has more stars to spot."
-        skills={['Visual scanning']}
-        suitableFor="Children learning visual scanning and attention skills"
-        onStart={() => {
-          setShowInfo(false);
-        }}
-        onBack={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      />
-    );
-  }
-
-  if (done && finalStats) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ResultCard
-          correct={finalStats.correct}
-          total={finalStats.total}
-          xpAwarded={finalStats.xp}
-          onHome={() => {
-            stopAllSpeech();
-            cleanupSounds();
-            onBack?.();
-          }}
-          onPlayAgain={() => {
-            doneRef.current = false;
-            advancingRef.current = false;
-            scoreRef.current = 0;
-            roundRef.current = 1;
-            setRound(1);
-            setScore(0);
-            setDone(false);
-            setFinalStats(null);
-            setObjects([]);
-            setStarsFound(0);
-            setStarsNeeded(2);
-          }}
-        />
-      </SafeAreaView>
-    );
-  }
+  const hint = `Find all ${starsNeeded} stars · ${starsFound}/${starsNeeded} found`;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => {
-          stopAllSpeech();
-          cleanupSounds();
-          onBack?.();
-        }}
-      >
-        <Text style={styles.backButtonText}>← Back</Text>
-      </TouchableOpacity>
-
-      <View style={styles.header}>
-        <Text style={styles.title}>Find the Stars</Text>
-        <Text style={styles.subtitle}>
-          Round {round}/{TOTAL_ROUNDS} • ⭐ Score: {score}
-        </Text>
-        <Text style={styles.instruction}>
-          Find all {starsNeeded} stars hidden below!
-        </Text>
-        <View style={styles.progressPill}>
-          <Text style={styles.progressText}>
-            Stars found: {starsFound}/{starsNeeded}
-          </Text>
-        </View>
-      </View>
-
+    <VisualFocusShell
+      theme={FIND_STAR_THEME}
+      copy={FIND_STAR_COPY}
+      showInfo={showInfo}
+      showCongrats={showCongrats}
+      done={done}
+      finalStats={finalStats}
+      round={round}
+      totalRounds={TOTAL_ROUNDS}
+      score={score}
+      hint={hint}
+      showHint
+      onStart={() => setShowInfo(false)}
+      onExit={handleExit}
+      onContinue={onComplete}
+      onBack={onBack}
+    >
       <View
         style={styles.gameArea}
         onLayout={(e) => {
@@ -346,8 +276,7 @@ const FindTheStarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             key={obj.id}
             onPress={() => handleObjectTap(obj)}
             style={[
-              styles.object,
-              obj.isStar && styles.starObject,
+              styles.tilePress,
               {
                 left: obj.x - OBJECT_SIZE / 2,
                 top: obj.y - OBJECT_SIZE / 2,
@@ -355,121 +284,20 @@ const FindTheStarGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               },
             ]}
           >
-            <Text style={styles.objectEmoji}>{obj.emoji}</Text>
+            <ThemedObjectTile size={OBJECT_SIZE} highlight={obj.isStar} accentColor={FIND_STAR_THEME.accent}>
+              <Text style={styles.objectEmoji}>{obj.emoji}</Text>
+            </ThemedObjectTile>
           </Pressable>
         ))}
       </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Skills: Visual scanning</Text>
-        <Text style={styles.footerSubtext}>
-          Tap every star. Wrong objects do not count.
-        </Text>
-      </View>
-    </SafeAreaView>
+    </VisualFocusShell>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 10,
-    backgroundColor: '#0F172A',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  header: {
-    marginTop: 80,
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#475569',
-    marginBottom: 12,
-  },
-  instruction: {
-    fontSize: 16,
-    color: '#3B82F6',
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  progressPill: {
-    backgroundColor: 'rgba(252,211,77,0.35)',
-    borderColor: '#F59E0B',
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 18,
-  },
-  progressText: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#92400E',
-  },
-  gameArea: {
-    flex: 1,
-    position: 'relative',
-    marginVertical: 40,
-  },
-  object: {
-    position: 'absolute',
-    width: OBJECT_SIZE,
-    height: OBJECT_SIZE,
-    borderRadius: OBJECT_SIZE / 2,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
-  starObject: {
-    borderColor: '#F59E0B',
-    backgroundColor: '#FFFBEB',
-  },
-  objectEmoji: {
-    fontSize: 30,
-  },
-  footer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  footerSubtext: {
-    fontSize: 12,
-    color: '#64748B',
-    textAlign: 'center',
-  },
+  gameArea: { flex: 1, position: 'relative' },
+  tilePress: { position: 'absolute', zIndex: 5 },
+  objectEmoji: { fontSize: 28 },
 });
 
 export default FindTheStarGame;

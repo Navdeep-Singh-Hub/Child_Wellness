@@ -26,8 +26,11 @@ function usePoseDetectionWebRoute(isActive: boolean): PoseDetectionResult {
     isDetecting: web.isDetecting,
     hasCamera: web.hasCamera,
     cameraSupported: true,
+    permissionGranted: web.hasCamera,
     error: web.error,
     previewContainerId: web.previewContainerId,
+    requestCameraAccess: async () => web.hasCamera,
+    mediapipeSolution: null,
   };
 }
 

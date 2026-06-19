@@ -1,12 +1,19 @@
 import type { PoseDetectionResult } from '@/hooks/poseDetectionTypes';
 
-/** Spread onto CameraStage to mount the native VisionCamera preview on APK. */
+/** Spread onto CameraStage to mount the native pose camera on APK. */
 export function poseStageNativeProps(det: PoseDetectionResult) {
-  if (!det.visionDevice || !det.frameProcessor) return {};
+  if (!det.mediapipeSolution || !det.permissionGranted) {
+    return {
+      mediapipeSolution: null as PoseDetectionResult['mediapipeSolution'],
+      cameraIsActive: false,
+    };
+  }
+
   return {
-    visionDevice: det.visionDevice,
-    frameProcessor: det.frameProcessor,
+    mediapipeSolution: det.mediapipeSolution,
     onCameraLayout: det.cameraLayoutHandler,
     cameraIsActive: det.cameraActive ?? true,
+    visionDevice: det.visionDevice,
+    frameProcessor: det.frameProcessor,
   };
 }
