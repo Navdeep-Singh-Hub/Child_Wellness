@@ -8113,3 +8113,5182 @@ export default function SessionGamesScreen() {
       color: '#84CC16',
       available: isAdventurePathAvailable,
     },
+    // Occupational Therapy Level 8 Session 1: Single-Step Motor Planning (camera tracks reach, posture & coordination)
+    {
+      id: 'touch-the-target',
+      title: 'Touch The Target',
+      emoji: '🎯',
+      description: 'Plan your move, then reach out and touch each glowing target. Camera tracks reach accuracy, posture and movement quality.',
+      color: '#F472B6',
+      available: isTouchTheTargetAvailable,
+    },
+    {
+      id: 'reach-the-star',
+      title: 'Reach The Star',
+      emoji: '⭐',
+      description: 'Stretch up high to grab each twinkling star. Camera tracks overhead reach, balance and coordination.',
+      color: '#FBBF24',
+      available: isReachTheStarAvailable,
+    },
+    {
+      id: 'move-to-the-spot',
+      title: 'Move To The Spot',
+      emoji: '👣',
+      description: 'Plan your steps and shift your whole body onto each glowing spot. Camera tracks weight-shift, posture and motor planning.',
+      color: '#34D399',
+      available: isMoveToTheSpotAvailable,
+    },
+    {
+      id: 'launch-the-rocket',
+      title: 'Launch The Rocket',
+      emoji: '🚀',
+      description: 'Raise both arms up high together to blast the rocket into space. Camera tracks bilateral coordination and movement quality.',
+      color: '#38BDF8',
+      available: isLaunchTheRocketAvailable,
+    },
+    {
+      id: 'place-the-box',
+      title: 'Place The Box',
+      emoji: '📦',
+      description: 'Reach to grab the box, then carry your reach over to place it on the shelf. Camera tracks sequencing, reach accuracy and praxis.',
+      color: '#FB923C',
+      available: isPlaceTheBoxAvailable,
+    },
+    // Occupational Therapy Level 8 Session 2: Two-Step Motor Planning (camera tracks sequenced movement & coordination)
+    {
+      id: 'clap-then-jump',
+      title: 'Clap Then Jump',
+      emoji: '👏',
+      description: 'Plan two moves — first clap your hands, then jump up high. Camera tracks the sequence, coordination and movement quality.',
+      color: '#F472B6',
+      available: isClapThenJumpAvailable,
+    },
+    {
+      id: 'touch-then-turn',
+      title: 'Touch Then Turn',
+      emoji: '🎯',
+      description: 'Plan two moves — touch the target, then turn your body sideways. Camera tracks reach accuracy, body rotation and sequencing.',
+      color: '#38BDF8',
+      available: isTouchThenTurnAvailable,
+    },
+    {
+      id: 'reach-then-freeze',
+      title: 'Reach Then Freeze',
+      emoji: '⭐',
+      description: 'Plan two moves — reach up to the star, then freeze like a statue. Camera tracks reach, postural control and self-regulation.',
+      color: '#FBBF24',
+      available: isReachThenFreezeAvailable,
+    },
+    {
+      id: 'launch-then-catch',
+      title: 'Launch Then Catch',
+      emoji: '🚀',
+      description: 'Plan two moves — raise both arms to launch, then bring hands together to catch. Camera tracks bilateral coordination and timing.',
+      color: '#34D399',
+      available: isLaunchThenCatchAvailable,
+    },
+    {
+      id: 'pick-and-place',
+      title: 'Pick And Place',
+      emoji: '📦',
+      description: 'Plan two reaches — pick up the box, then place it on the shelf. Camera tracks sequencing, reach accuracy and praxis.',
+      color: '#FB923C',
+      available: isPickAndPlaceAvailable,
+    },
+    // Occupational Therapy Level 8 Session 3: Multi-Step Sequencing (camera tracks ordered movement chains)
+    {
+      id: 'action-chain',
+      title: 'Action Chain',
+      emoji: '🔗',
+      description: 'Memorise a chain of moves, then perform every action in the right order. Camera tracks sequencing, coordination and movement quality.',
+      color: '#22D3EE',
+      available: isActionChainAvailable,
+    },
+    {
+      id: 'star-sequence',
+      title: 'Star Sequence',
+      emoji: '🌟',
+      description: 'Reach a chain of stars in the exact order they light up. Camera tracks reach accuracy, visual sequencing and motor planning.',
+      color: '#FBBF24',
+      available: isStarSequenceAvailable,
+    },
+    {
+      id: 'mission-steps',
+      title: 'Mission Steps',
+      emoji: '🛰️',
+      description: 'Complete each step of the launch mission in order. Camera tracks ordered movement, coordination and movement quality.',
+      color: '#38BDF8',
+      available: isMissionStepsAvailable,
+    },
+    {
+      id: 'pirate-commands',
+      title: 'Pirate Commands',
+      emoji: '🏴‍☠️',
+      description: 'Follow the captain’s command list in order, matey! Camera tracks sequencing, body awareness and movement quality.',
+      color: '#F59E0B',
+      available: isPirateCommandsAvailable,
+    },
+    {
+      id: 'rainbow-sequence',
+      title: 'Rainbow Sequence',
+      emoji: '🌈',
+      description: 'Touch the rainbow colours in the order they glow. Camera tracks reach accuracy, visual sequencing and praxis.',
+      color: '#A855F7',
+      available: isRainbowSequenceAvailable,
+    },
+    // Occupational Therapy Level 8 Session 4: Motor Imitation (camera tracks copied poses & movement quality)
+    {
+      id: 'robot-copy',
+      title: 'Robot Copy',
+      emoji: '🤖',
+      description: 'Watch each robot move and copy its pose exactly with your body. Camera tracks imitation accuracy, posture and coordination.',
+      color: '#38BDF8',
+      available: isRobotCopyAvailable,
+    },
+    {
+      id: 'animal-copy',
+      title: 'Animal Copy',
+      emoji: '🦁',
+      description: 'Copy each animal shape with your whole body — wings, ears and more. Camera tracks imitation accuracy and body awareness.',
+      color: '#84CC16',
+      available: isAnimalCopyAvailable,
+    },
+    {
+      id: 'dance-mirror',
+      title: 'Dance Mirror',
+      emoji: '💃',
+      description: 'Mirror the dancer’s moves and strike each pose to the beat. Camera tracks imitation, rhythm and coordination.',
+      color: '#EC4899',
+      available: isDanceMirrorAvailable,
+    },
+    {
+      available: isMotorPoseMatchAvailable,
+    },
+    {
+      id: 'quick-copy',
+      title: 'Quick Copy',
+      emoji: '⚡',
+      description: 'Copy each pose as fast as you can before the clock runs out. Camera tracks reaction speed, imitation and movement quality.',
+      color: '#FBBF24',
+      available: isQuickCopyAvailable,
+    },
+    // Occupational Therapy Level 8 Session 5: Body Position Planning (camera tracks body position & movement quality)
+    {
+      id: 'high-reach',
+      title: 'High Reach',
+      emoji: '🙌',
+      description: 'Plan and stretch your whole body up high to reach the sky targets. Camera tracks overhead reach, posture and movement quality.',
+      color: '#38BDF8',
+      available: isHighReachAvailable,
+    },
+    {
+      id: 'low-reach',
+      title: 'Low Reach',
+      emoji: '🌱',
+      description: 'Plan and bend your body down low to reach ground treasures. Camera tracks low reach, posture and motor planning.',
+      color: '#84CC16',
+      available: isLowReachAvailable,
+    },
+    {
+      id: 'side-reach',
+      title: 'Side Reach',
+      emoji: '↔️',
+      description: 'Plan and reach your arm out to each glowing side. Camera tracks lateral reach, balance and coordination.',
+      color: '#06B6D4',
+      available: isSideReachAvailable,
+    },
+    {
+      id: 'turn-position',
+      title: 'Turn Position',
+      emoji: '🌀',
+      description: 'Plan and turn your body sideways to face the glowing planet. Camera tracks body rotation, posture and motor planning.',
+      color: '#A855F7',
+      available: isTurnPositionAvailable,
+    },
+    {
+      id: 'shape-body',
+      title: 'Shape Body',
+      emoji: '✨',
+      description: 'Plan and shape your whole body into stars, towers and balls. Camera tracks body shapes, posture and movement quality.',
+      color: '#F472B6',
+      available: isShapeBodyAvailable,
+    },
+    // Occupational Therapy Level 8 Session 6: Obstacle Navigation (camera tracks trail navigation & movement quality)
+    {
+      id: 'jungle-path',
+      title: 'Jungle Path',
+      emoji: '🌴',
+      description: 'Navigate the wild jungle trail — duck under vines, jump logs and climb branches. Camera tracks obstacle navigation and coordination.',
+      color: '#22C55E',
+      available: isJunglePathAvailable,
+    },
+    {
+      id: 'lava-escape',
+      title: 'Lava Escape',
+      emoji: '🌋',
+      description: 'Escape the erupting volcano — duck heat, jump gaps and balance on rocks. Camera tracks motor planning and movement quality.',
+      color: '#F97316',
+      available: isLavaEscapeAvailable,
+    },
+    {
+      id: 'mountain-route',
+      title: 'Mountain Route',
+      emoji: '⛰️',
+      description: 'Climb the mountain route — reach high, turn at passes and balance on ledges. Camera tracks body position and coordination.',
+      color: '#94A3B8',
+      available: isMountainRouteAvailable,
+    },
+    {
+      id: 'space-maze',
+      title: 'Space Maze',
+      emoji: '🚀',
+      description: 'Weave through the space maze — dodge asteroids, turn at portals and boost jump. Camera tracks navigation accuracy and praxis.',
+      color: '#818CF8',
+      available: isSpaceMazeAvailable,
+    },
+    {
+      id: 'pirate-island',
+      title: 'Pirate Island',
+      emoji: '🏴‍☠️',
+      description: 'Cross the pirate island — balance planks, dodge traps and reach treasure. Camera tracks sequencing and movement quality.',
+      color: '#F59E0B',
+      available: isPirateIslandNavAvailable,
+    },
+    // Occupational Therapy Level 8 Session 7: Bilateral Motor Planning (camera tracks two-sided coordination)
+    {
+      id: 'twin-moves',
+      title: 'Twin Moves',
+      emoji: '👯',
+      description: 'Move BOTH arms together — same twin move on each side. Camera tracks bilateral coordination and movement quality.',
+      color: '#38BDF8',
+      available: isTwinMovesAvailable,
+    },
+    {
+      id: 'cross-clap',
+      title: 'Cross Clap',
+      emoji: '✖️',
+      description: 'Cross your arms and clap across your body. Camera tracks midline crossing, bilateral planning and praxis.',
+      color: '#F472B6',
+      available: isCrossClapAvailable,
+    },
+    {
+      id: 'bear-pattern',
+      title: 'Bear Pattern',
+      emoji: '🐻',
+      description: 'Make the bear crawl shape with both paws and your body. Camera tracks bilateral motor planning and body awareness.',
+      color: '#D97706',
+      available: isBearPatternAvailable,
+    },
+    {
+      id: 'mirror-hands',
+      title: 'Mirror Hands',
+      emoji: '🪞',
+      description: 'Put each hand in a different mirror position — left and right opposite. Camera tracks asymmetric bilateral coordination.',
+      color: '#A855F7',
+      available: isMirrorHandsAvailable,
+    },
+    {
+      id: 'dual-action',
+      title: 'Dual Action',
+      emoji: '⚡',
+      description: 'Do TWO different moves at once — one with each hand. Camera tracks dual-action planning and coordination.',
+      color: '#22D3EE',
+      available: isDualActionAvailable,
+    },
+    // Occupational Therapy Level 8 Session 8: Movement Problem Solving (camera tracks puzzle-solving & movement quality)
+    {
+      id: 'find-the-route',
+      title: 'Find The Route',
+      emoji: '🗺️',
+      description: 'Read the map clue and pick the right move to find the route. Camera tracks problem-solving, motor planning and coordination.',
+      color: '#38BDF8',
+      available: isFindTheRouteAvailable,
+    },
+    {
+      id: 'open-the-path',
+      title: 'Open The Path',
+      emoji: '🔓',
+      description: 'Solve each lock clue and perform the key move to open the path. Camera tracks praxis, sequencing and movement quality.',
+      color: '#FBBF24',
+      available: isOpenThePathAvailable,
+    },
+    {
+      id: 'movement-puzzle',
+      title: 'Movement Puzzle',
+      emoji: '🧩',
+      description: 'Read the puzzle clue and figure out which body move solves it. Camera tracks motor planning and body awareness.',
+      color: '#A855F7',
+      available: isMovementPuzzleAvailable,
+    },
+    {
+      id: 'rescue-mission',
+      title: 'Rescue Mission',
+      emoji: '🚁',
+      description: 'Read each rescue clue and perform the hero move to save the day. Camera tracks problem-solving and coordination.',
+      color: '#F472B6',
+      available: isRescueMissionAvailable,
+    },
+    {
+      id: 'escape-course',
+      title: 'Escape Course',
+      emoji: '🚪',
+      description: 'Crack each escape room code with the right body move. Camera tracks sequencing, praxis and movement quality.',
+      color: '#34D399',
+      available: isEscapeCourseAvailable,
+    },
+    // Occupational Therapy Level 8 Session 9: Novel Motor Challenges (camera tracks unfamiliar composite moves)
+    {
+      id: 'alien-moves',
+      title: 'Alien Moves',
+      emoji: '👽',
+      description: 'Copy weird brand-new alien body moves — arms up and lean, float and wiggle! Camera tracks novel motor planning and coordination.',
+      color: '#84CC16',
+      available: isAlienMovesAvailable,
+    },
+    {
+      id: 'robot-factory',
+      title: 'Robot Factory',
+      emoji: '🏭',
+      description: 'Build robots with strange factory moves — power build, fold mode and spinner arms. Camera tracks praxis and movement quality.',
+      color: '#94A3B8',
+      available: isRobotFactoryAvailable,
+    },
+    {
+      id: 'mystery-island',
+      title: 'Mystery Island',
+      emoji: '🏝️',
+      description: 'Discover secret island moves nobody has seen before — flamingo, crab and palm wave. Camera tracks body awareness and motor planning.',
+      color: '#F59E0B',
+      available: isMysteryIslandAvailable,
+    },
+    {
+      id: 'surprise-actions',
+      title: 'Surprise Actions',
+      emoji: '🎁',
+      description: 'Wait for the surprise reveal, then do the mystery move fast! Camera tracks flexible motor planning and reaction.',
+      color: '#EC4899',
+      available: isSurpriseActionsAvailable,
+    },
+    {
+      id: 'challenge-quest',
+      title: 'Challenge Quest',
+      emoji: '🏆',
+      description: 'The ultimate novel-move quest with surprise combos. Camera tracks problem-solving, praxis and movement quality.',
+      color: '#8B5CF6',
+      available: isChallengeQuestAvailable,
+    },
+    // Occupational Therapy Level 8 Session 10: Praxis Adventure (camera tracks integrated praxis expedition)
+    {
+      id: 'praxis-jungle-expedition',
+      title: 'Jungle Expedition',
+      emoji: '🌴',
+      description: 'Cross the jungle trail — plan and execute every praxis mission in one epic adventure! Camera tracks accuracy, completion and movement quality.',
+      color: '#22C55E',
+      available: isPraxisJungleExpeditionAvailable,
+    },
+    {
+      id: 'praxis-space-explorer',
+      title: 'Space Explorer',
+      emoji: '🚀',
+      description: 'Blast through galaxy missions mixing reach, chain, imitate and novel moves. Camera tracks motor planning and coordination.',
+      color: '#818CF8',
+      available: isPraxisSpaceExplorerAvailable,
+    },
+    {
+      id: 'praxis-pirate-treasure',
+      title: 'Pirate Treasure Hunt',
+      emoji: '🏴‍☠️',
+      description: 'Follow the treasure map through praxis challenges — balance, turn, cross-clap and more! Camera tracks sequencing and body awareness.',
+      color: '#F59E0B',
+      available: isPraxisPirateTreasureAvailable,
+    },
+    {
+      id: 'praxis-mountain-mission',
+      title: 'Mountain Mission',
+      emoji: '⛰️',
+      description: 'Climb the mountain beat by beat — integrated motor planning from base to summit. Camera tracks posture and movement quality.',
+      color: '#38BDF8',
+      available: isPraxisMountainMissionAvailable,
+    },
+    {
+      id: 'praxis-champion',
+      title: 'Praxis Champion',
+      emoji: '👑',
+      description: 'The Level 8 grand finale — every praxis skill in one champion quest! Camera tracks accuracy, completion and movement quality.',
+      color: '#FBBF24',
+      available: isPraxisChampionAvailable,
+    },
+    // Occupational Therapy Level 7 Session 2: Head Movement & Vestibular Activation (camera tracks head & posture)
+    {
+      id: 'look-up-explorer',
+      title: 'Look Up Explorer',
+      emoji: '👀',
+      description: 'Explore the sky looking for hidden treasures. Camera tracks head angle, neck movement and posture.',
+      color: '#38BDF8',
+      available: isLookUpExplorerAvailable,
+    },
+    {
+      id: 'sky-ground-mission',
+      title: 'Sky-Ground Mission',
+      emoji: '🌞',
+      description: 'Alternate looking up at the sky and down at the ground for clues. Camera tracks head range, speed and body stability.',
+      color: '#F59E0B',
+      available: isSkyGroundMissionAvailable,
+    },
+    {
+      id: 'helicopter-watch',
+      title: 'Helicopter Watch',
+      emoji: '🚁',
+      description: 'Follow helicopters across the sky with smooth head tracking. Camera tracks accuracy, head movement and trunk compensation.',
+      color: '#22D3EE',
+      available: isHelicopterWatchAvailable,
+    },
+    {
+      id: 'vestibular-star-tracker',
+      title: 'Star Tracker',
+      emoji: '⭐',
+      description: 'Follow magical stars moving in different directions. Camera tracks head orientation, tracking quality and posture.',
+      color: '#A78BFA',
+      available: isVestibularStarTrackerAvailable,
+    },
+    {
+      id: 'turn-and-find',
+      title: 'Turn & Find',
+      emoji: '🎯',
+      description: 'Turn your head left and right to find hidden targets. Camera tracks head rotation, search speed and body stability.',
+      color: '#F472B6',
+      available: isTurnAndFindAvailable,
+    },
+    // Occupational Therapy Level 7 Session 3: Direction Changes (camera tracks shifts, turns & balance)
+    {
+      id: 'direction-switch',
+      title: 'Direction Switch',
+      emoji: '↔️',
+      description: 'Follow magical arrows and instantly change direction in the maze. Camera tracks direction changes, reaction speed and balance.',
+      color: '#A78BFA',
+      available: isDirectionSwitchAvailable,
+    },
+    {
+      id: 'go-left-go-right',
+      title: 'Go Left Go Right',
+      emoji: '🚦',
+      description: 'Navigate traffic — move left or right on the signal. Camera tracks movement accuracy, timing and posture.',
+      color: '#34D399',
+      available: isGoLeftGoRightAvailable,
+    },
+    {
+      id: 'pirate-turn-hunt',
+      title: 'Pirate Turn Hunt',
+      emoji: '🏴‍☠️',
+      description: 'Turn and move toward pirate treasure in different directions. Camera tracks turning accuracy, balance and control.',
+      color: '#F59E0B',
+      available: isPirateTurnHuntAvailable,
+    },
+    {
+      id: 'turn-around-quest',
+      title: 'Turn Around Quest',
+      emoji: '🔄',
+      description: 'Perform 90° and 180° turns to discover hidden kingdom objects. Camera tracks turning angle, stability and posture.',
+      color: '#38BDF8',
+      available: isTurnAroundQuestAvailable,
+    },
+    {
+      id: 'magical-arrow-sequence',
+      title: 'Follow The Arrow',
+      emoji: '🎯',
+      description: 'Follow a sequence of magical arrows in changing directions. Camera tracks movement sequence, accuracy and balance.',
+      color: '#F472B6',
+      available: isMagicalArrowSequenceAvailable,
+    },
+    // Occupational Therapy Level 7 Session 4: Rotational Processing (camera tracks rotation & balance)
+    {
+      id: 'tornado-turn',
+      title: 'Tornado Turn',
+      emoji: '🌀',
+      description: 'Spin slowly like a tornado, then STOP on command. Camera tracks rotation angle, speed and postural stability.',
+      color: '#A78BFA',
+      available: isTornadoTurnAvailable,
+    },
+    {
+      id: 'spin-and-stop',
+      title: 'Spin & Stop',
+      emoji: '🔄',
+      description: 'Spin the magic wheel slowly and freeze when the target appears. Camera tracks reaction time, turning control and balance.',
+      color: '#F472B6',
+      available: isSpinAndStopAvailable,
+    },
+    {
+      id: 'helicopter-pilot',
+      title: 'Helicopter Pilot',
+      emoji: '🚁',
+      description: 'Rotate toward checkpoints while maintaining balance. Camera tracks head movement, body rotation and stability.',
+      color: '#38BDF8',
+      available: isHelicopterPilotAvailable,
+    },
+    {
+      id: 'orbit-hunt',
+      title: 'Orbit Hunt',
+      emoji: '⭐',
+      description: 'Turn to catch stars orbiting around you. Camera tracks rotation range, tracking accuracy and balance.',
+      color: '#FBBF24',
+      available: isOrbitHuntAvailable,
+    },
+    {
+      id: 'turn-and-point',
+      title: 'Turn & Point',
+      emoji: '🎯',
+      description: 'Turn your body, then point your head at hidden targets. Camera tracks turning accuracy, pointing and posture.',
+      color: '#34D399',
+      available: isTurnAndPointAvailable,
+    },
+    // Occupational Therapy Level 7 Session 5: Dynamic Standing Balance
+    {
+      id: 'balance-bridge',
+      title: 'Balance Bridge',
+      emoji: '🌉',
+      description: 'Walk heel-to-toe across the magical bridge to the castle. Camera tracks body sway, posture and path accuracy.',
+      color: '#A78BFA',
+      available: isBalanceBridgeAvailable,
+    },
+    {
+      id: 'stepping-stones-l7',
+      title: 'Stepping Stones',
+      emoji: '🪨',
+      description: 'Step from stone to stone across the river while keeping balance. Camera tracks foot placement, balance and movement control.',
+      color: '#38BDF8',
+      available: isSteppingStonesL7Available,
+    },
+    {
+      id: 'island-hopper',
+      title: 'Island Hopper',
+      emoji: '🏝️',
+      description: 'Hop between islands to collect treasures and avoid the water. Camera tracks movement transitions, balance and posture.',
+      color: '#34D399',
+      available: isIslandHopperAvailable,
+    },
+    {
+      id: 'river-crossing-l7',
+      title: 'River Crossing',
+      emoji: '🌊',
+      description: 'Cross the fast river by following changing paths and recovering balance. Camera tracks balance reactions, stepping and posture.',
+      color: '#22D3EE',
+      available: isRiverCrossingL7Available,
+    },
+    {
+      id: 'star-trail',
+      title: 'Star Trail',
+      emoji: '⭐',
+      description: 'Follow the star trail through space — walk, turn and reach for stars. Camera tracks movement quality, posture and balance.',
+      color: '#FBBF24',
+      available: isStarTrailAvailable,
+    },
+    // Occupational Therapy Level 7 Session 6: Visual-Vestibular Integration
+    {
+      id: 'rocket-follow',
+      title: 'Rocket Follow',
+      emoji: '🚀',
+      description: 'Track a rocket traveling through space while you keep moving. Camera tracks head tracking, posture and movement accuracy.',
+      color: '#818CF8',
+      available: isRocketFollowAvailable,
+    },
+    {
+      id: 'butterfly-chase',
+      title: 'Butterfly Chase',
+      emoji: '🦋',
+      description: 'Catch magical butterflies flying around the garden. Camera tracks smooth head movement, tracking quality and stability.',
+      color: '#34D399',
+      available: isButterflyChaseAvailable,
+    },
+    {
+      id: 'balloon-drift',
+      title: 'Balloon Drift',
+      emoji: '🎈',
+      description: 'Follow drifting balloons across the sky without losing balance. Camera tracks eye-head coordination, movement path and posture.',
+      color: '#FB7185',
+      available: isBalloonDriftAvailable,
+    },
+    {
+      id: 'ufo-watch',
+      title: 'UFO Watch',
+      emoji: '🛸',
+      description: 'Track UFOs moving in changing directions and speeds. Camera tracks tracking accuracy, head control and posture.',
+      color: '#22D3EE',
+      available: isUFOWatchAvailable,
+    },
+    {
+      id: 'orbit-tracker',
+      title: 'Orbit Tracker',
+      emoji: '⭐',
+      description: 'Follow stars orbiting a galaxy in circular and diagonal patterns. Camera tracks head movement, tracking smoothness and body stability.',
+      color: '#FBBF24',
+      available: isOrbitTrackerAvailable,
+    },
+    // Occupational Therapy Level 7 Session 7: Balance Reactions
+    {
+      id: 'freeze-balance-l7',
+      title: 'Freeze Balance',
+      emoji: '⚡',
+      description: 'Move like a superhero, then freeze in a balanced position when danger appears. Camera tracks reaction time, posture and stability.',
+      color: '#FBBF24',
+      available: isFreezeBalanceL7Available,
+    },
+    {
+      id: 'wave-rider',
+      title: 'Wave Rider',
+      emoji: '🌊',
+      description: 'Ride ocean waves by shifting your weight to stay balanced. Camera tracks weight shifting, balance and posture.',
+      color: '#22D3EE',
+      available: isWaveRiderAvailable,
+    },
+    {
+      id: 'surf-challenge',
+      title: 'Surf Challenge',
+      emoji: '🏄',
+      description: 'Respond to sudden changes in movement direction while staying upright. Camera tracks recovery speed, posture and balance.',
+      color: '#38BDF8',
+      available: isSurfChallengeAvailable,
+    },
+    {
+      id: 'obstacle-balance',
+      title: 'Obstacle Balance',
+      emoji: '🚧',
+      description: 'Step around obstacles while keeping postural control. Camera tracks foot placement, posture and balance reactions.',
+      color: '#34D399',
+      available: isObstacleBalanceAvailable,
+    },
+    {
+      id: 'recovery-master',
+      title: 'Recovery Master',
+      emoji: '🏆',
+      description: 'Complete a series of balance recovery challenges with increasing difficulty. Camera tracks stability, reaction quality and movement control.',
+      color: '#FBBF24',
+      available: isRecoveryMasterAvailable,
+    },
+    // Occupational Therapy Level 7 Session 8: Vestibular Sequencing
+    {
+      id: 'follow-my-steps',
+      title: 'Follow My Steps',
+      emoji: '👣',
+      description: 'Follow movement sequences across floor markers in order. Camera tracks movement accuracy, posture and balance.',
+      color: '#C084FC',
+      available: isFollowMyStepsAvailable,
+    },
+    {
+      id: 'movement-pattern-copy',
+      title: 'Movement Pattern Copy',
+      emoji: '🎯',
+      description: 'Copy increasingly complex movement patterns. Camera tracks movement accuracy, posture and balance.',
+      color: '#F472B6',
+      available: isMovementPatternCopyAvailable,
+    },
+    {
+      id: 'star-sequence-path',
+      title: 'Star Sequence Path',
+      emoji: '⭐',
+      description: 'Collect stars in the correct movement order. Camera tracks movement accuracy, posture and balance.',
+      color: '#FBBF24',
+      available: isStarSequencePathAvailable,
+    },
+    {
+      id: 'space-mission',
+      title: 'Space Mission',
+      emoji: '🚀',
+      description: 'Complete a sequence of movement commands in space. Camera tracks movement accuracy, posture and balance.',
+      color: '#818CF8',
+      available: isSpaceMissionAvailable,
+    },
+    {
+      id: 'pirate-journey',
+      title: 'Pirate Journey',
+      emoji: '🏴',
+      description: 'Follow a treasure map using directional sequences. Camera tracks movement accuracy, posture and balance.',
+      color: '#34D399',
+      available: isPirateJourneyAvailable,
+    },
+    // Occupational Therapy Level 7 Session 9: Vestibular Endurance
+    {
+      id: 'long-trail-walk',
+      title: 'Long Trail Walk',
+      emoji: '🚶',
+      description: 'Maintain movement and balance over longer distances. Camera tracks movement accuracy, posture and balance.',
+      color: '#34D399',
+      available: isLongTrailWalkAvailable,
+    },
+    {
+      id: 'rainbow-journey',
+      title: 'Rainbow Journey',
+      emoji: '🌈',
+      description: 'Travel through a long colorful movement path. Camera tracks movement accuracy, posture and balance.',
+      color: '#F472B6',
+      available: isRainbowJourneyAvailable,
+    },
+    {
+      id: 'forest-explorer',
+      title: 'Forest Explorer',
+      emoji: '🏞️',
+      description: 'Navigate a forest while sustaining posture and balance. Camera tracks movement accuracy, posture and balance.',
+      color: '#22C55E',
+      available: isForestExplorerAvailable,
+    },
+    {
+      id: 'endless-tracks',
+      title: 'Endless Tracks',
+      emoji: '🚂',
+      description: 'Keep moving through changing train routes. Camera tracks movement accuracy, posture and balance.',
+      color: '#38BDF8',
+      available: isEndlessTracksAvailable,
+    },
+    {
+      id: 'balance-marathon',
+      title: 'Balance Marathon',
+      emoji: '⭐',
+      description: 'Complete extended balance and movement challenges. Camera tracks movement accuracy, posture and balance.',
+      color: '#FBBF24',
+      available: isBalanceMarathonAvailable,
+    },
+    // Occupational Therapy Level 7 Session 10: Vestibular Challenge Course
+    {
+      id: 'pirate-island-challenge',
+      title: 'Pirate Island Challenge',
+      emoji: '🏴',
+      description: 'Complete a vestibular treasure-hunt course. Camera tracks movement accuracy, posture and balance.',
+      color: '#34D399',
+      available: isPirateIslandChallengeAvailable,
+    },
+    {
+      id: 'space-explorer-course',
+      title: 'Space Explorer Course',
+      emoji: '🚀',
+      description: 'Navigate space-themed balance missions. Camera tracks movement accuracy, posture and balance.',
+      color: '#818CF8',
+      available: isSpaceExplorerCourseAvailable,
+    },
+    {
+      id: 'jungle-expedition',
+      title: 'Jungle Expedition',
+      emoji: '🌴',
+      description: 'Cross jungle obstacles using vestibular skills. Camera tracks movement accuracy, posture and balance.',
+      color: '#22C55E',
+      available: isJungleExpeditionAvailable,
+    },
+    {
+      id: 'mountain-adventure',
+      title: 'Mountain Adventure',
+      emoji: '⛰️',
+      description: 'Climb, turn and balance through mountain paths. Camera tracks movement accuracy, posture and balance.',
+      color: '#38BDF8',
+      available: isMountainAdventureAvailable,
+    },
+    {
+      id: 'vestibular-champion',
+      title: 'Vestibular Champion',
+      emoji: '🏆',
+      description: 'The final integrated vestibular obstacle course. Camera tracks movement accuracy, posture and balance.',
+      color: '#FBBF24',
+      available: isVestibularChampionAvailable,
+    },
+    // Occupational Therapy Level 3 Session 2: Big vs Small Movements
+    {
+      id: 'big-tap-small-tap',
+      title: 'Size Tap',
+      emoji: '👆',
+      description: 'Tap the big circle for BIG and the tiny circle for SMALL. Builds size discrimination.',
+      color: '#3B82F6',
+      available: isBigTapSmallTapAvailable,
+    },
+    {
+      id: 'big-swipe-small-swipe',
+      title: 'Swipe Scale',
+      emoji: '↔️',
+      description: 'Long swipe for BIG, short swipe for SMALL. Builds movement scaling.',
+      color: '#22C55E',
+      available: isBigSwipeSmallSwipeAvailable,
+    },
+    {
+      id: 'stretch-pinch',
+      title: 'Pinch & Stretch',
+      emoji: '🤏',
+      description: 'Stretch to make it big, pinch to make it small. Builds fine motor control.',
+      color: '#D946EF',
+      available: isStretchPinchAvailable,
+    },
+    {
+      id: 'big-throw-small-throw',
+      title: 'Throw Range',
+      emoji: '⚾',
+      description: 'Drag far for a big throw, short for a small throw. Builds force grading.',
+      color: '#F97316',
+      available: isBigThrowSmallThrowAvailable,
+    },
+    {
+      id: 'big-path-trace',
+      title: 'Road Trace',
+      emoji: '🛤️',
+      description: 'Trace the wide road or the thin road. Builds visual-motor scaling.',
+      color: '#8B5CF6',
+      available: isBigPathTraceAvailable,
+    },
+    // Occupational Therapy Level 3 Session 3: Tap with Rhythm + Fast vs Slow
+    {
+      id: 'single-beat-tap',
+      title: 'One Beat',
+      emoji: '🥁',
+      description: 'One drum beat — tap once in time. Develops timing and cause-effect.',
+      color: '#F97316',
+      available: isSingleBeatTapAvailable,
+    },
+    {
+      id: 'double-beat-copy',
+      title: 'Two Beats',
+      emoji: '🥁',
+      description: 'Hear two beats — tap twice back. Builds rhythm and coordination.',
+      color: '#3B82F6',
+      available: isDoubleBeatCopyAvailable,
+    },
+    {
+      id: 'pause-and-tap',
+      title: 'Wait & Tap',
+      emoji: '⏸️',
+      description: 'Beat, pause, then tap. Develops impulse control and listening.',
+      color: '#8B5CF6',
+      available: isPauseAndTapAvailable,
+    },
+    {
+      id: 'fast-beat-challenge',
+      title: 'Beat Sprint',
+      emoji: '⚡',
+      description: 'Fast drum beats — tap each one quickly. Builds reaction speed.',
+      color: '#DC2626',
+      available: isFastBeatChallengeAvailable,
+    },
+    {
+      id: 'slow-beat-calm-mode',
+      title: 'Calm Beats',
+      emoji: '🧘',
+      description: 'Slow, calming beats — tap gently when ready. Develops self-regulation.',
+      color: '#10B981',
+      available: isSlowBeatCalmModeAvailable,
+    },
+    {
+      id: 'slow-turtle-move',
+      title: 'Slow & Steady',
+      emoji: '🐢',
+      description: 'Drag the turtle slowly to the finish. Develops patience and controlled motion.',
+      color: '#10B981',
+      available: isSlowTurtleMoveAvailable,
+    },
+    {
+      id: 'fast-rabbit-run',
+      title: 'Quick Hop',
+      emoji: '🐰',
+      description: 'Drag the rabbit quickly to the finish. Develops speed and energy control.',
+      color: '#F59E0B',
+      available: isFastRabbitRunAvailable,
+    },
+    {
+      id: 'speed-match',
+      title: 'Match the Pace',
+      emoji: '🐢',
+      description: 'Watch the top turtle and match its speed below. Builds movement sync.',
+      color: '#3B82F6',
+      available: isSpeedMatchAvailable,
+    },
+    {
+      id: 'traffic-light-game',
+      title: 'Light Rules',
+      emoji: '🚦',
+      description: 'Green = fast swipe, yellow = slow swipe. Builds rule following.',
+      color: '#EF4444',
+      available: isTrafficLightAvailable,
+    },
+    {
+      id: 'music-speed-control',
+      title: 'Move to Music',
+      emoji: '🎵',
+      description: 'Fast music = fast swipe, slow music = slow swipe. Auditory-motor integration.',
+      color: '#8B5CF6',
+      available: isMusicSpeedControlAvailable,
+    },
+    // Level 3 Session 4: Up-Down Gestures
+    {
+      id: 'balloon-up',
+      title: 'Lift Off',
+      emoji: '🎈',
+      description: 'Swipe up to lift the balloon. Builds direction awareness and shoulder movement.',
+      color: '#0EA5E9',
+      available: isBalloonUpAvailable,
+    },
+    {
+      id: 'ball-drop',
+      title: 'Gravity Drop',
+      emoji: '⚽',
+      description: 'Swipe down to drop the ball. Develops vertical movement understanding.',
+      color: '#F59E0B',
+      available: isBallDropAvailable,
+    },
+    {
+      id: 'elevator-game',
+      title: 'Floor Express',
+      emoji: '🛗',
+      description: 'Swipe up or down to reach the correct floor. Builds up/down concept clarity.',
+      color: '#6366F1',
+      available: isElevatorGameAvailable,
+    },
+    {
+      id: 'jump-arrow',
+      title: 'Arrow Jump',
+      emoji: '⬆️',
+      description: 'Match your swipe to the arrow direction. Builds visual-motor response.',
+      color: '#EAB308',
+      available: isJumpArrowAvailable,
+    },
+    {
+      id: 'rain-catch',
+      title: 'Rain Reach',
+      emoji: '🌧️',
+      description: 'Swipe up to raise hands and catch rain. Develops whole-arm coordination.',
+      color: '#38BDF8',
+      available: isRainCatchAvailable,
+    },
+    // Level 3 Session 5: Left-Right Swipes
+    {
+      id: 'car-turn',
+      title: 'Road Turn',
+      emoji: '🚗',
+      description: 'Swipe left or right to turn the car. Builds direction discrimination.',
+      color: '#3B82F6',
+      available: isCarTurnAvailable,
+    },
+    {
+      id: 'arrow-match',
+      title: 'Arrow Sync',
+      emoji: '⬅️',
+      description: 'Swipe the same way the arrow points. Builds visual-motor link.',
+      color: '#F59E0B',
+      available: isArrowMatchAvailable,
+    },
+    {
+      id: 'animal-run',
+      title: 'Pet Dash',
+      emoji: '🐕',
+      description: 'Send the animal left or right. Builds bilateral coordination.',
+      color: '#8B5CF6',
+      available: isAnimalRunAvailable,
+    },
+    {
+      id: 'mirror-swipe',
+      title: 'Flip Side',
+      emoji: '🪞',
+      description: 'Mirror mode — swipe left, object goes right! Builds cognitive flexibility.',
+      color: '#EC4899',
+      available: isMirrorSwipeAvailable,
+    },
+    {
+      id: 'catch-the-ball',
+      title: 'Quick Catch',
+      emoji: '⚽',
+      description: 'Catch the ball by swiping the direction it comes from. Builds reaction time.',
+      color: '#EF4444',
+      available: isCatchTheBallAvailable,
+    },
+    // Level 3 Session 6: Jump Imitation (Tap Twice)
+    {
+      id: 'frog-jump',
+      title: 'Leap Frog',
+      emoji: '🐸',
+      description: 'Tap twice to make the frog jump. Builds sequencing and motor imitation.',
+      color: '#22C55E',
+      available: isFrogJumpAvailable,
+    },
+    {
+      id: 'jump-count',
+      title: 'Two Jump',
+      emoji: '🔢',
+      description: 'Jump only when number 2 appears. Builds inhibition and number recognition.',
+      color: '#3B82F6',
+      available: isJumpCountAvailable,
+    },
+    {
+      id: 'double-tap-only',
+      title: 'Double Only',
+      emoji: '👆',
+      description: 'Single taps are ignored — only double tap jumps. Builds inhibition.',
+      color: '#EF4444',
+      available: isDoubleTapOnlyAvailable,
+    },
+    {
+      id: 'rhythm-jump',
+      title: 'Beat Jump',
+      emoji: '🎵',
+      description: 'Listen to tap-tap, then copy the rhythm. Builds auditory-motor timing.',
+      color: '#8B5CF6',
+      available: isRhythmJumpAvailable,
+    },
+    {
+      id: 'obstacle-jump',
+      title: 'Rock Hop',
+      emoji: '🪨',
+      description: 'Double tap to hop over the rock. Builds reaction and motor planning.',
+      color: '#F59E0B',
+      available: isObstacleJumpAvailable,
+    },
+    // Level 3 Session 7: Swinging Movement Imitation
+    {
+      id: 'pendulum-copy',
+      title: 'Copy Swing',
+      emoji: '🔄',
+      description: 'Watch the demo, then copy the side-to-side swing. Builds motor imitation.',
+      color: '#3B82F6',
+      available: isPendulumCopyAvailable,
+    },
+    {
+      id: 'monkey-swing',
+      title: 'Vine Swing',
+      emoji: '🐵',
+      description: 'Diagonal swipes to swing the monkey on the vine. Builds bilateral coordination.',
+      color: '#F59E0B',
+      available: isMonkeySwingAvailable,
+    },
+    {
+      id: 'fan-motion',
+      title: 'Spin Flow',
+      emoji: '🌀',
+      description: 'Trace a full circle around the fan. Builds circular swinging motion.',
+      color: '#22C55E',
+      available: isFanMotionAvailable,
+    },
+    {
+      id: 'rope-swing-timing',
+      title: 'Peak Swipe',
+      emoji: '🪢',
+      description: 'Swipe when the rope reaches its peak. Builds anticipation and timing.',
+      color: '#EF4444',
+      available: isRopeSwingTimingAvailable,
+    },
+    {
+      id: 'music-swing',
+      title: 'Beat Swing',
+      emoji: '🎵',
+      description: 'Listen to beats, then swing on each one. Builds rhythm and timing.',
+      color: '#8B5CF6',
+      available: isMusicSwingAvailable,
+    },
+    // Level 3 Session 8: Whole Body Map
+    {
+      id: 'touch-head',
+      title: 'Head Tap',
+      emoji: '👤',
+      description: 'Touch the head when it glows. Builds body-part awareness.',
+      color: '#3B82F6',
+      available: isTouchHeadAvailable,
+    },
+    {
+      id: 'shoulders-tap',
+      title: 'Shoulder Pick',
+      emoji: '💪',
+      description: 'Touch the highlighted shoulder. Builds left-right discrimination.',
+      color: '#F59E0B',
+      available: isShouldersTapAvailable,
+    },
+    {
+      id: 'body-puzzle',
+      title: 'Body Build',
+      emoji: '🧩',
+      description: 'Drag body parts to the matching spots. Builds spatial understanding.',
+      color: '#22C55E',
+      available: isBodyPuzzleAvailable,
+    },
+    {
+      id: 'follow-the-body',
+      title: 'Copy Body',
+      emoji: '👥',
+      description: 'Watch the demo, then touch the same body part. Builds imitation.',
+      color: '#8B5CF6',
+      available: isFollowTheBodyAvailable,
+    },
+    {
+      id: 'body-flash',
+      title: 'Quick Part',
+      emoji: '⚡',
+      description: 'Tap flashing body parts quickly. Builds fast recognition.',
+      color: '#EF4444',
+      available: isBodyFlashAvailable,
+    },
+    // Level 3 Session 9: Mirror Movements
+    {
+      id: 'copy-pose',
+      title: 'Pose Match',
+      emoji: '👤',
+      description: 'Watch the pose, copy it with your body, then tap done. Builds motor imitation.',
+      color: '#3B82F6',
+      available: isCopyPoseAvailable,
+    },
+    {
+      id: 'hand-mirror',
+      title: 'Flip Hand',
+      emoji: '👋',
+      description: 'Screen shows one hand — raise the opposite. Builds mirror coordination.',
+      color: '#8B5CF6',
+      available: isHandMirrorAvailable,
+    },
+    {
+      id: 'pattern-copy',
+      title: 'Move Chain',
+      emoji: '🔄',
+      description: 'Watch a 3-move pattern, then repeat it. Builds memory and motor planning.',
+      color: '#10B981',
+      available: isPatternCopyAvailable,
+    },
+    {
+      id: 'delayed-mirror',
+      title: 'Wait Copy',
+      emoji: '⏱️',
+      description: 'Watch the pose, wait, then copy from memory. Builds delayed imitation.',
+      color: '#F59E0B',
+      available: isDelayedMirrorAvailable,
+    },
+    {
+      id: 'fast-copy',
+      title: 'Speed Pose',
+      emoji: '⚡',
+      description: 'Three quick poses per round — copy fast! Builds speed and accuracy.',
+      color: '#EF4444',
+      available: isFastCopyAvailable,
+    },
+    // Level 3 Session 10: Posture-Based Games
+    {
+      id: 'posture-match',
+      title: 'Posture Match',
+      emoji: '🎯',
+      description: 'Match each yoga pose on screen. Builds precision and focus.',
+      color: '#3B82F6',
+      available: isZenPoseMatchAvailable,
+    },
+    {
+      id: 'animal-pose',
+      title: 'Wild Pose',
+      emoji: '🐕',
+      description: 'Copy tree, dog, and cat poses. Builds core strength and posture.',
+      color: '#F59E0B',
+      available: isAnimalPoseAvailable,
+    },
+    {
+      id: 'shape-pose',
+      title: 'Shape Body',
+      emoji: '⭕',
+      description: 'Make a circle or line with your body. Builds spatial awareness.',
+      color: '#22C55E',
+      available: isShapePoseAvailable,
+    },
+    {
+      id: 'freeze-pose',
+      title: 'Statue Hold',
+      emoji: '🧊',
+      description: 'Hold each pose until the timer fills. Builds balance and strength.',
+      color: '#0EA5E9',
+      available: isFreezePoseAvailable,
+    },
+    {
+      id: 'count-hold',
+      title: 'Count Still',
+      emoji: '🔢',
+      description: 'Hold the pose while counting down from five. Builds endurance.',
+      color: '#8B5CF6',
+      available: isCountHoldAvailable,
+    },
+    // Level 4 Session 1: Drag Object Left → Right
+    {
+      id: 'ball-transfer',
+      title: 'Goal Pass',
+      emoji: '⚽',
+      description: 'Drag the ball from left to right. Builds midline crossing.',
+      color: '#3B82F6',
+      available: isBallTransferAvailable,
+    },
+    {
+      id: 'feed-the-monster',
+      title: 'Monster Feed',
+      emoji: '👹',
+      description: 'Feed the monster by dragging food across. Builds arm coordination.',
+      color: '#F59E0B',
+      available: isFeedTheMonsterAvailable,
+    },
+    {
+      id: 'road-crossing',
+      title: 'Lane Cross',
+      emoji: '🚗',
+      description: 'Drive the car to the right lane. Builds spatial planning.',
+      color: '#8B5CF6',
+      available: isRoadCrossingAvailable,
+    },
+    {
+      id: 'color-match-drag',
+      title: 'Color Slide',
+      emoji: '🎨',
+      description: 'Slide matching colors left to right. Builds visual-motor matching.',
+      color: '#10B981',
+      available: isColorMatchDragAvailable,
+    },
+    {
+      id: 'timed-drag',
+      title: 'Quick Drag',
+      emoji: '⏱️',
+      description: 'Drag across before time runs out. Builds speed and accuracy.',
+      color: '#EF4444',
+      available: isTimedDragAvailable,
+    },
+    // Level 4 Session 2: Drag Object Right → Left
+    {
+      id: 'reverse-ball-pass',
+      title: 'Return Pass',
+      emoji: '⚽',
+      description: 'Drag the ball from right to left. Builds bilateral balance.',
+      color: '#3B82F6',
+      available: isReverseBallPassAvailable,
+    },
+    {
+      id: 'collect-stars',
+      title: 'Star Sweep',
+      emoji: '⭐',
+      description: 'Sweep stars into the left bag. Builds cross-body reach.',
+      color: '#F59E0B',
+      available: isCollectStarsAvailable,
+    },
+    {
+      id: 'reverse-path',
+      title: 'Back Track',
+      emoji: '🔄',
+      description: 'Follow the reverse path right to left. Builds cognitive flexibility.',
+      color: '#8B5CF6',
+      available: isReversePathAvailable,
+    },
+    {
+      id: 'mirror-drag',
+      title: 'Cross Reach',
+      emoji: '👋',
+      description: 'Reach across with your right hand to the left. Builds brain-hand sync.',
+      color: '#10B981',
+      available: isMirrorDragAvailable,
+    },
+    {
+      id: 'pattern-drag',
+      title: 'Pattern Run',
+      emoji: '📐',
+      description: 'Trace zigzag, wave, or step patterns right to left. Builds motor planning.',
+      color: '#EF4444',
+      available: isPatternDragAvailable,
+    },
+    // Level 4 Session 3: Diagonal Dragging
+    {
+      id: 'top-left-bottom-right',
+      title: 'Diagonal Dash',
+      emoji: '↘️',
+      description: 'Drag from top-left to bottom-right. Builds midline crossing.',
+      color: '#3B82F6',
+      available: isTopLeftToBottomRightAvailable,
+    },
+    {
+      id: 'x-path-trace',
+      title: 'X Trace',
+      emoji: '❌',
+      description: 'Trace both diagonals to form an X. Builds eye-hand coordination.',
+      color: '#8B5CF6',
+      available: isXPathTraceAvailable,
+    },
+    {
+      id: 'diagonal-catch',
+      title: 'Sky Catch',
+      emoji: '🎯',
+      description: 'Intercept objects falling diagonally. Builds anticipation.',
+      color: '#EF4444',
+      available: isDiagonalCatchAvailable,
+    },
+    {
+      id: 'zigzag-drag',
+      title: 'Zigzag Run',
+      emoji: '⚡',
+      description: 'Follow the diagonal zigzag path. Builds direction switching.',
+      color: '#10B981',
+      available: isZigZagDragAvailable,
+    },
+    {
+      id: 'diagonal-match',
+      title: 'Corner Match',
+      emoji: '🎯',
+      description: 'Match colors at the opposite corner. Builds spatial awareness.',
+      color: '#F59E0B',
+      available: isDiagonalMatchAvailable,
+    },
+    // Level 4 Session 4: Two-Hand Tapping (Dual Targets)
+    {
+      id: 'double-circle-tap',
+      title: 'Twin Tap',
+      emoji: '⭕',
+      description: 'Tap both circles together. Builds bilateral coordination.',
+      color: '#3B82F6',
+      available: isDoubleCircleTapAvailable,
+    },
+    {
+      id: 'piano-keys',
+      title: 'Duo Keys',
+      emoji: '🎹',
+      description: 'Press both keys before time runs out. Builds hand sync.',
+      color: '#8B5CF6',
+      available: isPianoKeysAvailable,
+    },
+    {
+      id: 'drum-duo',
+      title: 'Beat Duo',
+      emoji: '🥁',
+      description: 'Tap both drums on the beat. Builds rhythm and coordination.',
+      color: '#F59E0B',
+      available: isDrumDuoAvailable,
+    },
+    {
+      id: 'light-up-targets',
+      title: 'Flash Tap',
+      emoji: '💡',
+      description: 'Tap both targets when they light up. Builds reaction timing.',
+      color: '#EF4444',
+      available: isLightUpTargetsAvailable,
+    },
+    {
+      id: 'hold-and-tap',
+      title: 'Hold & Hit',
+      emoji: '🤲',
+      description: 'Hold with one hand, tap with the other. Builds hand independence.',
+      color: '#10B981',
+      available: isHoldAndTapAvailable,
+    },
+    // Level 4 Session 5: Alternating Hands
+    {
+      id: 'left-right-tap',
+      title: 'Switch Tap',
+      emoji: '👆',
+      description: 'Alternate left then right taps. Builds sequencing.',
+      color: '#3B82F6',
+      available: isLeftRightTapAvailable,
+    },
+    {
+      id: 'walking-hands',
+      title: 'Hand Walk',
+      emoji: '🚶',
+      description: 'Walk hands left and right. Builds pre-writing skills.',
+      color: '#10B981',
+      available: isWalkingHandsAvailable,
+    },
+    {
+      id: 'flash-side',
+      title: 'Flash Pick',
+      emoji: '⚡',
+      description: 'Tap the flashing side fast. Builds decision making.',
+      color: '#EF4444',
+      available: isFlashSideAvailable,
+    },
+    {
+      id: 'drum-alternate',
+      title: 'Rhythm Switch',
+      emoji: '🥁',
+      description: 'Alternate left and right drums. Builds rhythm control.',
+      color: '#F59E0B',
+      available: isDrumAlternateAvailable,
+    },
+    {
+      id: 'speed-alternate',
+      title: 'Speed Switch',
+      emoji: '⚡',
+      description: 'Start slow, speed up alternating. Builds motor speed.',
+      color: '#8B5CF6',
+      available: isSpeedAlternateAvailable,
+    },
+    // Level 4 Session 6: Pass Ball Across Midline
+    {
+      id: 'hand-to-hand-pass',
+      title: 'Hand Swap',
+      emoji: '🤲',
+      description: 'Pass left ↔ right across midline — awareness!',
+      color: '#3B82F6',
+      available: isHandToHandPassAvailable,
+    },
+    {
+      id: 'throw-catch',
+      title: 'Toss & Grab',
+      emoji: '🎾',
+      description: 'Throw left, catch right — hand coordination!',
+      color: '#F59E0B',
+      available: isThrowCatchAvailable,
+    },
+    {
+      id: 'target-pass',
+      title: 'Aim Pass',
+      emoji: '🎯',
+      description: 'Drag across body to the target — accuracy!',
+      color: '#EF4444',
+      available: isTargetPassAvailable,
+    },
+    {
+      id: 'rhythm-pass',
+      title: 'Beat Pass',
+      emoji: '🎵',
+      description: 'Pass on the beat — timing + flow!',
+      color: '#8B5CF6',
+      available: isRhythmPassAvailable,
+    },
+    {
+      id: 'obstacle-pass',
+      title: 'Detour Pass',
+      emoji: '🚧',
+      description: 'Go around the obstacle — planning skill!',
+      color: '#10B981',
+      available: isObstaclePassAvailable,
+    },
+    // Level 4 Session 7: Follow Cross-Body Arrows
+    {
+      id: 'arrow-touch',
+      title: 'Cross Tap',
+      emoji: '⬅️',
+      description: 'Left arrow → right hand! Cross-body brain training!',
+      color: '#3B82F6',
+      available: isArrowTouchAvailable,
+    },
+    {
+      id: 'arrow-swipe',
+      title: 'Swipe Cross',
+      emoji: '➡️',
+      description: 'Swipe across your body — opposite direction!',
+      color: '#EF4444',
+      available: isArrowSwipeAvailable,
+    },
+    {
+      id: 'moving-arrows',
+      title: 'Drift Tap',
+      emoji: '➡️',
+      description: 'Track the drifting arrow — tap cross-body!',
+      color: '#8B5CF6',
+      available: isMovingArrowsAvailable,
+    },
+    {
+      id: 'arrow-sequence',
+      title: 'Arrow Chain',
+      emoji: '➡️',
+      description: 'Watch 3 arrows, tap the chain in order!',
+      color: '#10B981',
+      available: isArrowSequenceAvailable,
+    },
+    {
+      id: 'speed-arrows',
+      title: 'Flash Cross',
+      emoji: '⚡',
+      description: 'Fast-flashing arrows — react cross-body!',
+      color: '#F59E0B',
+      available: isSpeedArrowsAvailable,
+    },
+    // Level 4 Session 8: Tap Alternating Sides
+    {
+      id: 'side-lights-l4s8',
+      title: 'Glow Tap',
+      emoji: '💡',
+      description: 'Tap the glowing side — bilateral activation!',
+      color: '#3B82F6',
+      available: isSideLightsAvailable,
+    },
+    {
+      id: 'ping-pong-tap',
+      title: 'Rally Tap',
+      emoji: '🏓',
+      description: 'Tap when the ball hits center — focus!',
+      color: '#10B981',
+      available: isPingPongTapAvailable,
+    },
+    {
+      id: 'sound-side-tap',
+      title: 'Sound Tap',
+      emoji: '🔊',
+      description: 'Hear the sound — tap that side!',
+      color: '#8B5CF6',
+      available: isSoundSideTapAvailable,
+    },
+    {
+      id: 'count-and-tap',
+      title: 'Odd Even Tap',
+      emoji: '🔢',
+      description: 'Odd = left, even = right — brain + motor!',
+      color: '#EF4444',
+      available: isCountAndTapAvailable,
+    },
+    {
+      id: 'fast-switch',
+      title: 'Quick Switch',
+      emoji: '⚡',
+      description: 'Sides flash faster — rapid switching!',
+      color: '#F59E0B',
+      available: isFastSwitchAvailable,
+    },
+    // Level 4 Session 9: Drag Two Objects Simultaneously
+    {
+      id: 'double-drag',
+      title: 'Twin Drag',
+      emoji: '🤲',
+      description: 'Drag both objects at once — bilateral strength!',
+      color: '#3B82F6',
+      available: isDoubleDragAvailable,
+    },
+    {
+      id: 'match-pair',
+      title: 'Pair Match',
+      emoji: '🤝',
+      description: 'Match both shapes to the center together!',
+      color: '#10B981',
+      available: isMatchPairAvailable,
+    },
+    {
+      id: 'shape-sort',
+      title: 'Box Sort',
+      emoji: '📦',
+      description: 'Sort two shapes into boxes — multitasking!',
+      color: '#8B5CF6',
+      available: isShapeSortAvailable,
+    },
+    {
+      id: 'rope-pull',
+      title: 'Tug Rope',
+      emoji: '🪢',
+      description: 'Pull both handles outward — upper body!',
+      color: '#F59E0B',
+      available: isRopePullAvailable,
+    },
+    {
+      id: 'balance-drag',
+      title: 'Even Pull',
+      emoji: '⚖️',
+      description: 'Drag both at equal pace — speed regulation!',
+      color: '#EF4444',
+      available: isBalanceDragAvailable,
+    },
+    // Level 4 Session 10: Cross-Body Rhythm Imitation
+    {
+      id: 'clap-pattern',
+      title: 'Cross Clap',
+      emoji: '👏',
+      description: 'Copy cross-body clap patterns — rhythm + midline!',
+      color: '#3B82F6',
+      available: isClapPatternAvailable,
+    },
+    {
+      id: 'tap-shoulder-pattern',
+      title: 'Shoulder Tap',
+      emoji: '👆',
+      description: 'Cross-body shoulder tap patterns — body mapping!',
+      color: '#10B981',
+      available: isTapShoulderPatternAvailable,
+    },
+    {
+      id: 'music-copy',
+      title: 'Beat Mirror',
+      emoji: '🎵',
+      description: 'Mirror hand movements to the beat!',
+      color: '#8B5CF6',
+      available: isMusicCopyAvailable,
+    },
+    {
+      id: 'memory-rhythm',
+      title: 'Rhythm Recall',
+      emoji: '🧠',
+      description: 'Remember the pattern, then repeat!',
+      color: '#F59E0B',
+      available: isMemoryRhythmAvailable,
+    },
+    {
+      id: 'speed-rhythm',
+      title: 'Fast Beat',
+      emoji: '⚡',
+      description: 'Rhythm speeds up — control + flexibility!',
+      color: '#EF4444',
+      available: isSpeedRhythmAvailable,
+    },
+    // Level 5 Session 1: Follow Moving Object
+    {
+      id: 'catch-moving-ball',
+      title: 'Ball Chase',
+      emoji: '⚽',
+      description: 'Ball screen pe move karta hai → tap karna. Visual tracking + reaction time!',
+      color: '#3B82F6',
+      available: isCatchMovingBallAvailable,
+    },
+    {
+      id: 'follow-the-butterfly',
+      title: 'Butterfly Trail',
+      emoji: '🦋',
+      description: 'Butterfly ko finger se follow. Smooth eye movement!',
+      color: '#10B981',
+      available: isFollowTheButterflyAvailable,
+    },
+    {
+      id: 'avoid-the-bomb',
+      title: 'Safe Tap',
+      emoji: '💣',
+      description: 'Bomb se bachate hue target tap. Focus + control!',
+      color: '#EF4444',
+      available: isAvoidTheBombAvailable,
+    },
+    {
+      id: 'chase-the-star',
+      title: 'Star Hunt',
+      emoji: '⭐',
+      description: 'Star idhar-udhar bhage. Predictive tracking!',
+      color: '#F59E0B',
+      available: isChaseTheStarAvailable,
+    },
+    {
+      id: 'zigzag-follow',
+      title: 'Zigzag Run',
+      emoji: '〰️',
+      description: 'Object zig-zag me chale. Reading line movement prep!',
+      color: '#8B5CF6',
+      available: isZigzagFollowAvailable,
+    },
+    // Level 5 Session 2: Targeted Tapping
+    {
+      id: 'pop-the-bubble',
+      title: 'Pop the Bubble',
+      emoji: '🫧',
+      description: 'Bubble tap karke pop. Tap accuracy!',
+      color: '#0EA5E9',
+      available: isPopTheBubbleAvailable,
+    },
+    {
+      id: 'color-dot-hit',
+      title: 'Color Dot Hit',
+      emoji: '🎨',
+      description: 'Correct color tap. Visual discrimination!',
+      color: '#8B5CF6',
+      available: isColorDotHitAvailable,
+    },
+    {
+      id: 'small-target',
+      title: 'Small Target',
+      emoji: '🎯',
+      description: 'Tiny target tap. Finger precision!',
+      color: '#EF4444',
+      available: isSmallTargetAvailable,
+    },
+    {
+      id: 'moving-target',
+      title: 'Moving Target',
+      emoji: '⚫',
+      description: 'Moving dot tap. Timing control!',
+      color: '#1F2937',
+      available: isMovingTargetAvailable,
+    },
+    {
+      id: 'timed-target',
+      title: 'Timed Target',
+      emoji: '⏱️',
+      description: 'Time ke andar tap. Speed + accuracy!',
+      color: '#10B981',
+      available: isTimedTargetAvailable,
+    },
+    // Level 5 Session 3: Drag to Track
+    {
+      id: 'drag-rocket',
+      title: 'Rocket Drag',
+      emoji: '🚀',
+      description: 'Finger se rocket follow. Smooth pursuit!',
+      color: '#6366F1',
+      available: isDragRocketAvailable,
+    },
+    {
+      id: 'drag-train',
+      title: 'Train Track',
+      emoji: '🚂',
+      description: 'Train ko track pe drag. Circular pursuit!',
+      color: '#F59E0B',
+      available: isDragTrainAvailable,
+    },
+    {
+      id: 'drag-comet',
+      title: 'Comet Chase',
+      emoji: '☄️',
+      description: 'Comet figure-8 path. Complex tracking!',
+      color: '#8B5CF6',
+      available: isDragCometAvailable,
+    },
+    {
+      id: 'drag-river',
+      title: 'River Boat',
+      emoji: '⛵',
+      description: 'Boat up-down river. Vertical drag track!',
+      color: '#06B6D4',
+      available: isDragRiverAvailable,
+    },
+    {
+      id: 'drag-lightning',
+      title: 'Lightning Drag',
+      emoji: '⚡',
+      description: 'Zigzag lightning follow. Fast pursuit!',
+      color: '#EAB308',
+      available: isDragLightningAvailable,
+    },
+    // Level 5 Session 4: Visual Focus
+    {
+      id: 'find-the-star',
+      title: 'Find the Stars',
+      emoji: '⭐',
+      description: 'Many objects me saare stars dhoondo. Visual scanning!',
+      color: '#FCD34D',
+      available: isFindTheStarAvailable,
+    },
+    {
+      id: 'memory-flash',
+      title: 'Memory Flash',
+      emoji: '💫',
+      description: 'Saare objects saath, phir ek flash. Visual memory!',
+      color: '#8B5CF6',
+      available: isMemoryFlashAvailable,
+    },
+    {
+      id: 'match-shadow',
+      title: 'Match Shadow',
+      emoji: '🕳️',
+      description: 'Object aur shadow match. Depth perception!',
+      color: '#1F2937',
+      available: isMatchShadowAvailable,
+    },
+    {
+      id: 'what-moved',
+      title: 'What Moved?',
+      emoji: '👀',
+      description: 'Change spot karo. Attention control!',
+      color: '#3B82F6',
+      available: isWhatMovedAvailable,
+    },
+    {
+      id: 'spot-the-color',
+      title: 'Spot the Color',
+      emoji: '🎨',
+      description: 'Specific color find. Selective focus!',
+      color: '#EC4899',
+      available: isSpotTheColorAvailable,
+    },
+    // Level 5 Session 5: Moving Eye Control
+    {
+      id: 'side-eye-track',
+      title: 'Side Eye Track',
+      emoji: '👁️',
+      description: 'Left-right moving dot. Reading readiness!',
+      color: '#10B981',
+      available: isSideEyeTrackAvailable,
+    },
+    {
+      id: 'up-down-track',
+      title: 'Up-Down Track',
+      emoji: '⬆️',
+      description: 'Dot upar-neeche. Line shifting!',
+      color: '#6366F1',
+      available: isUpDownTrackAvailable,
+    },
+    {
+      id: 'circular-track',
+      title: 'Circular Track',
+      emoji: '⭕',
+      description: 'Dot circle me. Eye muscle strength!',
+      color: '#F59E0B',
+      available: isCircularTrackAvailable,
+    },
+    {
+      id: 'jump-track',
+      title: 'Jump Track',
+      emoji: '⚡',
+      description: 'Dot ek jagah se doosri. Visual jump control!',
+      color: '#EF4444',
+      available: isJumpTrackAvailable,
+    },
+    {
+      id: 'multi-dot',
+      title: 'Multi Dot',
+      emoji: '⚫',
+      description: '2 dots alternate. Focus switching!',
+      color: '#8B5CF6',
+      available: isMultiDotAvailable,
+    },
+    // Level 5 Session 6: Speed Matching
+    {
+      id: 'fast-catch',
+      title: 'Fast Catch',
+      emoji: '⚡',
+      description: 'Fast ball tap. Reaction speed!',
+      color: '#EF4444',
+      available: isFastCatchAvailable,
+    },
+    {
+      id: 'slow-catch',
+      title: 'Slow Catch',
+      emoji: '🐢',
+      description: 'Slow ball tap. Controlled timing!',
+      color: '#10B981',
+      available: isSlowCatchAvailable,
+    },
+    {
+      id: 'speed-switch',
+      title: 'Speed Switch',
+      emoji: '🔄',
+      description: 'Fast → slow. Adaptability!',
+      color: '#F59E0B',
+      available: isSpeedSwitchAvailable,
+    },
+    {
+      id: 'music-speed',
+      title: 'Music Speed',
+      emoji: '🎵',
+      description: 'Beat ke sath tap. Auditory + visual sync!',
+      color: '#8B5CF6',
+      available: isMusicSpeedAvailable,
+    },
+    {
+      id: 'countdown-hit',
+      title: 'Countdown Hit',
+      emoji: '⏰',
+      description: 'Timer pe tap. Anticipation!',
+      color: '#6366F1',
+      available: isCountdownHitAvailable,
+    },
+    // Level 5 Session 7: Depth & Distance
+    {
+      id: 'near-vs-far',
+      title: 'Near vs Far',
+      emoji: '📏',
+      description: 'Near target tap. Distance judgment!',
+      color: '#3B82F6',
+      available: isNearVsFarAvailable,
+    },
+    {
+      id: 'zoom-touch',
+      title: 'Zoom Touch',
+      emoji: '🔍',
+      description: 'Object bada hota jaye. Depth awareness!',
+      color: '#EC4899',
+      available: isZoomTouchAvailable,
+    },
+    {
+      id: 'falling-objects',
+      title: 'Falling Objects',
+      emoji: '🍎',
+      description: 'Catch before ground. Prediction!',
+      color: '#F97316',
+      available: isFallingObjectsAvailable,
+    },
+    {
+      id: 'depth-shrinking-target',
+      title: 'Shrinking Target',
+      emoji: '🎯',
+      description: 'Target chhota hota. Precision!',
+      color: '#EF4444',
+      available: isShrinkingTargetL5S7Available,
+    },
+    {
+      id: '3-layer-tap',
+      title: '3-Layer Tap',
+      emoji: '📚',
+      description: 'Front vs back. Visual layering!',
+      color: '#8B5CF6',
+      available: is3LayerTapAvailable,
+    },
+    // Level 5 Session 8: Multi-Object Tracking
+    {
+      id: 'follow-red',
+      title: 'Follow Red',
+      emoji: '🔴',
+      description: 'Red object follow. Selective attention!',
+      color: '#EF4444',
+      available: isFollowRedAvailable,
+    },
+    {
+      id: 'two-moving-balls',
+      title: '2 Moving Balls',
+      emoji: '⚽',
+      description: 'Correct one tap. Filtering skill!',
+      color: '#3B82F6',
+      available: isTwoMovingBallsAvailable,
+    },
+    {
+      id: 'distraction-mode',
+      title: 'Distraction Mode',
+      emoji: '🎯',
+      description: 'Extra objects. Focus under load!',
+      color: '#10B981',
+      available: isDistractionModeAvailable,
+    },
+    {
+      id: 'pattern-chase',
+      title: 'Pattern Chase',
+      emoji: '🔢',
+      description: 'Pattern follow. Visual memory!',
+      color: '#8B5CF6',
+      available: isPatternChaseAvailable,
+    },
+    {
+      id: 'speed-objects',
+      title: 'Speed Objects',
+      emoji: '⚡',
+      description: 'Fast & slow mixed. Tracking control!',
+      color: '#F59E0B',
+      available: isSpeedObjectsAvailable,
+    },
+    // Level 5 Session 9: Visual Reaction
+    {
+      id: 'flash-tap',
+      title: 'Flash Tap',
+      emoji: '💡',
+      description: 'Light flash → tap. Reflex!',
+      color: '#FCD34D',
+      available: isFlashTapAvailable,
+    },
+    {
+      id: 'go-stop',
+      title: 'Go / Stop',
+      emoji: '🚦',
+      description: 'Green tap, red no. Inhibition!',
+      color: '#10B981',
+      available: isGoStopAvailable,
+    },
+    {
+      id: 'surprise-pop',
+      title: 'Surprise Pop',
+      emoji: '💥',
+      description: 'Random pop. Alertness!',
+      color: '#F59E0B',
+      available: isSurprisePopAvailable,
+    },
+    {
+      id: 'sound-light',
+      title: 'Sound + Light',
+      emoji: '🎵',
+      description: 'Both match. Multi-sensory!',
+      color: '#8B5CF6',
+      available: isSoundLightAvailable,
+    },
+    {
+      id: 'quick-choice',
+      title: 'Quick Choice',
+      emoji: '⚡',
+      description: '2 options. Decision speed!',
+      color: '#6366F1',
+      available: isQuickChoiceAvailable,
+    },
+    // Level 5 Session 10: Integrated Visual Challenge
+    {
+      id: 'pursuit-combo',
+      title: 'Comet Chase',
+      emoji: '☄️',
+      description: 'Chase + flash relay. Pursuit combo!',
+      color: '#6366F1',
+      available: isPursuitComboAvailable,
+    },
+    {
+      id: 'focus-relay',
+      title: 'Focus Fortress',
+      emoji: '🏰',
+      description: 'Target filter + GO/STOP. Focus relay!',
+      color: '#14B8A6',
+      available: isFocusRelayAvailable,
+    },
+    {
+      id: 'depth-mix',
+      title: 'Canyon Rally',
+      emoji: '🏜️',
+      description: 'Near/far + chase mix. Depth relay!',
+      color: '#F97316',
+      available: isDepthMixAvailable,
+    },
+    {
+      id: 'reaction-relay',
+      title: 'Storm Relay',
+      emoji: '🌩️',
+      description: 'Flash, stop & speed mix. Reaction relay!',
+      color: '#EC4899',
+      available: isReactionRelayAvailable,
+    },
+    {
+      id: 'eagle-eye-quest',
+      title: 'Eagle Eye Quest',
+      emoji: '🦅',
+      description: 'All visual skills. Grand finale!',
+      color: '#EAB308',
+      available: isEagleEyeQuestAvailable,
+    },
+  ];
+
+  // Debug: Log available games count
+  const availableGamesCount = GAMES.filter(game => game.available).length;
+  console.log('[Builder Games] Total games in GAMES array:', GAMES.length);
+  console.log('[Builder Games] Available games count:', availableGamesCount);
+  console.log('[Builder Games] Available game IDs:', GAMES.filter(game => game.available).map(g => g.id));
+  console.log('[Builder Games] Builder games in array:', GAMES.filter(g => ['listen-tap', 'build-word', 'shape-match', 'simple-symmetry', 'mini-builder-mix'].includes(g.id)).map(g => ({ id: g.id, available: g.available })));
+
+  // Free-access users (FREE_ACCESS_IDS / FREE_ACCESS_EMAILS) get all games unlocked in every session
+  const isFreeAccess = Boolean(
+    subscriptionStatus?.isFreeAccess === true || subscriptionStatus?.status === 'free'
+  );
+
+  // Get completed games for current session
+  const currentSessionProgress = therapyProgress?.levels
+    ?.find(l => l.levelNumber === levelNumber)
+    ?.sessions.find(s => s.sessionNumber === sessionNumber);
+  const completedGames = currentSessionProgress?.completedGames || [];
+
+  // Helper function to check if a game is unlocked
+  const isGameUnlocked = (gameId: string, gameIndex: number): boolean => {
+    // Unlock everything when configured, or for free-access users
+    if (UNLOCK_ALL_THERAPY_CONTENT || isFreeAccess) {
+      return true;
+    }
+    
+    // First game is always unlocked
+    if (gameIndex === 0) {
+      return true;
+    }
+    
+    // Get available games for current session
+    const availableGames = GAMES.filter(game => game.available);
+    
+    // A game is unlocked if the previous game is completed
+    const previousGame = availableGames[gameIndex - 1];
+    if (!previousGame) {
+      return false;
+    }
+    
+    // Check if previous game is in completedGames
+    const previousGameCompleted = completedGames.includes(previousGame.id);
+    
+    console.log(`[GAME UNLOCK] Game ${gameId} (index ${gameIndex}): Previous game ${previousGame.id} completed: ${previousGameCompleted}, unlocked: ${previousGameCompleted}`);
+    
+    return previousGameCompleted;
+  };
+
+  // Handle game completion for The Matcher games
+  // Returns true if should continue to next game, false if should show completion screen
+  const handleGameComplete = async (gameId: string, stats: { correct: number; total: number; accuracy: number; gameId: string }): Promise<boolean> => {
+    try {
+      await advanceTherapyProgress({
+        therapy: therapyId,
+        levelNumber,
+        sessionNumber,
+        gameId,
+        markCompleted: stats.correct === stats.total, // Mark as completed if all correct
+      });
+      
+      // Refresh therapy progress
+      const progress = await fetchTherapyProgress();
+      const therapy = progress.therapies.find(t => t.therapy === therapyId);
+      setTherapyProgress(therapy || null);
+
+      return true; // Continue to next game
+    } catch (error) {
+      console.error('[SessionGames] Error marking game complete:', error);
+      return true; // On error, continue anyway
+    }
+  };
+
+  // ---------- Game render switches ----------
+
+
+
+  if (currentGame === 'follow-ball') {
+    return (
+      <FollowTheBall
+        onBack={() => setCurrentGame('menu')}
+        onComplete={handleContinue}
+        therapyId={therapyId}
+        levelNumber={levelNumber}
+        sessionNumber={sessionNumber}
+        gameId="game-1"
+      />
+    );
+  }
+
+  if (currentGame === 'catch-star') {
+    return <CatchTheBouncingStar onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'slow-to-fast') {
+    return <SlowToFastGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'track-freeze') {
+    return <TrackAndFreezeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'follow-look') {
+    return <FollowWhereILookGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-magic') {
+    return <TapForMagicGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-animate') {
+    return <TapToAnimateGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-reveal') {
+    return <TapToRevealGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-sound') {
+    return <TapToMakeSoundGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-choice') {
+    return <TapForChoiceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'big-tap') {
+    return <BigTapTarget onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-red-circle') {
+    // 👇 NEW: launch our OT Game 2
+    return <TapRedCircleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'game-3') {
+    return <BalloonPopGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'game-4') {
+    return <TapAndHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'game-5') {
+    return <MultiTapFunGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'small-circle-tap') {
+    return <SmallCircleTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-only-small') {
+    return <TapOnlySmallTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'shrinking-target') {
+    return <ShrinkingTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'track-then-tap') {
+    return <TrackThenTapSmallObjectGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'multiple-small-targets') {
+    return <MultipleSmallTargetsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-slowly') {
+    return <TapSlowlyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-fast') {
+    return <TapFastGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'slow-then-fast') {
+    return <SlowThenFastGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'race-the-dot') {
+    return <RaceTheDotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'hold-the-button') {
+    return <HoldTheButtonGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'grow-the-balloon') {
+    return <GrowTheBalloonGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'launch-rocket') {
+    return <LaunchRocketGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'squish-the-jelly') {
+    return <SquishTheJellyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'hold-the-light') {
+    return <HoldTheLightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'drag-ball-to-goal') {
+    return <DragBallToGoalGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'follow-the-line') {
+    return <FollowTheLineGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'drag-animal-home') {
+    return <DragAnimalHomeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'drag-slowly') {
+    return <DragSlowlyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'puzzle-piece-drag') {
+    return <PuzzlePieceDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-the-numbers') {
+    return <TapTheNumbersGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-lights-in-order') {
+    return <TapLightsInOrderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'follow-the-arrows') {
+    return <FollowTheArrowsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-colours-in-order') {
+    return <TapColoursInOrderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-the-big-one') {
+    return <TapTheBigOneGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-the-small-one') {
+    return <TapTheSmallOneGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-the-shape-i-show-you') {
+    return <TapTheShapeIShowYouGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'find-the-odd-one-out') {
+    return <FindTheOddOneOutGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'match-shape-to-outline') {
+    return <MatchShapeToOutlineGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tiny-dot-tap') {
+    return <TinyDotTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-the-center-of-the-target') {
+    return <TapTheCenterOfTheTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'moving-small-target') {
+    return <MovingSmallTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-only-the-smallest-shape') {
+    return <TapOnlyTheSmallestShapeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-the-hidden-small-object') {
+    return <TapTheHiddenSmallObjectGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'shrinking-circle-tap') {
+    return <ShrinkingCircleTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-when-star-is-smallest') {
+    return <TapWhenStarIsSmallestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'shrink-stop-tap') {
+    return <ShrinkStopTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'multiple-shrinking-targets') {
+    return <MultipleShrinkingTargetsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'shrinking-object-movement') {
+    return <ShrinkingObjectMovementGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pinch-to-pop') {
+    return <PinchToPopGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'two-finger-simultaneous-tap') {
+    return <TwoFingerSimultaneousTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pinch-to-resize') {
+    return <PinchToResizeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pinch-to-open-treasure-box') {
+    return <PinchToOpenTreasureBoxGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+
+  // Level 2 Session 2: Trace Curved Line games
+  if (currentGame === 'rainbow-trace') {
+    return <RainbowCurveTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'snake-slide') {
+    return <SnakeSlideGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'moon-path') {
+    return <MoonPathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'smile-maker') {
+    return <SmileMakerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'curvy-road-drive') {
+    return <CurvyRoadDriveGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mountain-climb') {
+    return <MountainClimbGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'lightning-bolt') {
+    return <LightningBoltGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'saw-path') {
+    return <SawPathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'robot-wire-fix') {
+    return <RobotWireFixGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'zig-zag-race') {
+    return <ZigZagRaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 2 Session 3: Speech Therapy Airflow Games
+  if (currentGame === 'blow-the-bubble') {
+    return <BlowTheBubbleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'move-the-feather') {
+    return <MoveTheFeatherGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'windmill-spin') {
+    return <WindmillSpinGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'blow-out-candle') {
+    return <BlowOutTheCandleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'balloon-inflate') {
+    return <BalloonInflateGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 2 Session 4: Tongue Elevation Games
+  if (currentGame === 'ice-cream-lick') {
+    return <IceCreamLickGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'touch-the-star') {
+    return <TouchTheStarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tongue-elevator') {
+    return <TongueElevatorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'roof-tap') {
+    return <RoofTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'smile-and-lift') {
+    return <SmileAndLiftGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 2 Session 5: Tongue Lateralization Games
+  if (currentGame === 'paint-the-wall') {
+    return <PaintTheWallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'cookie-sweep') {
+    return <CookieSweepGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'catch-the-dot') {
+    return <CatchTheDotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'side-lights') {
+    return <SideLightsSpeechGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mirror-match') {
+    return <MirrorMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 2 Session 6: Bilabial Strength Games
+  if (currentGame === 'balloon-pump') {
+    return <BalloonPumpGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'bubble-press') {
+    return <BubblePressGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mama-call') {
+    return <MamaCallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'drum-lips') {
+    return <DrumLipsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'box-push') {
+    return <BoxPushGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 2 Session 7: Lip Rounding Games
+  if (currentGame === 'fish-mouth') {
+    return <FishMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tunnel-blow') {
+    return <TunnelBlowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'o-shape-match') {
+    return <OShapeMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'o-u-switch') {
+    return <OUSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mirror-round') {
+    return <MirrorRoundGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 2 Session 8: Breath Control Games
+  if (currentGame === 'ball-float') {
+    return <BallFloatGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'cloud-push') {
+    return <CloudPushGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'train-steam') {
+    return <TrainSteamGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'breath-meter') {
+    return <BreathMeterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'stop-go-breathing') {
+    return <StopGoBreathingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 2 Session 9: Simple Oral Sequences Games
+  if (currentGame === 'traffic-mouth') {
+    return <TrafficMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'robot-sequence') {
+    return <RobotSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pattern-match') {
+    return <PatternMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'copy-the-beat') {
+    return <CopyTheBeatGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sequence-builder') {
+    return <SequenceBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 2 Session 10: Foundational Imitation Games
+  if (currentGame === 'face-to-face-avatar') {
+    return <FaceToFaceAvatarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'highlight-zones') {
+    return <HighlightZonesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'one-step-imitation') {
+    return <OneStepImitationGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'two-step-imitation') {
+    return <TwoStepImitationGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'success-replay') {
+    return <SuccessReplayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 2 Session 4: Follow Path (Drag) games
+  if (currentGame === 'maze-walk') {
+    return <MazeWalkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'river-boat-guide') {
+    return <RiverBoatGuideGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'ant-trail-follow') {
+    return <AntTrailFollowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'ball-roll-path') {
+    return <BallRollPathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'dont-touch-grass') {
+    return <DontTouchGrassGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 2 Session 5: Connect Dots games
+  if (currentGame === 'dot-to-dot-animal') {
+    return <DotToDotAnimalGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'star-builder') {
+    return <StarBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'house-drawing') {
+    return <HouseDrawingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'hidden-shape-reveal') {
+    return <HiddenShapeRevealGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'connect-in-order-glow') {
+    return <ConnectInOrderGlowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 2 Session 6: Match Shape Outline games
+  if (currentGame === 'puzzle-drop-shapes') {
+    return <PuzzleDropShapesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'shadow-match') {
+    return <ShadowMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'cookie-cutter-match') {
+    return <CookieCutterMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'parking-shapes') {
+    return <ParkingShapesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'fast-match') {
+    return <FastMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 2 Session 7: Trace Large Shapes games
+  if (currentGame === 'big-square-walk') {
+    return <BigSquareWalkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'triangle-mountain-trace') {
+    return <TriangleMountainTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'paint-the-shape') {
+    return <PaintTheShapeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'glow-border-trace') {
+    return <GlowBorderTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 2 Session 8: Trace Small Shapes games
+  if (currentGame === 'tiny-circle-coins') {
+    return <TinyCircleCoinsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mini-square-locks') {
+    return <MiniSquareLocksGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'dot-border-shapes') {
+    return <DotBorderShapesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'careful-trace-challenge') {
+    return <CarefulTraceChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'shrink-mode-trace') {
+    return <ShrinkModeTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 2 Session 9: Copy Simple Patterns games
+  if (currentGame === 'copy-the-line-pattern') {
+    return <CopyTheLinePatternGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'block-pattern-copy') {
+    return <BlockPatternCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'color-pattern-match') {
+    return <ColorPatternMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'stick-design-copy') {
+    return <StickDesignCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'look-hide-draw') {
+    return <LookHideDrawGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 2 Session 10: Mirror Drawing Basics games
+  if (currentGame === 'mirror-line-draw') {
+    return <MirrorLineDrawGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'butterfly-wings') {
+    return <ButterflyWingsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'face-symmetry-draw') {
+    return <FaceSymmetryDrawGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'half-shape-complete') {
+    return <HalfShapeCompleteGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mirror-maze') {
+    return <MirrorMazeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 1 Session 3 games
+  if (currentGame === 'sound-to-tap') {
+    return <SoundToTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'which-sound') {
+    return <WhichSoundGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'find-sound-source') {
+    return <FindSoundSourceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'stop-when-sound-stops') {
+    return <StopWhenSoundStopsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'loud-vs-soft') {
+    return <LoudVsSoftGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 1 Session 4 games
+  if (currentGame === 'follow-my-eyes') {
+    return <FollowMyEyesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'which-side') {
+    return <WhichSideGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'follow-gaze-animation') {
+    return <FollowGazeToAnimationGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'eyes-only') {
+    return <EyesOnlyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 1 Session 5 games (Pointing Games)
+  if (currentGame === 'follow-my-point') {
+    return <FollowMyPointGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'point-to-object-appears') {
+    return <PointToObjectAppearsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-the-pointed-object') {
+    return <TapThePointedObjectGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'moving-arm-pointing') {
+    return <MovingArmPointingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'multi-point-follow') {
+    return <MultiPointFollowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 1 Session 6 games (Choice & Instruction Games)
+  if (currentGame === 'tap-what-you-like') {
+    return <TapWhatYouLikeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'which-one-moved') {
+    return <WhichOneMovedGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sound-to-choice') {
+    return <SoundToChoiceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'show-me-the-toy') {
+    return <ShowMeTheToyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'food-vs-toy') {
+    return <FoodVsToyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pass-the-ball') {
+    return <PassTheBallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-only-on-your-turn') {
+    return <TapOnlyOnYourTurnGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'your-turn-to-complete') {
+    return <YourTurnToCompleteGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'wait-for-the-signal') {
+    return <WaitForTheSignalGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'turn-timer') {
+    return <TurnTimerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'watch-and-wait') {
+    return <WatchAndWaitGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'growing-flower') {
+    return <GrowingFlowerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'timer-bar-tap') {
+    return <TimerBarTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'follow-slow-movement') {
+    return <FollowSlowMovementGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'shapes-appear-one-by-one') {
+    return <ShapesAppearOneByOneGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'touch-the-ball') {
+    return <TouchTheBallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-the-circle') {
+    return <TapTheCircleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'find-the-sound-source') {
+    return <FindTheSoundSourceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-what-i-show-you') {
+    return <TapWhatIShowYouGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'follow-the-arrow') {
+    return <FollowTheArrowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-the-target-ignore-distraction') {
+    return <TapTheTargetIgnoreDistractionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sound-distraction-challenge') {
+    return <SoundDistractionChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'slow-task-with-pop-up-distraction') {
+    return <SlowTaskWithPopUpDistractionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sequence-with-distraction') {
+    return <SequenceWithDistractionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 1 — Voice Activation & Vocal Play
+  if (currentGame === 'wake-the-monster') {
+    return <WakeTheMonsterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'voice-rocket') {
+    return <VoiceRocketGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'sound-paint') {
+    return <SoundPaintGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'echo-cave') {
+    return <EchoCaveGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'voice-match-light') {
+    return <VoiceMatchLightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 2 — Vowel Sounds
+  if (currentGame === 'open-mouth-aaa') {
+    return <OpenMouthAaaGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'happy-eee-smile') {
+    return <HappyEeeSmileGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'round-ooo-fish') {
+    return <RoundOooFishGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'long-sound-train') {
+    return <LongSoundTrainGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'vowel-switch') {
+    return <VowelSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 3 — Bilabial Speech Sounds
+  if (currentGame === 'mama-drum') {
+    return <MamaDrumGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'bubble-pop-puh') {
+    return <BubblePopPuhGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'ball-bounce-buh') {
+    return <BallBounceBuhGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'sound-catch') {
+    return <SoundCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'lip-power-race') {
+    return <LipPowerRaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 4 — Consonant + Vowel Syllables
+  if (currentGame === 'syllable-bridge') {
+    return <SyllableBridgeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'feed-the-panda') {
+    return <FeedThePandaGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'baby-calls-mama') {
+    return <BabyCallsMamaGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'syllable-balloons') {
+    return <SyllableBalloonsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'copy-talking-robot') {
+    return <CopyTalkingRobotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 5 — Animal & Environmental Sounds
+  if (currentGame === 'cow-sound-farm') {
+    return <CowSoundFarmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'car-engine-race') {
+    return <CarEngineRaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'snake-hiss') {
+    return <SnakeHissGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'train-choo-choo') {
+    return <TrainChooChooGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'animal-sound-match') {
+    return <AnimalSoundMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 6 — Sound Imitation Sequences
+  if (currentGame === 'copy-one-sound') {
+    return <CopyOneSoundGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'copy-two-sounds') {
+    return <CopyTwoSoundsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'rhythm-repeat') {
+    return <RhythmRepeatGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'sound-pattern-lights') {
+    return <SoundPatternLightsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-robot-says') {
+    return <TalkingRobotSaysGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 7 — First Meaningful Words
+  if (currentGame === 'say-more') {
+    return <SayMoreGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'call-mama') {
+    return <CallMamaGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'say-ball') {
+    return <SayBallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'snack-request') {
+    return <SnackRequestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'toy-voice-unlock') {
+    return <ToyVoiceUnlockGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 8 — Listen & Repeat
+  if (currentGame === 'hear-and-say') {
+    return <HearAndSayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-mirror') {
+    return <TalkingMirrorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'match-my-mouth') {
+    return <MatchMyMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'repeat-the-beat') {
+    return <RepeatTheBeatGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'fast-or-slow') {
+    return <FastOrSlowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 9 — Two-Part Verbal Sequences
+  if (currentGame === 'say-then-tap') {
+    return <SayThenTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'open-speak') {
+    return <OpenSpeakGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'two-word-combo') {
+    return <TwoWordComboGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'follow-repeat') {
+    return <FollowRepeatGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-pathway') {
+    return <SpeechPathwayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 3 Session 10 — Early Fluent Speech Foundations
+  if (currentGame === 'smooth-talking-train') {
+    return <SmoothTalkingTrainGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'phrase-builder') {
+    return <PhraseBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-adventure') {
+    return <TalkingAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'fast-slow-talking') {
+    return <FastSlowTalkingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'conversation-avatar') {
+    return <ConversationAvatarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'copy-the-clap') {
+    return <CopyTheClapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'jump-like-me') {
+    return <JumpLikeMeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'dance-freeze') {
+    return <DanceFreezeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'silly-action-match') {
+    return <SillyActionMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'follow-my-move') {
+    return <FollowMyMoveGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'touch-the-nose') {
+    return <TouchTheNoseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-body-puzzle') {
+    return <SpeechBodyPuzzleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'what-helps-you-see') {
+    return <WhatHelpsYouSeeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'dress-the-character') {
+    return <DressTheCharacterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'simon-says-body') {
+    return <SimonSaysBodyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'find-the-animal') {
+    return <FindTheAnimalGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'fruit-basket') {
+    return <FruitBasketGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'vehicle-garage') {
+    return <VehicleGarageGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'alphabet-hunt') {
+    return <AlphabetHuntGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'vegetable-farm') {
+    return <VegetableFarmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'same-category') {
+    return <SameCategoryGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'pick-the-different-one') {
+    return <PickTheDifferentOneGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'big-vs-small') {
+    return <BigVsSmallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'soft-or-hard') {
+    return <SoftOrHardGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'color-match-train') {
+    return <ColorMatchTrainGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'put-teddy-in-box') {
+    return <PutTeddyInTheBoxGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'under-the-table') {
+    return <UnderTheTableGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'left-or-right') {
+    return <LeftOrRightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'near-or-far') {
+    return <NearOrFarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'behind-the-tree') {
+    return <BehindTheTreeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'who-is-running') {
+    return <WhoIsRunningGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'what-do-we-eat-with') {
+    return <WhatDoWeEatWithGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'match-the-action') {
+    return <MatchTheActionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'what-does-a-doctor-do') {
+    return <WhatDoesADoctorDoGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'tool-match') {
+    return <ToolMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'find-the-kitchen') {
+    return <FindTheKitchenGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'where-does-teacher-work') {
+    return <WhereDoesTeacherWorkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'family-match') {
+    return <FamilyMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'boy-or-girl') {
+    return <BoyOrGirlGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'community-helpers') {
+    return <CommunityHelpersGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'guess-the-object') {
+    return <GuessTheObjectGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'hidden-part-puzzle') {
+    return <HiddenPartPuzzleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'what-am-i-describing') {
+    return <WhatAmIDescribingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'find-by-function') {
+    return <FindByFunctionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mystery-bag') {
+    return <MysteryBagGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'story-order-cards') {
+    return <StoryOrderCardsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'what-is-missing') {
+    return <WhatIsMissingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'complete-the-pattern') {
+    return <CompleteThePatternGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'first-middle-last') {
+    return <FirstMiddleLastGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'find-the-hidden-toy') {
+    return <FindTheHiddenToyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'follow-2-step-directions') {
+    return <Follow2StepDirectionsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'belongs-or-not') {
+    return <BelongsOrNotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'singular-or-plural') {
+    return <SingularOrPluralGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'pronoun-match') {
+    return <PronounMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'smart-listener-challenge') {
+    return <SmartListenerChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-feather') {
+    return <MagicFeatherGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'cloud-puff') {
+    return <CloudPuffGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'bubble-wakeup') {
+    return <BubbleWakeupGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'windmill-friend') {
+    return <WindmillFriendGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'air-painter') {
+    return <AirPainterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'copy-happy-mouth') {
+    return <CopyHappyMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-monster-mouth') {
+    return <FunnyMonsterMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mirror-mouth-match') {
+    return <MirrorMouthMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'open-close-dance') {
+    return <OpenCloseDanceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'silly-face-copy') {
+    return <SillyFaceCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'wake-feather') {
+    return <WakeFeatherGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'start-stop-cloud') {
+    return <StartStopCloudGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'windmill-freeze') {
+    return <WindmillFreezeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'balloon-breath') {
+    return <BalloonBreathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-air-switch') {
+    return <MagicAirSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'happy-lips-mirror') {
+    return <HappyLipsMirrorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'lip-tap-friend') {
+    return <LipTapFriendGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-lip-glow') {
+    return <MagicLipGlowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-fish-lips') {
+    return <FunnyFishLipsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'lip-explorer-adventure') {
+    return <LipExplorerAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'jaw-hungry-crocodile') {
+    return <JawHungryCrocodileGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'sleepy-lion-mouth') {
+    return <SleepyLionMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mouth-elevator') {
+    return <MouthElevatorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'jaw-open-close-dance') {
+    return <JawOpenCloseDanceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-jaw-adventure') {
+    return <FunnyJawAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-face-mirror') {
+    return <FunnyFaceMirrorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'happy-sad-copy') {
+    return <HappySadCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'monster-face-match') {
+    return <MonsterFaceMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mirror-dance-faces') {
+    return <MirrorDanceFacesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'face-adventure-copy') {
+    return <FaceAdventureCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-face-breeze') {
+    return <MagicFaceBreezeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'bubble-nose-tickles') {
+    return <BubbleNoseTicklesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-mouth-explorer') {
+    return <FunnyMouthExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'soft-sensory-monster') {
+    return <SoftSensoryMonsterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'calm-mouth-adventure') {
+    return <CalmMouthAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'find-mouth-part') {
+    return <FindMouthPartGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-spotlight') {
+    return <MagicMouthSpotlightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'follow-funny-mouth') {
+    return <FollowFunnyMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'where-did-it-go-mouth') {
+    return <WhereDidItGoMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mouth-treasure-hunt') {
+    return <MouthTreasureHuntGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'friendly-tongue-explorer') {
+    return <FriendlyTongueExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'tongue-hide-seek') {
+    return <TongueHideSeekGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-tongue-mirror') {
+    return <MagicTongueMirrorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'hungry-tongue-monster') {
+    return <HungryTongueMonsterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'tongue-treasure-adventure') {
+    return <TongueTreasureAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'copy-my-mouth-friend') {
+    return <CopyMyMouthFriendGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-mouth-adventure') {
+    return <FunnyMouthAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'air-mouth-play') {
+    return <AirMouthPlayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'oral-mirror-party') {
+    return <OralMirrorPartyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mouth-hero-adventure') {
+    return <MouthHeroAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-mouth-copy') {
+    return <SpeechMouthCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-robot-face') {
+    return <TalkingRobotFaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mouth-pattern-match') {
+    return <MouthPatternMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mirror-speech-play') {
+    return <MirrorSpeechPlayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-hero-warmup') {
+    return <SpeechHeroWarmupGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'wake-sleeping-star') {
+    return <WakeSleepingStarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-robot-start') {
+    return <TalkingRobotStartGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-voice-balloon') {
+    return <MagicVoiceBalloonGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-voice-echo') {
+    return <FunnyVoiceEchoGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'sound-hero-starter') {
+    return <SoundHeroStarterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-shapes') {
+    return <MagicMouthShapesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-animal-vowels') {
+    return <TalkingAnimalVowelsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mirror-vowel-face') {
+    return <MirrorVowelFaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'vowel-balloon-builder') {
+    return <VowelBalloonBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-shape-adventure') {
+    return <SpeechShapeAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-sound-builder') {
+    return <MagicSoundBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-animal-mouths') {
+    return <TalkingAnimalMouthsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-says-play') {
+    return <RobotSaysPlayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-pattern-train') {
+    return <SpeechPatternTrainGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mini-talking-hero') {
+    return <MiniTalkingHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mama-drum-beat') {
+    return <MamaDrumBeatGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'pop-balloon-race') {
+    return <PopBalloonRaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-robot-beats') {
+    return <TalkingRobotBeatsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-train-rhythm') {
+    return <SpeechTrainRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mini-speaker-hero') {
+    return <MiniSpeakerHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-drum-rhythm') {
+    return <TalkingDrumRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-beat-robot') {
+    return <SpeechBeatRobotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-metronome') {
+    return <MagicMouthMetronomeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-train-timing') {
+    return <TalkingTrainTimingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-rhythm-hero') {
+    return <SpeechRhythmHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-voice-river') {
+    return <MagicVoiceRiverGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-balloon-hold') {
+    return <TalkingBalloonHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-power-voice') {
+    return <RobotPowerVoiceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'voice-train-journey') {
+    return <VoiceTrainJourneyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-stability-hero') {
+    return <SpeechStabilityHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'syllable-pop-party') {
+    return <SyllablePopPartyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-animal-syllables') {
+    return <TalkingAnimalSyllablesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-speech-steps') {
+    return <RobotSpeechStepsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-train-builder') {
+    return <SpeechTrainBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'little-speaker-hero') {
+    return <LittleSpeakerHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-sound-request') {
+    return <MagicSoundRequestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-friend-turn-taking') {
+    return <TalkingFriendTurnTakingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'voice-choice-adventure') {
+    return <VoiceChoiceAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'help-character-speak') {
+    return <HelpCharacterSpeakGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'little-communicator-hero') {
+    return <LittleCommunicatorHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-adventure-party') {
+    return <SpeechAdventurePartyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-friend-challenge') {
+    return <TalkingFriendChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-mission') {
+    return <MagicMouthMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'little-speaker-celebration') {
+    return <LittleSpeakerCelebrationGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'speech-hero-graduation') {
+    return <SpeechHeroGraduationGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-mouth-teamwork') {
+    return <FunnyMouthTeamworkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-mouth-builder') {
+    return <RobotMouthBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-switch') {
+    return <MagicMouthSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-face-rhythm') {
+    return <TalkingFaceRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'mouth-coordination-hero') {
+    return <MouthCoordinationHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'tongue-explorer-teamwork') {
+    return <TongueExplorerTeamworkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-monster-tongue-moves') {
+    return <FunnyMonsterTongueMovesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-tunnel') {
+    return <MagicMouthTunnelGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-tongue-rhythm') {
+    return <TalkingTongueRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'tongue-coordination-hero') {
+    return <TongueCoordinationHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-tongue-lips-team') {
+    return <FunnyTongueLipsTeamGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'monster-mouth-mixup') {
+    return <MonsterMouthMixUpGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-lip-tongue-switch') {
+    return <MagicLipTongueSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-face-coordination') {
+    return <TalkingFaceCoordinationGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'tongue-lips-hero') {
+    return <TongueLipsHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-wind-lips') {
+    return <MagicWindLipsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-balloon-breaths') {
+    return <FunnyBalloonBreathsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-wind-mouth') {
+    return <RobotWindMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'wind-rhythm-adventure') {
+    return <WindRhythmAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'breath-lips-hero') {
+    return <BreathLipsHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-wind-mouth') {
+    return <MagicWindMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-dragon-breaths') {
+    return <FunnyDragonBreathsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-air-mouth-switch') {
+    return <RobotAirMouthSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'breathing-train-rhythm') {
+    return <BreathingTrainRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'breath-jaw-hero') {
+    return <BreathJawHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-steps') {
+    return <MagicMouthStepsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-monster-combo-moves') {
+    return <FunnyMonsterComboMovesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-mouth-builder-sequence') {
+    return <RobotMouthBuilderSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-adventure-rhythm') {
+    return <TalkingAdventureRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'coordination-hero-quest') {
+    return <CoordinationHeroQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-sequence') {
+    return <MagicMouthSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-monster-steps') {
+    return <FunnyMonsterStepsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-memory-mouth') {
+    return <RobotMemoryMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-rhythm-sequence') {
+    return <TalkingRhythmSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'sequence-hero-adventure') {
+    return <SequenceHeroAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-beat') {
+    return <MagicMouthBeatGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-timing-monster') {
+    return <FunnyTimingMonsterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-pause-go') {
+    return <RobotPauseGoGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-rhythm-road') {
+    return <TalkingRhythmRoadGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'timing-hero-challenge') {
+    return <TimingHeroChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-planner') {
+    return <MagicMouthPlannerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-monster-mission') {
+    return <FunnyMonsterMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-copy-challenge') {
+    return <RobotCopyChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-path-adventure') {
+    return <TalkingPathAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'motor-planning-hero') {
+    return <MotorPlanningHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'magic-mouth-teamwork') {
+    return <MagicMouthTeamworkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'funny-talking-monster') {
+    return <FunnyTalkingMonsterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'robot-mouth-adventure') {
+    return <RobotMouthAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'talking-rhythm-quest') {
+    return <TalkingRhythmQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'coordination-hero-graduation') {
+    return <CoordinationHeroGraduationGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'hungry-crocodile') {
+    return <HungryCrocodileGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'big-mouth-lion') {
+    return <BigMouthLionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'jaw-elevator') {
+    return <JawElevatorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'freeze-mouth') {
+    return <FreezeMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'open-close-rhythm') {
+    return <OpenCloseRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Level 2 Session 2: Curved path / mouth tracing
+  if (currentGame === 'paint-curved-snake') {
+    return <PaintCurvedSnakeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'rainbow-curve-trace-speech') {
+    return <RainbowCurveTraceSpeechGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'trace-smiling-mouth') {
+    return <TraceSmilingMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'ball-roll-curved-track') {
+    return <BallRollCurvedTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+  if (currentGame === 'drive-car-curvy-road') {
+    return <DriveCarCurvyRoadGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 2 Session 1 games (Occupational Therapy - Eye-Hand Coordination)
+  if (currentGame === 'touch-the-dot') {
+    return <TouchTheDotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'where-is-it') {
+    return <WhereIsItGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'follow-and-touch') {
+    return <FollowAndTouchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-where-it-lights-up') {
+    return <TapWhereItLightsUpGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'match-and-touch') {
+    return <MatchAndTouchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 3 Session 1 games - Tap with Rhythm
+  if (currentGame === 'beat-match-tap') {
+    return <BeatMatchTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'copy-my-rhythm') {
+    return <CopyMyRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'stop-go-drum') {
+    return <StopGoDrumGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'loud-soft-rhythm') {
+    return <LoudSoftRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'instrument-choice') {
+    return <InstrumentChoiceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 1 games - Sitting Posture Control (camera/pose detection)
+  if (currentGame === 'superhero-power-sit') {
+    return <SuperheroPowerSitGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'crown-keeper') {
+    return <CrownKeeperGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'statue-kingdom') {
+    return <StatueKingdomGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sit-tall-freeze') {
+    return <SitTallFreezeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'star-reach-mission') {
+    return <StarReachMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 2 games - Standing Posture Control (camera/pose detection)
+  if (currentGame === 'tall-tree') {
+    return <TallTreeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'soldier-stand') {
+    return <SoldierStandGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'statue-guard') {
+    return <StatueGuardGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'grow-taller') {
+    return <GrowTallerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'freeze-balance') {
+    return <FreezeBalanceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 3 games - Head & Neck Stability (camera/pose detection)
+  if (currentGame === 'rocket-watch') {
+    return <RocketWatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'look-and-hold') {
+    return <LookAndHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sky-ground-explorer') {
+    return <SkyGroundExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'keep-the-crown') {
+    return <KeepTheCrownGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'star-tracker') {
+    return <StarTrackerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 4 games - Static Balance (camera/pose detection)
+  if (currentGame === 'flamingo-stand') {
+    return <FlamingoStandGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'one-foot-island') {
+    return <OneFootIslandGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'balance-statue') {
+    return <BalanceStatueGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'star-balance-hold') {
+    return <StarBalanceHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'freeze-hero') {
+    return <FreezeHeroGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 5 games - Weight Shifting (camera/pose detection)
+  if (currentGame === 'apple-reach') {
+    return <AppleReachGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'side-star-catch') {
+    return <SideStarCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'treasure-lean') {
+    return <TreasureLeanGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'bridge-balance') {
+    return <BridgeBalanceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'magic-scale') {
+    return <MagicScaleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 6 games - Dynamic Balance (camera/pose detection)
+  if (currentGame === 'stepping-stones') {
+    return <SteppingStonesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'cross-the-bridge') {
+    return <CrossTheBridgeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'river-crossing') {
+    return <RiverCrossingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'adventure-trail') {
+    return <AdventureTrailGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'balance-journey') {
+    return <BalanceJourneyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 7 games - Trunk Rotation & Reaching (camera/pose detection)
+  if (currentGame === 'apple-picker') {
+    return <ApplePickerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pirate-treasure-reach') {
+    return <PirateTreasureReachGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'turn-and-touch') {
+    return <TurnAndTouchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'cross-body-catch') {
+    return <CrossBodyCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'twisting-star-hunt') {
+    return <TwistingStarHuntGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 8 games - Animal Walks & Core Activation (camera/pose detection)
+  if (currentGame === 'bear-walk-adventure') {
+    return <BearWalkAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'crab-walk-challenge') {
+    return <CrabWalkChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'seal-push') {
+    return <SealPushGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'turtle-crawl') {
+    return <TurtleCrawlGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'gorilla-march') {
+    return <GorillaMarchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 9 games - Postural Endurance (camera/pose detection)
+  if (currentGame === 'superhero-hold') {
+    return <SuperheroHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'airplane-hold') {
+    return <AirplaneHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'bridge-hold') {
+    return <BridgeHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tall-tree-challenge') {
+    return <TallTreeChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'longest-statue') {
+    return <LongestStatueGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 6 Session 10 games - Integrated Core Challenge (camera/pose detection)
+  if (currentGame === 'jungle-adventure') {
+    return <JungleAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pirate-mission') {
+    return <PirateMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'space-explorer') {
+    return <SpaceExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mountain-rescue') {
+    return <MountainRescueGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'ot-obstacle-course') {
+    return <OTObstacleCourseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 1 games - Linear Vestibular Movement (camera/pose detection)
+  if (currentGame === 'train-tracks') {
+    return <TrainTracksGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rocket-launch') {
+    return <RocketLaunchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rainbow-run') {
+    return <RainbowRunGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'wave-walker') {
+    return <WaveWalkerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'adventure-path') {
+    return <AdventurePathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 1 games - Single-Step Motor Planning (camera/pose detection)
+  if (currentGame === 'touch-the-target') {
+    return <TouchTheTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'reach-the-star') {
+    return <ReachTheStarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'move-to-the-spot') {
+    return <MoveToTheSpotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'launch-the-rocket') {
+    return <LaunchTheRocketGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'place-the-box') {
+    return <PlaceTheBoxGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 2 games - Two-Step Motor Planning (camera/pose detection)
+  if (currentGame === 'clap-then-jump') {
+    return <ClapThenJumpGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'touch-then-turn') {
+    return <TouchThenTurnGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'reach-then-freeze') {
+    return <ReachThenFreezeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'launch-then-catch') {
+    return <LaunchThenCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pick-and-place') {
+    return <PickAndPlaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 3 games - Multi-Step Sequencing (camera/pose detection)
+  if (currentGame === 'action-chain') {
+    return <ActionChainGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'star-sequence') {
+    return <StarSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mission-steps') {
+    return <MissionStepsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pirate-commands') {
+    return <PirateCommandsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rainbow-sequence') {
+    return <RainbowSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 4 games - Motor Imitation (camera/pose detection)
+  if (currentGame === 'robot-copy') {
+    return <RobotCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'animal-copy') {
+    return <AnimalCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'dance-mirror') {
+    return <DanceMirrorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pose-match') {
+    return <PoseMatchGameL8 onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'quick-copy') {
+    return <QuickCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 5 games - Body Position Planning (camera/pose detection)
+  if (currentGame === 'high-reach') {
+    return <HighReachGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'low-reach') {
+    return <LowReachGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'side-reach') {
+    return <SideReachGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'turn-position') {
+    return <TurnPositionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'shape-body') {
+    return <ShapeBodyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 6 games - Obstacle Navigation (camera/pose detection)
+  if (currentGame === 'jungle-path') {
+    return <JunglePathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'lava-escape') {
+    return <LavaEscapeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mountain-route') {
+    return <MountainRouteGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'space-maze') {
+    return <SpaceMazeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pirate-island') {
+    return <PirateIslandGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 7 games - Bilateral Motor Planning (camera/pose detection)
+  if (currentGame === 'twin-moves') {
+    return <TwinMovesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'cross-clap') {
+    return <CrossClapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'bear-pattern') {
+    return <BearPatternGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mirror-hands') {
+    return <MirrorHandsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'dual-action') {
+    return <DualActionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 8 games - Movement Problem Solving (camera/pose detection)
+  if (currentGame === 'find-the-route') {
+    return <FindTheRouteGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'open-the-path') {
+    return <OpenThePathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'movement-puzzle') {
+    return <MovementPuzzleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rescue-mission') {
+    return <RescueMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'escape-course') {
+    return <EscapeCourseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 9 games - Novel Motor Challenges (camera/pose detection)
+  if (currentGame === 'alien-moves') {
+    return <AlienMovesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'robot-factory') {
+    return <RobotFactoryGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mystery-island') {
+    return <MysteryIslandGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'surprise-actions') {
+    return <SurpriseActionsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'challenge-quest') {
+    return <ChallengeQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 8 Session 10 games - Praxis Adventure (camera/pose detection)
+  if (currentGame === 'praxis-jungle-expedition') {
+    return <JungleExpeditionPraxisGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'praxis-space-explorer') {
+    return <SpaceExplorerPraxisGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'praxis-pirate-treasure') {
+    return <PirateTreasureHuntGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'praxis-mountain-mission') {
+    return <MountainMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'praxis-champion') {
+    return <PraxisChampionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 2 games - Head Movement & Vestibular Activation (camera/pose detection)
+  if (currentGame === 'look-up-explorer') {
+    return <LookUpExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sky-ground-mission') {
+    return <SkyGroundMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'helicopter-watch') {
+    return <HelicopterWatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'vestibular-star-tracker') {
+    return <VestibularStarTrackerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'turn-and-find') {
+    return <TurnAndFindGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 3 games - Direction Changes (camera/pose detection)
+  if (currentGame === 'direction-switch') {
+    return <DirectionSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'go-left-go-right') {
+    return <GoLeftGoRightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pirate-turn-hunt') {
+    return <PirateTurnHuntGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'turn-around-quest') {
+    return <TurnAroundQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'magical-arrow-sequence') {
+    return <MagicalArrowSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 4 games - Rotational Processing (camera/pose detection)
+  if (currentGame === 'tornado-turn') {
+    return <TornadoTurnGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'spin-and-stop') {
+    return <SpinAndStopGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'helicopter-pilot') {
+    return <HelicopterPilotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'orbit-hunt') {
+    return <OrbitHuntGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'turn-and-point') {
+    return <TurnAndPointGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 5 games - Dynamic Standing Balance (camera/pose detection)
+  if (currentGame === 'balance-bridge') {
+    return <BalanceBridgeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'stepping-stones-l7') {
+    return <SteppingStonesL7Game onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'island-hopper') {
+    return <IslandHopperGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'river-crossing-l7') {
+    return <RiverCrossingL7Game onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'star-trail') {
+    return <StarTrailGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 6 games - Visual-Vestibular Integration (camera/pose detection)
+  if (currentGame === 'rocket-follow') {
+    return <RocketFollowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'butterfly-chase') {
+    return <ButterflyChaseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'balloon-drift') {
+    return <BalloonDriftGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'ufo-watch') {
+    return <UFOWatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'orbit-tracker') {
+    return <OrbitTrackerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 7 games - Balance Reactions (camera/pose detection)
+  if (currentGame === 'freeze-balance-l7') {
+    return <FreezeBalanceL7Game onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'wave-rider') {
+    return <WaveRiderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'surf-challenge') {
+    return <SurfChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'obstacle-balance') {
+    return <ObstacleBalanceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'recovery-master') {
+    return <RecoveryMasterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 8 games - Vestibular Sequencing (camera/pose detection)
+  if (currentGame === 'follow-my-steps') {
+    return <FollowMyStepsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'movement-pattern-copy') {
+    return <MovementPatternCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'star-sequence-path') {
+    return <StarSequencePathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'space-mission') {
+    return <SpaceMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pirate-journey') {
+    return <PirateJourneyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 9 games - Vestibular Endurance (camera/pose detection)
+  if (currentGame === 'long-trail-walk') {
+    return <LongTrailWalkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rainbow-journey') {
+    return <RainbowJourneyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'forest-explorer') {
+    return <ForestExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'endless-tracks') {
+    return <EndlessTracksGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'balance-marathon') {
+    return <BalanceMarathonGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 7 Session 10 games - Vestibular Challenge Course (camera/pose detection)
+  if (currentGame === 'pirate-island-challenge') {
+    return <PirateIslandChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'space-explorer-course') {
+    return <SpaceExplorerCourseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'jungle-expedition') {
+    return <JungleExpeditionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mountain-adventure') {
+    return <MountainAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'vestibular-champion') {
+    return <VestibularChampionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 3 Session 2 games - Big vs Small Movements
+  if (currentGame === 'big-swipe-small-swipe') {
+    return <BigSwipeSmallSwipeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'big-tap-small-tap') {
+    return <BigTapSmallTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'stretch-pinch') {
+    return <StretchPinchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'big-path-trace') {
+    return <BigPathTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'big-throw-small-throw') {
+    return <BigThrowSmallThrowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 3 Session 3 games - Tap with Rhythm (Drum Beats)
+  if (currentGame === 'single-beat-tap') {
+    return <SingleBeatTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'double-beat-copy') {
+    return <DoubleBeatCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pause-and-tap') {
+    return <PauseAndTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'fast-beat-challenge') {
+    return <FastBeatChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'slow-beat-calm-mode') {
+    return <SlowBeatCalmModeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 3 Session 3 games - Fast vs Slow Movements
+  if (currentGame === 'slow-turtle-move') {
+    return <SlowTurtleMoveGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'fast-rabbit-run') {
+    return <FastRabbitRunGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'speed-match') {
+    return <SpeedMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'traffic-light-game') {
+    return <TrafficLightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'music-speed-control') {
+    return <MusicSpeedControlGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 3 Session 4 games - Up-Down Gestures & Big vs Small Movements
+  if (currentGame === 'balloon-up') {
+    return <BalloonUpGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'ball-drop') {
+    return <BallDropGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'elevator-game') {
+    return <ElevatorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'jump-arrow') {
+    return <JumpArrowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rain-catch') {
+    return <RainCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 3 Session 5 games - Left-Right Swipes
+  if (currentGame === 'car-turn') {
+    return <CarTurnGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'arrow-match') {
+    return <ArrowMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'animal-run') {
+    return <AnimalRunGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mirror-swipe') {
+    return <MirrorSwipeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'catch-the-ball') {
+    return <CatchTheBallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 3 Session 6 games - Jump Imitation (Tap Twice)
+  if (currentGame === 'frog-jump') {
+    return <FrogJumpGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'jump-count') {
+    return <JumpCountGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'double-tap-only') {
+    return <DoubleTapOnlyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rhythm-jump') {
+    return <RhythmJumpGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'obstacle-jump') {
+    return <ObstacleJumpGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 3 Session 7 games - Swinging Movement Imitation
+  if (currentGame === 'pendulum-copy') {
+    return <PendulumCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'monkey-swing') {
+    return <MonkeySwingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'fan-motion') {
+    return <FanMotionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rope-swing-timing') {
+    return <RopeSwingTimingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'music-swing') {
+    return <MusicSwingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 3 Session 8 games - Whole Body Map
+  if (currentGame === 'touch-head') {
+    return <TouchHeadGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'shoulders-tap') {
+    return <ShouldersTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'body-puzzle') {
+    return <BodyPuzzleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'follow-the-body') {
+    return <FollowTheBodyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'body-flash') {
+    return <BodyFlashGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 3 Session 9 games - Mirror Movements
+  if (currentGame === 'copy-pose') {
+    return <CopyPoseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'hand-mirror') {
+    return <HandMirrorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pattern-copy') {
+    return <PatternCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'delayed-mirror') {
+    return <DelayedMirrorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'fast-copy') {
+    return <FastCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 3 Session 10 games - Posture-Based Games
+  if (currentGame === 'posture-match') {
+    return <PoseMatchGameL3 onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'freeze-pose') {
+    return <FreezePoseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'animal-pose') {
+    return <AnimalPoseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'shape-pose') {
+    return <ShapePoseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'count-hold') {
+    return <CountHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 4 Session 1 games - Drag Object Left → Right
+  if (currentGame === 'ball-transfer') {
+    return <BallTransferGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'feed-the-monster') {
+    return <FeedTheMonsterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'road-crossing') {
+    return <RoadCrossingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'color-match-drag') {
+    return <ColorMatchDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'timed-drag') {
+    return <TimedDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 4 Session 2 games - Drag Object Right → Left
+  if (currentGame === 'reverse-ball-pass') {
+    return <ReverseBallPassGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'collect-stars') {
+    return <CollectStarsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'reverse-path') {
+    return <ReversePathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mirror-drag') {
+    return <MirrorDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pattern-drag') {
+    return <PatternDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 4 Session 3 games - Diagonal Dragging
+  if (currentGame === 'top-left-bottom-right') {
+    return <TopLeftToBottomRightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'x-path-trace') {
+    return <XPathTraceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'diagonal-catch') {
+    return <DiagonalCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'zigzag-drag') {
+    return <ZigZagDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'diagonal-match') {
+    return <DiagonalMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 4 Session 4 games - Two-Hand Tapping (Dual Targets)
+  if (currentGame === 'double-circle-tap') {
+    return <DoubleCircleTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'piano-keys') {
+    return <PianoKeysGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'drum-duo') {
+    return <DrumDuoGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'light-up-targets') {
+    return <LightUpTargetsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'hold-and-tap') {
+    return <HoldAndTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 4 Session 5 games - Alternating Hands
+  if (currentGame === 'left-right-tap') {
+    return <LeftRightTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'walking-hands') {
+    return <WalkingHandsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'flash-side') {
+    return <FlashSideGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'drum-alternate') {
+    return <DrumAlternateGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'speed-alternate') {
+    return <SpeedAlternateGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 4 Session 6 games - Pass Ball Across Midline
+  if (currentGame === 'hand-to-hand-pass') {
+    return <HandToHandPassGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'throw-catch') {
+    return <ThrowCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'target-pass') {
+    return <TargetPassGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rhythm-pass') {
+    return <RhythmPassGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'obstacle-pass') {
+    return <ObstaclePassGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 4 Session 7 games - Follow Cross-Body Arrows
+  if (currentGame === 'arrow-touch') {
+    return <ArrowTouchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'arrow-swipe') {
+    return <ArrowSwipeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'moving-arrows') {
+    return <MovingArrowsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'arrow-sequence') {
+    return <ArrowSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'speed-arrows') {
+    return <SpeedArrowsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 4 Session 8 games - Tap Alternating Sides
+  if (currentGame === 'side-lights-l4s8') {
+    return <SideLightsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'ping-pong-tap') {
+    return <PingPongTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sound-side-tap') {
+    return <SoundSideTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'count-and-tap') {
+    return <CountAndTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'fast-switch') {
+    return <FastSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 4 Session 9 games - Drag Two Objects Simultaneously
+  if (currentGame === 'double-drag') {
+    return <DoubleDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'match-pair') {
+    return <MatchPairGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'shape-sort') {
+    return <ShapeSortGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rope-pull') {
+    return <RopePullGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'balance-drag') {
+    return <BalanceDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 4 Session 10 games - Cross-Body Rhythm Imitation
+  if (currentGame === 'clap-pattern') {
+    return <ClapPatternGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tap-shoulder-pattern') {
+    return <TapShoulderPatternGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'music-copy') {
+    return <MusicCopyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'memory-rhythm') {
+    return <MemoryRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+
+  if (currentGame === 'speed-rhythm') {
+    return <SpeedRhythmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 5 Session 1 games - Follow Moving Object
+  if (currentGame === 'catch-moving-ball') {
+    return <CatchMovingBallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'follow-the-butterfly') {
+    return <FollowTheButterflyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'avoid-the-bomb') {
+    return <AvoidTheBombGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'chase-the-star') {
+    return <ChaseTheStarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'zigzag-follow') {
+    return <ZigZagFollowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 5 Session 2: Targeted Tapping
+  if (currentGame === 'pop-the-bubble') {
+    return <PopTheBubbleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'color-dot-hit') {
+    return <ColorDotHitGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'small-target') {
+    return <SmallTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'moving-target') {
+    return <MovingTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'timed-target') {
+    return <TimedTargetGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 5 Session 3: Drag to Track
+  if (currentGame === 'drag-rocket') {
+    return <RocketDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'drag-train') {
+    return <TrainTrackDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'drag-comet') {
+    return <CometChaseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'drag-river') {
+    return <RiverBoatDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'drag-lightning') {
+    return <LightningDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 5 Session 4: Visual Focus
+  if (currentGame === 'find-the-star') {
+    return <FindTheStarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'memory-flash') {
+    return <MemoryFlashGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'match-shadow') {
+    return <MatchShadowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'what-moved') {
+    return <WhatMovedGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'spot-the-color') {
+    return <SpotTheColorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 5 Session 5: Moving Eye Control
+  if (currentGame === 'side-eye-track') {
+    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'up-down-track') {
+    return <UpDownTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'circular-track') {
+    return <CircularTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'jump-track') {
+    return <JumpTrackGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'multi-dot') {
+    return <MultiDotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 5 Session 6: Speed Matching
+  if (currentGame === 'fast-catch') {
+    return <FastCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'slow-catch') {
+    return <SlowCatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'speed-switch') {
+    return <SpeedSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'music-speed') {
+    return <MusicSpeedGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'countdown-hit') {
+    return <CountdownHitGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 5 Session 7: Depth & Distance — route by game id → config (key forces remount per game)
+  const l5s7DepthConfig = L5_SESSION7_DEPTH_CONFIGS[currentGame];
+  if (l5s7DepthConfig) {
+    return (
+      <DepthDistanceGame
+        key={currentGame}
+        config={l5s7DepthConfig}
+        onBack={() => setCurrentGame('menu')}
+        onComplete={handleContinue}
+      />
+    );
+  }
+
+  // Level 5 Session 8: Multi-Object Tracking
+  if (currentGame === 'follow-red') {
+    return <FollowRedGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'two-moving-balls') {
+    return <TwoMovingBallsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'distraction-mode') {
+    return <DistractionModeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pattern-chase') {
+    return <PatternChaseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'speed-objects') {
+    return <SpeedObjectsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 5 Session 9: Visual Reaction
+  if (currentGame === 'flash-tap') {
+    return <FlashTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'go-stop') {
+    return <GoStopGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'surprise-pop') {
+    return <SurprisePopGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sound-light') {
+    return <SoundLightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'quick-choice') {
+    return <QuickChoiceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 5 Session 10: Integrated Visual Challenge
+  if (currentGame === 'pursuit-combo') {
+    return <PursuitComboGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'focus-relay') {
+    return <FocusRelayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'depth-mix') {
+    return <DepthMixGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'reaction-relay') {
+    return <ReactionRelayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'eagle-eye-quest') {
+    return <EagleEyeQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Therapy display label for breadcrumb
+  const therapyLabel = therapyId === 'speech' ? 'Speech Therapy' : therapyId === 'occupational' ? 'Occupational Therapy' : therapyId.charAt(0).toUpperCase() + therapyId.slice(1).replace(/-/g, ' ');
+
+  // ---------- Menu UI ----------
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <Animated.View style={styles.header} entering={FadeInDown.duration(250)}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <Text style={styles.backText}>Back</Text>
+        </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <Text style={styles.breadcrumbText}>{therapyLabel} › Level {levelNumber} › Session {sessionNumber}</Text>
+          <View style={styles.headerTitleRow}>
+            <Text style={styles.headerTitle}>Session {sessionNumber} Games</Text>
+            <Ionicons name="game-controller" size={22} color="#2563EB" />
+          </View>
+          <Text style={styles.headerSubtitle}>
+            Complete games to earn stars and unlock the next.
+          </Text>
+        </View>
+      </Animated.View>
+
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="sparkles" size={20} color="#F59E0B" />
+          <Text style={styles.sectionTitle}>Choose a Game</Text>
+        </View>
+        <Text style={styles.sectionSubtitle}>
+          Complete each game to earn stars and unlock the next.
+        </Text>
+
+        <View style={styles.gamesGrid}>
+          {GAMES.filter(game => game.available).length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateTitle}>No games available yet</Text>
+              <Text style={styles.emptyStateText}>
+                Games for this session will be added soon!
+              </Text>
+            </View>
+          ) : (
+            GAMES.filter(game => game.available).map((game, index) => {
+              const unlocked = isGameUnlocked(game.id, index);
+              const isLocked = !unlocked;
+              const gameNumber = index + 1;
+              return (
+                <GameMenuCard
+                  key={game.id}
+                  game={game}
+                  index={index}
+                  unlocked={unlocked}
+                  isLocked={isLocked}
+                  gameNumber={gameNumber}
+                  onPress={() => {
+                    if (isLocked) {
+                      Alert.alert('Locked', 'Complete the previous game to unlock this game.');
+                      return;
+                    }
+                    setCurrentGame(game.id as GameKey);
+                  }}
+                  cardStyles={styles}
+                />
+              );
+            })
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  backText: {
+    marginLeft: 4,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0F172A',
+  },
+  breadcrumbText: {
+    fontSize: 12,
+    color: '#64748B',
+    marginBottom: 4,
+  },
+  headerContent: {
+    flex: 1,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+  },
+  content: {
+    padding: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    marginBottom: 24,
+  },
+  gamesGrid: {
+    gap: 16,
+  },
+  gameCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 2,
+    minHeight: 72,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+    marginBottom: 4,
+  },
+  gameCardDisabled: {
+    opacity: 0.7,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F8FAFC',
+  },
+  gameNumberCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  gameNumberText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  lockBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gameIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  gameEmoji: {
+    fontSize: 32,
+  },
+  gameContent: {
+    flex: 1,
+  },
+  gameTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  gameTitleDisabled: {
+    color: '#9CA3AF',
+  },
+  gameDescription: {
+    fontSize: 14,
+    color: '#64748B',
+    lineHeight: 20,
+  },
+  gameDescriptionDisabled: {
+    color: '#9CA3AF',
+  },
+  playBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  emptyState: {
+    padding: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+  },
+});
