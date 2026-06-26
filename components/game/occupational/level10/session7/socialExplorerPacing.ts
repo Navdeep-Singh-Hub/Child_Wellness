@@ -1,0 +1,22 @@
+/** Pacing — OT Level 10 Session 7 · Game 5 Social Explorer capstone */
+export const SOCIAL_EXPLORER_PACING = {
+  rounds: 5,
+  calibrationMs: 3000,
+  tickMs: 80,
+  exploreHoldMs: 1100,
+  exploreGraceMs: 400,
+  connectHoldMs: 1400,
+  connectGraceMs: 450,
+  socialHoldMs: 1700,
+  socialGraceMs: 450,
+  minPostureForConnect: 0.34,
+  minStillnessForConnect: 0.36,
+  minPostureForSocial: 0.36,
+  minAttentionForSocial: 0.38,
+  betweenRoundsMs: 1200,
+  roundIntroMs: 900,
+  fallbackExploreMs: 1800,
+  fallbackConnectMs: 2200,
+  fallbackSocialMs: 2600,
+  starEveryNRounds: 2,
+} as const;

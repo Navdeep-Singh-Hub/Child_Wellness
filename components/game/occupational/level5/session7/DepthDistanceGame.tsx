@@ -81,6 +81,7 @@ const DepthDistanceGame: React.FC<DepthDistanceGameProps> = ({ config, onBack, o
   const screenWidth = useRef(SCREEN_WIDTH);
   const screenHeight = useRef(SCREEN_HEIGHT);
   const endGameRef = useRef<((finalScore: number) => Promise<void>) | null>(null);
+  const scoreRef = useRef(0);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const intervalsRef = useRef<ReturnType<typeof setInterval>[]>([]);
 
@@ -152,6 +153,10 @@ const DepthDistanceGame: React.FC<DepthDistanceGameProps> = ({ config, onBack, o
   }, [endGame]);
 
   useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
     clearTimers();
     stopTTS();
     setShowInfo(true);
@@ -159,6 +164,7 @@ const DepthDistanceGame: React.FC<DepthDistanceGameProps> = ({ config, onBack, o
     setPhase('idle');
     setRound(1);
     setScore(0);
+    scoreRef.current = 0;
     setDone(false);
     setFinalStats(null);
     setNearFarTargets([]);
@@ -176,20 +182,27 @@ const DepthDistanceGame: React.FC<DepthDistanceGameProps> = ({ config, onBack, o
     (success: boolean) => {
       if (!success) return;
 
-      setScore((s) => {
-        const newScore = s + 1;
-        if (newScore >= P.rounds) {
-          scheduleTimeout(() => endGameRef.current?.(newScore), 800);
-        } else {
-          scheduleTimeout(() => setRound((r) => r + 1), 1000);
-        }
-        return newScore;
-      });
+      const newScore = scoreRef.current + 1;
+      scoreRef.current = newScore;
+      setScore(newScore);
+
+      if (newScore >= P.rounds) {
+        scheduleTimeout(() => endGameRef.current?.(newScore), 800);
+      } else {
+        scheduleTimeout(() => setRound((r) => r + 1), 1000);
+      }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       speakTTS('Great!', 0.9, 'en-US');
     },
     [scheduleTimeout],
+  );
+
+  const layerZIndex = (layer: LayerTarget) => (layer.isFront ? 3 : layer.id === 'mid' ? 2 : 1);
+
+  const layersFrontFirst = useCallback(
+    (items: LayerTarget[]) => [...items].sort((a, b) => layerZIndex(b) - layerZIndex(a)),
+    [],
   );
 
   const randomX = useCallback((size: number) => Math.random() * (screenWidth.current - size) + size / 2, []);
@@ -199,9 +212,19 @@ const DepthDistanceGame: React.FC<DepthDistanceGameProps> = ({ config, onBack, o
   );
 
   const getAnchorPoint = useCallback(
-    () => ({ x: screenWidth.current * 0.5, y: screenHeight.current * 0.86 }),
+    () => ({ x: screenWidth.current * 0.5, y: screenHeight.current * 0.5 }),
     [],
   );
+
+  const clampX = useCallback((x: number, size: number) => {
+    const pad = 10;
+    return Math.max(size / 2 + pad, Math.min(screenWidth.current - size / 2 - pad, x));
+  }, []);
+
+  const clampY = useCallback((y: number, size: number) => {
+    const pad = 10;
+    return Math.max(size / 2 + pad, Math.min(screenHeight.current - size / 2 - pad, y));
+  }, []);
 
   const startNearFarRound = useCallback(() => {
     const isNear = Math.random() > 0.5;
@@ -210,17 +233,35 @@ const DepthDistanceGame: React.FC<DepthDistanceGameProps> = ({ config, onBack, o
 
     const anchor = getAnchorPoint();
     setAnchorPoint(anchor);
-    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.9;
 
-    const placeOnRay = (distance: number, near: boolean): NearFarTarget => ({
-      id: near ? 'near' : 'far',
-      x: anchor.x + Math.cos(angle) * distance,
-      y: anchor.y + Math.sin(angle) * distance,
-      isNear: near,
-      scale: 1,
-    });
+    /** Even rounds: near on one side, far on the other (you stay centered). Odd: same depth line from center. */
+    const useSplitLayout = round % 2 === 0;
+    let targets: NearFarTarget[];
 
-    setNearFarTargets([placeOnRay(NEAR_DISTANCE, true), placeOnRay(FAR_DISTANCE, false)]);
+    if (useSplitLayout) {
+      const nearOnLeft = Math.random() > 0.5;
+      const nearX = clampX(anchor.x + (nearOnLeft ? -NEAR_DISTANCE : NEAR_DISTANCE), NEAR_SIZE);
+      const farX = clampX(anchor.x + (nearOnLeft ? FAR_DISTANCE : -FAR_DISTANCE), FAR_SIZE);
+      targets = [
+        { id: 'near', x: nearX, y: anchor.y, isNear: true, scale: 1 },
+        { id: 'far', x: farX, y: anchor.y, isNear: false, scale: 1 },
+      ];
+    } else {
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.9;
+      const placeOnRay = (distance: number, near: boolean): NearFarTarget => {
+        const size = near ? NEAR_SIZE : FAR_SIZE;
+        return {
+          id: near ? 'near' : 'far',
+          x: clampX(anchor.x + Math.cos(angle) * distance, size),
+          y: clampY(anchor.y + Math.sin(angle) * distance, size),
+          isNear: near,
+          scale: 1,
+        };
+      };
+      targets = [placeOnRay(NEAR_DISTANCE, true), placeOnRay(FAR_DISTANCE, false)];
+    }
+
+    setNearFarTargets(targets);
 
     scheduleTimeout(() => {
       speakTTS(
@@ -229,7 +270,7 @@ const DepthDistanceGame: React.FC<DepthDistanceGameProps> = ({ config, onBack, o
         'en-US',
       );
     }, 400);
-  }, [getAnchorPoint, scheduleTimeout]);
+  }, [clampX, clampY, getAnchorPoint, round, scheduleTimeout]);
 
   const startZoomRound = useCallback(() => {
     setZoomPos({ x: randomX(70), y: randomY(70) });
@@ -290,17 +331,30 @@ const DepthDistanceGame: React.FC<DepthDistanceGameProps> = ({ config, onBack, o
   }, [clearTimers, randomX, randomY, scheduleInterval, scheduleTimeout]);
 
   const startLayersRound = useCallback(() => {
-    const baseX = randomX(100);
-    const baseY = randomY(100);
+    const cx = screenWidth.current * 0.5;
+    const cy = screenHeight.current * 0.46;
     const frontIndex = Math.floor(Math.random() * 3);
-    const layerData: LayerTarget[] = [
-      { id: 'back', x: baseX - 30, y: baseY + 20, size: 55, color: '#93C5FD', emoji: '🔵', isFront: frontIndex === 0 },
-      { id: 'mid', x: baseX + 20, y: baseY, size: 70, color: '#F9A8D4', emoji: '🟣', isFront: frontIndex === 1 },
-      { id: 'front', x: baseX, y: baseY - 15, size: 85, color: '#FCD34D', emoji: '🟡', isFront: frontIndex === 2 },
+
+    const specs = [
+      { id: 'back' as const, dx: -22, dy: 26, size: 58, color: '#93C5FD', emoji: '🔵' },
+      { id: 'mid' as const, dx: 18, dy: 10, size: 74, color: '#F9A8D4', emoji: '🟣' },
+      { id: 'front' as const, dx: 0, dy: -14, size: 90, color: '#FCD34D', emoji: '🟡' },
     ];
-    setLayers(layerData.map((l, i) => ({ ...l, isFront: i === frontIndex })));
-    scheduleTimeout(() => speakTTS('Tap the front circle!', 0.8, 'en-US'), 300);
-  }, [randomX, randomY, scheduleTimeout]);
+
+    setLayers(
+      specs.map((spec, i) => ({
+        id: spec.id,
+        x: cx + spec.dx,
+        y: cy + spec.dy,
+        size: spec.size,
+        color: spec.color,
+        emoji: spec.emoji,
+        isFront: i === frontIndex,
+      })),
+    );
+
+    scheduleTimeout(() => speakTTS('Tap the circle with the glowing ring!', 0.8, 'en-US'), 300);
+  }, [scheduleTimeout]);
 
   const startRound = useCallback(() => {
     clearTimers();
@@ -394,16 +448,19 @@ const DepthDistanceGame: React.FC<DepthDistanceGameProps> = ({ config, onBack, o
       }
 
       if (config.mode === 'layers') {
-        for (const layer of layers) {
+        if (layers.length === 0) return;
+
+        for (const layer of layersFrontFirst(layers)) {
           if (!isTapNearTarget(event, layer.x, layer.y, layer.size, TOLERANCE)) continue;
           if (layer.isFront) {
             advanceOrFinish(true);
           } else {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-            speakTTS('Tap the front layer!', 0.8, 'en-US');
+            speakTTS('Tap the circle with the glowing ring!', 0.8, 'en-US');
           }
           return;
         }
+        return;
       }
     },
     [
@@ -415,6 +472,7 @@ const DepthDistanceGame: React.FC<DepthDistanceGameProps> = ({ config, onBack, o
       fallPos.x,
       fallPos.y,
       layers,
+      layersFrontFirst,
       nearFarTargets,
       phase,
       shrinkActive,
@@ -433,6 +491,10 @@ const DepthDistanceGame: React.FC<DepthDistanceGameProps> = ({ config, onBack, o
       return tapNear ? 'Tap closer to 📍 You' : 'Tap farther from 📍 You';
     }
     if (config.mode === 'zoom' && zoomReady) return '🔍 Tap now — it is big!';
+    if (config.mode === 'layers') {
+      const front = layers.find((l) => l.isFront);
+      return front ? `Tap the front ${front.emoji} (glowing ring)` : config.instruction;
+    }
     return config.instruction;
   };
 
@@ -501,20 +563,31 @@ const DepthDistanceGame: React.FC<DepthDistanceGameProps> = ({ config, onBack, o
       );
     }
 
-    return layers.map((layer) => (
-      <View
-        key={layer.id}
-        pointerEvents="none"
-        style={{
-          position: 'absolute',
-          left: layer.x - layer.size / 2,
-          top: layer.y - layer.size / 2,
-          zIndex: layer.isFront ? 3 : layer.id === 'mid' ? 2 : 1,
-        }}
-      >
-        <DepthSphere size={layer.size} color={layer.color} emoji={layer.emoji} dimmed={!layer.isFront} accentColor={theme.accent} />
-      </View>
-    ));
+    if (config.mode === 'layers') {
+      return layersFrontFirst(layers).map((layer) => (
+        <View
+          key={layer.id}
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: layer.x - layer.size / 2,
+            top: layer.y - layer.size / 2,
+            zIndex: layerZIndex(layer),
+          }}
+        >
+          <DepthSphere
+            size={layer.size}
+            color={layer.color}
+            emoji={layer.emoji}
+            dimmed={!layer.isFront}
+            highlight={layer.isFront}
+            accentColor={theme.accent}
+          />
+        </View>
+      ));
+    }
+
+    return null;
   };
 
   return (

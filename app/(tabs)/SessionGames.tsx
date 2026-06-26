@@ -72,7 +72,7 @@ import { SlowTaskWithPopUpDistractionGame } from '@/components/game/speech/level
 import { SoundDistractionChallengeGame } from '@/components/game/speech/level1/session10/SoundDistractionChallengeGame';
 import { TapTheTargetIgnoreDistractionGame } from '@/components/game/speech/level1/session10/TapTheTargetIgnoreDistractionGame';
 
-// Speech Therapy Level 2 — Action Imitation Session 1
+// Speech Therapy Level 2 ? Action Imitation Session 1
 import { CopyTheClapGame } from '@/components/game/speech/action-imitation/session1/CopyTheClapGame';
 import { DanceFreezeGame } from '@/components/game/speech/action-imitation/session1/DanceFreezeGame';
 import { FollowMyMoveGame } from '@/components/game/speech/action-imitation/session1/FollowMyMoveGame';
@@ -81,341 +81,341 @@ import { SillyActionMatchGame } from '@/components/game/speech/action-imitation/
 import { UNLOCK_ALL_THERAPY_CONTENT } from '@/constants/unlockConfig';
 import { SPEECH_LEVEL } from '@/constants/speechLevels';
 
-// Speech Therapy Level 2 — Body Parts & Self Awareness Session 2
+// Speech Therapy Level 2 ? Body Parts & Self Awareness Session 2
 import { BodyPuzzleGame as SpeechBodyPuzzleGame } from '@/components/game/speech/body-parts/session2/BodyPuzzleGame';
 import { DressTheCharacterGame } from '@/components/game/speech/body-parts/session2/DressTheCharacterGame';
 import { SimonSaysBodyGame } from '@/components/game/speech/body-parts/session2/SimonSaysBodyGame';
 import { TouchTheNoseGame } from '@/components/game/speech/body-parts/session2/TouchTheNoseGame';
 import { WhatHelpsYouSeeGame } from '@/components/game/speech/body-parts/session2/WhatHelpsYouSeeGame';
 
-// Speech Therapy Level 2 — Objects, Animals & Vocabulary Session 3
+// Speech Therapy Level 2 ? Objects, Animals & Vocabulary Session 3
 import { AlphabetHuntGame } from '@/components/game/speech/vocabulary/session3/AlphabetHuntGame';
 import { FindTheAnimalGame } from '@/components/game/speech/vocabulary/session3/FindTheAnimalGame';
 import { FruitBasketGame } from '@/components/game/speech/vocabulary/session3/FruitBasketGame';
 import { VegetableFarmGame } from '@/components/game/speech/vocabulary/session3/VegetableFarmGame';
 import { VehicleGarageGame } from '@/components/game/speech/vocabulary/session3/VehicleGarageGame';
 
-// Speech Therapy Level 2 — Categories & Attributes Session 4
+// Speech Therapy Level 2 ? Categories & Attributes Session 4
 import { BigVsSmallGame } from '@/components/game/speech/categories/session4/BigVsSmallGame';
 import { ColorMatchTrainGame } from '@/components/game/speech/categories/session4/ColorMatchTrainGame';
 import { PickTheDifferentOneGame } from '@/components/game/speech/categories/session4/PickTheDifferentOneGame';
 import { SameCategoryGame } from '@/components/game/speech/categories/session4/SameCategoryGame';
 import { SoftOrHardGame } from '@/components/game/speech/categories/session4/SoftOrHardGame';
 
-// Speech Therapy Level 2 — Positions & Prepositions Session 5
+// Speech Therapy Level 2 ? Positions & Prepositions Session 5
 import { BehindTheTreeGame } from '@/components/game/speech/positions/session5/BehindTheTreeGame';
 import { LeftOrRightGame } from '@/components/game/speech/positions/session5/LeftOrRightGame';
 import { NearOrFarGame } from '@/components/game/speech/positions/session5/NearOrFarGame';
 import { PutTeddyInTheBoxGame } from '@/components/game/speech/positions/session5/PutTeddyInTheBoxGame';
 import { UnderTheTableGame } from '@/components/game/speech/positions/session5/UnderTheTableGame';
 
-// Speech Therapy Level 2 — Actions, Verbs & Functions Session 6
+// Speech Therapy Level 2 ? Actions, Verbs & Functions Session 6
 import { MatchTheActionGame } from '@/components/game/speech/actions/session6/MatchTheActionGame';
 import { ToolMatchGame } from '@/components/game/speech/actions/session6/ToolMatchGame';
 import { WhatDoWeEatWithGame } from '@/components/game/speech/actions/session6/WhatDoWeEatWithGame';
 import { WhatDoesADoctorDoGame } from '@/components/game/speech/actions/session6/WhatDoesADoctorDoGame';
 import { WhoIsRunningGame } from '@/components/game/speech/actions/session6/WhoIsRunningGame';
 
-// Speech Therapy Level 2 — Places, People & Community Session 7
+// Speech Therapy Level 2 ? Places, People & Community Session 7
 import { BoyOrGirlGame } from '@/components/game/speech/community/session7/BoyOrGirlGame';
 import { CommunityHelpersGame } from '@/components/game/speech/community/session7/CommunityHelpersGame';
 import { FamilyMatchGame } from '@/components/game/speech/community/session7/FamilyMatchGame';
 import { FindTheKitchenGame } from '@/components/game/speech/community/session7/FindTheKitchenGame';
 import { WhereDoesTeacherWorkGame } from '@/components/game/speech/community/session7/WhereDoesTeacherWorkGame';
 
-// Speech Therapy Level 2 — Descriptions & Reasoning Session 8
+// Speech Therapy Level 2 ? Descriptions & Reasoning Session 8
 import { FindByFunctionGame } from '@/components/game/speech/descriptions/session8/FindByFunctionGame';
 import { GuessTheObjectGame } from '@/components/game/speech/descriptions/session8/GuessTheObjectGame';
 import { HiddenPartPuzzleGame } from '@/components/game/speech/descriptions/session8/HiddenPartPuzzleGame';
 import { MysteryBagGame } from '@/components/game/speech/descriptions/session8/MysteryBagGame';
 import { WhatAmIDescribingGame } from '@/components/game/speech/descriptions/session8/WhatAmIDescribingGame';
 
-// Speech Therapy Level 2 — Sequences, Missing Items & Logic Session 9
+// Speech Therapy Level 2 ? Sequences, Missing Items & Logic Session 9
 import { CompleteThePatternGame } from '@/components/game/speech/sequences/session9/CompleteThePatternGame';
 import { FindTheHiddenToyGame } from '@/components/game/speech/sequences/session9/FindTheHiddenToyGame';
 import { FirstMiddleLastGame } from '@/components/game/speech/sequences/session9/FirstMiddleLastGame';
 import { StoryOrderCardsGame } from '@/components/game/speech/sequences/session9/StoryOrderCardsGame';
 import { WhatIsMissingGame } from '@/components/game/speech/sequences/session9/WhatIsMissingGame';
 
-// Speech Therapy Level 2 — Advanced Comprehension Concepts Session 10
+// Speech Therapy Level 2 ? Advanced Comprehension Concepts Session 10
 import { BelongsOrNotGame } from '@/components/game/speech/comprehension/session10/BelongsOrNotGame';
 import { Follow2StepDirectionsGame } from '@/components/game/speech/comprehension/session10/Follow2StepDirectionsGame';
 import { PronounMatchGame } from '@/components/game/speech/comprehension/session10/PronounMatchGame';
 import { SingularOrPluralGame } from '@/components/game/speech/comprehension/session10/SingularOrPluralGame';
 import { SmartListenerChallengeGame } from '@/components/game/speech/comprehension/session10/SmartListenerChallengeGame';
 
-// Speech Therapy Level 5 Session 1 — Air Awareness & Airflow Cause-Effect
+// Speech Therapy Level 5 Session 1 ? Air Awareness & Airflow Cause-Effect
 import { AirPainterGame } from '@/components/game/speech/breath-awareness/session1/AirPainterGame';
 import { BubbleWakeupGame } from '@/components/game/speech/breath-awareness/session1/BubbleWakeupGame';
 import { CloudPuffGame } from '@/components/game/speech/breath-awareness/session1/CloudPuffGame';
 import { MagicFeatherGame } from '@/components/game/speech/breath-awareness/session1/MagicFeatherGame';
 import { WindmillFriendGame } from '@/components/game/speech/breath-awareness/session1/WindmillFriendGame';
 
-// Speech Therapy Level 5 Session 2 — Mouth Movement Imitation
+// Speech Therapy Level 5 Session 2 ? Mouth Movement Imitation
 import { CopyHappyMouthGame } from '@/components/game/speech/mouth-imitation/session2/CopyHappyMouthGame';
 import { FunnyMonsterMouthGame } from '@/components/game/speech/mouth-imitation/session2/FunnyMonsterMouthGame';
 import { MirrorMouthMatchGame } from '@/components/game/speech/mouth-imitation/session2/MirrorMouthMatchGame';
 import { OpenCloseDanceGame } from '@/components/game/speech/mouth-imitation/session2/OpenCloseDanceGame';
 import { SillyFaceCopyGame } from '@/components/game/speech/mouth-imitation/session2/SillyFaceCopyGame';
 
-// Speech Therapy Level 5 Session 3 — Breath Activation & Start–Stop Air
+// Speech Therapy Level 5 Session 3 ? Breath Activation & Start?Stop Air
 import { BalloonBreathGame } from '@/components/game/speech/breath-activation/session3/BalloonBreathGame';
 import { MagicAirSwitchGame } from '@/components/game/speech/breath-activation/session3/MagicAirSwitchGame';
 import { StartStopCloudGame } from '@/components/game/speech/breath-activation/session3/StartStopCloudGame';
 import { WakeFeatherGame } from '@/components/game/speech/breath-activation/session3/WakeFeatherGame';
 import { WindmillFreezeGame } from '@/components/game/speech/breath-activation/session3/WindmillFreezeGame';
 
-// Speech Therapy Level 5 Session 4 — Lip Awareness & Lip Sensory Mapping
+// Speech Therapy Level 5 Session 4 ? Lip Awareness & Lip Sensory Mapping
 import { FunnyFishLipsGame } from '@/components/game/speech/lip-awareness/session4/FunnyFishLipsGame';
 import { HappyLipsMirrorGame } from '@/components/game/speech/lip-awareness/session4/HappyLipsMirrorGame';
 import { LipExplorerAdventureGame } from '@/components/game/speech/lip-awareness/session4/LipExplorerAdventureGame';
 import { LipTapFriendGame } from '@/components/game/speech/lip-awareness/session4/LipTapFriendGame';
 import { MagicLipGlowGame } from '@/components/game/speech/lip-awareness/session4/MagicLipGlowGame';
 
-// Speech Therapy Level 5 Session 5 — Jaw Awareness & Open–Close Basics
+// Speech Therapy Level 5 Session 5 ? Jaw Awareness & Open?Close Basics
 import { FunnyJawAdventureGame } from '@/components/game/speech/jaw-awareness/session5/FunnyJawAdventureGame';
 import { JawHungryCrocodileGame } from '@/components/game/speech/jaw-awareness/session5/JawHungryCrocodileGame';
 import { JawOpenCloseDanceGame } from '@/components/game/speech/jaw-awareness/session5/JawOpenCloseDanceGame';
 import { MouthElevatorGame } from '@/components/game/speech/jaw-awareness/session5/MouthElevatorGame';
 import { SleepyLionMouthGame } from '@/components/game/speech/jaw-awareness/session5/SleepyLionMouthGame';
 
-// Speech Therapy Level 5 Session 6 — Facial Imitation & Mirror Play
+// Speech Therapy Level 5 Session 6 ? Facial Imitation & Mirror Play
 import { FaceAdventureCopyGame } from '@/components/game/speech/facial-imitation/session6/FaceAdventureCopyGame';
 import { FunnyFaceMirrorGame } from '@/components/game/speech/facial-imitation/session6/FunnyFaceMirrorGame';
 import { HappySadCopyGame } from '@/components/game/speech/facial-imitation/session6/HappySadCopyGame';
 import { MirrorDanceFacesGame } from '@/components/game/speech/facial-imitation/session6/MirrorDanceFacesGame';
 import { MonsterFaceMatchGame } from '@/components/game/speech/facial-imitation/session6/MonsterFaceMatchGame';
 
-// Speech Therapy Level 5 Session 7 — Oral Sensory Tolerance
+// Speech Therapy Level 5 Session 7 ? Oral Sensory Tolerance
 import { BubbleNoseTicklesGame } from '@/components/game/speech/oral-sensory-tolerance/session7/BubbleNoseTicklesGame';
 import { CalmMouthAdventureGame } from '@/components/game/speech/oral-sensory-tolerance/session7/CalmMouthAdventureGame';
 import { FunnyMouthExplorerGame } from '@/components/game/speech/oral-sensory-tolerance/session7/FunnyMouthExplorerGame';
 import { MagicFaceBreezeGame } from '@/components/game/speech/oral-sensory-tolerance/session7/MagicFaceBreezeGame';
 import { SoftSensoryMonsterGame } from '@/components/game/speech/oral-sensory-tolerance/session7/SoftSensoryMonsterGame';
 
-// Speech Therapy Level 5 Session 8 — Lip Airflow Control System
+// Speech Therapy Level 5 Session 8 ? Lip Airflow Control System
 import { FindMouthPartGame } from '@/components/game/speech/mouth-attention/session8/FindMouthPartGame';
 import { FollowFunnyMouthGame } from '@/components/game/speech/mouth-attention/session8/FollowFunnyMouthGame';
 import { MagicMouthSpotlightGame } from '@/components/game/speech/mouth-attention/session8/MagicMouthSpotlightGame';
 import { MouthTreasureHuntGame } from '@/components/game/speech/mouth-attention/session8/MouthTreasureHuntGame';
 import { WhereDidItGoMouthGame } from '@/components/game/speech/mouth-attention/session8/WhereDidItGoMouthGame';
 
-// Speech Therapy Level 5 Session 9 — Tongue Awareness & Internal Mapping
+// Speech Therapy Level 5 Session 9 ? Tongue Awareness & Internal Mapping
 import { FriendlyTongueExplorerGame } from '@/components/game/speech/tongue-awareness/session9/FriendlyTongueExplorerGame';
 import { HungryTongueMonsterGame } from '@/components/game/speech/tongue-awareness/session9/HungryTongueMonsterGame';
 import { MagicTongueMirrorGame } from '@/components/game/speech/tongue-awareness/session9/MagicTongueMirrorGame';
 import { TongueHideSeekGame } from '@/components/game/speech/tongue-awareness/session9/TongueHideSeekGame';
 import { TongueTreasureAdventureGame } from '@/components/game/speech/tongue-awareness/session9/TongueTreasureAdventureGame';
 
-// Speech Therapy Level 5 Session 10 — Basic Oral Imitation Integration
+// Speech Therapy Level 5 Session 10 ? Basic Oral Imitation Integration
 import { AirMouthPlayGame } from '@/components/game/speech/oral-imitation-integration/session10/AirMouthPlayGame';
 import { CopyMyMouthFriendGame } from '@/components/game/speech/oral-imitation-integration/session10/CopyMyMouthFriendGame';
 import { FunnyMouthAdventureGame } from '@/components/game/speech/oral-imitation-integration/session10/FunnyMouthAdventureGame';
 import { MouthHeroAdventureGame } from '@/components/game/speech/oral-imitation-integration/session10/MouthHeroAdventureGame';
 import { OralMirrorPartyGame } from '@/components/game/speech/oral-imitation-integration/session10/OralMirrorPartyGame';
 
-// Speech Therapy Level 6 Session 1 — Oral Imitation (Speech Motor Readiness)
+// Speech Therapy Level 6 Session 1 ? Oral Imitation (Speech Motor Readiness)
 import { MirrorSpeechPlayGame } from '@/components/game/speech/speech-oral-imitation/session1/MirrorSpeechPlayGame';
 import { MouthPatternMatchGame } from '@/components/game/speech/speech-oral-imitation/session1/MouthPatternMatchGame';
 import { SpeechHeroWarmupGame } from '@/components/game/speech/speech-oral-imitation/session1/SpeechHeroWarmupGame';
 import { SpeechMouthCopyGame } from '@/components/game/speech/speech-oral-imitation/session1/SpeechMouthCopyGame';
 import { TalkingRobotFaceGame } from '@/components/game/speech/speech-oral-imitation/session1/TalkingRobotFaceGame';
 
-// Speech Therapy Level 6 Session 2 — Sound Initiation
+// Speech Therapy Level 6 Session 2 ? Sound Initiation
 import { FunnyVoiceEchoGame } from '@/components/game/speech/sound-initiation/session2/FunnyVoiceEchoGame';
 import { MagicVoiceBalloonGame } from '@/components/game/speech/sound-initiation/session2/MagicVoiceBalloonGame';
 import { SoundHeroStarterGame } from '@/components/game/speech/sound-initiation/session2/SoundHeroStarterGame';
 import { TalkingRobotStartGame } from '@/components/game/speech/sound-initiation/session2/TalkingRobotStartGame';
 import { WakeSleepingStarGame } from '@/components/game/speech/sound-initiation/session2/WakeSleepingStarGame';
 
-// Speech Therapy Level 7 Session 1 — Lip + Jaw Coordination
+// Speech Therapy Level 7 Session 1 ? Lip + Jaw Coordination
 import { FunnyMouthTeamworkGame } from '@/components/game/speech/lip-jaw-coordination/session1/FunnyMouthTeamworkGame';
 import { MagicMouthSwitchGame } from '@/components/game/speech/lip-jaw-coordination/session1/MagicMouthSwitchGame';
 import { MouthCoordinationHeroGame } from '@/components/game/speech/lip-jaw-coordination/session1/MouthCoordinationHeroGame';
 import { RobotMouthBuilderGame } from '@/components/game/speech/lip-jaw-coordination/session1/RobotMouthBuilderGame';
 import { TalkingFaceRhythmGame } from '@/components/game/speech/lip-jaw-coordination/session1/TalkingFaceRhythmGame';
 
-// Speech Therapy Level 7 Session 2 — Tongue + Jaw Coordination
+// Speech Therapy Level 7 Session 2 ? Tongue + Jaw Coordination
 import { FunnyMonsterTongueMovesGame } from '@/components/game/speech/tongue-jaw-coordination/session2/FunnyMonsterTongueMovesGame';
 import { MagicMouthTunnelGame } from '@/components/game/speech/tongue-jaw-coordination/session2/MagicMouthTunnelGame';
 import { TalkingTongueRhythmGame } from '@/components/game/speech/tongue-jaw-coordination/session2/TalkingTongueRhythmGame';
 import { TongueCoordinationHeroGame } from '@/components/game/speech/tongue-jaw-coordination/session2/TongueCoordinationHeroGame';
 import { TongueExplorerTeamworkGame } from '@/components/game/speech/tongue-jaw-coordination/session2/TongueExplorerTeamworkGame';
 
-// Speech Therapy Level 7 Session 3 — Tongue + Lips Coordination
+// Speech Therapy Level 7 Session 3 ? Tongue + Lips Coordination
 import { FunnyTongueLipsTeamGame } from '@/components/game/speech/tongue-lip-coordination/session3/FunnyTongueLipsTeamGame';
 import { MagicLipTongueSwitchGame } from '@/components/game/speech/tongue-lip-coordination/session3/MagicLipTongueSwitchGame';
 import { MonsterMouthMixUpGame } from '@/components/game/speech/tongue-lip-coordination/session3/MonsterMouthMixUpGame';
 import { TalkingFaceCoordinationGame } from '@/components/game/speech/tongue-lip-coordination/session3/TalkingFaceCoordinationGame';
 import { TongueLipsHeroGame } from '@/components/game/speech/tongue-lip-coordination/session3/TongueLipsHeroGame';
 
-// Speech Therapy Level 7 Session 4 — Breath + Lips Coordination
+// Speech Therapy Level 7 Session 4 ? Breath + Lips Coordination
 import { BreathLipsHeroGame } from '@/components/game/speech/breath-lip-coordination/session4/BreathLipsHeroGame';
 import { FunnyBalloonBreathsGame } from '@/components/game/speech/breath-lip-coordination/session4/FunnyBalloonBreathsGame';
 import { MagicWindLipsGame } from '@/components/game/speech/breath-lip-coordination/session4/MagicWindLipsGame';
 import { RobotWindMouthGame } from '@/components/game/speech/breath-lip-coordination/session4/RobotWindMouthGame';
 import { WindRhythmAdventureGame } from '@/components/game/speech/breath-lip-coordination/session4/WindRhythmAdventureGame';
 
-// Speech Therapy Level 7 Session 5 — Breath + Jaw Coordination
+// Speech Therapy Level 7 Session 5 ? Breath + Jaw Coordination
 import { BreathJawHeroGame } from '@/components/game/speech/breath-jaw-coordination/session5/BreathJawHeroGame';
 import { BreathingTrainRhythmGame } from '@/components/game/speech/breath-jaw-coordination/session5/BreathingTrainRhythmGame';
 import { FunnyDragonBreathsGame } from '@/components/game/speech/breath-jaw-coordination/session5/FunnyDragonBreathsGame';
 import { MagicWindMouthGame } from '@/components/game/speech/breath-jaw-coordination/session5/MagicWindMouthGame';
 import { RobotAirMouthSwitchGame } from '@/components/game/speech/breath-jaw-coordination/session5/RobotAirMouthSwitchGame';
 
-// Speech Therapy Level 7 Session 6 — Multi-Step Coordination
+// Speech Therapy Level 7 Session 6 ? Multi-Step Coordination
 import { CoordinationHeroQuestGame } from '@/components/game/speech/multi-step-coordination/session6/CoordinationHeroQuestGame';
 import { FunnyMonsterComboMovesGame } from '@/components/game/speech/multi-step-coordination/session6/FunnyMonsterComboMovesGame';
 import { MagicMouthStepsGame } from '@/components/game/speech/multi-step-coordination/session6/MagicMouthStepsGame';
 import { RobotMouthBuilderSequenceGame } from '@/components/game/speech/multi-step-coordination/session6/RobotMouthBuilderSequenceGame';
 import { TalkingAdventureRhythmGame } from '@/components/game/speech/multi-step-coordination/session6/TalkingAdventureRhythmGame';
 
-// Speech Therapy Level 7 Session 7 — Oral Sequencing
+// Speech Therapy Level 7 Session 7 ? Oral Sequencing
 import { FunnyMonsterStepsGame } from '@/components/game/speech/oral-sequencing/session7/FunnyMonsterStepsGame';
 import { MagicMouthSequenceGame } from '@/components/game/speech/oral-sequencing/session7/MagicMouthSequenceGame';
 import { RobotMemoryMouthGame } from '@/components/game/speech/oral-sequencing/session7/RobotMemoryMouthGame';
 import { SequenceHeroAdventureGame } from '@/components/game/speech/oral-sequencing/session7/SequenceHeroAdventureGame';
 import { TalkingRhythmSequenceGame } from '@/components/game/speech/oral-sequencing/session7/TalkingRhythmSequenceGame';
 
-// Speech Therapy Level 7 Session 8 — Timing Control
+// Speech Therapy Level 7 Session 8 ? Timing Control
 import { FunnyTimingMonsterGame } from '@/components/game/speech/timing-control/session8/FunnyTimingMonsterGame';
 import { MagicMouthBeatGame } from '@/components/game/speech/timing-control/session8/MagicMouthBeatGame';
 import { RobotPauseGoGame } from '@/components/game/speech/timing-control/session8/RobotPauseGoGame';
 import { TalkingRhythmRoadGame } from '@/components/game/speech/timing-control/session8/TalkingRhythmRoadGame';
 import { TimingHeroChallengeGame } from '@/components/game/speech/timing-control/session8/TimingHeroChallengeGame';
-// Speech Therapy Level 7 Session 9 — Motor Planning
+// Speech Therapy Level 7 Session 9 ? Motor Planning
 import { FunnyMonsterMissionGame } from '@/components/game/speech/motor-planning/session9/FunnyMonsterMissionGame';
 import { MagicMouthPlannerGame } from '@/components/game/speech/motor-planning/session9/MagicMouthPlannerGame';
 import { MotorPlanningHeroGame } from '@/components/game/speech/motor-planning/session9/MotorPlanningHeroGame';
 import { RobotCopyChallengeGame } from '@/components/game/speech/motor-planning/session9/RobotCopyChallengeGame';
 import { TalkingPathAdventureGame } from '@/components/game/speech/motor-planning/session9/TalkingPathAdventureGame';
-// Speech Therapy Level 7 Session 10 — Functional Coordination
+// Speech Therapy Level 7 Session 10 ? Functional Coordination
 import { CoordinationHeroGraduationGame } from '@/components/game/speech/functional-coordination/session10/CoordinationHeroGraduationGame';
 import { FunnyTalkingMonsterGame } from '@/components/game/speech/functional-coordination/session10/FunnyTalkingMonsterGame';
 import { MagicMouthTeamworkGame } from '@/components/game/speech/functional-coordination/session10/MagicMouthTeamworkGame';
 import { RobotMouthAdventureGame } from '@/components/game/speech/functional-coordination/session10/RobotMouthAdventureGame';
 import { TalkingRhythmQuestGame } from '@/components/game/speech/functional-coordination/session10/TalkingRhythmQuestGame';
 
-// Speech Therapy Level 6 Session 10 — Speech Readiness Completion
+// Speech Therapy Level 6 Session 10 ? Speech Readiness Completion
 import { LittleSpeakerCelebrationGame } from '@/components/game/speech/speech-readiness-completion/session10/LittleSpeakerCelebrationGame';
 import { MagicMouthMissionGame } from '@/components/game/speech/speech-readiness-completion/session10/MagicMouthMissionGame';
 import { SpeechAdventurePartyGame } from '@/components/game/speech/speech-readiness-completion/session10/SpeechAdventurePartyGame';
 import { SpeechHeroGraduationGame } from '@/components/game/speech/speech-readiness-completion/session10/SpeechHeroGraduationGame';
 import { TalkingFriendChallengeGame } from '@/components/game/speech/speech-readiness-completion/session10/TalkingFriendChallengeGame';
 
-// Speech Therapy Level 6 Session 9 — Functional Vocal Intent
+// Speech Therapy Level 6 Session 9 ? Functional Vocal Intent
 import { HelpCharacterSpeakGame } from '@/components/game/speech/functional-vocal-intent/session9/HelpCharacterSpeakGame';
 import { LittleCommunicatorHeroGame } from '@/components/game/speech/functional-vocal-intent/session9/LittleCommunicatorHeroGame';
 import { MagicSoundRequestGame } from '@/components/game/speech/functional-vocal-intent/session9/MagicSoundRequestGame';
 import { TalkingFriendTurnTakingGame } from '@/components/game/speech/functional-vocal-intent/session9/TalkingFriendTurnTakingGame';
 import { VoiceChoiceAdventureGame } from '@/components/game/speech/functional-vocal-intent/session9/VoiceChoiceAdventureGame';
 
-// Speech Therapy Level 6 Session 7 — Sound Stability
+// Speech Therapy Level 6 Session 7 ? Sound Stability
 import { MagicVoiceRiverGame } from '@/components/game/speech/sound-stability/session7/MagicVoiceRiverGame';
 import { RobotPowerVoiceGame } from '@/components/game/speech/sound-stability/session7/RobotPowerVoiceGame';
 import { SpeechStabilityHeroGame } from '@/components/game/speech/sound-stability/session7/SpeechStabilityHeroGame';
 import { TalkingBalloonHoldGame } from '@/components/game/speech/sound-stability/session7/TalkingBalloonHoldGame';
 import { VoiceTrainJourneyGame } from '@/components/game/speech/sound-stability/session7/VoiceTrainJourneyGame';
 
-// Speech Therapy Level 6 Session 8 — Early Syllable Control
+// Speech Therapy Level 6 Session 8 ? Early Syllable Control
 import { LittleSpeakerHeroGame } from '@/components/game/speech/early-syllable-control/session8/LittleSpeakerHeroGame';
 import { RobotSpeechStepsGame } from '@/components/game/speech/early-syllable-control/session8/RobotSpeechStepsGame';
 import { SpeechTrainBuilderGame } from '@/components/game/speech/early-syllable-control/session8/SpeechTrainBuilderGame';
 import { SyllablePopPartyGame } from '@/components/game/speech/early-syllable-control/session8/SyllablePopPartyGame';
 import { TalkingAnimalSyllablesGame } from '@/components/game/speech/early-syllable-control/session8/TalkingAnimalSyllablesGame';
 
-// Speech Therapy Level 6 Session 6 — Motor Speech Timing
+// Speech Therapy Level 6 Session 6 ? Motor Speech Timing
 import { MagicMouthMetronomeGame } from '@/components/game/speech/motor-speech-timing/session6/MagicMouthMetronomeGame';
 import { SpeechBeatRobotGame } from '@/components/game/speech/motor-speech-timing/session6/SpeechBeatRobotGame';
 import { SpeechRhythmHeroGame } from '@/components/game/speech/motor-speech-timing/session6/SpeechRhythmHeroGame';
 import { TalkingDrumRhythmGame } from '@/components/game/speech/motor-speech-timing/session6/TalkingDrumRhythmGame';
 import { TalkingTrainTimingGame } from '@/components/game/speech/motor-speech-timing/session6/TalkingTrainTimingGame';
 
-// Speech Therapy Level 6 Session 5 — Bilabial Sequencing
+// Speech Therapy Level 6 Session 5 ? Bilabial Sequencing
 import { MamaDrumBeatGame } from '@/components/game/speech/bilabial-sequencing/session5/MamaDrumBeatGame';
 import { MiniSpeakerHeroGame } from '@/components/game/speech/bilabial-sequencing/session5/MiniSpeakerHeroGame';
 import { PopBalloonRaceGame } from '@/components/game/speech/bilabial-sequencing/session5/PopBalloonRaceGame';
 import { SpeechTrainRhythmGame } from '@/components/game/speech/bilabial-sequencing/session5/SpeechTrainRhythmGame';
 import { TalkingRobotBeatsGame } from '@/components/game/speech/bilabial-sequencing/session5/TalkingRobotBeatsGame';
 
-// Speech Therapy Level 6 Session 4 — CV Preparation
+// Speech Therapy Level 6 Session 4 ? CV Preparation
 import { MagicSoundBuilderGame } from '@/components/game/speech/cv-preparation/session4/MagicSoundBuilderGame';
 import { MiniTalkingHeroGame } from '@/components/game/speech/cv-preparation/session4/MiniTalkingHeroGame';
 import { RobotSaysPlayGame } from '@/components/game/speech/cv-preparation/session4/RobotSaysPlayGame';
 import { SpeechPatternTrainGame } from '@/components/game/speech/cv-preparation/session4/SpeechPatternTrainGame';
 import { TalkingAnimalMouthsGame } from '@/components/game/speech/cv-preparation/session4/TalkingAnimalMouthsGame';
 
-// Speech Therapy Level 6 Session 3 — Vowel Shaping
+// Speech Therapy Level 6 Session 3 ? Vowel Shaping
 import { MagicMouthShapesGame } from '@/components/game/speech/vowel-shaping/session3/MagicMouthShapesGame';
 import { MirrorVowelFaceGame } from '@/components/game/speech/vowel-shaping/session3/MirrorVowelFaceGame';
 import { SpeechShapeAdventureGame } from '@/components/game/speech/vowel-shaping/session3/SpeechShapeAdventureGame';
 import { TalkingAnimalVowelsGame } from '@/components/game/speech/vowel-shaping/session3/TalkingAnimalVowelsGame';
 import { VowelBalloonBuilderGame } from '@/components/game/speech/vowel-shaping/session3/VowelBalloonBuilderGame';
 
-// Speech Therapy Level 3 Session 1 — Voice Activation & Vocal Play
+// Speech Therapy Level 3 Session 1 ? Voice Activation & Vocal Play
 import { EchoCaveGame } from '@/components/game/speech/level3/session1/EchoCaveGame';
 import { SoundPaintGame } from '@/components/game/speech/level3/session1/SoundPaintGame';
 import { VoiceMatchLightGame } from '@/components/game/speech/level3/session1/VoiceMatchLightGame';
 import { VoiceRocketGame } from '@/components/game/speech/level3/session1/VoiceRocketGame';
 import { WakeTheMonsterGame } from '@/components/game/speech/level3/session1/WakeTheMonsterGame';
 
-// Speech Therapy Level 3 Session 2 — Vowel Sounds
+// Speech Therapy Level 3 Session 2 ? Vowel Sounds
 import { HappyEeeSmileGame } from '@/components/game/speech/level3/session2/HappyEeeSmileGame';
 import { LongSoundTrainGame } from '@/components/game/speech/level3/session2/LongSoundTrainGame';
 import { OpenMouthAaaGame } from '@/components/game/speech/level3/session2/OpenMouthAaaGame';
 import { RoundOooFishGame } from '@/components/game/speech/level3/session2/RoundOooFishGame';
 import { VowelSwitchGame } from '@/components/game/speech/level3/session2/VowelSwitchGame';
 
-// Speech Therapy Level 3 Session 3 — Bilabial Speech Sounds (M, B, P)
+// Speech Therapy Level 3 Session 3 ? Bilabial Speech Sounds (M, B, P)
 import { BallBounceBuhGame } from '@/components/game/speech/level3/session3/BallBounceBuhGame';
 import { BubblePopPuhGame } from '@/components/game/speech/level3/session3/BubblePopPuhGame';
 import { LipPowerRaceGame } from '@/components/game/speech/level3/session3/LipPowerRaceGame';
 import { MamaDrumGame } from '@/components/game/speech/level3/session3/MamaDrumGame';
 import { SoundCatchGame } from '@/components/game/speech/level3/session3/SoundCatchGame';
 
-// Speech Therapy Level 3 Session 4 — Consonant + Vowel Syllables
+// Speech Therapy Level 3 Session 4 ? Consonant + Vowel Syllables
 import { BabyCallsMamaGame } from '@/components/game/speech/level3/session4/BabyCallsMamaGame';
 import { CopyTalkingRobotGame } from '@/components/game/speech/level3/session4/CopyTalkingRobotGame';
 import { FeedThePandaGame } from '@/components/game/speech/level3/session4/FeedThePandaGame';
 import { SyllableBalloonsGame } from '@/components/game/speech/level3/session4/SyllableBalloonsGame';
 import { SyllableBridgeGame } from '@/components/game/speech/level3/session4/SyllableBridgeGame';
 
-// Speech Therapy Level 3 Session 5 — Animal & Environmental Sounds
+// Speech Therapy Level 3 Session 5 ? Animal & Environmental Sounds
 import { AnimalSoundMatchGame } from '@/components/game/speech/level3/session5/AnimalSoundMatchGame';
 import { CarEngineRaceGame } from '@/components/game/speech/level3/session5/CarEngineRaceGame';
 import { CowSoundFarmGame } from '@/components/game/speech/level3/session5/CowSoundFarmGame';
 import { SnakeHissGame } from '@/components/game/speech/level3/session5/SnakeHissGame';
 import { TrainChooChooGame } from '@/components/game/speech/level3/session5/TrainChooChooGame';
 
-// Speech Therapy Level 3 Session 6 — Sound Imitation Sequences
+// Speech Therapy Level 3 Session 6 ? Sound Imitation Sequences
 import { CopyOneSoundGame } from '@/components/game/speech/level3/session6/CopyOneSoundGame';
 import { CopyTwoSoundsGame } from '@/components/game/speech/level3/session6/CopyTwoSoundsGame';
 import { RhythmRepeatGame } from '@/components/game/speech/level3/session6/RhythmRepeatGame';
 import { SoundPatternLightsGame } from '@/components/game/speech/level3/session6/SoundPatternLightsGame';
 import { TalkingRobotSaysGame } from '@/components/game/speech/level3/session6/TalkingRobotSaysGame';
 
-// Speech Therapy Level 3 Session 7 — First Meaningful Words
+// Speech Therapy Level 3 Session 7 ? First Meaningful Words
 import { CallMamaGame } from '@/components/game/speech/level3/session7/CallMamaGame';
 import { SayBallGame } from '@/components/game/speech/level3/session7/SayBallGame';
 import { SayMoreGame } from '@/components/game/speech/level3/session7/SayMoreGame';
 import { SnackRequestGame } from '@/components/game/speech/level3/session7/SnackRequestGame';
 import { ToyVoiceUnlockGame } from '@/components/game/speech/level3/session7/ToyVoiceUnlockGame';
 
-// Speech Therapy Level 3 Session 8 — Listen & Repeat
+// Speech Therapy Level 3 Session 8 ? Listen & Repeat
 import { FastOrSlowGame } from '@/components/game/speech/level3/session8/FastOrSlowGame';
 import { HearAndSayGame } from '@/components/game/speech/level3/session8/HearAndSayGame';
 import { MatchMyMouthGame } from '@/components/game/speech/level3/session8/MatchMyMouthGame';
 import { RepeatTheBeatGame } from '@/components/game/speech/level3/session8/RepeatTheBeatGame';
 import { TalkingMirrorGame } from '@/components/game/speech/level3/session8/TalkingMirrorGame';
 
-// Speech Therapy Level 3 Session 9 — Two-Part Verbal Sequences
+// Speech Therapy Level 3 Session 9 ? Two-Part Verbal Sequences
 import { FollowRepeatGame } from '@/components/game/speech/level3/session9/FollowRepeatGame';
 import { OpenSpeakGame } from '@/components/game/speech/level3/session9/OpenSpeakGame';
 import { SayThenTapGame } from '@/components/game/speech/level3/session9/SayThenTapGame';
 import { SpeechPathwayGame } from '@/components/game/speech/level3/session9/SpeechPathwayGame';
 import { TwoWordComboGame } from '@/components/game/speech/level3/session9/TwoWordComboGame';
 
-// Speech Therapy Level 3 Session 10 — Early Fluent Speech Foundations
+// Speech Therapy Level 3 Session 10 ? Early Fluent Speech Foundations
 import { ConversationAvatarGame } from '@/components/game/speech/level3/session10/ConversationAvatarGame';
 import { FastSlowTalkingGame } from '@/components/game/speech/level3/session10/FastSlowTalkingGame';
 import { PhraseBuilderGame } from '@/components/game/speech/level3/session10/PhraseBuilderGame';
@@ -457,7 +457,7 @@ import SitTallFreezeGame from '@/components/game/occupational/level6/session1/Si
 import StarReachMissionGame from '@/components/game/occupational/level6/session1/StarReachMissionGame';
 // Occupational Therapy Level 6 Session 2: Standing Posture Control (camera/pose)
 import TallTreeGame from '@/components/game/occupational/level6/session2/TallTreeGame';
-import SoldierStandGame from '@/components/game/occupational/level6/session2/SoldierStandGame';
+import CrownKeeperS2Game from '@/components/game/occupational/level6/session2/CrownKeeperGame';
 import StatueGuardGame from '@/components/game/occupational/level6/session2/StatueGuardGame';
 import GrowTallerGame from '@/components/game/occupational/level6/session2/GrowTallerGame';
 import FreezeBalanceGame from '@/components/game/occupational/level6/session2/FreezeBalanceGame';
@@ -575,6 +575,105 @@ import SpaceExplorerPraxisGame from '@/components/game/occupational/level8/sessi
 import PirateTreasureHuntGame from '@/components/game/occupational/level8/session10/PirateTreasureHuntGame';
 import MountainMissionGame from '@/components/game/occupational/level8/session10/MountainMissionGame';
 import PraxisChampionGame from '@/components/game/occupational/level8/session10/PraxisChampionGame';
+import BalloonPressGame from '@/components/game/occupational/level9/session1/BalloonPressGame';
+import RocketPushGame from '@/components/game/occupational/level9/session1/RocketPushGame';
+import BerrySquishGame from '@/components/game/occupational/level9/session1/BerrySquishGame';
+import EnergyMeterGame from '@/components/game/occupational/level9/session1/EnergyMeterGame';
+import MatchTheForceGame from '@/components/game/occupational/level9/session1/MatchTheForceGame';
+import DecorateTheCakeGame from '@/components/game/occupational/level9/session2/DecorateTheCakeGame';
+import PaintPressureGame from '@/components/game/occupational/level9/session2/PaintPressureGame';
+import MagicTouchGame from '@/components/game/occupational/level9/session2/MagicTouchGame';
+import InflateCarefullyGame from '@/components/game/occupational/level9/session2/InflateCarefullyGame';
+import GoldilocksPressureGame from '@/components/game/occupational/level9/session2/GoldilocksPressureGame';
+import RobotArmsGame from '@/components/game/occupational/level9/session3/RobotArmsGame';
+import MatchTheLegsGame from '@/components/game/occupational/level9/session3/MatchTheLegsGame';
+import CopyThePoseGame from '@/components/game/occupational/level9/session3/CopyThePoseGame';
+import MirrorBodyGame from '@/components/game/occupational/level9/session3/MirrorBodyGame';
+import PositionMatchGame from '@/components/game/occupational/level9/session3/PositionMatchGame';
+import CarryTheTreasureGame from '@/components/game/occupational/level9/session4/CarryTheTreasureGame';
+import WallPusherGame from '@/components/game/occupational/level9/session4/WallPusherGame';
+import GorillaPowerGame from '@/components/game/occupational/level9/session4/GorillaPowerGame';
+import TrainEngineGame from '@/components/game/occupational/level9/session4/TrainEngineGame';
+import BulldozerMissionGame from '@/components/game/occupational/level9/session4/BulldozerMissionGame';
+import LaunchPowerGame from '@/components/game/occupational/level9/session5/LaunchPowerGame';
+import PullTheShipGame from '@/components/game/occupational/level9/session5/PullTheShipGame';
+import TugChallengeGame from '@/components/game/occupational/level9/session5/TugChallengeGame';
+import VolcanoPushGame from '@/components/game/occupational/level9/session5/VolcanoPushGame';
+import StrengthMasterGame from '@/components/game/occupational/level9/session5/StrengthMasterGame';
+import BuildTheBodyGame from '@/components/game/occupational/level9/session6/BuildTheBodyGame';
+import TouchThePartGame from '@/components/game/occupational/level9/session6/TouchThePartGame';
+import BodyMapGame from '@/components/game/occupational/level9/session6/BodyMapGame';
+import HeroPoseGame from '@/components/game/occupational/level9/session6/HeroPoseGame';
+import RobotBuilderGame from '@/components/game/occupational/level9/session6/RobotBuilderGame';
+import SlowMotionGame from '@/components/game/occupational/level9/session7/SlowMotionGame';
+import FastDashGame from '@/components/game/occupational/level9/session7/FastDashGame';
+import MatchMySpeedGame from '@/components/game/occupational/level9/session7/MatchMySpeedGame';
+import SpeedControlGame from '@/components/game/occupational/level9/session7/SpeedControlGame';
+import RhythmMoveGame from '@/components/game/occupational/level9/session7/RhythmMoveGame';
+import PushThenCarryGame from '@/components/game/occupational/level9/session8/PushThenCarryGame';
+import ReachThenPressGame from '@/components/game/occupational/level9/session8/ReachThenPressGame';
+import PowerSequenceGame from '@/components/game/occupational/level9/session8/PowerSequenceGame';
+import PirateWorkMissionGame from '@/components/game/occupational/level9/session8/PirateWorkMissionGame';
+import RainbowChallengeGame from '@/components/game/occupational/level9/session8/RainbowChallengeGame';
+import EnergyTrailGame from '@/components/game/occupational/level9/session9/EnergyTrailGame';
+import LongHaulTrainGame from '@/components/game/occupational/level9/session9/LongHaulTrainGame';
+import MountainPushGame from '@/components/game/occupational/level9/session9/MountainPushGame';
+import EnduranceQuestGame from '@/components/game/occupational/level9/session9/EnduranceQuestGame';
+import PowerMarathonGame from '@/components/game/occupational/level9/session9/PowerMarathonGame';
+import JungleWorksiteGame from '@/components/game/occupational/level9/session10/JungleWorksiteGame';
+import SpaceBuilderGame from '@/components/game/occupational/level9/session10/SpaceBuilderGame';
+import PirateCargoMissionGame from '@/components/game/occupational/level9/session10/PirateCargoMissionGame';
+import MountainRescueAdventureGame from '@/components/game/occupational/level9/session10/MountainRescueAdventureGame';
+import ProprioceptionChampionGame from '@/components/game/occupational/level9/session10/ProprioceptionChampionGame';
+import SensoryExplorerGame from '@/components/game/occupational/level10/session1/SensoryExplorerGame';
+import FindTheSoundGame from '@/components/game/occupational/level10/session1/FindTheSoundGame';
+import SpotTheChangeGame from '@/components/game/occupational/level10/session1/SpotTheChangeGame';
+import MysteryTouchGame from '@/components/game/occupational/level10/session1/MysteryTouchGame';
+import SensoryDetectiveGame from '@/components/game/occupational/level10/session1/SensoryDetectiveGame';
+import BalloonBreathingGame from '@/components/game/occupational/level10/session2/BalloonBreathingGame';
+import SlowMotionWalkGame from '@/components/game/occupational/level10/session2/SlowMotionWalkGame';
+import HeavyWorkBreakGame from '@/components/game/occupational/level10/session2/HeavyWorkBreakGame';
+import CalmBodyQuestGame from '@/components/game/occupational/level10/session2/CalmBodyQuestGame';
+import EnergyMeterCalmGame from '@/components/game/occupational/level10/session2/EnergyMeterGame';
+import ChangeThePlanGame from '@/components/game/occupational/level10/session3/ChangeThePlanGame';
+import LavaShiftGame from '@/components/game/occupational/level10/session3/LavaShiftGame';
+import PirateDetourGame from '@/components/game/occupational/level10/session3/PirateDetourGame';
+import MissionUpdateGame from '@/components/game/occupational/level10/session3/MissionUpdateGame';
+import SurpriseRouteGame from '@/components/game/occupational/level10/session3/SurpriseRouteGame';
+import BalanceReachGame from '@/components/game/occupational/level10/session4/BalanceReachGame';
+import TrackMoveGame from '@/components/game/occupational/level10/session4/TrackMoveGame';
+import CatchTurnGame from '@/components/game/occupational/level10/session4/CatchTurnGame';
+import MoveMatchGame from '@/components/game/occupational/level10/session4/MoveMatchGame';
+import IntegrationQuestGame from '@/components/game/occupational/level10/session4/IntegrationQuestGame';
+import SchoolReadyGame from '@/components/game/occupational/level10/session5/SchoolReadyGame';
+import HomeHelperGame from '@/components/game/occupational/level10/session5/HomeHelperGame';
+import MealMissionGame from '@/components/game/occupational/level10/session5/MealMissionGame';
+import DoorChallengeGame from '@/components/game/occupational/level10/session5/DoorChallengeGame';
+import FocusFinderGame from '@/components/game/occupational/level10/session6/FocusFinderGame';
+import StopThinkGame from '@/components/game/occupational/level10/session6/StopThinkGame';
+import AttentionQuestGame from '@/components/game/occupational/level10/session6/AttentionQuestGame';
+import WatchCarefullyGame from '@/components/game/occupational/level10/session6/WatchCarefullyGame';
+import MindMasterGame from '@/components/game/occupational/level10/session6/MindMasterGame';
+import GreetingGame from '@/components/game/occupational/level10/session7/GreetingGame';
+import EmotionMatchGame from '@/components/game/occupational/level10/session7/EmotionMatchGame';
+import TeamMissionGame from '@/components/game/occupational/level10/session7/TeamMissionGame';
+import FriendshipQuestGame from '@/components/game/occupational/level10/session7/FriendshipQuestGame';
+import SocialExplorerGame from '@/components/game/occupational/level10/session7/SocialExplorerGame';
+import FindAnotherWayGame from '@/components/game/occupational/level10/session8/FindAnotherWayGame';
+import SensoryOpenThePathGame from '@/components/game/occupational/level10/session8/OpenThePathGame';
+import EscapeRouteGame from '@/components/game/occupational/level10/session8/EscapeRouteGame';
+import SensoryRescueMissionGame from '@/components/game/occupational/level10/session8/RescueMissionGame';
+import ProblemSolverGame from '@/components/game/occupational/level10/session8/ProblemSolverGame';
+import SchoolAdventureGame from '@/components/game/occupational/level10/session9/SchoolAdventureGame';
+import ShoppingTripGame from '@/components/game/occupational/level10/session9/ShoppingTripGame';
+import PlaygroundQuestGame from '@/components/game/occupational/level10/session9/PlaygroundQuestGame';
+import TravelChallengeGame from '@/components/game/occupational/level10/session9/TravelChallengeGame';
+import CommunityExplorerGame from '@/components/game/occupational/level10/session9/CommunityExplorerGame';
+import SensoryJungleExpeditionGame from '@/components/game/occupational/level10/session10/SensoryJungleExpeditionGame';
+import SensorySpaceExplorerGame from '@/components/game/occupational/level10/session10/SensorySpaceExplorerGame';
+import SensoryPirateTreasureHuntGame from '@/components/game/occupational/level10/session10/SensoryPirateTreasureHuntGame';
+import SensoryMountainRescueGame from '@/components/game/occupational/level10/session10/SensoryMountainRescueGame';
+import ArvitGrandChampionGame from '@/components/game/occupational/level10/session10/ArvitGrandChampionGame';
 // Occupational Therapy Level 7 Session 2: Head Movement & Vestibular Activation (camera/pose)
 import LookUpExplorerGame from '@/components/game/occupational/level7/session2/LookUpExplorerGame';
 import SkyGroundMissionGame from '@/components/game/occupational/level7/session2/SkyGroundMissionGame';
@@ -699,14 +798,14 @@ import FreezePoseGame from '@/components/game/occupational/level3/session10/Free
 import PoseMatchGameL3 from '@/components/game/occupational/level3/session10/PoseMatchGame';
 import ShapePoseGame from '@/components/game/occupational/level3/session10/ShapePoseGame';
 
-// Occupational Therapy Level 4 Session 1: Drag Object Left → Right
+// Occupational Therapy Level 4 Session 1: Drag Object Left ? Right
 import BallTransferGame from '@/components/game/occupational/level4/session1/BallTransferGame';
 import ColorMatchDragGame from '@/components/game/occupational/level4/session1/ColorMatchDragGame';
 import FeedTheMonsterGame from '@/components/game/occupational/level4/session1/FeedTheMonsterGame';
 import RoadCrossingGame from '@/components/game/occupational/level4/session1/RoadCrossingGame';
 import TimedDragGame from '@/components/game/occupational/level4/session1/TimedDragGame';
 
-// Occupational Therapy Level 4 Session 2: Drag Object Right → Left
+// Occupational Therapy Level 4 Session 2: Drag Object Right ? Left
 import CollectStarsGame from '@/components/game/occupational/level4/session2/CollectStarsGame';
 import MirrorDragGame from '@/components/game/occupational/level4/session2/MirrorDragGame';
 import PatternDragGame from '@/components/game/occupational/level4/session2/PatternDragGame';
@@ -1036,18 +1135,17 @@ import FaceSymmetryDrawGame from '@/components/game/occupational/level2/session1
 import HalfShapeCompleteGame from '@/components/game/occupational/level2/session10/HalfShapeCompleteGame';
 import MirrorLineDrawGame from '@/components/game/occupational/level2/session10/MirrorLineDrawGame';
 import MirrorMazeGame from '@/components/game/occupational/level2/session10/MirrorMazeGame';
-import { GAME_MENU_STAGGER_MS, PRESS_SCALE_AMOUNT, SPRING_CONFIG } from '@/constants/therapyProgressAnimations';
+import { SessionGameMenuCard } from '@/components/sessionGames/SessionGameMenuCard';
+import { SessionGamesMenuHeader, SessionGamesMenuShell } from '@/components/sessionGames/SessionGamesMenuHeader';
+import { getSessionTheme } from '@/constants/stageThemes';
+import { TP_COLORS, TP_TYPE } from '@/constants/therapyProgressDesign';
 import { advanceTherapyProgress, fetchTherapyProgress, getSubscriptionStatus, type SubscriptionStatus, type TherapyProgress } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
     FadeInDown,
-    FadeInUp,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -1545,6 +1643,105 @@ type GameKey =
   | 'praxis-pirate-treasure'
   | 'praxis-mountain-mission'
   | 'praxis-champion'
+  | 'balloon-press'
+  | 'rocket-push'
+  | 'berry-squish'
+  | 'energy-meter'
+  | 'match-the-force'
+  | 'decorate-the-cake'
+  | 'paint-pressure'
+  | 'magic-touch'
+  | 'inflate-carefully'
+  | 'goldilocks-pressure'
+  | 'robot-arms'
+  | 'match-the-legs'
+  | 'copy-the-pose'
+  | 'mirror-body'
+  | 'position-match'
+  | 'carry-the-treasure'
+  | 'wall-pusher'
+  | 'gorilla-power'
+  | 'train-engine'
+  | 'bulldozer-mission'
+  | 'launch-power'
+  | 'pull-the-ship'
+  | 'tug-challenge'
+  | 'volcano-push'
+  | 'strength-master'
+  | 'build-the-body'
+  | 'touch-the-part'
+  | 'body-map'
+  | 'hero-pose'
+  | 'robot-builder'
+  | 'slow-motion'
+  | 'fast-dash'
+  | 'match-my-speed'
+  | 'speed-control'
+  | 'rhythm-move'
+  | 'push-then-carry'
+  | 'reach-then-press'
+  | 'power-sequence'
+  | 'pirate-work-mission'
+  | 'rainbow-challenge'
+  | 'energy-trail'
+  | 'long-haul-train'
+  | 'mountain-push'
+  | 'endurance-quest'
+  | 'power-marathon'
+  | 'jungle-worksite'
+  | 'space-builder'
+  | 'pirate-cargo-mission'
+  | 'mountain-rescue-mission'
+  | 'proprioception-champion'
+  | 'sensory-explorer'
+  | 'find-the-sound'
+  | 'spot-the-change'
+  | 'mystery-touch'
+  | 'sensory-detective'
+  | 'balloon-breathing'
+  | 'slow-motion-walk'
+  | 'heavy-work-break'
+  | 'calm-body-quest'
+  | 'calm-energy-meter'
+  | 'change-the-plan'
+  | 'lava-shift'
+  | 'pirate-detour'
+  | 'mission-update'
+  | 'surprise-route'
+  | 'balance-reach'
+  | 'track-move'
+  | 'catch-turn'
+  | 'move-match'
+  | 'integration-quest'
+  | 'school-ready'
+  | 'home-helper'
+  | 'meal-mission'
+  | 'door-challenge'
+  | 'focus-finder'
+  | 'stop-think'
+  | 'attention-quest'
+  | 'watch-carefully'
+  | 'mind-master'
+  | 'greeting-game'
+  | 'emotion-match'
+  | 'team-mission'
+  | 'friendship-quest'
+  | 'social-explorer'
+  | 'find-another-way'
+  | 'sensory-open-the-path'
+  | 'escape-route'
+  | 'sensory-rescue-mission'
+  | 'problem-solver'
+  | 'school-adventure'
+  | 'shopping-trip'
+  | 'playground-quest'
+  | 'travel-challenge'
+  | 'community-explorer'
+  | 'sensory-jungle-expedition'
+  | 'sensory-space-explorer'
+  | 'sensory-pirate-treasure-hunt'
+  | 'sensory-mountain-rescue'
+  | 'arvit-grand-champion'
   | 'look-up-explorer'
   | 'sky-ground-mission'
   | 'helicopter-watch'
@@ -1876,82 +2073,6 @@ type GameItem = {
   color: string;
   available: boolean;
 };
-
-type GameMenuCardStyles = {
-  gameCard: object;
-  gameCardDisabled: object;
-  gameNumberCircle: object;
-  gameNumberText: object;
-  gameTitle: object;
-  gameTitleDisabled: object;
-  gameIcon: object;
-  gameEmoji: object;
-  gameContent: object;
-  gameDescription: object;
-  lockBadge: object;
-  playBadge: object;
-};
-
-function GameMenuCard({
-  game,
-  index,
-  unlocked,
-  isLocked,
-  gameNumber,
-  onPress,
-  cardStyles,
-}: {
-  game: GameItem;
-  index: number;
-  unlocked: boolean;
-  isLocked: boolean;
-  gameNumber: number;
-  onPress: () => void;
-  cardStyles: GameMenuCardStyles;
-}) {
-  const press = useSharedValue(0);
-  const pressStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 - press.value * PRESS_SCALE_AMOUNT }],
-  }));
-  const s = cardStyles;
-  return (
-    <Animated.View entering={FadeInUp.delay(index * GAME_MENU_STAGGER_MS).springify().damping(SPRING_CONFIG.damping)}>
-      <TouchableOpacity
-        activeOpacity={1}
-        onPressIn={() => { if (unlocked) press.value = withSpring(1, SPRING_CONFIG); }}
-        onPressOut={() => { press.value = withSpring(0, SPRING_CONFIG); }}
-        onPress={onPress}
-        style={[
-          s.gameCard,
-          { borderColor: isLocked ? '#E5E7EB' : game.color },
-          isLocked && s.gameCardDisabled,
-        ]}
-      >
-        <Animated.View style={pressStyle}>
-          <View style={[s.gameNumberCircle, !isLocked && { backgroundColor: `${game.color}25` }]}>
-            <Text style={[s.gameNumberText, isLocked && s.gameTitleDisabled]}>{gameNumber}</Text>
-          </View>
-          <View style={[s.gameIcon, { backgroundColor: isLocked ? '#F1F5F9' : `${game.color}20` }]}>
-            <Text style={s.gameEmoji}>{game.emoji}</Text>
-          </View>
-          <View style={s.gameContent}>
-            <Text style={[s.gameTitle, isLocked && s.gameTitleDisabled]}>{game.title}</Text>
-            <Text style={[s.gameDescription, isLocked && { color: '#9CA3AF' }]}>{game.description}</Text>
-          </View>
-          {isLocked ? (
-            <View style={[s.lockBadge, { backgroundColor: '#F1F5F9' }]}>
-              <Ionicons name="lock-closed" size={18} color="#9CA3AF" />
-            </View>
-          ) : (
-            <View style={[s.playBadge, { backgroundColor: `${game.color}20` }]}>
-              <Ionicons name="play" size={20} color={game.color} />
-            </View>
-          )}
-        </Animated.View>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
 
 export default function SessionGamesScreen() {
   const router = useRouter();
@@ -2566,7 +2687,7 @@ export default function SessionGamesScreen() {
   const isSequenceWithDistractionAvailable =
     therapyId === 'speech' && levelNumber === 1 && sessionNumber === 10;
 
-  // Level 2 Session 1 — Speech Therapy (Action Imitation)
+  // Level 2 Session 1 ? Speech Therapy (Action Imitation)
   const isCopyTheClapAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 1;
   const isJumpLikeMeAvailable =
@@ -2578,7 +2699,7 @@ export default function SessionGamesScreen() {
   const isFollowMyMoveAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 1;
 
-  // Level 2 Session 2 — Speech Therapy (Body Parts & Self Awareness)
+  // Level 2 Session 2 ? Speech Therapy (Body Parts & Self Awareness)
   const isTouchTheNoseAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 2;
   const isBodyPuzzleSpeechAvailable =
@@ -2590,7 +2711,7 @@ export default function SessionGamesScreen() {
   const isSimonSaysBodyAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 2;
 
-  // Level 2 Session 3 — Speech Therapy (Objects, Animals & Vocabulary)
+  // Level 2 Session 3 ? Speech Therapy (Objects, Animals & Vocabulary)
   const isFindTheAnimalAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 3;
   const isFruitBasketAvailable =
@@ -2602,7 +2723,7 @@ export default function SessionGamesScreen() {
   const isVegetableFarmAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 3;
 
-  // Level 2 Session 4 — Speech Therapy (Categories & Attributes)
+  // Level 2 Session 4 ? Speech Therapy (Categories & Attributes)
   const isSameCategoryAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 4;
   const isPickTheDifferentOneAvailable =
@@ -2614,7 +2735,7 @@ export default function SessionGamesScreen() {
   const isColorMatchTrainAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 4;
 
-  // Level 2 Session 5 — Speech Therapy (Positions & Prepositions)
+  // Level 2 Session 5 ? Speech Therapy (Positions & Prepositions)
   const isPutTeddyInBoxAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 5;
   const isUnderTheTableAvailable =
@@ -2626,7 +2747,7 @@ export default function SessionGamesScreen() {
   const isBehindTheTreeAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 5;
 
-  // Level 2 Session 6 — Speech Therapy (Actions, Verbs & Functions)
+  // Level 2 Session 6 ? Speech Therapy (Actions, Verbs & Functions)
   const isWhoIsRunningAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 6;
   const isWhatDoWeEatWithAvailable =
@@ -2638,7 +2759,7 @@ export default function SessionGamesScreen() {
   const isToolMatchAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 6;
 
-  // Level 2 Session 7 — Speech Therapy (Places, People & Community)
+  // Level 2 Session 7 ? Speech Therapy (Places, People & Community)
   const isFindTheKitchenAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 7;
   const isWhereDoesTeacherWorkAvailable =
@@ -2650,7 +2771,7 @@ export default function SessionGamesScreen() {
   const isCommunityHelpersAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 7;
 
-  // Level 2 Session 8 — Speech Therapy (Descriptions & Reasoning)
+  // Level 2 Session 8 ? Speech Therapy (Descriptions & Reasoning)
   const isGuessTheObjectAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 8;
   const isHiddenPartPuzzleAvailable =
@@ -2662,7 +2783,7 @@ export default function SessionGamesScreen() {
   const isMysteryBagAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 8;
 
-  // Level 2 Session 9 — Speech Therapy (Sequences, Missing Items & Logic)
+  // Level 2 Session 9 ? Speech Therapy (Sequences, Missing Items & Logic)
   const isStoryOrderCardsAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 9;
   const isWhatIsMissingAvailable =
@@ -2674,7 +2795,7 @@ export default function SessionGamesScreen() {
   const isFindTheHiddenToyAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 9;
 
-  // Level 2 Session 10 — Speech Therapy (Advanced Comprehension Concepts)
+  // Level 2 Session 10 ? Speech Therapy (Advanced Comprehension Concepts)
   const isFollow2StepDirectionsAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 10;
   const isBelongsOrNotAvailable =
@@ -2686,7 +2807,7 @@ export default function SessionGamesScreen() {
   const isSmartListenerChallengeAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.actionImitation && sessionNumber === 10;
 
-  // Level 5 Session 1 — Air Awareness (mic only)
+  // Level 5 Session 1 ? Air Awareness (mic only)
   const isMagicFeatherAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 1;
   const isCloudPuffAvailable =
@@ -2698,7 +2819,7 @@ export default function SessionGamesScreen() {
   const isAirPainterAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 1;
 
-  // Level 5 Session 2 — Mouth Movement Imitation (no camera)
+  // Level 5 Session 2 ? Mouth Movement Imitation (no camera)
   const isCopyHappyMouthAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 2;
   const isFunnyMonsterMouthAvailable =
@@ -2710,7 +2831,7 @@ export default function SessionGamesScreen() {
   const isSillyFaceCopyAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 2;
 
-  // Level 5 Session 3 — Breath Activation (mic only)
+  // Level 5 Session 3 ? Breath Activation (mic only)
   const isWakeFeatherAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 3;
   const isStartStopCloudAvailable =
@@ -2722,7 +2843,7 @@ export default function SessionGamesScreen() {
   const isMagicAirSwitchAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 3;
 
-  // Level 5 Session 4 — Lip Awareness (tap / copy, no camera)
+  // Level 5 Session 4 ? Lip Awareness (tap / copy, no camera)
   const isHappyLipsMirrorAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 4;
   const isLipTapFriendAvailable =
@@ -2734,7 +2855,7 @@ export default function SessionGamesScreen() {
   const isLipExplorerAdventureAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 4;
 
-  // Level 5 Session 5 — Jaw Awareness (tap / copy, no camera)
+  // Level 5 Session 5 ? Jaw Awareness (tap / copy, no camera)
   const isJawHungryCrocodileAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 5;
   const isSleepyLionMouthAvailable =
@@ -2746,7 +2867,7 @@ export default function SessionGamesScreen() {
   const isFunnyJawAdventureAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 5;
 
-  // Level 5 Session 6 — Facial Imitation (tap / copy, no camera)
+  // Level 5 Session 6 ? Facial Imitation (tap / copy, no camera)
   const isFunnyFaceMirrorAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 6;
   const isHappySadCopyAvailable =
@@ -2758,7 +2879,7 @@ export default function SessionGamesScreen() {
   const isFaceAdventureCopyAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 6;
 
-  // Level 5 Session 7 — Oral Sensory Tolerance (tap / watch, no camera, no mic)
+  // Level 5 Session 7 ? Oral Sensory Tolerance (tap / watch, no camera, no mic)
   const isMagicFaceBreezeAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 7;
   const isBubbleNoseTicklesAvailable =
@@ -2770,7 +2891,7 @@ export default function SessionGamesScreen() {
   const isCalmMouthAdventureAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 7;
 
-  // Level 5 Session 8 — Mouth Attention Shifting (tap / watch, no camera, no mic)
+  // Level 5 Session 8 ? Mouth Attention Shifting (tap / watch, no camera, no mic)
   const isFindMouthPartAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 8;
   const isMagicMouthSpotlightAvailable =
@@ -2782,7 +2903,7 @@ export default function SessionGamesScreen() {
   const isMouthTreasureHuntAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 8;
 
-  // Level 5 Session 9 — Tongue Awareness & Internal Mapping (tap / watch, no camera, no mic)
+  // Level 5 Session 9 ? Tongue Awareness & Internal Mapping (tap / watch, no camera, no mic)
   const isFriendlyTongueExplorerAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 9;
   const isTongueHideSeekAvailable =
@@ -2794,7 +2915,7 @@ export default function SessionGamesScreen() {
   const isTongueTreasureAdventureAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 9;
 
-  // Level 5 Session 10 — Basic Oral Imitation Integration (tap / watch, no camera, no mic scoring)
+  // Level 5 Session 10 ? Basic Oral Imitation Integration (tap / watch, no camera, no mic scoring)
   const isCopyMyMouthFriendAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 10;
   const isFunnyMouthAdventureAvailable =
@@ -2806,7 +2927,7 @@ export default function SessionGamesScreen() {
   const isMouthHeroAdventureAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.lipClosure && sessionNumber === 10;
 
-  // Level 6 Session 1 — Oral Imitation (Speech Motor Readiness)
+  // Level 6 Session 1 ? Oral Imitation (Speech Motor Readiness)
   const isSpeechMouthCopyAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 1;
   const isTalkingRobotFaceAvailable =
@@ -2818,7 +2939,7 @@ export default function SessionGamesScreen() {
   const isSpeechHeroWarmupAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 1;
 
-  // Level 6 Session 2 — Sound Initiation (mic amplitude, no speech recognition)
+  // Level 6 Session 2 ? Sound Initiation (mic amplitude, no speech recognition)
   const isWakeSleepingStarAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 2;
   const isTalkingRobotStartAvailable =
@@ -2830,7 +2951,7 @@ export default function SessionGamesScreen() {
   const isSoundHeroStarterAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 2;
 
-  // Level 6 Session 3 — Vowel Shaping (watch-copy, optional voice encouragement)
+  // Level 6 Session 3 ? Vowel Shaping (watch-copy, optional voice encouragement)
   const isMagicMouthShapesAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 3;
   const isTalkingAnimalVowelsAvailable =
@@ -2842,7 +2963,7 @@ export default function SessionGamesScreen() {
   const isSpeechShapeAdventureAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 3;
 
-  // Level 6 Session 4 — CV Preparation (watch-copy, optional voice, no STT)
+  // Level 6 Session 4 ? CV Preparation (watch-copy, optional voice, no STT)
   const isMagicSoundBuilderAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 4;
   const isTalkingAnimalMouthsAvailable =
@@ -2854,7 +2975,7 @@ export default function SessionGamesScreen() {
   const isMiniTalkingHeroAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 4;
 
-  // Level 6 Session 5 — Bilabial Sequencing (repeated bilabial rhythm, no STT)
+  // Level 6 Session 5 ? Bilabial Sequencing (repeated bilabial rhythm, no STT)
   const isMamaDrumBeatAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 5;
   const isPopBalloonRaceAvailable =
@@ -2866,7 +2987,7 @@ export default function SessionGamesScreen() {
   const isMiniSpeakerHeroAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 5;
 
-  // Level 6 Session 6 — Motor Speech Timing (rhythm pacing, no STT)
+  // Level 6 Session 6 ? Motor Speech Timing (rhythm pacing, no STT)
   const isTalkingDrumRhythmAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 6;
   const isSpeechBeatRobotAvailable =
@@ -2878,7 +2999,7 @@ export default function SessionGamesScreen() {
   const isSpeechRhythmHeroAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 6;
 
-  // Level 6 Session 7 — Sound Stability (sustained sound, mic amplitude, no STT)
+  // Level 6 Session 7 ? Sound Stability (sustained sound, mic amplitude, no STT)
   const isMagicVoiceRiverAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 7;
   const isTalkingBalloonHoldAvailable =
@@ -2890,7 +3011,7 @@ export default function SessionGamesScreen() {
   const isSpeechStabilityHeroAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 7;
 
-  // Level 6 Session 8 — Early Syllable Control (simple syllable attempts, no STT)
+  // Level 6 Session 8 ? Early Syllable Control (simple syllable attempts, no STT)
   const isSyllablePopPartyAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 8;
   const isTalkingAnimalSyllablesAvailable =
@@ -2902,7 +3023,7 @@ export default function SessionGamesScreen() {
   const isLittleSpeakerHeroAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 8;
 
-  // Level 6 Session 9 — Functional Vocal Intent (mic amplitude, turn-taking, no STT)
+  // Level 6 Session 9 ? Functional Vocal Intent (mic amplitude, turn-taking, no STT)
   const isMagicSoundRequestAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 9;
   const isTalkingFriendTurnTakingAvailable =
@@ -2914,7 +3035,7 @@ export default function SessionGamesScreen() {
   const isLittleCommunicatorHeroAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 9;
 
-  // Level 6 Session 10 — Speech Readiness Completion (Level 6 capstone)
+  // Level 6 Session 10 ? Speech Readiness Completion (Level 6 capstone)
   const isSpeechAdventurePartyAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 10;
   const isTalkingFriendChallengeAvailable =
@@ -2926,7 +3047,7 @@ export default function SessionGamesScreen() {
   const isSpeechHeroGraduationAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.speechMotor && sessionNumber === 10;
 
-  // Level 7 Session 1 — Lip + Jaw Coordination (watch-copy tap, no STT)
+  // Level 7 Session 1 ? Lip + Jaw Coordination (watch-copy tap, no STT)
   const isFunnyMouthTeamworkAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 1;
   const isRobotMouthBuilderAvailable =
@@ -2938,7 +3059,7 @@ export default function SessionGamesScreen() {
   const isMouthCoordinationHeroAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 1;
 
-  // Level 7 Session 2 — Tongue + Jaw Coordination (watch-copy tap, no STT)
+  // Level 7 Session 2 ? Tongue + Jaw Coordination (watch-copy tap, no STT)
   const isTongueExplorerTeamworkAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 2;
   const isFunnyMonsterTongueMovesAvailable =
@@ -2950,7 +3071,7 @@ export default function SessionGamesScreen() {
   const isTongueCoordinationHeroAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 2;
 
-  // Level 7 Session 3 — Tongue + Lips Coordination (watch-copy tap, no STT)
+  // Level 7 Session 3 ? Tongue + Lips Coordination (watch-copy tap, no STT)
   const isFunnyTongueLipsTeamAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 3;
   const isMonsterMouthMixUpAvailable =
@@ -2962,7 +3083,7 @@ export default function SessionGamesScreen() {
   const isTongueLipsHeroAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 3;
 
-  // Level 7 Session 4 — Breath + Lips Coordination (watch-copy + airflow, no STT)
+  // Level 7 Session 4 ? Breath + Lips Coordination (watch-copy + airflow, no STT)
   const isMagicWindLipsAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 4;
   const isFunnyBalloonBreathsAvailable =
@@ -2974,7 +3095,7 @@ export default function SessionGamesScreen() {
   const isBreathLipsHeroAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 4;
 
-  // Level 7 Session 5 — Breath + Jaw Coordination (watch-copy + airflow, no STT)
+  // Level 7 Session 5 ? Breath + Jaw Coordination (watch-copy + airflow, no STT)
   const isMagicWindMouthAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 5;
   const isFunnyDragonBreathsAvailable =
@@ -2986,7 +3107,7 @@ export default function SessionGamesScreen() {
   const isBreathJawHeroAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 5;
 
-  // Level 7 Session 6 — Multi-Step Coordination (watch-copy sequencing, no STT)
+  // Level 7 Session 6 ? Multi-Step Coordination (watch-copy sequencing, no STT)
   const isMagicMouthStepsAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 6;
   const isFunnyMonsterComboMovesAvailable =
@@ -2998,7 +3119,7 @@ export default function SessionGamesScreen() {
   const isCoordinationHeroQuestAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 6;
 
-  // Level 7 Session 7 — Oral Sequencing (watch-copy sequence order, no STT)
+  // Level 7 Session 7 ? Oral Sequencing (watch-copy sequence order, no STT)
   const isMagicMouthSequenceAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 7;
   const isFunnyMonsterStepsAvailable =
@@ -3010,7 +3131,7 @@ export default function SessionGamesScreen() {
   const isSequenceHeroAdventureAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 7;
 
-  // Level 7 Session 8 — Timing Control (watch-copy pacing, no STT)
+  // Level 7 Session 8 ? Timing Control (watch-copy pacing, no STT)
   const isMagicMouthBeatAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 8;
   const isFunnyTimingMonsterAvailable =
@@ -3021,7 +3142,7 @@ export default function SessionGamesScreen() {
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 8;
   const isTimingHeroChallengeAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 8;
-  // Level 7 Session 9 — Motor Planning (watch, prepare, copy; no correctness scoring)
+  // Level 7 Session 9 ? Motor Planning (watch, prepare, copy; no correctness scoring)
   const isMagicMouthPlannerAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 9;
   const isFunnyMonsterMissionAvailable =
@@ -3032,7 +3153,7 @@ export default function SessionGamesScreen() {
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 9;
   const isMotorPlanningHeroAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 9;
-  // Level 7 Session 10 — Functional Coordination (integrated oral systems, no fail states)
+  // Level 7 Session 10 ? Functional Coordination (integrated oral systems, no fail states)
   const isMagicMouthTeamworkAvailable =
     therapyId === 'speech' && levelNumber === SPEECH_LEVEL.oralMotorCoordination && sessionNumber === 10;
   const isFunnyTalkingMonsterAvailable =
@@ -3092,7 +3213,7 @@ export default function SessionGamesScreen() {
   const isInstrumentChoiceAvailable =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 1;
 
-  // Level 6 Session 1 games - Occupational Therapy (Sitting Posture Control · camera/pose)
+  // Level 6 Session 1 games - Occupational Therapy (Sitting Posture Control ? camera/pose)
   const isSuperheroPowerSitAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 1;
   const isCrownKeeperAvailable =
@@ -3104,7 +3225,7 @@ export default function SessionGamesScreen() {
   const isStarReachMissionAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 1;
 
-  // Level 6 Session 2 games - Occupational Therapy (Standing Posture Control · camera/pose)
+  // Level 6 Session 2 games - Occupational Therapy (Standing Posture Control ? camera/pose)
   const isTallTreeAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 2;
   const isSoldierStandAvailable =
@@ -3116,7 +3237,7 @@ export default function SessionGamesScreen() {
   const isFreezeBalanceAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 2;
 
-  // Level 6 Session 3 games - Occupational Therapy (Head & Neck Stability · camera/pose)
+  // Level 6 Session 3 games - Occupational Therapy (Head & Neck Stability ? camera/pose)
   const isRocketWatchAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 3;
   const isLookAndHoldAvailable =
@@ -3128,7 +3249,7 @@ export default function SessionGamesScreen() {
   const isStarTrackerAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 3;
 
-  // Level 6 Session 4 games - Occupational Therapy (Static Balance · camera/pose)
+  // Level 6 Session 4 games - Occupational Therapy (Static Balance ? camera/pose)
   const isFlamingoStandAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 4;
   const isOneFootIslandAvailable =
@@ -3140,7 +3261,7 @@ export default function SessionGamesScreen() {
   const isFreezeHeroAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 4;
 
-  // Level 6 Session 5 games - Occupational Therapy (Weight Shifting · camera/pose)
+  // Level 6 Session 5 games - Occupational Therapy (Weight Shifting ? camera/pose)
   const isAppleReachAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 5;
   const isSideStarCatchAvailable =
@@ -3152,7 +3273,7 @@ export default function SessionGamesScreen() {
   const isMagicScaleAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 5;
 
-  // Level 6 Session 6 games - Occupational Therapy (Dynamic Balance · camera/pose)
+  // Level 6 Session 6 games - Occupational Therapy (Dynamic Balance ? camera/pose)
   const isSteppingStonesAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 6;
   const isCrossTheBridgeAvailable =
@@ -3164,7 +3285,7 @@ export default function SessionGamesScreen() {
   const isBalanceJourneyAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 6;
 
-  // Level 6 Session 7 games - Occupational Therapy (Trunk Rotation & Reaching · camera/pose)
+  // Level 6 Session 7 games - Occupational Therapy (Trunk Rotation & Reaching ? camera/pose)
   const isApplePickerAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 7;
   const isPirateTreasureReachAvailable =
@@ -3176,7 +3297,7 @@ export default function SessionGamesScreen() {
   const isTwistingStarHuntAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 7;
 
-  // Level 6 Session 8 games - Occupational Therapy (Animal Walks & Core Activation · camera/pose)
+  // Level 6 Session 8 games - Occupational Therapy (Animal Walks & Core Activation ? camera/pose)
   const isBearWalkAdventureAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 8;
   const isCrabWalkChallengeAvailable =
@@ -3188,7 +3309,7 @@ export default function SessionGamesScreen() {
   const isGorillaMarchAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 8;
 
-  // Level 6 Session 9 games - Occupational Therapy (Postural Endurance · camera/pose)
+  // Level 6 Session 9 games - Occupational Therapy (Postural Endurance ? camera/pose)
   const isSuperheroHoldAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 9;
   const isAirplaneHoldAvailable =
@@ -3200,7 +3321,7 @@ export default function SessionGamesScreen() {
   const isLongestStatueAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 9;
 
-  // Level 6 Session 10 games - Occupational Therapy (Integrated Core Challenge · camera/pose)
+  // Level 6 Session 10 games - Occupational Therapy (Integrated Core Challenge ? camera/pose)
   const isJungleAdventureAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 10;
   const isPirateMissionAvailable =
@@ -3212,7 +3333,7 @@ export default function SessionGamesScreen() {
   const isOTObstacleCourseAvailable =
     therapyId === 'occupational' && levelNumber === 6 && sessionNumber === 10;
 
-  // Level 7 Session 1 games - Occupational Therapy (Linear Vestibular Movement · camera/pose)
+  // Level 7 Session 1 games - Occupational Therapy (Linear Vestibular Movement ? camera/pose)
   const isTrainTracksAvailable =
     therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 1;
   const isRocketLaunchAvailable =
@@ -3224,7 +3345,7 @@ export default function SessionGamesScreen() {
   const isAdventurePathAvailable =
     therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 1;
 
-  // Level 8 Session 1 games - Occupational Therapy (Single-Step Motor Planning · camera/pose)
+  // Level 8 Session 1 games - Occupational Therapy (Single-Step Motor Planning ? camera/pose)
   const isTouchTheTargetAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 1;
   const isReachTheStarAvailable =
@@ -3236,7 +3357,7 @@ export default function SessionGamesScreen() {
   const isPlaceTheBoxAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 1;
 
-  // Level 8 Session 2 games - Occupational Therapy (Two-Step Motor Planning · camera/pose)
+  // Level 8 Session 2 games - Occupational Therapy (Two-Step Motor Planning ? camera/pose)
   const isClapThenJumpAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 2;
   const isTouchThenTurnAvailable =
@@ -3248,7 +3369,7 @@ export default function SessionGamesScreen() {
   const isPickAndPlaceAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 2;
 
-  // Level 8 Session 3 games - Occupational Therapy (Multi-Step Sequencing · camera/pose)
+  // Level 8 Session 3 games - Occupational Therapy (Multi-Step Sequencing ? camera/pose)
   const isActionChainAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 3;
   const isStarSequenceAvailable =
@@ -3260,7 +3381,7 @@ export default function SessionGamesScreen() {
   const isRainbowSequenceAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 3;
 
-  // Level 8 Session 4 games - Occupational Therapy (Motor Imitation · camera/pose)
+  // Level 8 Session 4 games - Occupational Therapy (Motor Imitation ? camera/pose)
   const isRobotCopyAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 4;
   const isAnimalCopyAvailable =
@@ -3272,7 +3393,7 @@ export default function SessionGamesScreen() {
   const isQuickCopyAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 4;
 
-  // Level 8 Session 5 games - Occupational Therapy (Body Position Planning · camera/pose)
+  // Level 8 Session 5 games - Occupational Therapy (Body Position Planning ? camera/pose)
   const isHighReachAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 5;
   const isLowReachAvailable =
@@ -3284,7 +3405,7 @@ export default function SessionGamesScreen() {
   const isShapeBodyAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 5;
 
-  // Level 8 Session 6 games - Occupational Therapy (Obstacle Navigation · camera/pose)
+  // Level 8 Session 6 games - Occupational Therapy (Obstacle Navigation ? camera/pose)
   const isJunglePathAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 6;
   const isLavaEscapeAvailable =
@@ -3296,7 +3417,7 @@ export default function SessionGamesScreen() {
   const isPirateIslandNavAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 6;
 
-  // Level 8 Session 7 games - Occupational Therapy (Bilateral Motor Planning · camera/pose)
+  // Level 8 Session 7 games - Occupational Therapy (Bilateral Motor Planning ? camera/pose)
   const isTwinMovesAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 7;
   const isCrossClapAvailable =
@@ -3308,7 +3429,7 @@ export default function SessionGamesScreen() {
   const isDualActionAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 7;
 
-  // Level 8 Session 8 games - Occupational Therapy (Movement Problem Solving · camera/pose)
+  // Level 8 Session 8 games - Occupational Therapy (Movement Problem Solving ? camera/pose)
   const isFindTheRouteAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 8;
   const isOpenThePathAvailable =
@@ -3320,7 +3441,7 @@ export default function SessionGamesScreen() {
   const isEscapeCourseAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 8;
 
-  // Level 8 Session 9 games - Occupational Therapy (Novel Motor Challenges · camera/pose)
+  // Level 8 Session 9 games - Occupational Therapy (Novel Motor Challenges ? camera/pose)
   const isAlienMovesAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 9;
   const isRobotFactoryAvailable =
@@ -3332,7 +3453,7 @@ export default function SessionGamesScreen() {
   const isChallengeQuestAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 9;
 
-  // Level 8 Session 10 games - Occupational Therapy (Praxis Adventure · camera/pose)
+  // Level 8 Session 10 games - Occupational Therapy (Praxis Adventure ? camera/pose)
   const isPraxisJungleExpeditionAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 10;
   const isPraxisSpaceExplorerAvailable =
@@ -3344,7 +3465,239 @@ export default function SessionGamesScreen() {
   const isPraxisChampionAvailable =
     therapyId === 'occupational' && levelNumber === 8 && sessionNumber === 10;
 
-  // Level 7 Session 2 games - Occupational Therapy (Head Movement & Vestibular Activation · camera/pose)
+  // Level 9 Session 1 games - Occupational Therapy (Proprioception & Force Regulation ? camera/pose)
+  const isBalloonPressAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 1;
+  const isRocketPushAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 1;
+  const isBerrySquishAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 1;
+  const isEnergyMeterAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 1;
+  const isMatchTheForceAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 1;
+
+  // Level 9 Session 2 games - Occupational Therapy (Pressure Grading · camera/pose)
+  const isDecorateTheCakeAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 2;
+  const isPaintPressureAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 2;
+  const isMagicTouchAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 2;
+  const isInflateCarefullyAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 2;
+  const isGoldilocksPressureAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 2;
+
+  // Level 9 Session 3 games - Occupational Therapy (Joint Position Awareness · camera/pose)
+  const isRobotArmsAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 3;
+  const isMatchTheLegsAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 3;
+  const isCopyThePoseAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 3;
+  const isMirrorBodyAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 3;
+  const isPositionMatchAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 3;
+
+  // Level 9 Session 4 games - Occupational Therapy (Heavy Work Missions · camera/pose)
+  const isCarryTheTreasureAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 4;
+  const isWallPusherAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 4;
+  const isGorillaPowerAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 4;
+  const isTrainEngineAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 4;
+  const isBulldozerMissionAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 4;
+
+  // Level 9 Session 5 games - Occupational Therapy (Resistance Control · camera/pose)
+  const isLaunchPowerAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 5;
+  const isPullTheShipAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 5;
+  const isTugChallengeAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 5;
+  const isVolcanoPushAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 5;
+  const isStrengthMasterAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 5;
+
+  // Level 9 Session 6 games - Occupational Therapy (Body Awareness ? camera/pose)
+  const isBuildTheBodyAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 6;
+  const isTouchThePartAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 6;
+  const isBodyMapAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 6;
+  const isHeroPoseAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 6;
+  const isRobotBuilderAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 6;
+
+  // Level 9 Session 7 games - Occupational Therapy (Movement Calibration ? camera/pose)
+  const isSlowMotionAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 7;
+  const isFastDashAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 7;
+  const isMatchMySpeedAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 7;
+  const isSpeedControlAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 7;
+  const isRhythmMoveAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 7;
+
+  // Level 9 Session 8 games - Occupational Therapy (Proprioceptive Sequencing ? camera/pose)
+  const isPushThenCarryAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 8;
+  const isReachThenPressAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 8;
+  const isPowerSequenceAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 8;
+  const isPirateWorkMissionAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 8;
+  const isRainbowChallengeAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 8;
+  const isEnergyTrailAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 9;
+  const isLongHaulTrainAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 9;
+  const isMountainPushAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 9;
+  const isEnduranceQuestAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 9;
+  const isPowerMarathonAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 9;
+  const isJungleWorksiteAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 10;
+  const isSpaceBuilderAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 10;
+  const isPirateCargoMissionAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 10;
+  const isMountainRescueMissionAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 10;
+  const isProprioceptionChampionAvailable =
+    therapyId === 'occupational' && levelNumber === 9 && sessionNumber === 10;
+
+  // Level 10 Session 1 games - Occupational Therapy (Sensory Integration & Adaptive Responses)
+  const isSensoryExplorerAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 1;
+  const isFindTheSoundAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 1;
+  const isSpotTheChangeAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 1;
+  const isMysteryTouchAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 1;
+  const isSensoryDetectiveAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 1;
+
+  // Level 10 Session 2 games - Occupational Therapy (Regulation Through Movement)
+  const isBalloonBreathingAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 2;
+  const isSlowMotionWalkAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 2;
+  const isHeavyWorkBreakAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 2;
+  const isCalmBodyQuestAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 2;
+  const isCalmEnergyMeterAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 2;
+
+  // Level 10 Session 3 games - Occupational Therapy (Adaptive Motor Responses)
+  const isChangeThePlanAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 3;
+  const isLavaShiftAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 3;
+  const isPirateDetourAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 3;
+  const isMissionUpdateAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 3;
+  const isSurpriseRouteAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 3;
+
+  // Level 10 Session 4 games - Occupational Therapy (Sensory-Motor Integration)
+  const isBalanceReachAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 4;
+  const isTrackMoveAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 4;
+  const isCatchTurnAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 4;
+  const isMoveMatchAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 4;
+  const isIntegrationQuestAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 4;
+
+  // Level 10 Session 5 games - Occupational Therapy (Functional Daily Skills ? camera/pose)
+  const isSchoolReadyAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 5;
+  const isHomeHelperAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 5;
+  const isMealMissionAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 5;
+  const isDoorChallengeAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 5;
+
+  // Level 10 Session 6 games - Occupational Therapy (Attention & Regulation ? camera/pose)
+  const isFocusFinderAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 6;
+  const isStopThinkAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 6;
+  const isAttentionQuestAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 6;
+  const isWatchCarefullyAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 6;
+  const isMindMasterAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 6;
+
+  // Level 10 Session 7 games - Occupational Therapy (Social Sensory Adventures ? camera/pose)
+  const isGreetingGameAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 7;
+  const isEmotionMatchAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 7;
+  const isTeamMissionAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 7;
+  const isFriendshipQuestAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 7;
+  const isSocialExplorerAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 7;
+
+  // Level 10 Session 8 games - Occupational Therapy (Sensory Problem Solving ? camera/pose)
+  const isFindAnotherWayAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 8;
+  const isSensoryOpenThePathAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 8;
+  const isEscapeRouteAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 8;
+  const isSensoryRescueMissionAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 8;
+  const isProblemSolverAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 8;
+
+  // Level 10 Session 9 games - Occupational Therapy (Real-Life Sensory Challenges ? camera/pose)
+  const isSchoolAdventureAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 9;
+  const isShoppingTripAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 9;
+  const isPlaygroundQuestAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 9;
+  const isTravelChallengeAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 9;
+  const isCommunityExplorerAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 9;
+  const isSensoryJungleExpeditionAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 10;
+  const isSensorySpaceExplorerAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 10;
+  const isSensoryPirateTreasureHuntAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 10;
+  const isSensoryMountainRescueAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 10;
+  const isArvitGrandChampionAvailable =
+    therapyId === 'occupational' && levelNumber === 10 && sessionNumber === 10;
+
+  // Level 7 Session 2 games - Occupational Therapy (Head Movement & Vestibular Activation ? camera/pose)
   const isLookUpExplorerAvailable =
     therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 2;
   const isSkyGroundMissionAvailable =
@@ -3356,7 +3709,7 @@ export default function SessionGamesScreen() {
   const isTurnAndFindAvailable =
     therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 2;
 
-  // Level 7 Session 3 games - Occupational Therapy (Direction Changes · camera/pose)
+  // Level 7 Session 3 games - Occupational Therapy (Direction Changes ? camera/pose)
   const isDirectionSwitchAvailable =
     therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 3;
   const isGoLeftGoRightAvailable =
@@ -3368,7 +3721,7 @@ export default function SessionGamesScreen() {
   const isMagicalArrowSequenceAvailable =
     therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 3;
 
-  // Level 7 Session 4 games - Occupational Therapy (Rotational Processing · camera/pose)
+  // Level 7 Session 4 games - Occupational Therapy (Rotational Processing ? camera/pose)
   const isTornadoTurnAvailable =
     therapyId === 'occupational' && levelNumber === 7 && sessionNumber === 4;
   const isSpinAndStopAvailable =
@@ -3575,7 +3928,7 @@ export default function SessionGamesScreen() {
   const isZenPoseMatchAvailable =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 10;
 
-  // Level 4 Session 1: Drag Object Left → Right
+  // Level 4 Session 1: Drag Object Left ? Right
   const isBallTransferAvailable =
     therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 1;
   const isFeedTheMonsterAvailable =
@@ -3587,7 +3940,7 @@ export default function SessionGamesScreen() {
   const isTimedDragAvailable =
     therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 1;
 
-  // Level 4 Session 2: Drag Object Right → Left
+  // Level 4 Session 2: Drag Object Right ? Left
   const isReverseBallPassAvailable =
     therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 2;
   const isCollectStarsAvailable =
@@ -3911,7 +4264,7 @@ export default function SessionGamesScreen() {
   const isSuccessReplayAvailable =
     therapyId === 'speech' && levelNumber === 3 && sessionNumber === 10;
 
-  // Speech Therapy Level 3 Session 1 — Voice Activation & Vocal Play
+  // Speech Therapy Level 3 Session 1 ? Voice Activation & Vocal Play
   const isWakeTheMonsterAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 1;
   const isVoiceRocketAvailable =
@@ -3923,7 +4276,7 @@ export default function SessionGamesScreen() {
   const isVoiceMatchLightAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 1;
 
-  // Speech Therapy Level 3 Session 2 — Vowel Sounds
+  // Speech Therapy Level 3 Session 2 ? Vowel Sounds
   const isOpenMouthAaaAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 2;
   const isHappyEeeSmileAvailable =
@@ -3935,7 +4288,7 @@ export default function SessionGamesScreen() {
   const isVowelSwitchAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 2;
 
-  // Speech Therapy Level 3 Session 3 — Bilabial Speech Sounds
+  // Speech Therapy Level 3 Session 3 ? Bilabial Speech Sounds
   const isMamaDrumAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 3;
   const isBubblePopPuhAvailable =
@@ -3947,7 +4300,7 @@ export default function SessionGamesScreen() {
   const isLipPowerRaceAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 3;
 
-  // Speech Therapy Level 3 Session 4 — Consonant + Vowel Syllables
+  // Speech Therapy Level 3 Session 4 ? Consonant + Vowel Syllables
   const isSyllableBridgeAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 4;
   const isFeedThePandaAvailable =
@@ -3959,7 +4312,7 @@ export default function SessionGamesScreen() {
   const isCopyTalkingRobotAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 4;
 
-  // Speech Therapy Level 3 Session 5 — Animal & Environmental Sounds
+  // Speech Therapy Level 3 Session 5 ? Animal & Environmental Sounds
   const isCowSoundFarmAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 5;
   const isCarEngineRaceAvailable =
@@ -3971,7 +4324,7 @@ export default function SessionGamesScreen() {
   const isAnimalSoundMatchAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 5;
 
-  // Speech Therapy Level 3 Session 6 — Sound Imitation Sequences
+  // Speech Therapy Level 3 Session 6 ? Sound Imitation Sequences
   const isCopyOneSoundAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 6;
   const isCopyTwoSoundsAvailable =
@@ -3983,7 +4336,7 @@ export default function SessionGamesScreen() {
   const isTalkingRobotSaysAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 6;
 
-  // Speech Therapy Level 3 Session 7 — First Meaningful Words
+  // Speech Therapy Level 3 Session 7 ? First Meaningful Words
   const isSayMoreAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 7;
   const isCallMamaAvailable =
@@ -3995,7 +4348,7 @@ export default function SessionGamesScreen() {
   const isToyVoiceUnlockAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 7;
 
-  // Speech Therapy Level 3 Session 8 — Listen & Repeat
+  // Speech Therapy Level 3 Session 8 ? Listen & Repeat
   const isHearAndSayAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 8;
   const isTalkingMirrorAvailable =
@@ -4007,7 +4360,7 @@ export default function SessionGamesScreen() {
   const isFastOrSlowAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 8;
 
-  // Speech Therapy Level 3 Session 9 — Two-Part Verbal Sequences
+  // Speech Therapy Level 3 Session 9 ? Two-Part Verbal Sequences
   const isSayThenTapAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 9;
   const isOpenSpeakAvailable =
@@ -4019,7 +4372,7 @@ export default function SessionGamesScreen() {
   const isSpeechPathwayAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 9;
 
-  // Speech Therapy Level 3 Session 10 — Early Fluent Speech Foundations
+  // Speech Therapy Level 3 Session 10 ? Early Fluent Speech Foundations
   const isSmoothTalkingTrainAvailable =
     therapyId === 'speech' && levelNumber === 4 && sessionNumber === 10;
   const isPhraseBuilderAvailable =
@@ -4035,7 +4388,7 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-ball',
       title: 'Follow the Ball',
-      emoji: '⚽',
+      emoji: '?',
       description: 'Watch the ball and tap when it glows! Build your Focus Power.',
       color: '#3B82F6',
       available: isFollowBallAvailable,
@@ -4043,15 +4396,15 @@ export default function SessionGamesScreen() {
     {
       id: 'catch-star',
       title: 'Catch the Bouncing Star',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Tap the star as it bounces around! Build visual tracking and coordination.',
       color: '#FCD34D',
       available: isCatchStarAvailable,
     },
     {
       id: 'slow-to-fast',
-      title: 'Slow → Fast Game',
-      emoji: '⭐',
+      title: 'Slow ? Fast Game',
+      emoji: '?',
       description: 'Tap the object as it moves! Speed increases after 3 taps.',
       color: '#F59E0B',
       available: isSlowToFastAvailable,
@@ -4059,7 +4412,7 @@ export default function SessionGamesScreen() {
     {
       id: 'track-freeze',
       title: 'Track & Freeze',
-      emoji: '🚗',
+      emoji: '??',
       description: 'Follow the car... tap only when it stops! Build impulse control.',
       color: '#EF4444',
       available: isTrackFreezeAvailable,
@@ -4067,7 +4420,7 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-look',
       title: 'Follow Where I Look',
-      emoji: '👀',
+      emoji: '??',
       description: 'Watch my eyes! Tap the object where I\'m looking. Build gaze following.',
       color: '#F59E0B',
       available: isFollowLookAvailable,
@@ -4075,7 +4428,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-magic',
       title: 'Tap for Magic',
-      emoji: '✨',
+      emoji: '?',
       description: 'Tap the button to make magic happen! Build cause & effect understanding.',
       color: '#8B5CF6',
       available: isTapMagicAvailable,
@@ -4083,7 +4436,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-animate',
       title: 'Tap to Animate',
-      emoji: '🐕',
+      emoji: '??',
       description: 'Tap the animal to make him jump, dance, or laugh! Build control & preference.',
       color: '#F59E0B',
       available: isTapAnimateAvailable,
@@ -4091,7 +4444,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-reveal',
       title: 'Tap to Reveal',
-      emoji: '☁️',
+      emoji: '??',
       description: 'Tap the cloud to see what\'s hiding! Build anticipation & attention.',
       color: '#3B82F6',
       available: isTapRevealAvailable,
@@ -4099,7 +4452,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-sound',
       title: 'Tap to Make Sound',
-      emoji: '🥁',
+      emoji: '??',
       description: 'Tap the instrument to hear it play! Build sound association & listening.',
       color: '#F59E0B',
       available: isTapSoundAvailable,
@@ -4107,7 +4460,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-choice',
       title: 'Tap for Choice',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Tap what you like! Choose between two items. Builds early choice-making.',
       color: '#3B82F6',
       available: isTapChoiceAvailable,
@@ -4115,15 +4468,15 @@ export default function SessionGamesScreen() {
     {
       id: 'big-tap',
       title: 'Big Tap Target',
-      emoji: '🟢',
+      emoji: '??',
       description: 'Tap the big circle to make it burst! Build finger tap & scanning.',
       color: '#22C55E',
       available: isBigTapAvailable,
     },
     {
-      id: 'tap-red-circle',                                  // 👈 NEW GAME
+      id: 'tap-red-circle',                                  // ?? NEW GAME
       title: 'Tap the Big Red Circle',
-      emoji: '🔴',
+      emoji: '??',
       description:
         'Tap the glowing red circle to build shape & colour attention and finger control.',
       color: '#EF4444',
@@ -4132,7 +4485,7 @@ export default function SessionGamesScreen() {
     {
       id: 'game-3',
       title: 'Balloon Pop',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Tap the balloon as it moves slowly across the screen. Build hand-eye coordination!',
       color: '#8B5CF6',
       available: isGame3Available,
@@ -4140,7 +4493,7 @@ export default function SessionGamesScreen() {
     {
       id: 'game-4',
       title: 'Tap and Hold',
-      emoji: '✨',
+      emoji: '?',
       description: 'Tap and hold the button for 2 seconds. Build finger control and endurance!',
       color: '#3B82F6',
       available: isGame4Available,
@@ -4148,7 +4501,7 @@ export default function SessionGamesScreen() {
     {
       id: 'game-5',
       title: 'Multi-Tap Fun',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Tap all 5 balloons one by one! Build coordination and finger precision!',
       color: '#F472B6',
       available: isGame5Available,
@@ -4156,7 +4509,7 @@ export default function SessionGamesScreen() {
     {
       id: 'small-circle-tap',
       title: 'Small Circle Tap',
-      emoji: '🔵',
+      emoji: '??',
       description: 'Tap the small circle with your index finger. Build precision and finger isolation!',
       color: '#0EA5E9',
       available: isSmallCircleTapAvailable,
@@ -4164,7 +4517,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-only-small',
       title: 'Tap Only Small Target',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Large and small shapes appear. Tap only the small one when it glows!',
       color: '#F59E0B',
       available: isTapOnlySmallAvailable,
@@ -4172,7 +4525,7 @@ export default function SessionGamesScreen() {
     {
       id: 'shrinking-target',
       title: 'Shrinking Target',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Tap the target! It gets smaller each time. If you struggle, it grows bigger.',
       color: '#8B5CF6',
       available: isShrinkingTargetAvailable,
@@ -4180,7 +4533,7 @@ export default function SessionGamesScreen() {
     {
       id: 'track-then-tap',
       title: 'Track Then Tap',
-      emoji: '🐝',
+      emoji: '??',
       description: 'Follow the moving object with your eyes, then tap it when it stops!',
       color: '#FCD34D',
       available: isTrackThenTapAvailable,
@@ -4188,7 +4541,7 @@ export default function SessionGamesScreen() {
     {
       id: 'multiple-small-targets',
       title: 'Multiple Small Targets',
-      emoji: '⚫',
+      emoji: '?',
       description: 'Tap all 4 small dots to clear the screen! Build scanning and precision.',
       color: '#06B6D4',
       available: isMultipleSmallTargetsAvailable,
@@ -4196,7 +4549,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-slowly',
       title: 'Tap Slowly',
-      emoji: '⏱️',
+      emoji: '??',
       description: 'Wait for the circle to light up, then tap! Build slow motor control and rhythm.',
       color: '#3B82F6',
       available: isTapSlowlyAvailable,
@@ -4204,7 +4557,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-fast',
       title: 'Tap Fast',
-      emoji: '⚡',
+      emoji: '?',
       description: 'Circle blinks rapidly. Tap quickly to match the pace! Build fast motor activation.',
       color: '#F59E0B',
       available: isTapFastAvailable,
@@ -4212,7 +4565,7 @@ export default function SessionGamesScreen() {
     {
       id: 'slow-then-fast',
       title: 'Slow Then Fast',
-      emoji: '🔄',
+      emoji: '??',
       description: 'Switch between slow and fast tapping. Build cognitive flexibility and motor switching.',
       color: '#8B5CF6',
       available: isSlowThenFastAvailable,
@@ -4220,7 +4573,7 @@ export default function SessionGamesScreen() {
     {
       id: 'race-the-dot',
       title: 'Race The Dot',
-      emoji: '🏁',
+      emoji: '??',
       description: 'Tap to keep the dot moving! Race to the goal. Build visual tracking, speed modulation, and motor planning.',
       color: '#F59E0B',
       available: isRaceTheDotAvailable,
@@ -4228,7 +4581,7 @@ export default function SessionGamesScreen() {
     {
       id: 'hold-the-button',
       title: 'Hold The Button',
-      emoji: '✅',
+      emoji: '?',
       description: 'Press and hold until the ring fills completely. Release when you see the green flash! Build sustained finger pressure and timing control.',
       color: '#3B82F6',
       available: isHoldTheButtonAvailable,
@@ -4236,7 +4589,7 @@ export default function SessionGamesScreen() {
     {
       id: 'grow-the-balloon',
       title: 'Grow The Balloon',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Press and hold to inflate the balloon. Release when its big to make it float! Build visual-motor mapping and finger endurance.',
       color: '#EF4444',
       available: isGrowTheBalloonAvailable,
@@ -4244,7 +4597,7 @@ export default function SessionGamesScreen() {
     {
       id: 'launch-rocket',
       title: 'Launch Rocket',
-      emoji: '🚀',
+      emoji: '??',
       description: 'Press and hold to fill the fuel bar. Release when full to launch! Build force + duration control and delayed gratification.',
       color: '#F59E0B',
       available: isLaunchRocketAvailable,
@@ -4252,7 +4605,7 @@ export default function SessionGamesScreen() {
     {
       id: 'squish-the-jelly',
       title: 'Squish The Jelly',
-      emoji: '🍮',
+      emoji: '??',
       description: 'Press and hold to compress the jelly. Release to let it spring back! Build proprioception and force regulation.',
       color: '#8B5CF6',
       available: isSquishTheJellyAvailable,
@@ -4260,7 +4613,7 @@ export default function SessionGamesScreen() {
     {
       id: 'hold-the-light',
       title: 'Hold The Light',
-      emoji: '💡',
+      emoji: '??',
       description: 'Press and hold to make the bulb glow brighter. Release at full brightness! Build timing modulation and sustained attention.',
       color: '#FCD34D',
       available: isHoldTheLightAvailable,
@@ -4268,7 +4621,7 @@ export default function SessionGamesScreen() {
     {
       id: 'drag-ball-to-goal',
       title: 'Drag The Ball To The Goal',
-      emoji: '⚽',
+      emoji: '?',
       description: 'Press the ball and drag it to the goal box. Release when it\'s inside! Build drag initiation and directionality.',
       color: '#3B82F6',
       available: isDragBallToGoalAvailable,
@@ -4276,7 +4629,7 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-the-line',
       title: 'Follow The Line',
-      emoji: '📏',
+      emoji: '??',
       description: 'Drag the object along the thick line from start to end. Stay on the line! This is the first step toward writing strokes.',
       color: '#22C55E',
       available: isFollowTheLineAvailable,
@@ -4284,7 +4637,7 @@ export default function SessionGamesScreen() {
     {
       id: 'drag-animal-home',
       title: 'Drag The Animal Home',
-      emoji: '🏠',
+      emoji: '??',
       description: 'Drag the animal to its home! Match the animal with its home. Build directional drag and spatial planning.',
       color: '#FCD34D',
       available: isDragAnimalHomeAvailable,
@@ -4292,7 +4645,7 @@ export default function SessionGamesScreen() {
     {
       id: 'drag-slowly',
       title: 'Drag Slowly',
-      emoji: '🐌',
+      emoji: '??',
       description: 'Drag the bar slowly along the path. Watch the speed meter! Build controlled movement and proprioception.',
       color: '#8B5CF6',
       available: isDragSlowlyAvailable,
@@ -4300,7 +4653,7 @@ export default function SessionGamesScreen() {
     {
       id: 'puzzle-piece-drag',
       title: 'Puzzle Piece Drag',
-      emoji: '🧩',
+      emoji: '??',
       description: 'Drag the puzzle piece to its matching outline. Match the shapes! Build spatial problem solving and visual perception.',
       color: '#F59E0B',
       available: isPuzzlePieceDragAvailable,
@@ -4308,7 +4661,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-the-numbers',
       title: 'Tap The Numbers',
-      emoji: '🔢',
+      emoji: '??',
       description: 'Tap the numbers in order: 1, then 2, then 3! Build early sequencing and number-order foundation.',
       color: '#3B82F6',
       available: isTapTheNumbersAvailable,
@@ -4316,7 +4669,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-lights-in-order',
       title: 'Tap The Lights In Order',
-      emoji: '💡',
+      emoji: '??',
       description: 'Watch the shapes blink in sequence, then tap them in the same order! Build visual memory and attention to order.',
       color: '#FCD34D',
       available: isTapLightsInOrderAvailable,
@@ -4324,7 +4677,7 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-the-arrows',
       title: 'Follow The Arrows',
-      emoji: '➡️',
+      emoji: '??',
       description: 'Watch the arrow sequence, then tap them in the same order! Build early spatial sequencing and directional recall.',
       color: '#22C55E',
       available: isFollowTheArrowsAvailable,
@@ -4332,7 +4685,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-colours-in-order',
       title: 'Tap Colours In Order',
-      emoji: '🎨',
+      emoji: '??',
       description: 'Watch the color sequence, then tap them in the same order! Colors change positions each time. Build sequencing and colour discrimination.',
       color: '#8B5CF6',
       available: isTapColoursInOrderAvailable,
@@ -4340,7 +4693,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-the-big-one',
       title: 'Tap The Big One',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Watch the big circle glow, then tap it! Build size discrimination and target accuracy.',
       color: '#3B82F6',
       available: isTapTheBigOneAvailable,
@@ -4348,7 +4701,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-the-small-one',
       title: 'Tap The Small One',
-      emoji: '🔍',
+      emoji: '??',
       description: 'Find and tap the smallest shape! Size changes each round. Build scale discrimination and fine-motor precision.',
       color: '#22C55E',
       available: isTapTheSmallOneAvailable,
@@ -4356,7 +4709,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-the-shape-i-show-you',
       title: 'Tap The Shape I Show You',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Watch the shape, then find and tap the matching one! Build shape recognition and working memory.',
       color: '#F59E0B',
       available: isTapTheShapeIShowYouAvailable,
@@ -4364,7 +4717,7 @@ export default function SessionGamesScreen() {
     {
       id: 'find-the-odd-one-out',
       title: 'Find The Odd One Out',
-      emoji: '🔍',
+      emoji: '??',
       description: 'Find the item that\'s different from the others! Build figure-ground perception and discrimination.',
       color: '#EF4444',
       available: isFindTheOddOneOutAvailable,
@@ -4372,7 +4725,7 @@ export default function SessionGamesScreen() {
     {
       id: 'match-shape-to-outline',
       title: 'Match Shape To Outline',
-      emoji: '🧩',
+      emoji: '??',
       description: 'Match the shape to the outline! Build spatial reasoning and early puzzle foundation.',
       color: '#8B5CF6',
       available: isMatchShapeToOutlineAvailable,
@@ -4380,7 +4733,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tiny-dot-tap',
       title: 'Tiny Dot Tap',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Tap the tiny dot accurately! Build fine-target accuracy and controlled finger movement.',
       color: '#EF4444',
       available: isTinyDotTapAvailable,
@@ -4388,7 +4741,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-the-center-of-the-target',
       title: 'Tap The Center Of The Target',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Tap the center dot, not the outer ring! Build spatial precision and accuracy grading.',
       color: '#3B82F6',
       available: isTapTheCenterOfTheTargetAvailable,
@@ -4396,7 +4749,7 @@ export default function SessionGamesScreen() {
     {
       id: 'moving-small-target',
       title: 'Moving Small Target',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Tap the tiny shape when it passes through the green zone! Build dynamic accuracy and timing.',
       color: '#10B981',
       available: isMovingSmallTargetAvailable,
@@ -4404,7 +4757,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-only-the-smallest-shape',
       title: 'Tap Only The Smallest Shape',
-      emoji: '🔍',
+      emoji: '??',
       description: 'Find and tap the smallest shape! Build precision, discrimination, and selective control.',
       color: '#8B5CF6',
       available: isTapOnlyTheSmallestShapeAvailable,
@@ -4412,7 +4765,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-the-hidden-small-object',
       title: 'Tap The Hidden Small Object',
-      emoji: '🔍',
+      emoji: '??',
       description: 'Scan the pattern and find the tiny hidden object! Build visual scanning and figure-ground perception.',
       color: '#F59E0B',
       available: isTapTheHiddenSmallObjectAvailable,
@@ -4420,7 +4773,7 @@ export default function SessionGamesScreen() {
     {
       id: 'shrinking-circle-tap',
       title: 'Shrinking Circle Tap',
-      emoji: '⭕',
+      emoji: '?',
       description: 'Tap the circle before it disappears! Build timing, precision, focus, and motor inhibition.',
       color: '#3B82F6',
       available: isShrinkingCircleTapAvailable,
@@ -4428,15 +4781,15 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-when-star-is-smallest',
       title: 'Tap When Star Is Smallest',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Wait until the star reaches its smallest size, then tap! Build delayed tapping and controlled timing.',
       color: '#FCD34D',
       available: isTapWhenStarIsSmallestAvailable,
     },
     {
       id: 'shrink-stop-tap',
-      title: 'Shrink → Stop → Tap',
-      emoji: '⏸️',
+      title: 'Shrink ? Stop ? Tap',
+      emoji: '??',
       description: 'Wait for the object to stop shrinking, then tap! Build visual waiting and precise finger control.',
       color: '#8B5CF6',
       available: isShrinkStopTapAvailable,
@@ -4444,7 +4797,7 @@ export default function SessionGamesScreen() {
     {
       id: 'multiple-shrinking-targets',
       title: 'Multiple Shrinking Targets',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Watch all 3 shapes shrink! Tap the one that stops glowing! Build discrimination and selective attention.',
       color: '#EF4444',
       available: isMultipleShrinkingTargetsAvailable,
@@ -4452,7 +4805,7 @@ export default function SessionGamesScreen() {
     {
       id: 'shrinking-object-movement',
       title: 'Shrinking Object + Movement',
-      emoji: '🐝',
+      emoji: '??',
       description: 'Track the moving object as it shrinks and tap it! Build dynamic targeting and visuomotor integration.',
       color: '#FCD34D',
       available: isShrinkingObjectMovementAvailable,
@@ -4460,7 +4813,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pinch-to-pop',
       title: 'Pinch to Pop',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Use two fingers to pinch the balloon and pop it! Build pinch strength and two-finger coordination.',
       color: '#EF4444',
       available: isPinchToPopAvailable,
@@ -4468,7 +4821,7 @@ export default function SessionGamesScreen() {
     {
       id: 'two-finger-simultaneous-tap',
       title: 'Two-Finger Simultaneous Tap',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Tap both targets at the same time! Build bilateral finger coordination and synchronization.',
       color: '#FCD34D',
       available: isTwoFingerSimultaneousTapAvailable,
@@ -4476,7 +4829,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pinch-to-resize',
       title: 'Pinch to Resize',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Pinch to shrink, spread to grow! Match the target size. Build controlled pinch & stretch skills.',
       color: '#8B5CF6',
       available: isPinchToResizeAvailable,
@@ -4484,7 +4837,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pinch-to-open-treasure-box',
       title: 'Pinch to Open Treasure Box',
-      emoji: '📦',
+      emoji: '??',
       description: 'Pinch both locks at the same time to open the treasure! Build bimanual coordination.',
       color: '#92400E',
       available: isPinchToOpenTreasureBoxAvailable,
@@ -4493,7 +4846,7 @@ export default function SessionGamesScreen() {
     {
       id: 'rainbow-trace',
       title: 'Rainbow Bridge',
-      emoji: '🌈',
+      emoji: '??',
       description: 'Trace the rainbow arc from left to right. Build smooth curved wrist movement!',
       color: '#EF4444',
       available: isRainbowTraceAvailable,
@@ -4501,7 +4854,7 @@ export default function SessionGamesScreen() {
     {
       id: 'snake-slide',
       title: 'Serpent Slide',
-      emoji: '🐍',
+      emoji: '??',
       description: 'Slide along the smooth S-curve path. Keep your wrist movement steady!',
       color: '#10B981',
       available: isSnakeSlideAvailable,
@@ -4509,7 +4862,7 @@ export default function SessionGamesScreen() {
     {
       id: 'moon-path',
       title: 'Lunar Loop',
-      emoji: '🌙',
+      emoji: '??',
       description: 'Trace the moon semi-circle path under the stars. Practice smooth curved motion!',
       color: '#FBBF24',
       available: isMoonPathAvailable,
@@ -4517,7 +4870,7 @@ export default function SessionGamesScreen() {
     {
       id: 'smile-maker',
       title: 'Happy Curve',
-      emoji: '😊',
+      emoji: '??',
       description: 'Trace the smile curve from corner to corner. Build smooth wrist movement!',
       color: '#EC4899',
       available: isSmileMakerAvailable,
@@ -4525,7 +4878,7 @@ export default function SessionGamesScreen() {
     {
       id: 'curvy-road-drive',
       title: 'Road Rally',
-      emoji: '🚗',
+      emoji: '??',
       description: 'Drive the car along the curvy road and stay on the line!',
       color: '#2563EB',
       available: isCurvyRoadDriveAvailable,
@@ -4534,7 +4887,7 @@ export default function SessionGamesScreen() {
     {
       id: 'mountain-climb',
       title: 'Peak Path',
-      emoji: '⛰️',
+      emoji: '??',
       description: 'Climb the zig-zag trail up the mountain. Navigate each turn carefully!',
       color: '#16A34A',
       available: isMountainClimbAvailable,
@@ -4542,7 +4895,7 @@ export default function SessionGamesScreen() {
     {
       id: 'lightning-bolt',
       title: 'Thunder Trace',
-      emoji: '⚡',
+      emoji: '?',
       description: 'Trace the lightning bolt with sharp angles. Follow every zig-zag turn!',
       color: '#FBBF24',
       available: isLightningBoltAvailable,
@@ -4550,7 +4903,7 @@ export default function SessionGamesScreen() {
     {
       id: 'saw-path',
       title: 'Saw Wave',
-      emoji: '🪚',
+      emoji: '??',
       description: 'Follow the saw-tooth path with controlled up-down motion!',
       color: '#EA580C',
       available: isSawPathAvailable,
@@ -4558,7 +4911,7 @@ export default function SessionGamesScreen() {
     {
       id: 'robot-wire-fix',
       title: 'Wire Fix Lab',
-      emoji: '🤖',
+      emoji: '??',
       description: 'Follow the zig-zag wire to fix the robot. Trace carefully!',
       color: '#2563EB',
       available: isRobotWireFixAvailable,
@@ -4566,7 +4919,7 @@ export default function SessionGamesScreen() {
     {
       id: 'zig-zag-race',
       title: 'Zig Sprint',
-      emoji: '🏁',
+      emoji: '??',
       description: 'Race along the zig-zag track to the finish line!',
       color: '#DC2626',
       available: isZigZagRaceAvailable,
@@ -4575,7 +4928,7 @@ export default function SessionGamesScreen() {
     {
       id: 'blow-the-bubble',
       title: 'Blow the Bubble',
-      emoji: '🫧',
+      emoji: '??',
       description: 'Blow to make the bubble grow! Keep blowing until it pops!',
       color: '#87CEEB',
       available: isBlowTheBubbleAvailable,
@@ -4583,7 +4936,7 @@ export default function SessionGamesScreen() {
     {
       id: 'move-the-feather',
       title: 'Move the Feather',
-      emoji: '🪶',
+      emoji: '??',
       description: 'Blow to push the feather across the screen to the finish line!',
       color: '#E0F2F1',
       available: isMoveTheFeatherAvailable,
@@ -4591,7 +4944,7 @@ export default function SessionGamesScreen() {
     {
       id: 'windmill-spin',
       title: 'Windmill Spin',
-      emoji: '🎡',
+      emoji: '??',
       description: 'Blow to spin the colorful pinwheel! Complete 5 full rotations!',
       color: '#FFD700',
       available: isWindmillSpinAvailable,
@@ -4599,7 +4952,7 @@ export default function SessionGamesScreen() {
     {
       id: 'blow-out-candle',
       title: 'Blow Out the Candle',
-      emoji: '🕯️',
+      emoji: '???',
       description: 'Blow strongly to extinguish the candle! The flame flickers as you blow.',
       color: '#FF4500',
       available: isBlowOutTheCandleAvailable,
@@ -4607,7 +4960,7 @@ export default function SessionGamesScreen() {
     {
       id: 'balloon-inflate',
       title: 'Balloon Inflate',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Blow to inflate the balloon! Each blow adds more air!',
       color: '#FFB6C1',
       available: isBalloonInflateAvailable,
@@ -4616,7 +4969,7 @@ export default function SessionGamesScreen() {
     {
       id: 'ice-cream-lick',
       title: 'Ice-Cream Lick (Up)',
-      emoji: '🍦',
+      emoji: '??',
       description: 'Lick the scoop at the top! Practice lifting your tongue upward.',
       color: '#FFB6C1',
       available: isIceCreamLickAvailable,
@@ -4624,7 +4977,7 @@ export default function SessionGamesScreen() {
     {
       id: 'touch-the-star',
       title: 'Touch the Star',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Tongue tip touches upper star. Lift your tongue high!',
       color: '#FFD700',
       available: isTouchTheStarAvailable,
@@ -4632,7 +4985,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tongue-elevator',
       title: 'Tongue Elevator',
-      emoji: '🏢',
+      emoji: '??',
       description: 'Elevator moves up when tongue lifts. Control the elevator with your tongue!',
       color: '#E74C3C',
       available: isTongueElevatorAvailable,
@@ -4640,7 +4993,7 @@ export default function SessionGamesScreen() {
     {
       id: 'roof-tap',
       title: 'Roof Tap',
-      emoji: '🏠',
+      emoji: '??',
       description: 'Tongue taps roof of mouth. Practice rapid tongue elevation!',
       color: '#4A90E2',
       available: isRoofTapAvailable,
@@ -4648,7 +5001,7 @@ export default function SessionGamesScreen() {
     {
       id: 'smile-and-lift',
       title: 'Smile + Lift',
-      emoji: '😊',
+      emoji: '??',
       description: 'Smile, then lift tongue (combo task). Master the sequence!',
       color: '#FF6B9D',
       available: isSmileAndLiftAvailable,
@@ -4657,7 +5010,7 @@ export default function SessionGamesScreen() {
     {
       id: 'paint-the-wall',
       title: 'Paint the Wall',
-      emoji: '🎨',
+      emoji: '??',
       description: 'Move your tongue left to right to paint the wall!',
       color: '#FF6B9D',
       available: isPaintTheWallAvailable,
@@ -4665,7 +5018,7 @@ export default function SessionGamesScreen() {
     {
       id: 'cookie-sweep',
       title: 'Cookie Sweep',
-      emoji: '🍪',
+      emoji: '??',
       description: 'Move your tongue side to side to sweep cookie crumbs!',
       color: '#DEB887',
       available: isCookieSweepAvailable,
@@ -4673,7 +5026,7 @@ export default function SessionGamesScreen() {
     {
       id: 'catch-the-dot',
       title: 'Catch the Dot',
-      emoji: '🔴',
+      emoji: '??',
       description: 'Move your tongue to catch the dot as it moves left and right!',
       color: '#FF4444',
       available: isCatchTheDotAvailable,
@@ -4681,7 +5034,7 @@ export default function SessionGamesScreen() {
     {
       id: 'side-lights',
       title: 'Side Lights',
-      emoji: '💡',
+      emoji: '??',
       description: 'Touch the glowing side with your tongue!',
       color: '#FFD700',
       available: isSideLightsSpeechAvailable,
@@ -4689,7 +5042,7 @@ export default function SessionGamesScreen() {
     {
       id: 'mirror-match',
       title: 'Mirror Match',
-      emoji: '🪞',
+      emoji: '??',
       description: 'Copy the avatar\'s tongue direction!',
       color: '#667eea',
       available: isMirrorMatchAvailable,
@@ -4698,7 +5051,7 @@ export default function SessionGamesScreen() {
     {
       id: 'balloon-pump',
       title: 'Balloon Pump',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Make "puh" sound to inflate the balloon!',
       color: '#FF6B9D',
       available: isBalloonPumpAvailable,
@@ -4706,7 +5059,7 @@ export default function SessionGamesScreen() {
     {
       id: 'bubble-press',
       title: 'Bubble Press',
-      emoji: '💧',
+      emoji: '??',
       description: 'Press your lips together to form bubbles!',
       color: '#4DD0E1',
       available: isBubblePressAvailable,
@@ -4714,7 +5067,7 @@ export default function SessionGamesScreen() {
     {
       id: 'mama-call',
       title: 'Mama Call',
-      emoji: '👩',
+      emoji: '??',
       description: 'Say "ma ma" rhythmically!',
       color: '#FDD835',
       available: isMamaCallAvailable,
@@ -4722,7 +5075,7 @@ export default function SessionGamesScreen() {
     {
       id: 'drum-lips',
       title: 'Drum Lips',
-      emoji: '🥁',
+      emoji: '??',
       description: 'Tap your lips together to play drum beats!',
       color: '#795548',
       available: isDrumLipsAvailable,
@@ -4730,7 +5083,7 @@ export default function SessionGamesScreen() {
     {
       id: 'box-push',
       title: 'Box Push',
-      emoji: '📦',
+      emoji: '??',
       description: 'Create strong lip seal to push the box!',
       color: '#757575',
       available: isBoxPushAvailable,
@@ -4739,7 +5092,7 @@ export default function SessionGamesScreen() {
     {
       id: 'fish-mouth',
       title: 'Fish Mouth',
-      emoji: '🐟',
+      emoji: '??',
       description: 'Make "O" shape to feed the fish!',
       color: '#4DD0E1',
       available: isFishMouthAvailable,
@@ -4747,7 +5100,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tunnel-blow',
       title: 'Tunnel Blow',
-      emoji: '🌪️',
+      emoji: '???',
       description: 'Round your lips and blow to control airflow!',
       color: '#4A90E2',
       available: isTunnelBlowAvailable,
@@ -4755,7 +5108,7 @@ export default function SessionGamesScreen() {
     {
       id: 'o-shape-match',
       title: 'O-Shape Match',
-      emoji: '⭕',
+      emoji: '?',
       description: 'Match the target O-shape with your lips!',
       color: '#FDD835',
       available: isOShapeMatchAvailable,
@@ -4763,7 +5116,7 @@ export default function SessionGamesScreen() {
     {
       id: 'o-u-switch',
       title: 'O-U Switch',
-      emoji: '🔄',
+      emoji: '??',
       description: 'Switch between O and U lip shapes on cue!',
       color: '#A5D6A7',
       available: isOUSwitchAvailable,
@@ -4771,7 +5124,7 @@ export default function SessionGamesScreen() {
     {
       id: 'mirror-round',
       title: 'Mirror Round',
-      emoji: '🪞',
+      emoji: '??',
       description: 'Copy the avatar\'s rounded lip shape!',
       color: '#f093fb',
       available: isMirrorRoundAvailable,
@@ -4780,7 +5133,7 @@ export default function SessionGamesScreen() {
     {
       id: 'ball-float',
       title: 'Ball Float',
-      emoji: '⚽',
+      emoji: '?',
       description: 'Keep the ball afloat with your breath!',
       color: '#FF6B9D',
       available: isBallFloatAvailable,
@@ -4788,7 +5141,7 @@ export default function SessionGamesScreen() {
     {
       id: 'cloud-push',
       title: 'Cloud Push',
-      emoji: '☁️',
+      emoji: '??',
       description: 'Push the cloud with gentle breath!',
       color: '#87CEEB',
       available: isCloudPushAvailable,
@@ -4796,7 +5149,7 @@ export default function SessionGamesScreen() {
     {
       id: 'train-steam',
       title: 'Train Steam',
-      emoji: '🚂',
+      emoji: '??',
       description: 'Create steam trail with continuous breath!',
       color: '#FFD700',
       available: isTrainSteamAvailable,
@@ -4804,7 +5157,7 @@ export default function SessionGamesScreen() {
     {
       id: 'breath-meter',
       title: 'Breath Meter',
-      emoji: '📊',
+      emoji: '??',
       description: 'Keep the meter filled with your breath!',
       color: '#4CAF50',
       available: isBreathMeterAvailable,
@@ -4812,7 +5165,7 @@ export default function SessionGamesScreen() {
     {
       id: 'stop-go-breathing',
       title: 'Stop-Go Breathing',
-      emoji: '🔄',
+      emoji: '??',
       description: 'Follow the cues: blow and stop!',
       color: '#FF6347',
       available: isStopGoBreathingAvailable,
@@ -4821,7 +5174,7 @@ export default function SessionGamesScreen() {
     {
       id: 'traffic-mouth',
       title: 'Traffic Mouth',
-      emoji: '🚦',
+      emoji: '??',
       description: 'Follow the traffic light: green = open, red = close!',
       color: '#4CAF50',
       available: isTrafficMouthAvailable,
@@ -4829,7 +5182,7 @@ export default function SessionGamesScreen() {
     {
       id: 'robot-sequence',
       title: 'Robot Sequence',
-      emoji: '🤖',
+      emoji: '??',
       description: 'Copy the robot\'s jaw pattern and timing!',
       color: '#2196F3',
       available: isRobotSequenceAvailable,
@@ -4837,7 +5190,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pattern-match',
       title: 'Pattern Match',
-      emoji: '🧩',
+      emoji: '??',
       description: 'Arrange tiles to match the pattern!',
       color: '#FF9800',
       available: isPatternMatchAvailable,
@@ -4845,7 +5198,7 @@ export default function SessionGamesScreen() {
     {
       id: 'copy-the-beat',
       title: 'Copy the Beat',
-      emoji: '🥁',
+      emoji: '??',
       description: 'Follow the rhythm with your jaw!',
       color: '#9C27B0',
       available: isCopyTheBeatAvailable,
@@ -4853,7 +5206,7 @@ export default function SessionGamesScreen() {
     {
       id: 'sequence-builder',
       title: 'Sequence Builder',
-      emoji: '🔧',
+      emoji: '??',
       description: 'Complete the missing step in the sequence!',
       color: '#F44336',
       available: isSequenceBuilderAvailable,
@@ -4862,7 +5215,7 @@ export default function SessionGamesScreen() {
     {
       id: 'face-to-face-avatar',
       title: 'Face-to-Face Avatar',
-      emoji: '👤',
+      emoji: '??',
       description: 'Watch the avatar and copy its slow movements!',
       color: '#2196F3',
       available: isFaceToFaceAvatarAvailable,
@@ -4870,7 +5223,7 @@ export default function SessionGamesScreen() {
     {
       id: 'highlight-zones',
       title: 'Highlight Zones',
-      emoji: '✨',
+      emoji: '?',
       description: 'Watch the glowing zones and use those parts of your face!',
       color: '#9C27B0',
       available: isHighlightZonesAvailable,
@@ -4878,7 +5231,7 @@ export default function SessionGamesScreen() {
     {
       id: 'one-step-imitation',
       title: 'One-Step Imitation',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Watch the movement, then copy it!',
       color: '#FF9800',
       available: isOneStepImitationAvailable,
@@ -4886,7 +5239,7 @@ export default function SessionGamesScreen() {
     {
       id: 'two-step-imitation',
       title: 'Two-Step Imitation',
-      emoji: '🔄',
+      emoji: '??',
       description: 'Watch both steps, then copy them in order!',
       color: '#4CAF50',
       available: isTwoStepImitationAvailable,
@@ -4894,24 +5247,24 @@ export default function SessionGamesScreen() {
     {
       id: 'success-replay',
       title: 'Success Replay',
-      emoji: '🎬',
+      emoji: '??',
       description: 'Copy the movement and watch your success animation!',
       color: '#E91E63',
       available: isSuccessReplayAvailable,
     },
-    // Speech Therapy Level 3 Session 1 — Voice Activation & Vocal Play
+    // Speech Therapy Level 3 Session 1 ? Voice Activation & Vocal Play
     {
       id: 'wake-the-monster',
       title: 'Wake the Monster',
-      emoji: '👾',
-      description: 'Say “aaa” to wake the sleeping monster! Build voice initiation.',
+      emoji: '??',
+      description: 'Say ?aaa? to wake the sleeping monster! Build voice initiation.',
       color: '#8B5CF6',
       available: isWakeTheMonsterAvailable,
     },
     {
       id: 'voice-rocket',
       title: 'Voice Rocket',
-      emoji: '🚀',
+      emoji: '??',
       description: 'Louder voice makes the rocket rise! Build vocal intensity.',
       color: '#0EA5E9',
       available: isVoiceRocketAvailable,
@@ -4919,7 +5272,7 @@ export default function SessionGamesScreen() {
     {
       id: 'sound-paint',
       title: 'Sound Paint',
-      emoji: '🎨',
+      emoji: '??',
       description: 'Your voice paints colors on the screen! Cause-and-effect speech play.',
       color: '#F97316',
       available: isSoundPaintAvailable,
@@ -4927,48 +5280,48 @@ export default function SessionGamesScreen() {
     {
       id: 'echo-cave',
       title: 'Echo Cave',
-      emoji: '🕳️',
-      description: 'Make a sound — the cave echoes it back! Explore your voice.',
+      emoji: '???',
+      description: 'Make a sound ? the cave echoes it back! Explore your voice.',
       color: '#14B8A6',
       available: isEchoCaveAvailable,
     },
     {
       id: 'voice-match-light',
       title: 'Voice Match Light',
-      emoji: '💡',
+      emoji: '??',
       description: 'Hold your voice to keep the light glowing! Build sustained phonation.',
       color: '#EAB308',
       available: isVoiceMatchLightAvailable,
     },
-    // Speech Therapy Level 3 Session 2 — Vowel Sounds
+    // Speech Therapy Level 3 Session 2 ? Vowel Sounds
     {
       id: 'open-mouth-aaa',
       title: 'Open Mouth "Aaa"',
-      emoji: '😮',
-      description: 'Open wide and say “Aaa”! Build vowel A and mouth shaping.',
+      emoji: '??',
+      description: 'Open wide and say ?Aaa?! Build vowel A and mouth shaping.',
       color: '#F59E0B',
       available: isOpenMouthAaaAvailable,
     },
     {
       id: 'happy-eee-smile',
       title: 'Happy "Eee" Smile',
-      emoji: '😁',
-      description: 'Smile and say “Eee”! Build lip spreading and vowel E.',
+      emoji: '??',
+      description: 'Smile and say ?Eee?! Build lip spreading and vowel E.',
       color: '#EC4899',
       available: isHappyEeeSmileAvailable,
     },
     {
       id: 'round-ooo-fish',
       title: 'Round "Ooo" Fish',
-      emoji: '🐠',
-      description: 'Round your lips — say “Ooo” to feed the fish! Lip rounding + vowel O.',
+      emoji: '??',
+      description: 'Round your lips ? say ?Ooo? to feed the fish! Lip rounding + vowel O.',
       color: '#0EA5E9',
       available: isRoundOooFishAvailable,
     },
     {
       id: 'long-sound-train',
       title: 'Long Sound Train',
-      emoji: '🚂',
+      emoji: '??',
       description: 'Hold a vowel sound to move the train to the station! Breath + phonation.',
       color: '#10B981',
       available: isLongSoundTrainAvailable,
@@ -4976,81 +5329,81 @@ export default function SessionGamesScreen() {
     {
       id: 'vowel-switch',
       title: 'Vowel Switch',
-      emoji: '🔄',
-      description: 'Switch between “Aaa” and “Ooo”! Build oral transitions.',
+      emoji: '??',
+      description: 'Switch between ?Aaa? and ?Ooo?! Build oral transitions.',
       color: '#8B5CF6',
       available: isVowelSwitchAvailable,
     },
-    // Speech Therapy Level 3 Session 3 — Bilabial Speech Sounds
+    // Speech Therapy Level 3 Session 3 ? Bilabial Speech Sounds
     {
       id: 'mama-drum',
       title: 'Mama Drum',
-      emoji: '🥁',
-      description: 'Say “ma ma ma” to beat the drum! Bilabial repetition with M.',
+      emoji: '??',
+      description: 'Say ?ma ma ma? to beat the drum! Bilabial repetition with M.',
       color: '#EAB308',
       available: isMamaDrumAvailable,
     },
     {
       id: 'bubble-pop-puh',
       title: 'Bubble Pop "Puh"',
-      emoji: '🫧',
-      description: 'Say “puh” to pop bubbles! Build air burst and bilabial P.',
+      emoji: '??',
+      description: 'Say ?puh? to pop bubbles! Build air burst and bilabial P.',
       color: '#38BDF8',
       available: isBubblePopPuhAvailable,
     },
     {
       id: 'ball-bounce-buh',
       title: 'Ball Bounce "Buh"',
-      emoji: '⚽',
-      description: 'Say “buh” to bounce the ball! Voiced bilabial B.',
+      emoji: '?',
+      description: 'Say ?buh? to bounce the ball! Voiced bilabial B.',
       color: '#F97316',
       available: isBallBounceBuhAvailable,
     },
     {
       id: 'sound-catch',
       title: 'Sound Catch',
-      emoji: '👂',
-      description: 'Hear “mmm”, then repeat it! Auditory imitation.',
+      emoji: '??',
+      description: 'Hear ?mmm?, then repeat it! Auditory imitation.',
       color: '#A855F7',
       available: isSoundCatchAvailable,
     },
     {
       id: 'lip-power-race',
       title: 'Lip Power Race',
-      emoji: '🏁',
+      emoji: '??',
       description: 'Race through M, P, and B sounds! Speech coordination.',
       color: '#EF4444',
       available: isLipPowerRaceAvailable,
     },
-    // Speech Therapy Level 3 Session 4 — Consonant + Vowel Syllables
+    // Speech Therapy Level 3 Session 4 ? Consonant + Vowel Syllables
     {
       id: 'syllable-bridge',
       title: 'Syllable Bridge',
-      emoji: '🌉',
-      description: 'Say “ma” to add bridge planks! Build CV syllables.',
+      emoji: '??',
+      description: 'Say ?ma? to add bridge planks! Build CV syllables.',
       color: '#3B82F6',
       available: isSyllableBridgeAvailable,
     },
     {
       id: 'feed-the-panda',
       title: 'Feed the Panda',
-      emoji: '🐼',
-      description: 'Say “pa pa pa” to feed the panda! Syllable repetition.',
+      emoji: '??',
+      description: 'Say ?pa pa pa? to feed the panda! Syllable repetition.',
       color: '#10B981',
       available: isFeedThePandaAvailable,
     },
     {
       id: 'baby-calls-mama',
       title: 'Baby Calls Mama',
-      emoji: '👶',
-      description: 'Say “Mama” to call for Mama! Functional speech.',
+      emoji: '??',
+      description: 'Say ?Mama? to call for Mama! Functional speech.',
       color: '#F43F5E',
       available: isBabyCallsMamaAvailable,
     },
     {
       id: 'syllable-balloons',
       title: 'Syllable Balloons',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Say ma, pa, moo, pee, ba to inflate each balloon! Timing & syllables.',
       color: '#F59E0B',
       available: isSyllableBalloonsAvailable,
@@ -5058,57 +5411,57 @@ export default function SessionGamesScreen() {
     {
       id: 'copy-talking-robot',
       title: 'Copy the Talking Robot',
-      emoji: '🤖',
+      emoji: '??',
       description: 'Listen to the robot, then repeat each syllable! Auditory-motor mapping.',
       color: '#6366F1',
       available: isCopyTalkingRobotAvailable,
     },
-    // Speech Therapy Level 3 Session 5 — Animal & Environmental Sounds
+    // Speech Therapy Level 3 Session 5 ? Animal & Environmental Sounds
     {
       id: 'cow-sound-farm',
       title: 'Cow Sound Farm',
-      emoji: '🐄',
-      description: 'Say “moo” for the cows! Fun vocal imitation.',
+      emoji: '??',
+      description: 'Say ?moo? for the cows! Fun vocal imitation.',
       color: '#22C55E',
       available: isCowSoundFarmAvailable,
     },
     {
       id: 'car-engine-race',
       title: 'Car Engine Race',
-      emoji: '🚗',
-      description: 'Say “vroom” to race the car! Sustained playful sound.',
+      emoji: '??',
+      description: 'Say ?vroom? to race the car! Sustained playful sound.',
       color: '#EF4444',
       available: isCarEngineRaceAvailable,
     },
     {
       id: 'snake-hiss',
       title: 'Snake Hiss',
-      emoji: '🐍',
-      description: 'Say “ssss” to grow the snake! Fricative sound practice.',
+      emoji: '??',
+      description: 'Say ?ssss? to grow the snake! Fricative sound practice.',
       color: '#84CC16',
       available: isSnakeHissAvailable,
     },
     {
       id: 'train-choo-choo',
       title: 'Train Choo-Choo',
-      emoji: '🚂',
-      description: 'Say “choo choo” to move the train! Sound sequencing.',
+      emoji: '??',
+      description: 'Say ?choo choo? to move the train! Sound sequencing.',
       color: '#3B82F6',
       available: isTrainChooChooAvailable,
     },
     {
       id: 'animal-sound-match',
       title: 'Animal Sound Match',
-      emoji: '🐾',
+      emoji: '??',
       description: 'Listen, pick the animal, then say the sound! Listening + speech.',
       color: '#F59E0B',
       available: isAnimalSoundMatchAvailable,
     },
-    // Speech Therapy Level 3 Session 6 — Sound Imitation Sequences
+    // Speech Therapy Level 3 Session 6 ? Sound Imitation Sequences
     {
       id: 'copy-one-sound',
       title: 'Copy 1 Sound',
-      emoji: '👂',
+      emoji: '??',
       description: 'Hear one sound, then repeat it! Immediate imitation.',
       color: '#8B5CF6',
       available: isCopyOneSoundAvailable,
@@ -5116,7 +5469,7 @@ export default function SessionGamesScreen() {
     {
       id: 'copy-two-sounds',
       title: 'Copy 2 Sounds',
-      emoji: '🔁',
+      emoji: '??',
       description: 'Listen to two sounds in a row, then copy both! Sequencing.',
       color: '#EC4899',
       available: isCopyTwoSoundsAvailable,
@@ -5124,15 +5477,15 @@ export default function SessionGamesScreen() {
     {
       id: 'rhythm-repeat',
       title: 'Rhythm Repeat',
-      emoji: '🥁',
-      description: 'Match the speech rhythm — say sounds on the beat! Timing.',
+      emoji: '??',
+      description: 'Match the speech rhythm ? say sounds on the beat! Timing.',
       color: '#F97316',
       available: isRhythmRepeatAvailable,
     },
     {
       id: 'sound-pattern-lights',
       title: 'Sound Pattern Lights',
-      emoji: '💡',
+      emoji: '??',
       description: 'Watch the lights, hear the pattern, then repeat the sound order! Working memory.',
       color: '#14B8A6',
       available: isSoundPatternLightsAvailable,
@@ -5140,40 +5493,40 @@ export default function SessionGamesScreen() {
     {
       id: 'talking-robot-says',
       title: 'Talking Robot Says',
-      emoji: '🤖',
-      description: 'Copy the robot’s silly sound combinations! Flexibility.',
+      emoji: '??',
+      description: 'Copy the robot?s silly sound combinations! Flexibility.',
       color: '#6366F1',
       available: isTalkingRobotSaysAvailable,
     },
-    // Speech Therapy Level 3 Session 7 — First Meaningful Words
+    // Speech Therapy Level 3 Session 7 ? First Meaningful Words
     {
       id: 'say-more',
       title: 'Say "More"',
-      emoji: '➕',
-      description: 'Say “more” to fill your bowl! Functional communication.',
+      emoji: '?',
+      description: 'Say ?more? to fill your bowl! Functional communication.',
       color: '#F59E0B',
       available: isSayMoreAvailable,
     },
     {
       id: 'call-mama',
       title: 'Call Mama',
-      emoji: '👩',
-      description: 'Say “Mama” to reveal Mom! Emotional speech.',
+      emoji: '??',
+      description: 'Say ?Mama? to reveal Mom! Emotional speech.',
       color: '#EC4899',
       available: isCallMamaAvailable,
     },
     {
       id: 'say-ball',
       title: 'Say "Ball"',
-      emoji: '⚽',
-      description: 'Say “ball” to bounce and play! Word association.',
+      emoji: '?',
+      description: 'Say ?ball? to bounce and play! Word association.',
       color: '#3B82F6',
       available: isSayBallAvailable,
     },
     {
       id: 'snack-request',
       title: 'Snack Request',
-      emoji: '🍎',
+      emoji: '??',
       description: 'Say food words to get snacks! Requesting.',
       color: '#F97316',
       available: isSnackRequestAvailable,
@@ -5181,16 +5534,16 @@ export default function SessionGamesScreen() {
     {
       id: 'toy-voice-unlock',
       title: 'Toy Voice Unlock',
-      emoji: '🧸',
+      emoji: '??',
       description: 'Say each toy name to unlock the shelf! Motivation speech.',
       color: '#8B5CF6',
       available: isToyVoiceUnlockAvailable,
     },
-    // Speech Therapy Level 3 Session 8 — Listen & Repeat
+    // Speech Therapy Level 3 Session 8 ? Listen & Repeat
     {
       id: 'hear-and-say',
       title: 'Hear & Say',
-      emoji: '👂',
+      emoji: '??',
       description: 'Listen to a word, then repeat it! Auditory processing.',
       color: '#0EA5E9',
       available: isHearAndSayAvailable,
@@ -5198,7 +5551,7 @@ export default function SessionGamesScreen() {
     {
       id: 'talking-mirror',
       title: 'Talking Mirror',
-      emoji: '🪞',
+      emoji: '??',
       description: 'Watch the avatar say a word, then copy in the mirror! Visual imitation.',
       color: '#A855F7',
       available: isTalkingMirrorAvailable,
@@ -5206,7 +5559,7 @@ export default function SessionGamesScreen() {
     {
       id: 'match-my-mouth',
       title: 'Match My Mouth',
-      emoji: '👄',
+      emoji: '??',
       description: 'Copy the mouth shape and the sound together! Articulation.',
       color: '#F97316',
       available: isMatchMyMouthAvailable,
@@ -5214,7 +5567,7 @@ export default function SessionGamesScreen() {
     {
       id: 'repeat-the-beat',
       title: 'Repeat the Beat',
-      emoji: '🥁',
+      emoji: '??',
       description: 'Repeat rhythmic syllables on the beat! Prosody.',
       color: '#EC4899',
       available: isRepeatTheBeatAvailable,
@@ -5222,16 +5575,16 @@ export default function SessionGamesScreen() {
     {
       id: 'fast-or-slow',
       title: 'Fast or Slow?',
-      emoji: '⏱️',
+      emoji: '??',
       description: 'Copy words at slow and fast speeds! Speech control.',
       color: '#10B981',
       available: isFastOrSlowAvailable,
     },
-    // Speech Therapy Level 3 Session 9 — Two-Part Verbal Sequences
+    // Speech Therapy Level 3 Session 9 ? Two-Part Verbal Sequences
     {
       id: 'say-then-tap',
       title: 'Say Then Tap',
-      emoji: '🗣️',
+      emoji: '???',
       description: 'Say the word, then tap the matching picture! Dual-task speech.',
       color: '#6366F1',
       available: isSayThenTapAvailable,
@@ -5239,23 +5592,23 @@ export default function SessionGamesScreen() {
     {
       id: 'open-speak',
       title: 'Open + Speak',
-      emoji: '😮',
-      description: 'Open your mouth wide, then say “Ma”! Sequencing.',
+      emoji: '??',
+      description: 'Open your mouth wide, then say ?Ma?! Sequencing.',
       color: '#F59E0B',
       available: isOpenSpeakAvailable,
     },
     {
       id: 'two-word-combo',
       title: 'Two Word Combo',
-      emoji: '💬',
-      description: 'Say early phrases like “more juice”! Two-word combos.',
+      emoji: '??',
+      description: 'Say early phrases like ?more juice?! Two-word combos.',
       color: '#22C55E',
       available: isTwoWordComboAvailable,
     },
     {
       id: 'follow-repeat',
       title: 'Follow & Repeat',
-      emoji: '🧠',
+      emoji: '??',
       description: 'Listen to a 2-step phrase, then repeat each part! Memory.',
       color: '#EC4899',
       available: isFollowRepeatAvailable,
@@ -5263,16 +5616,16 @@ export default function SessionGamesScreen() {
     {
       id: 'speech-pathway',
       title: 'Speech Pathway',
-      emoji: '🗺️',
-      description: 'Complete open → sound → sound → tap in order! Planning.',
+      emoji: '???',
+      description: 'Complete open ? sound ? sound ? tap in order! Planning.',
       color: '#8B5CF6',
       available: isSpeechPathwayAvailable,
     },
-    // Speech Therapy Level 3 Session 10 — Early Fluent Speech Foundations
+    // Speech Therapy Level 3 Session 10 ? Early Fluent Speech Foundations
     {
       id: 'smooth-talking-train',
       title: 'Smooth Talking Train',
-      emoji: '🚂',
+      emoji: '??',
       description: 'Say syllables in a row to move the train! Connected speech.',
       color: '#2563EB',
       available: isSmoothTalkingTrainAvailable,
@@ -5280,7 +5633,7 @@ export default function SessionGamesScreen() {
     {
       id: 'phrase-builder',
       title: 'Phrase Builder',
-      emoji: '🧱',
+      emoji: '??',
       description: 'Build short phrases word by word! Expressive language.',
       color: '#22C55E',
       available: isPhraseBuilderAvailable,
@@ -5288,7 +5641,7 @@ export default function SessionGamesScreen() {
     {
       id: 'talking-adventure',
       title: 'Talking Adventure',
-      emoji: '📖',
+      emoji: '??',
       description: 'Speak to continue the story! Functional speech.',
       color: '#F59E0B',
       available: isTalkingAdventureAvailable,
@@ -5296,7 +5649,7 @@ export default function SessionGamesScreen() {
     {
       id: 'fast-slow-talking',
       title: 'Fast-Slow Talking',
-      emoji: '⏱️',
+      emoji: '??',
       description: 'Practice slow and fast smooth phrases! Speech control.',
       color: '#0EA5E9',
       available: isFastSlowTalkingAvailable,
@@ -5304,8 +5657,8 @@ export default function SessionGamesScreen() {
     {
       id: 'conversation-avatar',
       title: 'Conversation Avatar',
-      emoji: '🤖',
-      description: 'Answer the avatar’s simple questions! Interactive speech.',
+      emoji: '??',
+      description: 'Answer the avatar?s simple questions! Interactive speech.',
       color: '#A855F7',
       available: isConversationAvatarAvailable,
     },
@@ -5313,7 +5666,7 @@ export default function SessionGamesScreen() {
     {
       id: 'maze-walk',
       title: 'Maze Master',
-      emoji: '🧩',
+      emoji: '??',
       description: 'Follow the clear path through the maze. Stay on track!',
       color: '#7C3AED',
       available: isMazeWalkAvailable,
@@ -5321,7 +5674,7 @@ export default function SessionGamesScreen() {
     {
       id: 'river-boat-guide',
       title: 'River Run',
-      emoji: '🛶',
+      emoji: '??',
       description: 'Guide the boat along the curvy river path carefully!',
       color: '#2563EB',
       available: isRiverBoatGuideAvailable,
@@ -5329,7 +5682,7 @@ export default function SessionGamesScreen() {
     {
       id: 'ant-trail-follow',
       title: 'Trail Trek',
-      emoji: '🐜',
+      emoji: '??',
       description: 'Follow the dotted ant trail from start to finish!',
       color: '#D97706',
       available: isAntTrailFollowAvailable,
@@ -5337,7 +5690,7 @@ export default function SessionGamesScreen() {
     {
       id: 'ball-roll-path',
       title: 'Roll Route',
-      emoji: '⚽',
+      emoji: '?',
       description: 'Roll the ball along the curved path!',
       color: '#16A34A',
       available: isBallRollPathAvailable,
@@ -5345,8 +5698,8 @@ export default function SessionGamesScreen() {
     {
       id: 'dont-touch-grass',
       title: 'Grass Guard',
-      emoji: '🚶',
-      description: 'Stay on the path — don\'t touch the grass on either side!',
+      emoji: '??',
+      description: 'Stay on the path ? don\'t touch the grass on either side!',
       color: '#15803D',
       available: isDontTouchGrassAvailable,
     },
@@ -5354,7 +5707,7 @@ export default function SessionGamesScreen() {
     {
       id: 'dot-to-dot-animal',
       title: 'Animal Sketch',
-      emoji: '🐾',
+      emoji: '??',
       description: 'Connect the dots in order to reveal the animal shape!',
       color: '#2563EB',
       available: isDotToDotAnimalAvailable,
@@ -5362,7 +5715,7 @@ export default function SessionGamesScreen() {
     {
       id: 'star-builder',
       title: 'Star Forge',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Connect all 10 dots in order to build a star!',
       color: '#FBBF24',
       available: isStarBuilderAvailable,
@@ -5370,7 +5723,7 @@ export default function SessionGamesScreen() {
     {
       id: 'house-drawing',
       title: 'Home Builder',
-      emoji: '🏠',
+      emoji: '??',
       description: 'Connect the dots in order to draw a house!',
       color: '#7C3AED',
       available: isHouseDrawingAvailable,
@@ -5378,7 +5731,7 @@ export default function SessionGamesScreen() {
     {
       id: 'hidden-shape-reveal',
       title: 'Mystery Shape',
-      emoji: '✨',
+      emoji: '?',
       description: 'Connect the dots to reveal the hidden shape!',
       color: '#EC4899',
       available: isHiddenShapeRevealAvailable,
@@ -5386,7 +5739,7 @@ export default function SessionGamesScreen() {
     {
       id: 'connect-in-order-glow',
       title: 'Glow Connect',
-      emoji: '💡',
+      emoji: '??',
       description: 'Watch the dots light up and tap them in sequence!',
       color: '#10B981',
       available: isConnectInOrderGlowAvailable,
@@ -5395,7 +5748,7 @@ export default function SessionGamesScreen() {
     {
       id: 'puzzle-drop-shapes',
       title: 'Shape Slot',
-      emoji: '🧩',
+      emoji: '??',
       description: 'Drag shape into outline',
       color: '#8B5CF6',
       available: isPuzzleDropShapesAvailable,
@@ -5403,7 +5756,7 @@ export default function SessionGamesScreen() {
     {
       id: 'shadow-match',
       title: 'Shadow Studio',
-      emoji: '🎭',
+      emoji: '??',
       description: 'Match exact shadow outline',
       color: '#3B82F6',
       available: isShadowMatchAvailable,
@@ -5411,7 +5764,7 @@ export default function SessionGamesScreen() {
     {
       id: 'cookie-cutter-match',
       title: 'Cookie Cut',
-      emoji: '🍪',
+      emoji: '??',
       description: 'Shape fits only if aligned',
       color: '#F59E0B',
       available: isCookieCutterMatchAvailable,
@@ -5419,7 +5772,7 @@ export default function SessionGamesScreen() {
     {
       id: 'parking-shapes',
       title: 'Park & Turn',
-      emoji: '🅿️',
+      emoji: '???',
       description: 'Correct orientation needed',
       color: '#10B981',
       available: isParkingShapesAvailable,
@@ -5427,7 +5780,7 @@ export default function SessionGamesScreen() {
     {
       id: 'fast-match',
       title: 'Quick Match',
-      emoji: '⚡',
+      emoji: '?',
       description: 'Builds speed gently (No Rotate)',
       color: '#EF4444',
       available: isFastMatchAvailable,
@@ -5436,7 +5789,7 @@ export default function SessionGamesScreen() {
     {
       id: 'big-square-walk',
       title: 'Square Stroll',
-      emoji: '⬜',
+      emoji: '?',
       description: 'Walk around the big square with your whole arm!',
       color: '#10B981',
       available: isBigSquareWalkAvailable,
@@ -5444,7 +5797,7 @@ export default function SessionGamesScreen() {
     {
       id: 'triangle-mountain-trace',
       title: 'Peak Trace',
-      emoji: '⛰️',
+      emoji: '??',
       description: 'Trace the triangle mountain with your whole arm!',
       color: '#F59E0B',
       available: isTriangleMountainTraceAvailable,
@@ -5452,7 +5805,7 @@ export default function SessionGamesScreen() {
     {
       id: 'paint-the-shape',
       title: 'Color Fill',
-      emoji: '🎨',
+      emoji: '??',
       description: 'Trace to fill the shape with color!',
       color: '#EC4899',
       available: isPaintTheShapeAvailable,
@@ -5460,7 +5813,7 @@ export default function SessionGamesScreen() {
     {
       id: 'glow-border-trace',
       title: 'Neon Ring',
-      emoji: '✨',
+      emoji: '?',
       description: 'Trace the thick glowing border!',
       color: '#A855F7',
       available: isGlowBorderTraceAvailable,
@@ -5469,7 +5822,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tiny-circle-coins',
       title: 'Coin Trace',
-      emoji: '🪙',
+      emoji: '??',
       description: 'Trace the tiny circle coin with precision!',
       color: '#F59E0B',
       available: isTinyCircleCoinsAvailable,
@@ -5477,7 +5830,7 @@ export default function SessionGamesScreen() {
     {
       id: 'mini-square-locks',
       title: 'Lock Loop',
-      emoji: '🔒',
+      emoji: '??',
       description: 'Trace the mini square lock with precision!',
       color: '#6366F1',
       available: isMiniSquareLocksAvailable,
@@ -5485,7 +5838,7 @@ export default function SessionGamesScreen() {
     {
       id: 'dot-border-shapes',
       title: 'Dotted Edge',
-      emoji: '⚫',
+      emoji: '?',
       description: 'Trace the dotted border shape with precision!',
       color: '#8B5CF6',
       available: isDotBorderShapesAvailable,
@@ -5493,7 +5846,7 @@ export default function SessionGamesScreen() {
     {
       id: 'careful-trace-challenge',
       title: 'Steady Hand',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Trace slowly and carefully with precision!',
       color: '#10B981',
       available: isCarefulTraceChallengeAvailable,
@@ -5501,7 +5854,7 @@ export default function SessionGamesScreen() {
     {
       id: 'shrink-mode-trace',
       title: 'Shrink Sprint',
-      emoji: '🔽',
+      emoji: '??',
       description: 'Trace the circle as it shrinks smaller each round!',
       color: '#EF4444',
       available: isShrinkModeTraceAvailable,
@@ -5510,23 +5863,23 @@ export default function SessionGamesScreen() {
     {
       id: 'copy-the-line-pattern',
       title: 'Line Copy',
-      emoji: '📋',
-      description: 'Copy the pattern by tapping vertical (|) or horizontal (—) lines!',
+      emoji: '??',
+      description: 'Copy the pattern by tapping vertical (|) or horizontal (?) lines!',
       color: '#8B5CF6',
       available: isCopyTheLinePatternAvailable,
     },
     {
       id: 'block-pattern-copy',
       title: 'Block Builder',
-      emoji: '⬜',
-      description: 'Copy the pattern by tapping square (□) or circle (○) blocks!',
+      emoji: '?',
+      description: 'Copy the pattern by tapping square (?) or circle (?) blocks!',
       color: '#6366F1',
       available: isBlockPatternCopyAvailable,
     },
     {
       id: 'color-pattern-match',
       title: 'Hue Sequence',
-      emoji: '🎨',
+      emoji: '??',
       description: 'Copy the color pattern by tapping colors in order!',
       color: '#EF4444',
       available: isColorPatternMatchAvailable,
@@ -5534,7 +5887,7 @@ export default function SessionGamesScreen() {
     {
       id: 'stick-design-copy',
       title: 'Stroke Studio',
-      emoji: '✏️',
+      emoji: '??',
       description: 'Copy the pre-writing stroke design!',
       color: '#F59E0B',
       available: isStickDesignCopyAvailable,
@@ -5542,7 +5895,7 @@ export default function SessionGamesScreen() {
     {
       id: 'look-hide-draw',
       title: 'Memory Sketch',
-      emoji: '👁️',
+      emoji: '???',
       description: 'Pattern disappears briefly - remember and draw it!',
       color: '#EC4899',
       available: isLookHideDrawAvailable,
@@ -5551,7 +5904,7 @@ export default function SessionGamesScreen() {
     {
       id: 'mirror-line-draw',
       title: 'Mirror Sketch',
-      emoji: '🪞',
+      emoji: '??',
       description: 'Draw on the left side, and it will mirror on the right!',
       color: '#8B5CF6',
       available: isMirrorLineDrawAvailable,
@@ -5559,7 +5912,7 @@ export default function SessionGamesScreen() {
     {
       id: 'butterfly-wings',
       title: 'Wing Mirror',
-      emoji: '🦋',
+      emoji: '??',
       description: 'Draw one wing on the left, and it will mirror on the right!',
       color: '#F59E0B',
       available: isButterflyWingsAvailable,
@@ -5567,7 +5920,7 @@ export default function SessionGamesScreen() {
     {
       id: 'face-symmetry-draw',
       title: 'Smile Mirror',
-      emoji: '😊',
+      emoji: '??',
       description: 'Draw facial features that mirror symmetrically!',
       color: '#FCD34D',
       available: isFaceSymmetryDrawAvailable,
@@ -5575,7 +5928,7 @@ export default function SessionGamesScreen() {
     {
       id: 'half-shape-complete',
       title: 'Half & Whole',
-      emoji: '✨',
+      emoji: '?',
       description: 'Draw the missing half of the shape on the right!',
       color: '#10B981',
       available: isHalfShapeCompleteAvailable,
@@ -5583,7 +5936,7 @@ export default function SessionGamesScreen() {
     {
       id: 'mirror-maze',
       title: 'Twin Trek',
-      emoji: '🔄',
+      emoji: '??',
       description: 'Move both objects together - drag on the left, right mirrors!',
       color: '#22C55E',
       available: isMirrorMazeAvailable,
@@ -5591,8 +5944,8 @@ export default function SessionGamesScreen() {
     // Speech Therapy Level 1 Session 3 games
     {
       id: 'sound-to-tap',
-      title: 'Sound → Tap',
-      emoji: '🔔',
+      title: 'Sound ? Tap',
+      emoji: '??',
       description: 'Listen to the sound, then tap when the circle appears! Build sound detection and reaction timing.',
       color: '#3B82F6',
       available: isSoundToTapAvailable,
@@ -5600,7 +5953,7 @@ export default function SessionGamesScreen() {
     {
       id: 'which-sound',
       title: 'Which Sound?',
-      emoji: '🎵',
+      emoji: '??',
       description: 'Listen to the sound and tap the matching picture! Build sound discrimination.',
       color: '#8B5CF6',
       available: isWhichSoundAvailable,
@@ -5608,7 +5961,7 @@ export default function SessionGamesScreen() {
     {
       id: 'find-sound-source',
       title: 'Find the Sound Source',
-      emoji: '🔍',
+      emoji: '??',
       description: 'Listen to the sound and find what made it! Link sounds to objects.',
       color: '#F59E0B',
       available: isFindSoundSourceAvailable,
@@ -5616,7 +5969,7 @@ export default function SessionGamesScreen() {
     {
       id: 'stop-when-sound-stops',
       title: 'Stop When Sound Stops',
-      emoji: '🛑',
+      emoji: '??',
       description: 'Watch the ball move with sound. Tap when the sound stops! Build self-control and auditory focus.',
       color: '#22C55E',
       available: isStopWhenSoundStopsAvailable,
@@ -5624,7 +5977,7 @@ export default function SessionGamesScreen() {
     {
       id: 'loud-vs-soft',
       title: 'Loud vs Soft',
-      emoji: '🔊',
+      emoji: '??',
       description: 'Listen! Loud sound? Tap big! Soft sound? Tap small! Build volume discrimination.',
       color: '#EC4899',
       available: isLoudVsSoftAvailable,
@@ -5633,7 +5986,7 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-my-eyes',
       title: 'Follow My Eyes',
-      emoji: '👁️',
+      emoji: '???',
       description: 'Watch where I look! Tap the toy that appears on that side. Build gaze following and joint attention.',
       color: '#60A5FA',
       available: isFollowMyEyesAvailable,
@@ -5641,7 +5994,7 @@ export default function SessionGamesScreen() {
     {
       id: 'which-side',
       title: 'Which Side?',
-      emoji: '🤔',
+      emoji: '??',
       description: 'I\'m looking at one of the toys. Can you find it? Build visual scanning and decision-making.',
       color: '#8B5CF6',
       available: isWhichSideAvailable,
@@ -5649,7 +6002,7 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-gaze-animation',
       title: 'Follow My Gaze to Animation',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Watch me look up! Tap the balloon that floats up. Build vertical gaze following and tracking.',
       color: '#EF4444',
       available: isFollowGazeToAnimationAvailable,
@@ -5657,7 +6010,7 @@ export default function SessionGamesScreen() {
     {
       id: 'eyes-only',
       title: 'Eyes Only',
-      emoji: '👁️',
+      emoji: '???',
       description: 'Only my eyes move! Watch carefully and tap the correct toy. Build subtle social cue reading.',
       color: '#10B981',
       available: isEyesOnlyAvailable,
@@ -5666,15 +6019,15 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-my-point',
       title: 'Follow My Point',
-      emoji: '👆',
+      emoji: '??',
       description: 'Watch me point! Tap the object I\'m pointing to. Build gesture following and joint attention.',
       color: '#FCD34D',
       available: isFollowMyPointAvailable,
     },
     {
       id: 'point-to-object-appears',
-      title: 'Point → Object Appears',
-      emoji: '✨',
+      title: 'Point ? Object Appears',
+      emoji: '?',
       description: 'I point, then the object appears! Tap it when you see it. Build gesture anticipation and social prediction.',
       color: '#60A5FA',
       available: isPointToObjectAppearsAvailable,
@@ -5682,15 +6035,15 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-the-pointed-object',
       title: 'Tap the Pointed Object',
-      emoji: '🎯',
-      description: 'Three objects appear. I point to one—can you find it? Build discrimination and social interpretation.',
+      emoji: '??',
+      description: 'Three objects appear. I point to one?can you find it? Build discrimination and social interpretation.',
       color: '#8B5CF6',
       available: isTapThePointedObjectAvailable,
     },
     {
       id: 'moving-arm-pointing',
       title: 'Moving Arm Pointing',
-      emoji: '🤲',
+      emoji: '??',
       description: 'Watch my arm move slowly and point! Follow the motion and tap. Build visual tracking and gesture integration.',
       color: '#3B82F6',
       available: isMovingArmPointingAvailable,
@@ -5698,8 +6051,8 @@ export default function SessionGamesScreen() {
     {
       id: 'multi-point-follow',
       title: 'Multi-Point Follow',
-      emoji: '⚡',
-      description: 'I point left, then right—follow quickly! Build rapid attention shifting and sustained engagement.',
+      emoji: '?',
+      description: 'I point left, then right?follow quickly! Build rapid attention shifting and sustained engagement.',
       color: '#EF4444',
       available: isMultiPointFollowAvailable,
     },
@@ -5707,23 +6060,23 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-what-you-like',
       title: 'Tap What You Like',
-      emoji: '💝',
-      description: 'Choose the one you like! No wrong answer—build confidence and preference expression.',
+      emoji: '??',
+      description: 'Choose the one you like! No wrong answer?build confidence and preference expression.',
       color: '#FCD34D',
       available: isTapWhatYouLikeAvailable,
     },
     {
       id: 'which-one-moved',
       title: 'Which One Moved?',
-      emoji: '👀',
-      description: 'Watch carefully! One picture wiggles—tap the one that moved. Build visual discrimination.',
+      emoji: '??',
+      description: 'Watch carefully! One picture wiggles?tap the one that moved. Build visual discrimination.',
       color: '#60A5FA',
       available: isWhichOneMovedAvailable,
     },
     {
       id: 'sound-to-choice',
-      title: 'Sound → Choice',
-      emoji: '🔊',
+      title: 'Sound ? Choice',
+      emoji: '??',
       description: 'Listen to the sound, then tap the matching picture! Link sounds to objects.',
       color: '#8B5CF6',
       available: isSoundToChoiceAvailable,
@@ -5731,7 +6084,7 @@ export default function SessionGamesScreen() {
     {
       id: 'show-me-the-toy',
       title: 'Show Me The Toy',
-      emoji: '👆',
+      emoji: '??',
       description: 'I\'ll tell you which one to tap! Follow simple instructions and build vocabulary.',
       color: '#3B82F6',
       available: isShowMeTheToyAvailable,
@@ -5739,7 +6092,7 @@ export default function SessionGamesScreen() {
     {
       id: 'food-vs-toy',
       title: 'Food vs Toy',
-      emoji: '🗂️',
+      emoji: '???',
       description: 'Tap the food or tap the toy! Learn to sort by category and build cognitive reasoning.',
       color: '#EF4444',
       available: isFoodVsToyAvailable,
@@ -5748,7 +6101,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pass-the-ball',
       title: 'Pass the Ball',
-      emoji: '⚽',
+      emoji: '?',
       description: 'Take turns passing the ball! Learn turn-taking and waiting.',
       color: '#22C55E',
       available: isPassTheBallAvailable,
@@ -5756,7 +6109,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-only-on-your-turn',
       title: 'Tap Only On Your Turn',
-      emoji: '🟢',
+      emoji: '??',
       description: 'Tap when you see GO! Wait when you see STOP! Build self-control.',
       color: '#EF4444',
       available: isTapOnlyOnYourTurnAvailable,
@@ -5764,7 +6117,7 @@ export default function SessionGamesScreen() {
     {
       id: 'your-turn-to-complete',
       title: 'Your Turn to Complete',
-      emoji: '🧩',
+      emoji: '??',
       description: 'Take turns placing puzzle pieces! Learn alternating turns.',
       color: '#6366F1',
       available: isYourTurnToCompleteAvailable,
@@ -5772,7 +6125,7 @@ export default function SessionGamesScreen() {
     {
       id: 'wait-for-the-signal',
       title: 'Wait for the Signal',
-      emoji: '🫧',
+      emoji: '??',
       description: 'Watch the spinner! Tap only when it turns green. Build waiting skills.',
       color: '#06B6D4',
       available: isWaitForTheSignalAvailable,
@@ -5780,7 +6133,7 @@ export default function SessionGamesScreen() {
     {
       id: 'turn-timer',
       title: 'Turn Timer',
-      emoji: '⏱️',
+      emoji: '??',
       description: 'Wait for the timer to fill, then tap! Learn timed waiting.',
       color: '#FCD34D',
       available: isTurnTimerAvailable,
@@ -5789,7 +6142,7 @@ export default function SessionGamesScreen() {
     {
       id: 'watch-and-wait',
       title: 'Watch and Wait',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Watch the object move slowly, then tap when the ring appears! Build sustained attention.',
       color: '#FCD34D',
       available: isWatchAndWaitAvailable,
@@ -5797,15 +6150,15 @@ export default function SessionGamesScreen() {
     {
       id: 'growing-flower',
       title: 'Growing Flower',
-      emoji: '🌻',
+      emoji: '??',
       description: 'Watch the flower grow! Tap when it\'s fully bloomed. Build patience and delayed gratification.',
       color: '#22C55E',
       available: isGrowingFlowerAvailable,
     },
     {
       id: 'timer-bar-tap',
-      title: 'Timer Bar → Tap',
-      emoji: '⭐',
+      title: 'Timer Bar ? Tap',
+      emoji: '?',
       description: 'Watch the bar fill! Tap only when it\'s full. Build time perception and control.',
       color: '#3B82F6',
       available: isTimerBarTapAvailable,
@@ -5813,7 +6166,7 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-slow-movement',
       title: 'Follow the Slow Movement',
-      emoji: '🐢',
+      emoji: '??',
       description: 'Follow the slow-moving object with your eyes, then tap when it stops! Build extended attention.',
       color: '#8B5CF6',
       available: isFollowSlowMovementAvailable,
@@ -5821,7 +6174,7 @@ export default function SessionGamesScreen() {
     {
       id: 'shapes-appear-one-by-one',
       title: 'Shapes Appear One By One',
-      emoji: '🔵',
+      emoji: '??',
       description: 'Watch shapes appear one by one, then tap all three! Build multi-step attention and memory.',
       color: '#EC4899',
       available: isShapesAppearOneByOneAvailable,
@@ -5830,7 +6183,7 @@ export default function SessionGamesScreen() {
     {
       id: 'touch-the-ball',
       title: 'Touch the Object',
-      emoji: '⚽',
+      emoji: '?',
       description: 'Listen to the instruction and touch the correct object! Build receptive command understanding.',
       color: '#3B82F6',
       available: isTouchTheBallAvailable,
@@ -5838,7 +6191,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-the-circle',
       title: 'Tap the Object',
-      emoji: '⭕',
+      emoji: '?',
       description: 'Follow the shape instruction! Tap the correct shape. Build shape recognition and discrimination.',
       color: '#8B5CF6',
       available: isTapTheCircleAvailable,
@@ -5846,7 +6199,7 @@ export default function SessionGamesScreen() {
     {
       id: 'find-the-sound-source',
       title: 'Find the Sound Source',
-      emoji: '🔊',
+      emoji: '??',
       description: 'Listen to the sound, then show me the matching object! Build sound-object linking.',
       color: '#F59E0B',
       available: isFindTheSoundSourceAvailable,
@@ -5854,7 +6207,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-what-i-show-you',
       title: 'Tap What I Show You',
-      emoji: '✨',
+      emoji: '?',
       description: 'Watch the glowing object, then tap it! Build visual instruction comprehension.',
       color: '#22C55E',
       available: isTapWhatIShowYouAvailable,
@@ -5862,7 +6215,7 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-the-arrow',
       title: 'Follow the Arrow',
-      emoji: '➡️',
+      emoji: '??',
       description: 'Follow the arrow and tap the object it points to! Build gestural cue understanding.',
       color: '#EC4899',
       available: isFollowTheArrowAvailable,
@@ -5871,7 +6224,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-the-target-ignore-distraction',
       title: 'Tap the Target, Ignore Distraction',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Tap the target object only! Ignore the flying distraction. Build selective attention.',
       color: '#FCD34D',
       available: isTapTheTargetIgnoreDistractionAvailable,
@@ -5879,7 +6232,7 @@ export default function SessionGamesScreen() {
     {
       id: 'sound-distraction-challenge',
       title: 'Sound Distraction Challenge',
-      emoji: '🔊',
+      emoji: '??',
       description: 'Wait for the target to glow while sounds play! Build auditory filtering.',
       color: '#3B82F6',
       available: isSoundDistractionChallengeAvailable,
@@ -5887,7 +6240,7 @@ export default function SessionGamesScreen() {
     {
       id: 'slow-task-with-pop-up-distraction',
       title: 'Slow Task + Pop-up Distraction',
-      emoji: '🌻',
+      emoji: '??',
       description: 'Watch the flower grow while ignoring pop-ups! Build sustained attention.',
       color: '#22C55E',
       available: isSlowTaskWithPopUpDistractionAvailable,
@@ -5895,7 +6248,7 @@ export default function SessionGamesScreen() {
     {
       id: 'sequence-with-distraction',
       title: 'Sequence with Distraction',
-      emoji: '🔢',
+      emoji: '??',
       description: 'Tap shapes in order while ignoring distractions! Build multi-step focus.',
       color: '#8B5CF6',
       available: isSequenceWithDistractionAvailable,
@@ -5903,15 +6256,15 @@ export default function SessionGamesScreen() {
     {
       id: 'copy-the-clap',
       title: 'Copy the Clap',
-      emoji: '👏',
-      description: 'Avatar claps — tap Clap to copy. Action imitation.',
+      emoji: '??',
+      description: 'Avatar claps ? tap Clap to copy. Action imitation.',
       color: '#D97706',
       available: isCopyTheClapAvailable,
     },
     {
       id: 'jump-like-me',
       title: 'Jump Like Me',
-      emoji: '🦘',
+      emoji: '??',
       description: 'Match the character jump. Gross motor imitation.',
       color: '#2563EB',
       available: isJumpLikeMeAvailable,
@@ -5919,7 +6272,7 @@ export default function SessionGamesScreen() {
     {
       id: 'dance-freeze',
       title: 'Dance Freeze',
-      emoji: '💃',
+      emoji: '??',
       description: 'Copy the dance pose when the music stops. Body imitation.',
       color: '#DB2777',
       available: isDanceFreezeAvailable,
@@ -5927,7 +6280,7 @@ export default function SessionGamesScreen() {
     {
       id: 'silly-action-match',
       title: 'Silly Action Match',
-      emoji: '🤪',
+      emoji: '??',
       description: 'Match the funny movement. Attention + imitation.',
       color: '#7C3AED',
       available: isSillyActionMatchAvailable,
@@ -5935,7 +6288,7 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-my-move',
       title: 'Follow My Move',
-      emoji: '🧠',
+      emoji: '??',
       description: 'Repeat the action sequence in order. Motor planning.',
       color: '#059669',
       available: isFollowMyMoveAvailable,
@@ -5943,7 +6296,7 @@ export default function SessionGamesScreen() {
     {
       id: 'touch-the-nose',
       title: 'Touch the Nose',
-      emoji: '👃',
+      emoji: '??',
       description: 'Tap the correct body part when asked. Body awareness.',
       color: '#EA580C',
       available: isTouchTheNoseAvailable,
@@ -5951,7 +6304,7 @@ export default function SessionGamesScreen() {
     {
       id: 'speech-body-puzzle',
       title: 'Body Puzzle',
-      emoji: '🧩',
+      emoji: '??',
       description: 'Place head, arm, and leg on the figure. Recognition.',
       color: '#4F46E5',
       available: isBodyPuzzleSpeechAvailable,
@@ -5959,7 +6312,7 @@ export default function SessionGamesScreen() {
     {
       id: 'what-helps-you-see',
       title: 'What Helps You See?',
-      emoji: '👀',
+      emoji: '??',
       description: 'Pick which body part does each job. Function understanding.',
       color: '#0D9488',
       available: isWhatHelpsYouSeeAvailable,
@@ -5967,7 +6320,7 @@ export default function SessionGamesScreen() {
     {
       id: 'dress-the-character',
       title: 'Dress the Character',
-      emoji: '👕',
+      emoji: '??',
       description: 'Put hat, shirt, and pants on the right places. Body mapping.',
       color: '#CA8A04',
       available: isDressTheCharacterAvailable,
@@ -5975,7 +6328,7 @@ export default function SessionGamesScreen() {
     {
       id: 'simon-says-body',
       title: 'Simon Says Body',
-      emoji: '👂',
+      emoji: '??',
       description: 'Follow Simon Says body rules. Receptive language.',
       color: '#DC2626',
       available: isSimonSaysBodyAvailable,
@@ -5983,7 +6336,7 @@ export default function SessionGamesScreen() {
     {
       id: 'find-the-animal',
       title: 'Find the Animal',
-      emoji: '🐕',
+      emoji: '??',
       description: 'Tap the animal you hear named. Vocabulary.',
       color: '#16A34A',
       available: isFindTheAnimalAvailable,
@@ -5991,7 +6344,7 @@ export default function SessionGamesScreen() {
     {
       id: 'fruit-basket',
       title: 'Fruit Basket',
-      emoji: '🍎',
+      emoji: '??',
       description: 'Sort fruits into the basket. Categorization.',
       color: '#D97706',
       available: isFruitBasketAvailable,
@@ -5999,7 +6352,7 @@ export default function SessionGamesScreen() {
     {
       id: 'vehicle-garage',
       title: 'Vehicle Garage',
-      emoji: '🚗',
+      emoji: '??',
       description: 'Park each vehicle in its garage. Object recognition.',
       color: '#2563EB',
       available: isVehicleGarageAvailable,
@@ -6007,7 +6360,7 @@ export default function SessionGamesScreen() {
     {
       id: 'alphabet-hunt',
       title: 'Alphabet Hunt',
-      emoji: '🔤',
+      emoji: '??',
       description: 'Find the letter you hear. Symbol recognition.',
       color: '#7C3AED',
       available: isAlphabetHuntAvailable,
@@ -6015,7 +6368,7 @@ export default function SessionGamesScreen() {
     {
       id: 'vegetable-farm',
       title: 'Vegetable Farm',
-      emoji: '🥕',
+      emoji: '??',
       description: 'Pick the vegetable named aloud. Listening.',
       color: '#C2410C',
       available: isVegetableFarmAvailable,
@@ -6023,7 +6376,7 @@ export default function SessionGamesScreen() {
     {
       id: 'same-category',
       title: 'Same Category',
-      emoji: '🗂️',
+      emoji: '???',
       description: 'Tap everything in the same group. Categorization.',
       color: '#0284C7',
       available: isSameCategoryAvailable,
@@ -6031,7 +6384,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pick-the-different-one',
       title: 'Pick the Different One',
-      emoji: '🔍',
+      emoji: '??',
       description: 'Find the item that does not belong. Comparison.',
       color: '#DB2777',
       available: isPickTheDifferentOneAvailable,
@@ -6039,7 +6392,7 @@ export default function SessionGamesScreen() {
     {
       id: 'big-vs-small',
       title: 'Big vs Small',
-      emoji: '📏',
+      emoji: '??',
       description: 'Tap all big or all small things. Size attributes.',
       color: '#CA8A04',
       available: isBigVsSmallAvailable,
@@ -6047,7 +6400,7 @@ export default function SessionGamesScreen() {
     {
       id: 'soft-or-hard',
       title: 'Soft or Hard?',
-      emoji: '🧸',
+      emoji: '??',
       description: 'Sort soft and hard things. Descriptive concepts.',
       color: '#9333EA',
       available: isSoftOrHardAvailable,
@@ -6055,7 +6408,7 @@ export default function SessionGamesScreen() {
     {
       id: 'color-match-train',
       title: 'Color Match Train',
-      emoji: '🚂',
+      emoji: '??',
       description: 'Load the train with matching colors. Visual attributes.',
       color: '#DC2626',
       available: isColorMatchTrainAvailable,
@@ -6063,7 +6416,7 @@ export default function SessionGamesScreen() {
     {
       id: 'put-teddy-in-box',
       title: 'Put Teddy In the Box',
-      emoji: '🧸',
+      emoji: '??',
       description: 'Drag the toy into the box. In and out.',
       color: '#D97706',
       available: isPutTeddyInBoxAvailable,
@@ -6071,7 +6424,7 @@ export default function SessionGamesScreen() {
     {
       id: 'under-the-table',
       title: 'Under the Table',
-      emoji: '🪑',
+      emoji: '??',
       description: 'Place the object under the table. Spatial understanding.',
       color: '#4F46E5',
       available: isUnderTheTableAvailable,
@@ -6079,7 +6432,7 @@ export default function SessionGamesScreen() {
     {
       id: 'left-or-right',
       title: 'Left or Right?',
-      emoji: '↔️',
+      emoji: '??',
       description: 'Tap the item on the correct side. Direction concepts.',
       color: '#16A34A',
       available: isLeftOrRightAvailable,
@@ -6087,7 +6440,7 @@ export default function SessionGamesScreen() {
     {
       id: 'near-or-far',
       title: 'Near or Far',
-      emoji: '🔭',
+      emoji: '??',
       description: 'Choose what is close or far away. Spatial reasoning.',
       color: '#DB2777',
       available: isNearOrFarAvailable,
@@ -6095,7 +6448,7 @@ export default function SessionGamesScreen() {
     {
       id: 'behind-the-tree',
       title: 'Behind the Tree',
-      emoji: '🌳',
+      emoji: '??',
       description: 'Hide the friend behind the tree. Prepositions.',
       color: '#059669',
       available: isBehindTheTreeAvailable,
@@ -6103,7 +6456,7 @@ export default function SessionGamesScreen() {
     {
       id: 'who-is-running',
       title: 'Who Is Running?',
-      emoji: '🏃',
+      emoji: '??',
       description: 'Tap who is doing the action. Verb identification.',
       color: '#EA580C',
       available: isWhoIsRunningAvailable,
@@ -6111,7 +6464,7 @@ export default function SessionGamesScreen() {
     {
       id: 'what-do-we-eat-with',
       title: 'What Do We Eat With?',
-      emoji: '🥄',
+      emoji: '??',
       description: 'Choose the spoon for eating. Object function.',
       color: '#CA8A04',
       available: isWhatDoWeEatWithAvailable,
@@ -6119,7 +6472,7 @@ export default function SessionGamesScreen() {
     {
       id: 'match-the-action',
       title: 'Match the Action',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Match the verb word to the picture. Verb comprehension.',
       color: '#0284C7',
       available: isMatchTheActionAvailable,
@@ -6127,7 +6480,7 @@ export default function SessionGamesScreen() {
     {
       id: 'what-does-a-doctor-do',
       title: 'What Does a Doctor Do?',
-      emoji: '👨‍⚕️',
+      emoji: '?????',
       description: 'Match the helper to what they do. Functional reasoning.',
       color: '#7C3AED',
       available: isWhatDoesADoctorDoAvailable,
@@ -6135,7 +6488,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tool-match',
       title: 'Tool Match',
-      emoji: '🔧',
+      emoji: '??',
       description: 'Match the tool with what it is used for. Problem solving.',
       color: '#475569',
       available: isToolMatchAvailable,
@@ -6143,7 +6496,7 @@ export default function SessionGamesScreen() {
     {
       id: 'find-the-kitchen',
       title: 'Find the Kitchen',
-      emoji: '🍳',
+      emoji: '??',
       description: 'Tap the right room in the house. Room identification.',
       color: '#C2410C',
       available: isFindTheKitchenAvailable,
@@ -6151,7 +6504,7 @@ export default function SessionGamesScreen() {
     {
       id: 'where-does-teacher-work',
       title: 'Where Does Teacher Work?',
-      emoji: '🏫',
+      emoji: '??',
       description: 'Match the person to where they work. Community understanding.',
       color: '#2563EB',
       available: isWhereDoesTeacherWorkAvailable,
@@ -6159,7 +6512,7 @@ export default function SessionGamesScreen() {
     {
       id: 'family-match',
       title: 'Family Match',
-      emoji: '👨‍👩‍👧',
+      emoji: '????????',
       description: 'Find the family member you hear. Social recognition.',
       color: '#DB2777',
       available: isFamilyMatchAvailable,
@@ -6167,7 +6520,7 @@ export default function SessionGamesScreen() {
     {
       id: 'boy-or-girl',
       title: 'Boy or Girl?',
-      emoji: '👦',
+      emoji: '??',
       description: 'Tap the boy or girl you hear. Visual discrimination.',
       color: '#4F46E5',
       available: isBoyOrGirlAvailable,
@@ -6175,7 +6528,7 @@ export default function SessionGamesScreen() {
     {
       id: 'community-helpers',
       title: 'Community Helpers',
-      emoji: '👮',
+      emoji: '??',
       description: 'Match the helper to their job. Social understanding.',
       color: '#059669',
       available: isCommunityHelpersAvailable,
@@ -6183,7 +6536,7 @@ export default function SessionGamesScreen() {
     {
       id: 'guess-the-object',
       title: 'Guess the Object',
-      emoji: '🔮',
+      emoji: '??',
       description: 'Read the clues and pick the object. Listening comprehension.',
       color: '#7C3AED',
       available: isGuessTheObjectAvailable,
@@ -6191,7 +6544,7 @@ export default function SessionGamesScreen() {
     {
       id: 'hidden-part-puzzle',
       title: 'Hidden Part Puzzle',
-      emoji: '🧩',
+      emoji: '??',
       description: 'Guess the whole object from a hidden part. Visual reasoning.',
       color: '#0284C7',
       available: isHiddenPartPuzzleAvailable,
@@ -6199,7 +6552,7 @@ export default function SessionGamesScreen() {
     {
       id: 'what-am-i-describing',
       title: 'What Am I Describing?',
-      emoji: '💬',
+      emoji: '??',
       description: 'Match the words to the right picture. Language processing.',
       color: '#CA8A04',
       available: isWhatAmIDescribingAvailable,
@@ -6207,7 +6560,7 @@ export default function SessionGamesScreen() {
     {
       id: 'find-by-function',
       title: 'Find by Function',
-      emoji: '✂️',
+      emoji: '??',
       description: 'Used for cutting? Pick scissors. Functional comprehension.',
       color: '#EA580C',
       available: isFindByFunctionAvailable,
@@ -6215,7 +6568,7 @@ export default function SessionGamesScreen() {
     {
       id: 'mystery-bag',
       title: 'Mystery Bag',
-      emoji: '🎒',
+      emoji: '??',
       description: 'Tap the bag for clues, then guess inside. Inferencing.',
       color: '#475569',
       available: isMysteryBagAvailable,
@@ -6223,7 +6576,7 @@ export default function SessionGamesScreen() {
     {
       id: 'story-order-cards',
       title: 'Story Order Cards',
-      emoji: '📖',
+      emoji: '??',
       description: 'Tap the story steps in order. Sequencing.',
       color: '#7C3AED',
       available: isStoryOrderCardsAvailable,
@@ -6231,7 +6584,7 @@ export default function SessionGamesScreen() {
     {
       id: 'what-is-missing',
       title: 'What Is Missing?',
-      emoji: '❓',
+      emoji: '?',
       description: 'Find the item for the empty spot. Visual memory.',
       color: '#0284C7',
       available: isWhatIsMissingAvailable,
@@ -6239,7 +6592,7 @@ export default function SessionGamesScreen() {
     {
       id: 'complete-the-pattern',
       title: 'Complete the Pattern',
-      emoji: '🔁',
+      emoji: '??',
       description: 'What comes next in the pattern? Logic.',
       color: '#16A34A',
       available: isCompleteThePatternAvailable,
@@ -6247,7 +6600,7 @@ export default function SessionGamesScreen() {
     {
       id: 'first-middle-last',
       title: 'First-Middle-Last',
-      emoji: '1️⃣',
+      emoji: '1??',
       description: 'Tap first, middle, or last. Order concepts.',
       color: '#DB2777',
       available: isFirstMiddleLastAvailable,
@@ -6255,7 +6608,7 @@ export default function SessionGamesScreen() {
     {
       id: 'find-the-hidden-toy',
       title: 'Find the Hidden Toy',
-      emoji: '🧸',
+      emoji: '??',
       description: 'Follow clues, then find the toy. Multi-step reasoning.',
       color: '#EA580C',
       available: isFindTheHiddenToyAvailable,
@@ -6263,7 +6616,7 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-2-step-directions',
       title: 'Follow 2-Step Directions',
-      emoji: '👂',
+      emoji: '??',
       description: 'Put the ball under the chair. Multi-step processing.',
       color: '#2563EB',
       available: isFollow2StepDirectionsAvailable,
@@ -6271,7 +6624,7 @@ export default function SessionGamesScreen() {
     {
       id: 'belongs-or-not',
       title: 'Belongs or Not?',
-      emoji: '🗂️',
+      emoji: '???',
       description: 'Does it fit in the group? Advanced categorization.',
       color: '#7C3AED',
       available: isBelongsOrNotAvailable,
@@ -6279,7 +6632,7 @@ export default function SessionGamesScreen() {
     {
       id: 'singular-or-plural',
       title: 'Singular or Plural',
-      emoji: '1️⃣',
+      emoji: '1??',
       description: 'Tap one or many. Language concepts.',
       color: '#CA8A04',
       available: isSingularOrPluralAvailable,
@@ -6287,7 +6640,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pronoun-match',
       title: 'Pronoun Match',
-      emoji: '💬',
+      emoji: '??',
       description: 'Match he, she, or they to the picture. Pronoun understanding.',
       color: '#DB2777',
       available: isPronounMatchAvailable,
@@ -6295,7 +6648,7 @@ export default function SessionGamesScreen() {
     {
       id: 'smart-listener-challenge',
       title: 'Smart Listener Challenge',
-      emoji: '🎧',
+      emoji: '??',
       description: 'Mixed listening tasks in one game. Integrated comprehension.',
       color: '#EA580C',
       available: isSmartListenerChallengeAvailable,
@@ -6303,7 +6656,7 @@ export default function SessionGamesScreen() {
     {
       id: 'magic-feather',
       title: 'Magic Feather',
-      emoji: '🪶',
+      emoji: '??',
       description: 'Soft breath gently moves the feather. Any try counts!',
       color: '#38BDF8',
       available: isMagicFeatherAvailable,
@@ -6311,7 +6664,7 @@ export default function SessionGamesScreen() {
     {
       id: 'cloud-puff',
       title: 'Cloud Puff',
-      emoji: '☁️',
+      emoji: '??',
       description: 'Your breath pushes the cloud. Watch the sun appear.',
       color: '#94A3B8',
       available: isCloudPuffAvailable,
@@ -6319,7 +6672,7 @@ export default function SessionGamesScreen() {
     {
       id: 'bubble-wakeup',
       title: 'Bubble Wake-Up',
-      emoji: '🫧',
+      emoji: '??',
       description: 'Wake sleepy bubbles with gentle air. Friendly faces appear.',
       color: '#22D3EE',
       available: isBubbleWakeupAvailable,
@@ -6327,15 +6680,15 @@ export default function SessionGamesScreen() {
     {
       id: 'windmill-friend',
       title: 'Windmill Friend',
-      emoji: '🌬️',
-      description: 'Breath spins the windmill slowly. No pressure — just play.',
+      emoji: '???',
+      description: 'Breath spins the windmill slowly. No pressure ? just play.',
       color: '#EAB308',
       available: isWindmillFriendAvailable,
     },
     {
       id: 'air-painter',
       title: 'Air Painter',
-      emoji: '🎨',
+      emoji: '??',
       description: 'Breath paints colors on the canvas. Rainbow celebration!',
       color: '#A855F7',
       available: isAirPainterAvailable,
@@ -6343,7 +6696,7 @@ export default function SessionGamesScreen() {
     {
       id: 'copy-happy-mouth',
       title: 'Copy Happy Mouth',
-      emoji: '😊',
+      emoji: '??',
       description: 'Watch open and close, then copy. Every try gets stars!',
       color: '#EA580C',
       available: isCopyHappyMouthAvailable,
@@ -6351,7 +6704,7 @@ export default function SessionGamesScreen() {
     {
       id: 'funny-monster-mouth',
       title: 'Funny Monster Mouth',
-      emoji: '👾',
+      emoji: '??',
       description: 'Copy silly monster mouths. The monster laughs with you!',
       color: '#059669',
       available: isFunnyMonsterMouthAvailable,
@@ -6359,15 +6712,15 @@ export default function SessionGamesScreen() {
     {
       id: 'mirror-mouth-match',
       title: 'Mirror Mouth Match',
-      emoji: '🪞',
-      description: 'Slow mirror avatar — copy open, close, and smile.',
+      emoji: '??',
+      description: 'Slow mirror avatar ? copy open, close, and smile.',
       color: '#7C3AED',
       available: isMirrorMouthMatchAvailable,
     },
     {
       id: 'open-close-dance',
-      title: 'Open–Close Dance',
-      emoji: '💃',
+      title: 'Open?Close Dance',
+      emoji: '??',
       description: 'Rhythmic open-close mouth dance. Very slow, no pressure.',
       color: '#DB2777',
       available: isOpenCloseDanceAvailable,
@@ -6375,23 +6728,23 @@ export default function SessionGamesScreen() {
     {
       id: 'silly-face-copy',
       title: 'Silly Face Copy',
-      emoji: '🎉',
-      description: 'Open, smile, and silly mouths — confetti celebration!',
+      emoji: '??',
+      description: 'Open, smile, and silly mouths ? confetti celebration!',
       color: '#D97706',
       available: isSillyFaceCopyAvailable,
     },
     {
       id: 'wake-feather',
       title: 'Wake the Feather',
-      emoji: '🪶',
+      emoji: '??',
       description: 'Start air to wake the feather, stop to let it rest softly.',
       color: '#0284C7',
       available: isWakeFeatherAvailable,
     },
     {
       id: 'start-stop-cloud',
-      title: 'Start–Stop Cloud',
-      emoji: '☁️',
+      title: 'Start?Stop Cloud',
+      emoji: '??',
       description: 'Cloud moves while air is on, pauses when you stop.',
       color: '#64748B',
       available: isStartStopCloudAvailable,
@@ -6399,7 +6752,7 @@ export default function SessionGamesScreen() {
     {
       id: 'windmill-freeze',
       title: 'Windmill Freeze',
-      emoji: '🌬️',
+      emoji: '???',
       description: 'Windmill spins with air, slows when you stop. No punishment!',
       color: '#CA8A04',
       available: isWindmillFreezeAvailable,
@@ -6407,7 +6760,7 @@ export default function SessionGamesScreen() {
     {
       id: 'balloon-breath',
       title: 'Balloon Breath',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Inflate with breath, pause on stop. Balloon floats happily!',
       color: '#DB2777',
       available: isBalloonBreathAvailable,
@@ -6415,23 +6768,23 @@ export default function SessionGamesScreen() {
     {
       id: 'magic-air-switch',
       title: 'Magic Air Switch',
-      emoji: '🔮',
-      description: 'Breath powers the glow. Stop — magic fades slowly.',
+      emoji: '??',
+      description: 'Breath powers the glow. Stop ? magic fades slowly.',
       color: '#7C3AED',
       available: isMagicAirSwitchAvailable,
     },
     {
       id: 'happy-lips-mirror',
       title: 'Happy Lips Mirror',
-      emoji: '🪞',
-      description: 'Watch big, small, closed, and funny lips — copy playfully!',
+      emoji: '??',
+      description: 'Watch big, small, closed, and funny lips ? copy playfully!',
       color: '#E11D48',
       available: isHappyLipsMirrorAvailable,
     },
     {
       id: 'lip-tap-friend',
       title: 'Lip Tap Friend',
-      emoji: '👄',
+      emoji: '??',
       description: 'Tap the glowing lips! Your friend giggles every time.',
       color: '#059669',
       available: isLipTapFriendAvailable,
@@ -6439,7 +6792,7 @@ export default function SessionGamesScreen() {
     {
       id: 'magic-lip-glow',
       title: 'Magic Lip Glow',
-      emoji: '✨',
+      emoji: '?',
       description: 'Tap lips for soft magical glows. Different taps, different sparkles.',
       color: '#7C3AED',
       available: isMagicLipGlowAvailable,
@@ -6447,7 +6800,7 @@ export default function SessionGamesScreen() {
     {
       id: 'funny-fish-lips',
       title: 'Funny Fish Lips',
-      emoji: '🐡',
+      emoji: '??',
       description: 'Fish shows silly lip shapes. Copy and watch it swim!',
       color: '#0284C7',
       available: isFunnyFishLipsAvailable,
@@ -6455,15 +6808,15 @@ export default function SessionGamesScreen() {
     {
       id: 'lip-explorer-adventure',
       title: 'Lip Explorer Adventure',
-      emoji: '🗺️',
-      description: 'Tap, copy, and watch lips — treasure celebration!',
+      emoji: '???',
+      description: 'Tap, copy, and watch lips ? treasure celebration!',
       color: '#B45309',
       available: isLipExplorerAdventureAvailable,
     },
     {
       id: 'jaw-hungry-crocodile',
       title: 'Hungry Crocodile',
-      emoji: '🐊',
+      emoji: '??',
       description: 'Open wide like the croc, then tap food in. Happy munch!',
       color: '#059669',
       available: isJawHungryCrocodileAvailable,
@@ -6471,7 +6824,7 @@ export default function SessionGamesScreen() {
     {
       id: 'sleepy-lion-mouth',
       title: 'Sleepy Lion Mouth',
-      emoji: '🦁',
+      emoji: '??',
       description: 'Awake open, big yawn, sleepy close. Lion smiles!',
       color: '#CA8A04',
       available: isSleepyLionMouthAvailable,
@@ -6479,15 +6832,15 @@ export default function SessionGamesScreen() {
     {
       id: 'mouth-elevator',
       title: 'Mouth Elevator',
-      emoji: '🛗',
+      emoji: '??',
       description: 'Open lifts the elevator, close stops it. Playful pacing!',
       color: '#4F46E5',
       available: isMouthElevatorAvailable,
     },
     {
       id: 'jaw-open-close-dance',
-      title: 'Open–Close Dance',
-      emoji: '💃',
+      title: 'Open?Close Dance',
+      emoji: '??',
       description: 'Slow jaw dance: open, close, open. Dance stars reward!',
       color: '#DB2777',
       available: isJawOpenCloseDanceAvailable,
@@ -6495,23 +6848,23 @@ export default function SessionGamesScreen() {
     {
       id: 'funny-jaw-adventure',
       title: 'Funny Jaw Adventure',
-      emoji: '🗺️',
-      description: 'Watch, copy open, copy close — treasure celebration!',
+      emoji: '???',
+      description: 'Watch, copy open, copy close ? treasure celebration!',
       color: '#16A34A',
       available: isFunnyJawAdventureAvailable,
     },
     {
       id: 'funny-face-mirror',
       title: 'Funny Face Mirror',
-      emoji: '🪞',
-      description: 'Silly mirror faces — big smile, open, small, surprised. Avatar laughs!',
+      emoji: '??',
+      description: 'Silly mirror faces ? big smile, open, small, surprised. Avatar laughs!',
       color: '#EA580C',
       available: isFunnyFaceMirrorAvailable,
     },
     {
       id: 'happy-sad-copy',
-      title: 'Happy–Sad Copy',
-      emoji: '😄',
+      title: 'Happy?Sad Copy',
+      emoji: '??',
       description: 'Gentle happy, surprised, and sleepy faces. Stars reward!',
       color: '#0284C7',
       available: isHappySadCopyAvailable,
@@ -6519,7 +6872,7 @@ export default function SessionGamesScreen() {
     {
       id: 'monster-face-match',
       title: 'Monster Face Match',
-      emoji: '👾',
+      emoji: '??',
       description: 'Friendly monster shows big silly faces. Monster dance!',
       color: '#7C3AED',
       available: isMonsterFaceMatchAvailable,
@@ -6527,7 +6880,7 @@ export default function SessionGamesScreen() {
     {
       id: 'mirror-dance-faces',
       title: 'Mirror Dance Faces',
-      emoji: '💃',
+      emoji: '??',
       description: 'Slow face dance: smile, open, funny. No timing pressure!',
       color: '#DB2777',
       available: isMirrorDanceFacesAvailable,
@@ -6535,15 +6888,15 @@ export default function SessionGamesScreen() {
     {
       id: 'face-adventure-copy',
       title: 'Face Adventure Copy',
-      emoji: '🗺️',
-      description: 'Watch, copy, tap the star — treasure celebration!',
+      emoji: '???',
+      description: 'Watch, copy, tap the star ? treasure celebration!',
       color: '#16A34A',
       available: isFaceAdventureCopyAvailable,
     },
     {
       id: 'magic-face-breeze',
       title: 'Magic Face Breeze',
-      emoji: '🌬️',
+      emoji: '???',
       description: 'Tap gentle sparkles near the face. Watching counts too.',
       color: '#7C3AED',
       available: isMagicFaceBreezeAvailable,
@@ -6551,7 +6904,7 @@ export default function SessionGamesScreen() {
     {
       id: 'bubble-nose-tickles',
       title: 'Bubble Nose Tickles',
-      emoji: '🫧',
+      emoji: '??',
       description: 'Funny bubbles float softly. Tap a bubble to make it smile.',
       color: '#0EA5E9',
       available: isBubbleNoseTicklesAvailable,
@@ -6559,7 +6912,7 @@ export default function SessionGamesScreen() {
     {
       id: 'funny-mouth-explorer',
       title: 'Funny Mouth Explorer',
-      emoji: '👄',
+      emoji: '??',
       description: 'Tap friendly mouth pictures (lips, tongue, teeth). Safe and playful.',
       color: '#DB2777',
       available: isFunnyMouthExplorerAvailable,
@@ -6567,7 +6920,7 @@ export default function SessionGamesScreen() {
     {
       id: 'soft-sensory-monster',
       title: 'Soft Sensory Monster',
-      emoji: '🧸',
+      emoji: '??',
       description: 'Tap the friendly monster gently for a calm hug. No pressure.',
       color: '#22C55E',
       available: isSoftSensoryMonsterAvailable,
@@ -6575,7 +6928,7 @@ export default function SessionGamesScreen() {
     {
       id: 'calm-mouth-adventure',
       title: 'Calm Mouth Adventure',
-      emoji: '🌿',
+      emoji: '??',
       description: 'Tap gentle sensory objects. Slow, predictable, and safe.',
       color: '#16A34A',
       available: isCalmMouthAdventureAvailable,
@@ -6583,7 +6936,7 @@ export default function SessionGamesScreen() {
     {
       id: 'find-mouth-part',
       title: 'Find the Mouth Part',
-      emoji: '👄',
+      emoji: '??',
       description: 'Find lips, tongue, and mouth with calm glowing prompts. Any attempt counts.',
       color: '#0284C7',
       available: isFindMouthPartAvailable,
@@ -6591,7 +6944,7 @@ export default function SessionGamesScreen() {
     {
       id: 'magic-mouth-spotlight',
       title: 'Magic Mouth Spotlight',
-      emoji: '✨',
+      emoji: '?',
       description: 'Follow a slow spotlight across mouth areas and tap gently.',
       color: '#7C3AED',
       available: isMagicMouthSpotlightAvailable,
@@ -6599,7 +6952,7 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-funny-mouth',
       title: 'Follow the Funny Mouth',
-      emoji: '😄',
+      emoji: '??',
       description: 'Watch playful mouth changes and shift attention without pressure.',
       color: '#EA580C',
       available: isFollowFunnyMouthAvailable,
@@ -6607,7 +6960,7 @@ export default function SessionGamesScreen() {
     {
       id: 'where-did-it-go-mouth',
       title: 'Where Did It Go? Mouth Explorer',
-      emoji: '🧭',
+      emoji: '??',
       description: 'Find where the object hides near mouth areas. Tap to explore.',
       color: '#16A34A',
       available: isWhereDidItGoMouthAvailable,
@@ -6615,7 +6968,7 @@ export default function SessionGamesScreen() {
     {
       id: 'mouth-treasure-hunt',
       title: 'Mouth Treasure Hunt',
-      emoji: '🗺️',
+      emoji: '???',
       description: 'Mini adventure for tapping prompts and shifting oral attention.',
       color: '#CA8A04',
       available: isMouthTreasureHuntAvailable,
@@ -6623,23 +6976,23 @@ export default function SessionGamesScreen() {
     {
       id: 'friendly-tongue-explorer',
       title: 'Friendly Tongue Explorer',
-      emoji: '👅',
-      description: 'Meet your tongue with a friendly character. Tap mouth areas — every try counts.',
+      emoji: '??',
+      description: 'Meet your tongue with a friendly character. Tap mouth areas ? every try counts.',
       color: '#DB2777',
       available: isFriendlyTongueExplorerAvailable,
     },
     {
       id: 'tongue-hide-seek',
       title: 'Tongue Hide & Seek',
-      emoji: '🔍',
-      description: 'A funny tongue peeks out. Tap when you notice it — no fail state.',
+      emoji: '??',
+      description: 'A funny tongue peeks out. Tap when you notice it ? no fail state.',
       color: '#CA8A04',
       available: isTongueHideSeekAvailable,
     },
     {
       id: 'magic-tongue-mirror',
       title: 'Magic Tongue Mirror',
-      emoji: '🪞',
+      emoji: '??',
       description: 'Watch playful tongue faces and copy if you want. Parent Good try counts too.',
       color: '#6366F1',
       available: isMagicTongueMirrorAvailable,
@@ -6647,7 +7000,7 @@ export default function SessionGamesScreen() {
     {
       id: 'hungry-tongue-monster',
       title: 'Hungry Tongue Monster',
-      emoji: '👾',
+      emoji: '??',
       description: 'Silly monster tongue catches treats. Tap to play and celebrate.',
       color: '#16A34A',
       available: isHungryTongueMonsterAvailable,
@@ -6655,7 +7008,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tongue-treasure-adventure',
       title: 'Tongue Treasure Adventure',
-      emoji: '🗺️',
+      emoji: '???',
       description: 'Mini adventure: tap, watch, and copy playful tongue actions.',
       color: '#0EA5E9',
       available: isTongueTreasureAdventureAvailable,
@@ -6663,15 +7016,15 @@ export default function SessionGamesScreen() {
     {
       id: 'copy-my-mouth-friend',
       title: 'Copy My Mouth Friend',
-      emoji: '🧸',
-      description: 'Friendly face shows open, close, smile — copy or tap I tried. No scoring.',
+      emoji: '??',
+      description: 'Friendly face shows open, close, smile ? copy or tap I tried. No scoring.',
       color: '#EC4899',
       available: isCopyMyMouthFriendAvailable,
     },
     {
       id: 'funny-mouth-adventure',
       title: 'Funny Mouth Adventure',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Watch, copy, and tap through a mini oral adventure.',
       color: '#F59E0B',
       available: isFunnyMouthAdventureAvailable,
@@ -6679,15 +7032,15 @@ export default function SessionGamesScreen() {
     {
       id: 'air-mouth-play',
       title: 'Air + Mouth Play',
-      emoji: '🌬️',
-      description: 'Soft blow animation + mouth watch. Tap to try — no microphone pressure.',
+      emoji: '???',
+      description: 'Soft blow animation + mouth watch. Tap to try ? no microphone pressure.',
       color: '#0284C7',
       available: isAirMouthPlayAvailable,
     },
     {
       id: 'oral-mirror-party',
       title: 'Oral Mirror Party',
-      emoji: '🎉',
+      emoji: '??',
       description: 'Slow mirror sequence: smile, open, tongue, funny face. Party stars for tries.',
       color: '#7C3AED',
       available: isOralMirrorPartyAvailable,
@@ -6695,15 +7048,15 @@ export default function SessionGamesScreen() {
     {
       id: 'mouth-hero-adventure',
       title: 'Mouth Hero Adventure',
-      emoji: '🦸',
-      description: 'Integration hero play: air, lips, jaw, face, tongue — no fail state.',
+      emoji: '??',
+      description: 'Integration hero play: air, lips, jaw, face, tongue ? no fail state.',
       color: '#EA580C',
       available: isMouthHeroAdventureAvailable,
     },
     {
       id: 'speech-mouth-copy',
       title: 'Speech Mouth Copy',
-      emoji: '🗣️',
+      emoji: '???',
       description: 'Copy speech mouth shapes: open, closed, round, smile. Stars for every try.',
       color: '#2563EB',
       available: isSpeechMouthCopyAvailable,
@@ -6711,39 +7064,39 @@ export default function SessionGamesScreen() {
     {
       id: 'talking-robot-face',
       title: 'Talking Robot Face',
-      emoji: '🤖',
-      description: 'Robot shows OOO, EEE, open, closed — slow copy, robot dance rewards.',
+      emoji: '??',
+      description: 'Robot shows OOO, EEE, open, closed ? slow copy, robot dance rewards.',
       color: '#4F46E5',
       available: isTalkingRobotFaceAvailable,
     },
     {
       id: 'mouth-pattern-match',
       title: 'Mouth Pattern Match',
-      emoji: '🔁',
-      description: 'Short sequences like open→closed. Progress stars, no wrong answers.',
+      emoji: '??',
+      description: 'Short sequences like open?closed. Progress stars, no wrong answers.',
       color: '#CA8A04',
       available: isMouthPatternMatchAvailable,
     },
     {
       id: 'mirror-speech-play',
       title: 'Mirror Speech Play',
-      emoji: '🪞',
-      description: 'Speech-style mirror imitation. Optional soft hints on web — tap always counts.',
+      emoji: '??',
+      description: 'Speech-style mirror imitation. Optional soft hints on web ? tap always counts.',
       color: '#7C3AED',
       available: isMirrorSpeechPlayAvailable,
     },
     {
       id: 'speech-hero-warmup',
       title: 'Speech Hero Warm-Up',
-      emoji: '🦸',
-      description: 'Level 6 integration: watch, copy, tap — hero celebration, no fail.',
+      emoji: '??',
+      description: 'Level 6 integration: watch, copy, tap ? hero celebration, no fail.',
       color: '#EA580C',
       available: isSpeechHeroWarmupAvailable,
     },
     {
       id: 'wake-sleeping-star',
       title: 'Wake the Sleeping Star',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Any sound wakes the star. Longer sounds glow brighter. Sparkles, no fail.',
       color: '#A78BFA',
       available: isWakeSleepingStarAvailable,
@@ -6751,15 +7104,15 @@ export default function SessionGamesScreen() {
     {
       id: 'talking-robot-start',
       title: 'Talking Robot Start',
-      emoji: '🤖',
-      description: 'Robot waits quietly — any vocal attempt gets a playful reply.',
+      emoji: '??',
+      description: 'Robot waits quietly ? any vocal attempt gets a playful reply.',
       color: '#4F46E5',
       available: isTalkingRobotStartAvailable,
     },
     {
       id: 'magic-voice-balloon',
       title: 'Magic Voice Balloon',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Sounds inflate the balloon. Longer sounds grow it bigger.',
       color: '#EC4899',
       available: isMagicVoiceBalloonAvailable,
@@ -6767,7 +7120,7 @@ export default function SessionGamesScreen() {
     {
       id: 'funny-voice-echo',
       title: 'Funny Voice Echo',
-      emoji: '😄',
+      emoji: '??',
       description: 'Funny character sound, then child echoes with any sound.',
       color: '#16A34A',
       available: isFunnyVoiceEchoAvailable,
@@ -6775,423 +7128,423 @@ export default function SessionGamesScreen() {
     {
       id: 'sound-hero-starter',
       title: 'Sound Hero Starter',
-      emoji: '🦸',
-      description: 'Sound initiation mini challenge — hero celebration, no fail.',
+      emoji: '??',
+      description: 'Sound initiation mini challenge ? hero celebration, no fail.',
       color: '#EA580C',
       available: isSoundHeroStarterAvailable,
     },
     {
       id: 'magic-mouth-shapes',
       title: 'Magic Mouth Shapes',
-      emoji: '✨',
-      description: 'AAA open, OOO round, EEE smile — copy with your mouth. Stars for every try.',
+      emoji: '?',
+      description: 'AAA open, OOO round, EEE smile ? copy with your mouth. Stars for every try.',
       color: '#A855F7',
       available: isMagicMouthShapesAvailable,
     },
     {
       id: 'talking-animal-vowels',
       title: 'Talking Animal Vowels',
-      emoji: '🦁',
-      description: 'Animals show OOO, EEE, AAA — playful copy, animal dance reward.',
+      emoji: '??',
+      description: 'Animals show OOO, EEE, AAA ? playful copy, animal dance reward.',
       color: '#16A34A',
       available: isTalkingAnimalVowelsAvailable,
     },
     {
       id: 'mirror-vowel-face',
       title: 'Mirror Vowel Face',
-      emoji: '🪞',
-      description: 'Mirror AAA, OOO, EEE — soft posture hints, sparkle celebration.',
+      emoji: '??',
+      description: 'Mirror AAA, OOO, EEE ? soft posture hints, sparkle celebration.',
       color: '#7C3AED',
       available: isMirrorVowelFaceAvailable,
     },
     {
       id: 'vowel-balloon-builder',
       title: 'Vowel Balloon Builder',
-      emoji: '🎈',
-      description: 'Vowel shape tries inflate a balloon — celebration when it grows.',
+      emoji: '??',
+      description: 'Vowel shape tries inflate a balloon ? celebration when it grows.',
       color: '#EC4899',
       available: isVowelBalloonBuilderAvailable,
     },
     {
       id: 'speech-shape-adventure',
       title: 'Speech Shape Adventure',
-      emoji: '🗺️',
-      description: 'Watch, copy, optional sound — AAA OOO EEE hero adventure, no fail.',
+      emoji: '???',
+      description: 'Watch, copy, optional sound ? AAA OOO EEE hero adventure, no fail.',
       color: '#EA580C',
       available: isSpeechShapeAdventureAvailable,
     },
     {
       id: 'magic-sound-builder',
       title: 'Magic Sound Builder',
-      emoji: '✨',
-      description: 'MA, PA, BA patterns — mouth movement or any sound counts, sparkles every try.',
+      emoji: '?',
+      description: 'MA, PA, BA patterns ? mouth movement or any sound counts, sparkles every try.',
       color: '#059669',
       available: isMagicSoundBuilderAvailable,
     },
     {
       id: 'talking-animal-mouths',
       title: 'Talking Animal Mouths',
-      emoji: '🦁',
-      description: 'Animals show ma, pa, moo — playful copy, animal celebration.',
+      emoji: '??',
+      description: 'Animals show ma, pa, moo ? playful copy, animal celebration.',
       color: '#16A34A',
       available: isTalkingAnimalMouthsAvailable,
     },
     {
       id: 'robot-says-play',
-      title: 'Robot Says Ma–Pa Play',
-      emoji: '🤖',
-      description: 'Open mouth, close lips, vocal try — slow robot dance reward.',
+      title: 'Robot Says Ma?Pa Play',
+      emoji: '??',
+      description: 'Open mouth, close lips, vocal try ? slow robot dance reward.',
       color: '#4F46E5',
       available: isRobotSaysPlayAvailable,
     },
     {
       id: 'speech-pattern-train',
       title: 'Speech Pattern Train',
-      emoji: '🚂',
-      description: 'MA→MA, PA→PA, MOO→MA — repeat patterns, train celebration.',
+      emoji: '??',
+      description: 'MA?MA, PA?PA, MOO?MA ? repeat patterns, train celebration.',
       color: '#D97706',
       available: isSpeechPatternTrainAvailable,
     },
     {
       id: 'mini-talking-hero',
       title: 'Mini Talking Hero',
-      emoji: '🦸',
-      description: 'Watch, copy, optional sound — CV hero mini challenge, no fail.',
+      emoji: '??',
+      description: 'Watch, copy, optional sound ? CV hero mini challenge, no fail.',
       color: '#EA580C',
       available: isMiniTalkingHeroAvailable,
     },
     {
       id: 'mama-drum-beat',
       title: 'Mama Drum Beat',
-      emoji: '🥁',
-      description: 'MA MA, PA PA, BA BA rhythm — repeat any way, drum celebration.',
+      emoji: '??',
+      description: 'MA MA, PA PA, BA BA rhythm ? repeat any way, drum celebration.',
       color: '#DB2777',
       available: isMamaDrumBeatAvailable,
     },
     {
       id: 'pop-balloon-race',
       title: 'Pop Pop Balloon Race',
-      emoji: '🎈',
-      description: 'Each repeat pops a balloon — mouth or sound tries count.',
+      emoji: '??',
+      description: 'Each repeat pops a balloon ? mouth or sound tries count.',
       color: '#E11D48',
       available: isPopBalloonRaceAvailable,
     },
     {
       id: 'talking-robot-beats',
       title: 'Talking Robot Beats',
-      emoji: '🤖',
-      description: 'MA MA, PA PA, MMM — slow robot beats, dance reward.',
+      emoji: '??',
+      description: 'MA MA, PA PA, MMM ? slow robot beats, dance reward.',
       color: '#4F46E5',
       available: isTalkingRobotBeatsAvailable,
     },
     {
       id: 'speech-train-rhythm',
       title: 'Speech Train Rhythm',
-      emoji: '🚂',
-      description: 'MA→MA, PA→PA — train moves with each repeat, party animation.',
+      emoji: '??',
+      description: 'MA?MA, PA?PA ? train moves with each repeat, party animation.',
       color: '#CA8A04',
       available: isSpeechTrainRhythmAvailable,
     },
     {
       id: 'mini-speaker-hero',
       title: 'Mini Speaker Hero',
-      emoji: '🦸',
-      description: 'MA PA BA MMM mini challenge — watch, repeat, hero celebration.',
+      emoji: '??',
+      description: 'MA PA BA MMM mini challenge ? watch, repeat, hero celebration.',
       color: '#7C3AED',
       available: isMiniSpeakerHeroAvailable,
     },
     {
       id: 'talking-drum-rhythm',
       title: 'Talking Drum Rhythm',
-      emoji: '🥁',
-      description: 'MA … MA, PA … PA — slow drum beats, loose timing, drum celebration.',
+      emoji: '??',
+      description: 'MA ? MA, PA ? PA ? slow drum beats, loose timing, drum celebration.',
       color: '#C2410C',
       available: isTalkingDrumRhythmAvailable,
     },
     {
       id: 'speech-beat-robot',
       title: 'Speech Beat Robot',
-      emoji: '🤖',
-      description: 'Slow speaking rhythm — copy with robot, approximate beat counts.',
+      emoji: '??',
+      description: 'Slow speaking rhythm ? copy with robot, approximate beat counts.',
       color: '#4F46E5',
       available: isSpeechBeatRobotAvailable,
     },
     {
       id: 'magic-mouth-metronome',
       title: 'Magic Mouth Metronome',
-      emoji: '✨',
-      description: 'Slow visual tick — mouth or voice on beat, magic stars reward.',
+      emoji: '?',
+      description: 'Slow visual tick ? mouth or voice on beat, magic stars reward.',
       color: '#A855F7',
       available: isMagicMouthMetronomeAvailable,
     },
     {
       id: 'talking-train-timing',
       title: 'Talking Train Timing',
-      emoji: '🚂',
-      description: 'MA … MA, PA … PA, OO … OO — train moves with each rhythm try.',
+      emoji: '??',
+      description: 'MA ? MA, PA ? PA, OO ? OO ? train moves with each rhythm try.',
       color: '#CA8A04',
       available: isTalkingTrainTimingAvailable,
     },
     {
       id: 'speech-rhythm-hero',
       title: 'Speech Rhythm Hero',
-      emoji: '🦸',
-      description: 'Repeat rhythm, mouth timing, optional vocal — hero celebration, no fail.',
+      emoji: '??',
+      description: 'Repeat rhythm, mouth timing, optional vocal ? hero celebration, no fail.',
       color: '#7C3AED',
       available: isSpeechRhythmHeroAvailable,
     },
     {
       id: 'magic-voice-river',
       title: 'Magic Voice River',
-      emoji: '🌊',
-      description: 'Hold any sound — river glows longer with you. Weak sound still counts.',
+      emoji: '??',
+      description: 'Hold any sound ? river glows longer with you. Weak sound still counts.',
       color: '#0284C7',
       available: isMagicVoiceRiverAvailable,
     },
     {
       id: 'talking-balloon-hold',
       title: 'Talking Balloon Hold',
-      emoji: '🎈',
-      description: 'Sound inflates the balloon — stopping is okay, balloon floats happily.',
+      emoji: '??',
+      description: 'Sound inflates the balloon ? stopping is okay, balloon floats happily.',
       color: '#E11D48',
       available: isTalkingBalloonHoldAvailable,
     },
     {
       id: 'robot-power-voice',
       title: 'Robot Power Voice',
-      emoji: '🤖',
-      description: 'Hold sound to power up the robot — stable effort glows more.',
+      emoji: '??',
+      description: 'Hold sound to power up the robot ? stable effort glows more.',
       color: '#4F46E5',
       available: isRobotPowerVoiceAvailable,
     },
     {
       id: 'voice-train-journey',
       title: 'Voice Train Journey',
-      emoji: '🚂',
-      description: 'Train moves while sound is active — short attempts still count.',
+      emoji: '??',
+      description: 'Train moves while sound is active ? short attempts still count.',
       color: '#16A34A',
       available: isVoiceTrainJourneyAvailable,
     },
     {
       id: 'speech-stability-hero',
       title: 'Speech Stability Hero',
-      emoji: '🦸',
-      description: 'Hold sound, watch glow, repeat — integrates stability, no fail.',
+      emoji: '??',
+      description: 'Hold sound, watch glow, repeat ? integrates stability, no fail.',
       color: '#7C3AED',
       available: isSpeechStabilityHeroAvailable,
     },
     {
       id: 'syllable-pop-party',
       title: 'Syllable Pop Party',
-      emoji: '🎈',
-      description: 'MA, PA, BA — any syllable try pops balloons, celebration every time.',
+      emoji: '??',
+      description: 'MA, PA, BA ? any syllable try pops balloons, celebration every time.',
       color: '#E11D48',
       available: isSyllablePopPartyAvailable,
     },
     {
       id: 'talking-animal-syllables',
       title: 'Talking Animal Syllables',
-      emoji: '🦁',
-      description: 'MOO, BEE, MA from animals — playful copy, animal dance reward.',
+      emoji: '??',
+      description: 'MOO, BEE, MA from animals ? playful copy, animal dance reward.',
       color: '#16A34A',
       available: isTalkingAnimalSyllablesAvailable,
     },
     {
       id: 'robot-speech-steps',
       title: 'Robot Speech Steps',
-      emoji: '🤖',
-      description: 'MA, PA, OO in slow steps — speech chunk confidence, robot celebration.',
+      emoji: '??',
+      description: 'MA, PA, OO in slow steps ? speech chunk confidence, robot celebration.',
       color: '#4F46E5',
       available: isRobotSpeechStepsAvailable,
     },
     {
       id: 'speech-train-builder',
       title: 'Speech Train Builder',
-      emoji: '🚂',
-      description: 'Syllable tries move the train — mouth or voice participation counts.',
+      emoji: '??',
+      description: 'Syllable tries move the train ? mouth or voice participation counts.',
       color: '#CA8A04',
       available: isSpeechTrainBuilderAvailable,
     },
     {
       id: 'little-speaker-hero',
       title: 'Little Speaker Hero',
-      emoji: '🦸',
-      description: 'MA PA BA OO AAA mini challenge — watch, chunk try, hero celebration.',
+      emoji: '??',
+      description: 'MA PA BA OO AAA mini challenge ? watch, chunk try, hero celebration.',
       color: '#7C3AED',
       available: isLittleSpeakerHeroAvailable,
     },
     {
       id: 'magic-sound-request',
       title: 'Magic Sound Request',
-      emoji: '✨',
-      description: 'Character waits — any sound brings a gift. Sound = action, sparkles reward.',
+      emoji: '?',
+      description: 'Character waits ? any sound brings a gift. Sound = action, sparkles reward.',
       color: '#0D9488',
       available: isMagicSoundRequestAvailable,
     },
     {
       id: 'talking-friend-turn-taking',
       title: 'Talking Friend Turn-Taking',
-      emoji: '🐻',
-      description: 'Friend makes a sound, you respond — any sound counts, friend celebration.',
+      emoji: '??',
+      description: 'Friend makes a sound, you respond ? any sound counts, friend celebration.',
       color: '#16A34A',
       available: isTalkingFriendTurnTakingAvailable,
     },
     {
       id: 'voice-choice-adventure',
       title: 'Voice Choice Adventure',
-      emoji: '🗺️',
-      description: 'Any sound lights a magic path — character reacts, no correctness needed.',
+      emoji: '???',
+      description: 'Any sound lights a magic path ? character reacts, no correctness needed.',
       color: '#A855F7',
       available: isVoiceChoiceAdventureAvailable,
     },
     {
       id: 'help-character-speak',
       title: 'Help the Character Speak',
-      emoji: '🦊',
-      description: 'Character pauses — your sound continues the adventure, celebration.',
+      emoji: '??',
+      description: 'Character pauses ? your sound continues the adventure, celebration.',
       color: '#EA580C',
       available: isHelpCharacterSpeakAvailable,
     },
     {
       id: 'little-communicator-hero',
       title: 'Little Communicator Hero',
-      emoji: '🦸',
-      description: 'Turn-taking mini challenge — make sound, get response, hero celebration.',
+      emoji: '??',
+      description: 'Turn-taking mini challenge ? make sound, get response, hero celebration.',
       color: '#7C3AED',
       available: isLittleCommunicatorHeroAvailable,
     },
     {
       id: 'speech-adventure-party',
       title: 'Speech Adventure Party',
-      emoji: '🎈',
-      description: 'Mini adventure — mouth, sound, rhythm play. Celebration party reward.',
+      emoji: '??',
+      description: 'Mini adventure ? mouth, sound, rhythm play. Celebration party reward.',
       color: '#DB2777',
       available: isSpeechAdventurePartyAvailable,
     },
     {
       id: 'talking-friend-challenge',
       title: 'Talking Friend Challenge',
-      emoji: '🐼',
-      description: 'Friend models mouth — you copy or sound. Friend celebration!',
+      emoji: '??',
+      description: 'Friend models mouth ? you copy or sound. Friend celebration!',
       color: '#0284C7',
       available: isTalkingFriendChallengeAvailable,
     },
     {
       id: 'magic-mouth-mission',
       title: 'Magic Mouth Mission',
-      emoji: '🪄',
-      description: 'OOO EEE AAA MA PA — watch mouth, try playfully, magic celebration.',
+      emoji: '??',
+      description: 'OOO EEE AAA MA PA ? watch mouth, try playfully, magic celebration.',
       color: '#7C3AED',
       available: isMagicMouthMissionAvailable,
     },
     {
       id: 'little-speaker-celebration',
       title: 'Little Speaker Celebration',
-      emoji: '🎤',
-      description: 'High encouragement — any participation gets speaker party stars.',
+      emoji: '??',
+      description: 'High encouragement ? any participation gets speaker party stars.',
       color: '#EA580C',
       available: isLittleSpeakerCelebrationAvailable,
     },
     {
       id: 'speech-hero-graduation',
       title: 'Speech Hero Graduation',
-      emoji: '🎓',
-      description: 'Level 6 finale — imitation, sound, vowels, timing, syllables, voice hero!',
+      emoji: '??',
+      description: 'Level 6 finale ? imitation, sound, vowels, timing, syllables, voice hero!',
       color: '#4F46E5',
       available: isSpeechHeroGraduationAvailable,
     },
     {
       id: 'funny-mouth-teamwork',
       title: 'Funny Mouth Teamwork',
-      emoji: '🤪',
-      description: 'Lips wide + jaw open, then close together — sparkles for every try.',
+      emoji: '??',
+      description: 'Lips wide + jaw open, then close together ? sparkles for every try.',
       color: '#D97706',
       available: isFunnyMouthTeamworkAvailable,
     },
     {
       id: 'robot-mouth-builder',
       title: 'Robot Mouth Builder',
-      emoji: '🤖',
-      description: 'Round lips + open jaw, smile + open — robot celebration!',
+      emoji: '??',
+      description: 'Round lips + open jaw, smile + open ? robot celebration!',
       color: '#4F46E5',
       available: isRobotMouthBuilderAvailable,
     },
     {
       id: 'magic-mouth-switch',
       title: 'Magic Mouth Switch',
-      emoji: '🪄',
-      description: 'Slow OPEN ↔ CLOSED and ROUND ↔ SMILE switches — magic stars.',
+      emoji: '??',
+      description: 'Slow OPEN ? CLOSED and ROUND ? SMILE switches ? magic stars.',
       color: '#7C3AED',
       available: isMagicMouthSwitchAvailable,
     },
     {
       id: 'talking-face-rhythm',
       title: 'Talking Face Rhythm',
-      emoji: '😊',
-      description: 'Slow face rhythm — lips and jaw move together, face dance reward.',
+      emoji: '??',
+      description: 'Slow face rhythm ? lips and jaw move together, face dance reward.',
       color: '#059669',
       available: isTalkingFaceRhythmAvailable,
     },
     {
       id: 'mouth-coordination-hero',
       title: 'Mouth Coordination Hero',
-      emoji: '🦸',
-      description: 'Watch, copy, repeat — lip + jaw hero challenge, no fail.',
+      emoji: '??',
+      description: 'Watch, copy, repeat ? lip + jaw hero challenge, no fail.',
       color: '#7C3AED',
       available: isMouthCoordinationHeroAvailable,
     },
     {
       id: 'tongue-explorer-teamwork',
       title: 'Tongue Explorer Teamwork',
-      emoji: '🧭',
-      description: 'Open + tongue out, tongue up, close + rest — sparkles for every try.',
+      emoji: '??',
+      description: 'Open + tongue out, tongue up, close + rest ? sparkles for every try.',
       color: '#0284C7',
       available: isTongueExplorerTeamworkAvailable,
     },
     {
       id: 'funny-monster-tongue-moves',
       title: 'Funny Monster Tongue Moves',
-      emoji: '👾',
-      description: 'Monster models tongue out/in and open — monster dance rewards.',
+      emoji: '??',
+      description: 'Monster models tongue out/in and open ? monster dance rewards.',
       color: '#16A34A',
       available: isFunnyMonsterTongueMovesAvailable,
     },
     {
       id: 'magic-mouth-tunnel',
       title: 'Magic Mouth Tunnel',
-      emoji: '🪄',
-      description: 'Slow switches OPEN → tongue out and OPEN → closed — magic stars.',
+      emoji: '??',
+      description: 'Slow switches OPEN ? tongue out and OPEN ? closed ? magic stars.',
       color: '#7C3AED',
       available: isMagicMouthTunnelAvailable,
     },
     {
       id: 'talking-tongue-rhythm',
       title: 'Talking Tongue Rhythm',
-      emoji: '🥁',
-      description: 'Slow rhythm with tongue + jaw moves — rhythm celebration.',
+      emoji: '??',
+      description: 'Slow rhythm with tongue + jaw moves ? rhythm celebration.',
       color: '#059669',
       available: isTalkingTongueRhythmAvailable,
     },
     {
       id: 'tongue-coordination-hero',
       title: 'Tongue Coordination Hero',
-      emoji: '🦸',
-      description: 'Watch, copy tongue move, repeat — no fail hero challenge.',
+      emoji: '??',
+      description: 'Watch, copy tongue move, repeat ? no fail hero challenge.',
       color: '#7C3AED',
       available: isTongueCoordinationHeroAvailable,
     },
     {
       id: 'funny-tongue-lips-team',
       title: 'Funny Tongue Lips Team',
-      emoji: '🤝',
-      description: 'Round lips + tongue out, smile + tongue visible, close + rest — all tries count.',
+      emoji: '??',
+      description: 'Round lips + tongue out, smile + tongue visible, close + rest ? all tries count.',
       color: '#0EA5E9',
       available: isFunnyTongueLipsTeamAvailable,
     },
     {
       id: 'monster-mouth-mixup',
       title: 'Monster Mouth Mix-Up',
-      emoji: '👾',
+      emoji: '??',
       description: 'Copy monster tongue and lip moves with high tolerance and instant rewards.',
       color: '#22C55E',
       available: isMonsterMouthMixUpAvailable,
@@ -7199,15 +7552,15 @@ export default function SessionGamesScreen() {
     {
       id: 'magic-lip-tongue-switch',
       title: 'Magic Lip Tongue Switch',
-      emoji: '🪄',
-      description: 'Slow switches: ROUND → tongue out, SMILE → CLOSED, tongue visible → ROUND.',
+      emoji: '??',
+      description: 'Slow switches: ROUND ? tongue out, SMILE ? CLOSED, tongue visible ? ROUND.',
       color: '#7C3AED',
       available: isMagicLipTongueSwitchAvailable,
     },
     {
       id: 'talking-face-coordination',
       title: 'Talking Face Coordination',
-      emoji: '😊',
+      emoji: '??',
       description: 'Friendly rhythm play for tongue + lips timing with calm pacing.',
       color: '#10B981',
       available: isTalkingFaceCoordinationAvailable,
@@ -7215,23 +7568,23 @@ export default function SessionGamesScreen() {
     {
       id: 'tongue-lips-hero',
       title: 'Tongue Lips Hero',
-      emoji: '🦸',
-      description: 'Watch, copy, repeat playful mouth coordination — no fail state.',
+      emoji: '??',
+      description: 'Watch, copy, repeat playful mouth coordination ? no fail state.',
       color: '#8B5CF6',
       available: isTongueLipsHeroAvailable,
     },
     {
       id: 'magic-wind-lips',
       title: 'Magic Wind Lips',
-      emoji: '💨',
-      description: 'Round, open, smile lips with soft air — all attempts count.',
+      emoji: '??',
+      description: 'Round, open, smile lips with soft air ? all attempts count.',
       color: '#0284C7',
       available: isMagicWindLipsAvailable,
     },
     {
       id: 'funny-balloon-breaths',
       title: 'Funny Balloon Breaths',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Balloon reacts to weak blow, hum air, lip move, or both.',
       color: '#DB2777',
       available: isFunnyBalloonBreathsAvailable,
@@ -7239,15 +7592,15 @@ export default function SessionGamesScreen() {
     {
       id: 'robot-wind-mouth',
       title: 'Robot Wind Mouth',
-      emoji: '🤖',
-      description: 'Slow switches ROUND → BLOW, OPEN → AIR, STOP → START.',
+      emoji: '??',
+      description: 'Slow switches ROUND ? BLOW, OPEN ? AIR, STOP ? START.',
       color: '#4F46E5',
       available: isRobotWindMouthAvailable,
     },
     {
       id: 'wind-rhythm-adventure',
       title: 'Wind Rhythm Adventure',
-      emoji: '🥁',
+      emoji: '??',
       description: 'Practice blow-pause-blow rhythm with calm pacing.',
       color: '#059669',
       available: isWindRhythmAdventureAvailable,
@@ -7255,23 +7608,23 @@ export default function SessionGamesScreen() {
     {
       id: 'breath-lips-hero',
       title: 'Breath Lips Hero',
-      emoji: '🦸',
-      description: 'Watch mouth, attempt airflow, copy timing — no fail hero challenge.',
+      emoji: '??',
+      description: 'Watch mouth, attempt airflow, copy timing ? no fail hero challenge.',
       color: '#7C3AED',
       available: isBreathLipsHeroAvailable,
     },
     {
       id: 'magic-wind-mouth',
       title: 'Magic Wind Mouth',
-      emoji: '💨',
-      description: 'Open mouth + soft blow, close + stop, open + airflow — all attempts count.',
+      emoji: '??',
+      description: 'Open mouth + soft blow, close + stop, open + airflow ? all attempts count.',
       color: '#0284C7',
       available: isMagicWindMouthAvailable,
     },
     {
       id: 'funny-dragon-breaths',
       title: 'Funny Dragon Breaths',
-      emoji: '🐉',
+      emoji: '??',
       description: 'Dragon reacts to air attempt, mouth opening, or both.',
       color: '#EA580C',
       available: isFunnyDragonBreathsAvailable,
@@ -7279,15 +7632,15 @@ export default function SessionGamesScreen() {
     {
       id: 'robot-air-mouth-switch',
       title: 'Robot Air Mouth Switch',
-      emoji: '🤖',
-      description: 'Slow switches OPEN → AIR, CLOSE → STOP with high tolerance.',
+      emoji: '??',
+      description: 'Slow switches OPEN ? AIR, CLOSE ? STOP with high tolerance.',
       color: '#4F46E5',
       available: isRobotAirMouthSwitchAvailable,
     },
     {
       id: 'breathing-train-rhythm',
       title: 'Breathing Train Rhythm',
-      emoji: '🚂',
+      emoji: '??',
       description: 'Train rhythm: blow, pause, blow with mouth open-close timing.',
       color: '#059669',
       available: isBreathingTrainRhythmAvailable,
@@ -7295,23 +7648,23 @@ export default function SessionGamesScreen() {
     {
       id: 'breath-jaw-hero',
       title: 'Breath Jaw Hero',
-      emoji: '🦸',
-      description: 'Watch mouth, attempt airflow, copy timing — no fail hero challenge.',
+      emoji: '??',
+      description: 'Watch mouth, attempt airflow, copy timing ? no fail hero challenge.',
       color: '#7C3AED',
       available: isBreathJawHeroAvailable,
     },
     {
       id: 'magic-mouth-steps',
       title: 'Magic Mouth Steps',
-      emoji: '🪄',
-      description: 'Simple oral sequences: OPEN→SMILE, ROUND→OPEN, OPEN→CLOSE.',
+      emoji: '??',
+      description: 'Simple oral sequences: OPEN?SMILE, ROUND?OPEN, OPEN?CLOSE.',
       color: '#0284C7',
       available: isMagicMouthStepsAvailable,
     },
     {
       id: 'funny-monster-combo-moves',
       title: 'Funny Monster Combo Moves',
-      emoji: '👾',
+      emoji: '??',
       description: 'Practice multi-step combos with high tolerance and instant rewards.',
       color: '#16A34A',
       available: isFunnyMonsterComboMovesAvailable,
@@ -7319,15 +7672,15 @@ export default function SessionGamesScreen() {
     {
       id: 'robot-mouth-builder-sequence',
       title: 'Robot Mouth Builder',
-      emoji: '🤖',
-      description: 'Slow sequence building: OPEN→CLOSE, OPEN→ROUND, OPEN→TONGUE.',
+      emoji: '??',
+      description: 'Slow sequence building: OPEN?CLOSE, OPEN?ROUND, OPEN?TONGUE.',
       color: '#4F46E5',
       available: isRobotMouthBuilderSequenceAvailable,
     },
     {
       id: 'talking-adventure-rhythm',
       title: 'Talking Adventure Rhythm',
-      emoji: '🥁',
+      emoji: '??',
       description: 'Movement-pause-movement timing with calm predictable pacing.',
       color: '#059669',
       available: isTalkingAdventureRhythmAvailable,
@@ -7335,15 +7688,15 @@ export default function SessionGamesScreen() {
     {
       id: 'coordination-hero-quest',
       title: 'Coordination Hero Quest',
-      emoji: '🦸',
-      description: 'Watch sequence, copy movement, repeat playfully — no fail.',
+      emoji: '??',
+      description: 'Watch sequence, copy movement, repeat playfully ? no fail.',
       color: '#7C3AED',
       available: isCoordinationHeroQuestAvailable,
     },
     {
       id: 'magic-mouth-sequence',
       title: 'Magic Mouth Sequence',
-      emoji: '✨',
+      emoji: '?',
       description: 'Learn movement order with OPEN-SMILE-CLOSE and similar chains.',
       color: '#0284C7',
       available: isMagicMouthSequenceAvailable,
@@ -7351,7 +7704,7 @@ export default function SessionGamesScreen() {
     {
       id: 'funny-monster-steps',
       title: 'Funny Monster Steps',
-      emoji: '👾',
+      emoji: '??',
       description: 'Practice oral sequence imitation with playful monster steps.',
       color: '#16A34A',
       available: isFunnyMonsterStepsAvailable,
@@ -7359,7 +7712,7 @@ export default function SessionGamesScreen() {
     {
       id: 'robot-memory-mouth',
       title: 'Robot Memory Mouth',
-      emoji: '🤖',
+      emoji: '??',
       description: 'Short memory chains with slow predictable pacing.',
       color: '#4F46E5',
       available: isRobotMemoryMouthAvailable,
@@ -7367,7 +7720,7 @@ export default function SessionGamesScreen() {
     {
       id: 'talking-rhythm-sequence',
       title: 'Talking Rhythm Sequence',
-      emoji: '🥁',
+      emoji: '??',
       description: 'Movement-pause-movement timing with sequencing support.',
       color: '#059669',
       available: isTalkingRhythmSequenceAvailable,
@@ -7375,15 +7728,15 @@ export default function SessionGamesScreen() {
     {
       id: 'sequence-hero-adventure',
       title: 'Sequence Hero Adventure',
-      emoji: '🦸',
-      description: 'Watch sequence, copy movement, repeat playfully — no fail.',
+      emoji: '??',
+      description: 'Watch sequence, copy movement, repeat playfully ? no fail.',
       color: '#7C3AED',
       available: isSequenceHeroAdventureAvailable,
     },
     {
       id: 'magic-mouth-beat',
       title: 'Magic Mouth Beat',
-      emoji: '⏱️',
+      emoji: '??',
       description: 'Learn OPEN-pause-CLOSE and gentle pacing with soft timing.',
       color: '#0284C7',
       available: isMagicMouthBeatAvailable,
@@ -7391,7 +7744,7 @@ export default function SessionGamesScreen() {
     {
       id: 'funny-timing-monster',
       title: 'Funny Timing Monster',
-      emoji: '👾',
+      emoji: '??',
       description: 'Practice move-stop timing with high-tolerance participation.',
       color: '#16A34A',
       available: isFunnyTimingMonsterAvailable,
@@ -7399,7 +7752,7 @@ export default function SessionGamesScreen() {
     {
       id: 'robot-pause-go',
       title: 'Robot Pause & Go',
-      emoji: '🤖',
+      emoji: '??',
       description: 'GO-STOP-GO start-stop control with slow predictable pacing.',
       color: '#4F46E5',
       available: isRobotPauseGoAvailable,
@@ -7407,7 +7760,7 @@ export default function SessionGamesScreen() {
     {
       id: 'talking-rhythm-road',
       title: 'Talking Rhythm Road',
-      emoji: '🥁',
+      emoji: '??',
       description: 'Movement-pause-movement rhythm play for oral pacing awareness.',
       color: '#059669',
       available: isTalkingRhythmRoadAvailable,
@@ -7415,7 +7768,7 @@ export default function SessionGamesScreen() {
     {
       id: 'timing-hero-challenge',
       title: 'Timing Hero Challenge',
-      emoji: '🦸',
+      emoji: '??',
       description: 'Integrate timing, order, and oral movement with no fail state.',
       color: '#7C3AED',
       available: isTimingHeroChallengeAvailable,
@@ -7423,15 +7776,15 @@ export default function SessionGamesScreen() {
     {
       id: 'magic-mouth-planner',
       title: 'Magic Mouth Planner',
-      emoji: '✨',
-      description: 'WATCH → PREPARE → COPY planning practice; every try gets rewards.',
+      emoji: '?',
+      description: 'WATCH ? PREPARE ? COPY planning practice; every try gets rewards.',
       color: '#0284C7',
       available: isMagicMouthPlannerAvailable,
     },
     {
       id: 'funny-monster-mission',
       title: 'Funny Monster Mission',
-      emoji: '👾',
+      emoji: '??',
       description: 'Open, round, smile, blow sequence preparation with gentle pacing.',
       color: '#9333EA',
       available: isFunnyMonsterMissionAvailable,
@@ -7439,7 +7792,7 @@ export default function SessionGamesScreen() {
     {
       id: 'robot-copy-challenge',
       title: 'Robot Copy Challenge',
-      emoji: '🤖',
+      emoji: '??',
       description: 'Watch robot first, pause, then copy for movement anticipation.',
       color: '#0E7490',
       available: isRobotCopyChallengeAvailable,
@@ -7447,7 +7800,7 @@ export default function SessionGamesScreen() {
     {
       id: 'talking-path-adventure',
       title: 'Talking Path Adventure',
-      emoji: '🛤️',
+      emoji: '???',
       description: 'Movement-pause-movement timing and transition readiness.',
       color: '#CA8A04',
       available: isTalkingPathAdventureAvailable,
@@ -7455,7 +7808,7 @@ export default function SessionGamesScreen() {
     {
       id: 'motor-planning-hero',
       title: 'Motor Planning Hero',
-      emoji: '🦸',
+      emoji: '??',
       description: 'Combine timing, jaw, lips, tongue, airflow, and planning with no fail.',
       color: '#7C3AED',
       available: isMotorPlanningHeroAvailable,
@@ -7463,7 +7816,7 @@ export default function SessionGamesScreen() {
     {
       id: 'magic-mouth-teamwork',
       title: 'Magic Mouth Teamwork',
-      emoji: '✨',
+      emoji: '?',
       description: 'Integrate OPEN, ROUND, BLOW and smile-close chains with soft pacing.',
       color: '#0284C7',
       available: isMagicMouthTeamworkAvailable,
@@ -7471,7 +7824,7 @@ export default function SessionGamesScreen() {
     {
       id: 'funny-talking-monster',
       title: 'Funny Talking Monster',
-      emoji: '👾',
+      emoji: '??',
       description: 'Coordinated oral movement play with tongue, breath, and pause chains.',
       color: '#9333EA',
       available: isFunnyTalkingMonsterAvailable,
@@ -7479,7 +7832,7 @@ export default function SessionGamesScreen() {
     {
       id: 'robot-mouth-adventure',
       title: 'Robot Mouth Adventure',
-      emoji: '🤖',
+      emoji: '??',
       description: 'Watch, prepare, copy sequence adventures with predictable timing.',
       color: '#0E7490',
       available: isRobotMouthAdventureAvailable,
@@ -7487,7 +7840,7 @@ export default function SessionGamesScreen() {
     {
       id: 'talking-rhythm-quest',
       title: 'Talking Rhythm Quest',
-      emoji: '🥁',
+      emoji: '??',
       description: 'Movement-pause-movement integration for airflow and timing confidence.',
       color: '#CA8A04',
       available: isTalkingRhythmQuestAvailable,
@@ -7495,7 +7848,7 @@ export default function SessionGamesScreen() {
     {
       id: 'coordination-hero-graduation',
       title: 'Coordination Hero Graduation',
-      emoji: '🎓',
+      emoji: '??',
       description: 'Final integration of jaw, lips, tongue, airflow, timing, and sequencing.',
       color: '#7C3AED',
       available: isCoordinationHeroGraduationAvailable,
@@ -7503,7 +7856,7 @@ export default function SessionGamesScreen() {
     {
       id: 'hungry-crocodile',
       title: 'Hungry Crocodile',
-      emoji: '🐊',
+      emoji: '??',
       description: 'Open and close your mouth to feed the crocodile. Jaw awareness.',
       color: '#22C55E',
       available: isHungryCrocodileAvailable,
@@ -7511,7 +7864,7 @@ export default function SessionGamesScreen() {
     {
       id: 'big-mouth-lion',
       title: 'Big Mouth Lion',
-      emoji: '🦁',
+      emoji: '??',
       description: 'Open wide for the roaring lion. Mouth opening.',
       color: '#EAB308',
       available: isBigMouthLionAvailable,
@@ -7519,7 +7872,7 @@ export default function SessionGamesScreen() {
     {
       id: 'jaw-elevator',
       title: 'Jaw Elevator',
-      emoji: '🛗',
+      emoji: '??',
       description: 'Open your mouth to lift the elevator. Controlled opening.',
       color: '#6366F1',
       available: isJawElevatorAvailable,
@@ -7527,7 +7880,7 @@ export default function SessionGamesScreen() {
     {
       id: 'freeze-mouth',
       title: 'Freeze Mouth',
-      emoji: '🧊',
+      emoji: '??',
       description: 'Hold your mouth open when you see FREEZE. Jaw endurance.',
       color: '#06B6D4',
       available: isFreezeMouthAvailable,
@@ -7535,7 +7888,7 @@ export default function SessionGamesScreen() {
     {
       id: 'open-close-rhythm',
       title: 'Open-Close Rhythm',
-      emoji: '🥁',
+      emoji: '??',
       description: 'Match the open/close beat. Timing and coordination.',
       color: '#A855F7',
       available: isOpenCloseRhythmAvailable,
@@ -7544,7 +7897,7 @@ export default function SessionGamesScreen() {
     {
       id: 'paint-curved-snake',
       title: 'Paint Curved Snake',
-      emoji: '🐍',
+      emoji: '??',
       description: 'Paint snake curves with your finger. Build smooth curved tracing.',
       color: '#22C55E',
       available: isPaintCurvedSnakeAvailable,
@@ -7552,7 +7905,7 @@ export default function SessionGamesScreen() {
     {
       id: 'rainbow-curve-trace-speech',
       title: 'Rainbow Curve Trace',
-      emoji: '🌈',
+      emoji: '??',
       description: 'Trace rainbow paths with your finger. Build curved path control.',
       color: '#8B5CF6',
       available: isRainbowCurveTraceSpeechAvailable,
@@ -7560,7 +7913,7 @@ export default function SessionGamesScreen() {
     {
       id: 'trace-smiling-mouth',
       title: 'Trace Smiling Mouth',
-      emoji: '😊',
+      emoji: '??',
       description: 'Trace smile curves with your finger. Build mouth-shape awareness.',
       color: '#F59E0B',
       available: isTraceSmilingMouthAvailable,
@@ -7568,7 +7921,7 @@ export default function SessionGamesScreen() {
     {
       id: 'ball-roll-curved-track',
       title: 'Ball Roll Curved Track',
-      emoji: '🎱',
+      emoji: '??',
       description: 'Roll a ball along a curved track with your finger. Build curved tracking.',
       color: '#0EA5E9',
       available: isBallRollCurvedTrackAvailable,
@@ -7576,7 +7929,7 @@ export default function SessionGamesScreen() {
     {
       id: 'drive-car-curvy-road',
       title: 'Drive Car Curvy Road',
-      emoji: '🚗',
+      emoji: '??',
       description: 'Drive a car along a curvy road with your finger. Build path following.',
       color: '#EF4444',
       available: isDriveCarCurvyRoadAvailable,
@@ -7584,7 +7937,7 @@ export default function SessionGamesScreen() {
     {
       id: 'touch-the-dot',
       title: 'Dot Safari',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Tap the colorful dot wherever it appears. Build target acquisition and visual attention.',
       color: '#10B981',
       available: isTouchTheDotAvailable,
@@ -7592,7 +7945,7 @@ export default function SessionGamesScreen() {
     {
       id: 'where-is-it',
       title: 'Star Seeker',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Scan the field and find the hidden star among the dots. Build visual scanning skills.',
       color: '#3B82F6',
       available: isWhereIsItAvailable,
@@ -7600,7 +7953,7 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-and-touch',
       title: 'Drift & Tap',
-      emoji: '🌀',
+      emoji: '??',
       description: 'Watch the orb drift across the screen, then tap when it stops. Build visual tracking and timing.',
       color: '#9333EA',
       available: isFollowAndTouchAvailable,
@@ -7608,7 +7961,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tap-where-it-lights-up',
       title: 'Glow Recall',
-      emoji: '✨',
+      emoji: '?',
       description: 'Watch which shape glows, then tap it from memory. Build visual memory and attention.',
       color: '#EA580C',
       available: isTapWhereItLightsUpAvailable,
@@ -7616,7 +7969,7 @@ export default function SessionGamesScreen() {
     {
       id: 'match-and-touch',
       title: 'Shape Match Studio',
-      emoji: '🎨',
+      emoji: '??',
       description: 'Match the preview shape below. Build visual matching and shape recognition.',
       color: '#EC4899',
       available: isMatchAndTouchAvailable,
@@ -7625,7 +7978,7 @@ export default function SessionGamesScreen() {
     {
       id: 'beat-match-tap',
       title: 'Beat Sync',
-      emoji: '🥁',
+      emoji: '??',
       description: 'Tap in time with the drum as the beat speeds up. Builds timing and auditory-motor sync.',
       color: '#F97316',
       available: isBeatMatchTapAvailable,
@@ -7633,15 +7986,15 @@ export default function SessionGamesScreen() {
     {
       id: 'stop-go-drum',
       title: 'Stop & Go',
-      emoji: '⏸️',
-      description: 'Tap only while the drum plays — freeze when it goes silent. Builds impulse control.',
+      emoji: '??',
+      description: 'Tap only while the drum plays ? freeze when it goes silent. Builds impulse control.',
       color: '#8B5CF6',
       available: isStopGoDrumAvailable,
     },
     {
       id: 'copy-my-rhythm',
       title: 'Rhythm Echo',
-      emoji: '🔁',
+      emoji: '??',
       description: 'Listen to a rhythm pattern, then tap it back. Builds working memory and rhythm.',
       color: '#3B82F6',
       available: isCopyMyRhythmAvailable,
@@ -7649,7 +8002,7 @@ export default function SessionGamesScreen() {
     {
       id: 'loud-soft-rhythm',
       title: 'Loud & Soft',
-      emoji: '🔊',
+      emoji: '??',
       description: 'Match loud beats with big taps and soft beats with small taps. Builds force grading.',
       color: '#EC4899',
       available: isLoudSoftRhythmAvailable,
@@ -7657,7 +8010,7 @@ export default function SessionGamesScreen() {
     {
       id: 'instrument-choice',
       title: 'Sound Match',
-      emoji: '🎵',
+      emoji: '??',
       description: 'Hear an instrument and pick drum, bell, or clap. Builds auditory discrimination.',
       color: '#10B981',
       available: isInstrumentChoiceAvailable,
@@ -7666,15 +8019,15 @@ export default function SessionGamesScreen() {
     {
       id: 'superhero-power-sit',
       title: 'Superhero Power Sit',
-      emoji: '⚡',
-      description: 'Sit up tall to charge your super power — slouching drains it! Camera tracks upright sitting and core activation.',
+      emoji: '?',
+      description: 'Sit up tall to charge your super power ? slouching drains it! Camera tracks upright sitting and core activation.',
       color: '#F59E0B',
       available: isSuperheroPowerSitAvailable,
     },
     {
       id: 'crown-keeper',
       title: 'Crown Keeper',
-      emoji: '👑',
+      emoji: '??',
       description: 'Keep your head steady and tall to protect the magic crown. Camera tracks head control and neck stability.',
       color: '#F472B6',
       available: isCrownKeeperAvailable,
@@ -7682,7 +8035,7 @@ export default function SessionGamesScreen() {
     {
       id: 'statue-kingdom',
       title: 'Statue Kingdom',
-      emoji: '🗿',
+      emoji: '??',
       description: 'Freeze like a royal statue while distractions appear. Camera tracks stillness, postural endurance and motor inhibition.',
       color: '#22D3EE',
       available: isStatueKingdomAvailable,
@@ -7690,7 +8043,7 @@ export default function SessionGamesScreen() {
     {
       id: 'sit-tall-freeze',
       title: 'Sit Tall Freeze',
-      emoji: '🚦',
+      emoji: '??',
       description: 'Green = sit tall, Yellow = ready, Red = freeze. Camera tracks reaction speed and posture quality.',
       color: '#34D399',
       available: isSitTallFreezeAvailable,
@@ -7698,7 +8051,7 @@ export default function SessionGamesScreen() {
     {
       id: 'star-reach-mission',
       title: 'Star Reach Mission',
-      emoji: '🌟',
+      emoji: '??',
       description: 'Reach left, right and high to catch stars while staying balanced. Camera tracks trunk movement and weight shifting.',
       color: '#A78BFA',
       available: isStarReachMissionAvailable,
@@ -7707,23 +8060,23 @@ export default function SessionGamesScreen() {
     {
       id: 'tall-tree',
       title: 'Tall Tree',
-      emoji: '🌳',
-      description: 'Stand up tall to grow a magical tree — leaves and birds appear! Camera tracks standing posture and body alignment.',
+      emoji: '??',
+      description: 'Stand up tall to grow a magical tree ? leaves and birds appear! Camera tracks standing posture and body alignment.',
       color: '#22C55E',
       available: isTallTreeAvailable,
     },
     {
       id: 'soldier-stand',
-      title: 'Soldier Stand',
-      emoji: '💂',
-      description: 'Be a royal guard — follow standing commands with perfect posture. Camera tracks alignment and shoulder symmetry.',
+      title: 'Crown Keeper',
+      emoji: '👑',
+      description: 'Keep your magical crown steady using face tracking. Head stability, focus and postural control.',
       color: '#F59E0B',
       available: isSoldierStandAvailable,
     },
     {
       id: 'statue-guard',
       title: 'Statue Guard',
-      emoji: '🗽',
+      emoji: '??',
       description: 'Stand frozen like a giant statue while distractions appear. Camera tracks body sway, head and arm movement.',
       color: '#22D3EE',
       available: isStatueGuardAvailable,
@@ -7731,7 +8084,7 @@ export default function SessionGamesScreen() {
     {
       id: 'grow-taller',
       title: 'Grow Taller',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Stretch up tall to float a balloon to the clouds. Camera tracks trunk extension and shoulder elevation.',
       color: '#F472B6',
       available: isGrowTallerAvailable,
@@ -7739,7 +8092,7 @@ export default function SessionGamesScreen() {
     {
       id: 'freeze-balance',
       title: 'Freeze & Balance',
-      emoji: '🧊',
+      emoji: '??',
       description: 'Move and march, then freeze and balance when signaled. Camera tracks reaction speed, balance and stability.',
       color: '#A78BFA',
       available: isFreezeBalanceAvailable,
@@ -7748,7 +8101,7 @@ export default function SessionGamesScreen() {
     {
       id: 'rocket-watch',
       title: 'Rocket Watch',
-      emoji: '🚀',
+      emoji: '??',
       description: 'Follow a flying rocket using only your head while keeping your body still. Camera tracks head tracking and trunk compensation.',
       color: '#38BDF8',
       available: isRocketWatchAvailable,
@@ -7756,15 +8109,15 @@ export default function SessionGamesScreen() {
     {
       id: 'look-and-hold',
       title: 'Look & Hold',
-      emoji: '🏰',
-      description: 'Be a castle lookout — look left, right, up and down and hold each look. Camera tracks head angle and neck alignment.',
+      emoji: '??',
+      description: 'Be a castle lookout ? look left, right, up and down and hold each look. Camera tracks head angle and neck alignment.',
       color: '#F59E0B',
       available: isLookAndHoldAvailable,
     },
     {
       id: 'sky-ground-explorer',
       title: 'Sky-Ground Explorer',
-      emoji: '🌤️',
+      emoji: '???',
       description: 'Look up at the clouds and down at the flowers without moving your body. Camera tracks vertical head movement and range.',
       color: '#34D399',
       available: isSkyGroundExplorerAvailable,
@@ -7772,7 +8125,7 @@ export default function SessionGamesScreen() {
     {
       id: 'keep-the-crown',
       title: 'Keep The Crown',
-      emoji: '👑',
+      emoji: '??',
       description: 'Turn your head smoothly in every direction without dropping the crown. Camera tracks neck alignment and movement smoothness.',
       color: '#F472B6',
       available: isKeepTheCrownAvailable,
@@ -7780,7 +8133,7 @@ export default function SessionGamesScreen() {
     {
       id: 'star-tracker',
       title: 'Star Tracker',
-      emoji: '🌟',
+      emoji: '??',
       description: 'Follow stars moving across the night sky with your head. Camera tracks smooth pursuit and head-eye coordination.',
       color: '#A78BFA',
       available: isStarTrackerAvailable,
@@ -7789,7 +8142,7 @@ export default function SessionGamesScreen() {
     {
       id: 'flamingo-stand',
       title: 'Flamingo Stand',
-      emoji: '🦩',
+      emoji: '??',
       description: 'Stand on one leg like a flamingo and collect fish & stars. Camera tracks balance time, body sway and alignment.',
       color: '#F472B6',
       available: isFlamingoStandAvailable,
@@ -7797,7 +8150,7 @@ export default function SessionGamesScreen() {
     {
       id: 'one-foot-island',
       title: 'One Foot Island',
-      emoji: '🏝️',
+      emoji: '???',
       description: 'Balance on one foot on each floating island without stepping off. Camera tracks foot placement, sway and stability.',
       color: '#38BDF8',
       available: isOneFootIslandAvailable,
@@ -7805,7 +8158,7 @@ export default function SessionGamesScreen() {
     {
       id: 'balance-statue',
       title: 'Balance Statue',
-      emoji: '🗿',
+      emoji: '??',
       description: 'Hold magical standing poses and stay perfectly still while ignoring distractions. Camera tracks body movement and sway.',
       color: '#A78BFA',
       available: isBalanceStatueAvailable,
@@ -7813,7 +8166,7 @@ export default function SessionGamesScreen() {
     {
       id: 'star-balance-hold',
       title: 'Star Balance Hold',
-      emoji: '🌟',
+      emoji: '??',
       description: 'Reach your arms to the stars while holding your balance on the platform. Camera tracks arm position, trunk stability and balance.',
       color: '#FBBF24',
       available: isStarBalanceHoldAvailable,
@@ -7821,7 +8174,7 @@ export default function SessionGamesScreen() {
     {
       id: 'freeze-hero',
       title: 'Freeze Hero',
-      emoji: '🦸',
+      emoji: '??',
       description: 'Move like a hero, then freeze and balance the instant danger appears. Camera tracks reaction speed, balance and alignment.',
       color: '#34D399',
       available: isFreezeHeroAvailable,
@@ -7830,7 +8183,7 @@ export default function SessionGamesScreen() {
     {
       id: 'apple-reach',
       title: 'Apple Reach',
-      emoji: '🍎',
+      emoji: '??',
       description: 'Lean left and right to pick apples while keeping your balance. Camera tracks trunk movement, weight transfer and balance.',
       color: '#EF4444',
       available: isAppleReachAvailable,
@@ -7838,7 +8191,7 @@ export default function SessionGamesScreen() {
     {
       id: 'side-star-catch',
       title: 'Side Star Catch',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Shift side to side to catch falling stars without losing balance. Camera tracks center-of-mass movement and stability.',
       color: '#FBBF24',
       available: isSideStarCatchAvailable,
@@ -7846,7 +8199,7 @@ export default function SessionGamesScreen() {
     {
       id: 'treasure-lean',
       title: 'Treasure Lean',
-      emoji: '🏴‍☠️',
+      emoji: '?????',
       description: 'Lean to grab pirate treasure, then steady yourself back to center. Camera tracks lean angle, trunk control and recovery.',
       color: '#F59E0B',
       available: isTreasureLeanAvailable,
@@ -7854,7 +8207,7 @@ export default function SessionGamesScreen() {
     {
       id: 'bridge-balance',
       title: 'Bridge Balance',
-      emoji: '🌉',
+      emoji: '??',
       description: 'Shift your weight onto each stepping stone to cross the magic bridge. Camera tracks weight-transfer patterns and balance.',
       color: '#38BDF8',
       available: isBridgeBalanceAvailable,
@@ -7862,7 +8215,7 @@ export default function SessionGamesScreen() {
     {
       id: 'magic-scale',
       title: 'Magic Scale',
-      emoji: '⚖️',
+      emoji: '??',
       description: 'Shift your weight until the magic scale is perfectly level. Camera tracks body alignment and weight distribution.',
       color: '#A78BFA',
       available: isMagicScaleAvailable,
@@ -7871,7 +8224,7 @@ export default function SessionGamesScreen() {
     {
       id: 'stepping-stones',
       title: 'Stepping Stones',
-      emoji: '🪨',
+      emoji: '??',
       description: 'Step from stone to stone to cross the river, balancing after each step. Camera tracks foot placement and balance.',
       color: '#38BDF8',
       available: isSteppingStonesAvailable,
@@ -7879,7 +8232,7 @@ export default function SessionGamesScreen() {
     {
       id: 'cross-the-bridge',
       title: 'Cross The Bridge',
-      emoji: '🌉',
+      emoji: '??',
       description: 'Walk heel-to-toe across the narrow bridge to the castle. Camera tracks body sway, path accuracy and posture.',
       color: '#A78BFA',
       available: isCrossTheBridgeAvailable,
@@ -7887,7 +8240,7 @@ export default function SessionGamesScreen() {
     {
       id: 'river-crossing',
       title: 'River Crossing',
-      emoji: '🌊',
+      emoji: '??',
       description: 'Hop between safe islands and land with steady balance and recovery. Camera tracks landing stability and stepping accuracy.',
       color: '#22D3EE',
       available: isRiverCrossingAvailable,
@@ -7895,16 +8248,16 @@ export default function SessionGamesScreen() {
     {
       id: 'adventure-trail',
       title: 'Adventure Trail',
-      emoji: '🚶',
-      description: 'Follow the forest trail arrows — step, turn and stop in sequence. Camera tracks movement sequence, posture and balance.',
+      emoji: '??',
+      description: 'Follow the forest trail arrows ? step, turn and stop in sequence. Camera tracks movement sequence, posture and balance.',
       color: '#84CC16',
       available: isAdventureTrailAvailable,
     },
     {
       id: 'balance-journey',
       title: 'Balance Journey',
-      emoji: '🏆',
-      description: 'The grand challenge — navigate a course of stepping, turning and stopping tasks. Camera tracks whole-body movement and balance.',
+      emoji: '??',
+      description: 'The grand challenge ? navigate a course of stepping, turning and stopping tasks. Camera tracks whole-body movement and balance.',
       color: '#FBBF24',
       available: isBalanceJourneyAvailable,
     },
@@ -7912,7 +8265,7 @@ export default function SessionGamesScreen() {
     {
       id: 'apple-picker',
       title: 'Apple Picker',
-      emoji: '🍎',
+      emoji: '??',
       description: 'Rotate and reach left and right to pick apples while keeping balance. Camera tracks trunk rotation, posture and balance.',
       color: '#EF4444',
       available: isApplePickerAvailable,
@@ -7920,7 +8273,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pirate-treasure-reach',
       title: 'Pirate Treasure Reach',
-      emoji: '🏴‍☠️',
+      emoji: '?????',
       description: 'Reach across your body to collect hidden treasure. Camera tracks cross-midline reach, trunk movement and stability.',
       color: '#F59E0B',
       available: isPirateTreasureReachAvailable,
@@ -7928,7 +8281,7 @@ export default function SessionGamesScreen() {
     {
       id: 'turn-and-touch',
       title: 'Turn & Touch',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Turn your body and touch magical targets in different directions. Camera tracks rotation, accuracy and balance.',
       color: '#22D3EE',
       available: isTurnAndTouchAvailable,
@@ -7936,7 +8289,7 @@ export default function SessionGamesScreen() {
     {
       id: 'cross-body-catch',
       title: 'Cross-Body Catch',
-      emoji: '🤾',
+      emoji: '??',
       description: 'Reach across your body to catch energy balls from different directions. Camera tracks reach timing, trunk rotation and balance.',
       color: '#A78BFA',
       available: isCrossBodyCatchAvailable,
@@ -7944,7 +8297,7 @@ export default function SessionGamesScreen() {
     {
       id: 'twisting-star-hunt',
       title: 'Twisting Star Hunt',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Rotate and reach in every direction to collect stars across the galaxy. Camera tracks rotation range, posture and smoothness.',
       color: '#E879F9',
       available: isTwistingStarHuntAvailable,
@@ -7953,7 +8306,7 @@ export default function SessionGamesScreen() {
     {
       id: 'bear-walk-adventure',
       title: 'Bear Walk Adventure',
-      emoji: '🐻',
+      emoji: '??',
       description: 'Walk on hands and feet through the forest collecting honey. Camera tracks body posture, movement quality and endurance.',
       color: '#F59E0B',
       available: isBearWalkAdventureAvailable,
@@ -7961,7 +8314,7 @@ export default function SessionGamesScreen() {
     {
       id: 'crab-walk-challenge',
       title: 'Crab Walk Challenge',
-      emoji: '🦀',
+      emoji: '??',
       description: 'Crab walk across the beach between the markers. Camera tracks hip position, trunk stability and movement control.',
       color: '#22D3EE',
       available: isCrabWalkChallengeAvailable,
@@ -7969,7 +8322,7 @@ export default function SessionGamesScreen() {
     {
       id: 'seal-push',
       title: 'Seal Push',
-      emoji: '🦭',
+      emoji: '??',
       description: 'Push forward with your arms and slide across the ice. Camera tracks arm movement, trunk control and posture.',
       color: '#60A5FA',
       available: isSealPushAvailable,
@@ -7977,7 +8330,7 @@ export default function SessionGamesScreen() {
     {
       id: 'turtle-crawl',
       title: 'Turtle Crawl',
-      emoji: '🐢',
+      emoji: '??',
       description: 'Crawl slowly and steadily along the jungle path. Camera tracks crawling pattern, body alignment and endurance.',
       color: '#34D399',
       available: isTurtleCrawlAvailable,
@@ -7985,7 +8338,7 @@ export default function SessionGamesScreen() {
     {
       id: 'gorilla-march',
       title: 'Gorilla March',
-      emoji: '🦍',
+      emoji: '??',
       description: 'March with big stomps and lift your knees high. Camera tracks movement intensity, posture and coordination.',
       color: '#A16207',
       available: isGorillaMarchAvailable,
@@ -7994,7 +8347,7 @@ export default function SessionGamesScreen() {
     {
       id: 'superhero-hold',
       title: 'Superhero Hold',
-      emoji: '🦸',
+      emoji: '??',
       description: 'Hold a powerful superhero pose for increasing durations to charge your energy. Camera tracks posture quality and hold duration.',
       color: '#EF4444',
       available: isSuperheroHoldAvailable,
@@ -8002,7 +8355,7 @@ export default function SessionGamesScreen() {
     {
       id: 'airplane-hold',
       title: 'Airplane Hold',
-      emoji: '✈️',
+      emoji: '??',
       description: 'Stretch your arms wide and hold an airplane pose as long as you can. Camera tracks arm position, trunk stability and sway.',
       color: '#38BDF8',
       available: isAirplaneHoldAvailable,
@@ -8010,7 +8363,7 @@ export default function SessionGamesScreen() {
     {
       id: 'bridge-hold',
       title: 'Bridge Hold',
-      emoji: '🌉',
+      emoji: '??',
       description: 'Hold a strong bridge position so the animals can cross safely. Camera tracks hip position, alignment and hold duration.',
       color: '#34D399',
       available: isBridgeHoldAvailable,
@@ -8018,7 +8371,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tall-tree-challenge',
       title: 'Tall Tree Challenge',
-      emoji: '🌳',
+      emoji: '??',
       description: 'Stand tall and steady while weather challenges try to sway you. Camera tracks body alignment, sway and endurance.',
       color: '#22C55E',
       available: isTallTreeChallengeAvailable,
@@ -8026,7 +8379,7 @@ export default function SessionGamesScreen() {
     {
       id: 'longest-statue',
       title: 'Longest Statue',
-      emoji: '🗿',
+      emoji: '??',
       description: 'Stay perfectly still while distractions try to break your focus. Camera tracks body movement, sway and posture changes.',
       color: '#A78BFA',
       available: isLongestStatueAvailable,
@@ -8035,7 +8388,7 @@ export default function SessionGamesScreen() {
     {
       id: 'jungle-adventure',
       title: 'Jungle Adventure',
-      emoji: '🌴',
+      emoji: '??',
       description: 'Explore the jungle, completing balance, reaching and movement tasks to collect treasures. Camera tracks posture, balance and movement.',
       color: '#FACC15',
       available: isJungleAdventureAvailable,
@@ -8043,7 +8396,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pirate-mission',
       title: 'Pirate Mission',
-      emoji: '🏴‍☠️',
+      emoji: '?????',
       description: 'Help the pirates recover treasure by navigating markers, reaching and balancing. Camera tracks balance, trunk control and posture.',
       color: '#F59E0B',
       available: isPirateMissionAvailable,
@@ -8051,7 +8404,7 @@ export default function SessionGamesScreen() {
     {
       id: 'space-explorer',
       title: 'Space Explorer',
-      emoji: '🚀',
+      emoji: '??',
       description: 'Travel through space collecting crystals with head control, balance and movement tasks. Camera tracks head movement, balance and alignment.',
       color: '#22D3EE',
       available: isSpaceExplorerAvailable,
@@ -8059,7 +8412,7 @@ export default function SessionGamesScreen() {
     {
       id: 'mountain-rescue',
       title: 'Mountain Rescue',
-      emoji: '⛰️',
+      emoji: '??',
       description: 'Rescue trapped animals through a sequence of reaching, balancing and movement tasks. Camera tracks coordination, posture and endurance.',
       color: '#FDE68A',
       available: isMountainRescueAvailable,
@@ -8067,8 +8420,8 @@ export default function SessionGamesScreen() {
     {
       id: 'ot-obstacle-course',
       title: 'OT Obstacle Course',
-      emoji: '🏆',
-      description: 'The grand finale — perform sitting, standing, balance, reaching and movement activities in sequence to become an OT Champion!',
+      emoji: '??',
+      description: 'The grand finale ? perform sitting, standing, balance, reaching and movement activities in sequence to become an OT Champion!',
       color: '#FBBF24',
       available: isOTObstacleCourseAvailable,
     },
@@ -8076,15 +8429,15 @@ export default function SessionGamesScreen() {
     {
       id: 'train-tracks',
       title: 'Train Tracks',
-      emoji: '🚂',
-      description: 'Drive a train forward along floor markers — collect passengers at each station. Camera tracks walking path, posture and balance.',
+      emoji: '??',
+      description: 'Drive a train forward along floor markers ? collect passengers at each station. Camera tracks walking path, posture and balance.',
       color: '#F59E0B',
       available: isTrainTracksAvailable,
     },
     {
       id: 'rocket-launch',
       title: 'Rocket Launch',
-      emoji: '🚀',
+      emoji: '??',
       description: 'Step forward through launch zones to power the rocket into space. Camera tracks movement distance, posture and stepping accuracy.',
       color: '#38BDF8',
       available: isRocketLaunchAvailable,
@@ -8092,7 +8445,7 @@ export default function SessionGamesScreen() {
     {
       id: 'rainbow-run',
       title: 'Rainbow Run',
-      emoji: '🌈',
+      emoji: '??',
       description: 'Follow a rainbow path marker by marker to find hidden treasure. Camera tracks movement pattern, balance and body alignment.',
       color: '#A855F7',
       available: isRainbowRunAvailable,
@@ -8100,7 +8453,7 @@ export default function SessionGamesScreen() {
     {
       id: 'wave-walker',
       title: 'Wave Walker',
-      emoji: '🌊',
+      emoji: '??',
       description: 'Walk across gentle ocean waves while staying balanced. Camera tracks balance, stepping control and posture as waves shift.',
       color: '#22D3EE',
       available: isWaveWalkerAvailable,
@@ -8108,8 +8461,8 @@ export default function SessionGamesScreen() {
     {
       id: 'adventure-path',
       title: 'Adventure Path',
-      emoji: '🏃',
-      description: 'Explore a jungle trail — follow arrows and markers through movement challenges. Camera tracks walking pattern, posture and balance.',
+      emoji: '??',
+      description: 'Explore a jungle trail ? follow arrows and markers through movement challenges. Camera tracks walking pattern, posture and balance.',
       color: '#84CC16',
       available: isAdventurePathAvailable,
     },
@@ -8117,7 +8470,7 @@ export default function SessionGamesScreen() {
     {
       id: 'touch-the-target',
       title: 'Touch The Target',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Plan your move, then reach out and touch each glowing target. Camera tracks reach accuracy, posture and movement quality.',
       color: '#F472B6',
       available: isTouchTheTargetAvailable,
@@ -8125,7 +8478,7 @@ export default function SessionGamesScreen() {
     {
       id: 'reach-the-star',
       title: 'Reach The Star',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Stretch up high to grab each twinkling star. Camera tracks overhead reach, balance and coordination.',
       color: '#FBBF24',
       available: isReachTheStarAvailable,
@@ -8133,7 +8486,7 @@ export default function SessionGamesScreen() {
     {
       id: 'move-to-the-spot',
       title: 'Move To The Spot',
-      emoji: '👣',
+      emoji: '??',
       description: 'Plan your steps and shift your whole body onto each glowing spot. Camera tracks weight-shift, posture and motor planning.',
       color: '#34D399',
       available: isMoveToTheSpotAvailable,
@@ -8141,7 +8494,7 @@ export default function SessionGamesScreen() {
     {
       id: 'launch-the-rocket',
       title: 'Launch The Rocket',
-      emoji: '🚀',
+      emoji: '??',
       description: 'Raise both arms up high together to blast the rocket into space. Camera tracks bilateral coordination and movement quality.',
       color: '#38BDF8',
       available: isLaunchTheRocketAvailable,
@@ -8149,7 +8502,7 @@ export default function SessionGamesScreen() {
     {
       id: 'place-the-box',
       title: 'Place The Box',
-      emoji: '📦',
+      emoji: '??',
       description: 'Reach to grab the box, then carry your reach over to place it on the shelf. Camera tracks sequencing, reach accuracy and praxis.',
       color: '#FB923C',
       available: isPlaceTheBoxAvailable,
@@ -8158,40 +8511,40 @@ export default function SessionGamesScreen() {
     {
       id: 'clap-then-jump',
       title: 'Clap Then Jump',
-      emoji: '👏',
-      description: 'Plan two moves — first clap your hands, then jump up high. Camera tracks the sequence, coordination and movement quality.',
+      emoji: '??',
+      description: 'Plan two moves ? first clap your hands, then jump up high. Camera tracks the sequence, coordination and movement quality.',
       color: '#F472B6',
       available: isClapThenJumpAvailable,
     },
     {
       id: 'touch-then-turn',
       title: 'Touch Then Turn',
-      emoji: '🎯',
-      description: 'Plan two moves — touch the target, then turn your body sideways. Camera tracks reach accuracy, body rotation and sequencing.',
+      emoji: '??',
+      description: 'Plan two moves ? touch the target, then turn your body sideways. Camera tracks reach accuracy, body rotation and sequencing.',
       color: '#38BDF8',
       available: isTouchThenTurnAvailable,
     },
     {
       id: 'reach-then-freeze',
       title: 'Reach Then Freeze',
-      emoji: '⭐',
-      description: 'Plan two moves — reach up to the star, then freeze like a statue. Camera tracks reach, postural control and self-regulation.',
+      emoji: '?',
+      description: 'Plan two moves ? reach up to the star, then freeze like a statue. Camera tracks reach, postural control and self-regulation.',
       color: '#FBBF24',
       available: isReachThenFreezeAvailable,
     },
     {
       id: 'launch-then-catch',
       title: 'Launch Then Catch',
-      emoji: '🚀',
-      description: 'Plan two moves — raise both arms to launch, then bring hands together to catch. Camera tracks bilateral coordination and timing.',
+      emoji: '??',
+      description: 'Plan two moves ? raise both arms to launch, then bring hands together to catch. Camera tracks bilateral coordination and timing.',
       color: '#34D399',
       available: isLaunchThenCatchAvailable,
     },
     {
       id: 'pick-and-place',
       title: 'Pick And Place',
-      emoji: '📦',
-      description: 'Plan two reaches — pick up the box, then place it on the shelf. Camera tracks sequencing, reach accuracy and praxis.',
+      emoji: '??',
+      description: 'Plan two reaches ? pick up the box, then place it on the shelf. Camera tracks sequencing, reach accuracy and praxis.',
       color: '#FB923C',
       available: isPickAndPlaceAvailable,
     },
@@ -8199,7 +8552,7 @@ export default function SessionGamesScreen() {
     {
       id: 'action-chain',
       title: 'Action Chain',
-      emoji: '🔗',
+      emoji: '??',
       description: 'Memorise a chain of moves, then perform every action in the right order. Camera tracks sequencing, coordination and movement quality.',
       color: '#22D3EE',
       available: isActionChainAvailable,
@@ -8207,7 +8560,7 @@ export default function SessionGamesScreen() {
     {
       id: 'star-sequence',
       title: 'Star Sequence',
-      emoji: '🌟',
+      emoji: '??',
       description: 'Reach a chain of stars in the exact order they light up. Camera tracks reach accuracy, visual sequencing and motor planning.',
       color: '#FBBF24',
       available: isStarSequenceAvailable,
@@ -8215,7 +8568,7 @@ export default function SessionGamesScreen() {
     {
       id: 'mission-steps',
       title: 'Mission Steps',
-      emoji: '🛰️',
+      emoji: '???',
       description: 'Complete each step of the launch mission in order. Camera tracks ordered movement, coordination and movement quality.',
       color: '#38BDF8',
       available: isMissionStepsAvailable,
@@ -8223,15 +8576,15 @@ export default function SessionGamesScreen() {
     {
       id: 'pirate-commands',
       title: 'Pirate Commands',
-      emoji: '🏴‍☠️',
-      description: 'Follow the captain’s command list in order, matey! Camera tracks sequencing, body awareness and movement quality.',
+      emoji: '?????',
+      description: 'Follow the captain?s command list in order, matey! Camera tracks sequencing, body awareness and movement quality.',
       color: '#F59E0B',
       available: isPirateCommandsAvailable,
     },
     {
       id: 'rainbow-sequence',
       title: 'Rainbow Sequence',
-      emoji: '🌈',
+      emoji: '??',
       description: 'Touch the rainbow colours in the order they glow. Camera tracks reach accuracy, visual sequencing and praxis.',
       color: '#A855F7',
       available: isRainbowSequenceAvailable,
@@ -8240,7 +8593,7 @@ export default function SessionGamesScreen() {
     {
       id: 'robot-copy',
       title: 'Robot Copy',
-      emoji: '🤖',
+      emoji: '??',
       description: 'Watch each robot move and copy its pose exactly with your body. Camera tracks imitation accuracy, posture and coordination.',
       color: '#38BDF8',
       available: isRobotCopyAvailable,
@@ -8248,16 +8601,16 @@ export default function SessionGamesScreen() {
     {
       id: 'animal-copy',
       title: 'Animal Copy',
-      emoji: '🦁',
-      description: 'Copy each animal shape with your whole body — wings, ears and more. Camera tracks imitation accuracy and body awareness.',
+      emoji: '??',
+      description: 'Copy each animal shape with your whole body ? wings, ears and more. Camera tracks imitation accuracy and body awareness.',
       color: '#84CC16',
       available: isAnimalCopyAvailable,
     },
     {
       id: 'dance-mirror',
       title: 'Dance Mirror',
-      emoji: '💃',
-      description: 'Mirror the dancer’s moves and strike each pose to the beat. Camera tracks imitation, rhythm and coordination.',
+      emoji: '??',
+      description: 'Mirror the dancer?s moves and strike each pose to the beat. Camera tracks imitation, rhythm and coordination.',
       color: '#EC4899',
       available: isDanceMirrorAvailable,
     },
@@ -8267,7 +8620,7 @@ export default function SessionGamesScreen() {
     {
       id: 'quick-copy',
       title: 'Quick Copy',
-      emoji: '⚡',
+      emoji: '?',
       description: 'Copy each pose as fast as you can before the clock runs out. Camera tracks reaction speed, imitation and movement quality.',
       color: '#FBBF24',
       available: isQuickCopyAvailable,
@@ -8276,7 +8629,7 @@ export default function SessionGamesScreen() {
     {
       id: 'high-reach',
       title: 'High Reach',
-      emoji: '🙌',
+      emoji: '??',
       description: 'Plan and stretch your whole body up high to reach the sky targets. Camera tracks overhead reach, posture and movement quality.',
       color: '#38BDF8',
       available: isHighReachAvailable,
@@ -8284,7 +8637,7 @@ export default function SessionGamesScreen() {
     {
       id: 'low-reach',
       title: 'Low Reach',
-      emoji: '🌱',
+      emoji: '??',
       description: 'Plan and bend your body down low to reach ground treasures. Camera tracks low reach, posture and motor planning.',
       color: '#84CC16',
       available: isLowReachAvailable,
@@ -8292,7 +8645,7 @@ export default function SessionGamesScreen() {
     {
       id: 'side-reach',
       title: 'Side Reach',
-      emoji: '↔️',
+      emoji: '??',
       description: 'Plan and reach your arm out to each glowing side. Camera tracks lateral reach, balance and coordination.',
       color: '#06B6D4',
       available: isSideReachAvailable,
@@ -8300,7 +8653,7 @@ export default function SessionGamesScreen() {
     {
       id: 'turn-position',
       title: 'Turn Position',
-      emoji: '🌀',
+      emoji: '??',
       description: 'Plan and turn your body sideways to face the glowing planet. Camera tracks body rotation, posture and motor planning.',
       color: '#A855F7',
       available: isTurnPositionAvailable,
@@ -8308,7 +8661,7 @@ export default function SessionGamesScreen() {
     {
       id: 'shape-body',
       title: 'Shape Body',
-      emoji: '✨',
+      emoji: '?',
       description: 'Plan and shape your whole body into stars, towers and balls. Camera tracks body shapes, posture and movement quality.',
       color: '#F472B6',
       available: isShapeBodyAvailable,
@@ -8317,40 +8670,40 @@ export default function SessionGamesScreen() {
     {
       id: 'jungle-path',
       title: 'Jungle Path',
-      emoji: '🌴',
-      description: 'Navigate the wild jungle trail — duck under vines, jump logs and climb branches. Camera tracks obstacle navigation and coordination.',
+      emoji: '??',
+      description: 'Navigate the wild jungle trail ? duck under vines, jump logs and climb branches. Camera tracks obstacle navigation and coordination.',
       color: '#22C55E',
       available: isJunglePathAvailable,
     },
     {
       id: 'lava-escape',
       title: 'Lava Escape',
-      emoji: '🌋',
-      description: 'Escape the erupting volcano — duck heat, jump gaps and balance on rocks. Camera tracks motor planning and movement quality.',
+      emoji: '??',
+      description: 'Escape the erupting volcano ? duck heat, jump gaps and balance on rocks. Camera tracks motor planning and movement quality.',
       color: '#F97316',
       available: isLavaEscapeAvailable,
     },
     {
       id: 'mountain-route',
       title: 'Mountain Route',
-      emoji: '⛰️',
-      description: 'Climb the mountain route — reach high, turn at passes and balance on ledges. Camera tracks body position and coordination.',
+      emoji: '??',
+      description: 'Climb the mountain route ? reach high, turn at passes and balance on ledges. Camera tracks body position and coordination.',
       color: '#94A3B8',
       available: isMountainRouteAvailable,
     },
     {
       id: 'space-maze',
       title: 'Space Maze',
-      emoji: '🚀',
-      description: 'Weave through the space maze — dodge asteroids, turn at portals and boost jump. Camera tracks navigation accuracy and praxis.',
+      emoji: '??',
+      description: 'Weave through the space maze ? dodge asteroids, turn at portals and boost jump. Camera tracks navigation accuracy and praxis.',
       color: '#818CF8',
       available: isSpaceMazeAvailable,
     },
     {
       id: 'pirate-island',
       title: 'Pirate Island',
-      emoji: '🏴‍☠️',
-      description: 'Cross the pirate island — balance planks, dodge traps and reach treasure. Camera tracks sequencing and movement quality.',
+      emoji: '?????',
+      description: 'Cross the pirate island ? balance planks, dodge traps and reach treasure. Camera tracks sequencing and movement quality.',
       color: '#F59E0B',
       available: isPirateIslandNavAvailable,
     },
@@ -8358,15 +8711,15 @@ export default function SessionGamesScreen() {
     {
       id: 'twin-moves',
       title: 'Twin Moves',
-      emoji: '👯',
-      description: 'Move BOTH arms together — same twin move on each side. Camera tracks bilateral coordination and movement quality.',
+      emoji: '??',
+      description: 'Move BOTH arms together ? same twin move on each side. Camera tracks bilateral coordination and movement quality.',
       color: '#38BDF8',
       available: isTwinMovesAvailable,
     },
     {
       id: 'cross-clap',
       title: 'Cross Clap',
-      emoji: '✖️',
+      emoji: '??',
       description: 'Cross your arms and clap across your body. Camera tracks midline crossing, bilateral planning and praxis.',
       color: '#F472B6',
       available: isCrossClapAvailable,
@@ -8374,7 +8727,7 @@ export default function SessionGamesScreen() {
     {
       id: 'bear-pattern',
       title: 'Bear Pattern',
-      emoji: '🐻',
+      emoji: '??',
       description: 'Make the bear crawl shape with both paws and your body. Camera tracks bilateral motor planning and body awareness.',
       color: '#D97706',
       available: isBearPatternAvailable,
@@ -8382,16 +8735,16 @@ export default function SessionGamesScreen() {
     {
       id: 'mirror-hands',
       title: 'Mirror Hands',
-      emoji: '🪞',
-      description: 'Put each hand in a different mirror position — left and right opposite. Camera tracks asymmetric bilateral coordination.',
+      emoji: '??',
+      description: 'Put each hand in a different mirror position ? left and right opposite. Camera tracks asymmetric bilateral coordination.',
       color: '#A855F7',
       available: isMirrorHandsAvailable,
     },
     {
       id: 'dual-action',
       title: 'Dual Action',
-      emoji: '⚡',
-      description: 'Do TWO different moves at once — one with each hand. Camera tracks dual-action planning and coordination.',
+      emoji: '?',
+      description: 'Do TWO different moves at once ? one with each hand. Camera tracks dual-action planning and coordination.',
       color: '#22D3EE',
       available: isDualActionAvailable,
     },
@@ -8399,7 +8752,7 @@ export default function SessionGamesScreen() {
     {
       id: 'find-the-route',
       title: 'Find The Route',
-      emoji: '🗺️',
+      emoji: '???',
       description: 'Read the map clue and pick the right move to find the route. Camera tracks problem-solving, motor planning and coordination.',
       color: '#38BDF8',
       available: isFindTheRouteAvailable,
@@ -8407,7 +8760,7 @@ export default function SessionGamesScreen() {
     {
       id: 'open-the-path',
       title: 'Open The Path',
-      emoji: '🔓',
+      emoji: '??',
       description: 'Solve each lock clue and perform the key move to open the path. Camera tracks praxis, sequencing and movement quality.',
       color: '#FBBF24',
       available: isOpenThePathAvailable,
@@ -8415,7 +8768,7 @@ export default function SessionGamesScreen() {
     {
       id: 'movement-puzzle',
       title: 'Movement Puzzle',
-      emoji: '🧩',
+      emoji: '??',
       description: 'Read the puzzle clue and figure out which body move solves it. Camera tracks motor planning and body awareness.',
       color: '#A855F7',
       available: isMovementPuzzleAvailable,
@@ -8423,7 +8776,7 @@ export default function SessionGamesScreen() {
     {
       id: 'rescue-mission',
       title: 'Rescue Mission',
-      emoji: '🚁',
+      emoji: '??',
       description: 'Read each rescue clue and perform the hero move to save the day. Camera tracks problem-solving and coordination.',
       color: '#F472B6',
       available: isRescueMissionAvailable,
@@ -8431,7 +8784,7 @@ export default function SessionGamesScreen() {
     {
       id: 'escape-course',
       title: 'Escape Course',
-      emoji: '🚪',
+      emoji: '??',
       description: 'Crack each escape room code with the right body move. Camera tracks sequencing, praxis and movement quality.',
       color: '#34D399',
       available: isEscapeCourseAvailable,
@@ -8440,31 +8793,31 @@ export default function SessionGamesScreen() {
     {
       id: 'alien-moves',
       title: 'Alien Moves',
-      emoji: '👽',
-      description: 'Copy weird brand-new alien body moves — arms up and lean, float and wiggle! Camera tracks novel motor planning and coordination.',
+      emoji: '??',
+      description: 'Copy weird brand-new alien body moves ? arms up and lean, float and wiggle! Camera tracks novel motor planning and coordination.',
       color: '#84CC16',
       available: isAlienMovesAvailable,
     },
     {
       id: 'robot-factory',
       title: 'Robot Factory',
-      emoji: '🏭',
-      description: 'Build robots with strange factory moves — power build, fold mode and spinner arms. Camera tracks praxis and movement quality.',
+      emoji: '??',
+      description: 'Build robots with strange factory moves ? power build, fold mode and spinner arms. Camera tracks praxis and movement quality.',
       color: '#94A3B8',
       available: isRobotFactoryAvailable,
     },
     {
       id: 'mystery-island',
       title: 'Mystery Island',
-      emoji: '🏝️',
-      description: 'Discover secret island moves nobody has seen before — flamingo, crab and palm wave. Camera tracks body awareness and motor planning.',
+      emoji: '???',
+      description: 'Discover secret island moves nobody has seen before ? flamingo, crab and palm wave. Camera tracks body awareness and motor planning.',
       color: '#F59E0B',
       available: isMysteryIslandAvailable,
     },
     {
       id: 'surprise-actions',
       title: 'Surprise Actions',
-      emoji: '🎁',
+      emoji: '??',
       description: 'Wait for the surprise reveal, then do the mystery move fast! Camera tracks flexible motor planning and reaction.',
       color: '#EC4899',
       available: isSurpriseActionsAvailable,
@@ -8472,7 +8825,7 @@ export default function SessionGamesScreen() {
     {
       id: 'challenge-quest',
       title: 'Challenge Quest',
-      emoji: '🏆',
+      emoji: '??',
       description: 'The ultimate novel-move quest with surprise combos. Camera tracks problem-solving, praxis and movement quality.',
       color: '#8B5CF6',
       available: isChallengeQuestAvailable,
@@ -8481,15 +8834,15 @@ export default function SessionGamesScreen() {
     {
       id: 'praxis-jungle-expedition',
       title: 'Jungle Expedition',
-      emoji: '🌴',
-      description: 'Cross the jungle trail — plan and execute every praxis mission in one epic adventure! Camera tracks accuracy, completion and movement quality.',
+      emoji: '??',
+      description: 'Cross the jungle trail ? plan and execute every praxis mission in one epic adventure! Camera tracks accuracy, completion and movement quality.',
       color: '#22C55E',
       available: isPraxisJungleExpeditionAvailable,
     },
     {
       id: 'praxis-space-explorer',
       title: 'Space Explorer',
-      emoji: '🚀',
+      emoji: '??',
       description: 'Blast through galaxy missions mixing reach, chain, imitate and novel moves. Camera tracks motor planning and coordination.',
       color: '#818CF8',
       available: isPraxisSpaceExplorerAvailable,
@@ -8497,32 +8850,842 @@ export default function SessionGamesScreen() {
     {
       id: 'praxis-pirate-treasure',
       title: 'Pirate Treasure Hunt',
-      emoji: '🏴‍☠️',
-      description: 'Follow the treasure map through praxis challenges — balance, turn, cross-clap and more! Camera tracks sequencing and body awareness.',
+      emoji: '?????',
+      description: 'Follow the treasure map through praxis challenges ? balance, turn, cross-clap and more! Camera tracks sequencing and body awareness.',
       color: '#F59E0B',
       available: isPraxisPirateTreasureAvailable,
     },
     {
       id: 'praxis-mountain-mission',
       title: 'Mountain Mission',
-      emoji: '⛰️',
-      description: 'Climb the mountain beat by beat — integrated motor planning from base to summit. Camera tracks posture and movement quality.',
+      emoji: '??',
+      description: 'Climb the mountain beat by beat ? integrated motor planning from base to summit. Camera tracks posture and movement quality.',
       color: '#38BDF8',
       available: isPraxisMountainMissionAvailable,
     },
     {
       id: 'praxis-champion',
       title: 'Praxis Champion',
-      emoji: '👑',
-      description: 'The Level 8 grand finale — every praxis skill in one champion quest! Camera tracks accuracy, completion and movement quality.',
+      emoji: '??',
+      description: 'The Level 8 grand finale ? every praxis skill in one champion quest! Camera tracks accuracy, completion and movement quality.',
       color: '#FBBF24',
       available: isPraxisChampionAvailable,
+    },
+    // Occupational Therapy Level 9 Session 1: Force Awareness (camera tracks press force, posture & effort)
+    {
+      id: 'balloon-press',
+      title: 'Balloon Press',
+      emoji: '??',
+      description: 'Press the candy-cloud balloon with just-right force ? squeeze and push to inflate it! Camera tracks wrist press, force grading and body awareness.',
+      color: '#F472B6',
+      available: isBalloonPressAvailable,
+    },
+    {
+      id: 'rocket-push',
+      title: 'Rocket Push',
+      emoji: '🚀',
+      description: 'Push your palms forward with steady thrust to launch rockets to distant planets! Camera tracks bilateral push force, posture and effort control.',
+      color: '#38BDF8',
+      available: isRocketPushAvailable,
+    },
+    {
+      id: 'berry-squish',
+      title: 'Berry Squish',
+      emoji: '🍓',
+      description: 'Bring your hands together and squish each berry with gentle, controlled force! Camera tracks bilateral squeeze, posture and effort grading.',
+      color: '#EF4444',
+      available: isBerrySquishAvailable,
+    },
+    {
+      id: 'energy-meter',
+      title: 'Energy Meter',
+      emoji: '⚡',
+      description: 'Charge the energy meter to the green zone and hold steady — not too low, not too high! Camera tracks graded effort, posture and force regulation.',
+      color: '#EAB308',
+      available: isEnergyMeterAvailable,
+    },
+    {
+      id: 'match-the-force',
+      title: 'Match The Force',
+      emoji: '💎',
+      description: 'Study the crystal target force, then match it with your body to lock the mirror! Camera tracks effort precision, posture and force grading.',
+      color: '#D946EF',
+      available: isMatchTheForceAvailable,
+    },
+    // Occupational Therapy Level 9 Session 2: Pressure Grading (camera tracks piping pressure, posture & effort)
+    {
+      id: 'decorate-the-cake',
+      title: 'Decorate The Cake',
+      emoji: '🎂',
+      description: 'Pipe frosting swirls with graded pressure — gentle to firm! Camera tracks piping-bag squeeze, posture and force grading.',
+      color: '#F472B6',
+      available: isDecorateTheCakeAvailable,
+    },
+    {
+      id: 'paint-pressure',
+      title: 'Paint Pressure',
+      emoji: '🎨',
+      description: 'Press your brush on the canvas with graded pressure — light washes to bold strokes! Camera tracks brush reach, posture and force grading.',
+      color: '#3B82F6',
+      available: isPaintPressureAvailable,
+    },
+    {
+      id: 'magic-touch',
+      title: 'Magic Touch',
+      emoji: '✨',
+      description: 'Gently touch floating crystals with feather-light magic pressure — reach out delicately without crushing! Camera tracks fingertip reach, posture and force grading.',
+      color: '#A78BFA',
+      available: isMagicTouchAvailable,
+    },
+    {
+      id: 'inflate-carefully',
+      title: 'Inflate Carefully',
+      emoji: '🎈',
+      description: 'Inflate cloud balloons to the perfect size — gentle steady pressure, ease off before they pop! Camera tracks inflation force, posture and effort regulation.',
+      color: '#38BDF8',
+      available: isInflateCarefullyAvailable,
+    },
+    {
+      id: 'goldilocks-pressure',
+      title: 'Goldilocks Pressure',
+      emoji: '🥣',
+      description: 'Taste porridge with just-right pressure — not Papa Bear\'s too soft, not Mama Bear\'s too hard! Camera tracks force grading, posture and body awareness.',
+      color: '#F59E0B',
+      available: isGoldilocksPressureAvailable,
+    },
+    // Occupational Therapy Level 9 Session 3: Joint Position Awareness (camera tracks arm joints, posture & body awareness)
+    {
+      id: 'robot-arms',
+      title: 'Robot Arms',
+      emoji: '🤖',
+      description: 'Copy robot arm poses — match shoulder height and elbow bend on each joint! Camera tracks arm joints, posture and motor planning.',
+      color: '#22D3EE',
+      available: isRobotArmsAvailable,
+    },
+    {
+      id: 'match-the-legs',
+      title: 'Match The Legs',
+      emoji: '🦿',
+      description: 'Match mech walker leg poses — copy knee lift and knee bend on both legs! Camera tracks leg joints, posture and body awareness.',
+      color: '#A3E635',
+      available: isMatchTheLegsAvailable,
+    },
+    {
+      id: 'copy-the-pose',
+      title: 'Copy The Pose',
+      emoji: '🪞',
+      description: 'Copy full-body mirror poses — match arms and legs together in the Mirror Maze Studio! Camera tracks body positioning, posture and motor planning.',
+      color: '#E879F9',
+      available: isCopyThePoseAvailable,
+    },
+    {
+      id: 'mirror-body',
+      title: 'Mirror Body',
+      emoji: '🪩',
+      description: 'Mirror each pose with your opposite side — left becomes right in the Crystal Reflection Hall! Camera tracks body movement, posture and body awareness.',
+      color: '#38BDF8',
+      available: isMirrorBodyAvailable,
+    },
+    {
+      id: 'position-match',
+      title: 'Position Match',
+      emoji: '🎯',
+      description: 'Lock highlighted joints to target positions on the precision calibration grid! Camera tracks joint accuracy, posture and motor planning.',
+      color: '#FBBF24',
+      available: isPositionMatchAvailable,
+    },
+    // Occupational Therapy Level 9 Session 4: Heavy Work Missions (camera tracks body movement, posture & effort)
+    {
+      id: 'carry-the-treasure',
+      title: 'Carry The Treasure',
+      emoji: '💰',
+      description: 'Carry treasure chests with steady heavy-work effort — bend your arms and haul with control! Camera tracks carry pose, posture and force regulation.',
+      color: '#F59E0B',
+      available: isCarryTheTreasureAvailable,
+    },
+    {
+      id: 'wall-pusher',
+      title: 'Wall Pusher',
+      emoji: '🧱',
+      description: 'Push fortress walls with steady bilateral force — extend your arms and press with control! Camera tracks push effort, posture and body awareness.',
+      color: '#64748B',
+      available: isWallPusherAvailable,
+    },
+    {
+      id: 'gorilla-power',
+      title: 'Gorilla Power',
+      emoji: '🦍',
+      description: 'Beat your chest with gorilla power — wide stance, raised arms and controlled force! Camera tracks body movement, posture and effort regulation.',
+      color: '#84CC16',
+      available: isGorillaPowerAvailable,
+    },
+    {
+      id: 'train-engine',
+      title: 'Train Engine',
+      emoji: '🚂',
+      description: 'Chug the engine levers with steady steam power — pump both arms and drive the train! Camera tracks lever pose, force control and effort regulation.',
+      color: '#F97316',
+      available: isTrainEngineAvailable,
+    },
+    {
+      id: 'bulldozer-mission',
+      title: 'Bulldozer Mission',
+      emoji: '🚜',
+      description: 'Push the bulldozer blade through dirt piles — wide stance, low arms and steady force! Camera tracks blade pose, posture and effort regulation.',
+      color: '#EAB308',
+      available: isBulldozerMissionAvailable,
+    },
+    // Occupational Therapy Level 9 Session 5: Resistance Control (camera tracks body movement, posture & effort)
+    {
+      id: 'launch-power',
+      title: 'Launch Power',
+      emoji: '🚀',
+      description: 'Squat on the launch pad and push upward through ignition resistance — hold steady power in the zone! Camera tracks launch pose, force control and effort regulation.',
+      color: '#A78BFA',
+      available: isLaunchPowerAvailable,
+    },
+    {
+      id: 'pull-the-ship',
+      title: 'Pull The Ship',
+      emoji: '🚢',
+      description: 'Lean back and pull the tow rope at waist height — haul each ship with steady resistance control! Camera tracks anchor pose, force control and effort regulation.',
+      color: '#0EA5E9',
+      available: isPullTheShipAvailable,
+    },
+    {
+      id: 'tug-challenge',
+      title: 'Tug Challenge',
+      emoji: '🪢',
+      description: 'Plant your feet and tug the rope outward at chest height — win each round with steady resistance control! Camera tracks tug pose, force control and effort regulation.',
+      color: '#EF4444',
+      available: isTugChallengeAvailable,
+    },
+    {
+      id: 'volcano-push',
+      title: 'Volcano Push',
+      emoji: '🌋',
+      description: 'Brace wide and push downward on the lava vent — contain each eruption with steady resistance control! Camera tracks vent pose, force control and effort regulation.',
+      color: '#F97316',
+      available: isVolcanoPushAvailable,
+    },
+    {
+      id: 'strength-master',
+      title: 'Strength Master',
+      emoji: '💪',
+      description: 'Raise both arms overhead and hold the resistance pillar — master each round with steady isometric strength! Camera tracks overhead pose, force control and effort regulation.',
+      color: '#EAB308',
+      available: isStrengthMasterAvailable,
+    },
+    {
+      id: 'build-the-body',
+      title: 'Build The Body',
+      emoji: '🧩',
+      description: 'Build your body piece by piece — match each segment pose and hold steady placement control! Camera tracks body segments, posture and effort regulation.',
+      color: '#2DD4BF',
+      available: isBuildTheBodyAvailable,
+    },
+    {
+      id: 'touch-the-part',
+      title: 'Touch The Part',
+      emoji: '👆',
+      description: 'Touch each glowing body part with the correct hand — hold steady controlled touch in the zone! Camera tracks hand reach, body landmarks and effort regulation.',
+      color: '#A78BFA',
+      available: isTouchThePartAvailable,
+    },
+    {
+      id: 'body-map',
+      title: 'Body Map',
+      emoji: '🗺️',
+      description: 'Scan each body map zone top to bottom — hold regional awareness with steady mapping control! Camera tracks zone activation, posture and effort regulation.',
+      color: '#38BDF8',
+      available: isBodyMapAvailable,
+    },
+    {
+      id: 'hero-pose',
+      title: 'Hero Pose',
+      emoji: '🦸',
+      description: 'Strike each iconic hero pose and channel steady power — unleash your champion with controlled effort! Camera tracks full-body pose, force control and effort regulation.',
+      color: '#FBBF24',
+      available: isHeroPoseAvailable,
+    },
+    {
+      id: 'robot-builder',
+      title: 'Robot Builder',
+      emoji: '🤖',
+      description: 'Install each robot module with stiff mechanical poses — hold steady assembly torque in the zone! Camera tracks joint precision, posture and effort regulation.',
+      color: '#22D3EE',
+      available: isRobotBuilderAvailable,
+    },
+    // Occupational Therapy Level 9 Session 7: Movement Calibration (camera tracks slow motion & effort)
+    {
+      id: 'slow-motion',
+      title: 'Slow Motion',
+      emoji: '🐢',
+      description: 'Glide through each calibration path in ultra-slow motion — hold steady controlled effort in the zone! Camera tracks movement pace, posture and effort regulation.',
+      color: '#A78BFA',
+      available: isSlowMotionAvailable,
+    },
+    {
+      id: 'fast-dash',
+      title: 'Fast Dash',
+      emoji: '⚡',
+      description: 'Burst to each checkpoint fast — lock steady controlled effort in the zone! Camera tracks dash speed, posture and effort regulation.',
+      color: '#FB923C',
+      available: isFastDashAvailable,
+    },
+    {
+      id: 'match-my-speed',
+      title: 'Match My Speed',
+      emoji: '🎯',
+      description: 'Move at the target pace and match the pose path — hold steady controlled effort in the zone! Camera tracks speed matching, posture and effort regulation.',
+      color: '#2DD4BF',
+      available: isMatchMySpeedAvailable,
+    },
+    {
+      id: 'speed-control',
+      title: 'Speed Control',
+      emoji: '🎚️',
+      description: 'Stay inside the speed corridor and match the pose path — hold steady controlled effort in the zone! Camera tracks speed bracket regulation, posture and effort regulation.',
+      color: '#38BDF8',
+      available: isSpeedControlAvailable,
+    },
+    {
+      id: 'rhythm-move',
+      title: 'Rhythm Move',
+      emoji: '🥁',
+      description: 'Move on each beat and match the pose path — hold steady controlled effort in the zone! Camera tracks beat-synced movement, posture and effort regulation.',
+      color: '#F472B6',
+      available: isRhythmMoveAvailable,
+    },
+    // Occupational Therapy Level 9 Session 8: Proprioceptive Sequencing (camera tracks force sequences & effort regulation)
+    {
+      id: 'push-then-carry',
+      title: 'Push Then Carry',
+      emoji: '📦',
+      description: 'Push each crate with steady force, then carry it with controlled effort — complete the haul sequence! Camera tracks push-carry sequencing, posture and effort regulation.',
+      color: '#F59E0B',
+      available: isPushThenCarryAvailable,
+    },
+    {
+      id: 'reach-then-press',
+      title: 'Reach Then Press',
+      emoji: '🎯',
+      description: 'Reach each target pose, then press with steady force — complete the reach-press sequence! Camera tracks reach-press sequencing, posture and effort regulation.',
+      color: '#38BDF8',
+      available: isReachThenPressAvailable,
+    },
+    {
+      id: 'power-sequence',
+      title: 'Power Sequence',
+      emoji: '⚡',
+      description: 'Charge power in the stance zone, then blast with controlled thrust — complete the power sequence! Camera tracks charge-blast sequencing, posture and effort regulation.',
+      color: '#F97316',
+      available: isPowerSequenceAvailable,
+    },
+    {
+      id: 'pirate-work-mission',
+      title: 'Pirate Work Mission',
+      emoji: '🏴‍☠️',
+      description: 'Haul the tow rope with steady pull force, then stow the treasure with controlled carry effort — complete every pirate work mission! Camera tracks haul-stow sequencing, posture and effort regulation.',
+      color: '#14B8A6',
+      available: isPirateWorkMissionAvailable,
+    },
+    {
+      id: 'rainbow-challenge',
+      title: 'Rainbow Challenge',
+      emoji: '🌈',
+      description: 'Shape each rainbow arch with your whole body, then glow with steady overhead hold effort — complete every rainbow challenge! Camera tracks arch-glow sequencing, posture and effort regulation.',
+      color: '#A855F7',
+      available: isRainbowChallengeAvailable,
+    },
+    // Occupational Therapy Level 9 Session 9: Endurance & Effort Regulation (camera tracks sustained effort & posture)
+    {
+      id: 'energy-trail',
+      title: 'Energy Trail',
+      emoji: '⚡',
+      description: 'Carry each energy orb along the trail with steady controlled effort — hold longer as the path grows! Camera tracks endurance carry holds, posture stability and effort regulation.',
+      color: '#22D3EE',
+      available: isEnergyTrailAvailable,
+    },
+    {
+      id: 'long-haul-train',
+      title: 'Long Haul Train',
+      emoji: '🚂',
+      description: 'Chug the engine levers with steady steam power — hold longer as the train hauls each station! Camera tracks endurance chug holds, posture stability and effort regulation.',
+      color: '#F97316',
+      available: isLongHaulTrainAvailable,
+    },
+    {
+      id: 'mountain-push',
+      title: 'Mountain Push',
+      emoji: '⛰️',
+      description: 'Push each mountain boulder with steady bilateral force — hold longer as you climb the ridge! Camera tracks endurance wall-push holds, posture stability and effort regulation.',
+      color: '#78716C',
+      available: isMountainPushAvailable,
+    },
+    {
+      id: 'endurance-quest',
+      title: 'Endurance Quest',
+      emoji: '⚔️',
+      description: 'Brace each quest pillar overhead with steady controlled force — hold longer as the adventure continues! Camera tracks endurance overhead brace holds, posture stability and effort regulation.',
+      color: '#A855F7',
+      available: isEnduranceQuestAvailable,
+    },
+    {
+      id: 'power-marathon',
+      title: 'Power Marathon',
+      emoji: '🏃',
+      description: 'Hold each power mile in gorilla pose with steady chest-beat force — endure longer through the marathon! Camera tracks endurance power holds, posture stability and effort regulation.',
+      color: '#EF4444',
+      available: isPowerMarathonAvailable,
+    },
+    // Occupational Therapy Level 9 Session 10: Proprioceptive Adventure (camera tracks force control & posture)
+    {
+      id: 'jungle-worksite',
+      title: 'Jungle Worksite',
+      emoji: '🌴',
+      description: 'Haul each jungle log to the worksite with steady controlled effort — bend your arms and carry with control! Camera tracks carry pose form, force grading and effort regulation.',
+      color: '#22C55E',
+      available: isJungleWorksiteAvailable,
+    },
+    {
+      id: 'space-builder',
+      title: 'Space Builder',
+      emoji: '🚀',
+      description: 'Push each space module into place with steady bilateral force — extend your arms and install with control! Camera tracks wall-push form, force grading and effort regulation.',
+      color: '#38BDF8',
+      available: isSpaceBuilderAvailable,
+    },
+    {
+      id: 'pirate-cargo-mission',
+      title: 'Pirate Cargo Mission',
+      emoji: '🏴‍☠️',
+      description: 'Hoist each pirate cargo crate aboard with steady tow-rope pull — anchor your stance and haul with control! Camera tracks pull pose form, force grading and effort regulation.',
+      color: '#F59E0B',
+      available: isPirateCargoMissionAvailable,
+    },
+    {
+      id: 'mountain-rescue-mission',
+      title: 'Mountain Rescue',
+      emoji: '⛰️',
+      description: 'Brace each rescue rope overhead with steady controlled force — reach up and hold to bring climbers to safety! Camera tracks overhead brace form, force grading and effort regulation.',
+      color: '#60A5FA',
+      available: isMountainRescueMissionAvailable,
+    },
+    {
+      id: 'proprioception-champion',
+      title: 'Proprioception Champion',
+      emoji: '🏆',
+      description: 'Hold each champion power pose with steady controlled force — raise your arms wide and prove your proprioception mastery! Camera tracks power pose form, force grading and effort regulation.',
+      color: '#A855F7',
+      available: isProprioceptionChampionAvailable,
+    },
+    // Occupational Therapy Level 10 Session 1: Sensory Awareness (camera tracks movement, posture & attention)
+    {
+      id: 'sensory-explorer',
+      title: 'Sensory Explorer',
+      emoji: '🌈',
+      description: 'Journey through aurora sensory portals — guide your explorer dot onto each crystal with head and body movement! Camera tracks absolute coordinates, posture, attention and adaptive responses.',
+      color: '#22D3EE',
+      available: isSensoryExplorerAvailable,
+    },
+    {
+      id: 'find-the-sound',
+      title: 'Find The Sound',
+      emoji: '🔊',
+      description: 'Listen to echoes in the cavern, then move your body to find each sound portal! Camera tracks auditory localization, posture, attention and adaptive responses.',
+      color: '#F59E0B',
+      available: isFindTheSoundAvailable,
+    },
+    {
+      id: 'spot-the-change',
+      title: 'Spot The Change',
+      emoji: '🔍',
+      description: 'Watch the prism garden tiles — when one transforms, move your body to spot what changed! Camera tracks visual attention, posture, movement quality and adaptive responses.',
+      color: '#10B981',
+      available: isSpotTheChangeAvailable,
+    },
+    {
+      id: 'mystery-touch',
+      title: 'Mystery Touch',
+      emoji: '✨',
+      description: 'Reach through the silk void to touch hidden mystery orbs with the correct hand! Camera tracks wrist position, bilateral coordination, posture and adaptive responses.',
+      color: '#C084FC',
+      available: isMysteryTouchAvailable,
+    },
+    {
+      id: 'sensory-detective',
+      title: 'Sensory Detective',
+      emoji: '🕵️',
+      description: 'Read case files, scan clues, and solve sensory mysteries on the evidence board! Camera tracks problem-solving, posture, attention and adaptive responses.',
+      color: '#22C55E',
+      available: isSensoryDetectiveAvailable,
+    },
+    // Occupational Therapy Level 10 Session 2: Regulation Through Movement (camera tracks breath-sync movement)
+    {
+      id: 'balloon-breathing',
+      title: 'Balloon Breathing',
+      emoji: '🎈',
+      description: 'Breathe with the floating balloon — raise arms on inhale, lower on exhale to build calm regulation! Camera tracks movement sync, posture, steadiness and attention.',
+      color: '#38BDF8',
+      available: isBalloonBreathingAvailable,
+    },
+    {
+      id: 'slow-motion-walk',
+      title: 'Slow Motion Walk',
+      emoji: '🐢',
+      description: 'Glide along the twilight path in slow motion — reach each stone with calm, steady movement! Camera tracks pace, smoothness, posture and attention.',
+      color: '#2DD4BF',
+      available: isSlowMotionWalkAvailable,
+    },
+    {
+      id: 'heavy-work-break',
+      title: 'Heavy Work Break',
+      emoji: '🧱',
+      description: 'Take a proprioceptive break — push, pull, carry and press through heavy work stations! Camera tracks bilateral effort, posture, steadiness and sustained holds.',
+      color: '#F97316',
+      available: isHeavyWorkBreakAvailable,
+    },
+    {
+      id: 'calm-body-quest',
+      title: 'Calm Body Quest',
+      emoji: '🧘',
+      description: 'Quest through moonlit calm sanctuaries — arrive gently, then hold your body still and peaceful! Camera tracks stillness, posture, attention and calm poses.',
+      color: '#A78BFA',
+      available: isCalmBodyQuestAvailable,
+    },
+    {
+      id: 'calm-energy-meter',
+      title: 'Energy Meter',
+      emoji: '⚡',
+      description: 'Match your body energy to the neon gauge — rise, peak, then calm reset! Camera tracks movement level, posture, attention and sustained matching.',
+      color: '#22D3EE',
+      available: isCalmEnergyMeterAvailable,
+    },
+    // Occupational Therapy Level 10 Session 3: Adaptive Motor Responses (camera tracks adaptive movement)
+    {
+      id: 'change-the-plan',
+      title: 'Change The Plan',
+      emoji: '🔀',
+      description: 'Follow Plan A — then adapt fast when the signal switches to Plan B! Camera tracks redirect speed, movement quality, posture and attention.',
+      color: '#2DD4BF',
+      available: isChangeThePlanAvailable,
+    },
+    {
+      id: 'lava-shift',
+      title: 'Lava Shift',
+      emoji: '🌋',
+      description: 'Escape shifting lava by jumping between safe stones! Camera tracks adaptive escape speed, movement quality, posture and attention.',
+      color: '#F97316',
+      available: isLavaShiftAvailable,
+    },
+    {
+      id: 'pirate-detour',
+      title: 'Pirate Detour',
+      emoji: '🏴‍☠️',
+      description: 'Sail the planned route — then adapt when the captain orders a detour! Camera tracks redirect speed, movement quality, posture and attention.',
+      color: '#EAB308',
+      available: isPirateDetourAvailable,
+    },
+    {
+      id: 'mission-update',
+      title: 'Mission Update',
+      emoji: '📡',
+      description: 'Complete Mission A — then adapt when command sends a live mission update! Camera tracks redirect speed, movement quality, posture and attention.',
+      color: '#38BDF8',
+      available: isMissionUpdateAvailable,
+    },
+    {
+      id: 'surprise-route',
+      title: 'Surprise Route',
+      emoji: '🌿',
+      description: 'Follow the planned trail — then adapt when a surprise fork appears! Camera tracks redirect speed, movement quality, posture and attention.',
+      color: '#34D399',
+      available: isSurpriseRouteAvailable,
+    },
+    // Occupational Therapy Level 10 Session 4: Sensory-Motor Integration (camera tracks balance, reach & posture)
+    {
+      id: 'balance-reach',
+      title: 'Balance & Reach',
+      emoji: '⚖️',
+      description: 'Hold steady on the balance bridge — then reach for glow orbs without losing center! Camera tracks balance, reach accuracy, posture and attention.',
+      color: '#2DD4BF',
+      available: isBalanceReachAvailable,
+    },
+    {
+      id: 'track-move',
+      title: 'Track & Move',
+      emoji: '🎯',
+      description: 'Follow the gliding aurora pulse — then move to the finish glow and hold! Camera tracks tracking accuracy, movement quality, posture and attention.',
+      color: '#22D3EE',
+      available: isTrackMoveAvailable,
+    },
+    {
+      id: 'catch-turn',
+      title: 'Catch & Turn',
+      emoji: '🌀',
+      description: 'Catch the flying orb with your hand — then turn to the spin marker and hold! Camera tracks catch timing, turn accuracy, posture and attention.',
+      color: '#FBBF24',
+      available: isCatchTurnAvailable,
+    },
+    {
+      id: 'move-match',
+      title: 'Move & Match',
+      emoji: '🎨',
+      description: 'Move to the studio pad — then match the twin symbol with your body and hold! Camera tracks move accuracy, match quality, posture and attention.',
+      color: '#F472B6',
+      available: isMoveMatchAvailable,
+    },
+    {
+      id: 'integration-quest',
+      title: 'Integration Quest',
+      emoji: '🏆',
+      description: 'Gather, integrate balance + reach, then complete the crystal finale! Camera tracks sensory-motor integration, posture, attention and completion.',
+      color: '#A78BFA',
+      available: isIntegrationQuestAvailable,
+    },
+    // Occupational Therapy Level 10 Session 5: Functional Daily Skills (camera tracks movement, posture, attention)
+    {
+      id: 'school-ready',
+      title: 'School Ready',
+      emoji: '🎒',
+      description: 'Practice the morning school routine — prepare at each station, then hold your school-ready stance! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#38BDF8',
+      available: isSchoolReadyAvailable,
+    },
+    {
+      id: 'home-helper',
+      title: 'Home Helper',
+      emoji: '🏠',
+      description: 'Help around the house — prepare at each chore station, then hold your helper-ready stance! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#FBBF24',
+      available: isHomeHelperAvailable,
+    },
+    {
+      id: 'meal-mission',
+      title: 'Meal Mission',
+      emoji: '🍳',
+      description: 'Complete the kitchen meal routine — prepare at each station, then hold your meal-ready stance! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#F97316',
+      available: isMealMissionAvailable,
+    },
+    {
+      id: 'door-challenge',
+      title: 'Door Challenge',
+      emoji: '🚪',
+      description: 'Practice door transitions — approach each doorway, then hold your transition-ready stance! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#64748B',
+      available: isDoorChallengeAvailable,
+    },
+    // Occupational Therapy Level 10 Session 6: Attention & Regulation (camera tracks movement, posture, attention)
+    {
+      id: 'focus-finder',
+      title: 'Focus Finder',
+      emoji: '🔍',
+      description: 'Find each spotlight beacon — then hold calm locked focus with steady posture and attention! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#8B5CF6',
+      available: isFocusFinderAvailable,
+    },
+    {
+      id: 'stop-think',
+      title: 'Stop & Think',
+      emoji: '🛑',
+      description: 'Go to each cue — then STOP, think, and hold calm stillness with steady attention! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#14B8A6',
+      available: isStopThinkAvailable,
+    },
+    {
+      id: 'attention-quest',
+      title: 'Attention Quest',
+      emoji: '🗺️',
+      description: 'Follow the quest trail to each node — then lock your attention challenge! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#F59E0B',
+      available: isAttentionQuestAvailable,
+    },
+    {
+      id: 'watch-carefully',
+      title: 'Watch Carefully',
+      emoji: '👀',
+      description: 'Move to each watch point — then observe carefully with calm stillness and steady attention! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#06B6D4',
+      available: isWatchCarefullyAvailable,
+    },
+    {
+      id: 'mind-master',
+      title: 'Mind Master',
+      emoji: '🧠',
+      description: 'The ultimate attention adventure — focus at each node, regulate with calm stillness, then master the finale! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#8B5CF6',
+      available: isMindMasterAvailable,
+    },
+    // Occupational Therapy Level 10 Session 7: Social Sensory Adventures (camera tracks movement, posture, attention)
+    {
+      id: 'greeting-game',
+      title: 'Greeting Game',
+      emoji: '👋',
+      description: 'Approach each friend on the hello trail — then greet with calm posture, attention and a friendly hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#FB923C',
+      available: isGreetingGameAvailable,
+    },
+    {
+      id: 'emotion-match',
+      title: 'Emotion Match',
+      emoji: '😊',
+      description: 'Find each feeling face — then match the emotion with calm posture, attention and a steady hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#2DD4BF',
+      available: isEmotionMatchAvailable,
+    },
+    {
+      id: 'team-mission',
+      title: 'Team Mission',
+      emoji: '🤝',
+      description: 'Rally with your squad — then complete each team mission with calm posture, attention and a steady hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#3B82F6',
+      available: isTeamMissionAvailable,
+    },
+    {
+      id: 'friendship-quest',
+      title: 'Friendship Quest',
+      emoji: '💫',
+      description: 'Follow each friendship trail — then bond with calm posture, attention and a steady friendship hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#A78BFA',
+      available: isFriendshipQuestAvailable,
+    },
+    {
+      id: 'social-explorer',
+      title: 'Social Explorer',
+      emoji: '🌍',
+      description: 'The ultimate social sensory adventure — explore, connect with calm stillness, then social master the finale! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#FB923C',
+      available: isSocialExplorerAvailable,
+    },
+    // Occupational Therapy Level 10 Session 8: Sensory Problem Solving (camera tracks movement, posture, attention)
+    {
+      id: 'find-another-way',
+      title: 'Find Another Way',
+      emoji: '🧩',
+      description: 'Try each blocked path — then adapt and find another way with calm posture, attention and a steady hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#14B8A6',
+      available: isFindAnotherWayAvailable,
+    },
+    {
+      id: 'sensory-open-the-path',
+      title: 'Open The Path',
+      emoji: '🗝️',
+      description: 'Find each closed gateway — then open the path with calm posture, attention and a steady hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#22C55E',
+      available: isSensoryOpenThePathAvailable,
+    },
+    {
+      id: 'escape-route',
+      title: 'Escape Route',
+      emoji: '🏃',
+      description: 'Scout each blocked exit — then follow the escape route with calm posture, attention and a steady hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#8B5CF6',
+      available: isEscapeRouteAvailable,
+    },
+    {
+      id: 'sensory-rescue-mission',
+      title: 'Rescue Mission',
+      emoji: '🦸',
+      description: 'Spot each rescue signal — then complete the rescue with calm posture, attention and a steady hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#EF4444',
+      available: isSensoryRescueMissionAvailable,
+    },
+    {
+      id: 'problem-solver',
+      title: 'Problem Solver',
+      emoji: '🧩',
+      description: 'Try, adapt, then solve each challenge — the ultimate sensory problem-solving adventure! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#6366F1',
+      available: isProblemSolverAvailable,
+    },
+    // Occupational Therapy Level 10 Session 9: Real-Life Sensory Challenges (camera tracks movement, posture, attention)
+    {
+      id: 'school-adventure',
+      title: 'School Adventure',
+      emoji: '🏫',
+      description: 'Enter each school zone — then participate with calm posture, attention and a steady hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#0EA5E9',
+      available: isSchoolAdventureAvailable,
+    },
+    {
+      id: 'shopping-trip',
+      title: 'Shopping Trip',
+      emoji: '🛒',
+      description: 'Browse each store aisle — then complete checkout with calm posture, attention and a steady hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#F97316',
+      available: isShoppingTripAvailable,
+    },
+    {
+      id: 'playground-quest',
+      title: 'Playground Quest',
+      emoji: '🛝',
+      description: 'Explore each playground station — then play with calm posture, attention and a steady hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#22C55E',
+      available: isPlaygroundQuestAvailable,
+    },
+    {
+      id: 'travel-challenge',
+      title: 'Travel Challenge',
+      emoji: '✈️',
+      description: 'Pack for each travel stop — then journey with calm posture, attention and a steady hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#0EA5E9',
+      available: isTravelChallengeAvailable,
+    },
+    {
+      id: 'community-explorer',
+      title: 'Community Explorer',
+      emoji: '🏘️',
+      description: 'Visit each community place — then join in with calm posture, attention and a steady hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#8B5CF6',
+      available: isCommunityExplorerAvailable,
+    },
+    {
+      id: 'sensory-jungle-expedition',
+      title: 'Jungle Expedition',
+      emoji: '🌿',
+      description: 'Scout each jungle site — then trek with calm posture, attention and a steady hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#16A34A',
+      available: isSensoryJungleExpeditionAvailable,
+    },
+    {
+      id: 'sensory-space-explorer',
+      title: 'Space Explorer',
+      emoji: '🚀',
+      description: 'Scan each cosmic zone — then fly with calm posture, attention and a steady hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#6366F1',
+      available: isSensorySpaceExplorerAvailable,
+    },
+    {
+      id: 'sensory-pirate-treasure-hunt',
+      title: 'Pirate Treasure Hunt',
+      emoji: '🏴‍☠️',
+      description: 'Seek each treasure spot — then claim with calm posture, attention and a steady hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#D97706',
+      available: isSensoryPirateTreasureHuntAvailable,
+    },
+    {
+      id: 'sensory-mountain-rescue',
+      title: 'Mountain Rescue',
+      emoji: '🏔️',
+      description: 'Spot each rescue site — then climb with calm posture, attention and a steady hold! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#0EA5E9',
+      available: isSensoryMountainRescueAvailable,
+    },
+    {
+      id: 'arvit-grand-champion',
+      title: 'ARVIT Grand Champion',
+      emoji: '👑',
+      description: 'Explore, integrate, then champion each adventure — the ultimate sensory integration quest! Camera tracks movement quality, posture, attention and task completion.',
+      color: '#EAB308',
+      available: isArvitGrandChampionAvailable,
     },
     // Occupational Therapy Level 7 Session 2: Head Movement & Vestibular Activation (camera tracks head & posture)
     {
       id: 'look-up-explorer',
       title: 'Look Up Explorer',
-      emoji: '👀',
+      emoji: '??',
       description: 'Explore the sky looking for hidden treasures. Camera tracks head angle, neck movement and posture.',
       color: '#38BDF8',
       available: isLookUpExplorerAvailable,
@@ -8530,7 +9693,7 @@ export default function SessionGamesScreen() {
     {
       id: 'sky-ground-mission',
       title: 'Sky-Ground Mission',
-      emoji: '🌞',
+      emoji: '??',
       description: 'Alternate looking up at the sky and down at the ground for clues. Camera tracks head range, speed and body stability.',
       color: '#F59E0B',
       available: isSkyGroundMissionAvailable,
@@ -8538,7 +9701,7 @@ export default function SessionGamesScreen() {
     {
       id: 'helicopter-watch',
       title: 'Helicopter Watch',
-      emoji: '🚁',
+      emoji: '??',
       description: 'Follow helicopters across the sky with smooth head tracking. Camera tracks accuracy, head movement and trunk compensation.',
       color: '#22D3EE',
       available: isHelicopterWatchAvailable,
@@ -8546,7 +9709,7 @@ export default function SessionGamesScreen() {
     {
       id: 'vestibular-star-tracker',
       title: 'Star Tracker',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Follow magical stars moving in different directions. Camera tracks head orientation, tracking quality and posture.',
       color: '#A78BFA',
       available: isVestibularStarTrackerAvailable,
@@ -8554,7 +9717,7 @@ export default function SessionGamesScreen() {
     {
       id: 'turn-and-find',
       title: 'Turn & Find',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Turn your head left and right to find hidden targets. Camera tracks head rotation, search speed and body stability.',
       color: '#F472B6',
       available: isTurnAndFindAvailable,
@@ -8563,7 +9726,7 @@ export default function SessionGamesScreen() {
     {
       id: 'direction-switch',
       title: 'Direction Switch',
-      emoji: '↔️',
+      emoji: '??',
       description: 'Follow magical arrows and instantly change direction in the maze. Camera tracks direction changes, reaction speed and balance.',
       color: '#A78BFA',
       available: isDirectionSwitchAvailable,
@@ -8571,15 +9734,15 @@ export default function SessionGamesScreen() {
     {
       id: 'go-left-go-right',
       title: 'Go Left Go Right',
-      emoji: '🚦',
-      description: 'Navigate traffic — move left or right on the signal. Camera tracks movement accuracy, timing and posture.',
+      emoji: '??',
+      description: 'Navigate traffic ? move left or right on the signal. Camera tracks movement accuracy, timing and posture.',
       color: '#34D399',
       available: isGoLeftGoRightAvailable,
     },
     {
       id: 'pirate-turn-hunt',
       title: 'Pirate Turn Hunt',
-      emoji: '🏴‍☠️',
+      emoji: '?????',
       description: 'Turn and move toward pirate treasure in different directions. Camera tracks turning accuracy, balance and control.',
       color: '#F59E0B',
       available: isPirateTurnHuntAvailable,
@@ -8587,15 +9750,15 @@ export default function SessionGamesScreen() {
     {
       id: 'turn-around-quest',
       title: 'Turn Around Quest',
-      emoji: '🔄',
-      description: 'Perform 90° and 180° turns to discover hidden kingdom objects. Camera tracks turning angle, stability and posture.',
+      emoji: '??',
+      description: 'Perform 90? and 180? turns to discover hidden kingdom objects. Camera tracks turning angle, stability and posture.',
       color: '#38BDF8',
       available: isTurnAroundQuestAvailable,
     },
     {
       id: 'magical-arrow-sequence',
       title: 'Follow The Arrow',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Follow a sequence of magical arrows in changing directions. Camera tracks movement sequence, accuracy and balance.',
       color: '#F472B6',
       available: isMagicalArrowSequenceAvailable,
@@ -8604,7 +9767,7 @@ export default function SessionGamesScreen() {
     {
       id: 'tornado-turn',
       title: 'Tornado Turn',
-      emoji: '🌀',
+      emoji: '??',
       description: 'Spin slowly like a tornado, then STOP on command. Camera tracks rotation angle, speed and postural stability.',
       color: '#A78BFA',
       available: isTornadoTurnAvailable,
@@ -8612,7 +9775,7 @@ export default function SessionGamesScreen() {
     {
       id: 'spin-and-stop',
       title: 'Spin & Stop',
-      emoji: '🔄',
+      emoji: '??',
       description: 'Spin the magic wheel slowly and freeze when the target appears. Camera tracks reaction time, turning control and balance.',
       color: '#F472B6',
       available: isSpinAndStopAvailable,
@@ -8620,7 +9783,7 @@ export default function SessionGamesScreen() {
     {
       id: 'helicopter-pilot',
       title: 'Helicopter Pilot',
-      emoji: '🚁',
+      emoji: '??',
       description: 'Rotate toward checkpoints while maintaining balance. Camera tracks head movement, body rotation and stability.',
       color: '#38BDF8',
       available: isHelicopterPilotAvailable,
@@ -8628,7 +9791,7 @@ export default function SessionGamesScreen() {
     {
       id: 'orbit-hunt',
       title: 'Orbit Hunt',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Turn to catch stars orbiting around you. Camera tracks rotation range, tracking accuracy and balance.',
       color: '#FBBF24',
       available: isOrbitHuntAvailable,
@@ -8636,7 +9799,7 @@ export default function SessionGamesScreen() {
     {
       id: 'turn-and-point',
       title: 'Turn & Point',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Turn your body, then point your head at hidden targets. Camera tracks turning accuracy, pointing and posture.',
       color: '#34D399',
       available: isTurnAndPointAvailable,
@@ -8645,7 +9808,7 @@ export default function SessionGamesScreen() {
     {
       id: 'balance-bridge',
       title: 'Balance Bridge',
-      emoji: '🌉',
+      emoji: '??',
       description: 'Walk heel-to-toe across the magical bridge to the castle. Camera tracks body sway, posture and path accuracy.',
       color: '#A78BFA',
       available: isBalanceBridgeAvailable,
@@ -8653,7 +9816,7 @@ export default function SessionGamesScreen() {
     {
       id: 'stepping-stones-l7',
       title: 'Stepping Stones',
-      emoji: '🪨',
+      emoji: '??',
       description: 'Step from stone to stone across the river while keeping balance. Camera tracks foot placement, balance and movement control.',
       color: '#38BDF8',
       available: isSteppingStonesL7Available,
@@ -8661,7 +9824,7 @@ export default function SessionGamesScreen() {
     {
       id: 'island-hopper',
       title: 'Island Hopper',
-      emoji: '🏝️',
+      emoji: '???',
       description: 'Hop between islands to collect treasures and avoid the water. Camera tracks movement transitions, balance and posture.',
       color: '#34D399',
       available: isIslandHopperAvailable,
@@ -8669,7 +9832,7 @@ export default function SessionGamesScreen() {
     {
       id: 'river-crossing-l7',
       title: 'River Crossing',
-      emoji: '🌊',
+      emoji: '??',
       description: 'Cross the fast river by following changing paths and recovering balance. Camera tracks balance reactions, stepping and posture.',
       color: '#22D3EE',
       available: isRiverCrossingL7Available,
@@ -8677,8 +9840,8 @@ export default function SessionGamesScreen() {
     {
       id: 'star-trail',
       title: 'Star Trail',
-      emoji: '⭐',
-      description: 'Follow the star trail through space — walk, turn and reach for stars. Camera tracks movement quality, posture and balance.',
+      emoji: '?',
+      description: 'Follow the star trail through space ? walk, turn and reach for stars. Camera tracks movement quality, posture and balance.',
       color: '#FBBF24',
       available: isStarTrailAvailable,
     },
@@ -8686,7 +9849,7 @@ export default function SessionGamesScreen() {
     {
       id: 'rocket-follow',
       title: 'Rocket Follow',
-      emoji: '🚀',
+      emoji: '??',
       description: 'Track a rocket traveling through space while you keep moving. Camera tracks head tracking, posture and movement accuracy.',
       color: '#818CF8',
       available: isRocketFollowAvailable,
@@ -8694,7 +9857,7 @@ export default function SessionGamesScreen() {
     {
       id: 'butterfly-chase',
       title: 'Butterfly Chase',
-      emoji: '🦋',
+      emoji: '??',
       description: 'Catch magical butterflies flying around the garden. Camera tracks smooth head movement, tracking quality and stability.',
       color: '#34D399',
       available: isButterflyChaseAvailable,
@@ -8702,7 +9865,7 @@ export default function SessionGamesScreen() {
     {
       id: 'balloon-drift',
       title: 'Balloon Drift',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Follow drifting balloons across the sky without losing balance. Camera tracks eye-head coordination, movement path and posture.',
       color: '#FB7185',
       available: isBalloonDriftAvailable,
@@ -8710,7 +9873,7 @@ export default function SessionGamesScreen() {
     {
       id: 'ufo-watch',
       title: 'UFO Watch',
-      emoji: '🛸',
+      emoji: '??',
       description: 'Track UFOs moving in changing directions and speeds. Camera tracks tracking accuracy, head control and posture.',
       color: '#22D3EE',
       available: isUFOWatchAvailable,
@@ -8718,7 +9881,7 @@ export default function SessionGamesScreen() {
     {
       id: 'orbit-tracker',
       title: 'Orbit Tracker',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Follow stars orbiting a galaxy in circular and diagonal patterns. Camera tracks head movement, tracking smoothness and body stability.',
       color: '#FBBF24',
       available: isOrbitTrackerAvailable,
@@ -8727,7 +9890,7 @@ export default function SessionGamesScreen() {
     {
       id: 'freeze-balance-l7',
       title: 'Freeze Balance',
-      emoji: '⚡',
+      emoji: '?',
       description: 'Move like a superhero, then freeze in a balanced position when danger appears. Camera tracks reaction time, posture and stability.',
       color: '#FBBF24',
       available: isFreezeBalanceL7Available,
@@ -8735,7 +9898,7 @@ export default function SessionGamesScreen() {
     {
       id: 'wave-rider',
       title: 'Wave Rider',
-      emoji: '🌊',
+      emoji: '??',
       description: 'Ride ocean waves by shifting your weight to stay balanced. Camera tracks weight shifting, balance and posture.',
       color: '#22D3EE',
       available: isWaveRiderAvailable,
@@ -8743,7 +9906,7 @@ export default function SessionGamesScreen() {
     {
       id: 'surf-challenge',
       title: 'Surf Challenge',
-      emoji: '🏄',
+      emoji: '??',
       description: 'Respond to sudden changes in movement direction while staying upright. Camera tracks recovery speed, posture and balance.',
       color: '#38BDF8',
       available: isSurfChallengeAvailable,
@@ -8751,7 +9914,7 @@ export default function SessionGamesScreen() {
     {
       id: 'obstacle-balance',
       title: 'Obstacle Balance',
-      emoji: '🚧',
+      emoji: '??',
       description: 'Step around obstacles while keeping postural control. Camera tracks foot placement, posture and balance reactions.',
       color: '#34D399',
       available: isObstacleBalanceAvailable,
@@ -8759,7 +9922,7 @@ export default function SessionGamesScreen() {
     {
       id: 'recovery-master',
       title: 'Recovery Master',
-      emoji: '🏆',
+      emoji: '??',
       description: 'Complete a series of balance recovery challenges with increasing difficulty. Camera tracks stability, reaction quality and movement control.',
       color: '#FBBF24',
       available: isRecoveryMasterAvailable,
@@ -8768,7 +9931,7 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-my-steps',
       title: 'Follow My Steps',
-      emoji: '👣',
+      emoji: '??',
       description: 'Follow movement sequences across floor markers in order. Camera tracks movement accuracy, posture and balance.',
       color: '#C084FC',
       available: isFollowMyStepsAvailable,
@@ -8776,7 +9939,7 @@ export default function SessionGamesScreen() {
     {
       id: 'movement-pattern-copy',
       title: 'Movement Pattern Copy',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Copy increasingly complex movement patterns. Camera tracks movement accuracy, posture and balance.',
       color: '#F472B6',
       available: isMovementPatternCopyAvailable,
@@ -8784,7 +9947,7 @@ export default function SessionGamesScreen() {
     {
       id: 'star-sequence-path',
       title: 'Star Sequence Path',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Collect stars in the correct movement order. Camera tracks movement accuracy, posture and balance.',
       color: '#FBBF24',
       available: isStarSequencePathAvailable,
@@ -8792,7 +9955,7 @@ export default function SessionGamesScreen() {
     {
       id: 'space-mission',
       title: 'Space Mission',
-      emoji: '🚀',
+      emoji: '??',
       description: 'Complete a sequence of movement commands in space. Camera tracks movement accuracy, posture and balance.',
       color: '#818CF8',
       available: isSpaceMissionAvailable,
@@ -8800,7 +9963,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pirate-journey',
       title: 'Pirate Journey',
-      emoji: '🏴',
+      emoji: '??',
       description: 'Follow a treasure map using directional sequences. Camera tracks movement accuracy, posture and balance.',
       color: '#34D399',
       available: isPirateJourneyAvailable,
@@ -8809,7 +9972,7 @@ export default function SessionGamesScreen() {
     {
       id: 'long-trail-walk',
       title: 'Long Trail Walk',
-      emoji: '🚶',
+      emoji: '??',
       description: 'Maintain movement and balance over longer distances. Camera tracks movement accuracy, posture and balance.',
       color: '#34D399',
       available: isLongTrailWalkAvailable,
@@ -8817,7 +9980,7 @@ export default function SessionGamesScreen() {
     {
       id: 'rainbow-journey',
       title: 'Rainbow Journey',
-      emoji: '🌈',
+      emoji: '??',
       description: 'Travel through a long colorful movement path. Camera tracks movement accuracy, posture and balance.',
       color: '#F472B6',
       available: isRainbowJourneyAvailable,
@@ -8825,7 +9988,7 @@ export default function SessionGamesScreen() {
     {
       id: 'forest-explorer',
       title: 'Forest Explorer',
-      emoji: '🏞️',
+      emoji: '???',
       description: 'Navigate a forest while sustaining posture and balance. Camera tracks movement accuracy, posture and balance.',
       color: '#22C55E',
       available: isForestExplorerAvailable,
@@ -8833,7 +9996,7 @@ export default function SessionGamesScreen() {
     {
       id: 'endless-tracks',
       title: 'Endless Tracks',
-      emoji: '🚂',
+      emoji: '??',
       description: 'Keep moving through changing train routes. Camera tracks movement accuracy, posture and balance.',
       color: '#38BDF8',
       available: isEndlessTracksAvailable,
@@ -8841,7 +10004,7 @@ export default function SessionGamesScreen() {
     {
       id: 'balance-marathon',
       title: 'Balance Marathon',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Complete extended balance and movement challenges. Camera tracks movement accuracy, posture and balance.',
       color: '#FBBF24',
       available: isBalanceMarathonAvailable,
@@ -8850,7 +10013,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pirate-island-challenge',
       title: 'Pirate Island Challenge',
-      emoji: '🏴',
+      emoji: '??',
       description: 'Complete a vestibular treasure-hunt course. Camera tracks movement accuracy, posture and balance.',
       color: '#34D399',
       available: isPirateIslandChallengeAvailable,
@@ -8858,7 +10021,7 @@ export default function SessionGamesScreen() {
     {
       id: 'space-explorer-course',
       title: 'Space Explorer Course',
-      emoji: '🚀',
+      emoji: '??',
       description: 'Navigate space-themed balance missions. Camera tracks movement accuracy, posture and balance.',
       color: '#818CF8',
       available: isSpaceExplorerCourseAvailable,
@@ -8866,7 +10029,7 @@ export default function SessionGamesScreen() {
     {
       id: 'jungle-expedition',
       title: 'Jungle Expedition',
-      emoji: '🌴',
+      emoji: '??',
       description: 'Cross jungle obstacles using vestibular skills. Camera tracks movement accuracy, posture and balance.',
       color: '#22C55E',
       available: isJungleExpeditionAvailable,
@@ -8874,7 +10037,7 @@ export default function SessionGamesScreen() {
     {
       id: 'mountain-adventure',
       title: 'Mountain Adventure',
-      emoji: '⛰️',
+      emoji: '??',
       description: 'Climb, turn and balance through mountain paths. Camera tracks movement accuracy, posture and balance.',
       color: '#38BDF8',
       available: isMountainAdventureAvailable,
@@ -8882,7 +10045,7 @@ export default function SessionGamesScreen() {
     {
       id: 'vestibular-champion',
       title: 'Vestibular Champion',
-      emoji: '🏆',
+      emoji: '??',
       description: 'The final integrated vestibular obstacle course. Camera tracks movement accuracy, posture and balance.',
       color: '#FBBF24',
       available: isVestibularChampionAvailable,
@@ -8891,7 +10054,7 @@ export default function SessionGamesScreen() {
     {
       id: 'big-tap-small-tap',
       title: 'Size Tap',
-      emoji: '👆',
+      emoji: '??',
       description: 'Tap the big circle for BIG and the tiny circle for SMALL. Builds size discrimination.',
       color: '#3B82F6',
       available: isBigTapSmallTapAvailable,
@@ -8899,7 +10062,7 @@ export default function SessionGamesScreen() {
     {
       id: 'big-swipe-small-swipe',
       title: 'Swipe Scale',
-      emoji: '↔️',
+      emoji: '??',
       description: 'Long swipe for BIG, short swipe for SMALL. Builds movement scaling.',
       color: '#22C55E',
       available: isBigSwipeSmallSwipeAvailable,
@@ -8907,7 +10070,7 @@ export default function SessionGamesScreen() {
     {
       id: 'stretch-pinch',
       title: 'Pinch & Stretch',
-      emoji: '🤏',
+      emoji: '??',
       description: 'Stretch to make it big, pinch to make it small. Builds fine motor control.',
       color: '#D946EF',
       available: isStretchPinchAvailable,
@@ -8915,7 +10078,7 @@ export default function SessionGamesScreen() {
     {
       id: 'big-throw-small-throw',
       title: 'Throw Range',
-      emoji: '⚾',
+      emoji: '?',
       description: 'Drag far for a big throw, short for a small throw. Builds force grading.',
       color: '#F97316',
       available: isBigThrowSmallThrowAvailable,
@@ -8923,7 +10086,7 @@ export default function SessionGamesScreen() {
     {
       id: 'big-path-trace',
       title: 'Road Trace',
-      emoji: '🛤️',
+      emoji: '???',
       description: 'Trace the wide road or the thin road. Builds visual-motor scaling.',
       color: '#8B5CF6',
       available: isBigPathTraceAvailable,
@@ -8932,23 +10095,23 @@ export default function SessionGamesScreen() {
     {
       id: 'single-beat-tap',
       title: 'One Beat',
-      emoji: '🥁',
-      description: 'One drum beat — tap once in time. Develops timing and cause-effect.',
+      emoji: '??',
+      description: 'One drum beat ? tap once in time. Develops timing and cause-effect.',
       color: '#F97316',
       available: isSingleBeatTapAvailable,
     },
     {
       id: 'double-beat-copy',
       title: 'Two Beats',
-      emoji: '🥁',
-      description: 'Hear two beats — tap twice back. Builds rhythm and coordination.',
+      emoji: '??',
+      description: 'Hear two beats ? tap twice back. Builds rhythm and coordination.',
       color: '#3B82F6',
       available: isDoubleBeatCopyAvailable,
     },
     {
       id: 'pause-and-tap',
       title: 'Wait & Tap',
-      emoji: '⏸️',
+      emoji: '??',
       description: 'Beat, pause, then tap. Develops impulse control and listening.',
       color: '#8B5CF6',
       available: isPauseAndTapAvailable,
@@ -8956,23 +10119,23 @@ export default function SessionGamesScreen() {
     {
       id: 'fast-beat-challenge',
       title: 'Beat Sprint',
-      emoji: '⚡',
-      description: 'Fast drum beats — tap each one quickly. Builds reaction speed.',
+      emoji: '?',
+      description: 'Fast drum beats ? tap each one quickly. Builds reaction speed.',
       color: '#DC2626',
       available: isFastBeatChallengeAvailable,
     },
     {
       id: 'slow-beat-calm-mode',
       title: 'Calm Beats',
-      emoji: '🧘',
-      description: 'Slow, calming beats — tap gently when ready. Develops self-regulation.',
+      emoji: '??',
+      description: 'Slow, calming beats ? tap gently when ready. Develops self-regulation.',
       color: '#10B981',
       available: isSlowBeatCalmModeAvailable,
     },
     {
       id: 'slow-turtle-move',
       title: 'Slow & Steady',
-      emoji: '🐢',
+      emoji: '??',
       description: 'Drag the turtle slowly to the finish. Develops patience and controlled motion.',
       color: '#10B981',
       available: isSlowTurtleMoveAvailable,
@@ -8980,7 +10143,7 @@ export default function SessionGamesScreen() {
     {
       id: 'fast-rabbit-run',
       title: 'Quick Hop',
-      emoji: '🐰',
+      emoji: '??',
       description: 'Drag the rabbit quickly to the finish. Develops speed and energy control.',
       color: '#F59E0B',
       available: isFastRabbitRunAvailable,
@@ -8988,7 +10151,7 @@ export default function SessionGamesScreen() {
     {
       id: 'speed-match',
       title: 'Match the Pace',
-      emoji: '🐢',
+      emoji: '??',
       description: 'Watch the top turtle and match its speed below. Builds movement sync.',
       color: '#3B82F6',
       available: isSpeedMatchAvailable,
@@ -8996,7 +10159,7 @@ export default function SessionGamesScreen() {
     {
       id: 'traffic-light-game',
       title: 'Light Rules',
-      emoji: '🚦',
+      emoji: '??',
       description: 'Green = fast swipe, yellow = slow swipe. Builds rule following.',
       color: '#EF4444',
       available: isTrafficLightAvailable,
@@ -9004,7 +10167,7 @@ export default function SessionGamesScreen() {
     {
       id: 'music-speed-control',
       title: 'Move to Music',
-      emoji: '🎵',
+      emoji: '??',
       description: 'Fast music = fast swipe, slow music = slow swipe. Auditory-motor integration.',
       color: '#8B5CF6',
       available: isMusicSpeedControlAvailable,
@@ -9013,7 +10176,7 @@ export default function SessionGamesScreen() {
     {
       id: 'balloon-up',
       title: 'Lift Off',
-      emoji: '🎈',
+      emoji: '??',
       description: 'Swipe up to lift the balloon. Builds direction awareness and shoulder movement.',
       color: '#0EA5E9',
       available: isBalloonUpAvailable,
@@ -9021,7 +10184,7 @@ export default function SessionGamesScreen() {
     {
       id: 'ball-drop',
       title: 'Gravity Drop',
-      emoji: '⚽',
+      emoji: '?',
       description: 'Swipe down to drop the ball. Develops vertical movement understanding.',
       color: '#F59E0B',
       available: isBallDropAvailable,
@@ -9029,7 +10192,7 @@ export default function SessionGamesScreen() {
     {
       id: 'elevator-game',
       title: 'Floor Express',
-      emoji: '🛗',
+      emoji: '??',
       description: 'Swipe up or down to reach the correct floor. Builds up/down concept clarity.',
       color: '#6366F1',
       available: isElevatorGameAvailable,
@@ -9037,7 +10200,7 @@ export default function SessionGamesScreen() {
     {
       id: 'jump-arrow',
       title: 'Arrow Jump',
-      emoji: '⬆️',
+      emoji: '??',
       description: 'Match your swipe to the arrow direction. Builds visual-motor response.',
       color: '#EAB308',
       available: isJumpArrowAvailable,
@@ -9045,7 +10208,7 @@ export default function SessionGamesScreen() {
     {
       id: 'rain-catch',
       title: 'Rain Reach',
-      emoji: '🌧️',
+      emoji: '???',
       description: 'Swipe up to raise hands and catch rain. Develops whole-arm coordination.',
       color: '#38BDF8',
       available: isRainCatchAvailable,
@@ -9054,7 +10217,7 @@ export default function SessionGamesScreen() {
     {
       id: 'car-turn',
       title: 'Road Turn',
-      emoji: '🚗',
+      emoji: '??',
       description: 'Swipe left or right to turn the car. Builds direction discrimination.',
       color: '#3B82F6',
       available: isCarTurnAvailable,
@@ -9062,7 +10225,7 @@ export default function SessionGamesScreen() {
     {
       id: 'arrow-match',
       title: 'Arrow Sync',
-      emoji: '⬅️',
+      emoji: '??',
       description: 'Swipe the same way the arrow points. Builds visual-motor link.',
       color: '#F59E0B',
       available: isArrowMatchAvailable,
@@ -9070,7 +10233,7 @@ export default function SessionGamesScreen() {
     {
       id: 'animal-run',
       title: 'Pet Dash',
-      emoji: '🐕',
+      emoji: '??',
       description: 'Send the animal left or right. Builds bilateral coordination.',
       color: '#8B5CF6',
       available: isAnimalRunAvailable,
@@ -9078,15 +10241,15 @@ export default function SessionGamesScreen() {
     {
       id: 'mirror-swipe',
       title: 'Flip Side',
-      emoji: '🪞',
-      description: 'Mirror mode — swipe left, object goes right! Builds cognitive flexibility.',
+      emoji: '??',
+      description: 'Mirror mode ? swipe left, object goes right! Builds cognitive flexibility.',
       color: '#EC4899',
       available: isMirrorSwipeAvailable,
     },
     {
       id: 'catch-the-ball',
       title: 'Quick Catch',
-      emoji: '⚽',
+      emoji: '?',
       description: 'Catch the ball by swiping the direction it comes from. Builds reaction time.',
       color: '#EF4444',
       available: isCatchTheBallAvailable,
@@ -9095,7 +10258,7 @@ export default function SessionGamesScreen() {
     {
       id: 'frog-jump',
       title: 'Leap Frog',
-      emoji: '🐸',
+      emoji: '??',
       description: 'Tap twice to make the frog jump. Builds sequencing and motor imitation.',
       color: '#22C55E',
       available: isFrogJumpAvailable,
@@ -9103,7 +10266,7 @@ export default function SessionGamesScreen() {
     {
       id: 'jump-count',
       title: 'Two Jump',
-      emoji: '🔢',
+      emoji: '??',
       description: 'Jump only when number 2 appears. Builds inhibition and number recognition.',
       color: '#3B82F6',
       available: isJumpCountAvailable,
@@ -9111,15 +10274,15 @@ export default function SessionGamesScreen() {
     {
       id: 'double-tap-only',
       title: 'Double Only',
-      emoji: '👆',
-      description: 'Single taps are ignored — only double tap jumps. Builds inhibition.',
+      emoji: '??',
+      description: 'Single taps are ignored ? only double tap jumps. Builds inhibition.',
       color: '#EF4444',
       available: isDoubleTapOnlyAvailable,
     },
     {
       id: 'rhythm-jump',
       title: 'Beat Jump',
-      emoji: '🎵',
+      emoji: '??',
       description: 'Listen to tap-tap, then copy the rhythm. Builds auditory-motor timing.',
       color: '#8B5CF6',
       available: isRhythmJumpAvailable,
@@ -9127,7 +10290,7 @@ export default function SessionGamesScreen() {
     {
       id: 'obstacle-jump',
       title: 'Rock Hop',
-      emoji: '🪨',
+      emoji: '??',
       description: 'Double tap to hop over the rock. Builds reaction and motor planning.',
       color: '#F59E0B',
       available: isObstacleJumpAvailable,
@@ -9136,7 +10299,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pendulum-copy',
       title: 'Copy Swing',
-      emoji: '🔄',
+      emoji: '??',
       description: 'Watch the demo, then copy the side-to-side swing. Builds motor imitation.',
       color: '#3B82F6',
       available: isPendulumCopyAvailable,
@@ -9144,7 +10307,7 @@ export default function SessionGamesScreen() {
     {
       id: 'monkey-swing',
       title: 'Vine Swing',
-      emoji: '🐵',
+      emoji: '??',
       description: 'Diagonal swipes to swing the monkey on the vine. Builds bilateral coordination.',
       color: '#F59E0B',
       available: isMonkeySwingAvailable,
@@ -9152,7 +10315,7 @@ export default function SessionGamesScreen() {
     {
       id: 'fan-motion',
       title: 'Spin Flow',
-      emoji: '🌀',
+      emoji: '??',
       description: 'Trace a full circle around the fan. Builds circular swinging motion.',
       color: '#22C55E',
       available: isFanMotionAvailable,
@@ -9160,7 +10323,7 @@ export default function SessionGamesScreen() {
     {
       id: 'rope-swing-timing',
       title: 'Peak Swipe',
-      emoji: '🪢',
+      emoji: '??',
       description: 'Swipe when the rope reaches its peak. Builds anticipation and timing.',
       color: '#EF4444',
       available: isRopeSwingTimingAvailable,
@@ -9168,7 +10331,7 @@ export default function SessionGamesScreen() {
     {
       id: 'music-swing',
       title: 'Beat Swing',
-      emoji: '🎵',
+      emoji: '??',
       description: 'Listen to beats, then swing on each one. Builds rhythm and timing.',
       color: '#8B5CF6',
       available: isMusicSwingAvailable,
@@ -9177,7 +10340,7 @@ export default function SessionGamesScreen() {
     {
       id: 'touch-head',
       title: 'Head Tap',
-      emoji: '👤',
+      emoji: '??',
       description: 'Touch the head when it glows. Builds body-part awareness.',
       color: '#3B82F6',
       available: isTouchHeadAvailable,
@@ -9185,7 +10348,7 @@ export default function SessionGamesScreen() {
     {
       id: 'shoulders-tap',
       title: 'Shoulder Pick',
-      emoji: '💪',
+      emoji: '??',
       description: 'Touch the highlighted shoulder. Builds left-right discrimination.',
       color: '#F59E0B',
       available: isShouldersTapAvailable,
@@ -9193,7 +10356,7 @@ export default function SessionGamesScreen() {
     {
       id: 'body-puzzle',
       title: 'Body Build',
-      emoji: '🧩',
+      emoji: '??',
       description: 'Drag body parts to the matching spots. Builds spatial understanding.',
       color: '#22C55E',
       available: isBodyPuzzleAvailable,
@@ -9201,7 +10364,7 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-the-body',
       title: 'Copy Body',
-      emoji: '👥',
+      emoji: '??',
       description: 'Watch the demo, then touch the same body part. Builds imitation.',
       color: '#8B5CF6',
       available: isFollowTheBodyAvailable,
@@ -9209,7 +10372,7 @@ export default function SessionGamesScreen() {
     {
       id: 'body-flash',
       title: 'Quick Part',
-      emoji: '⚡',
+      emoji: '?',
       description: 'Tap flashing body parts quickly. Builds fast recognition.',
       color: '#EF4444',
       available: isBodyFlashAvailable,
@@ -9218,7 +10381,7 @@ export default function SessionGamesScreen() {
     {
       id: 'copy-pose',
       title: 'Pose Match',
-      emoji: '👤',
+      emoji: '??',
       description: 'Watch the pose, copy it with your body, then tap done. Builds motor imitation.',
       color: '#3B82F6',
       available: isCopyPoseAvailable,
@@ -9226,15 +10389,15 @@ export default function SessionGamesScreen() {
     {
       id: 'hand-mirror',
       title: 'Flip Hand',
-      emoji: '👋',
-      description: 'Screen shows one hand — raise the opposite. Builds mirror coordination.',
+      emoji: '??',
+      description: 'Screen shows one hand ? raise the opposite. Builds mirror coordination.',
       color: '#8B5CF6',
       available: isHandMirrorAvailable,
     },
     {
       id: 'pattern-copy',
       title: 'Move Chain',
-      emoji: '🔄',
+      emoji: '??',
       description: 'Watch a 3-move pattern, then repeat it. Builds memory and motor planning.',
       color: '#10B981',
       available: isPatternCopyAvailable,
@@ -9242,7 +10405,7 @@ export default function SessionGamesScreen() {
     {
       id: 'delayed-mirror',
       title: 'Wait Copy',
-      emoji: '⏱️',
+      emoji: '??',
       description: 'Watch the pose, wait, then copy from memory. Builds delayed imitation.',
       color: '#F59E0B',
       available: isDelayedMirrorAvailable,
@@ -9250,8 +10413,8 @@ export default function SessionGamesScreen() {
     {
       id: 'fast-copy',
       title: 'Speed Pose',
-      emoji: '⚡',
-      description: 'Three quick poses per round — copy fast! Builds speed and accuracy.',
+      emoji: '?',
+      description: 'Three quick poses per round ? copy fast! Builds speed and accuracy.',
       color: '#EF4444',
       available: isFastCopyAvailable,
     },
@@ -9259,7 +10422,7 @@ export default function SessionGamesScreen() {
     {
       id: 'posture-match',
       title: 'Posture Match',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Match each yoga pose on screen. Builds precision and focus.',
       color: '#3B82F6',
       available: isZenPoseMatchAvailable,
@@ -9267,7 +10430,7 @@ export default function SessionGamesScreen() {
     {
       id: 'animal-pose',
       title: 'Wild Pose',
-      emoji: '🐕',
+      emoji: '??',
       description: 'Copy tree, dog, and cat poses. Builds core strength and posture.',
       color: '#F59E0B',
       available: isAnimalPoseAvailable,
@@ -9275,7 +10438,7 @@ export default function SessionGamesScreen() {
     {
       id: 'shape-pose',
       title: 'Shape Body',
-      emoji: '⭕',
+      emoji: '?',
       description: 'Make a circle or line with your body. Builds spatial awareness.',
       color: '#22C55E',
       available: isShapePoseAvailable,
@@ -9283,7 +10446,7 @@ export default function SessionGamesScreen() {
     {
       id: 'freeze-pose',
       title: 'Statue Hold',
-      emoji: '🧊',
+      emoji: '??',
       description: 'Hold each pose until the timer fills. Builds balance and strength.',
       color: '#0EA5E9',
       available: isFreezePoseAvailable,
@@ -9291,16 +10454,16 @@ export default function SessionGamesScreen() {
     {
       id: 'count-hold',
       title: 'Count Still',
-      emoji: '🔢',
+      emoji: '??',
       description: 'Hold the pose while counting down from five. Builds endurance.',
       color: '#8B5CF6',
       available: isCountHoldAvailable,
     },
-    // Level 4 Session 1: Drag Object Left → Right
+    // Level 4 Session 1: Drag Object Left ? Right
     {
       id: 'ball-transfer',
       title: 'Goal Pass',
-      emoji: '⚽',
+      emoji: '?',
       description: 'Drag the ball from left to right. Builds midline crossing.',
       color: '#3B82F6',
       available: isBallTransferAvailable,
@@ -9308,7 +10471,7 @@ export default function SessionGamesScreen() {
     {
       id: 'feed-the-monster',
       title: 'Monster Feed',
-      emoji: '👹',
+      emoji: '??',
       description: 'Feed the monster by dragging food across. Builds arm coordination.',
       color: '#F59E0B',
       available: isFeedTheMonsterAvailable,
@@ -9316,7 +10479,7 @@ export default function SessionGamesScreen() {
     {
       id: 'road-crossing',
       title: 'Lane Cross',
-      emoji: '🚗',
+      emoji: '??',
       description: 'Drive the car to the right lane. Builds spatial planning.',
       color: '#8B5CF6',
       available: isRoadCrossingAvailable,
@@ -9324,7 +10487,7 @@ export default function SessionGamesScreen() {
     {
       id: 'color-match-drag',
       title: 'Color Slide',
-      emoji: '🎨',
+      emoji: '??',
       description: 'Slide matching colors left to right. Builds visual-motor matching.',
       color: '#10B981',
       available: isColorMatchDragAvailable,
@@ -9332,16 +10495,16 @@ export default function SessionGamesScreen() {
     {
       id: 'timed-drag',
       title: 'Quick Drag',
-      emoji: '⏱️',
+      emoji: '??',
       description: 'Drag across before time runs out. Builds speed and accuracy.',
       color: '#EF4444',
       available: isTimedDragAvailable,
     },
-    // Level 4 Session 2: Drag Object Right → Left
+    // Level 4 Session 2: Drag Object Right ? Left
     {
       id: 'reverse-ball-pass',
       title: 'Return Pass',
-      emoji: '⚽',
+      emoji: '?',
       description: 'Drag the ball from right to left. Builds bilateral balance.',
       color: '#3B82F6',
       available: isReverseBallPassAvailable,
@@ -9349,7 +10512,7 @@ export default function SessionGamesScreen() {
     {
       id: 'collect-stars',
       title: 'Star Sweep',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Sweep stars into the left bag. Builds cross-body reach.',
       color: '#F59E0B',
       available: isCollectStarsAvailable,
@@ -9357,7 +10520,7 @@ export default function SessionGamesScreen() {
     {
       id: 'reverse-path',
       title: 'Back Track',
-      emoji: '🔄',
+      emoji: '??',
       description: 'Follow the reverse path right to left. Builds cognitive flexibility.',
       color: '#8B5CF6',
       available: isReversePathAvailable,
@@ -9365,7 +10528,7 @@ export default function SessionGamesScreen() {
     {
       id: 'mirror-drag',
       title: 'Cross Reach',
-      emoji: '👋',
+      emoji: '??',
       description: 'Reach across with your right hand to the left. Builds brain-hand sync.',
       color: '#10B981',
       available: isMirrorDragAvailable,
@@ -9373,7 +10536,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pattern-drag',
       title: 'Pattern Run',
-      emoji: '📐',
+      emoji: '??',
       description: 'Trace zigzag, wave, or step patterns right to left. Builds motor planning.',
       color: '#EF4444',
       available: isPatternDragAvailable,
@@ -9382,7 +10545,7 @@ export default function SessionGamesScreen() {
     {
       id: 'top-left-bottom-right',
       title: 'Diagonal Dash',
-      emoji: '↘️',
+      emoji: '??',
       description: 'Drag from top-left to bottom-right. Builds midline crossing.',
       color: '#3B82F6',
       available: isTopLeftToBottomRightAvailable,
@@ -9390,7 +10553,7 @@ export default function SessionGamesScreen() {
     {
       id: 'x-path-trace',
       title: 'X Trace',
-      emoji: '❌',
+      emoji: '?',
       description: 'Trace both diagonals to form an X. Builds eye-hand coordination.',
       color: '#8B5CF6',
       available: isXPathTraceAvailable,
@@ -9398,7 +10561,7 @@ export default function SessionGamesScreen() {
     {
       id: 'diagonal-catch',
       title: 'Sky Catch',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Intercept objects falling diagonally. Builds anticipation.',
       color: '#EF4444',
       available: isDiagonalCatchAvailable,
@@ -9406,7 +10569,7 @@ export default function SessionGamesScreen() {
     {
       id: 'zigzag-drag',
       title: 'Zigzag Run',
-      emoji: '⚡',
+      emoji: '?',
       description: 'Follow the diagonal zigzag path. Builds direction switching.',
       color: '#10B981',
       available: isZigZagDragAvailable,
@@ -9414,7 +10577,7 @@ export default function SessionGamesScreen() {
     {
       id: 'diagonal-match',
       title: 'Corner Match',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Match colors at the opposite corner. Builds spatial awareness.',
       color: '#F59E0B',
       available: isDiagonalMatchAvailable,
@@ -9423,7 +10586,7 @@ export default function SessionGamesScreen() {
     {
       id: 'double-circle-tap',
       title: 'Twin Tap',
-      emoji: '⭕',
+      emoji: '?',
       description: 'Tap both circles together. Builds bilateral coordination.',
       color: '#3B82F6',
       available: isDoubleCircleTapAvailable,
@@ -9431,7 +10594,7 @@ export default function SessionGamesScreen() {
     {
       id: 'piano-keys',
       title: 'Duo Keys',
-      emoji: '🎹',
+      emoji: '??',
       description: 'Press both keys before time runs out. Builds hand sync.',
       color: '#8B5CF6',
       available: isPianoKeysAvailable,
@@ -9439,7 +10602,7 @@ export default function SessionGamesScreen() {
     {
       id: 'drum-duo',
       title: 'Beat Duo',
-      emoji: '🥁',
+      emoji: '??',
       description: 'Tap both drums on the beat. Builds rhythm and coordination.',
       color: '#F59E0B',
       available: isDrumDuoAvailable,
@@ -9447,7 +10610,7 @@ export default function SessionGamesScreen() {
     {
       id: 'light-up-targets',
       title: 'Flash Tap',
-      emoji: '💡',
+      emoji: '??',
       description: 'Tap both targets when they light up. Builds reaction timing.',
       color: '#EF4444',
       available: isLightUpTargetsAvailable,
@@ -9455,7 +10618,7 @@ export default function SessionGamesScreen() {
     {
       id: 'hold-and-tap',
       title: 'Hold & Hit',
-      emoji: '🤲',
+      emoji: '??',
       description: 'Hold with one hand, tap with the other. Builds hand independence.',
       color: '#10B981',
       available: isHoldAndTapAvailable,
@@ -9464,7 +10627,7 @@ export default function SessionGamesScreen() {
     {
       id: 'left-right-tap',
       title: 'Switch Tap',
-      emoji: '👆',
+      emoji: '??',
       description: 'Alternate left then right taps. Builds sequencing.',
       color: '#3B82F6',
       available: isLeftRightTapAvailable,
@@ -9472,7 +10635,7 @@ export default function SessionGamesScreen() {
     {
       id: 'walking-hands',
       title: 'Hand Walk',
-      emoji: '🚶',
+      emoji: '??',
       description: 'Walk hands left and right. Builds pre-writing skills.',
       color: '#10B981',
       available: isWalkingHandsAvailable,
@@ -9480,7 +10643,7 @@ export default function SessionGamesScreen() {
     {
       id: 'flash-side',
       title: 'Flash Pick',
-      emoji: '⚡',
+      emoji: '?',
       description: 'Tap the flashing side fast. Builds decision making.',
       color: '#EF4444',
       available: isFlashSideAvailable,
@@ -9488,7 +10651,7 @@ export default function SessionGamesScreen() {
     {
       id: 'drum-alternate',
       title: 'Rhythm Switch',
-      emoji: '🥁',
+      emoji: '??',
       description: 'Alternate left and right drums. Builds rhythm control.',
       color: '#F59E0B',
       available: isDrumAlternateAvailable,
@@ -9496,7 +10659,7 @@ export default function SessionGamesScreen() {
     {
       id: 'speed-alternate',
       title: 'Speed Switch',
-      emoji: '⚡',
+      emoji: '?',
       description: 'Start slow, speed up alternating. Builds motor speed.',
       color: '#8B5CF6',
       available: isSpeedAlternateAvailable,
@@ -9505,40 +10668,40 @@ export default function SessionGamesScreen() {
     {
       id: 'hand-to-hand-pass',
       title: 'Hand Swap',
-      emoji: '🤲',
-      description: 'Pass left ↔ right across midline — awareness!',
+      emoji: '??',
+      description: 'Pass left ? right across midline ? awareness!',
       color: '#3B82F6',
       available: isHandToHandPassAvailable,
     },
     {
       id: 'throw-catch',
       title: 'Toss & Grab',
-      emoji: '🎾',
-      description: 'Throw left, catch right — hand coordination!',
+      emoji: '??',
+      description: 'Throw left, catch right ? hand coordination!',
       color: '#F59E0B',
       available: isThrowCatchAvailable,
     },
     {
       id: 'target-pass',
       title: 'Aim Pass',
-      emoji: '🎯',
-      description: 'Drag across body to the target — accuracy!',
+      emoji: '??',
+      description: 'Drag across body to the target ? accuracy!',
       color: '#EF4444',
       available: isTargetPassAvailable,
     },
     {
       id: 'rhythm-pass',
       title: 'Beat Pass',
-      emoji: '🎵',
-      description: 'Pass on the beat — timing + flow!',
+      emoji: '??',
+      description: 'Pass on the beat ? timing + flow!',
       color: '#8B5CF6',
       available: isRhythmPassAvailable,
     },
     {
       id: 'obstacle-pass',
       title: 'Detour Pass',
-      emoji: '🚧',
-      description: 'Go around the obstacle — planning skill!',
+      emoji: '??',
+      description: 'Go around the obstacle ? planning skill!',
       color: '#10B981',
       available: isObstaclePassAvailable,
     },
@@ -9546,31 +10709,31 @@ export default function SessionGamesScreen() {
     {
       id: 'arrow-touch',
       title: 'Cross Tap',
-      emoji: '⬅️',
-      description: 'Left arrow → right hand! Cross-body brain training!',
+      emoji: '??',
+      description: 'Left arrow ? right hand! Cross-body brain training!',
       color: '#3B82F6',
       available: isArrowTouchAvailable,
     },
     {
       id: 'arrow-swipe',
       title: 'Swipe Cross',
-      emoji: '➡️',
-      description: 'Swipe across your body — opposite direction!',
+      emoji: '??',
+      description: 'Swipe across your body ? opposite direction!',
       color: '#EF4444',
       available: isArrowSwipeAvailable,
     },
     {
       id: 'moving-arrows',
       title: 'Drift Tap',
-      emoji: '➡️',
-      description: 'Track the drifting arrow — tap cross-body!',
+      emoji: '??',
+      description: 'Track the drifting arrow ? tap cross-body!',
       color: '#8B5CF6',
       available: isMovingArrowsAvailable,
     },
     {
       id: 'arrow-sequence',
       title: 'Arrow Chain',
-      emoji: '➡️',
+      emoji: '??',
       description: 'Watch 3 arrows, tap the chain in order!',
       color: '#10B981',
       available: isArrowSequenceAvailable,
@@ -9578,8 +10741,8 @@ export default function SessionGamesScreen() {
     {
       id: 'speed-arrows',
       title: 'Flash Cross',
-      emoji: '⚡',
-      description: 'Fast-flashing arrows — react cross-body!',
+      emoji: '?',
+      description: 'Fast-flashing arrows ? react cross-body!',
       color: '#F59E0B',
       available: isSpeedArrowsAvailable,
     },
@@ -9587,40 +10750,40 @@ export default function SessionGamesScreen() {
     {
       id: 'side-lights-l4s8',
       title: 'Glow Tap',
-      emoji: '💡',
-      description: 'Tap the glowing side — bilateral activation!',
+      emoji: '??',
+      description: 'Tap the glowing side ? bilateral activation!',
       color: '#3B82F6',
       available: isSideLightsAvailable,
     },
     {
       id: 'ping-pong-tap',
       title: 'Rally Tap',
-      emoji: '🏓',
-      description: 'Tap when the ball hits center — focus!',
+      emoji: '??',
+      description: 'Tap when the ball hits center ? focus!',
       color: '#10B981',
       available: isPingPongTapAvailable,
     },
     {
       id: 'sound-side-tap',
       title: 'Sound Tap',
-      emoji: '🔊',
-      description: 'Hear the sound — tap that side!',
+      emoji: '??',
+      description: 'Hear the sound ? tap that side!',
       color: '#8B5CF6',
       available: isSoundSideTapAvailable,
     },
     {
       id: 'count-and-tap',
       title: 'Odd Even Tap',
-      emoji: '🔢',
-      description: 'Odd = left, even = right — brain + motor!',
+      emoji: '??',
+      description: 'Odd = left, even = right ? brain + motor!',
       color: '#EF4444',
       available: isCountAndTapAvailable,
     },
     {
       id: 'fast-switch',
       title: 'Quick Switch',
-      emoji: '⚡',
-      description: 'Sides flash faster — rapid switching!',
+      emoji: '?',
+      description: 'Sides flash faster ? rapid switching!',
       color: '#F59E0B',
       available: isFastSwitchAvailable,
     },
@@ -9628,15 +10791,15 @@ export default function SessionGamesScreen() {
     {
       id: 'double-drag',
       title: 'Twin Drag',
-      emoji: '🤲',
-      description: 'Drag both objects at once — bilateral strength!',
+      emoji: '??',
+      description: 'Drag both objects at once ? bilateral strength!',
       color: '#3B82F6',
       available: isDoubleDragAvailable,
     },
     {
       id: 'match-pair',
       title: 'Pair Match',
-      emoji: '🤝',
+      emoji: '??',
       description: 'Match both shapes to the center together!',
       color: '#10B981',
       available: isMatchPairAvailable,
@@ -9644,24 +10807,24 @@ export default function SessionGamesScreen() {
     {
       id: 'shape-sort',
       title: 'Box Sort',
-      emoji: '📦',
-      description: 'Sort two shapes into boxes — multitasking!',
+      emoji: '??',
+      description: 'Sort two shapes into boxes ? multitasking!',
       color: '#8B5CF6',
       available: isShapeSortAvailable,
     },
     {
       id: 'rope-pull',
       title: 'Tug Rope',
-      emoji: '🪢',
-      description: 'Pull both handles outward — upper body!',
+      emoji: '??',
+      description: 'Pull both handles outward ? upper body!',
       color: '#F59E0B',
       available: isRopePullAvailable,
     },
     {
       id: 'balance-drag',
       title: 'Even Pull',
-      emoji: '⚖️',
-      description: 'Drag both at equal pace — speed regulation!',
+      emoji: '??',
+      description: 'Drag both at equal pace ? speed regulation!',
       color: '#EF4444',
       available: isBalanceDragAvailable,
     },
@@ -9669,23 +10832,23 @@ export default function SessionGamesScreen() {
     {
       id: 'clap-pattern',
       title: 'Cross Clap',
-      emoji: '👏',
-      description: 'Copy cross-body clap patterns — rhythm + midline!',
+      emoji: '??',
+      description: 'Copy cross-body clap patterns ? rhythm + midline!',
       color: '#3B82F6',
       available: isClapPatternAvailable,
     },
     {
       id: 'tap-shoulder-pattern',
       title: 'Shoulder Tap',
-      emoji: '👆',
-      description: 'Cross-body shoulder tap patterns — body mapping!',
+      emoji: '??',
+      description: 'Cross-body shoulder tap patterns ? body mapping!',
       color: '#10B981',
       available: isTapShoulderPatternAvailable,
     },
     {
       id: 'music-copy',
       title: 'Beat Mirror',
-      emoji: '🎵',
+      emoji: '??',
       description: 'Mirror hand movements to the beat!',
       color: '#8B5CF6',
       available: isMusicCopyAvailable,
@@ -9693,7 +10856,7 @@ export default function SessionGamesScreen() {
     {
       id: 'memory-rhythm',
       title: 'Rhythm Recall',
-      emoji: '🧠',
+      emoji: '??',
       description: 'Remember the pattern, then repeat!',
       color: '#F59E0B',
       available: isMemoryRhythmAvailable,
@@ -9701,8 +10864,8 @@ export default function SessionGamesScreen() {
     {
       id: 'speed-rhythm',
       title: 'Fast Beat',
-      emoji: '⚡',
-      description: 'Rhythm speeds up — control + flexibility!',
+      emoji: '?',
+      description: 'Rhythm speeds up ? control + flexibility!',
       color: '#EF4444',
       available: isSpeedRhythmAvailable,
     },
@@ -9710,15 +10873,15 @@ export default function SessionGamesScreen() {
     {
       id: 'catch-moving-ball',
       title: 'Ball Chase',
-      emoji: '⚽',
-      description: 'Ball screen pe move karta hai → tap karna. Visual tracking + reaction time!',
+      emoji: '?',
+      description: 'Ball screen pe move karta hai ? tap karna. Visual tracking + reaction time!',
       color: '#3B82F6',
       available: isCatchMovingBallAvailable,
     },
     {
       id: 'follow-the-butterfly',
       title: 'Butterfly Trail',
-      emoji: '🦋',
+      emoji: '??',
       description: 'Butterfly ko finger se follow. Smooth eye movement!',
       color: '#10B981',
       available: isFollowTheButterflyAvailable,
@@ -9726,7 +10889,7 @@ export default function SessionGamesScreen() {
     {
       id: 'avoid-the-bomb',
       title: 'Safe Tap',
-      emoji: '💣',
+      emoji: '??',
       description: 'Bomb se bachate hue target tap. Focus + control!',
       color: '#EF4444',
       available: isAvoidTheBombAvailable,
@@ -9734,7 +10897,7 @@ export default function SessionGamesScreen() {
     {
       id: 'chase-the-star',
       title: 'Star Hunt',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Star idhar-udhar bhage. Predictive tracking!',
       color: '#F59E0B',
       available: isChaseTheStarAvailable,
@@ -9742,7 +10905,7 @@ export default function SessionGamesScreen() {
     {
       id: 'zigzag-follow',
       title: 'Zigzag Run',
-      emoji: '〰️',
+      emoji: '??',
       description: 'Object zig-zag me chale. Reading line movement prep!',
       color: '#8B5CF6',
       available: isZigzagFollowAvailable,
@@ -9751,7 +10914,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pop-the-bubble',
       title: 'Pop the Bubble',
-      emoji: '🫧',
+      emoji: '??',
       description: 'Bubble tap karke pop. Tap accuracy!',
       color: '#0EA5E9',
       available: isPopTheBubbleAvailable,
@@ -9759,7 +10922,7 @@ export default function SessionGamesScreen() {
     {
       id: 'color-dot-hit',
       title: 'Color Dot Hit',
-      emoji: '🎨',
+      emoji: '??',
       description: 'Correct color tap. Visual discrimination!',
       color: '#8B5CF6',
       available: isColorDotHitAvailable,
@@ -9767,7 +10930,7 @@ export default function SessionGamesScreen() {
     {
       id: 'small-target',
       title: 'Small Target',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Tiny target tap. Finger precision!',
       color: '#EF4444',
       available: isSmallTargetAvailable,
@@ -9775,7 +10938,7 @@ export default function SessionGamesScreen() {
     {
       id: 'moving-target',
       title: 'Moving Target',
-      emoji: '⚫',
+      emoji: '?',
       description: 'Moving dot tap. Timing control!',
       color: '#1F2937',
       available: isMovingTargetAvailable,
@@ -9783,7 +10946,7 @@ export default function SessionGamesScreen() {
     {
       id: 'timed-target',
       title: 'Timed Target',
-      emoji: '⏱️',
+      emoji: '??',
       description: 'Time ke andar tap. Speed + accuracy!',
       color: '#10B981',
       available: isTimedTargetAvailable,
@@ -9792,7 +10955,7 @@ export default function SessionGamesScreen() {
     {
       id: 'drag-rocket',
       title: 'Rocket Drag',
-      emoji: '🚀',
+      emoji: '??',
       description: 'Finger se rocket follow. Smooth pursuit!',
       color: '#6366F1',
       available: isDragRocketAvailable,
@@ -9800,7 +10963,7 @@ export default function SessionGamesScreen() {
     {
       id: 'drag-train',
       title: 'Train Track',
-      emoji: '🚂',
+      emoji: '??',
       description: 'Train ko track pe drag. Circular pursuit!',
       color: '#F59E0B',
       available: isDragTrainAvailable,
@@ -9808,7 +10971,7 @@ export default function SessionGamesScreen() {
     {
       id: 'drag-comet',
       title: 'Comet Chase',
-      emoji: '☄️',
+      emoji: '??',
       description: 'Comet figure-8 path. Complex tracking!',
       color: '#8B5CF6',
       available: isDragCometAvailable,
@@ -9816,7 +10979,7 @@ export default function SessionGamesScreen() {
     {
       id: 'drag-river',
       title: 'River Boat',
-      emoji: '⛵',
+      emoji: '?',
       description: 'Boat up-down river. Vertical drag track!',
       color: '#06B6D4',
       available: isDragRiverAvailable,
@@ -9824,7 +10987,7 @@ export default function SessionGamesScreen() {
     {
       id: 'drag-lightning',
       title: 'Lightning Drag',
-      emoji: '⚡',
+      emoji: '?',
       description: 'Zigzag lightning follow. Fast pursuit!',
       color: '#EAB308',
       available: isDragLightningAvailable,
@@ -9833,7 +10996,7 @@ export default function SessionGamesScreen() {
     {
       id: 'find-the-star',
       title: 'Find the Stars',
-      emoji: '⭐',
+      emoji: '?',
       description: 'Many objects me saare stars dhoondo. Visual scanning!',
       color: '#FCD34D',
       available: isFindTheStarAvailable,
@@ -9841,7 +11004,7 @@ export default function SessionGamesScreen() {
     {
       id: 'memory-flash',
       title: 'Memory Flash',
-      emoji: '💫',
+      emoji: '??',
       description: 'Saare objects saath, phir ek flash. Visual memory!',
       color: '#8B5CF6',
       available: isMemoryFlashAvailable,
@@ -9849,7 +11012,7 @@ export default function SessionGamesScreen() {
     {
       id: 'match-shadow',
       title: 'Match Shadow',
-      emoji: '🕳️',
+      emoji: '???',
       description: 'Object aur shadow match. Depth perception!',
       color: '#1F2937',
       available: isMatchShadowAvailable,
@@ -9857,7 +11020,7 @@ export default function SessionGamesScreen() {
     {
       id: 'what-moved',
       title: 'What Moved?',
-      emoji: '👀',
+      emoji: '??',
       description: 'Change spot karo. Attention control!',
       color: '#3B82F6',
       available: isWhatMovedAvailable,
@@ -9865,7 +11028,7 @@ export default function SessionGamesScreen() {
     {
       id: 'spot-the-color',
       title: 'Spot the Color',
-      emoji: '🎨',
+      emoji: '??',
       description: 'Specific color find. Selective focus!',
       color: '#EC4899',
       available: isSpotTheColorAvailable,
@@ -9874,7 +11037,7 @@ export default function SessionGamesScreen() {
     {
       id: 'side-eye-track',
       title: 'Side Eye Track',
-      emoji: '👁️',
+      emoji: '???',
       description: 'Left-right moving dot. Reading readiness!',
       color: '#10B981',
       available: isSideEyeTrackAvailable,
@@ -9882,7 +11045,7 @@ export default function SessionGamesScreen() {
     {
       id: 'up-down-track',
       title: 'Up-Down Track',
-      emoji: '⬆️',
+      emoji: '??',
       description: 'Dot upar-neeche. Line shifting!',
       color: '#6366F1',
       available: isUpDownTrackAvailable,
@@ -9890,7 +11053,7 @@ export default function SessionGamesScreen() {
     {
       id: 'circular-track',
       title: 'Circular Track',
-      emoji: '⭕',
+      emoji: '?',
       description: 'Dot circle me. Eye muscle strength!',
       color: '#F59E0B',
       available: isCircularTrackAvailable,
@@ -9898,7 +11061,7 @@ export default function SessionGamesScreen() {
     {
       id: 'jump-track',
       title: 'Jump Track',
-      emoji: '⚡',
+      emoji: '?',
       description: 'Dot ek jagah se doosri. Visual jump control!',
       color: '#EF4444',
       available: isJumpTrackAvailable,
@@ -9906,7 +11069,7 @@ export default function SessionGamesScreen() {
     {
       id: 'multi-dot',
       title: 'Multi Dot',
-      emoji: '⚫',
+      emoji: '?',
       description: '2 dots alternate. Focus switching!',
       color: '#8B5CF6',
       available: isMultiDotAvailable,
@@ -9915,7 +11078,7 @@ export default function SessionGamesScreen() {
     {
       id: 'fast-catch',
       title: 'Fast Catch',
-      emoji: '⚡',
+      emoji: '?',
       description: 'Fast ball tap. Reaction speed!',
       color: '#EF4444',
       available: isFastCatchAvailable,
@@ -9923,7 +11086,7 @@ export default function SessionGamesScreen() {
     {
       id: 'slow-catch',
       title: 'Slow Catch',
-      emoji: '🐢',
+      emoji: '??',
       description: 'Slow ball tap. Controlled timing!',
       color: '#10B981',
       available: isSlowCatchAvailable,
@@ -9931,15 +11094,15 @@ export default function SessionGamesScreen() {
     {
       id: 'speed-switch',
       title: 'Speed Switch',
-      emoji: '🔄',
-      description: 'Fast → slow. Adaptability!',
+      emoji: '??',
+      description: 'Fast ? slow. Adaptability!',
       color: '#F59E0B',
       available: isSpeedSwitchAvailable,
     },
     {
       id: 'music-speed',
       title: 'Music Speed',
-      emoji: '🎵',
+      emoji: '??',
       description: 'Beat ke sath tap. Auditory + visual sync!',
       color: '#8B5CF6',
       available: isMusicSpeedAvailable,
@@ -9947,7 +11110,7 @@ export default function SessionGamesScreen() {
     {
       id: 'countdown-hit',
       title: 'Countdown Hit',
-      emoji: '⏰',
+      emoji: '?',
       description: 'Timer pe tap. Anticipation!',
       color: '#6366F1',
       available: isCountdownHitAvailable,
@@ -9956,7 +11119,7 @@ export default function SessionGamesScreen() {
     {
       id: 'near-vs-far',
       title: 'Near vs Far',
-      emoji: '📏',
+      emoji: '??',
       description: 'Near target tap. Distance judgment!',
       color: '#3B82F6',
       available: isNearVsFarAvailable,
@@ -9964,7 +11127,7 @@ export default function SessionGamesScreen() {
     {
       id: 'zoom-touch',
       title: 'Zoom Touch',
-      emoji: '🔍',
+      emoji: '??',
       description: 'Object bada hota jaye. Depth awareness!',
       color: '#EC4899',
       available: isZoomTouchAvailable,
@@ -9972,7 +11135,7 @@ export default function SessionGamesScreen() {
     {
       id: 'falling-objects',
       title: 'Falling Objects',
-      emoji: '🍎',
+      emoji: '??',
       description: 'Catch before ground. Prediction!',
       color: '#F97316',
       available: isFallingObjectsAvailable,
@@ -9980,7 +11143,7 @@ export default function SessionGamesScreen() {
     {
       id: 'depth-shrinking-target',
       title: 'Shrinking Target',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Target chhota hota. Precision!',
       color: '#EF4444',
       available: isShrinkingTargetL5S7Available,
@@ -9988,7 +11151,7 @@ export default function SessionGamesScreen() {
     {
       id: '3-layer-tap',
       title: '3-Layer Tap',
-      emoji: '📚',
+      emoji: '??',
       description: 'Front vs back. Visual layering!',
       color: '#8B5CF6',
       available: is3LayerTapAvailable,
@@ -9997,7 +11160,7 @@ export default function SessionGamesScreen() {
     {
       id: 'follow-red',
       title: 'Follow Red',
-      emoji: '🔴',
+      emoji: '??',
       description: 'Red object follow. Selective attention!',
       color: '#EF4444',
       available: isFollowRedAvailable,
@@ -10005,7 +11168,7 @@ export default function SessionGamesScreen() {
     {
       id: 'two-moving-balls',
       title: '2 Moving Balls',
-      emoji: '⚽',
+      emoji: '?',
       description: 'Correct one tap. Filtering skill!',
       color: '#3B82F6',
       available: isTwoMovingBallsAvailable,
@@ -10013,7 +11176,7 @@ export default function SessionGamesScreen() {
     {
       id: 'distraction-mode',
       title: 'Distraction Mode',
-      emoji: '🎯',
+      emoji: '??',
       description: 'Extra objects. Focus under load!',
       color: '#10B981',
       available: isDistractionModeAvailable,
@@ -10021,7 +11184,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pattern-chase',
       title: 'Pattern Chase',
-      emoji: '🔢',
+      emoji: '??',
       description: 'Pattern follow. Visual memory!',
       color: '#8B5CF6',
       available: isPatternChaseAvailable,
@@ -10029,7 +11192,7 @@ export default function SessionGamesScreen() {
     {
       id: 'speed-objects',
       title: 'Speed Objects',
-      emoji: '⚡',
+      emoji: '?',
       description: 'Fast & slow mixed. Tracking control!',
       color: '#F59E0B',
       available: isSpeedObjectsAvailable,
@@ -10038,15 +11201,15 @@ export default function SessionGamesScreen() {
     {
       id: 'flash-tap',
       title: 'Flash Tap',
-      emoji: '💡',
-      description: 'Light flash → tap. Reflex!',
+      emoji: '??',
+      description: 'Light flash ? tap. Reflex!',
       color: '#FCD34D',
       available: isFlashTapAvailable,
     },
     {
       id: 'go-stop',
       title: 'Go / Stop',
-      emoji: '🚦',
+      emoji: '??',
       description: 'Green tap, red no. Inhibition!',
       color: '#10B981',
       available: isGoStopAvailable,
@@ -10054,7 +11217,7 @@ export default function SessionGamesScreen() {
     {
       id: 'surprise-pop',
       title: 'Surprise Pop',
-      emoji: '💥',
+      emoji: '??',
       description: 'Random pop. Alertness!',
       color: '#F59E0B',
       available: isSurprisePopAvailable,
@@ -10062,7 +11225,7 @@ export default function SessionGamesScreen() {
     {
       id: 'sound-light',
       title: 'Sound + Light',
-      emoji: '🎵',
+      emoji: '??',
       description: 'Both match. Multi-sensory!',
       color: '#8B5CF6',
       available: isSoundLightAvailable,
@@ -10070,7 +11233,7 @@ export default function SessionGamesScreen() {
     {
       id: 'quick-choice',
       title: 'Quick Choice',
-      emoji: '⚡',
+      emoji: '?',
       description: '2 options. Decision speed!',
       color: '#6366F1',
       available: isQuickChoiceAvailable,
@@ -10079,7 +11242,7 @@ export default function SessionGamesScreen() {
     {
       id: 'pursuit-combo',
       title: 'Comet Chase',
-      emoji: '☄️',
+      emoji: '??',
       description: 'Chase + flash relay. Pursuit combo!',
       color: '#6366F1',
       available: isPursuitComboAvailable,
@@ -10087,7 +11250,7 @@ export default function SessionGamesScreen() {
     {
       id: 'focus-relay',
       title: 'Focus Fortress',
-      emoji: '🏰',
+      emoji: '??',
       description: 'Target filter + GO/STOP. Focus relay!',
       color: '#14B8A6',
       available: isFocusRelayAvailable,
@@ -10095,7 +11258,7 @@ export default function SessionGamesScreen() {
     {
       id: 'depth-mix',
       title: 'Canyon Rally',
-      emoji: '🏜️',
+      emoji: '???',
       description: 'Near/far + chase mix. Depth relay!',
       color: '#F97316',
       available: isDepthMixAvailable,
@@ -10103,7 +11266,7 @@ export default function SessionGamesScreen() {
     {
       id: 'reaction-relay',
       title: 'Storm Relay',
-      emoji: '🌩️',
+      emoji: '???',
       description: 'Flash, stop & speed mix. Reaction relay!',
       color: '#EC4899',
       available: isReactionRelayAvailable,
@@ -10111,7 +11274,7 @@ export default function SessionGamesScreen() {
     {
       id: 'eagle-eye-quest',
       title: 'Eagle Eye Quest',
-      emoji: '🦅',
+      emoji: '??',
       description: 'All visual skills. Grand finale!',
       color: '#EAB308',
       available: isEagleEyeQuestAvailable,
@@ -10247,7 +11410,7 @@ export default function SessionGamesScreen() {
   }
 
   if (currentGame === 'tap-red-circle') {
-    // 👇 NEW: launch our OT Game 2
+    // ?? NEW: launch our OT Game 2
     return <TapRedCircleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
@@ -10940,7 +12103,7 @@ export default function SessionGamesScreen() {
     return <SequenceWithDistractionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Speech Therapy Level 3 Session 1 — Voice Activation & Vocal Play
+  // Speech Therapy Level 3 Session 1 ? Voice Activation & Vocal Play
   if (currentGame === 'wake-the-monster') {
     return <WakeTheMonsterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
@@ -10957,7 +12120,7 @@ export default function SessionGamesScreen() {
     return <VoiceMatchLightGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Speech Therapy Level 3 Session 2 — Vowel Sounds
+  // Speech Therapy Level 3 Session 2 ? Vowel Sounds
   if (currentGame === 'open-mouth-aaa') {
     return <OpenMouthAaaGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
@@ -10974,7 +12137,7 @@ export default function SessionGamesScreen() {
     return <VowelSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Speech Therapy Level 3 Session 3 — Bilabial Speech Sounds
+  // Speech Therapy Level 3 Session 3 ? Bilabial Speech Sounds
   if (currentGame === 'mama-drum') {
     return <MamaDrumGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
@@ -10991,7 +12154,7 @@ export default function SessionGamesScreen() {
     return <LipPowerRaceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Speech Therapy Level 3 Session 4 — Consonant + Vowel Syllables
+  // Speech Therapy Level 3 Session 4 ? Consonant + Vowel Syllables
   if (currentGame === 'syllable-bridge') {
     return <SyllableBridgeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
@@ -11008,7 +12171,7 @@ export default function SessionGamesScreen() {
     return <CopyTalkingRobotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Speech Therapy Level 3 Session 5 — Animal & Environmental Sounds
+  // Speech Therapy Level 3 Session 5 ? Animal & Environmental Sounds
   if (currentGame === 'cow-sound-farm') {
     return <CowSoundFarmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
@@ -11025,7 +12188,7 @@ export default function SessionGamesScreen() {
     return <AnimalSoundMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Speech Therapy Level 3 Session 6 — Sound Imitation Sequences
+  // Speech Therapy Level 3 Session 6 ? Sound Imitation Sequences
   if (currentGame === 'copy-one-sound') {
     return <CopyOneSoundGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
@@ -11042,7 +12205,7 @@ export default function SessionGamesScreen() {
     return <TalkingRobotSaysGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Speech Therapy Level 3 Session 7 — First Meaningful Words
+  // Speech Therapy Level 3 Session 7 ? First Meaningful Words
   if (currentGame === 'say-more') {
     return <SayMoreGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
@@ -11059,7 +12222,7 @@ export default function SessionGamesScreen() {
     return <ToyVoiceUnlockGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Speech Therapy Level 3 Session 8 — Listen & Repeat
+  // Speech Therapy Level 3 Session 8 ? Listen & Repeat
   if (currentGame === 'hear-and-say') {
     return <HearAndSayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
@@ -11076,7 +12239,7 @@ export default function SessionGamesScreen() {
     return <FastOrSlowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Speech Therapy Level 3 Session 9 — Two-Part Verbal Sequences
+  // Speech Therapy Level 3 Session 9 ? Two-Part Verbal Sequences
   if (currentGame === 'say-then-tap') {
     return <SayThenTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
@@ -11093,7 +12256,7 @@ export default function SessionGamesScreen() {
     return <SpeechPathwayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Speech Therapy Level 3 Session 10 — Early Fluent Speech Foundations
+  // Speech Therapy Level 3 Session 10 ? Early Fluent Speech Foundations
   if (currentGame === 'smooth-talking-train') {
     return <SmoothTalkingTrainGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
@@ -11816,7 +12979,7 @@ export default function SessionGamesScreen() {
   }
 
   if (currentGame === 'soldier-stand') {
-    return <SoldierStandGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+    return <CrownKeeperS2Game onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'statue-guard') {
@@ -12230,6 +13393,408 @@ export default function SessionGamesScreen() {
     return <PraxisChampionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
+  // Level 9 Session 1 games - Proprioception & Force Regulation (camera/pose detection)
+  if (currentGame === 'balloon-press') {
+    return <BalloonPressGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rocket-push') {
+    return <RocketPushGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'berry-squish') {
+    return <BerrySquishGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'energy-meter') {
+    return <EnergyMeterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'match-the-force') {
+    return <MatchTheForceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 9 Session 2 games - Pressure Grading (camera/pose detection)
+  if (currentGame === 'decorate-the-cake') {
+    return <DecorateTheCakeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'paint-pressure') {
+    return <PaintPressureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'magic-touch') {
+    return <MagicTouchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'inflate-carefully') {
+    return <InflateCarefullyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'goldilocks-pressure') {
+    return <GoldilocksPressureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 9 Session 3 games - Joint Position Awareness (camera/pose detection)
+  if (currentGame === 'robot-arms') {
+    return <RobotArmsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'match-the-legs') {
+    return <MatchTheLegsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'copy-the-pose') {
+    return <CopyThePoseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mirror-body') {
+    return <MirrorBodyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'position-match') {
+    return <PositionMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 9 Session 4 games - Heavy Work Missions (camera/pose detection)
+  if (currentGame === 'carry-the-treasure') {
+    return <CarryTheTreasureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'wall-pusher') {
+    return <WallPusherGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'gorilla-power') {
+    return <GorillaPowerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'train-engine') {
+    return <TrainEngineGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'bulldozer-mission') {
+    return <BulldozerMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 9 Session 5 games - Resistance Control (camera/pose detection)
+  if (currentGame === 'launch-power') {
+    return <LaunchPowerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pull-the-ship') {
+    return <PullTheShipGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tug-challenge') {
+    return <TugChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'volcano-push') {
+    return <VolcanoPushGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'strength-master') {
+    return <StrengthMasterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'build-the-body') {
+    return <BuildTheBodyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'touch-the-part') {
+    return <TouchThePartGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'body-map') {
+    return <BodyMapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'hero-pose') {
+    return <HeroPoseGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'robot-builder') {
+    return <RobotBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'slow-motion') {
+    return <SlowMotionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'fast-dash') {
+    return <FastDashGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'match-my-speed') {
+    return <MatchMySpeedGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'speed-control') {
+    return <SpeedControlGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rhythm-move') {
+    return <RhythmMoveGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'push-then-carry') {
+    return <PushThenCarryGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'reach-then-press') {
+    return <ReachThenPressGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'power-sequence') {
+    return <PowerSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pirate-work-mission') {
+    return <PirateWorkMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'rainbow-challenge') {
+    return <RainbowChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'energy-trail') {
+    return <EnergyTrailGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'long-haul-train') {
+    return <LongHaulTrainGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mountain-push') {
+    return <MountainPushGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'endurance-quest') {
+    return <EnduranceQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'power-marathon') {
+    return <PowerMarathonGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'jungle-worksite') {
+    return <JungleWorksiteGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'space-builder') {
+    return <SpaceBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pirate-cargo-mission') {
+    return <PirateCargoMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mountain-rescue-mission') {
+    return <MountainRescueAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'proprioception-champion') {
+    return <ProprioceptionChampionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 10 Session 1 games - Sensory Integration & Adaptive Responses
+  if (currentGame === 'sensory-explorer') {
+    return <SensoryExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'find-the-sound') {
+    return <FindTheSoundGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'spot-the-change') {
+    return <SpotTheChangeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mystery-touch') {
+    return <MysteryTouchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sensory-detective') {
+    return <SensoryDetectiveGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'balloon-breathing') {
+    return <BalloonBreathingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'slow-motion-walk') {
+    return <SlowMotionWalkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'heavy-work-break') {
+    return <HeavyWorkBreakGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'calm-body-quest') {
+    return <CalmBodyQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'calm-energy-meter') {
+    return <EnergyMeterCalmGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'change-the-plan') {
+    return <ChangeThePlanGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'lava-shift') {
+    return <LavaShiftGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pirate-detour') {
+    return <PirateDetourGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mission-update') {
+    return <MissionUpdateGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'surprise-route') {
+    return <SurpriseRouteGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'balance-reach') {
+    return <BalanceReachGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'track-move') {
+    return <TrackMoveGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'catch-turn') {
+    return <CatchTurnGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'move-match') {
+    return <MoveMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'integration-quest') {
+    return <IntegrationQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'school-ready') {
+    return <SchoolReadyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'home-helper') {
+    return <HomeHelperGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'meal-mission') {
+    return <MealMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'door-challenge') {
+    return <DoorChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'focus-finder') {
+    return <FocusFinderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'stop-think') {
+    return <StopThinkGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'attention-quest') {
+    return <AttentionQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'watch-carefully') {
+    return <WatchCarefullyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mind-master') {
+    return <MindMasterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'greeting-game') {
+    return <GreetingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'emotion-match') {
+    return <EmotionMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'team-mission') {
+    return <TeamMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'friendship-quest') {
+    return <FriendshipQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'social-explorer') {
+    return <SocialExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'find-another-way') {
+    return <FindAnotherWayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sensory-open-the-path') {
+    return <SensoryOpenThePathGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'escape-route') {
+    return <EscapeRouteGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sensory-rescue-mission') {
+    return <SensoryRescueMissionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'problem-solver') {
+    return <ProblemSolverGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'school-adventure') {
+    return <SchoolAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'shopping-trip') {
+    return <ShoppingTripGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'playground-quest') {
+    return <PlaygroundQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'travel-challenge') {
+    return <TravelChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'community-explorer') {
+    return <CommunityExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sensory-jungle-expedition') {
+    return <SensoryJungleExpeditionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sensory-space-explorer') {
+    return <SensorySpaceExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sensory-pirate-treasure-hunt') {
+    return <SensoryPirateTreasureHuntGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sensory-mountain-rescue') {
+    return <SensoryMountainRescueGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'arvit-grand-champion') {
+    return <ArvitGrandChampionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
   // Level 7 Session 2 games - Head Movement & Vestibular Activation (camera/pose detection)
   if (currentGame === 'look-up-explorer') {
     return <LookUpExplorerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
@@ -12629,7 +14194,7 @@ export default function SessionGamesScreen() {
     return <CountHoldGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Level 4 Session 1 games - Drag Object Left → Right
+  // Level 4 Session 1 games - Drag Object Left ? Right
   if (currentGame === 'ball-transfer') {
     return <BallTransferGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
@@ -12650,7 +14215,7 @@ export default function SessionGamesScreen() {
     return <TimedDragGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Level 4 Session 2 games - Drag Object Right → Left
+  // Level 4 Session 2 games - Drag Object Right ? Left
   if (currentGame === 'reverse-ball-pass') {
     return <ReverseBallPassGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
@@ -12966,7 +14531,7 @@ export default function SessionGamesScreen() {
     return <CountdownHitGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Level 5 Session 7: Depth & Distance — route by game id → config (key forces remount per game)
+  // Level 5 Session 7: Depth & Distance ? route by game id ? config (key forces remount per game)
   const l5s7DepthConfig = L5_SESSION7_DEPTH_CONFIGS[currentGame];
   if (l5s7DepthConfig) {
     return (
@@ -13042,77 +14607,60 @@ export default function SessionGamesScreen() {
     return <EagleEyeQuestGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
-  // Therapy display label for breadcrumb
-  const therapyLabel = therapyId === 'speech' ? 'Speech Therapy' : therapyId === 'occupational' ? 'Occupational Therapy' : therapyId.charAt(0).toUpperCase() + therapyId.slice(1).replace(/-/g, ' ');
-
-  // ---------- Menu UI ----------
+  const sessionTheme = getSessionTheme(therapyId, levelNumber, sessionNumber);
 
   return (
     <SafeAreaView style={styles.container}>
-      <Animated.View style={styles.header} entering={FadeInDown.duration(250)}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={styles.breadcrumbText}>{therapyLabel} › Level {levelNumber} › Session {sessionNumber}</Text>
-          <View style={styles.headerTitleRow}>
-            <Text style={styles.headerTitle}>Session {sessionNumber} Games</Text>
-            <Ionicons name="game-controller" size={22} color="#2563EB" />
+      <SessionGamesMenuShell>
+        <SessionGamesMenuHeader
+          therapyId={therapyId}
+          levelNumber={levelNumber}
+          sessionNumber={sessionNumber}
+          onBack={() => router.back()}
+        />
+
+        <ScrollView contentContainerStyle={styles.content}>
+          <Animated.View entering={FadeInDown.duration(350)} style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Choose a Game</Text>
+            <Text style={styles.sectionSubtitle}>
+              Each quest has its own look — complete all 5 to finish {sessionTheme.badge}.
+            </Text>
+          </Animated.View>
+
+          <View style={styles.gamesGrid}>
+            {GAMES.filter(game => game.available).length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateTitle}>No games available yet</Text>
+                <Text style={styles.emptyStateText}>
+                  Games for this session will be added soon!
+                </Text>
+              </View>
+            ) : (
+              GAMES.filter(game => game.available).map((game, index) => {
+                const unlocked = isGameUnlocked(game.id, index);
+                return (
+                  <SessionGameMenuCard
+                    key={game.id}
+                    game={game}
+                    index={index}
+                    therapyId={therapyId}
+                    levelNumber={levelNumber}
+                    sessionNumber={sessionNumber}
+                    unlocked={unlocked}
+                    onPress={() => {
+                      if (!unlocked) {
+                        Alert.alert('Locked', 'Complete the previous game to unlock this game.');
+                        return;
+                      }
+                      setCurrentGame(game.id as GameKey);
+                    }}
+                  />
+                );
+              })
+            )}
           </View>
-          <Text style={styles.headerSubtitle}>
-            Complete games to earn stars and unlock the next.
-          </Text>
-        </View>
-      </Animated.View>
-
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.sectionHeader}>
-          <Ionicons name="sparkles" size={20} color="#F59E0B" />
-          <Text style={styles.sectionTitle}>Choose a Game</Text>
-        </View>
-        <Text style={styles.sectionSubtitle}>
-          Complete each game to earn stars and unlock the next.
-        </Text>
-
-        <View style={styles.gamesGrid}>
-          {GAMES.filter(game => game.available).length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateTitle}>No games available yet</Text>
-              <Text style={styles.emptyStateText}>
-                Games for this session will be added soon!
-              </Text>
-            </View>
-          ) : (
-            GAMES.filter(game => game.available).map((game, index) => {
-              const unlocked = isGameUnlocked(game.id, index);
-              const isLocked = !unlocked;
-              const gameNumber = index + 1;
-              return (
-                <GameMenuCard
-                  key={game.id}
-                  game={game}
-                  index={index}
-                  unlocked={unlocked}
-                  isLocked={isLocked}
-                  gameNumber={gameNumber}
-                  onPress={() => {
-                    if (isLocked) {
-                      Alert.alert('Locked', 'Complete the previous game to unlock this game.');
-                      return;
-                    }
-                    setCurrentGame(game.id as GameKey);
-                  }}
-                  cardStyles={styles}
-                />
-              );
-            })
-          )}
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </SessionGamesMenuShell>
     </SafeAreaView>
   );
 }
@@ -13120,175 +14668,44 @@ export default function SessionGamesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  backText: {
-    marginLeft: 4,
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-  },
-  breadcrumbText: {
-    fontSize: 12,
-    color: '#64748B',
-    marginBottom: 4,
-  },
-  headerContent: {
-    flex: 1,
-  },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#64748B',
+    backgroundColor: TP_COLORS.page,
   },
   content: {
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 32,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0F172A',
+    ...TP_TYPE.h1,
+    color: TP_COLORS.ink,
   },
   sectionSubtitle: {
-    fontSize: 14,
-    color: '#64748B',
-    marginBottom: 24,
+    marginTop: 6,
+    ...TP_TYPE.body,
+    color: TP_COLORS.inkMuted,
   },
   gamesGrid: {
-    gap: 16,
-  },
-  gameCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 2,
-    minHeight: 72,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-    marginBottom: 4,
-  },
-  gameCardDisabled: {
-    opacity: 0.7,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#F8FAFC',
-  },
-  gameNumberCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E2E8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  gameNumberText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  lockBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gameIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 18,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  gameEmoji: {
-    fontSize: 32,
-  },
-  gameContent: {
-    flex: 1,
-  },
-  gameTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 4,
-  },
-  gameTitleDisabled: {
-    color: '#9CA3AF',
-  },
-  gameDescription: {
-    fontSize: 14,
-    color: '#64748B',
-    lineHeight: 20,
-  },
-  gameDescriptionDisabled: {
-    color: '#9CA3AF',
-  },
-  playBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
+    gap: 12,
   },
   emptyState: {
-    padding: 48,
+    padding: 32,
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: TP_COLORS.glass,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: TP_COLORS.glassBorder,
   },
   emptyStateTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 8,
+    color: TP_COLORS.ink,
   },
   emptyStateText: {
+    marginTop: 8,
     fontSize: 14,
-    color: '#64748B',
+    color: TP_COLORS.inkMuted,
     textAlign: 'center',
   },
 });

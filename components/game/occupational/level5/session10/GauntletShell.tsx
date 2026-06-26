@@ -5,6 +5,7 @@ import type { Session2ThemeTokens } from '@/components/game/occupational/level5/
 import { GauntletBackdrop } from '@/components/game/occupational/level5/session10/VisualGauntletVisuals';
 import type { GauntletCopy } from '@/components/game/occupational/level5/session10/visualGauntletThemes';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { configurePlaybackAudio } from '@/utils/configureAppAudio';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -40,7 +41,10 @@ export function GauntletShell({
             chips: copy.chips, startLabel: copy.startLabel, startGradient: copy.startGradient,
             backdrop: <GauntletBackdrop theme={theme} backdrop={copy.backdrop} />,
           }}
-          onStart={onStart}
+          onStart={() => {
+            void configurePlaybackAudio();
+            onStart();
+          }}
           onBack={onExit}
         />
       </SafeAreaView>

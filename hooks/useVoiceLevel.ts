@@ -3,7 +3,7 @@
  * Web: Web Audio API analyser. Native: expo-av Recording metering.
  */
 
-import { releaseAudioForMic } from '@/utils/releaseAudioForMic';
+import { releaseAudioForMic, restoreAudioForPlayback } from '@/utils/releaseAudioForMic';
 import { Audio as ExpoAudio, type RecordingStatus } from 'expo-av';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
@@ -131,6 +131,7 @@ export function useVoiceLevel(options: UseVoiceLevelOptions = {}): UseVoiceLevel
 
     nativeRecordingBusy = false;
     await new Promise((resolve) => setTimeout(resolve, NATIVE_RELEASE_MS));
+    await restoreAudioForPlayback(true).catch(() => undefined);
   }, []);
 
   const stop = useCallback(async () => {

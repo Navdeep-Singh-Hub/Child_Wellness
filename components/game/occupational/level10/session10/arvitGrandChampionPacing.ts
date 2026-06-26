@@ -1,0 +1,22 @@
+/** Pacing — OT Level 10 Session 10 · Game 5 ARVIT Grand Champion capstone */
+export const ARVIT_GRAND_CHAMPION_PACING = {
+  rounds: 5,
+  calibrationMs: 3000,
+  tickMs: 80,
+  exploreHoldMs: 1100,
+  exploreGraceMs: 400,
+  integrateHoldMs: 1400,
+  integrateGraceMs: 450,
+  championHoldMs: 1700,
+  championGraceMs: 450,
+  minPostureForIntegrate: 0.34,
+  minStillnessForIntegrate: 0.36,
+  minPostureForChampion: 0.36,
+  minAttentionForChampion: 0.38,
+  betweenRoundsMs: 1200,
+  roundIntroMs: 900,
+  fallbackExploreMs: 1800,
+  fallbackIntegrateMs: 2200,
+  fallbackChampionMs: 2600,
+  starEveryNRounds: 2,
+} as const;

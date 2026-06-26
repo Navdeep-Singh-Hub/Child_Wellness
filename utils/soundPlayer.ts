@@ -1,4 +1,5 @@
 // Shared sound player utility for Session 3 games
+import { configurePlaybackAudio } from '@/utils/configureAppAudio';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Speech from 'expo-speech';
 import { Platform } from 'react-native';
@@ -10,17 +11,7 @@ let audioReady = false;
 
 const ensureAudioReady = async () => {
   if (audioReady) return;
-  if (Platform.OS !== 'web') {
-    try {
-      await ExpoAudio.setAudioModeAsync({
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
-        shouldDuckAndroid: true,
-      });
-    } catch (e) {
-      console.warn('Failed to set audio mode:', e);
-    }
-  }
+  await configurePlaybackAudio();
   audioReady = true;
 };
 
@@ -111,7 +102,8 @@ export const preloadSounds = async () => {
 export const playSound = async (
   soundKey: keyof typeof SOUND_MAP,
   volume: number = 1.0,
-  rate: number = 1.0
+  rate: number = 1.0,
+  retry = true,
 ) => {
   const assetKey = SOUND_MAP[soundKey];
   if (!assetKey) {
@@ -201,6 +193,12 @@ export const playSound = async (
       await sound.playAsync();
     }
   } catch (e) {
+    const msg = String(e);
+    if (retry && Platform.OS !== 'web' && /AudioFocusNotAcquired|audio focus/i.test(msg)) {
+      audioReady = false;
+      await configurePlaybackAudio(true);
+      return playSound(soundKey, volume, rate, false);
+    }
     console.warn('Error playing sound:', soundKey, e);
   }
 };

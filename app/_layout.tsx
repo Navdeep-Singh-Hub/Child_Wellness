@@ -8,6 +8,9 @@ import './globals.css';
 import AuthTokenProvider from './providers/AuthTokenProvider';
 import { AuthProvider } from './providers/AuthProvider';
 import { preInitializeTTS, cleanupTTS } from '@/utils/tts';
+import { configurePlaybackAudio } from '@/utils/configureAppAudio';
+import { preloadSounds } from '@/utils/soundPlayer';
+import { Platform } from 'react-native';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -17,6 +20,14 @@ export default function RootLayout() {
     preInitializeTTS().catch((err) => {
       console.warn('[RootLayout] Failed to pre-initialize TTS:', err);
     });
+
+    if (Platform.OS !== 'web') {
+      configurePlaybackAudio()
+        .then(() => preloadSounds())
+        .catch((err) => {
+          console.warn('[RootLayout] Failed to configure game audio:', err);
+        });
+    }
 
     // Cleanup on unmount
     return () => {

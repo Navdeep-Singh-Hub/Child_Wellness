@@ -5,23 +5,23 @@
  * include the web-only speech-to-speech package, which depends on Node modules.
  */
 
+import { configurePlaybackAudio } from '@/utils/configureAppAudio';
 import * as Speech from 'expo-speech';
 
 export const DEFAULT_TTS_RATE = 0.75;
 
 let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
-let speechOp: Promise<void> = Promise.resolve();
+
+export type SpeakOptions = {
+  /** When true, do not stop current speech (e.g. stretched AAC phrases). */
+  skipStop?: boolean;
+};
 
 export function stopTTS(): void {
   try {
     scheduledSpeechTimers.forEach((timer) => clearTimeout(timer));
     scheduledSpeechTimers = [];
-    speechOp = speechOp
-      .catch(() => undefined)
-      .then(() => Speech.stop())
-      .catch((e) => {
-        console.warn('[TTS] Error stopping native TTS:', e);
-      });
+    Speech.stop();
   } catch (e) {
     console.warn('[TTS] Error stopping native TTS:', e);
   }
@@ -37,22 +37,31 @@ export async function speak(
   text: string,
   rate: number = DEFAULT_TTS_RATE,
   language?: string,
+  options?: SpeakOptions,
 ): Promise<void> {
   if (!text || text.trim().length === 0) return;
 
   try {
+    if (!options?.skipStop) {
+      stopTTS();
+    } else {
+      scheduledSpeechTimers.forEach((timer) => clearTimeout(timer));
+      scheduledSpeechTimers = [];
+    }
+
+    await configurePlaybackAudio();
+
     const safeRate = Math.max(0.4, Math.min(1.5, Number.isFinite(rate) ? rate : DEFAULT_TTS_RATE));
-    speechOp = speechOp
-      .catch(() => undefined)
-      .then(async () => {
-        await Speech.stop().catch(() => undefined);
-        Speech.speak(text, {
-          language,
-          rate: safeRate,
-          pitch: 1.02,
-        });
+    await new Promise<void>((resolve) => {
+      Speech.speak(text, {
+        language,
+        rate: safeRate,
+        pitch: 1.02,
+        onDone: () => resolve(),
+        onStopped: () => resolve(),
+        onError: () => resolve(),
       });
-    await speechOp;
+    });
   } catch (e) {
     console.warn('[TTS] native speak error:', e);
   }
@@ -67,11 +76,11 @@ export function speakSequence(
     clearScheduledSpeech();
     if (!texts || texts.length === 0) return;
 
-    speak(texts[0], rate);
+    void speak(texts[0], rate);
 
     for (let i = 1; i < texts.length; i += 1) {
       const timer = setTimeout(() => {
-        speak(texts[i], rate);
+        void speak(texts[i], rate);
       }, gapMs * i);
       scheduledSpeechTimers.push(timer);
     }
@@ -82,13 +91,13 @@ export function speakSequence(
 
 export async function cleanupTTS(): Promise<void> {
   stopTTS();
-  await speechOp.catch(() => undefined);
 }
 
 export async function preInitializeTTS(): Promise<void> {
-  // expo-speech does not need explicit native initialization.
+  await configurePlaybackAudio();
 }
 
 export async function activateWebTTS(callback?: () => void): Promise<void> {
+  await configurePlaybackAudio();
   callback?.();
 }

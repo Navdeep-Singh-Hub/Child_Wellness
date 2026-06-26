@@ -68,6 +68,68 @@ function SequenceStage({ accent }: { accent: string }) {
   );
 }
 
+export type TargetZoneLayout = {
+  upper: { x: number; y: number; size: number };
+  lower: { x: number; y: number; size: number };
+};
+
+export function TargetZoneBoxes({ zones, accent }: { zones: TargetZoneLayout; accent: string }) {
+  return (
+    <>
+      {(['upper', 'lower'] as const).map((key) => {
+        const zone = zones[key];
+        const half = zone.size / 2;
+        return (
+          <View
+            key={key}
+            pointerEvents="none"
+            style={[
+              styles.targetZone,
+              {
+                left: zone.x - half,
+                top: zone.y - half,
+                width: zone.size,
+                height: zone.size,
+                borderColor: accent,
+                backgroundColor: `${accent}18`,
+              },
+            ]}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+export function isObjectInTargetZone(
+  objX: number,
+  objY: number,
+  zones: TargetZoneLayout,
+  objectSize: number,
+): boolean {
+  const pad = objectSize * 0.15;
+  for (const key of ['upper', 'lower'] as const) {
+    const zone = zones[key];
+    const half = zone.size / 2;
+    if (
+      objX >= zone.x - half + pad &&
+      objX <= zone.x + half - pad &&
+      objY >= zone.y - half + pad &&
+      objY <= zone.y + half - pad
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function buildTargetZones(width: number, height: number, zoneSize = 92): TargetZoneLayout {
+  return {
+    upper: { x: width * 0.5, y: height * 0.28, size: zoneSize },
+    lower: { x: width * 0.5, y: height * 0.72, size: zoneSize },
+  };
+}
+
 export function TrackOrb({
   size,
   color,
@@ -128,5 +190,12 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
+  },
+  targetZone: {
+    position: 'absolute',
+    borderWidth: 3,
+    borderRadius: 10,
+    borderStyle: 'dashed',
+    zIndex: 1,
   },
 });

@@ -187,9 +187,10 @@ export function RoundCountdownOverlay({
     return () => clearTimeout(t);
   }, [step, steps.length, scale, opacity]);
 
+  const anim = useAnimatedStyle(() => ({ opacity: opacity.value, transform: [{ scale: scale.value }] }));
+
   if (step >= steps.length) return null;
   const isGo = steps[step] === 'GO!';
-  const anim = useAnimatedStyle(() => ({ opacity: opacity.value, transform: [{ scale: scale.value }] }));
 
   return (
     <View style={styles.cdOverlay} pointerEvents="none">

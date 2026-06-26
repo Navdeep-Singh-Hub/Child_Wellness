@@ -1,0 +1,22 @@
+/** Pacing — OT Level 10 Session 8 · Game 5 Problem Solver capstone */
+export const PROBLEM_SOLVER_PACING = {
+  rounds: 5,
+  calibrationMs: 3000,
+  tickMs: 80,
+  tryHoldMs: 1100,
+  tryGraceMs: 400,
+  adaptHoldMs: 1400,
+  adaptGraceMs: 450,
+  solveHoldMs: 1700,
+  solveGraceMs: 450,
+  minPostureForAdapt: 0.34,
+  minStillnessForAdapt: 0.36,
+  minPostureForSolve: 0.36,
+  minAttentionForSolve: 0.38,
+  betweenRoundsMs: 1200,
+  roundIntroMs: 900,
+  fallbackTryMs: 1800,
+  fallbackAdaptMs: 2200,
+  fallbackSolveMs: 2600,
+  starEveryNRounds: 2,
+} as const;

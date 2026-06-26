@@ -1,0 +1,57 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'maven-publish'
+
+group = 'expo.modules.childwellnessvision'
+version = '1.0.0'
+
+def expoModulesCorePlugin = new File(project(":expo-modules-core").projectDir.absolutePath, "ExpoModulesCorePlugin.gradle")
+if (expoModulesCorePlugin.exists()) {
+  apply from: expoModulesCorePlugin
+  applyKotlinExpoModulesCorePlugin()
+}
+
+buildscript {
+  def expoModulesCorePlugin = new File(project(":expo-modules-core").projectDir.absolutePath, "ExpoModulesCorePlugin.gradle")
+  if (expoModulesCorePlugin.exists()) {
+    apply from: expoModulesCorePlugin
+    applyKotlinExpoModulesCorePlugin()
+  }
+}
+
+android {
+  namespace "expo.modules.childwellnessvision"
+  compileSdkVersion safeExtGet("compileSdkVersion", 35)
+
+  defaultConfig {
+    minSdkVersion safeExtGet("minSdkVersion", 26)
+    targetSdkVersion safeExtGet("targetSdkVersion", 35)
+  }
+
+  lintOptions {
+    abortOnError false
+  }
+
+  publishing {
+    singleVariant("release") {
+      withSourcesJar()
+    }
+  }
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  implementation project(':expo-modules-core')
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${safeExtGet('kotlinVersion', '2.0.21')}"
+
+  def cameraxVersion = "1.4.1"
+  implementation "androidx.camera:camera-core:${cameraxVersion}"
+  implementation "androidx.camera:camera-camera2:${cameraxVersion}"
+  implementation "androidx.camera:camera-lifecycle:${cameraxVersion}"
+  implementation "androidx.camera:camera-view:${cameraxVersion}"
+
+  implementation 'com.google.mediapipe:tasks-vision:0.10.14'
+}
