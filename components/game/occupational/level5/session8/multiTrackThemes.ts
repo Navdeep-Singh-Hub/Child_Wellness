@@ -39,8 +39,8 @@ export const TWO_BALLS_THEME: Session2ThemeTokens = {
 
 export const TWO_BALLS_COPY: MultiTrackCopy = {
   gameTitle: 'Ball Duel', emoji: '⚽', tagline: 'Twin Track · Object Filter',
-  introBody: 'A ball and a star ball cross the upper and lower boxes. Tap only the star when it is inside a box — not the plain ball!',
-  chips: ['📦 Boxes', '⭐ Star', '🚫 No ball'], startLabel: 'Enter Duel', startGradient: ['#38BDF8', '#0284C7', '#0369A1'],
+  introBody: 'Two balls bounce around the arena. One is marked with a star — track it and tap the correct ball!',
+  chips: ['⚽ Track', '⭐ Mark', '👆 Tap'], startLabel: 'Enter Duel', startGradient: ['#38BDF8', '#0284C7', '#0369A1'],
   congrats: 'Duel Champion!', scoreLabel: 'WINS', rootBg: '#0C4A6E', backdrop: 'duel',
 };
 
@@ -78,8 +78,8 @@ export const SPEED_OBJECTS_THEME: Session2ThemeTokens = {
 
 export const SPEED_OBJECTS_COPY: MultiTrackCopy = {
   gameTitle: 'Speed Storm', emoji: '⚡', tagline: 'Velocity Track · Speed Discrimination',
-  introBody: 'Ten slow turtles drift among many fast bolts. Tap one slow turtle each round — it disappears until all ten are cleared!',
-  chips: ['🐢 10 slow', '⚡ fast noise', '👆 one tap'], startLabel: 'Ride Storm', startGradient: ['#FBBF24', '#F59E0B', '#D97706'],
+  introBody: 'Fast and slow objects swirl in the storm. Each round, tap an object matching the called speed!',
+  chips: ['⚡ Fast', '🐢 Slow', '👆 Match'], startLabel: 'Ride Storm', startGradient: ['#FBBF24', '#F59E0B', '#D97706'],
   congrats: 'Storm Tracker!', scoreLabel: 'HITS', rootBg: '#78350F', backdrop: 'storm',
 };
 

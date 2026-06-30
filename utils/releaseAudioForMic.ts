@@ -37,5 +37,3 @@ export async function releaseAudioForMic(): Promise<void> {
     interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
   });
 }
-
-export { configurePlaybackAudio, restoreAudioForPlayback } from '@/utils/configureAppAudio';

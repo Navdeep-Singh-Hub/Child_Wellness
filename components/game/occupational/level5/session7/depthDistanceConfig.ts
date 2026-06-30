@@ -19,7 +19,7 @@ export const NEAR_VS_FAR: DepthGameConfig = {
   title: 'Near vs Far',
   emoji: '📏',
   description:
-    'Stand at the center yellow point! Some rounds put one object on your left and one on your right; others line both up on the same depth path.',
+    'Stand at the yellow point! Tap the object closer to you or farther away from that spot.',
   skills: ['Distance judgment'],
   suitableFor: 'Children learning distance perception from a fixed viewpoint',
   instruction: 'Judge distance from the yellow point!',
@@ -71,10 +71,10 @@ export const THREE_LAYER_TAP: DepthGameConfig = {
   logType: '3-layer-tap',
   title: '3-Layer Tap',
   emoji: '📚',
-  description: 'Three circles overlap! Tap the one with the glowing ring.',
+  description: 'Three layers overlap! Tap only the front layer.',
   skills: ['Visual layering'],
   suitableFor: 'Children learning foreground vs background',
-  instruction: 'Tap the circle with the glowing ring!',
-  footerSubtext: 'Look for the pulsing gold ring!',
+  instruction: 'Tap the front circle!',
+  footerSubtext: 'Find the circle in front!',
   skillTags: ['visual-layering', 'foreground-selection', 'depth-cues'],
 };

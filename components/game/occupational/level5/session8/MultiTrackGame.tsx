@@ -1,4 +1,4 @@
-import { TrackOrb, TargetZoneBoxes, buildTargetZones, isObjectInTargetZone, type TargetZoneLayout } from '@/components/game/occupational/level5/session8/MultiTrackVisuals';
+import { TrackOrb } from '@/components/game/occupational/level5/session8/MultiTrackVisuals';
 import { MultiTrackShell, useMultiTrackExit } from '@/components/game/occupational/level5/session8/MultiTrackShell';
 import type { MultiTrackConfig } from '@/components/game/occupational/level5/session8/multiTrackConfig';
 import { getMultiTrackTheme } from '@/components/game/occupational/level5/session8/multiTrackThemes';
@@ -14,22 +14,6 @@ import { Dimensions, Pressable, StyleSheet, View } from 'react-native';
 
 const TOLERANCE = 50;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-function scatterPositions(count: number, size: number, width: number, height: number): { x: number; y: number }[] {
-  const points: { x: number; y: number }[] = [];
-  const minDist = size * 1.15;
-  for (let i = 0; i < count; i++) {
-    let x = width * 0.5;
-    let y = height * 0.5;
-    for (let attempt = 0; attempt < 48; attempt++) {
-      x = Math.random() * (width - size) + size / 2;
-      y = Math.random() * (height - size - 40) + size / 2 + 20;
-      if (points.every((p) => Math.hypot(p.x - x, p.y - y) >= minDist)) break;
-    }
-    points.push({ x, y });
-  }
-  return points;
-}
 
 const DISTRACTOR_STYLES = [
   { color: '#3B82F6', emoji: '🔵' },
@@ -49,7 +33,6 @@ interface TrackObject {
   isTarget: boolean;
   isFast: boolean;
   scale: number;
-  currentLane?: 'upper' | 'lower';
 }
 
 const MultiTrackGame: React.FC<{ config: MultiTrackConfig; onBack?: () => void; onComplete?: () => void }> = ({
@@ -69,18 +52,13 @@ const MultiTrackGame: React.FC<{ config: MultiTrackConfig; onBack?: () => void; 
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [objects, setObjects] = useState<TrackObject[]>([]);
-  const [targetZones, setTargetZones] = useState<TargetZoneLayout>(() => buildTargetZones(SCREEN_WIDTH, SCREEN_HEIGHT));
   const [targetFast, setTargetFast] = useState(true);
 
   const screenWidth = useRef(SCREEN_WIDTH);
   const screenHeight = useRef(SCREEN_HEIGHT);
-  const targetZonesRef = useRef<TargetZoneLayout>(buildTargetZones(SCREEN_WIDTH, SCREEN_HEIGHT));
   const animationRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const targetFastRef = useRef(true);
   const endGameRef = useRef<((s: number) => Promise<void>) | null>(null);
-  const speedFieldReadyRef = useRef(false);
-
-  const totalRounds = config.mode === 'speed-pick' ? (config.rounds ?? P.standardRounds) : P.standardRounds;
 
   const clearAnim = useCallback(() => {
     if (animationRef.current) {
@@ -122,27 +100,41 @@ const MultiTrackGame: React.FC<{ config: MultiTrackConfig; onBack?: () => void; 
         });
       }
     } else if (config.mode === 'two-balls') {
-      const zones = targetZonesRef.current;
       const targetIdx = Math.floor(Math.random() * 2);
       for (let i = 0; i < 2; i++) {
-        const lane: 'upper' | 'lower' = i === 0 ? 'upper' : 'lower';
-        const zone = zones[lane];
         items.push({
           id: `ball-${i}`,
-          x: screenWidth.current * (lane === 'upper' ? 0.22 : 0.78),
-          y: zone.y,
-          directionX: (i === 0 ? 1 : -1) * config.speed,
-          directionY: 0,
+          x: Math.random() * (screenWidth.current - size) + size / 2,
+          y: Math.random() * (screenHeight.current - size - 40) + size / 2 + 20,
+          directionX: (Math.random() > 0.5 ? 1 : -1) * config.speed,
+          directionY: (Math.random() > 0.5 ? 1 : -1) * config.speed,
           color: i === targetIdx ? '#10B981' : '#3B82F6',
           emoji: i === targetIdx ? '⭐' : '⚽',
           isTarget: i === targetIdx,
           isFast: true,
           scale: 1,
-          currentLane: lane,
         });
       }
-    } else if (config.mode === 'speed-pick') {
-      /* Speed Storm field is built once in initSpeedField */
+    } else {
+      const wantFast = Math.random() > 0.5;
+      targetFastRef.current = wantFast;
+      setTargetFast(wantFast);
+      for (let i = 0; i < config.objectCount; i++) {
+        const fast = i < 2;
+        const spd = fast ? config.speed : (config.slowSpeed ?? 0.8);
+        items.push({
+          id: `sp-${i}`,
+          x: Math.random() * (screenWidth.current - size) + size / 2,
+          y: Math.random() * (screenHeight.current - size - 40) + size / 2 + 20,
+          directionX: (Math.random() > 0.5 ? 1 : -1) * spd,
+          directionY: (Math.random() > 0.5 ? 1 : -1) * spd,
+          color: fast ? '#EF4444' : '#10B981',
+          emoji: fast ? '⚡' : '🐢',
+          isTarget: false,
+          isFast: fast,
+          scale: 1,
+        });
+      }
     }
 
     setObjects(items);
@@ -154,29 +146,6 @@ const MultiTrackGame: React.FC<{ config: MultiTrackConfig; onBack?: () => void; 
     animationRef.current = setInterval(() => {
       setObjects((prev) =>
         prev.map((obj) => {
-          if (config.mode === 'two-balls') {
-            const zones = targetZonesRef.current;
-            const lane = obj.currentLane ?? 'upper';
-            let newX = obj.x + obj.directionX;
-            let newDirX = obj.directionX;
-            let newLane = lane;
-
-            if (newX <= size / 2 || newX >= screenWidth.current - size / 2) {
-              newDirX *= -1;
-              newX = Math.max(size / 2, Math.min(screenWidth.current - size / 2, newX));
-              newLane = lane === 'upper' ? 'lower' : 'upper';
-            }
-
-            return {
-              ...obj,
-              x: newX,
-              y: zones[newLane].y,
-              directionX: newDirX,
-              directionY: 0,
-              currentLane: newLane,
-            };
-          }
-
           const spd =
             config.mode === 'speed-pick'
               ? obj.isFast
@@ -206,7 +175,7 @@ const MultiTrackGame: React.FC<{ config: MultiTrackConfig; onBack?: () => void; 
   const endGame = useCallback(
     async (finalScore: number) => {
       clearAnim();
-      const total = totalRounds;
+      const total = P.standardRounds;
       const xp = finalScore * P.standardXp;
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
@@ -227,7 +196,7 @@ const MultiTrackGame: React.FC<{ config: MultiTrackConfig; onBack?: () => void; 
         console.error('Failed to log game:', error);
       }
     },
-    [clearAnim, config.logType, config.skillTags, router, totalRounds],
+    [clearAnim, config.logType, config.skillTags, router],
   );
 
   useEffect(() => {
@@ -241,7 +210,7 @@ const MultiTrackGame: React.FC<{ config: MultiTrackConfig; onBack?: () => void; 
 
     setScore((s) => {
       const newScore = s + 1;
-      if (newScore >= totalRounds) {
+      if (newScore >= P.standardRounds) {
         setTimeout(() => endGameRef.current?.(newScore), 900);
       } else {
         setTimeout(() => setRound((r) => r + 1), 1100);
@@ -251,30 +220,7 @@ const MultiTrackGame: React.FC<{ config: MultiTrackConfig; onBack?: () => void; 
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     speakTTS(config.ttsSuccess, 0.9, 'en-US');
-  }, [clearAnim, config.ttsSuccess, totalRounds]);
-
-  const onSpeedSlowTap = useCallback(
-    (tappedId: string) => {
-      setObjects((prev) => prev.filter((o) => o.id !== tappedId));
-
-      setScore((s) => {
-        const newScore = s + 1;
-        if (newScore >= totalRounds) {
-          setTimeout(() => {
-            clearAnim();
-            endGameRef.current?.(newScore);
-          }, 700);
-        } else {
-          setRound((r) => r + 1);
-        }
-        return newScore;
-      });
-
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      speakTTS(config.ttsSuccess, 0.9, 'en-US');
-    },
-    [clearAnim, config.ttsSuccess, totalRounds],
-  );
+  }, [clearAnim, config.ttsSuccess]);
 
   const handleTap = useCallback(
     (event: { nativeEvent: { locationX: number; locationY: number } }) => {
@@ -288,112 +234,45 @@ const MultiTrackGame: React.FC<{ config: MultiTrackConfig; onBack?: () => void; 
         if (dist > TOLERANCE + size / 2) continue;
 
         let correct = false;
-        let missMsg = config.ttsMiss;
-
-        if (config.mode === 'follow-red') {
-          correct = obj.isTarget;
-        } else if (config.mode === 'two-balls') {
-          const zones = targetZonesRef.current;
-          const inZone = isObjectInTargetZone(obj.x, obj.y, zones, size);
-          if (obj.isTarget) {
-            correct = inZone;
-            if (!inZone) missMsg = 'Wait for the star to enter a box!';
-          } else {
-            correct = false;
-            missMsg = inZone ? 'Tap the star, not the ball!' : 'Tap only the star inside a box!';
-          }
-        } else if (config.mode === 'speed-pick') {
-          if (!obj.isFast) {
-            onSpeedSlowTap(obj.id);
-            return;
-          }
-          missMsg = config.ttsMiss;
-        } else {
-          correct = obj.isFast === targetFastRef.current;
-        }
+        if (config.mode === 'follow-red') correct = obj.isTarget;
+        else if (config.mode === 'two-balls') correct = obj.isTarget;
+        else correct = obj.isFast === targetFastRef.current;
 
         if (correct) {
           onSuccess();
         } else {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-          speakTTS(missMsg, 0.8, 'en-US');
+          const miss =
+            config.mode === 'speed-pick'
+              ? `Tap the ${targetFastRef.current ? 'fast' : 'slow'} object!`
+              : config.ttsMiss;
+          speakTTS(miss, 0.8, 'en-US');
         }
         return;
       }
     },
-    [config, done, objects, onSuccess, onSpeedSlowTap, phase],
+    [config, done, objects, onSuccess, phase],
   );
 
-  const initSpeedField = useCallback(() => {
-    stopTTS();
-    const size = config.objectSize;
-    const slowCount = config.slowCount ?? 10;
-    const fastCount = config.fastCount ?? 14;
-    const slowSpd = config.slowSpeed ?? 0.75;
-    const w = screenWidth.current;
-    const h = screenHeight.current;
-    const slowPositions = scatterPositions(slowCount, size, w, h);
-    const fastPositions = scatterPositions(fastCount, size, w, h);
-    const items: TrackObject[] = [];
-
-    slowPositions.forEach(({ x, y }, i) => {
-      items.push({
-        id: `slow-${i}`,
-        x,
-        y,
-        directionX: (Math.random() > 0.5 ? 1 : -1) * slowSpd,
-        directionY: (Math.random() > 0.5 ? 1 : -1) * slowSpd,
-        color: '#10B981',
-        emoji: '🐢',
-        isTarget: false,
-        isFast: false,
-        scale: 1,
-      });
-    });
-
-    fastPositions.forEach(({ x, y }, i) => {
-      items.push({
-        id: `fast-${i}`,
-        x,
-        y,
-        directionX: (Math.random() > 0.5 ? 1 : -1) * config.speed,
-        directionY: (Math.random() > 0.5 ? 1 : -1) * config.speed,
-        color: '#EF4444',
-        emoji: '⚡',
-        isTarget: false,
-        isFast: true,
-        scale: 1,
-      });
-    });
-
-    targetFastRef.current = false;
-    setTargetFast(false);
-    setObjects(items);
-    moveObjects();
-    speedFieldReadyRef.current = true;
-
-    setTimeout(() => speakTTS(config.ttsStart, 0.8, 'en-US'), 350);
-  }, [config, moveObjects, config.ttsStart]);
-
   const startRound = useCallback(() => {
-    if (config.mode === 'speed-pick') return;
     stopTTS();
     generateObjects();
     moveObjects();
-    setTimeout(() => speakTTS(config.ttsStart, 0.8, 'en-US'), 350);
+    setTimeout(() => {
+      const msg =
+        config.mode === 'speed-pick'
+          ? `Tap the ${targetFastRef.current ? 'fast' : 'slow'} object!`
+          : config.ttsStart;
+      speakTTS(msg, 0.8, 'en-US');
+    }, 350);
   }, [config.mode, config.ttsStart, generateObjects, moveObjects]);
 
   useEffect(() => {
-    if (showInfo || done || phase !== 'playing' || config.mode !== 'speed-pick') return;
-    if (speedFieldReadyRef.current) return;
-    initSpeedField();
-  }, [showInfo, done, phase, config.mode, initSpeedField]);
-
-  useEffect(() => {
-    if (showInfo || done || phase !== 'playing' || config.mode === 'speed-pick') return;
-    startRound();
-    return clearAnim;
-  }, [showInfo, round, done, phase, config.mode, startRound, clearAnim]);
+    if (!showInfo && !done && phase === 'playing') {
+      startRound();
+      return clearAnim;
+    }
+  }, [showInfo, round, done, phase, startRound, clearAnim]);
 
   useEffect(() => () => {
     try { stopTTS(); } catch { /* ignore */ }
@@ -401,10 +280,9 @@ const MultiTrackGame: React.FC<{ config: MultiTrackConfig; onBack?: () => void; 
     clearAnim();
   }, [clearAnim]);
 
-  const slowRemaining = objects.filter((o) => !o.isFast).length;
   const hint =
     config.mode === 'speed-pick'
-      ? `Tap a slow 🐢 (${slowRemaining} left)`
+      ? `Tap the ${targetFast ? 'fast ⚡' : 'slow 🐢'} object!`
       : config.instruction;
 
   return (
@@ -416,7 +294,7 @@ const MultiTrackGame: React.FC<{ config: MultiTrackConfig; onBack?: () => void; 
       done={done}
       finalStats={finalStats}
       round={round}
-      totalRounds={totalRounds}
+      totalRounds={P.standardRounds}
       score={score}
       hint={hint}
       showHint={phase === 'playing'}
@@ -430,15 +308,9 @@ const MultiTrackGame: React.FC<{ config: MultiTrackConfig; onBack?: () => void; 
         onLayout={(e) => {
           screenWidth.current = e.nativeEvent.layout.width;
           screenHeight.current = e.nativeEvent.layout.height;
-          const layout = buildTargetZones(screenWidth.current, screenHeight.current);
-          targetZonesRef.current = layout;
-          setTargetZones(layout);
         }}
         onPress={handleTap}
       >
-        {phase === 'playing' && config.mode === 'two-balls' && (
-          <TargetZoneBoxes zones={targetZones} accent={theme.accent} />
-        )}
         {phase === 'playing' &&
           objects.map((obj) => (
             <View

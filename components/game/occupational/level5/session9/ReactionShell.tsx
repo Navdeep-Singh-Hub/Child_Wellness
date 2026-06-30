@@ -5,7 +5,6 @@ import type { Session2ThemeTokens } from '@/components/game/occupational/level5/
 import { ReactionBackdrop } from '@/components/game/occupational/level5/session9/VisualReactionVisuals';
 import type { ReactionCopy } from '@/components/game/occupational/level5/session9/visualReactionThemes';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
-import { configurePlaybackAudio } from '@/utils/configureAppAudio';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -43,10 +42,7 @@ export function ReactionShell({
             chips: copy.chips, startLabel: copy.startLabel, startGradient: copy.startGradient,
             backdrop: <ReactionBackdrop theme={theme} backdrop={copy.backdrop} />,
           }}
-          onStart={() => {
-            void configurePlaybackAudio();
-            onStart();
-          }}
+          onStart={onStart}
           onBack={onExit}
         />
       </SafeAreaView>

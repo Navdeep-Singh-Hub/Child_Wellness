@@ -18,12 +18,12 @@ export const SIDE_EYE_TRACK: EyeTrackConfig = {
   logType: 'side-eye-track',
   title: 'Side Eye Track',
   emoji: '👁️',
-  description: 'Drag your finger with the dot moving left to right! Build eye-hand tracking.',
+  description: 'Follow the dot moving left to right with your eyes! Build reading readiness.',
   skills: ['Reading readiness'],
-  suitableFor: 'Children learning finger tracking and reading preparation',
-  instruction: 'Drag your finger with the dot!',
-  footerSubtext: 'Stay on the dot for 3 seconds to finish the round!',
-  skillTags: ['reading-readiness', 'eye-hand-coordination', 'horizontal-tracking'],
+  suitableFor: 'Children learning eye tracking and reading preparation',
+  instruction: 'Follow the dot with your eyes!',
+  footerSubtext: 'Follow the dot moving left to right!',
+  skillTags: ['reading-readiness', 'eye-tracking', 'horizontal-tracking'],
 };
 
 export const UP_DOWN_TRACK: EyeTrackConfig = {
@@ -31,12 +31,12 @@ export const UP_DOWN_TRACK: EyeTrackConfig = {
   logType: 'up-down-track',
   title: 'Up-Down Track',
   emoji: '⬆️',
-  description: 'Drag your finger with the dot moving up and down! Practice vertical tracking.',
+  description: 'Follow the dot moving up and down with your eyes! Practice line shifting.',
   skills: ['Line shifting'],
-  suitableFor: 'Children building vertical finger tracking control',
-  instruction: 'Follow the dot up and down with your finger!',
-  footerSubtext: 'Keep your finger on the dot to advance!',
-  skillTags: ['line-shifting', 'eye-hand-coordination', 'vertical-tracking'],
+  suitableFor: 'Children building vertical eye movement control',
+  instruction: 'Follow the dot up and down!',
+  footerSubtext: 'Watch the dot move from top to bottom!',
+  skillTags: ['line-shifting', 'eye-tracking', 'vertical-tracking'],
 };
 
 export const CIRCULAR_TRACK: EyeTrackConfig = {
@@ -44,12 +44,12 @@ export const CIRCULAR_TRACK: EyeTrackConfig = {
   logType: 'circular-track',
   title: 'Circular Track',
   emoji: '⭕',
-  description: 'Drag your finger around the circle with the dot! Strengthen smooth pursuit.',
+  description: 'Follow the dot moving in a circle! Strengthen eye muscles.',
   skills: ['Eye muscle strength'],
-  suitableFor: 'Children practicing smooth circular finger tracking',
-  instruction: 'Trace the circle with your finger on the dot!',
-  footerSubtext: 'Stay close to the dot for 3 seconds!',
-  skillTags: ['eye-hand-coordination', 'circular-tracking', 'smooth-pursuit'],
+  suitableFor: 'Children practicing smooth circular eye movements',
+  instruction: 'Follow the dot around the circle!',
+  footerSubtext: 'Keep your eyes on the dot as it circles!',
+  skillTags: ['eye-muscle-strength', 'circular-tracking', 'smooth-pursuit'],
 };
 
 export const JUMP_TRACK: EyeTrackConfig = {
@@ -57,12 +57,12 @@ export const JUMP_TRACK: EyeTrackConfig = {
   logType: 'jump-track',
   title: 'Jump Track',
   emoji: '⚡',
-  description: 'Drag your finger to each spot when the dot jumps! Build quick tracking.',
+  description: 'Watch the dot jump from spot to spot! Build visual jump control.',
   skills: ['Visual jump control'],
-  suitableFor: 'Children learning to track jumping targets with their finger',
-  instruction: 'Move your finger to the dot each time it jumps!',
-  footerSubtext: 'Stay on the dot for 3 seconds to pass the round!',
-  skillTags: ['saccades', 'visual-jump-control', 'eye-hand-coordination'],
+  suitableFor: 'Children learning saccadic eye movements',
+  instruction: 'Follow the dot when it jumps!',
+  footerSubtext: 'Track each new position with your eyes!',
+  skillTags: ['saccades', 'visual-jump-control', 'eye-tracking'],
 };
 
 export const MULTI_DOT: EyeTrackConfig = {
@@ -70,10 +70,10 @@ export const MULTI_DOT: EyeTrackConfig = {
   logType: 'multi-dot',
   title: 'Multi Dot',
   emoji: '⚫',
-  description: 'Two dots take turns moving! Drag your finger on whichever dot is active.',
+  description: 'Two dots take turns moving! Practice focus switching.',
   skills: ['Focus switching'],
-  suitableFor: 'Children learning to switch finger focus between moving targets',
-  instruction: 'Follow the bright dot with your finger!',
-  footerSubtext: 'Switch to the active dot and stay on it!',
-  skillTags: ['focus-switching', 'alternating-attention', 'eye-hand-coordination'],
+  suitableFor: 'Children learning to alternate visual attention',
+  instruction: 'Follow whichever dot is moving!',
+  footerSubtext: 'Switch your focus between the two dots!',
+  skillTags: ['focus-switching', 'alternating-attention', 'eye-tracking'],
 };

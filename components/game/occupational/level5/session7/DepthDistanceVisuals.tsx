@@ -120,64 +120,23 @@ export function DepthSphere({
   highlight?: boolean;
   accentColor?: string;
 }) {
-  const ringColor = accentColor ?? '#FBBF24';
-  const pulse = useSharedValue(1);
-  useEffect(() => {
-    if (highlight) {
-      pulse.value = withRepeat(
-        withSequence(
-          withTiming(1.12, { duration: 550, easing: Easing.inOut(Easing.sin) }),
-          withTiming(1, { duration: 550, easing: Easing.inOut(Easing.sin) }),
-        ),
-        -1,
-        false,
-      );
-    } else {
-      pulse.value = withTiming(1, { duration: 120 });
-    }
-  }, [highlight, pulse]);
-
-  const ringStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulse.value }],
-    opacity: 0.55 + (pulse.value - 1) * 2.5,
-  }));
-
   return (
-    <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center' }}>
-      {highlight ? (
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.glowRing,
-            ringStyle,
-            {
-              width: size + 18,
-              height: size + 18,
-              borderRadius: (size + 18) / 2,
-              borderColor: ringColor,
-            },
-          ]}
-        />
-      ) : null}
-      <View
-        style={[
-          styles.sphere,
-          {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            backgroundColor: color,
-            opacity: dimmed ? 0.72 : 1,
-            borderColor: highlight ? ringColor : 'rgba(255,255,255,0.6)',
-            borderWidth: highlight ? 4 : 2,
-            shadowColor: highlight ? ringColor : color,
-            shadowOpacity: highlight ? 0.55 : 0.35,
-            shadowRadius: highlight ? 14 : 10,
-          },
-        ]}
-      >
-        <Text style={{ fontSize: size * 0.42 }}>{emoji}</Text>
-      </View>
+    <View
+      style={[
+        styles.sphere,
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: color,
+          opacity: dimmed ? 0.75 : 1,
+          borderColor: highlight ? accentColor ?? '#FBBF24' : 'rgba(255,255,255,0.6)',
+          borderWidth: highlight ? 3 : 2,
+          shadowColor: color,
+        },
+      ]}
+    >
+      <Text style={{ fontSize: size * 0.42 }}>{emoji}</Text>
     </View>
   );
 }
@@ -274,14 +233,11 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   anchorLabel: { fontSize: 9, fontWeight: '800', color: '#713F12', marginTop: -2 },
-  glowRing: {
-    position: 'absolute',
-    borderWidth: 3,
-    backgroundColor: 'transparent',
-  },
   sphere: {
     justifyContent: 'center',
     alignItems: 'center',
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
   },

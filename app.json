@@ -85,7 +85,6 @@
           "assetsPaths": ["./assets/models/"]
         }
       ],
-      "child-wellness-vision",
       [
         "expo-build-properties",
         {

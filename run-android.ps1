@@ -2,7 +2,7 @@
 # Replace YOUR_JDK_PATH with the actual path from Android Studio
 
 # Set your JDK path here
-$jdkPath = "C:\Program Files\Eclipse Adoptium\jdk-17.0.19.10-hotspot"
+$jdkPath = "D:\Softwares\android studio\jbr"
 
 # Check if JDK path exists
 if (-not $jdkPath -or -not (Test-Path $jdkPath)) {
