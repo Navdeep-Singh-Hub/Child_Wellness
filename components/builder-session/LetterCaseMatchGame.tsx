@@ -1,23 +1,12 @@
 /**
- * Builder Session 6 — Game 3: Letter Mirror Bridge
- * Match uppercase letters to their lowercase pairs.
+ * Builder Session 6 — Game 3: Letter Match
+ * Match uppercase A with lowercase a. Tap uppercase then tap matching lowercase.
  */
+import { speak } from '@/utils/tts';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
-import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
+import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
+import { GameLayout } from '@/components/farm-session/GameLayout';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
-import { BUILDER_SESSION, LETTER_MIRROR_THEME as T } from './builderSessionTheme';
-import { speakBuilderHint, stopBuilderSpeech } from './builderSessionSpeech';
-import { MountainWorkshopBackground } from './MountainWorkshopBackground';
 
 const PAIRS = [
   { id: 'a', upper: 'A', lower: 'a' },
@@ -25,16 +14,16 @@ const PAIRS = [
   { id: 'c', upper: 'C', lower: 'c' },
 ];
 
-function shuffleArray<U>(arr: U[]): U[] {
+function shuffleArray<T>(arr: T[]): T[] {
   const out = [...arr];
-  for (let i = out.length - 1; i > 0; i -= 1) {
+  for (let i = out.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out;
 }
 
-function shuffleWithoutSameColumn<U extends { id: string }>(base: U[], source: U[]): U[] {
+function shuffleWithoutSameColumn<T extends { id: string }>(base: T[], source: T[]): T[] {
   if (source.length <= 1) return [...source];
   let candidate = shuffleArray(source);
   let tries = 0;
@@ -50,67 +39,35 @@ function shuffleWithoutSameColumn<U extends { id: string }>(base: U[], source: U
 
 export interface LetterCaseMatchGameProps {
   onComplete: () => void;
-  onBack?: () => void;
-  currentStep?: number;
-  totalSteps?: number;
-  sessionTitle?: string;
 }
 
-export function LetterCaseMatchGame({
-  onComplete,
-  onBack,
-  currentStep = 3,
-  totalSteps = 5,
-  sessionTitle,
-}: LetterCaseMatchGameProps) {
+export function LetterCaseMatchGame({ onComplete }: LetterCaseMatchGameProps) {
   const [upperOrder] = useState(() => shuffleArray(PAIRS));
   const [lowerOrder] = useState(() => shuffleWithoutSameColumn(upperOrder, PAIRS));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [matched, setMatched] = useState<Set<string>>(new Set());
-  const [celebrating, setCelebrating] = useState(false);
-  const shake = useSharedValue(0);
-
-  const progressPct = Math.round((currentStep / totalSteps) * 100);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [wrongShake] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
-    speakBuilderHint(
-      'Match the big letter with the small letter. Tap a big letter, then tap its small letter.'
-    );
-    return () => stopBuilderSpeech();
+    speak('Match the big letter with the small letter. Tap a big letter, then tap its small letter.', 0.75);
   }, []);
 
-  const shakeStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: shake.value }],
-  }));
-
   const triggerWrong = useCallback(() => {
-    shake.value = withSequence(
-      withTiming(-8, { duration: 50 }),
-      withTiming(8, { duration: 50 }),
-      withTiming(-5, { duration: 50 }),
-      withTiming(0, { duration: 50 })
-    );
-    speakBuilderHint('Try again. Match the big letter to the small letter.');
-    try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    } catch {
-      /* ignore */
-    }
-  }, [shake]);
+    wrongShake.setValue(0);
+    Animated.sequence([
+      Animated.timing(wrongShake, { toValue: 1, duration: 80, useNativeDriver: true }),
+      Animated.timing(wrongShake, { toValue: 0, duration: 80, useNativeDriver: true }),
+    ]).start();
+    speak('Try again. Match the big letter to the small letter.', 0.7);
+  }, [wrongShake]);
 
-  const handleUpperTap = useCallback(
-    (id: string) => {
-      if (matched.has(id)) return;
-      setSelectedId(id);
-      speakBuilderHint(PAIRS.find((x) => x.id === id)?.upper ?? id);
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch {
-        /* ignore */
-      }
-    },
-    [matched]
-  );
+  const handleUpperTap = useCallback((id: string) => {
+    if (matched.has(id)) return;
+    setSelectedId(id);
+    const p = PAIRS.find((x) => x.id === id);
+    speak(p?.upper ?? id, 0.7);
+  }, [matched]);
 
   const handleLowerTap = useCallback(
     (id: string) => {
@@ -120,230 +77,99 @@ export function LetterCaseMatchGame({
         setSelectedId(null);
         return;
       }
-
       const p = PAIRS.find((x) => x.id === id);
-      speakBuilderHint(`${p?.upper} and ${p?.lower}!`);
-      const nextMatched = new Set(matched).add(id);
-      setMatched(nextMatched);
+      speak(`${p?.upper} and ${p?.lower}!`, 0.7);
+      setMatched((m) => new Set(m).add(id));
       setSelectedId(null);
-
-      try {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {
-        /* ignore */
-      }
-
-      if (nextMatched.size >= upperOrder.length) {
-        speakBuilderHint('All letters matched!');
-        setCelebrating(true);
+      if (matched.size + 1 >= upperOrder.length) {
+        setShowSuccess(true);
         setTimeout(() => onComplete(), 2200);
       }
     },
-    [matched, onComplete, selectedId, triggerWrong, upperOrder.length]
+    [selectedId, matched, onComplete, triggerWrong, upperOrder.length]
   );
 
-  if (celebrating) {
+  if (showSuccess) {
     return (
-      <View style={styles.root}>
-        <ConfettiEffect />
-        <SuccessCelebration
-          title="Mirror Complete!"
-          subtitle="You matched A, B, and C!"
-          badgeEmoji="🔤"
-          variant="indigo"
-        />
-      </View>
+      <SuccessCelebration
+        variant="mint"
+        title="Great Job!"
+        subtitle="You matched A, B, and C!"
+        badgeEmoji="🔤"
+      />
     );
   }
 
+  const shakeX = wrongShake.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
+
   return (
-    <View style={styles.root}>
-      <LinearGradient
-        colors={[...T.gradient]}
-        locations={[...T.gradientLocations]}
-        style={StyleSheet.absoluteFill}
-      />
-      <MountainWorkshopBackground />
-
-      {onBack ? (
-        <Pressable
-          onPress={onBack}
-          style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="arrow-back" size={22} color={T.accentDeep} />
-          <Text style={styles.backText}>Back</Text>
-        </Pressable>
-      ) : null}
-
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View style={styles.badgeRow}>
-            <View style={styles.stepPill}>
-              <Text style={styles.stepPillText}>
-                Build {currentStep} · {progressPct}%
-              </Text>
-            </View>
-            <View style={styles.matchPill}>
-              <Text style={styles.matchPillText}>
-                {matched.size}/{upperOrder.length} matched
-              </Text>
-            </View>
-          </View>
-
-          <Text style={styles.title}>{T.name}</Text>
-          {sessionTitle ? <Text style={styles.subtitle}>{sessionTitle}</Text> : null}
-
-          <View style={styles.speechBubble}>
-            <Text style={styles.mascot}>{T.mascot}</Text>
-            <View style={styles.bubbleBody}>
-              <Text style={styles.mascotName}>{T.mascotName} says:</Text>
-              <Pressable
-                onPress={() =>
-                  speakBuilderHint('Match big letters to small letters across the mirror bridge.')
-                }
-              >
-                <Text style={styles.prompt}>Big ↔ small letters 🔊</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-
-        <Animated.View style={[styles.bridge, shakeStyle]}>
-          <Text style={styles.sectionLabel}>Big letters</Text>
-          <View style={styles.row}>
-            {upperOrder.map((p) => (
-              <Pressable
-                key={p.id}
-                onPress={() => handleUpperTap(p.id)}
-                style={[
-                  styles.letterBtn,
-                  styles.upperBtn,
-                  selectedId === p.id && styles.selected,
-                  matched.has(p.id) && styles.matched,
-                ]}
-                accessibilityLabel={`Letter ${p.upper}`}
-              >
-                <Text style={styles.upperText}>{p.upper}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <Text style={styles.sectionLabel}>Small letters</Text>
-          <View style={styles.row}>
-            {lowerOrder.map((p) => (
-              <Pressable
-                key={`lower-${p.id}`}
-                onPress={() => handleLowerTap(p.id)}
-                style={[styles.letterBtn, styles.lowerBtn, matched.has(p.id) && styles.matched]}
-                accessibilityLabel={`Letter ${p.lower}`}
-              >
-                <Text style={styles.lowerText}>{p.lower}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <Text style={styles.hint}>
-            {selectedId
-              ? `Tap the small letter for ${PAIRS.find((x) => x.id === selectedId)?.upper}`
-              : 'Tap a big letter first, then its small match'}
-          </Text>
+    <GameLayout
+      title="Letter Match"
+      instruction="Match the big letter with the small letter."
+      icon="🔤"
+      backgroundVariant="indigo"
+    >
+      <View style={styles.container}>
+        <Text style={styles.label}>Big letters</Text>
+        <Animated.View style={[styles.row, { transform: [{ translateX: shakeX }] }]}>
+          {upperOrder.map((p) => (
+            <Pressable
+              key={p.id}
+              onPress={() => handleUpperTap(p.id)}
+              style={[
+                styles.letterBtn,
+                styles.upperBtn,
+                selectedId === p.id && styles.selected,
+                matched.has(p.id) && styles.matched,
+              ]}
+              accessibilityLabel={`Letter ${p.upper}`}
+            >
+              <Text style={styles.upperText}>{p.upper}</Text>
+            </Pressable>
+          ))}
         </Animated.View>
-      </ScrollView>
-    </View>
+        <Text style={styles.label}>Small letters</Text>
+        <View style={styles.row}>
+          {lowerOrder.map((p) => (
+            <Pressable
+              key={`lower-${p.id}`}
+              onPress={() => handleLowerTap(p.id)}
+              style={[
+                styles.letterBtn,
+                styles.lowerBtn,
+                matched.has(p.id) && styles.matched,
+              ]}
+              accessibilityLabel={`Letter ${p.lower}`}
+            >
+              <Text style={styles.lowerText}>{p.lower}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {selectedId ? (
+          <Text style={styles.hint}>Tap the small letter for {PAIRS.find((x) => x.id === selectedId)?.upper}</Text>
+        ) : null}
+      </View>
+    </GameLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  scroll: { paddingBottom: Platform.OS === 'ios' ? 32 : 20 },
-  pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
-  backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    marginTop: Platform.OS === 'web' ? 12 : 48,
-    marginLeft: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.88)',
-    borderRadius: BUILDER_SESSION.radius.pill,
-    borderWidth: 1,
-    borderColor: T.panelBorder,
-    zIndex: 10,
-    ...BUILDER_SESSION.shadow.soft,
-  },
-  backText: { fontSize: 15, fontWeight: '700', color: T.accentDeep },
-  header: { paddingHorizontal: 20, paddingTop: 8, gap: 8, zIndex: 5 },
-  badgeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  stepPill: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: BUILDER_SESSION.radius.pill,
-    borderWidth: 1,
-    borderColor: T.panelBorder,
-  },
-  stepPillText: { fontSize: 12, fontWeight: '800', color: T.accentDeep },
-  matchPill: {
-    backgroundColor: 'rgba(237, 233, 254, 0.55)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: BUILDER_SESSION.radius.pill,
-    borderWidth: 1,
-    borderColor: T.accentSoft,
-  },
-  matchPillText: { fontSize: 12, fontWeight: '800', color: T.ink },
-  title: { fontSize: 26, fontWeight: '900', color: T.ink, textAlign: 'center' },
-  subtitle: { fontSize: 12, fontWeight: '600', color: T.inkMuted, textAlign: 'center' },
-  speechBubble: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: T.panel,
-    borderRadius: BUILDER_SESSION.radius.card,
-    borderWidth: 1,
-    borderColor: T.panelBorder,
-    padding: 14,
-    ...BUILDER_SESSION.shadow.soft,
-  },
-  mascot: { fontSize: 32 },
-  bubbleBody: { flex: 1, gap: 2 },
-  mascotName: { fontSize: 11, fontWeight: '800', color: T.accent, textTransform: 'uppercase', letterSpacing: 0.8 },
-  prompt: { fontSize: 14, fontWeight: '700', color: T.ink, lineHeight: 20 },
-  bridge: {
-    marginHorizontal: 20,
-    marginTop: 12,
-    padding: 16,
-    borderRadius: BUILDER_SESSION.radius.card,
-    backgroundColor: T.panel,
-    borderWidth: 1,
-    borderColor: T.panelBorder,
-    ...BUILDER_SESSION.shadow.card,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: T.inkMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 10,
-  },
-  row: { flexDirection: 'row', gap: 16, marginBottom: 18, justifyContent: 'center' },
+  container: { alignItems: 'center', paddingVertical: 24 },
+  label: { fontSize: 18, fontWeight: '700', color: '#4F46E5', marginBottom: 12 },
+  row: { flexDirection: 'row', gap: 20, marginBottom: 24 },
   letterBtn: {
     width: 72,
     height: 72,
     borderRadius: 16,
-    borderWidth: 3,
+    borderWidth: 4,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  upperBtn: { backgroundColor: T.upperCard, borderColor: T.upperBorder },
-  lowerBtn: { backgroundColor: T.lowerCard, borderColor: T.lowerBorder },
-  upperText: { fontSize: 36, fontWeight: '900', color: T.accentDeep },
-  lowerText: { fontSize: 32, fontWeight: '900', color: T.accentDeep },
-  selected: { borderColor: T.accent, backgroundColor: T.selected },
-  matched: { borderColor: '#22C55E', backgroundColor: T.matched, opacity: 0.92 },
-  hint: { fontSize: 14, fontWeight: '700', color: T.inkMuted, textAlign: 'center' },
+  upperBtn: { backgroundColor: '#EDE9FE', borderColor: '#8B5CF6' },
+  lowerBtn: { backgroundColor: '#FFF', borderColor: '#A78BFA' },
+  upperText: { fontSize: 36, fontWeight: '800', color: '#5B21B6' },
+  lowerText: { fontSize: 32, fontWeight: '800', color: '#5B21B6' },
+  selected: { borderColor: '#22C55E', backgroundColor: '#DCFCE7' },
+  matched: { borderColor: '#22C55E', backgroundColor: '#BBF7D0', opacity: 0.9 },
+  hint: { marginTop: 16, fontSize: 16, color: '#6B7280', fontWeight: '600' },
 });

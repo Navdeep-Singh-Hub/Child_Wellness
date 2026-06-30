@@ -22,8 +22,6 @@ export const SESSION1_PACING = {
   crownRounds: 3,
   crownRoundMs: 14000,
   crownStableThreshold: 0.6, // headStability needed to keep crown safe
-  crownUnstableThreshold: 0.42, // below this the crown is wobbling
-  crownUnstableFailMs: 1600, // sustained wobble ends the round early
   crownDistractionEveryMs: 2600,
 
   // ── Statue Kingdom ──

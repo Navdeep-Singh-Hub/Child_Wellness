@@ -1,101 +1,79 @@
 /**
- * Builder Session 6 — Twin Book Scout
- * Place TWO books together, upload photo → AI verifies.
+ * Builder Session 6 — Real World Task: Place TWO books together.
+ * Upload photo → AI checks for two books.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import { speak } from '@/utils/tts';
+import React, { useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
   View,
+  Text,
+  Pressable,
+  Image,
+  StyleSheet,
+  Alert,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
-import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
-import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { GameLayout } from '@/components/farm-session/GameLayout';
 import { API_BASE_URL, authHeaders } from '@/utils/api';
-import { BUILDER_SESSION, TWIN_BOOK_SCOUT_THEME as T } from './builderSessionTheme';
-import { speakBuilderHint, stopBuilderSpeech } from './builderSessionSpeech';
-import { MountainWorkshopBackground } from './MountainWorkshopBackground';
+
+const INSTRUCTIONS = 'Place TWO books together.\n\nThen take a photo or upload a picture.';
 
 export function BuilderNotebookUploadTwoBooks({
   onComplete,
-  onBack,
-  currentStep = 5,
-  totalSteps = 5,
-  sessionTitle,
 }: {
   onComplete: (correct: boolean) => void;
-  onBack?: () => void;
-  currentStep?: number;
-  totalSteps?: number;
-  sessionTitle?: string;
 }) {
   const [uploading, setUploading] = useState(false);
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [msg, setMsg] = useState('');
-  const [msgTone, setMsgTone] = useState<'info' | 'success' | 'error'>('info');
-  const [celebrating, setCelebrating] = useState(false);
-  const [activeStep, setActiveStep] = useState(0);
+  const [result, setResult] = useState<{ correct: boolean; feedback: string } | null>(null);
+  const [imageUri, setImageUri] = useState<string | null>(null);
 
-  const pulse = useSharedValue(0);
-  const scanPulse = useSharedValue(0);
-
-  const progressPct = Math.round((currentStep / totalSteps) * 100);
-
-  useEffect(() => {
-    speakBuilderHint(
-      'Twin Book Scout mission! Find two books, place them together, then take or upload a photo.'
-    );
-    pulse.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.quad) }),
-        withTiming(0.35, { duration: 1200, easing: Easing.inOut(Easing.quad) })
-      ),
-      -1,
-      false
-    );
-    return () => stopBuilderSpeech();
-  }, [pulse]);
-
-  useEffect(() => {
-    if (!uploading) {
-      scanPulse.value = 0;
+  const pickImage = async () => {
+    const permission =
+      Platform.OS === 'web'
+        ? { status: 'granted' as const }
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow access to photos to upload your picture.');
       return;
     }
-    scanPulse.value = withRepeat(withTiming(1, { duration: 900 }), -1, true);
-  }, [uploading, scanPulse]);
+    const pickerResult = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+    if (pickerResult.canceled) return;
+    const uri = pickerResult.assets[0].uri;
+    setImageUri(uri);
+    setResult(null);
+    await uploadImage(uri);
+  };
 
-  const pulseStyle = useAnimatedStyle(() => ({
-    opacity: 0.4 + pulse.value * 0.45,
-  }));
+  const takePhoto = async () => {
+    const permission =
+      Platform.OS === 'web'
+        ? { status: 'granted' as const }
+        : await ImagePicker.requestCameraPermissionsAsync();
+    if (permission.status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow camera to take a photo of your two books.');
+      return;
+    }
+    const pickerResult = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+    if (pickerResult.canceled) return;
+    const uri = pickerResult.assets[0].uri;
+    setImageUri(uri);
+    setResult(null);
+    await uploadImage(uri);
+  };
 
-  const scanStyle = useAnimatedStyle(() => ({
-    left: `${scanPulse.value * 92}%`,
-    opacity: uploading ? 0.85 : 0,
-  }));
-
-  const uploadImage = useCallback(async (uri: string) => {
+  const uploadImage = async (uri: string) => {
     setUploading(true);
-    setMsg('Sage is checking your books…');
-    setMsgTone('info');
-    setActiveStep(3);
-
     try {
       const formData = new FormData();
       const filename = 'two-books.jpg';
@@ -106,7 +84,11 @@ export function BuilderNotebookUploadTwoBooks({
         const blob = await response.blob();
         formData.append('file', blob, filename);
       } else {
-        formData.append('file', { uri, name: filename, type } as unknown as Blob);
+        formData.append('file', {
+          uri,
+          name: filename,
+          type,
+        } as any);
       }
 
       const headers = await authHeaders({ multipart: true });
@@ -120,445 +102,138 @@ export function BuilderNotebookUploadTwoBooks({
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error((err as { error?: string }).error || `Upload failed: ${res.status}`);
+        throw new Error(err.error || `Upload failed: ${res.status}`);
       }
-
       const data = await res.json();
       const correct = data.correct === true;
-      const feedback =
-        data.feedback ||
-        (correct ? 'SUCCESS! We see two books!' : 'Try again — place two books together clearly.');
-
+      const feedback = data.feedback || (correct ? 'SUCCESS! We see two books!' : 'TRY AGAIN.');
+      setResult({ correct, feedback });
       if (correct) {
-        setMsg(feedback);
-        setMsgTone('success');
-        setActiveStep(4);
-        try {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch {
-          /* ignore */
-        }
-        speakBuilderHint('Success! We see two books!');
-        setCelebrating(true);
-        setTimeout(() => onComplete(true), 2600);
+        speak('Success! We see two books!');
+        setTimeout(() => onComplete(true), 2200);
       } else {
-        setMsg(feedback);
-        setMsgTone('error');
-        setActiveStep(2);
-        speakBuilderHint('Try again. Place two books side by side and take a clear photo.');
-        try {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        } catch {
-          /* ignore */
-        }
+        speak('Try again. Place two books together.');
+        onComplete(false);
       }
-    } catch (e: unknown) {
-      const err = e as { message?: string };
-      setMsg(err?.message || 'Upload failed. Please try again.');
-      setMsgTone('error');
-      setActiveStep(2);
-      speakBuilderHint('Something went wrong. Try uploading again.');
+    } catch (e: any) {
+      setResult({
+        correct: false,
+        feedback: e?.message || 'Upload failed. Try again.',
+      });
+      speak("Let's try again!");
+      onComplete(false);
     } finally {
       setUploading(false);
     }
-  }, [onComplete]);
-
-  const pickImage = useCallback(async () => {
-    const permission =
-      Platform.OS === 'web'
-        ? { status: 'granted' as const }
-        : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (permission.status !== 'granted') {
-      Alert.alert('Permission needed', 'Allow access to photos to upload your picture.');
-      return;
-    }
-    const pickerResult = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.85,
-    });
-    if (pickerResult.canceled) return;
-    const uri = pickerResult.assets[0].uri;
-    setPhoto(uri);
-    setActiveStep(2);
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {
-      /* ignore */
-    }
-    await uploadImage(uri);
-  }, [uploadImage]);
-
-  const takePhoto = useCallback(async () => {
-    const permission =
-      Platform.OS === 'web'
-        ? { status: 'granted' as const }
-        : await ImagePicker.requestCameraPermissionsAsync();
-    if (permission.status !== 'granted') {
-      Alert.alert('Permission needed', 'Allow camera to take a photo of your two books.');
-      return;
-    }
-    const pickerResult = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.85,
-    });
-    if (pickerResult.canceled) return;
-    const uri = pickerResult.assets[0].uri;
-    setPhoto(uri);
-    setActiveStep(2);
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch {
-      /* ignore */
-    }
-    await uploadImage(uri);
-  }, [uploadImage]);
-
-  const handleReady = () => {
-    setActiveStep(1);
-    speakBuilderHint('Great! Place two books together, then take or upload a photo.');
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {
-      /* ignore */
-    }
   };
 
-  if (celebrating) {
-    return (
-      <View style={styles.root}>
-        <ConfettiEffect />
-        <SuccessCelebration
-          title="Twin Book Scout Complete!"
-          subtitle="You placed two books together in the real world!"
-          badgeEmoji="📚"
-          variant="indigo"
-        />
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.root}>
-      <LinearGradient
-        colors={[...T.gradient]}
-        locations={[...T.gradientLocations]}
-        style={StyleSheet.absoluteFill}
-      />
-      <MountainWorkshopBackground />
-
-      {onBack ? (
-        <Pressable
-          onPress={onBack}
-          style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="arrow-back" size={22} color={T.accentDeep} />
-          <Text style={styles.backText}>Back</Text>
-        </Pressable>
-      ) : null}
-
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View style={styles.badgeRow}>
-            <View style={styles.stepPill}>
-              <Text style={styles.stepPillText}>Final Build · {progressPct}%</Text>
-            </View>
-            <View style={styles.capstonePill}>
-              <Text style={styles.capstoneText}>⭐ Real World</Text>
-            </View>
-          </View>
-          <Text style={styles.title}>{T.name}</Text>
-          {sessionTitle ? <Text style={styles.subtitle}>{sessionTitle}</Text> : null}
-        </View>
-
-        <View style={styles.missionCard}>
-          <Text style={styles.mascot}>{T.mascot}</Text>
-          <View style={styles.missionBody}>
-            <Text style={styles.mascotName}>{T.mascotName} Mission</Text>
-            <Text style={styles.missionText}>
-              Place <Text style={styles.countWord}>2 books</Text> together side by side, then snap a photo.
+    <GameLayout
+      title="Real World Task"
+      instruction={INSTRUCTIONS}
+      icon="📚"
+      backgroundVariant="indigo"
+    >
+      <View style={styles.content}>
+        {!result ? (
+          <>
+            <Text style={styles.taskLabel}>Place two books together. Then:</Text>
+            <Pressable
+              onPress={pickImage}
+              disabled={uploading}
+              style={({ pressed }) => [
+                styles.uploadBtn,
+                pressed && styles.pressed,
+                uploading && styles.disabled,
+              ]}
+              accessibilityLabel="Upload photo"
+            >
+              {uploading ? (
+                <ActivityIndicator size="large" color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.uploadEmoji}>📷</Text>
+                  <Text style={styles.uploadText}>Upload Photo</Text>
+                </>
+              )}
+            </Pressable>
+            <Pressable
+              onPress={takePhoto}
+              disabled={uploading}
+              style={({ pressed }) => [
+                styles.uploadBtn,
+                styles.secondaryBtn,
+                pressed && styles.pressed,
+                uploading && styles.disabled,
+              ]}
+              accessibilityLabel="Take photo"
+            >
+              <Text style={styles.uploadEmoji}>📸</Text>
+              <Text style={[styles.uploadText, styles.secondaryBtnText]}>Take Photo</Text>
+            </Pressable>
+            {imageUri ? (
+              <View style={styles.previewWrap}>
+                <Image source={{ uri: imageUri }} style={styles.preview} />
+              </View>
+            ) : null}
+          </>
+        ) : (
+          <View style={styles.resultWrap}>
+            <Text style={styles.resultEmoji}>{result.correct ? '🎉' : '😊'}</Text>
+            <Text style={[styles.resultTitle, result.correct ? styles.resultSuccess : styles.resultTryAgain]}>
+              {result.correct ? 'SUCCESS!' : 'TRY AGAIN'}
             </Text>
-          </View>
-          <Pressable
-            onPress={() => speakBuilderHint('Place two books together and take or upload a photo.')}
-            style={styles.listenBtn}
-          >
-            <Ionicons name="volume-high" size={20} color={T.accentDeep} />
-          </Pressable>
-        </View>
-
-        <View style={styles.stepsRow}>
-          {T.steps.map((label, i) => (
-            <View key={label} style={styles.stepItem}>
-              <View style={[styles.stepDot, i <= activeStep && styles.stepDotActive]}>
-                <Text style={[styles.stepNum, i <= activeStep && styles.stepNumActive]}>{i + 1}</Text>
-              </View>
-              <Text style={[styles.stepLabel, i <= activeStep && styles.stepLabelActive]}>{label}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.targetShowcase}>
-          <Animated.View style={[styles.bookGlow, pulseStyle]} pointerEvents="none" />
-          <Text style={styles.showcaseLabel}>Your target setup</Text>
-          <Text style={styles.showcaseBooks}>📚 📚</Text>
-          <Text style={styles.showcaseCount}>2 books together</Text>
-        </View>
-
-        <View style={styles.frameCard}>
-          <Text style={styles.frameLabel}>Photo Preview</Text>
-          <View style={styles.frame}>
-            {photo ? (
-              <Image source={{ uri: photo }} style={styles.preview} resizeMode="contain" />
-            ) : (
-              <View style={styles.placeholder}>
-                <Ionicons name="camera-outline" size={48} color={T.accentSoft} />
-                <Text style={styles.placeholderText}>No photo yet</Text>
-                <Text style={styles.placeholderHint}>Show two books side by side</Text>
-              </View>
-            )}
-            <Animated.View style={[styles.scanLine, scanStyle]} pointerEvents="none" />
-          </View>
-        </View>
-
-        {!!msg && (
-          <View
-            style={[
-              styles.feedbackBanner,
-              msgTone === 'success' && styles.feedbackSuccess,
-              msgTone === 'error' && styles.feedbackError,
-            ]}
-          >
-            <Text style={styles.feedbackText}>{msg}</Text>
+            <Text style={styles.resultFeedback}>{result.feedback}</Text>
           </View>
         )}
-
-        <View style={styles.actions}>
-          {activeStep === 0 ? (
-            <Pressable onPress={handleReady} style={({ pressed }) => [pressed && styles.pressed]}>
-              <LinearGradient colors={[T.goldSoft, T.gold, '#D97706']} style={styles.primaryBtn}>
-                <Ionicons name="book" size={20} color={T.ink} />
-                <Text style={styles.primaryBtnTextDark}>I Have 2 Books!</Text>
-              </LinearGradient>
-            </Pressable>
-          ) : (
-            <>
-              <Pressable
-                onPress={takePhoto}
-                disabled={uploading}
-                style={({ pressed }) => [pressed && styles.pressed]}
-              >
-                <LinearGradient colors={[...T.doneGradient]} style={styles.primaryBtn}>
-                  {uploading ? (
-                    <ActivityIndicator color="#FFF" />
-                  ) : (
-                    <>
-                      <Ionicons name="camera" size={20} color="#FFF" />
-                      <Text style={styles.primaryBtnText}>Take Photo</Text>
-                    </>
-                  )}
-                </LinearGradient>
-              </Pressable>
-              <Pressable
-                onPress={pickImage}
-                disabled={uploading}
-                style={({ pressed }) => [styles.secondaryWrap, pressed && styles.pressed]}
-              >
-                <View style={styles.secondaryBtn}>
-                  <Ionicons name="cloud-upload" size={20} color={T.accentDeep} />
-                  <Text style={styles.secondaryBtnText}>Upload Photo</Text>
-                </View>
-              </Pressable>
-            </>
-          )}
-        </View>
-      </ScrollView>
-    </View>
+      </View>
+    </GameLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  scroll: { paddingBottom: Platform.OS === 'ios' ? 32 : 20 },
-  pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
-  backBtn: {
-    flexDirection: 'row',
+  content: {
+    flex: 1,
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    marginTop: Platform.OS === 'web' ? 12 : 48,
-    marginLeft: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.88)',
-    borderRadius: BUILDER_SESSION.radius.pill,
-    borderWidth: 1,
-    borderColor: T.cardBorder,
-    zIndex: 10,
-    ...BUILDER_SESSION.shadow.soft,
+    paddingVertical: 24,
   },
-  backText: { fontSize: 15, fontWeight: '700', color: T.accentDeep },
-  header: { paddingHorizontal: 20, paddingTop: 8, zIndex: 5 },
-  badgeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  stepPill: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: BUILDER_SESSION.radius.pill,
-    borderWidth: 1,
-    borderColor: T.cardBorder,
+  taskLabel: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#4F46E5',
+    marginBottom: 20,
+    textAlign: 'center',
   },
-  stepPillText: { fontSize: 12, fontWeight: '800', color: T.accentDeep },
-  capstonePill: {
-    backgroundColor: 'rgba(251, 191, 36, 0.25)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: BUILDER_SESSION.radius.pill,
-    borderWidth: 1.5,
-    borderColor: T.gold,
-  },
-  capstoneText: { fontSize: 12, fontWeight: '900', color: T.accentDeep },
-  title: { fontSize: 26, fontWeight: '900', color: T.ink, textAlign: 'center' },
-  subtitle: { fontSize: 12, fontWeight: '600', color: T.inkMuted, textAlign: 'center', marginTop: 2 },
-  missionCard: {
+  uploadBtn: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginHorizontal: 20,
-    marginTop: 10,
-    padding: 14,
-    borderRadius: 18,
-    backgroundColor: T.card,
-    borderWidth: 1,
-    borderColor: T.cardBorder,
-    ...BUILDER_SESSION.shadow.soft,
-  },
-  mascot: { fontSize: 32 },
-  missionBody: { flex: 1 },
-  mascotName: { fontSize: 11, fontWeight: '800', color: T.accent, textTransform: 'uppercase', letterSpacing: 0.8 },
-  missionText: { fontSize: 14, fontWeight: '700', color: T.ink, lineHeight: 20, marginTop: 2 },
-  countWord: { fontWeight: '900', color: T.accentDeep, fontSize: 16 },
-  listenBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(254, 243, 199, 0.9)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  stepsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginHorizontal: 20,
-    marginTop: 12,
-    paddingHorizontal: 2,
-  },
-  stepItem: { alignItems: 'center', flex: 1 },
-  stepDot: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: 'rgba(226, 232, 240, 0.9)',
-    borderWidth: 2,
-    borderColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepDotActive: { backgroundColor: 'rgba(148, 163, 184, 0.35)', borderColor: T.accentSoft },
-  stepNum: { fontSize: 11, fontWeight: '900', color: T.inkMuted },
-  stepNumActive: { color: T.ink },
-  stepLabel: { fontSize: 8, fontWeight: '700', color: T.inkMuted, marginTop: 4, textAlign: 'center' },
-  stepLabelActive: { color: T.ink },
-  targetShowcase: {
-    marginHorizontal: 20,
-    marginTop: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
+    backgroundColor: '#8B5CF6',
+    paddingVertical: 22,
+    paddingHorizontal: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(226, 232, 240, 0.55)',
-    borderWidth: 2,
-    borderColor: T.accentSoft,
-    overflow: 'hidden',
-    position: 'relative',
+    gap: 12,
+    minWidth: 220,
+    marginBottom: 16,
   },
-  bookGlow: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(251, 191, 36, 0.12)',
-  },
-  showcaseLabel: { fontSize: 10, fontWeight: '800', color: T.accentDeep, textTransform: 'uppercase', letterSpacing: 1 },
-  showcaseBooks: { fontSize: 44, marginVertical: 4, letterSpacing: 8 },
-  showcaseCount: { fontSize: 18, fontWeight: '900', color: T.accentDeep },
-  frameCard: { marginHorizontal: 20, marginTop: 12 },
-  frameLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: T.inkMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 6,
-  },
-  frame: {
-    height: 160,
+  secondaryBtn: { backgroundColor: '#EDE9FE' },
+  secondaryBtnText: { color: '#5B21B6' },
+  pressed: { opacity: 0.9 },
+  disabled: { opacity: 0.8 },
+  uploadEmoji: { fontSize: 36 },
+  uploadText: { fontSize: 22, fontWeight: '800', color: '#fff' },
+  previewWrap: {
+    marginTop: 24,
     borderRadius: 16,
-    backgroundColor: T.frame,
-    borderWidth: 3,
-    borderColor: T.frameBorder,
     overflow: 'hidden',
-    position: 'relative',
-    ...BUILDER_SESSION.shadow.card,
+    borderWidth: 4,
+    borderColor: '#E5E7EB',
   },
-  preview: { width: '100%', height: '100%' },
-  placeholder: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
-  placeholderText: { fontSize: 14, fontWeight: '700', color: T.ink, marginTop: 8 },
-  placeholderHint: { fontSize: 11, fontWeight: '600', color: T.inkMuted, marginTop: 4 },
-  scanLine: {
-    position: 'absolute',
-    top: 8,
-    bottom: 8,
-    width: 3,
-    backgroundColor: T.accent,
-    shadowColor: T.accent,
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-  },
-  feedbackBanner: {
-    marginHorizontal: 20,
-    marginTop: 10,
-    padding: 10,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderWidth: 1,
-    borderColor: T.cardBorder,
-  },
-  feedbackSuccess: { backgroundColor: 'rgba(209, 250, 229, 0.95)', borderColor: '#6EE7B7' },
-  feedbackError: { backgroundColor: 'rgba(254, 226, 226, 0.95)', borderColor: '#FCA5A5' },
-  feedbackText: { fontSize: 13, fontWeight: '700', color: T.ink, textAlign: 'center' },
-  actions: { paddingHorizontal: 20, paddingTop: 14, gap: 10 },
-  primaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 16,
-    borderRadius: BUILDER_SESSION.radius.button,
-    ...BUILDER_SESSION.shadow.card,
-  },
-  primaryBtnText: { fontSize: 17, fontWeight: '900', color: '#FFF' },
-  primaryBtnTextDark: { fontSize: 17, fontWeight: '900', color: T.ink },
-  secondaryWrap: { width: '100%' },
-  secondaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 14,
-    borderRadius: BUILDER_SESSION.radius.button,
-    backgroundColor: T.card,
-    borderWidth: 2,
-    borderColor: T.cardBorder,
-  },
-  secondaryBtnText: { fontSize: 16, fontWeight: '800', color: T.accentDeep },
+  preview: { width: 240, height: 180 },
+  resultWrap: { alignItems: 'center', padding: 24 },
+  resultEmoji: { fontSize: 64, marginBottom: 12 },
+  resultTitle: { fontSize: 28, fontWeight: '800', marginBottom: 8 },
+  resultSuccess: { color: '#22C55E' },
+  resultTryAgain: { color: '#EF4444' },
+  resultFeedback: { fontSize: 18, color: '#4b5563', textAlign: 'center' },
 });

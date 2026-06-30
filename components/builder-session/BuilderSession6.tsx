@@ -1,35 +1,31 @@
 /**
  * Level 3 Builder — Session 6: Memory, Direction & Match
- * Hub → 4 games + twin book scout task → completion
+ * Flow: Intro → Game 1 (Memory Colored) → Game 2 (Direction) → Game 3 (Letter Case Match) → Game 4 (Sound Match) → Real World Task (Two Books) → Result
  */
-import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
-import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import React, { useCallback, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  TouchableOpacity,
+  Pressable,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { MemoryColoredGame } from './MemoryColoredGame';
 import { DirectionGame } from './DirectionGame';
 import { LetterCaseMatchGame } from './LetterCaseMatchGame';
 import { SoundMatchGame } from './SoundMatchGame';
 import { BuilderNotebookUploadTwoBooks } from './BuilderNotebookUploadTwoBooks';
-import {
-  BUILDER_HUB_THEME as H,
-  BUILDER_S6_QUESTS,
-  BUILDER_SESSION,
-} from './builderSessionTheme';
-import { MountainWorkshopBackground } from './MountainWorkshopBackground';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useState } from 'react';
-import {
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
 
-const PLAY_STEPS = 5;
-const SESSION_TITLE = 'Session 6 · Memory, Direction & Match';
+const TOTAL_STEPS = 6;
+const DESIGN = {
+  primary: '#8B5CF6',
+  success: '#22C55E',
+  background: '#F5F3FF',
+  primaryLight: '#EDE9FE',
+};
 
 interface BuilderSession6Props {
   onExit?: () => void;
@@ -37,350 +33,241 @@ interface BuilderSession6Props {
 
 export function BuilderSession6({ onExit }: BuilderSession6Props = {}) {
   const [step, setStep] = useState(0);
-  const [doneCount, setDoneCount] = useState(0);
+  const [stars, setStars] = useState(0);
   const [taskCorrect, setTaskCorrect] = useState<boolean | null>(null);
-  const [completedBuilds, setCompletedBuilds] = useState<Set<number>>(() => new Set());
-
-  const markComplete = useCallback((buildStep: number) => {
-    setCompletedBuilds((prev) => {
-      const next = new Set(prev);
-      next.add(buildStep);
-      return next;
-    });
-    setDoneCount((c) => Math.min(c + 1, PLAY_STEPS));
-  }, []);
 
   const advance = useCallback(() => {
-    markComplete(step);
-    setStep((s) => Math.min(s + 1, 6));
-  }, [markComplete, step]);
+    setStars((s) => Math.min(s + 1, TOTAL_STEPS));
+    setStep((g) => Math.min(g + 1, 6));
+  }, []);
 
-  const handleTaskComplete = useCallback(
-    (correct: boolean) => {
-      setTaskCorrect(correct);
-      if (correct) {
-        markComplete(5);
-      }
-      setStep(6);
-    },
-    [markComplete]
-  );
+  const handleTaskComplete = useCallback((correct: boolean) => {
+    setTaskCorrect(correct);
+    if (correct) setStars((s) => Math.min(s + 1, TOTAL_STEPS));
+    setStep(6);
+  }, []);
+
+  const progressPct = step >= 1 && step <= 5 ? (step / TOTAL_STEPS) * 100 : 0;
 
   if (step === 0) {
-    const progressPct = Math.round((completedBuilds.size / PLAY_STEPS) * 100);
+    const cards = [
+      { icon: '🎨', title: 'Memory Game', desc: 'Match colored cards' },
+      { icon: '👆', title: 'Direction Game', desc: 'Move LEFT or RIGHT' },
+      { icon: '🔤', title: 'Letter Match', desc: 'Match A with a' },
+      { icon: '🔊', title: 'Sound Match', desc: 'Match animal with sound' },
+    ];
     return (
-      <View style={styles.root}>
-        <LinearGradient
-          colors={[...H.gradient]}
-          locations={[...H.gradientLocations]}
-          style={StyleSheet.absoluteFill}
-        />
-        <MountainWorkshopBackground />
-
-        <SafeAreaView style={styles.hubSafe}>
-          {onExit ? (
-            <Pressable
-              onPress={onExit}
-              style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
-            >
-              <Ionicons name="arrow-back" size={22} color={H.accentDeep} />
-              <Text style={styles.backText}>Sessions</Text>
-            </Pressable>
-          ) : (
-            <View style={styles.backSpacer} />
-          )}
-
-          <ScrollView contentContainerStyle={styles.hubScroll} showsVerticalScrollIndicator={false}>
-            <View style={styles.hubHeader}>
-              <Text style={styles.hubEyebrow}>Builder · Session 6 · Compass Camp</Text>
-              <Text style={styles.hubTitle}>{H.name}</Text>
-              <Text style={styles.hubSession}>Memory, Direction & Match</Text>
-
-              <View style={styles.progressRow}>
-                <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
-                </View>
-                <Text style={styles.progressLabel}>
-                  {completedBuilds.size}/{PLAY_STEPS} builds
-                </Text>
-              </View>
-
-              <View style={styles.speechBubble}>
-                <Text style={styles.mascot}>{H.mascot}</Text>
-                <View style={styles.bubbleBody}>
-                  <Text style={styles.mascotName}>{H.mascotName} says:</Text>
-                  <Text style={styles.hubPrompt}>
-                    Match colors, follow directions, mirror letters and sounds — then scout two books in
-                    the real world!
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {BUILDER_S6_QUESTS.map((quest) => {
-              const done = completedBuilds.has(quest.step);
-              return (
-                <Pressable
-                  key={quest.step}
-                  onPress={() => setStep(quest.step)}
-                  style={({ pressed }) => [styles.questCard, pressed && styles.pressed]}
-                  accessibilityLabel={`Build ${quest.step}: ${quest.label}`}
-                >
-                  <View style={[styles.questAccent, { backgroundColor: quest.theme.accent }]} />
-                  <View style={styles.questIconWrap}>
-                    <Text style={styles.questIcon}>{quest.theme.mascot}</Text>
-                    {done ? (
-                      <View style={styles.doneBadge}>
-                        <Ionicons name="checkmark" size={12} color="#fff" />
-                      </View>
-                    ) : null}
-                  </View>
-                  <View style={styles.questText}>
-                    <Text style={styles.questStep}>Build {quest.step}</Text>
-                    <Text style={styles.questTitle}>{quest.label}</Text>
-                    <Text style={styles.questDesc} numberOfLines={2}>
-                      {quest.desc}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={22} color={H.inkMuted} />
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </SafeAreaView>
-      </View>
+      <SafeAreaView style={[styles.safe, { backgroundColor: DESIGN.background }]}>
+        {onExit ? (
+          <Pressable
+            onPress={onExit}
+            style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="arrow-back" size={24} color={DESIGN.primary} />
+            <Text style={[styles.backButtonText, { color: DESIGN.primary }]}>Back</Text>
+          </Pressable>
+        ) : null}
+        <ScrollView contentContainerStyle={styles.introScroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.introHeader}>
+            <Text style={[styles.introTitle, { color: DESIGN.primary }]}>Memory, Direction & Match</Text>
+            <Text style={styles.introSub}>Session 6 · The Builder</Text>
+            <Text style={styles.introDesc}>Play 4 games, then place two books together!</Text>
+          </View>
+          <View style={styles.cardsWrap}>
+            {cards.map((card, i) => (
+              <Pressable
+                key={i}
+                onPress={() => setStep(i + 1)}
+                style={({ pressed }) => [
+                  styles.introCard,
+                  { borderColor: DESIGN.primary },
+                  pressed && styles.introCardPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`${card.title}. Tap to play.`}
+              >
+                <Text style={styles.introCardIcon}>{card.icon}</Text>
+                <Text style={styles.introCardTitle}>{card.title}</Text>
+                <Text style={styles.introCardDesc}>{card.desc}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Pressable
+            onPress={() => setStep(1)}
+            style={({ pressed }) => [styles.startBtn, { backgroundColor: DESIGN.primary }, pressed && styles.pressed]}
+            accessibilityLabel="Start first game"
+          >
+            <Text style={styles.startBtnText}>Start</Text>
+          </Pressable>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   if (step === 6) {
     return (
-      <View style={styles.root}>
-        <LinearGradient
-          colors={[...H.gradient]}
-          locations={[...H.gradientLocations]}
-          style={StyleSheet.absoluteFill}
-        />
-        <MountainWorkshopBackground />
-        <ConfettiEffect />
-        <SuccessCelebration
-          title="Workshop Complete!"
-          subtitle={`${SESSION_TITLE}\nCompleted ${doneCount}/${PLAY_STEPS} builds${
-            taskCorrect === false ? '\nTwin Book Scout: try again next time!' : ''
-          }`}
-          badgeEmoji="🧭"
-          variant="indigo"
-        />
-        <View style={styles.doneActions}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: DESIGN.background }]}>
+        <ScrollView contentContainerStyle={styles.resultScroll} showsVerticalScrollIndicator={false}>
+          <Text style={styles.resultEmoji}>🎉</Text>
+          <Text style={[styles.resultTitle, { color: DESIGN.primary }]}>Great job!</Text>
+          <View style={[styles.resultBadge, { borderColor: DESIGN.primary, backgroundColor: DESIGN.primaryLight }]}>
+            <Text style={styles.resultBadgeStar}>⭐</Text>
+            <Text style={styles.resultBadgeText}>Match Master</Text>
+          </View>
+          <View style={styles.resultStats}>
+            <Text style={styles.resultStat}>Games completed: {stars}</Text>
+            <Text style={styles.resultStat}>
+              Real-world task: {taskCorrect === null ? '—' : taskCorrect ? '✓ SUCCESS' : 'Try again'}
+            </Text>
+          </View>
+          <View style={styles.starsRow}>
+            {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+              <Text key={i} style={[styles.star, i < stars && styles.starEarned]}>⭐</Text>
+            ))}
+          </View>
           {onExit ? (
-            <Pressable onPress={onExit} style={({ pressed }) => [pressed && styles.pressed]}>
-              <LinearGradient
-                colors={[...H.doneGradient]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.doneBtn}
-              >
-                <Text style={styles.doneBtnText}>Back to sessions</Text>
-              </LinearGradient>
-            </Pressable>
-          ) : (
-            <Pressable onPress={() => setStep(0)} style={({ pressed }) => [pressed && styles.pressed]}>
-              <LinearGradient
-                colors={[...H.doneGradient]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.doneBtn}
-              >
-                <Text style={styles.doneBtnText}>Back to builds</Text>
-              </LinearGradient>
-            </Pressable>
-          )}
+            <TouchableOpacity style={[styles.backToGamesBtn, { backgroundColor: DESIGN.primary }]} onPress={onExit} activeOpacity={0.8}>
+              <Text style={styles.backToGamesText}>Back to games</Text>
+            </TouchableOpacity>
+          ) : null}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  const goBack = () => {
+    if (onExit) {
+      onExit();
+      return;
+    }
+    setStep((s) => Math.max(0, s - 1));
+  };
+
+  return (
+    <SafeAreaView style={[styles.safe, { backgroundColor: DESIGN.background }]}>
+      <View style={[styles.header, { borderBottomColor: DESIGN.primary }]}>
+        <Pressable
+          onPress={goBack}
+          style={({ pressed }) => [styles.backButtonHeader, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back to sessions"
+        >
+          <Ionicons name="arrow-back" size={24} color={DESIGN.primary} />
+          <Text style={[styles.backButtonText, { color: DESIGN.primary }]}>Back</Text>
+        </Pressable>
+        <Text style={[styles.title, { color: DESIGN.primary }]}>Memory, Direction & Match</Text>
+        <Text style={styles.subtitle}>Session 6 · The Builder</Text>
+        <View style={styles.progressRow}>
+          <View style={styles.progressBg}>
+            <View style={[styles.progressFill, { width: `${progressPct}%`, backgroundColor: DESIGN.primary }]} />
+          </View>
+          <Text style={[styles.progressText, { color: DESIGN.primary }]}>{step} / {TOTAL_STEPS}</Text>
+        </View>
+        <View style={styles.starsRow}>
+          {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+            <Text key={i} style={[styles.star, i < stars && styles.starEarned]}>⭐</Text>
+          ))}
         </View>
       </View>
-    );
-  }
-
-  if (step === 1) {
-    return (
-      <MemoryColoredGame
-        sessionTitle={SESSION_TITLE}
-        currentStep={1}
-        totalSteps={PLAY_STEPS}
-        onBack={() => setStep(0)}
-        onComplete={advance}
-      />
-    );
-  }
-
-  if (step === 2) {
-    return (
-      <DirectionGame
-        sessionTitle={SESSION_TITLE}
-        currentStep={2}
-        totalSteps={PLAY_STEPS}
-        onBack={() => setStep(0)}
-        onComplete={advance}
-      />
-    );
-  }
-
-  if (step === 3) {
-    return (
-      <LetterCaseMatchGame
-        sessionTitle={SESSION_TITLE}
-        currentStep={3}
-        totalSteps={PLAY_STEPS}
-        onBack={() => setStep(0)}
-        onComplete={advance}
-      />
-    );
-  }
-
-  if (step === 4) {
-    return (
-      <SoundMatchGame
-        sessionTitle={SESSION_TITLE}
-        currentStep={4}
-        totalSteps={PLAY_STEPS}
-        onBack={() => setStep(0)}
-        onComplete={advance}
-      />
-    );
-  }
-
-  if (step === 5) {
-    return (
-      <BuilderNotebookUploadTwoBooks
-        sessionTitle={SESSION_TITLE}
-        currentStep={5}
-        totalSteps={PLAY_STEPS}
-        onBack={() => setStep(0)}
-        onComplete={handleTaskComplete}
-      />
-    );
-  }
-
-  return null;
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {step === 1 && <MemoryColoredGame onComplete={advance} />}
+        {step === 2 && <DirectionGame onComplete={advance} />}
+        {step === 3 && <LetterCaseMatchGame onComplete={advance} />}
+        {step === 4 && <SoundMatchGame onComplete={advance} />}
+        {step === 5 && <BuilderNotebookUploadTwoBooks onComplete={handleTaskComplete} />}
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
-  hubSafe: { flex: 1 },
-  backSpacer: { height: Platform.OS === 'web' ? 12 : 8 },
-  backBtn: {
+  safe: { flex: 1 },
+  backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    marginTop: Platform.OS === 'web' ? 8 : 4,
-    marginLeft: 16,
-    marginBottom: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  backButtonHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.82)',
-    borderRadius: BUILDER_SESSION.radius.pill,
-    borderWidth: 1,
-    borderColor: H.cardBorder,
-    zIndex: 10,
-    ...BUILDER_SESSION.shadow.soft,
+    marginBottom: 4,
   },
-  backText: { fontSize: 15, fontWeight: '700', color: H.accentDeep },
-  hubScroll: { paddingHorizontal: 20, paddingBottom: 40, gap: 12 },
-  hubHeader: { alignItems: 'center', gap: 10, marginBottom: 8 },
-  hubEyebrow: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: H.inkMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+  backButtonText: { fontSize: 17, fontWeight: '700' },
+  header: {
+    backgroundColor: DESIGN.background,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 16,
+    borderBottomWidth: 3,
   },
-  hubTitle: { fontSize: 28, fontWeight: '900', color: H.ink, textAlign: 'center' },
-  hubSession: { fontSize: 15, fontWeight: '600', color: H.inkMuted, textAlign: 'center' },
-  progressRow: { width: '100%', alignItems: 'center', gap: 6, marginTop: 4 },
-  progressTrack: {
-    width: '100%',
-    height: 8,
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-  progressFill: { height: '100%', backgroundColor: H.accent, borderRadius: 999 },
-  progressLabel: { fontSize: 13, fontWeight: '700', color: H.inkMuted },
-  speechBubble: {
+  title: { fontSize: 22, fontWeight: '800', textAlign: 'center' },
+  subtitle: { fontSize: 14, color: '#6b7280', textAlign: 'center', marginTop: 4 },
+  progressRow: { flexDirection: 'row', alignItems: 'center', marginTop: 14, gap: 12 },
+  progressBg: { flex: 1, height: 14, backgroundColor: '#E5E7EB', borderRadius: 7, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 7 },
+  progressText: { fontSize: 16, fontWeight: '700', minWidth: 48 },
+  starsRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 10, gap: 6 },
+  star: { fontSize: 24, opacity: 0.35 },
+  starEarned: { opacity: 1 },
+  scroll: { flex: 1 },
+  scrollContent: { flexGrow: 1, paddingBottom: 24 },
+  introScroll: { flexGrow: 1, padding: 24, paddingBottom: 40 },
+  introHeader: { marginBottom: 20 },
+  introTitle: { fontSize: 28, fontWeight: '800', textAlign: 'center', marginBottom: 8 },
+  introSub: { fontSize: 16, color: '#6b7280', textAlign: 'center', marginBottom: 4 },
+  introDesc: { fontSize: 18, color: '#4b5563', textAlign: 'center' },
+  cardsWrap: { gap: 16, marginBottom: 32 },
+  introCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 3,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    gap: 16,
+  },
+  introCardPressed: { opacity: 0.9 },
+  introCardIcon: { fontSize: 40 },
+  introCardTitle: { fontSize: 20, fontWeight: '800', color: '#1f2937', flex: 1 },
+  introCardDesc: { fontSize: 16, color: '#6b7280' },
+  startBtn: {
+    paddingVertical: 18,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  startBtnText: { fontSize: 22, fontWeight: '800', color: '#FFF' },
+  pressed: { opacity: 0.9 },
+  resultScroll: { flexGrow: 1, padding: 24, alignItems: 'center', paddingBottom: 40 },
+  resultEmoji: { fontSize: 72, marginBottom: 16 },
+  resultTitle: { fontSize: 24, fontWeight: '800', textAlign: 'center', marginBottom: 24 },
+  resultBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 28,
+    borderRadius: 20,
+    borderWidth: 3,
     gap: 10,
-    backgroundColor: H.card,
-    borderRadius: BUILDER_SESSION.radius.card,
-    borderWidth: 1,
-    borderColor: H.cardBorder,
-    padding: 14,
-    width: '100%',
-    marginTop: 6,
-    ...BUILDER_SESSION.shadow.soft,
+    marginBottom: 24,
   },
-  mascot: { fontSize: 32 },
-  bubbleBody: { flex: 1, gap: 2 },
-  mascotName: { fontSize: 12, fontWeight: '800', color: H.accentDeep, textTransform: 'uppercase' },
-  hubPrompt: { fontSize: 14, fontWeight: '600', color: H.ink, lineHeight: 20 },
-  questCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: H.card,
-    borderRadius: BUILDER_SESSION.radius.card,
-    borderWidth: 1,
-    borderColor: H.cardBorder,
-    padding: 16,
-    gap: 14,
-    overflow: 'hidden',
-    ...BUILDER_SESSION.shadow.card,
-  },
-  questAccent: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 5,
-  },
-  questIconWrap: { position: 'relative', marginLeft: 4 },
-  questIcon: { fontSize: 38 },
-  doneBadge: {
-    position: 'absolute',
-    right: -4,
-    bottom: -2,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#10B981',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  questText: { flex: 1, gap: 2 },
-  questStep: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: H.inkMuted,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  questTitle: { fontSize: 17, fontWeight: '800', color: H.ink },
-  questDesc: { fontSize: 13, color: H.inkMuted, lineHeight: 18 },
-  doneBtn: {
+  resultBadgeStar: { fontSize: 32 },
+  resultBadgeText: { fontSize: 20, fontWeight: '800', color: '#1f2937' },
+  resultStats: { marginBottom: 16 },
+  resultStat: { fontSize: 18, color: '#374151', marginBottom: 4 },
+  backToGamesBtn: {
+    marginTop: 24,
     paddingVertical: 14,
     paddingHorizontal: 28,
-    borderRadius: BUILDER_SESSION.radius.button,
-    alignItems: 'center',
-    minWidth: 200,
+    borderRadius: 12,
   },
-  doneBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-  doneActions: {
-    position: 'absolute',
-    bottom: 48,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
+  backToGamesText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
 });

@@ -8,7 +8,7 @@ import {
   type PostureMetrics,
 } from '@/components/game/occupational/level6/session1/poseUtils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform } from 'react-native';
+import { Platform, TurboModuleRegistry } from 'react-native';
 import type { MediapipePoseSolution, PoseDetectionResult } from '@/hooks/poseDetectionTypes';
 
 const MODEL_FILE = 'pose_landmarker_lite.task';
@@ -17,11 +17,19 @@ const PREVIEW_ID = 'pose-preview-container';
 export const POSE_NATIVE_REBUILD_MSG =
   'Body tracking is not in this app build. Play guided mode, or reinstall with: npx expo run:android';
 
+/** True when the native MediapipePoseDetection TurboModule is registered in the APK. */
+function isNativePoseModuleLinked(): boolean {
+  if (Platform.OS === 'web') return false;
+  try {
+    return TurboModuleRegistry.get('MediapipePosedetection') != null;
+  } catch {
+    return false;
+  }
+}
+
 export function friendlyPoseError(raw?: string): string {
   if (!raw) return POSE_NATIVE_REBUILD_MSG;
-  if (/TurboModule|MediapipePose|native binary|not registered|posedetection plugin/i.test(raw)) {
-    return POSE_NATIVE_REBUILD_MSG;
-  }
+  if (/TurboModule|MediapipePose|native binary|not registered/i.test(raw)) return POSE_NATIVE_REBUILD_MSG;
   return raw;
 }
 
@@ -50,22 +58,8 @@ let useMediapipePoseDetection: ((...args: unknown[]) => MpSolution) | null = nul
 let RunningMode: { LIVE_STREAM: unknown } | null = null;
 let Delegate: { GPU: unknown; CPU: unknown } | null = null;
 let poseModuleLoadError: string | undefined;
-let nativeModulesLoadAttempted = false;
 
-/** Load native camera + pose modules on first hook use (not at bundle import time). */
-function ensureNativePoseModulesLoaded(): boolean {
-  if (nativeModulesLoadAttempted) {
-    return Boolean(
-      useMediapipePoseDetection && RunningMode && Delegate && (useCameraPermission || useExpoCameraPermissions),
-    );
-  }
-  nativeModulesLoadAttempted = true;
-
-  if (Platform.OS === 'web') {
-    poseModuleLoadError = POSE_NATIVE_REBUILD_MSG;
-    return false;
-  }
-
+if (Platform.OS !== 'web') {
   try {
     const visionCamera = require('react-native-vision-camera');
     useCameraDevice = visionCamera.useCameraDevice;
@@ -81,36 +75,27 @@ function ensureNativePoseModulesLoaded(): boolean {
     console.warn('[pose-native] expo-camera permissions unavailable:', e);
   }
 
-  try {
-    const mp = require('react-native-mediapipe-posedetection');
-    useMediapipePoseDetection = mp.usePoseDetection;
-    RunningMode = mp.RunningMode;
-    Delegate = mp.Delegate;
-  } catch (e) {
-    poseModuleLoadError = friendlyPoseError(e instanceof Error ? e.message : undefined);
-    console.warn('[pose-native] mediapipe-posedetection unavailable:', e);
-  }
-
-  const ok = Boolean(
-    useMediapipePoseDetection && RunningMode && Delegate && (useCameraPermission || useExpoCameraPermissions),
-  );
-  if (!ok && !poseModuleLoadError) {
+  if (isNativePoseModuleLinked()) {
+    try {
+      const mp = require('react-native-mediapipe-posedetection');
+      useMediapipePoseDetection = mp.usePoseDetection;
+      RunningMode = mp.RunningMode;
+      Delegate = mp.Delegate;
+    } catch (e) {
+      poseModuleLoadError = friendlyPoseError(e instanceof Error ? e.message : undefined);
+      console.warn('[pose-native] mediapipe-posedetection unavailable:', e);
+    }
+  } else {
     poseModuleLoadError = POSE_NATIVE_REBUILD_MSG;
+    console.warn('[pose-native] MediapipePoseDetection TurboModule not registered — rebuild the dev client APK.');
   }
-  return ok;
 }
 
+const modulesAvailable = Boolean(
+  useMediapipePoseDetection && RunningMode && Delegate && (useCameraPermission || useExpoCameraPermissions),
+);
+
 export function usePoseDetectionNative(isActive: boolean = true): PoseDetectionResult {
-  const [modulesReady, setModulesReady] = useState(() => ensureNativePoseModulesLoaded());
-
-  useEffect(() => {
-    if (!modulesReady && ensureNativePoseModulesLoaded()) {
-      setModulesReady(true);
-    }
-  }, [modulesReady]);
-
-  const modulesAvailable = modulesReady;
-
   const [pose, setPose] = useState<PoseLandmark[] | null>(null);
   const [isDetecting, setIsDetecting] = useState(false);
   const [error, setError] = useState<string | undefined>(
@@ -128,10 +113,10 @@ export function usePoseDetectionNative(isActive: boolean = true): PoseDetectionR
   useEffect(() => {
     const granted = Boolean(visionPermission || expoPermission?.granted);
     setPermissionGranted(granted);
-    if (granted && modulesAvailable) {
-      setError((prev) => (prev === poseModuleLoadError ? undefined : prev));
+    if (granted) {
+      setError((prev) => (prev === poseModuleLoadError ? prev : undefined));
     }
-  }, [visionPermission, expoPermission?.granted, modulesAvailable]);
+  }, [visionPermission, expoPermission?.granted]);
 
   const onResults = useCallback((result: { landmarks?: PoseLandmark[][] }) => {
     const lm = result?.landmarks?.[0];
@@ -206,19 +191,22 @@ export function usePoseDetectionNative(isActive: boolean = true): PoseDetectionR
       setError(undefined);
     }
     return granted;
-  }, [expoPermission?.granted, modulesAvailable, requestExpoPermission, requestVisionPermission, visionPermission]);
+  }, [expoPermission?.granted, requestExpoPermission, requestVisionPermission, visionPermission]);
 
   useEffect(() => {
     if (!modulesAvailable) {
       setError(friendlyPoseError(poseModuleLoadError));
     }
-  }, [modulesAvailable]);
+  }, []);
 
+  // Auto-request camera access once the hook is active so games that don't
+  // explicitly call requestCameraAccess() (e.g. older sessions) still light up
+  // the live camera. Games can also call requestCameraAccess() on a user tap.
   useEffect(() => {
     if (isActive && modulesAvailable && !permissionGranted) {
       requestCameraAccess().catch(() => {});
     }
-  }, [isActive, modulesAvailable, permissionGranted, requestCameraAccess]);
+  }, [isActive, permissionGranted, requestCameraAccess]);
 
   const metrics = useMemo<PostureMetrics>(() => computeMetrics(pose), [pose]);
 

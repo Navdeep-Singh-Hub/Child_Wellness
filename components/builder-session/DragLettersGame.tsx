@@ -1,355 +1,143 @@
 /**
- * Builder Session 3 — Game 3: Puppy Den Draft
- * Tap letters in order to spell DOG.
+ * Builder Session 3 — Game 3: Drag Letters (Build word DOG)
+ * Tap letters in order: D, then O, then G.
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
-import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
+import { speak } from '@/utils/tts';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
+import { GameLayout } from '@/components/farm-session/GameLayout';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
-import { BUILDER_SESSION, DOG_DEN_THEME as T } from './builderSessionTheme';
-import { speakBuilderHint, stopBuilderSpeech } from './builderSessionSpeech';
-import { MountainWorkshopBackground } from './MountainWorkshopBackground';
 
 const TARGET_WORD = 'DOG';
-
-type LetterOption = { letter: string; id: number };
-
-function shuffleLetters(word: string): LetterOption[] {
-  const items = word.split('').map((letter, id) => ({ letter, id }));
-  for (let i = items.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [items[i], items[j]] = [items[j], items[i]];
-  }
-  return items;
-}
-
-function LetterTile({
-  letter,
-  onPress,
-  disabled,
-  wrong,
-}: {
-  letter: string;
-  onPress: () => void;
-  disabled: boolean;
-  wrong: boolean;
-}) {
-  const scale = useSharedValue(1);
-  const shake = useSharedValue(0);
-
-  useEffect(() => {
-    if (wrong) {
-      shake.value = withSequence(
-        withTiming(-8, { duration: 50 }),
-        withTiming(8, { duration: 50 }),
-        withTiming(-5, { duration: 50 }),
-        withTiming(0, { duration: 50 })
-      );
-    } else if (!disabled) {
-      scale.value = withSpring(1, { damping: 10 });
-    }
-  }, [wrong, disabled, scale, shake]);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }, { translateX: shake.value }],
-  }));
-
-  return (
-    <Animated.View style={animStyle}>
-      <Pressable
-        onPress={onPress}
-        disabled={disabled}
-        style={({ pressed }) => [
-          styles.tile,
-          wrong && styles.tileWrong,
-          disabled && styles.tileUsed,
-          pressed && !disabled && styles.pressed,
-        ]}
-        accessibilityLabel={`Letter ${letter}`}
-      >
-        <Text style={styles.tileLetter}>{letter}</Text>
-      </Pressable>
-    </Animated.View>
-  );
-}
+const LETTERS = ['D', 'O', 'G'];
 
 export interface DragLettersGameProps {
   onComplete: () => void;
-  onBack?: () => void;
-  currentStep?: number;
-  totalSteps?: number;
-  sessionTitle?: string;
 }
 
-export function DragLettersGame({
-  onComplete,
-  onBack,
-  currentStep = 3,
-  totalSteps = 5,
-  sessionTitle,
-}: DragLettersGameProps) {
-  const letters = useMemo(() => TARGET_WORD.split(''), []);
-  const [pool] = useState(() => shuffleLetters(TARGET_WORD));
-  const [nextIndex, setNextIndex] = useState(0);
-  const [usedIds, setUsedIds] = useState<Set<number>>(() => new Set());
-  const [celebrating, setCelebrating] = useState(false);
-  const [wrongId, setWrongId] = useState<number | null>(null);
-
-  const progressPct = Math.round((currentStep / totalSteps) * 100);
-  const spellHint = letters.join(', ');
+export function DragLettersGame({ onComplete }: DragLettersGameProps) {
+  const [slots, setSlots] = useState<(string | null)[]>([null, null, null]);
+  const [usedOptionIndexes, setUsedOptionIndexes] = useState<number[]>([]);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [wrongShake] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
-    speakBuilderHint(`Spell DOG in the puppy den. Tap the letters in order: ${spellHint}.`);
-    return () => stopBuilderSpeech();
-  }, [spellHint]);
+    speak('Tap the letters in order to spell DOG. D, then O, then G.', 0.75);
+  }, []);
+
+  const triggerWrong = useCallback(() => {
+    wrongShake.setValue(0);
+    Animated.sequence([
+      Animated.timing(wrongShake, { toValue: 1, duration: 80, useNativeDriver: true }),
+      Animated.timing(wrongShake, { toValue: 0, duration: 80, useNativeDriver: true }),
+    ]).start();
+    speak('Tap D first, then O, then G.', 0.7);
+  }, [wrongShake]);
+
+  const nextIndex = slots.findIndex((s) => s === null);
+  const expectedLetter = nextIndex >= 0 ? TARGET_WORD[nextIndex] : null;
 
   const handleLetterTap = useCallback(
-    (letter: string, id: number) => {
-      if (usedIds.has(id) || celebrating) return;
-      const expected = letters[nextIndex];
-      if (letter !== expected) {
-        setWrongId(id);
-        speakBuilderHint(`Try again. Next letter is ${expected}.`);
-        try {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        } catch {
-          /* ignore */
-        }
-        setTimeout(() => setWrongId(null), 500);
+    (letter: string, optionIndex: number) => {
+      if (usedOptionIndexes.includes(optionIndex)) return;
+      if (nextIndex < 0) return;
+      if (letter !== expectedLetter) {
+        triggerWrong();
         return;
       }
-
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch {
-        /* ignore */
-      }
-
-      speakBuilderHint(letter);
-      const newIndex = nextIndex + 1;
-      setNextIndex(newIndex);
-      setUsedIds((prev) => new Set(prev).add(id));
-
-      if (newIndex >= letters.length) {
-        speakBuilderHint('DOG! Great job!');
-        setCelebrating(true);
+      const next = [...slots];
+      next[nextIndex] = letter;
+      setSlots(next);
+      setUsedOptionIndexes((prev) => [...prev, optionIndex]);
+      speak(letter, 0.7);
+      if (nextIndex === 2) {
+        speak('DOG! Great job!', 0.75);
+        setShowSuccess(true);
         setTimeout(() => onComplete(), 2200);
       }
     },
-    [celebrating, letters, nextIndex, onComplete, usedIds]
+    [slots, nextIndex, expectedLetter, onComplete, triggerWrong, usedOptionIndexes]
   );
 
-  if (celebrating) {
+  if (showSuccess) {
     return (
-      <View style={styles.root}>
-        <ConfettiEffect />
-        <SuccessCelebration
-          title="Puppy Den Done!"
-          subtitle="You spelled DOG!"
-          badgeEmoji="🐕"
-          variant="sunset"
-        />
-      </View>
+      <SuccessCelebration
+        variant="mint"
+        title="Great Job!"
+        subtitle="You spelled DOG!"
+        badgeEmoji="🐕"
+      />
     );
   }
 
+  const shakeX = wrongShake.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
+
   return (
-    <View style={styles.root}>
-      <LinearGradient
-        colors={[...T.gradient]}
-        locations={[...T.gradientLocations]}
-        style={StyleSheet.absoluteFill}
-      />
-      <MountainWorkshopBackground />
-
-      {onBack ? (
-        <Pressable
-          onPress={onBack}
-          style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="arrow-back" size={22} color={T.accentDeep} />
-          <Text style={styles.backText}>Back</Text>
-        </Pressable>
-      ) : null}
-
-      <View style={styles.header}>
-        <View style={styles.badgeRow}>
-          <View style={styles.stepPill}>
-            <Text style={styles.stepPillText}>
-              Build {currentStep} · {progressPct}%
-            </Text>
-          </View>
-          <View style={styles.wordPill}>
-            <Text style={styles.wordPillText}>
-              {nextIndex}/{letters.length} letters
-            </Text>
-          </View>
-        </View>
-
-        <Text style={styles.title}>{T.name}</Text>
-        {sessionTitle ? <Text style={styles.subtitle}>{sessionTitle}</Text> : null}
-
-        <View style={styles.speechBubble}>
-          <Text style={styles.mascot}>{T.mascot}</Text>
-          <View style={styles.bubbleBody}>
-            <Text style={styles.mascotName}>{T.mascotName} says:</Text>
-            <Pressable onPress={() => speakBuilderHint(`Spell DOG. Order: ${spellHint}`)}>
-              <Text style={styles.prompt}>Spell DOG 🐕 🔊</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.denArea}>
-        <View style={styles.desk}>
-          <Text style={styles.deskLabel}>Puppy Blueprint</Text>
-          <View style={styles.slotsRow}>
-            {letters.map((letter, i) => (
-              <View key={`slot-${i}`} style={[styles.slot, i < nextIndex && styles.slotFilled]}>
-                <Text style={styles.slotLetter}>{i < nextIndex ? letter : '?'}</Text>
-              </View>
-            ))}
-          </View>
-          <Text style={styles.targetWord}>DOG</Text>
-        </View>
-
-        <Text style={styles.hint}>Tap letters below in the right order</Text>
-
-        <View style={styles.tilesRow}>
-          {pool.map(({ letter, id }) =>
-            usedIds.has(id) ? (
-              <View key={id} style={styles.tileGhost} />
+    <GameLayout
+      title="Build DOG"
+      instruction="Tap the letters in order: D, then O, then G."
+      icon="🐕"
+      backgroundVariant="indigo"
+    >
+      <View style={styles.container}>
+        <Text style={styles.label}>Spell DOG</Text>
+        <Animated.View style={[styles.slotsRow, { transform: [{ translateX: shakeX }] }]}>
+          {[0, 1, 2].map((i) => (
+            <View key={i} style={styles.slot}>
+              <Text style={styles.slotLetter}>{slots[i] ?? '?'}</Text>
+            </View>
+          ))}
+        </Animated.View>
+        <Text style={styles.lettersLabel}>Tap in order</Text>
+        <View style={styles.lettersRow}>
+          {LETTERS.map((letter, i) => (
+            usedOptionIndexes.includes(i) ? (
+              <View key={`${letter}-${i}`} style={styles.letterBtnGone} />
             ) : (
-              <LetterTile
-                key={id}
-                letter={letter}
-                onPress={() => handleLetterTap(letter, id)}
-                disabled={false}
-                wrong={wrongId === id}
-              />
+              <Pressable
+                key={`${letter}-${i}`}
+                onPress={() => handleLetterTap(letter, i)}
+                style={({ pressed }) => [styles.letterBtn, pressed && styles.pressed]}
+                accessibilityLabel={`Letter ${letter}`}
+              >
+                <Text style={styles.letterText}>{letter}</Text>
+              </Pressable>
             )
-          )}
+          ))}
         </View>
       </View>
-    </View>
+    </GameLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
-  backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    marginTop: Platform.OS === 'web' ? 12 : 48,
-    marginLeft: 16,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.88)',
-    borderRadius: BUILDER_SESSION.radius.pill,
-    borderWidth: 1,
-    borderColor: T.deskBorder,
-    zIndex: 10,
-    ...BUILDER_SESSION.shadow.soft,
-  },
-  backText: { fontSize: 15, fontWeight: '700', color: T.accentDeep },
-  header: { paddingHorizontal: 20, paddingTop: 8, gap: 8, zIndex: 5 },
-  badgeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  stepPill: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: BUILDER_SESSION.radius.pill,
-    borderWidth: 1,
-    borderColor: T.deskBorder,
-  },
-  stepPillText: { fontSize: 12, fontWeight: '800', color: T.accentDeep },
-  wordPill: {
-    backgroundColor: 'rgba(255, 237, 213, 0.55)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: BUILDER_SESSION.radius.pill,
-    borderWidth: 1,
-    borderColor: T.accentSoft,
-  },
-  wordPillText: { fontSize: 12, fontWeight: '800', color: T.ink },
-  title: { fontSize: 26, fontWeight: '900', color: T.ink, textAlign: 'center' },
-  subtitle: { fontSize: 12, fontWeight: '600', color: T.inkMuted, textAlign: 'center' },
-  speechBubble: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: T.desk,
-    borderRadius: BUILDER_SESSION.radius.card,
-    borderWidth: 1,
-    borderColor: T.deskBorder,
-    padding: 14,
-    ...BUILDER_SESSION.shadow.soft,
-  },
-  mascot: { fontSize: 32 },
-  bubbleBody: { flex: 1, gap: 2 },
-  mascotName: { fontSize: 11, fontWeight: '800', color: T.accent, textTransform: 'uppercase', letterSpacing: 0.8 },
-  prompt: { fontSize: 14, fontWeight: '700', color: T.ink, lineHeight: 20 },
-  denArea: { flex: 1, paddingHorizontal: 20, paddingTop: 8, justifyContent: 'center', gap: 16 },
-  desk: {
-    backgroundColor: T.desk,
-    borderRadius: BUILDER_SESSION.radius.card,
-    borderWidth: 1,
-    borderColor: T.deskBorder,
-    padding: 18,
-    alignItems: 'center',
-    ...BUILDER_SESSION.shadow.card,
-  },
-  deskLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: T.inkMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 12,
-  },
-  slotsRow: { flexDirection: 'row', gap: 12, marginBottom: 10 },
+  container: { alignItems: 'center', paddingVertical: 24 },
+  label: { fontSize: 20, fontWeight: '800', color: '#4F46E5', marginBottom: 20 },
+  slotsRow: { flexDirection: 'row', gap: 16, marginBottom: 32 },
   slot: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    backgroundColor: T.slot,
-    borderWidth: 3,
-    borderColor: T.slotBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  slotFilled: { backgroundColor: T.slotFilled, borderColor: T.accentSoft },
-  slotLetter: { fontSize: 32, fontWeight: '900', color: T.accentDeep },
-  targetWord: { fontSize: 14, fontWeight: '800', color: T.inkMuted, letterSpacing: 4 },
-  hint: { fontSize: 13, fontWeight: '700', color: T.inkMuted, textAlign: 'center' },
-  tilesRow: { flexDirection: 'row', justifyContent: 'center', gap: 16 },
-  tile: {
     width: 72,
     height: 72,
-    borderRadius: 18,
-    backgroundColor: T.tile,
-    borderWidth: 3,
-    borderColor: T.tileBorder,
+    borderRadius: 16,
+    backgroundColor: '#EDE9FE',
+    borderWidth: 4,
+    borderColor: '#8B5CF6',
     alignItems: 'center',
     justifyContent: 'center',
-    ...BUILDER_SESSION.shadow.soft,
   },
-  tileWrong: { borderColor: T.tileWrong, backgroundColor: 'rgba(254, 226, 226, 0.9)' },
-  tileUsed: { opacity: 0 },
-  tileGhost: { width: 72, height: 72 },
-  tileLetter: { fontSize: 36, fontWeight: '900', color: T.accentDeep },
+  slotLetter: { fontSize: 36, fontWeight: '800', color: '#5B21B6' },
+  lettersLabel: { fontSize: 16, fontWeight: '700', color: '#6B7280', marginBottom: 16 },
+  lettersRow: { flexDirection: 'row', gap: 24 },
+  letterBtn: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    backgroundColor: '#FFF',
+    borderWidth: 4,
+    borderColor: '#A78BFA',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: { opacity: 0.9, backgroundColor: '#EDE9FE' },
+  letterBtnGone: { width: 80, height: 80 },
+  letterText: { fontSize: 40, fontWeight: '800', color: '#5B21B6' },
 });

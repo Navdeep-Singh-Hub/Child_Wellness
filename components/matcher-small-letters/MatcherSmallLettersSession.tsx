@@ -1,18 +1,17 @@
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
-import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
-import { MatcherIntroGame } from './MatcherIntroGame';
-import { MatcherRecognitionGame } from './MatcherRecognitionGame';
-import { MatcherTracingGame } from './MatcherTracingGame';
-import { MatcherCopyGame } from './MatcherCopyGame';
-import { MatcherPhotoTaskGame } from './MatcherPhotoTaskGame';
-import { MATCHER_HUB_THEME as H, MATCHER_QUESTS, MATCHER_SESSION } from './matcherSessionTheme';
-import { getMatcherSession } from './matcherCurriculum';
-import { OceanReefBackground } from './OceanReefBackground';
+import { DrawingCanvas, DrawingCanvasRef, Stroke } from '@/components/games/Level1/DrawingCanvas';
+import { captureDrawingForAi } from '@/components/level1-copy-letters-session/captureDrawingBase64';
+import { GameCardGrip } from '@/components/level1-grip-session/GameCardGrip';
+import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
+import { isLetterValidationPass, validateLetterImage } from '@/utils/recognizeLetter';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useCallback, useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import * as Speech from 'expo-speech';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Platform,
+  ActivityIndicator,
+  Alert,
+  Image,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -21,7 +20,341 @@ import {
   View,
 } from 'react-native';
 
+type SessionConfig = {
+  number: number;
+  title: string;
+  letters: string[];
+};
+
+const ALL = 'abcdefghijklmnopqrstuvwxyz'.split('');
+const SESSIONS: SessionConfig[] = [
+  { number: 1, title: 'Easy Strokes (i, l)', letters: ['i', 'l'] },
+  { number: 2, title: 'Easy Strokes (t, i)', letters: ['t', 'i'] },
+  { number: 3, title: 'Curves (c, o)', letters: ['c', 'o'] },
+  { number: 4, title: 'Curves (a)', letters: ['a'] },
+  { number: 5, title: 'Mixed (u, n)', letters: ['u', 'n'] },
+  { number: 6, title: 'Mixed (m, h, r)', letters: ['m', 'h', 'r'] },
+  { number: 7, title: 'Complex (b, d)', letters: ['b', 'd'] },
+  { number: 8, title: 'Complex (p, q, g)', letters: ['p', 'q', 'g'] },
+  { number: 9, title: 'Practice a–m', letters: 'abcdefghijklm'.split('') },
+  { number: 10, title: 'Full a–z', letters: ALL },
+];
+
 const TOTAL_STEPS = 5;
+
+function shuffle<T>(items: T[]): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+function IntroGame({
+  letters,
+  onBack,
+  onComplete,
+  currentStep,
+}: {
+  letters: string[];
+  onBack: () => void;
+  onComplete: () => void;
+  currentStep: number;
+}) {
+  const [idx, setIdx] = useState(0);
+  const current = letters[idx];
+
+  const next = () => {
+    try {
+      Speech.stop();
+      Speech.speak(current, { rate: 0.85, pitch: 1.05 });
+    } catch {}
+    if (idx < letters.length - 1) setIdx((v) => v + 1);
+    else setTimeout(onComplete, 500);
+  };
+
+  return (
+    <GameContainerGrip
+      title="Game 1: Letter Introduction"
+      currentStep={currentStep}
+      totalSteps={TOTAL_STEPS}
+      mascot="🔤"
+      mascotHint="Listen and watch lowercase letters."
+      onBack={onBack}
+    >
+      <View style={styles.center}>
+        <Text style={styles.bigLetter}>{current}</Text>
+        <Text style={styles.counter}>
+          {idx + 1}/{letters.length}
+        </Text>
+        <Pressable style={styles.primaryBtn} onPress={next}>
+          <Text style={styles.primaryBtnText}>{idx < letters.length - 1 ? 'Next' : 'Done'}</Text>
+        </Pressable>
+      </View>
+    </GameContainerGrip>
+  );
+}
+
+function RecognitionGame({
+  letters,
+  onBack,
+  onComplete,
+  currentStep,
+}: {
+  letters: string[];
+  onBack: () => void;
+  onComplete: () => void;
+  currentStep: number;
+}) {
+  const rounds = Math.max(4, Math.min(6, letters.length + 2));
+  const [round, setRound] = useState(0);
+  const [feedback, setFeedback] = useState<string>('');
+  const target = letters[round % letters.length];
+  const options = useMemo(() => {
+    const pool = ALL.filter((x) => x !== target);
+    return shuffle([target, ...shuffle(pool).slice(0, 3)]);
+  }, [target]);
+
+  useEffect(() => {
+    try {
+      Speech.stop();
+      Speech.speak(`Tap letter ${target}`, { rate: 0.85, pitch: 1.05 });
+    } catch {}
+  }, [target]);
+
+  const tap = (pick: string) => {
+    if (pick !== target) {
+      setFeedback('Try again');
+      return;
+    }
+    if (round === rounds - 1) {
+      setFeedback('Great!');
+      setTimeout(onComplete, 450);
+      return;
+    }
+    setFeedback('Correct');
+    setTimeout(() => {
+      setFeedback('');
+      setRound((r) => r + 1);
+    }, 350);
+  };
+
+  return (
+    <GameContainerGrip
+      title="Game 2: Letter Recognition"
+      currentStep={currentStep}
+      totalSteps={TOTAL_STEPS}
+      mascot="🔍"
+      mascotHint={`Tap letter ${target}`}
+      onBack={onBack}
+    >
+      <Text style={styles.prompt}>Tap letter {target}</Text>
+      <Text style={styles.counter}>Round {round + 1}/{rounds}</Text>
+      {!!feedback && <Text style={styles.feedback}>{feedback}</Text>}
+      <View style={styles.options}>
+        {options.map((o) => (
+          <Pressable key={o} onPress={() => tap(o)} style={styles.optionBtn}>
+            <Text style={styles.optionText}>{o}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </GameContainerGrip>
+  );
+}
+
+function WritingGame({
+  letters,
+  onBack,
+  onComplete,
+  currentStep,
+  title,
+}: {
+  letters: string[];
+  onBack: () => void;
+  onComplete: () => void;
+  currentStep: number;
+  title: string;
+}) {
+  const [idx, setIdx] = useState(0);
+  const [checking, setChecking] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [strokes, setStrokes] = useState<Stroke[]>([]);
+  const expected = letters[idx % letters.length];
+  const canvasRef = useRef<DrawingCanvasRef>(null);
+  const shotRef = useRef<View>(null);
+
+  const verify = useCallback(async () => {
+    setChecking(true);
+    setMsg('');
+    const b64 = await captureDrawingForAi(shotRef, strokes);
+    if (!b64) {
+      setChecking(false);
+      setMsg('Could not capture drawing. Try again.');
+      return;
+    }
+    const result = await validateLetterImage(b64, expected);
+    setChecking(false);
+    if (!result.ok) {
+      setMsg(result.message || 'Validation failed. Try again.');
+      return;
+    }
+    if (!isLetterValidationPass(result)) {
+      setMsg(`Detected "${result.detectedLetter ?? '?'}" (${result.confidence ?? 0}%). Try "${expected}".`);
+      return;
+    }
+
+    if (idx < letters.length - 1) {
+      setIdx((v) => v + 1);
+      setMsg('Correct! Next letter.');
+      setStrokes([]);
+      canvasRef.current?.clear();
+    } else {
+      setMsg('Great work!');
+      setTimeout(onComplete, 350);
+    }
+  }, [expected, idx, letters.length, onComplete, strokes]);
+
+  return (
+    <GameContainerGrip
+      title={title}
+      currentStep={currentStep}
+      totalSteps={TOTAL_STEPS}
+      mascot="✍️"
+      mascotHint="Keep strokes thin and follow the lowercase shape."
+      onBack={onBack}
+    >
+      <Text style={styles.prompt}>
+        Write: <Text style={styles.expected}>{expected}</Text> ({idx + 1}/{letters.length})
+      </Text>
+      <View style={styles.writeRow}>
+        <View style={styles.guideCard}>
+          <Text style={styles.guideLabel}>Guide</Text>
+          <Text style={styles.guideLetter}>{expected}</Text>
+        </View>
+        <View style={styles.canvasCard}>
+          <Text style={styles.guideLabel}>Draw</Text>
+          <View ref={shotRef} collapsable={false} style={styles.captureWrap}>
+            <DrawingCanvas
+              ref={canvasRef}
+              brushSize={7}
+              canvasColor="#FFFFFF"
+              randomColors={false}
+              onStrokeEnd={(s) => setStrokes(s)}
+            />
+          </View>
+        </View>
+      </View>
+      {!!msg && <Text style={styles.feedback}>{msg}</Text>}
+      <View style={styles.rowActions}>
+        <Pressable
+          style={styles.secondaryBtn}
+          onPress={() => {
+            setStrokes([]);
+            setMsg('');
+            canvasRef.current?.clear();
+          }}
+        >
+          <Text style={styles.secondaryBtnText}>Clear</Text>
+        </Pressable>
+        <Pressable style={styles.primaryBtn} onPress={verify} disabled={checking}>
+          {checking ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>Check</Text>}
+        </Pressable>
+      </View>
+    </GameContainerGrip>
+  );
+}
+
+function PhotoTask({
+  letters,
+  onBack,
+  onComplete,
+  currentStep,
+}: {
+  letters: string[];
+  onBack: () => void;
+  onComplete: (ok: boolean) => void;
+  currentStep: number;
+}) {
+  const [target] = useState(() => letters[Math.floor(Math.random() * letters.length)] || 'a');
+  const [busy, setBusy] = useState(false);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [msg, setMsg] = useState('');
+
+  const toBase64 = async (uri: string): Promise<{ b64: string; mimeType: string } | null> => {
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(String(reader.result || ''));
+        reader.onerror = () => reject(new Error('Failed to read image'));
+        reader.readAsDataURL(blob);
+      });
+      return {
+        b64: data.replace(/^data:image\/\w+;base64,/, ''),
+        mimeType: blob.type || 'image/jpeg',
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  const pick = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow photo access to upload task image.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8, allowsEditing: true });
+    if (result.canceled) return;
+    const uri = result.assets[0].uri;
+    setPhoto(uri);
+    setBusy(true);
+    setMsg('');
+
+    try {
+      const encoded = await toBase64(uri);
+      if (!encoded) {
+        setMsg('Could not read selected image.');
+        return;
+      }
+      const result = await validateLetterImage(encoded.b64, target, encoded.mimeType);
+      if (!result.ok) {
+        setMsg(result.message || 'Validation failed. Try another photo.');
+        return;
+      }
+      if (!isLetterValidationPass(result)) {
+        setMsg(`Detected "${result.detectedLetter ?? '?'}" (${result.confidence ?? 0}%). Try "${target}" again.`);
+        return;
+      }
+      setMsg(`Great! "${target}" matched.`);
+      onComplete(true);
+    } catch (e: any) {
+      setMsg(e?.message || 'Upload failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <GameContainerGrip
+      title="AI Task: Photo Upload"
+      currentStep={currentStep}
+      totalSteps={TOTAL_STEPS}
+      mascot="📷"
+      mascotHint={`Write "${target}" on paper and upload photo.`}
+      onBack={onBack}
+    >
+      <Text style={styles.prompt}>Write lowercase "{target}" on paper and upload.</Text>
+      {photo ? <Image source={{ uri: photo }} style={styles.preview} resizeMode="contain" /> : null}
+      {!!msg && <Text style={styles.feedback}>{msg}</Text>}
+      <Pressable style={styles.primaryBtn} onPress={pick} disabled={busy}>
+        {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>Upload Photo</Text>}
+      </Pressable>
+    </GameContainerGrip>
+  );
+}
 
 export function MatcherSmallLettersSession({
   sessionNumber,
@@ -30,341 +363,99 @@ export function MatcherSmallLettersSession({
   sessionNumber: number;
   onExit?: () => void;
 }) {
-  const config = getMatcherSession(sessionNumber);
+  const config = SESSIONS.find((s) => s.number === sessionNumber) || SESSIONS[0];
   const [step, setStep] = useState(0);
   const [doneCount, setDoneCount] = useState(0);
-  const [completedGames, setCompletedGames] = useState<Set<number>>(() => new Set());
 
   const advance = useCallback(() => {
     setDoneCount((c) => Math.min(c + 1, TOTAL_STEPS));
-    setCompletedGames((prev) => {
-      const next = new Set(prev);
-      if (step >= 1 && step <= TOTAL_STEPS) next.add(step);
-      return next;
-    });
     setStep((s) => Math.min(s + 1, 6));
-  }, [step]);
+  }, []);
 
   if (step === 0) {
-    const progressPct = Math.round((completedGames.size / TOTAL_STEPS) * 100);
     return (
-      <View style={styles.root}>
-        <LinearGradient
-          colors={[...H.gradient]}
-          locations={[...H.gradientLocations]}
-          style={StyleSheet.absoluteFill}
-        />
-        <OceanReefBackground />
-
-        <SafeAreaView style={styles.hubSafe}>
-          {onExit ? (
-            <Pressable
-              onPress={onExit}
-              style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
-            >
-              <Ionicons name="arrow-back" size={22} color={H.accentDeep} />
-              <Text style={styles.backText}>Sessions</Text>
-            </Pressable>
-          ) : (
-            <View style={styles.backSpacer} />
-          )}
-
-          <ScrollView contentContainerStyle={styles.hubScroll} showsVerticalScrollIndicator={false}>
-            <View style={styles.hubHeader}>
-              <Text style={styles.hubEyebrow}>Matcher · Small Letters</Text>
-              <Text style={styles.hubTitle}>{H.name}</Text>
-              <Text style={styles.hubSession}>
-                Voyage {config.number} — {config.title} ({config.subtitle})
-              </Text>
-
-              <View style={styles.letterChipRow}>
-                {config.letters.map((l) => (
-                  <View key={l} style={styles.letterChip}>
-                    <Text style={styles.letterChipText}>{l}</Text>
-                  </View>
-                ))}
-              </View>
-
-              <View style={styles.progressRow}>
-                <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
-                </View>
-                <Text style={styles.progressLabel}>
-                  {completedGames.size}/{TOTAL_STEPS} quests
-                </Text>
-              </View>
-
-              <View style={styles.speechBubble}>
-                <Text style={styles.mascot}>{H.mascot}</Text>
-                <View style={styles.bubbleBody}>
-                  <Text style={styles.mascotName}>{H.mascotName} says:</Text>
-                  <Text style={styles.hubPrompt}>Pick a quest below — finish all five to complete the voyage!</Text>
-                </View>
-              </View>
-            </View>
-
-            {MATCHER_QUESTS.map((quest) => {
-              const done = completedGames.has(quest.step);
-              const accent = quest.theme.accent;
-              return (
-                <Pressable
-                  key={quest.step}
-                  onPress={() => setStep(quest.step)}
-                  style={({ pressed }) => [styles.questCard, pressed && styles.pressed]}
-                  accessibilityLabel={`Quest ${quest.step}: ${quest.label}`}
-                >
-                  <View style={[styles.questAccent, { backgroundColor: accent }]} />
-                  <View style={styles.questIconWrap}>
-                    <Text style={styles.questIcon}>{quest.theme.mascot}</Text>
-                    {done ? (
-                      <View style={styles.doneBadge}>
-                        <Ionicons name="checkmark" size={12} color="#fff" />
-                      </View>
-                    ) : null}
-                  </View>
-                  <View style={styles.questText}>
-                    <Text style={styles.questStep}>Quest {quest.step}</Text>
-                    <Text style={styles.questTitle}>{quest.label}</Text>
-                    <Text style={styles.questDesc} numberOfLines={2}>
-                      {quest.desc}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={22} color={H.inkMuted} />
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </SafeAreaView>
-      </View>
+      <SafeAreaView style={styles.safe}>
+        {onExit ? (
+          <Pressable style={styles.backHeaderBtn} onPress={onExit}>
+            <Ionicons name="arrow-back" size={24} color="#0EA5E9" />
+            <Text style={styles.backHeaderText}>Back</Text>
+          </Pressable>
+        ) : null}
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <Text style={styles.title}>Matcher: Small Letters</Text>
+          <Text style={styles.subtitle}>
+            Session {config.number}: {config.title}
+          </Text>
+          <Text style={styles.subtitle}>Letters: {config.letters.join(', ')}</Text>
+          <GameCardGrip icon="🔤" title="Game 1: Introduction" description="See and hear lowercase letters" onPress={() => setStep(1)} isLocked={false} />
+          <GameCardGrip icon="🔍" title="Game 2: Recognition" description="Tap the asked lowercase letter" onPress={() => setStep(2)} isLocked={false} />
+          <GameCardGrip icon="✍️" title="Game 3: Tracing" description="Trace lowercase with thin strokes" onPress={() => setStep(3)} isLocked={false} />
+          <GameCardGrip icon="📝" title="Game 4: Copy Writing" description="Copy from guide + AI check" onPress={() => setStep(4)} isLocked={false} />
+          <GameCardGrip icon="📷" title="AI Task: Upload" description="Write on paper and upload photo" onPress={() => setStep(5)} isLocked={false} />
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   if (step === 6) {
     return (
-      <View style={styles.root}>
-        <LinearGradient
-          colors={[...H.gradient]}
-          locations={[...H.gradientLocations]}
-          style={StyleSheet.absoluteFill}
-        />
-        <OceanReefBackground />
-        <ConfettiEffect />
-        <SuccessCelebration
-          title="Voyage Complete!"
-          subtitle={`Voyage ${config.number}: ${config.title} (${config.subtitle})\nCompleted ${doneCount}/${TOTAL_STEPS} quests`}
-          badgeEmoji="🏆"
-          variant="ocean"
-        />
-        <View style={styles.doneActions}>
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.center}>
+          <Text style={styles.title}>Session Complete</Text>
+          <Text style={styles.subtitle}>
+            Session {config.number}: {config.title}
+          </Text>
+          <Text style={styles.subtitle}>Completed: {doneCount}/{TOTAL_STEPS}</Text>
+          <ConfettiEffect />
           {onExit ? (
-            <Pressable onPress={onExit} style={({ pressed }) => [pressed && styles.pressed]}>
-              <LinearGradient
-                colors={[...H.doneGradient]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.doneBtn}
-              >
-                <Text style={styles.doneBtnText}>Back to sessions</Text>
-              </LinearGradient>
+            <Pressable style={styles.primaryBtn} onPress={onExit}>
+              <Text style={styles.primaryBtnText}>Back to sessions</Text>
             </Pressable>
-          ) : (
-            <Pressable onPress={() => setStep(0)} style={({ pressed }) => [pressed && styles.pressed]}>
-              <LinearGradient
-                colors={[...H.doneGradient]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.doneBtn}
-              >
-                <Text style={styles.doneBtnText}>Back to quests</Text>
-              </LinearGradient>
-            </Pressable>
-          )}
+          ) : null}
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   const back = () => setStep(0);
   return (
     <View style={styles.safe}>
-      {step === 1 && (
-        <MatcherIntroGame
-          letters={config.letters}
-          sessionTitle={`Voyage ${config.number}: ${config.title} (${config.subtitle})`}
-          currentStep={1}
-          totalSteps={TOTAL_STEPS}
-          onBack={back}
-          onComplete={advance}
-        />
-      )}
-      {step === 2 && (
-        <MatcherRecognitionGame
-          letters={config.letters}
-          sessionTitle={`Voyage ${config.number}: ${config.title} (${config.subtitle})`}
-          currentStep={2}
-          totalSteps={TOTAL_STEPS}
-          onBack={back}
-          onComplete={advance}
-        />
-      )}
-      {step === 3 && (
-        <MatcherTracingGame
-          letters={config.letters}
-          sessionTitle={`Voyage ${config.number}: ${config.title} (${config.subtitle})`}
-          currentStep={3}
-          totalSteps={TOTAL_STEPS}
-          onBack={back}
-          onComplete={advance}
-        />
-      )}
-      {step === 4 && (
-        <MatcherCopyGame
-          letters={config.letters}
-          sessionTitle={`Voyage ${config.number}: ${config.title} (${config.subtitle})`}
-          currentStep={4}
-          totalSteps={TOTAL_STEPS}
-          onBack={back}
-          onComplete={advance}
-        />
-      )}
-      {step === 5 && (
-        <MatcherPhotoTaskGame
-          letters={config.letters}
-          sessionTitle={`Voyage ${config.number}: ${config.title} (${config.subtitle})`}
-          currentStep={5}
-          totalSteps={TOTAL_STEPS}
-          onBack={back}
-          onComplete={advance}
-        />
-      )}
+      {step === 1 && <IntroGame letters={config.letters} currentStep={1} onBack={back} onComplete={advance} />}
+      {step === 2 && <RecognitionGame letters={config.letters} currentStep={2} onBack={back} onComplete={advance} />}
+      {step === 3 && <WritingGame letters={config.letters} currentStep={3} onBack={back} onComplete={advance} title="Game 3: Tracing" />}
+      {step === 4 && <WritingGame letters={config.letters} currentStep={4} onBack={back} onComplete={advance} title="Game 4: Copy Writing" />}
+      {step === 5 && <PhotoTask letters={config.letters} currentStep={5} onBack={back} onComplete={() => advance()} />}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
-  safe: { flex: 1 },
-  pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
-  hubSafe: { flex: 1 },
-  backSpacer: { height: Platform.OS === 'web' ? 12 : 8 },
-  backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    marginTop: Platform.OS === 'web' ? 8 : 4,
-    marginLeft: 16,
-    marginBottom: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.82)',
-    borderRadius: MATCHER_SESSION.radius.pill,
-    borderWidth: 1,
-    borderColor: H.cardBorder,
-    zIndex: 10,
-    ...MATCHER_SESSION.shadow.soft,
-  },
-  backText: { fontSize: 15, fontWeight: '700', color: H.accentDeep },
-  hubScroll: { paddingHorizontal: 20, paddingBottom: 40, gap: 12 },
-  hubHeader: { alignItems: 'center', gap: 10, marginBottom: 8 },
-  hubEyebrow: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: H.inkMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  hubTitle: { fontSize: 28, fontWeight: '900', color: H.ink, textAlign: 'center' },
-  hubSession: { fontSize: 15, fontWeight: '600', color: H.inkMuted, textAlign: 'center' },
-  letterChipRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 4 },
-  letterChip: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderWidth: 2,
-    borderColor: H.cardBorder,
-    borderRadius: MATCHER_SESSION.radius.pill,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
-  letterChipText: { fontSize: 20, fontWeight: '800', color: H.accent },
-  progressRow: { width: '100%', alignItems: 'center', gap: 6, marginTop: 4 },
-  progressTrack: {
-    width: '100%',
-    height: 8,
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-  progressFill: { height: '100%', backgroundColor: H.accent, borderRadius: 999 },
-  progressLabel: { fontSize: 13, fontWeight: '700', color: H.inkMuted },
-  speechBubble: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: H.card,
-    borderRadius: MATCHER_SESSION.radius.card,
-    borderWidth: 1,
-    borderColor: H.cardBorder,
-    padding: 14,
-    width: '100%',
-    marginTop: 6,
-    ...MATCHER_SESSION.shadow.soft,
-  },
-  mascot: { fontSize: 32 },
-  bubbleBody: { flex: 1, gap: 2 },
-  mascotName: { fontSize: 12, fontWeight: '800', color: H.accentDeep, textTransform: 'uppercase' },
-  hubPrompt: { fontSize: 14, fontWeight: '600', color: H.ink, lineHeight: 20 },
-  questCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: H.card,
-    borderRadius: MATCHER_SESSION.radius.card,
-    borderWidth: 1,
-    borderColor: H.cardBorder,
-    padding: 16,
-    gap: 14,
-    overflow: 'hidden',
-    ...MATCHER_SESSION.shadow.card,
-  },
-  questAccent: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 5,
-  },
-  questIconWrap: { position: 'relative', marginLeft: 4 },
-  questIcon: { fontSize: 38 },
-  doneBadge: {
-    position: 'absolute',
-    right: -4,
-    bottom: -2,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#10B981',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  questText: { flex: 1, gap: 2 },
-  questStep: { fontSize: 11, fontWeight: '800', color: H.inkMuted, letterSpacing: 0.8, textTransform: 'uppercase' },
-  questTitle: { fontSize: 17, fontWeight: '800', color: H.ink },
-  questDesc: { fontSize: 13, color: H.inkMuted, lineHeight: 18 },
-  doneBtn: {
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: MATCHER_SESSION.radius.button,
-    alignItems: 'center',
-    minWidth: 200,
-  },
-  doneBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
-  doneActions: {
-    position: 'absolute',
-    bottom: 48,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
+  safe: { flex: 1, backgroundColor: '#EFF9FF' },
+  scroll: { padding: 20, gap: 12, paddingBottom: 40 },
+  title: { fontSize: 26, fontWeight: '800', color: '#0369A1', textAlign: 'center' },
+  subtitle: { fontSize: 14, color: '#0C4A6E', textAlign: 'center' },
+  backHeaderBtn: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 8 },
+  backHeaderText: { fontSize: 16, fontWeight: '700', color: '#0369A1' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, padding: 20 },
+  bigLetter: { fontSize: 150, fontWeight: '900', color: '#0EA5E9', lineHeight: 160 },
+  counter: { fontSize: 14, fontWeight: '700', color: '#0C4A6E' },
+  prompt: { fontSize: 20, fontWeight: '700', color: '#0C4A6E', textAlign: 'center' },
+  expected: { fontSize: 28, fontWeight: '900', color: '#0284C7' },
+  feedback: { fontSize: 14, color: '#0C4A6E', textAlign: 'center', marginTop: 8 },
+  options: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginTop: 14 },
+  optionBtn: { width: 82, height: 82, borderRadius: 16, backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#BAE6FD', alignItems: 'center', justifyContent: 'center' },
+  optionText: { fontSize: 42, color: '#0369A1', fontWeight: '900' },
+  writeRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  guideCard: { flex: 1, backgroundColor: '#E0F2FE', borderRadius: 16, borderWidth: 2, borderColor: '#BAE6FD', padding: 10 },
+  canvasCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 2, borderColor: '#BAE6FD', padding: 10 },
+  guideLabel: { textAlign: 'center', fontSize: 12, fontWeight: '700', color: '#0C4A6E', marginBottom: 4 },
+  guideLetter: { fontSize: 92, lineHeight: 100, textAlign: 'center', color: '#0284C7', fontWeight: '900' },
+  captureWrap: { width: '100%', height: 240, backgroundColor: '#FFFFFF', borderRadius: 10, overflow: 'hidden' },
+  rowActions: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 10 },
+  primaryBtn: { backgroundColor: '#0284C7', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12, alignItems: 'center', minWidth: 140, alignSelf: 'center' },
+  primaryBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
+  secondaryBtn: { backgroundColor: '#E0F2FE', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12, alignItems: 'center', minWidth: 100, alignSelf: 'center' },
+  secondaryBtnText: { color: '#0369A1', fontSize: 16, fontWeight: '800' },
+  preview: { width: '100%', height: 220, borderRadius: 12, backgroundColor: '#F8FAFC', marginTop: 10 },
 });
+
