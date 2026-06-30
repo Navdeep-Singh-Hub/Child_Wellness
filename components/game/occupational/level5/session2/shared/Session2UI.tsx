@@ -1,13 +1,15 @@
 /**
  * Shared intro + HUD primitives for OT L5 Session 2 themed games.
  */
+import type { Session2IntroConfig, Session2ThemeTokens } from '@/components/game/occupational/level5/session2/session2Theme';
+
+export type { Session2IntroConfig, Session2ThemeTokens } from '@/components/game/occupational/level5/session2/session2Theme';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   Easing,
-  interpolate,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -16,29 +18,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-export type Session2ThemeTokens = {
-  sky: readonly string[];
-  title: string;
-  subtitle: string;
-  accent: string;
-  accentDark: string;
-  hudGlass: string;
-  hudBorder: string;
-  cue: string;
-};
-
-export type IntroConfig = {
-  theme: Session2ThemeTokens;
-  emoji: string;
-  title: string;
-  tagline: string;
-  body: string;
-  chips: string[];
-  startLabel: string;
-  startGradient: readonly string[];
-  backdrop?: React.ReactNode;
-  floatEmoji?: string;
-};
+export type IntroConfig = Session2IntroConfig;
 
 export function Session2Intro({
   config,
@@ -61,7 +41,7 @@ export function Session2Intro({
     );
   }, [float]);
   const floatStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: interpolate(float.value, [0, 1], [0, -12]) }],
+    transform: [{ translateY: (float.value - 0.5) * -24 }],
   }));
 
   return (

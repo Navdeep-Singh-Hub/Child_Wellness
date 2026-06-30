@@ -964,6 +964,20 @@ app.post('/api/upload-level9-s4-round-rectangular-task', requireAuth, upload.sin
   });
 });
 
+// ---- upload-level9-s5-stack-3-vertical-task route (Level 9 Session 5: Stack THREE objects vertically — AI verifies vertical stacking)
+app.post('/api/upload-level9-s5-stack-3-vertical-task', requireAuth, upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  const mockCorrect = true; // TODO: AI vision to verify 3 objects + vertical stacking
+  res.json({
+    correct: mockCorrect,
+    feedback: mockCorrect
+      ? 'SUCCESS! We see three objects stacked vertically!'
+      : 'TRY AGAIN. Stack three objects on top of each other and take a photo.',
+  });
+});
+
 // ---- upload-level9-s6-triangle-center-task route (Level 9 Session 6: Three objects in triangle, one in center — AI verifies spatial arrangement)
 app.post('/api/upload-level9-s6-triangle-center-task', requireAuth, upload.single('file'), (req, res) => {
   if (!req.file) {

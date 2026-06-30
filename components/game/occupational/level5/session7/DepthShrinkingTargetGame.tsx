@@ -1,9 +1,2 @@
-import React from 'react';
-import DepthDistanceGame from './DepthDistanceGame';
-import { DEPTH_SHRINKING_TARGET } from './depthDistanceConfig';
-
-const DepthShrinkingTargetGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => (
-  <DepthDistanceGame config={DEPTH_SHRINKING_TARGET} onBack={onBack} onComplete={onComplete} />
-);
-
-export default DepthShrinkingTargetGame;
+/** OT Level 5 · Session 7 · Game 4 — Shrink Zone */
+export { default } from '@/components/game/occupational/level5/session7/shrinkZone/ShrinkZoneGame';

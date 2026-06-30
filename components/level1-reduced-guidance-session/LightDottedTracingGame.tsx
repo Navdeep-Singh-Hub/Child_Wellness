@@ -1,34 +1,52 @@
 /**
- * Game 1: Light Dotted Tracing — faint dots, no arrows.
- * Reduced guidance: child relies on muscle memory with minimal visual cues.
- *
- * Completion: nearly all dots hit (≥98%) so tiny touch gaps still count; live updates while drawing.
+ * Game 1: Whisper Dots Studio — faint dots, no arrows.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
+import { View, Text, StyleSheet, LayoutChangeEvent, AccessibilityInfo } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import * as Speech from 'expo-speech';
+import { speak, stopTTS } from '@/utils/tts';
 import { DrawingCanvas, DrawingCanvasRef, Stroke } from '@/components/games/Level1/DrawingCanvas';
-import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
+import { LetterGameShell } from '@/components/level1-straight-letters-session/letters-shared/LetterGameShell';
+import { LetterMascot } from '@/components/level1-straight-letters-session/letters-shared/LetterMascot';
+import { TraceMeter } from '@/components/level1-full-alphabet-session/alphabet-shared/TraceMeter';
 import { ALPHABET, scaleDots, scaleStrokes } from '@/components/level1-full-alphabet-session/alphabetData';
 import { getConnectedDots } from '@/components/level1-grip-session/shapeFillUtils';
 
-/** Wider than stroke width so “near” a dot counts (snap-friendly). */
 const SNAP_HIT_RADIUS = 26;
-/** All dots must be traced (no intentional slack). */
 const COMPLETE_PROGRESS = 1;
 const LETTERS_PER_ROUND = 10;
 
+const SHELL = {
+  bg: '#3B0764',
+  labelColor: '#C4B5FD',
+  titleColor: '#F5F3FF',
+  textOnDark: '#F5F3FF',
+  backBg: 'rgba(255,255,255,0.08)',
+  backBorder: 'rgba(167,139,250,0.35)',
+  dotIdle: 'rgba(255,255,255,0.15)',
+  dotActive: '#A78BFA',
+  dotDone: '#34D399',
+};
+
 export function LightDottedTracingGame({
-  currentStep, totalSteps, onBack, onComplete,
-}: { currentStep: number; totalSteps: number; onBack: () => void; onComplete: () => void }) {
+  currentStep,
+  totalSteps,
+  onBack,
+  onComplete,
+}: {
+  currentStep: number;
+  totalSteps: number;
+  onBack: () => void;
+  onComplete: () => void;
+}) {
   const [dims, setDims] = useState({ width: 300, height: 300 });
   const [idx, setIdx] = useState(0);
   const [connected, setConnected] = useState<Set<number>>(new Set());
   const [showConfetti, setShowConfetti] = useState(false);
   const [pulsePhase, setPulsePhase] = useState(0);
+  const [reduceMotion, setReduceMotion] = useState(false);
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const letterDoneRef = useRef(false);
 
@@ -49,6 +67,11 @@ export function LightDottedTracingGame({
     return -1;
   }, [connected, totalDots]);
 
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => setReduceMotion(!!v)).catch(() => {});
+    return () => stopTTS();
+  }, []);
+
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
     if (width > 0 && height > 0) setDims({ width, height });
@@ -58,13 +81,14 @@ export function LightDottedTracingGame({
     setConnected(new Set());
     canvasRef.current?.clear();
     letterDoneRef.current = false;
-    try { Speech.stop(); Speech.speak(`Trace ${def.letter}`, { rate: 0.85, pitch: 1.1 }); } catch (_) {}
+    speak(`Trace letter ${def.letter}. Whisper dots only!`, 0.72);
   }, [idx, def.letter]);
 
   useEffect(() => {
+    if (reduceMotion) return;
     const id = setInterval(() => setPulsePhase((p) => (p + 1) % 2), 520);
     return () => clearInterval(id);
-  }, [idx]);
+  }, [idx, reduceMotion]);
 
   const updateFromPaths = useCallback(
     (paths: { path: string }[]) => {
@@ -74,28 +98,28 @@ export function LightDottedTracingGame({
       if (p < COMPLETE_PROGRESS || letterDoneRef.current) return;
       letterDoneRef.current = true;
       try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
+      speak(`Beautiful ${def.letter}!`, 0.72);
       if (idx < subset.length - 1) {
         setShowConfetti(true);
         setTimeout(() => {
           setShowConfetti(false);
           setIdx((i) => i + 1);
-        }, 1000);
+        }, reduceMotion ? 400 : 1000);
       } else {
         setShowConfetti(true);
+        speak('Whisper dots mastered!', 0.72);
         setTimeout(() => {
           setShowConfetti(false);
           onComplete();
-        }, 1500);
+        }, reduceMotion ? 500 : 1500);
       }
     },
-    [dots, totalDots, idx, subset.length, onComplete]
+    [dots, totalDots, idx, subset.length, onComplete, def.letter, reduceMotion],
   );
 
   const handleTracingChange = useCallback(
-    (paths: { path: string }[]) => {
-      updateFromPaths(paths);
-    },
-    [updateFromPaths]
+    (paths: { path: string }[]) => updateFromPaths(paths),
+    [updateFromPaths],
   );
 
   const handleStrokeEnd = useCallback(
@@ -103,32 +127,45 @@ export function LightDottedTracingGame({
       updateFromPaths(strokes.map((s) => ({ path: s.path })));
       try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (_) {}
     },
-    [updateFromPaths]
+    [updateFromPaths],
   );
 
   let hint: string | null = null;
-  if (progress >= COMPLETE_PROGRESS) hint = null;
-  else if (pctDisplay >= 90) hint = 'Almost there! Finish the last part.';
-  else if (pctDisplay >= 60) hint = 'Keep going — follow every dot.';
+  if (progress < COMPLETE_PROGRESS) {
+    if (pctDisplay >= 90) hint = 'Almost there! Finish the last dot.';
+    else if (pctDisplay >= 60) hint = 'Follow every faint dot.';
+  }
 
-  const untracedPulseOpacity = 0.38 + pulsePhase * 0.22;
+  const untracedPulseOpacity = reduceMotion ? 0.45 : 0.38 + pulsePhase * 0.22;
 
   return (
-    <GameContainerGrip
-      title={`Trace ${def.letter}`}
+    <LetterGameShell
+      theme={SHELL}
+      gameLabel="WHISPER DOTS STUDIO"
+      gameTitle={`Trace ${def.letter}`}
       currentStep={currentStep}
       totalSteps={totalSteps}
-      mascot="👁️"
-      mascotHint="Faint dots only — you've got this!"
       onBack={onBack}
+      headerRight={<Text style={styles.counter}>{idx + 1}/{subset.length}</Text>}
+      footer={
+        <LetterMascot
+          emoji="👁️"
+          name="Whisper"
+          hint={hint ?? 'Faint dots only — you have got this!'}
+          accent="#A78BFA"
+          bubbleBg="rgba(255,255,255,0.08)"
+          bubbleBorder="rgba(167,139,250,0.35)"
+          nameColor="#C4B5FD"
+          hintColor="#F5F3FF"
+        />
+      }
     >
-      <Text style={styles.counter}>{def.letter} ({idx + 1}/{subset.length})</Text>
       <View style={styles.outer} onLayout={onLayout}>
         <View style={styles.canvasWrap}>
           <DrawingCanvas
             ref={canvasRef}
             brushSize={10}
-            canvasColor="rgba(255,255,255,0.45)"
+            canvasColor="rgba(255,255,255,0.12)"
             randomColors={false}
             onTracingChange={handleTracingChange}
             onStrokeEnd={handleStrokeEnd}
@@ -142,7 +179,7 @@ export function LightDottedTracingGame({
                   y1={s.from.y}
                   x2={s.to.x}
                   y2={s.to.y}
-                  stroke="#E5E7EB"
+                  stroke="rgba(196,181,253,0.25)"
                   strokeWidth={2}
                   strokeDasharray="4 8"
                   strokeLinecap="round"
@@ -152,9 +189,7 @@ export function LightDottedTracingGame({
                 const done = connected.has(i);
                 const isNext = !done && i === nextDotIndex;
                 if (done) {
-                  return (
-                    <Circle key={i} cx={d.x} cy={d.y} r={10} fill="#22C55E" opacity={1} />
-                  );
+                  return <Circle key={i} cx={d.x} cy={d.y} r={10} fill="#34D399" opacity={1} />;
                 }
                 if (isNext) {
                   return (
@@ -165,47 +200,34 @@ export function LightDottedTracingGame({
                   );
                 }
                 return (
-                  <Circle
-                    key={i}
-                    cx={d.x}
-                    cy={d.y}
-                    r={5}
-                    fill="#9CA3AF"
-                    opacity={untracedPulseOpacity}
-                  />
+                  <Circle key={i} cx={d.x} cy={d.y} r={5} fill="#94A3B8" opacity={untracedPulseOpacity} />
                 );
               })}
             </Svg>
           </View>
         </View>
-        {hint ? <Text style={styles.hint}>{hint}</Text> : null}
-        <View style={styles.progressRow}>
-          <Text style={styles.label}>
-            Traced: {pctDisplay}% ({tracedCount}/{totalDots} dots) — need 100%
-          </Text>
-          <View style={styles.barBg}>
-            <View style={[styles.barFill, { width: `${pctDisplay}%` }]} />
-          </View>
-        </View>
+        <TraceMeter
+          percent={pctDisplay}
+          label={`Dots ${tracedCount}/${totalDots} — need 100%`}
+          color="#A78BFA"
+          textColor={SHELL.textOnDark}
+        />
       </View>
       {showConfetti && <ConfettiEffect />}
-    </GameContainerGrip>
+    </LetterGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  counter: { textAlign: 'center', fontSize: 16, fontWeight: '800', color: '#374151', marginBottom: 6 },
+  counter: { fontSize: 14, fontWeight: '800', color: SHELL.labelColor },
   outer: { flex: 1 },
-  canvasWrap: { flex: 1, minHeight: 220, borderRadius: 24, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.45)' },
-  hint: {
-    marginTop: 8,
-    textAlign: 'center',
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#6D28D9',
+  canvasWrap: {
+    flex: 1,
+    minHeight: 220,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 2,
+    borderColor: 'rgba(167,139,250,0.3)',
   },
-  progressRow: { marginTop: 10, gap: 4 },
-  label: { fontSize: 14, fontWeight: '700', color: '#374151' },
-  barBg: { height: 12, backgroundColor: '#E5E7EB', borderRadius: 6, overflow: 'hidden' },
-  barFill: { height: '100%', backgroundColor: '#22C55E', borderRadius: 6 },
 });

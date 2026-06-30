@@ -1,103 +1,267 @@
 /**
  * Game 2 — Dialogue completion. Friend: Can you help me? You: ______. Options: Yes, Run, Sleep. Correct: Yes. Session 9: Story Problem Solver.
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { GraduateGameShell } from '@/components/graduate-session/shared/GraduateGameShell';
+import { GR } from '@/components/graduate-session/shared/graduateTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 const DIALOGUE = 'Can you help me?';
 const OPTIONS = ['Yes', 'Run', 'Sleep'];
 const CORRECT = 'Yes';
 const VOICE = 'Choose the correct reply.';
 
-export function DialogueCompleteCanYouHelp({ onComplete }: { onComplete: () => void }) {
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [shakeAnim] = useState(() => new Animated.Value(0));
+const PALETTE = { accent: '#EA580C', glow: '#FDBA74', secondary: '#FB923C' } as const;
+
+function ReplyChip({
+  label,
+  selected,
+  feedback,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  feedback: 'idle' | 'wrong' | 'correct';
+  onPress: () => void;
+}) {
+  const shake = useSharedValue(0);
+  const scale = useSharedValue(1);
 
   useEffect(() => {
-    speak(VOICE, 0.75);
+    if (feedback === 'wrong' && selected) {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    } else if (feedback === 'correct' && selected) {
+      scale.value = withSpring(1.04, { damping: 8 });
+    } else {
+      scale.value = withTiming(1, { duration: 150 });
+    }
+  }, [feedback, selected, shake, scale]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }, { scale: scale.value }],
+  }));
+
+  const border =
+    feedback === 'correct' && selected
+      ? GR.good
+      : feedback === 'wrong' && selected
+        ? GR.warn
+        : selected
+          ? PALETTE.glow
+          : GR.glassBorder;
+
+  return (
+    <Animated.View style={[styles.chipWrap, anim]}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.chip, { borderColor: border }, pressed && styles.pressed]}
+        accessibilityLabel={label}
+      >
+        <Text style={styles.chipText}>{label}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+export function DialogueCompleteCanYouHelp({ onComplete }: { onComplete: () => void }) {
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<'idle' | 'wrong' | 'correct'>('idle');
+  const [lock, setLock] = useState(false);
+
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
   }, []);
 
-  const triggerShake = useCallback(() => {
-    shakeAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-  }, [shakeAnim]);
+  useEffect(() => {
+    playVoice();
+  }, [playVoice]);
 
   const handleChoice = useCallback(
     (reply: string) => {
-      if (reply !== CORRECT) {
-        speak('Try again.');
-        triggerShake();
-        return;
+      if (lock || feedback === 'correct') return;
+      setSelected(reply);
+
+      if (reply === CORRECT) {
+        setFeedback('correct');
+        setLock(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speak('Correct! Yes!', 0.7);
+        setShowSuccess(true);
+        setTimeout(() => onComplete(), 2200);
+      } else {
+        setFeedback('wrong');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Try again.', 0.65);
+        setTimeout(() => {
+          setFeedback('idle');
+          setSelected(null);
+        }, 900);
       }
-      speak('Correct! Yes!');
-      setShowSuccess(true);
-      setTimeout(() => onComplete(), 2200);
     },
-    [onComplete, triggerShake]
+    [lock, feedback, onComplete],
   );
 
-  if (showSuccess) return <SuccessCelebration variant="indigo" title="Great Job!" subtitle="You finished the conversation!" />;
-
-  const shakeX = shakeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 10] });
+  if (showSuccess) {
+    return (
+      <SuccessCelebration
+        variant="indigo"
+        title="Great Job!"
+        subtitle="You finished the conversation!"
+        badgeEmoji="💬"
+      />
+    );
+  }
 
   return (
-    <GameLayout
+    <GraduateGameShell
+      studio="DIALOGUE COMPLETE · GAME 2"
       title="Finish the conversation"
       instruction="Choose the correct reply."
-      icon="💬"
-      backgroundVariant="indigo"
+      mascot="💬"
+      coachLine='When a friend asks "Can you help me?" saying Yes is kind!'
+      onReplayVoice={playVoice}
     >
-      <View style={styles.content}>
-        <View style={styles.dialogueBox}>
-          <Text style={styles.speaker}>Friend: {DIALOGUE}</Text>
-          <Text style={styles.speaker}>You: ______</Text>
+      <View style={styles.dialogueFrame}>
+        <LinearGradient
+          colors={[`${PALETTE.accent}33`, 'transparent', `${PALETTE.secondary}22`]}
+          style={styles.dialogueGlow}
+        />
+        <Text style={styles.frameLabel}>HELP SCENE</Text>
+
+        <View style={styles.contextRow}>
+          <Text style={styles.contextEmoji}>🤝</Text>
+          <Text style={styles.contextText}>A friend needs your help</Text>
         </View>
+
+        <View style={styles.bubbleRow}>
+          <View style={[styles.bubble, styles.friendBubble]}>
+            <Text style={styles.roleLabel}>FRIEND</Text>
+            <Text style={styles.bubbleText}>{DIALOGUE}</Text>
+          </View>
+        </View>
+
+        <View style={[styles.bubbleRow, styles.youRow]}>
+          <View style={[styles.bubble, styles.youBubble]}>
+            <Text style={styles.roleLabel}>YOU</Text>
+            <Text style={[styles.bubbleText, styles.blankLine]}>______</Text>
+          </View>
+        </View>
+
         <Text style={styles.prompt}>What should you say?</Text>
+
         <View style={styles.optionsColumn}>
           {OPTIONS.map((opt) => (
-            <Animated.View key={opt} style={{ transform: [{ translateX: opt === CORRECT ? 0 : shakeX }] }}>
-              <Pressable
-                onPress={() => handleChoice(opt)}
-                style={({ pressed }) => [styles.optionCard, pressed && styles.pressed]}
-                accessibilityLabel={opt}
-              >
-                <Text style={styles.optionText}>{opt}</Text>
-              </Pressable>
-            </Animated.View>
+            <ReplyChip
+              key={opt}
+              label={opt}
+              selected={selected === opt}
+              feedback={feedback}
+              onPress={() => handleChoice(opt)}
+            />
           ))}
         </View>
       </View>
-    </GameLayout>
+    </GraduateGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 8, alignItems: 'center' },
-  dialogueBox: {
-    backgroundColor: '#EDE9FE',
-    borderRadius: 16,
-    padding: 24,
-    borderWidth: 3,
-    borderColor: '#8B5CF6',
-    marginBottom: 20,
-    minWidth: 240,
+  dialogueFrame: {
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: `${PALETTE.accent}55`,
+    backgroundColor: 'rgba(15,10,30,0.5)',
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    overflow: 'hidden',
   },
-  speaker: { fontSize: 20, fontWeight: '700', color: '#374151', marginBottom: 8 },
-  prompt: { fontSize: 18, fontWeight: '800', color: '#374151', marginBottom: 20 },
-  optionsColumn: { gap: 12, width: '100%', maxWidth: 280 },
-  optionCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 4,
-    borderColor: '#E5E7EB',
+  dialogueGlow: { ...StyleSheet.absoluteFillObject },
+  frameLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: PALETTE.glow,
+    marginBottom: 12,
+    textAlign: 'center',
   },
-  pressed: { opacity: 0.85 },
-  optionText: { fontSize: 20, fontWeight: '700', color: '#1f2937' },
+  contextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: `${PALETTE.accent}44`,
+    backgroundColor: 'rgba(234,88,12,0.15)',
+  },
+  contextEmoji: { fontSize: 22 },
+  contextText: { fontSize: 14, fontWeight: '700', color: GR.textLight },
+  bubbleRow: { marginBottom: 10 },
+  youRow: { alignItems: 'flex-end' },
+  bubble: {
+    maxWidth: '88%',
+    borderRadius: 18,
+    borderWidth: 2,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  friendBubble: {
+    alignSelf: 'flex-start',
+    borderColor: `${PALETTE.accent}88`,
+    backgroundColor: 'rgba(234,88,12,0.22)',
+  },
+  youBubble: {
+    alignSelf: 'flex-end',
+    borderColor: `${PALETTE.secondary}88`,
+    backgroundColor: 'rgba(251,146,60,0.2)',
+  },
+  roleLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+    color: PALETTE.glow,
+    marginBottom: 4,
+  },
+  bubbleText: { fontSize: 18, fontWeight: '800', color: GR.textLight, lineHeight: 24 },
+  blankLine: { color: PALETTE.glow, letterSpacing: 2 },
+  prompt: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: GR.textLight,
+    marginTop: 8,
+    marginBottom: 14,
+    textAlign: 'center',
+  },
+  optionsColumn: { width: '100%', gap: 10 },
+  chipWrap: { width: '100%' },
+  chip: {
+    borderRadius: 16,
+    borderWidth: 2,
+    backgroundColor: 'rgba(11,10,26,0.7)',
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+  },
+  chipText: { fontSize: 17, fontWeight: '800', color: GR.textLight, textAlign: 'center' },
+  pressed: { opacity: 0.88 },
 });

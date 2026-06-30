@@ -4,10 +4,10 @@
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { ResultToast } from '@/components/game/FX';
 import { isTapNearTarget } from '@/components/game/occupational/level5/shared/movingTargetTouch';
-import { MOVING_TARGET_COPY as COPY, MOVING_TARGET_THEME as THEME } from '@/components/game/occupational/level5/session2/movingTarget/movingTargetTheme';
+import { MOVING_TARGET_COPY as COPY } from '@/components/game/occupational/level5/session2/movingTarget/movingTargetTheme';
 import { NeonGridBackdrop, NeonOrb } from '@/components/game/occupational/level5/session2/movingTarget/MovingTargetVisuals';
 import { SESSION5_2_PACING as P } from '@/components/game/occupational/level5/session2/session2Pacing';
-import { Session2HUD, Session2Intro } from '@/components/game/occupational/level5/session2/shared/Session2UI';
+import { NeonArcadeHUD, NeonArcadeIntro } from '@/components/game/occupational/level5/session2/movingTarget/MovingTargetUI';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { speak as speakTTS, stopTTS } from '@/utils/tts';
@@ -194,11 +194,7 @@ const MovingTargetGameNew: React.FC<{ onBack?: () => void; onComplete?: () => vo
   if (showInfo) {
     return (
       <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-        <Session2Intro
-          config={{ theme: THEME, emoji: COPY.emoji, title: COPY.title, tagline: COPY.tagline, body: COPY.body, chips: [...COPY.chips], startLabel: COPY.startLabel, startGradient: ['#22D3EE', '#06B6D4', '#0891B2'], backdrop: <NeonGridBackdrop /> }}
-          onStart={() => setShowInfo(false)}
-          onBack={exit}
-        />
+        <NeonArcadeIntro onStart={() => setShowInfo(false)} onBack={exit} />
       </SafeAreaView>
     );
   }
@@ -210,14 +206,10 @@ const MovingTargetGameNew: React.FC<{ onBack?: () => void; onComplete?: () => vo
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <TouchableOpacity onPress={exit} style={styles.back}><Text style={styles.backText}>← Exit</Text></TouchableOpacity>
-      <Session2HUD
-        theme={THEME}
-        gameTitle="Neon Orb"
-        emoji={COPY.emoji}
+      <NeonArcadeHUD
         round={displayRound}
         totalRounds={P.rounds}
         score={score}
-        scoreLabel="HITS"
         hint={displayRound <= 2 ? 'Warm-up — big & slow' : 'Track and tap!'}
         showHint={dotVisible}
         extra={<Text style={styles.tierText}>{tierLabels[tier - 1]}</Text>}

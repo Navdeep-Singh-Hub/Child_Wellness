@@ -1,102 +1,227 @@
 /**
- * Game 3 — Find the price. Display price tags ₹10, ₹20, ₹50. Instruction: "Tap the ₹20 price tag." Session 4: Store Signs.
+ * Game 3 — Price Hunter: Find the price tag. ₹10, ₹20, ₹50. Answer: ₹20.
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { CitizenGameShell } from '@/components/citizen-session/shared/CitizenGameShell';
+import { CZ } from '@/components/citizen-session/shared/citizenTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 const PRICE_TAGS = [
-  { id: '₹10', label: '₹10', color: '#1E40AF', bg: '#DBEAFE' },
-  { id: '₹20', label: '₹20', color: '#166534', bg: '#DCFCE7' },
-  { id: '₹50', label: '₹50', color: '#831843', bg: '#FBCFE8' },
-];
-const CORRECT = '₹20';
+  { id: '₹10', label: '₹10', color: '#1E40AF', glow: '#93C5FD' },
+  { id: '₹20', label: '₹20', color: '#16A34A', glow: '#86EFAC' },
+  { id: '₹50', label: '₹50', color: '#9D174D', glow: '#F9A8D4' },
+] as const;
+
+type TagId = (typeof PRICE_TAGS)[number]['id'];
+const CORRECT: TagId = '₹20';
 const VOICE = 'Tap the twenty rupees price tag.';
+const SHOP = { accent: '#F97316', glow: '#FDBA74' } as const;
+
+function PriceTagPlate({
+  tag,
+  selected,
+  feedback,
+  onPress,
+}: {
+  tag: (typeof PRICE_TAGS)[number];
+  selected: boolean;
+  feedback: 'idle' | 'wrong' | 'correct';
+  onPress: () => void;
+}) {
+  const shake = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (feedback === 'wrong' && selected) {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    } else if (feedback === 'correct' && selected) {
+      scale.value = withSpring(1.06, { damping: 8 });
+    } else {
+      scale.value = withTiming(1, { duration: 150 });
+    }
+  }, [feedback, selected, shake, scale]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }, { scale: scale.value }],
+  }));
+
+  const border =
+    feedback === 'correct' && selected
+      ? CZ.good
+      : feedback === 'wrong' && selected
+        ? CZ.warn
+        : selected
+          ? tag.glow
+          : `${tag.color}88`;
+
+  return (
+    <Animated.View style={anim}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.tagPlate, { borderColor: border }, pressed && styles.pressed]}
+        accessibilityLabel={`Price ${tag.label}`}
+      >
+        <LinearGradient
+          colors={[`${tag.color}44`, 'rgba(11,10,26,0.75)']}
+          style={styles.tagGrad}
+        />
+        <Text style={styles.tagIcon}>🏷️</Text>
+        <Text style={[styles.tagText, { color: tag.color }]}>{tag.label}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 export function PriceTagRecognition({ onComplete }: { onComplete: () => void }) {
   const [showSuccess, setShowSuccess] = useState(false);
-  const [shakeAnim] = useState(() => new Animated.Value(0));
+  const [selected, setSelected] = useState<TagId | null>(null);
+  const [feedback, setFeedback] = useState<'idle' | 'wrong' | 'correct'>('idle');
+  const [attempts, setAttempts] = useState(0);
 
-  useEffect(() => {
-    speak(VOICE, 0.75);
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
   }, []);
 
-  const triggerShake = useCallback(() => {
-    shakeAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-  }, [shakeAnim]);
+  useEffect(() => {
+    playVoice();
+  }, [playVoice]);
 
   const handleTap = useCallback(
-    (id: string) => {
-      if (id !== CORRECT) {
-        speak('Try again.');
-        triggerShake();
-        return;
+    (id: TagId) => {
+      if (feedback === 'correct') return;
+      setSelected(id);
+      setAttempts((a) => a + 1);
+
+      if (id === CORRECT) {
+        setFeedback('correct');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speak('Correct! Twenty rupees!', 0.75);
+        setShowSuccess(true);
+        setTimeout(() => onComplete(), 2400);
+      } else {
+        setFeedback('wrong');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Try again. Tap the twenty rupees price tag.', 0.7);
+        setTimeout(() => {
+          setFeedback('idle');
+          setSelected(null);
+        }, 900);
       }
-      speak('Correct! Twenty rupees!');
-      setShowSuccess(true);
-      setTimeout(() => onComplete(), 2200);
     },
-    [onComplete, triggerShake]
+    [feedback, onComplete],
   );
 
-  if (showSuccess) return <SuccessCelebration variant="indigo" title="Great Job!" subtitle="You found ₹20!" />;
+  const coachLine =
+    attempts === 0
+      ? 'Read each tag carefully — which one says twenty rupees?'
+      : 'Find the ₹20 tag — not ₹10 or ₹50!';
 
-  const shakeX = shakeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 10] });
+  if (showSuccess) {
+    return (
+      <SuccessCelebration
+        variant="sunset"
+        title="Price Hunter!"
+        subtitle="You found ₹20!"
+        badgeEmoji="🏷️"
+      />
+    );
+  }
 
   return (
-    <GameLayout
+    <CitizenGameShell
+      studio="PRICE HUNTER · GAME 3"
       title="Find the price"
       instruction="Tap the ₹20 price tag."
-      icon="🏷️"
-      backgroundVariant="indigo"
+      mascot="🏷️"
+      coachLine={coachLine}
+      onReplayVoice={playVoice}
     >
-      <View style={styles.content}>
+      <View style={styles.aisleFrame}>
+        <LinearGradient
+          colors={[`${SHOP.accent}33`, 'transparent', `${CZ.accent}22`]}
+          style={styles.aisleGlow}
+        />
+        <Text style={styles.aisleLabel}>PRICE TAG AISLE</Text>
         <Text style={styles.prompt}>Which price tag is ₹20?</Text>
         <View style={styles.tagsRow}>
           {PRICE_TAGS.map((tag) => (
-            <Animated.View
+            <PriceTagPlate
               key={tag.id}
-              style={[
-                styles.tagCard,
-                { backgroundColor: tag.bg, borderColor: tag.color },
-                tag.id === CORRECT && { borderWidth: 4 },
-                { transform: [{ translateX: tag.id === CORRECT ? 0 : shakeX }] },
-              ]}
-            >
-              <Pressable
-                onPress={() => handleTap(tag.id)}
-                style={({ pressed }) => [styles.tagTouch, pressed && styles.pressed]}
-                accessibilityLabel={`Price ${tag.label}`}
-              >
-                <Text style={[styles.tagText, { color: tag.color }]}>{tag.label}</Text>
-              </Pressable>
-            </Animated.View>
+              tag={tag}
+              selected={selected === tag.id}
+              feedback={feedback}
+              onPress={() => handleTap(tag.id)}
+            />
           ))}
         </View>
+        <Text style={styles.hint}>🏷️ twenty rupees · middle price tag</Text>
       </View>
-    </GameLayout>
+    </CitizenGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 8, alignItems: 'center' },
-  prompt: { fontSize: 20, fontWeight: '800', color: '#374151', marginBottom: 24, textAlign: 'center' },
-  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16 },
-  tagCard: {
+  aisleFrame: {
     borderRadius: 20,
-    padding: 24,
-    borderWidth: 3,
+    borderWidth: 2,
+    borderColor: `${SHOP.accent}55`,
+    backgroundColor: 'rgba(26,10,18,0.5)',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    overflow: 'hidden',
+    alignItems: 'center',
+  },
+  aisleGlow: { ...StyleSheet.absoluteFillObject },
+  aisleLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: SHOP.glow,
+    marginBottom: 12,
+  },
+  prompt: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: CZ.textLight,
+    textAlign: 'center',
+    marginBottom: 18,
+  },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 },
+  tagPlate: {
+    minWidth: 100,
+    minHeight: 112,
+    borderRadius: 16,
+    borderWidth: 2.5,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 100,
+    overflow: 'hidden',
+    padding: 12,
   },
-  tagTouch: { alignItems: 'center', justifyContent: 'center' },
-  pressed: { opacity: 0.9 },
-  tagText: { fontSize: 22, fontWeight: '800' },
+  tagGrad: { ...StyleSheet.absoluteFillObject },
+  tagIcon: { fontSize: 24, marginBottom: 4 },
+  tagText: { fontSize: 22, fontWeight: '900', letterSpacing: 0.5 },
+  pressed: { opacity: 0.88 },
+  hint: {
+    marginTop: 16,
+    fontSize: 12,
+    fontWeight: '700',
+    color: SHOP.glow,
+    textAlign: 'center',
+  },
 });

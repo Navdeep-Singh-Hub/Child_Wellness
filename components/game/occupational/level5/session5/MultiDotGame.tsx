@@ -1,9 +1,2 @@
-import React from 'react';
-import EyeTrackGame from './EyeTrackGame';
-import { MULTI_DOT } from './eyeTrackConfig';
-
-const MultiDotGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => (
-  <EyeTrackGame config={MULTI_DOT} onBack={onBack} onComplete={onComplete} />
-);
-
-export default MultiDotGame;
+/** OT Level 5 · Session 5 · Game 5 — Dual Focus */
+export { default } from '@/components/game/occupational/level5/session5/dualFocus/DualFocusGame';

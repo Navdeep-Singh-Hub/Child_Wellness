@@ -1,8 +1,6 @@
 /**
- * OT Level 4 Session 1 — Drag Left → Right theme tokens.
- * Each game extends the shared shell with its own identity.
+ * Backward-compat barrel — OT Level 4 Session 1 drag themes.
  */
-
 export const SESSION1_SHELL = {
   backText: '#1E3A8A',
   backBorder: 'rgba(59,130,246,0.28)',
@@ -13,162 +11,12 @@ export const SESSION1_SHELL = {
   statBorder: 'rgba(15,23,42,0.12)',
 } as const;
 
-/** Game 1 — Goal Pass · Stadium night kick-off */
-export const GOAL_PASS_THEME = {
-  title: 'Goal Pass',
-  subtitle: 'Slide the ball across the pitch into the net',
-  emoji: '⚽',
-  gradient: ['#0C1A3A', '#1E3A5F', '#1D4ED8', '#3B82F6'] as [string, string, string, string],
-  accent: '#FCD34D',
-  accentDark: '#F59E0B',
-  accentBlue: '#3B82F6',
-  pitchDark: '#166534',
-  pitchLight: '#22C55E',
-  pitchLine: 'rgba(255,255,255,0.72)',
-  goalGold: '#FCD34D',
-  goalNet: 'rgba(255,255,255,0.18)',
-  draggableEmoji: '⚽',
-  targetEmoji: '🥅',
-  playBorder: 'rgba(252,211,77,0.45)',
-  playBg: '#15803D',
-  sparkleColor: '#FCD34D',
-  zoneBorder: 'rgba(252,211,77,0.55)',
-  floodlight: 'rgba(254,243,199,0.12)',
-  shadow: 'rgba(0,0,0,0.35)',
-  hintBg: 'rgba(15,23,42,0.72)',
-  hintText: '#F8FAFC',
-  progressFill: '#FCD34D',
-  progressTrack: 'rgba(255,255,255,0.2)',
-  voiceIntro: 'Welcome to the stadium! Drag the ball from the kick-off spot into the goal net!',
-  voiceDrag: 'Slide the ball across the pitch to score!',
-  voiceComplete: 'What a striker! You scored every pass!',
-  voiceMiss: 'Keep the ball on the pitch — aim for the goal!',
-  voiceGoal: 'Goal!',
-  congrats: 'Stadium Striker!',
-} as const;
-
-/** Game 2 — Monster Munch · Snack cave feeding frenzy */
-export const MONSTER_FOOD_ITEMS = ['🍎', '🍌', '🍪', '🍇', '🥕', '🧁'] as const;
-
-export const MONSTER_FEED_THEME = {
-  title: 'Monster Munch',
-  subtitle: 'Slide the snack across the cave to the hungry monster',
-  emoji: '👹',
-  gradient: ['#1E1033', '#312E81', '#5B21B6', '#7C3AED'] as [string, string, string, string],
-  accent: '#F59E0B',
-  accentDark: '#D97706',
-  accentPink: '#F472B6',
-  caveDark: '#1E1033',
-  caveMid: '#4C1D95',
-  caveFloor: '#312E81',
-  mushroom: '#A78BFA',
-  snackGold: '#FCD34D',
-  monsterGreen: '#4ADE80',
-  monsterBody: '#6D28D9',
-  plateWood: '#92400E',
-  draggableEmoji: '🍎',
-  targetEmoji: '👹',
-  playBorder: 'rgba(244,114,182,0.42)',
-  playBg: '#2E1065',
-  sparkleColor: '#FBBF24',
-  zoneBorder: 'rgba(245,158,11,0.5)',
-  voiceIntro: 'Welcome to the snack cave! Drag food from the plate to feed the hungry monster!',
-  voiceDrag: 'Slide the snack to the monster mouth!',
-  voiceComplete: 'Burp! The monster is totally full. Amazing feeding!',
-  voiceMiss: 'Oops! Drop the snack right in the monster mouth!',
-  voiceYum: 'Yum yum!',
-  congrats: 'Snack Cave Champion!',
-} as const;
-
-/** Game 3 — Lane Cross · Neon city highway drive */
-export const LANE_CROSS_CARS = ['🚗', '🚙', '🚕', '🏎️'] as const;
-
-export const LANE_CROSS_THEME = {
-  title: 'Lane Cross',
-  subtitle: 'Drive from the left lane across to the parking spot',
-  emoji: '🚗',
-  gradient: ['#0F172A', '#1E293B', '#334155', '#475569'] as [string, string, string, string],
-  accent: '#22D3EE',
-  accentDark: '#0891B2',
-  accentAmber: '#FBBF24',
-  asphalt: '#1F2937',
-  asphaltLight: '#374151',
-  laneMark: 'rgba(253,224,71,0.85)',
-  laneWhite: 'rgba(255,255,255,0.55)',
-  neonCyan: '#22D3EE',
-  neonPink: '#F472B6',
-  skyline: '#111827',
-  windowLit: '#FDE68A',
-  draggableEmoji: '🚗',
-  targetEmoji: '🅿️',
-  playBorder: 'rgba(34,211,238,0.42)',
-  playBg: '#111827',
-  sparkleColor: '#22D3EE',
-  zoneBorder: 'rgba(34,211,238,0.45)',
-  voiceIntro: 'Welcome to the city! Drive your car from the left lane to the parking spot on the right!',
-  voiceDrag: 'Steer across the highway to the parking zone!',
-  voiceComplete: 'Perfect driving! You crossed every lane safely!',
-  voiceMiss: 'Stay on the road — park in the right zone!',
-  voiceSafe: 'Safe crossing!',
-  congrats: 'Highway Hero!',
-} as const;
-
-/** Game 4 — Color Slide · Art studio paint matching */
-export const COLOR_SLIDE_THEME = {
-  title: 'Color Slide',
-  subtitle: 'Slide each paint blob to its matching bucket',
-  emoji: '🎨',
-  gradient: ['#FFF7ED', '#FFEDD5', '#FBCFE8', '#F472B6'] as [string, string, string, string],
-  accent: '#EC4899',
-  accentDark: '#BE185D',
-  accentViolet: '#8B5CF6',
-  studioCream: '#FFF7ED',
-  studioWood: '#D97706',
-  canvasWhite: '#FFFBEB',
-  conveyor: '#78716C',
-  paintLabel: '#57534E',
-  draggableEmoji: '🔴',
-  targetEmoji: '🪣',
-  playBorder: 'rgba(236,72,153,0.38)',
-  playBg: '#FFFBEB',
-  sparkleColor: '#F472B6',
-  zoneBorder: 'rgba(236,72,153,0.42)',
-  voiceIntro: 'Welcome to the paint studio! Slide each color blob to the matching paint bucket!',
-  voiceDrag: 'Slide the paint to the same color bucket!',
-  voiceComplete: 'Master painter! You matched every color perfectly!',
-  voiceMiss: 'Aim for the matching color bucket!',
-  voiceWrong: 'That is the wrong color — find the matching bucket!',
-  voiceMatch: 'Perfect match!',
-  congrats: 'Studio Color Star!',
-} as const;
-
-/** Game 5 — Quick Drag · Speed rush launch track */
-export const QUICK_DRAG_THEME = {
-  title: 'Quick Drag',
-  subtitle: 'Launch across the track before the timer hits zero',
-  emoji: '⚡',
-  gradient: ['#1A0505', '#450A0A', '#B91C1C', '#EF4444'] as [string, string, string, string],
-  accent: '#F97316',
-  accentDark: '#EA580C',
-  accentYellow: '#FACC15',
-  trackDark: '#0F0F0F',
-  trackMid: '#1C1917',
-  trackGlow: '#F97316',
-  launchPad: '#292524',
-  finishGate: '#FACC15',
-  boltBlue: '#38BDF8',
-  draggableEmoji: '⚡',
-  targetEmoji: '🏁',
-  playBorder: 'rgba(249,115,22,0.5)',
-  playBg: '#0C0A09',
-  sparkleColor: '#FACC15',
-  zoneBorder: 'rgba(249,115,22,0.48)',
-  voiceIntro: 'Welcome to the speed track! Drag from the launch pad to the finish gate before time runs out!',
-  voiceDrag: 'Wait for launch — then drag fast!',
-  voiceTimed: 'Go go go! Beat the clock!',
-  voiceComplete: 'Lightning fast! You beat every countdown!',
-  voiceMiss: 'Aim for the finish gate!',
-  voiceSlow: 'Too slow! Try again — drag faster!',
-  voiceFast: 'Blazing fast!',
-  congrats: 'Speed Track Legend!',
-} as const;
+export { GOAL_PASS_THEME } from '@/components/game/occupational/level4/session1/goalPass/goalPassTheme';
+export {
+  MONSTER_FOOD_ITEMS,
+  MONSTER_FEED_THEME,
+  MONSTER_MUNCH_THEME,
+} from '@/components/game/occupational/level4/session1/monsterMunch/monsterMunchTheme';
+export { LANE_CROSS_CARS, LANE_CROSS_THEME } from '@/components/game/occupational/level4/session1/laneCross/laneCrossTheme';
+export { COLOR_SLIDE_THEME } from '@/components/game/occupational/level4/session1/colorSlide/colorSlideTheme';
+export { QUICK_DRAG_THEME } from '@/components/game/occupational/level4/session1/quickDrag/quickDragTheme';

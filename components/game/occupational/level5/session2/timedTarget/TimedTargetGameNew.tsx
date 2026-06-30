@@ -5,7 +5,7 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { PulsingTarget, RaceTrackBackdrop } from '@/components/game/occupational/level5/session2/timedTarget/TimedTargetVisuals';
 import { TIMED_TARGET_COPY as COPY, TARGET_SIZE, TIMED_TARGET_THEME as THEME, TIME_LIMIT_MS } from '@/components/game/occupational/level5/session2/timedTarget/timedTargetTheme';
 import { SESSION5_2_PACING as P } from '@/components/game/occupational/level5/session2/session2Pacing';
-import { RoundCountdownOverlay, Session2HUD, Session2Intro } from '@/components/game/occupational/level5/session2/shared/Session2UI';
+import { BeatTheClockCountdown, BeatTheClockHUD, BeatTheClockIntro } from '@/components/game/occupational/level5/session2/timedTarget/TimedTargetUI';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { speak as speakTTS, stopTTS } from '@/utils/tts';
@@ -120,11 +120,7 @@ const TimedTargetGameNew: React.FC<{ onBack?: () => void; onComplete?: () => voi
   if (showInfo) {
     return (
       <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-        <Session2Intro
-          config={{ theme: THEME, emoji: COPY.emoji, title: COPY.title, tagline: COPY.tagline, body: COPY.body, chips: [...COPY.chips], startLabel: COPY.startLabel, startGradient: ['#10B981', '#059669', '#047857'], backdrop: <RaceTrackBackdrop /> }}
-          onStart={() => setShowInfo(false)}
-          onBack={exit}
-        />
+        <BeatTheClockIntro onStart={() => setShowInfo(false)} onBack={exit} />
       </SafeAreaView>
     );
   }
@@ -136,14 +132,10 @@ const TimedTargetGameNew: React.FC<{ onBack?: () => void; onComplete?: () => voi
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <TouchableOpacity onPress={exit} style={styles.back}><Text style={styles.backText}>← Exit</Text></TouchableOpacity>
-      <Session2HUD
-        theme={THEME}
-        gameTitle="Race Tap"
-        emoji={COPY.emoji}
+      <BeatTheClockHUD
         round={round}
         totalRounds={P.rounds}
         score={score}
-        scoreLabel="HITS"
         hint={hint}
         showHint={phase === 'playing'}
         extra={target ? <Text style={styles.timerLbl}>{(target.timeLeft / 1000).toFixed(1)}s left</Text> : null}
@@ -156,7 +148,7 @@ const TimedTargetGameNew: React.FC<{ onBack?: () => void; onComplete?: () => voi
             <Pressable onPress={onHit} style={[styles.hitZone, { left: target.x - 44, top: target.y - 44, width: 88, height: 88 }]} />
           </>
         )}
-        {phase === 'countdown' && <RoundCountdownOverlay key={`cd-${round}`} accent={THEME.accent} onDone={startPlaying} />}
+        {phase === 'countdown' && <BeatTheClockCountdown key={`cd-${round}`} accent={THEME.accent} onDone={startPlaying} />}
       </View>
     </SafeAreaView>
   );

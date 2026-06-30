@@ -1,15 +1,16 @@
 /**
- * Game 4: Multi Letter Copy — write a sequence of letters (e.g. A B C).
+ * Game 3: Letter Chain — write sequences of letters (e.g. A B C).
  * Validation: OpenAI vision (GPT-4o).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
+import { View, Text, StyleSheet, LayoutChangeEvent, AccessibilityInfo } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import * as Speech from 'expo-speech';
+import { speak, stopTTS } from '@/utils/tts';
 import { DrawingCanvas, DrawingCanvasRef, Stroke } from '@/components/games/Level1/DrawingCanvas';
-import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
+import { LetterGameShell } from '@/components/level1-straight-letters-session/letters-shared/LetterGameShell';
+import { LetterMascot } from '@/components/level1-straight-letters-session/letters-shared/LetterMascot';
 import { ALPHABET, scaleStrokes } from '@/components/level1-full-alphabet-session/alphabetData';
 import { isLetterValidationPass, letterRecognitionFailureHint, validateLetterImage } from '@/utils/recognizeLetter';
 import { captureDrawingForAi } from './captureDrawingBase64';
@@ -25,13 +26,43 @@ const SEQUENCES = [
 ];
 const RECOGNITION_DEBOUNCE_MS = 750;
 
+const SHELL = {
+  bg: '#083344',
+  labelColor: '#67E8F9',
+  titleColor: '#ECFEFF',
+  textOnDark: '#ECFEFF',
+  backBg: 'rgba(255,255,255,0.08)',
+  backBorder: 'rgba(34,211,238,0.35)',
+  dotIdle: 'rgba(255,255,255,0.15)',
+  dotActive: '#06B6D4',
+  dotDone: '#34D399',
+};
+
+const FEEDBACK_THEME = {
+  accent: '#22D3EE',
+  bg: 'rgba(255,255,255,0.08)',
+  border: 'rgba(34,211,238,0.35)',
+  text: '#ECFEFF',
+  letter: '#67E8F9',
+  retryBg: '#0891B2',
+};
+
 export function MultiLetterCopyGame({
-  currentStep, totalSteps, onBack, onComplete,
-}: { currentStep: number; totalSteps: number; onBack: () => void; onComplete: () => void }) {
+  currentStep,
+  totalSteps,
+  onBack,
+  onComplete,
+}: {
+  currentStep: number;
+  totalSteps: number;
+  onBack: () => void;
+  onComplete: () => void;
+}) {
   const [refDims, setRefDims] = useState({ width: 280, height: 72 });
   const [seqIdx, setSeqIdx] = useState(0);
   const [letterPos, setLetterPos] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const shotRef = useRef<View>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -45,7 +76,7 @@ export function MultiLetterCopyGame({
   const [validationPassed, setValidationPassed] = useState(false);
 
   const seq = SEQUENCES[seqIdx];
-  const seqLetters = useMemo(() => seq.map((i) => ALPHABET[i]), [seqIdx]);
+  const seqLetters = useMemo(() => seq.map((i) => ALPHABET[i]), [seq]);
   const currentDef = seqLetters[letterPos];
   const refRowGuides = useMemo(() => {
     const w = refDims.width;
@@ -59,6 +90,11 @@ export function MultiLetterCopyGame({
       oy: h * 0.05,
     }));
   }, [seqLetters, refDims]);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => setReduceMotion(!!v)).catch(() => {});
+    return () => stopTTS();
+  }, []);
 
   const onRefRowLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -78,10 +114,7 @@ export function MultiLetterCopyGame({
       debounceRef.current = null;
     }
     const names = seqLetters.map((l) => l.letter).join(', ');
-    try {
-      Speech.stop();
-      Speech.speak(letterPos === 0 ? `Write ${names}` : `Now write ${currentDef.letter}`, { rate: 0.85 });
-    } catch (_) {}
+    speak(letterPos === 0 ? `Write ${names}` : `Now write ${currentDef.letter}`, 0.72);
   }, [seqIdx, letterPos, currentDef.letter, seqLetters]);
 
   const runRecognition = useCallback(async () => {
@@ -108,7 +141,7 @@ export function MultiLetterCopyGame({
       setAiFeedback(
         data.error === 'recognition_unavailable'
           ? 'Letter check is not set up yet. Ask a grown-up to add the key on the server.'
-          : letterRecognitionFailureHint(data) || 'Could not check your letter. Try again.'
+          : letterRecognitionFailureHint(data) || 'Could not check your letter. Try again.',
       );
       return;
     }
@@ -123,26 +156,38 @@ export function MultiLetterCopyGame({
 
     if (passed) {
       try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
+      speak(`Nice ${currentDef.letter}!`, 0.72);
       if (letterPos < seq.length - 1) {
-        setTimeout(() => setLetterPos((p) => p + 1), 800);
+        setTimeout(() => setLetterPos((p) => p + 1), reduceMotion ? 400 : 800);
       } else if (seqIdx < SEQUENCES.length - 1) {
         setShowConfetti(true);
-        setTimeout(() => { setShowConfetti(false); setSeqIdx((s) => s + 1); setLetterPos(0); }, 1200);
+        setTimeout(() => {
+          setShowConfetti(false);
+          setSeqIdx((s) => s + 1);
+          setLetterPos(0);
+        }, reduceMotion ? 500 : 1200);
       } else {
         setShowConfetti(true);
-        setTimeout(() => { setShowConfetti(false); onComplete(); }, 1500);
+        speak('Letter chain complete!', 0.72);
+        setTimeout(() => {
+          setShowConfetti(false);
+          onComplete();
+        }, reduceMotion ? 500 : 1500);
       }
     }
-  }, [currentDef.letter, letterPos, seq.length, seqIdx, onComplete]);
+  }, [currentDef.letter, letterPos, seq.length, seqIdx, onComplete, reduceMotion]);
 
-  const handleStrokeEnd = useCallback((strokes: Stroke[]) => {
-    latestStrokesRef.current = strokes;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      debounceRef.current = null;
-      runRecognition();
-    }, RECOGNITION_DEBOUNCE_MS);
-  }, [runRecognition]);
+  const handleStrokeEnd = useCallback(
+    (strokes: Stroke[]) => {
+      latestStrokesRef.current = strokes;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        runRecognition();
+      }, RECOGNITION_DEBOUNCE_MS);
+    },
+    [runRecognition],
+  );
 
   const handleRetry = useCallback(() => {
     canvasRef.current?.clear();
@@ -160,20 +205,46 @@ export function MultiLetterCopyGame({
   const seqDisplay = seqLetters.map((l) => l.letter);
 
   return (
-    <GameContainerGrip
-      title="Copy Sequence"
+    <LetterGameShell
+      theme={SHELL}
+      gameLabel="LETTER CHAIN"
+      gameTitle={`Sequence ${seqIdx + 1}`}
       currentStep={currentStep}
       totalSteps={totalSteps}
-      mascot="📋"
-      mascotHint={`Write: ${seqDisplay.join(' ')}`}
       onBack={onBack}
+      headerRight={<Text style={styles.seqCounter}>Set {seqIdx + 1}/{SEQUENCES.length}</Text>}
+      footer={
+        <LetterMascot
+          emoji="🔗"
+          name="Chain"
+          hint={`Write: ${seqDisplay.join(' ')}`}
+          accent="#22D3EE"
+          bubbleBg="rgba(255,255,255,0.08)"
+          bubbleBorder="rgba(34,211,238,0.35)"
+          nameColor="#67E8F9"
+          hintColor="#ECFEFF"
+        />
+      }
     >
-      <Text style={styles.seqCounter}>Set {seqIdx + 1}/{SEQUENCES.length}</Text>
-
       <View style={styles.seqRow}>
         {seqDisplay.map((l, i) => (
-          <View key={i} style={[styles.seqBox, i === letterPos && styles.seqBoxActive, i < letterPos && styles.seqBoxDone]}>
-            <Text style={[styles.seqLetter, i === letterPos && styles.seqLetterActive, i < letterPos && styles.seqLetterDone]}>{l}</Text>
+          <View
+            key={i}
+            style={[
+              styles.seqBox,
+              i === letterPos && styles.seqBoxActive,
+              i < letterPos && styles.seqBoxDone,
+            ]}
+          >
+            <Text
+              style={[
+                styles.seqLetter,
+                i === letterPos && styles.seqLetterActive,
+                i < letterPos && styles.seqLetterDone,
+              ]}
+            >
+              {l}
+            </Text>
           </View>
         ))}
       </View>
@@ -189,11 +260,11 @@ export function MultiLetterCopyGame({
                 y1={s.from.y + g.oy}
                 x2={s.to.x + g.ox}
                 y2={s.to.y + g.oy}
-                stroke="#1E40AF"
+                stroke="#22D3EE"
                 strokeWidth={4}
                 strokeLinecap="round"
               />
-            ))
+            )),
           )}
         </Svg>
       </View>
@@ -219,25 +290,51 @@ export function MultiLetterCopyGame({
         expectedLetter={currentDef.letter}
         passed={validationPassed}
         onRetry={handleRetry}
+        theme={FEEDBACK_THEME}
       />
 
       {showConfetti && <ConfettiEffect />}
-    </GameContainerGrip>
+    </LetterGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  seqCounter: { textAlign: 'center', fontSize: 14, fontWeight: '700', color: '#6B7280', marginBottom: 6 },
+  seqCounter: { fontSize: 13, fontWeight: '800', color: SHELL.labelColor },
   seqRow: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginBottom: 10 },
-  seqBox: { width: 54, height: 54, borderRadius: 14, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#E5E7EB' },
-  seqBoxActive: { backgroundColor: '#DBEAFE', borderColor: '#3B82F6' },
-  seqBoxDone: { backgroundColor: '#D1FAE5', borderColor: '#059669' },
-  seqLetter: { fontSize: 26, fontWeight: '900', color: '#9CA3AF' },
-  seqLetterActive: { color: '#1E40AF' },
-  seqLetterDone: { color: '#059669' },
-  refLabel: { fontSize: 13, fontWeight: '700', color: '#6B7280', marginBottom: 4 },
-  refRow: { height: 76, backgroundColor: '#EFF6FF', borderRadius: 16, borderWidth: 2, borderColor: '#BFDBFE', marginBottom: 8, overflow: 'hidden' },
-  writeLabel: { fontSize: 14, fontWeight: '700', color: '#374151', marginBottom: 4 },
-  canvasWrap: { flex: 1, minHeight: 180, borderRadius: 24, overflow: 'hidden', backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#E5E7EB' },
-  captureWrap: { flex: 1, width: '100%', minHeight: 160, backgroundColor: '#FFFFFF' },
+  seqBox: {
+    width: 54,
+    height: 54,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(34,211,238,0.2)',
+  },
+  seqBoxActive: { backgroundColor: 'rgba(6,182,212,0.2)', borderColor: '#22D3EE' },
+  seqBoxDone: { backgroundColor: 'rgba(52,211,153,0.15)', borderColor: '#34D399' },
+  seqLetter: { fontSize: 26, fontWeight: '900', color: '#64748B' },
+  seqLetterActive: { color: '#67E8F9' },
+  seqLetterDone: { color: '#34D399' },
+  refLabel: { fontSize: 13, fontWeight: '700', color: '#67E8F9', marginBottom: 4 },
+  refRow: {
+    height: 76,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(34,211,238,0.35)',
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  writeLabel: { fontSize: 14, fontWeight: '700', color: '#67E8F9', marginBottom: 4 },
+  canvasWrap: {
+    flex: 1,
+    minHeight: 160,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: 'rgba(34,211,238,0.25)',
+  },
+  captureWrap: { flex: 1, width: '100%', minHeight: 140, backgroundColor: '#FFFFFF' },
 });

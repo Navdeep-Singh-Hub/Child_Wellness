@@ -1,9 +1,1 @@
-/** OT Level 6 · Session 6 · Game 5 — Balance Journey */
-import { DynamicBalanceGame } from '@/components/game/occupational/level6/session6/DynamicBalanceGame';
-import React from 'react';
-
-const BalanceJourneyGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
-  <DynamicBalanceGame {...props} mode="balanceJourney" />
-);
-
-export default BalanceJourneyGame;
+export { default } from './summitQuest/SummitQuestGame';

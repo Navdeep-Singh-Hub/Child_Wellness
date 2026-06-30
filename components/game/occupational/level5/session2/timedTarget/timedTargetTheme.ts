@@ -1,4 +1,4 @@
-import type { Session2ThemeTokens } from '@/components/game/occupational/level5/session2/shared/Session2UI';
+import type { Session2Copy, Session2GameMeta, Session2ThemeTokens } from '@/components/game/occupational/level5/session2/session2Theme';
 
 export const TIMED_TARGET_THEME: Session2ThemeTokens = {
   sky: ['#ECFDF5', '#D1FAE5', '#A7F3D0', '#6EE7B7'],
@@ -11,8 +11,8 @@ export const TIMED_TARGET_THEME: Session2ThemeTokens = {
   cue: '#064E3B',
 };
 
-export const TIMED_TARGET_COPY = {
-  title: 'Timed Target',
+export const TIMED_TARGET_COPY: Session2Copy = {
+  title: 'Beat the Clock',
   emoji: '⏱️',
   tagline: 'Beat the Clock · Speed + Accuracy',
   body: 'A target appears with a shrinking time ring. Tap it before the clock runs out — stay fast AND accurate!',
@@ -24,7 +24,13 @@ export const TIMED_TARGET_COPY = {
   congrats: 'Speed Champion!',
   logType: 'timed-target',
   skillTags: ['speed', 'accuracy', 'reaction-time', 'time-pressure'],
-} as const;
+};
+
+export const TIMED_TARGET_META: Session2GameMeta = {
+  startGradient: ['#10B981', '#059669', '#047857'],
+  hudTitle: 'Race Tap',
+  scoreLabel: 'HITS',
+};
 
 export const TARGET_SIZE = 64;
 export const TIME_LIMIT_MS = 3000;

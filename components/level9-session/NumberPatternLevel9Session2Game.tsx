@@ -2,15 +2,142 @@
  * Level 9 (Clockwise) — Session 2, Game 1: Number Pattern
  * 2, 6, 10, 14, ? → 18 (+4 each time).
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { ClockwiseGameShell } from '@/components/level9-session/shared/ClockwiseGameShell';
+import { CW } from '@/components/level9-session/shared/clockwiseTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
-const PATTERN = [2, 6, 10, 14];
-const OPTIONS = [16, 17, 18, 19];
+const PATTERN = [2, 6, 10, 14] as const;
+const OPTIONS = [16, 17, 18, 19] as const;
 const CORRECT = 18;
+
+const VOICE = 'What number comes next? 2, 6, 10, 14. Add 4 each time.';
+const PALETTE = { accent: '#0891B2', glow: '#67E8F9', secondary: '#22D3EE' } as const;
+
+function RungCell({ value, index }: { value: number; index: number }) {
+  const drift = useSharedValue(0);
+
+  useEffect(() => {
+    drift.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 900 + index * 120 }),
+        withTiming(0, { duration: 900 + index * 120 }),
+      ),
+      -1,
+      true,
+    );
+  }, [drift, index]);
+
+  const glow = useAnimatedStyle(() => ({
+    opacity: 0.2 + drift.value * 0.35,
+    transform: [{ scale: 1 + drift.value * 0.06 }],
+  }));
+
+  return (
+    <View style={styles.rungWrap}>
+      <Animated.View style={[styles.rungGlow, glow]} />
+      <View style={[styles.rung, { borderColor: `${PALETTE.glow}88` }]}>
+        <Text style={styles.rungNum}>{value}</Text>
+        {index < PATTERN.length - 1 ? (
+          <Text style={styles.rungStep}>+4</Text>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+function VoidRung() {
+  const pulse = useSharedValue(0);
+
+  useEffect(() => {
+    pulse.value = withRepeat(
+      withSequence(withTiming(1, { duration: 700 }), withTiming(0, { duration: 700 })),
+      -1,
+      true,
+    );
+  }, [pulse]);
+
+  const anim = useAnimatedStyle(() => ({
+    borderColor: `rgba(103,232,249,${0.4 + pulse.value * 0.5})`,
+    transform: [{ scale: 1 + pulse.value * 0.06 }],
+  }));
+
+  return (
+    <Animated.View style={[styles.voidRung, anim]}>
+      <LinearGradient colors={[`${PALETTE.accent}55`, 'rgba(8,12,40,0.6)']} style={styles.voidGrad} />
+      <Text style={styles.voidQ}>?</Text>
+      <Text style={styles.voidLbl}>NEXT</Text>
+    </Animated.View>
+  );
+}
+
+function NumberOrb({
+  num,
+  selected,
+  feedback,
+  onPress,
+}: {
+  num: number;
+  selected: boolean;
+  feedback: 'idle' | 'wrong' | 'correct';
+  onPress: () => void;
+}) {
+  const shake = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (feedback === 'wrong' && selected) {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    } else if (feedback === 'correct' && selected) {
+      scale.value = withSpring(1.08, { damping: 8 });
+    } else {
+      scale.value = withTiming(1, { duration: 150 });
+    }
+  }, [feedback, selected, shake, scale]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }, { scale: scale.value }],
+  }));
+
+  const border =
+    feedback === 'correct' && selected
+      ? CW.good
+      : feedback === 'wrong' && selected
+        ? CW.warn
+        : selected
+          ? PALETTE.glow
+          : CW.glassBorder;
+
+  return (
+    <Animated.View style={anim}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.orb, { borderColor: border }, pressed && styles.pressed]}
+        accessibilityLabel={`Number ${num}`}
+      >
+        <View style={[styles.orbHalo, { backgroundColor: `${PALETTE.accent}22` }]} />
+        <Text style={styles.orbNum}>{num}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 export interface NumberPatternLevel9Session2GameProps {
   onComplete: () => void;
@@ -18,32 +145,39 @@ export interface NumberPatternLevel9Session2GameProps {
 
 export function NumberPatternLevel9Session2Game({ onComplete }: NumberPatternLevel9Session2GameProps) {
   const [showSuccess, setShowSuccess] = useState(false);
-  const [wrongShake] = useState(() => new Animated.Value(0));
+  const [selected, setSelected] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState<'idle' | 'wrong' | 'correct'>('idle');
 
-  useEffect(() => {
-    speak('What number comes next? 2, 6, 10, 14. Add 4 each time.', 0.75);
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
   }, []);
 
-  const triggerWrong = useCallback(() => {
-    wrongShake.setValue(0);
-    Animated.sequence([
-      Animated.timing(wrongShake, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(wrongShake, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-    speak('Try again. 2, 6, 10, 14 — add 4 each time.', 0.7);
-  }, [wrongShake]);
+  useEffect(() => {
+    playVoice();
+  }, [playVoice]);
 
   const handleTap = useCallback(
     (num: number) => {
+      if (feedback === 'correct') return;
+      setSelected(num);
+
       if (num === CORRECT) {
+        setFeedback('correct');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         speak('Correct! 18 comes next!', 0.75);
         setShowSuccess(true);
         setTimeout(() => onComplete(), 2200);
       } else {
-        triggerWrong();
+        setFeedback('wrong');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Try again. 2, 6, 10, 14 — add 4 each time.', 0.7);
+        setTimeout(() => {
+          setFeedback('idle');
+          setSelected(null);
+        }, 900);
       }
     },
-    [onComplete, triggerWrong]
+    [feedback, onComplete],
   );
 
   if (showSuccess) {
@@ -57,84 +191,154 @@ export function NumberPatternLevel9Session2Game({ onComplete }: NumberPatternLev
     );
   }
 
-  const shakeX = wrongShake.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
-
   return (
-    <GameLayout
-      title="Number Pattern"
+    <ClockwiseGameShell
+      studio="NUMBER PATTERN · GAME 1"
+      title="Find the next number"
       instruction="2, 6, 10, 14, ? — add 4 each time. Tap the next number."
-      icon="🔢"
-      backgroundVariant="indigo"
+      mascot="🔢"
+      coachLine="Each step adds four — what comes after fourteen?"
+      onReplayVoice={playVoice}
     >
-      <View style={styles.container}>
-        <Text style={styles.prompt}>2, 6, 10, 14, ?</Text>
-        <View style={styles.patternRow}>
-          {PATTERN.map((n, i) => (
-            <View key={i} style={styles.patternBox}>
-              <Text style={styles.patternNum}>{n}</Text>
-            </View>
-          ))}
-          <View style={styles.questionBox}>
-            <Text style={styles.questionText}>?</Text>
-          </View>
+      <View style={styles.ladderFrame}>
+        <LinearGradient
+          colors={[`${PALETTE.accent}33`, 'transparent', `${PALETTE.secondary}22`]}
+          style={styles.ladderGlow}
+        />
+        <Text style={styles.frameLabel}>ORBIT NUMBER LADDER</Text>
+
+        <View style={styles.ruleRow}>
+          <Text style={styles.ruleText}>+4</Text>
+          <Text style={styles.ruleArrow}>each step</Text>
         </View>
-        <Text style={styles.chooseLabel}>Tap the next number</Text>
-        <Animated.View style={[styles.optionsRow, { transform: [{ translateX: shakeX }] }]}>
-          {OPTIONS.map((num) => (
-            <Pressable
-              key={num}
-              onPress={() => handleTap(num)}
-              style={({ pressed }) => [styles.optionBtn, pressed && styles.pressed]}
-              accessibilityLabel={`Number ${num}`}
-            >
-              <Text style={styles.optionNum}>{num}</Text>
-            </Pressable>
+
+        <View style={styles.ladderRow}>
+          {PATTERN.map((n, i) => (
+            <React.Fragment key={i}>
+              <RungCell value={n} index={i} />
+              {i < PATTERN.length - 1 && <Text style={styles.connector}>→</Text>}
+            </React.Fragment>
           ))}
-        </Animated.View>
+          <Text style={styles.connector}>→</Text>
+          <VoidRung />
+        </View>
+
+        <Text style={styles.prompt}>Tap the next number</Text>
+
+        <View style={styles.optionsRow}>
+          {OPTIONS.map((num) => (
+            <NumberOrb
+              key={num}
+              num={num}
+              selected={selected === num}
+              feedback={feedback}
+              onPress={() => handleTap(num)}
+            />
+          ))}
+        </View>
       </View>
-    </GameLayout>
+    </ClockwiseGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', paddingVertical: 24 },
-  prompt: { fontSize: 22, fontWeight: '800', color: '#4338CA', marginBottom: 20 },
-  patternRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 24, flexWrap: 'wrap', justifyContent: 'center' },
-  patternBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: 'rgba(99,102,241,0.15)',
-    borderWidth: 3,
-    borderColor: '#6366F1',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  patternNum: { fontSize: 22, fontWeight: '800', color: '#4338CA' },
-  questionBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: '#C7D2FE',
-    borderWidth: 3,
-    borderColor: '#6366F1',
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  questionText: { fontSize: 22, fontWeight: '800', color: '#4338CA' },
-  chooseLabel: { fontSize: 18, fontWeight: '700', color: '#64748B', marginBottom: 16 },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 },
-  optionBtn: {
+  ladderFrame: {
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: `${PALETTE.accent}55`,
+    backgroundColor: 'rgba(8,12,40,0.5)',
     paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    backgroundColor: '#FFF',
-    borderWidth: 3,
-    borderColor: '#818CF8',
-    minWidth: 68,
+    paddingHorizontal: 12,
+    overflow: 'hidden',
     alignItems: 'center',
   },
-  pressed: { opacity: 0.9 },
-  optionNum: { fontSize: 24, fontWeight: '800', color: '#4338CA' },
+  ladderGlow: { ...StyleSheet.absoluteFillObject },
+  frameLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: PALETTE.glow,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  ruleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: `${PALETTE.accent}44`,
+    backgroundColor: 'rgba(8,145,178,0.15)',
+  },
+  ruleText: { fontSize: 18, fontWeight: '900', color: PALETTE.glow },
+  ruleArrow: { fontSize: 13, fontWeight: '700', color: CW.textLight },
+  ladderRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginBottom: 18,
+  },
+  connector: { fontSize: 16, fontWeight: '900', color: PALETTE.glow },
+  rungWrap: { alignItems: 'center' },
+  rungGlow: {
+    position: 'absolute',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: `${PALETTE.accent}44`,
+  },
+  rung: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    borderWidth: 2,
+    backgroundColor: 'rgba(8,12,40,0.75)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rungNum: { fontSize: 22, fontWeight: '900', color: CW.textLight },
+  rungStep: { fontSize: 9, fontWeight: '800', color: PALETTE.glow, marginTop: 2 },
+  voidRung: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    borderWidth: 2.5,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  voidGrad: { ...StyleSheet.absoluteFillObject },
+  voidQ: { fontSize: 24, fontWeight: '900', color: PALETTE.glow },
+  voidLbl: { fontSize: 8, fontWeight: '900', color: CW.textMuted, letterSpacing: 1 },
+  prompt: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: CW.textLight,
+    marginBottom: 14,
+    textAlign: 'center',
+  },
+  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 },
+  orb: {
+    minWidth: 64,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    borderWidth: 2,
+    backgroundColor: 'rgba(8,12,40,0.75)',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  orbHalo: {
+    position: 'absolute',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  orbNum: { fontSize: 24, fontWeight: '900', color: CW.textLight },
+  pressed: { opacity: 0.88 },
 });

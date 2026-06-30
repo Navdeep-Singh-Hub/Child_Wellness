@@ -1,14 +1,16 @@
 /**
- * Game 1: Free Letter Writing — prompt says "Write A", child writes on blank canvas.
- * Validation: OpenAI vision (strict letter check), not coverage-only matching.
+ * Game 1: Blank Canvas — prompt says "Write A", child writes on blank canvas.
+ * Validation: OpenAI vision (strict letter check).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, AccessibilityInfo } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import * as Speech from 'expo-speech';
+import { speak, stopTTS } from '@/utils/tts';
 import { DrawingCanvas, DrawingCanvasRef, Stroke } from '@/components/games/Level1/DrawingCanvas';
-import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
+import { LetterGameShell } from '@/components/level1-straight-letters-session/letters-shared/LetterGameShell';
+import { LetterMascot } from '@/components/level1-straight-letters-session/letters-shared/LetterMascot';
+import { TraceMeter } from '@/components/level1-full-alphabet-session/alphabet-shared/TraceMeter';
 import { ALPHABET } from '@/components/level1-full-alphabet-session/alphabetData';
 import { isLetterValidationPass, letterRecognitionFailureHint, validateLetterImage } from '@/utils/recognizeLetter';
 import { captureDrawingForAi } from '@/components/level1-copy-letters-session/captureDrawingBase64';
@@ -17,11 +19,41 @@ import { LetterRecognitionFeedback } from '@/components/level1-copy-letters-sess
 const ROUND_SIZE = 10;
 const RECOGNITION_DEBOUNCE_MS = 750;
 
+const SHELL = {
+  bg: '#450A0A',
+  labelColor: '#FCA5A5',
+  titleColor: '#FEF2F2',
+  textOnDark: '#FEF2F2',
+  backBg: 'rgba(255,255,255,0.08)',
+  backBorder: 'rgba(248,113,113,0.35)',
+  dotIdle: 'rgba(255,255,255,0.15)',
+  dotActive: '#EF4444',
+  dotDone: '#34D399',
+};
+
+const FEEDBACK_THEME = {
+  accent: '#F87171',
+  bg: 'rgba(255,255,255,0.08)',
+  border: 'rgba(248,113,113,0.35)',
+  text: '#FEF2F2',
+  letter: '#FCA5A5',
+  retryBg: '#DC2626',
+};
+
 export function FreeLetterWritingGame({
-  currentStep, totalSteps, onBack, onComplete,
-}: { currentStep: number; totalSteps: number; onBack: () => void; onComplete: () => void }) {
+  currentStep,
+  totalSteps,
+  onBack,
+  onComplete,
+}: {
+  currentStep: number;
+  totalSteps: number;
+  onBack: () => void;
+  onComplete: () => void;
+}) {
   const [idx, setIdx] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const shotRef = useRef<View>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -33,11 +65,15 @@ export function FreeLetterWritingGame({
   const [confidence, setConfidence] = useState<number | null>(null);
   const [aiFeedback, setAiFeedback] = useState<string | null>(null);
   const [validationPassed, setValidationPassed] = useState(false);
-  /** Bar label: AI confidence until pass, then 100% is shown via LetterRecognitionFeedback when passed */
   const [barPct, setBarPct] = useState(0);
 
   const subset = useMemo(() => ALPHABET.slice(0, ROUND_SIZE), []);
   const def = subset[idx];
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => setReduceMotion(!!v)).catch(() => {});
+    return () => stopTTS();
+  }, []);
 
   useEffect(() => {
     setPredicted(null);
@@ -52,7 +88,7 @@ export function FreeLetterWritingGame({
       clearTimeout(debounceRef.current);
       debounceRef.current = null;
     }
-    try { Speech.stop(); Speech.speak(`Write ${def.letter}`, { rate: 0.85, pitch: 1.1 }); } catch (_) {}
+    speak(`Write ${def.letter}`, 0.72);
   }, [idx, def.letter]);
 
   const runRecognition = useCallback(async () => {
@@ -80,7 +116,7 @@ export function FreeLetterWritingGame({
       setAiFeedback(
         data.error === 'recognition_unavailable'
           ? 'Letter check is not set up yet. Ask a grown-up to add the key on the server.'
-          : letterRecognitionFailureHint(data) || 'Could not check your letter. Try again.'
+          : letterRecognitionFailureHint(data) || 'Could not check your letter. Try again.',
       );
       return;
     }
@@ -96,15 +132,23 @@ export function FreeLetterWritingGame({
 
     if (passed) {
       try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
+      speak(`Great ${def.letter}!`, 0.72);
       if (idx < subset.length - 1) {
         setShowConfetti(true);
-        setTimeout(() => { setShowConfetti(false); setIdx((i) => i + 1); }, 1000);
+        setTimeout(() => {
+          setShowConfetti(false);
+          setIdx((i) => i + 1);
+        }, reduceMotion ? 400 : 1000);
       } else {
         setShowConfetti(true);
-        setTimeout(() => { setShowConfetti(false); onComplete(); }, 1500);
+        speak('Blank canvas complete!', 0.72);
+        setTimeout(() => {
+          setShowConfetti(false);
+          onComplete();
+        }, reduceMotion ? 500 : 1500);
       }
     }
-  }, [def.letter, idx, subset.length, onComplete]);
+  }, [def.letter, idx, subset.length, onComplete, reduceMotion]);
 
   const handleRetry = useCallback(() => {
     canvasRef.current?.clear();
@@ -120,33 +164,54 @@ export function FreeLetterWritingGame({
     }
   }, []);
 
-  const handleStrokeEnd = useCallback((strokes: Stroke[]) => {
-    latestStrokesRef.current = strokes;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      debounceRef.current = null;
-      runRecognition();
-    }, RECOGNITION_DEBOUNCE_MS);
-  }, [runRecognition]);
+  const handleStrokeEnd = useCallback(
+    (strokes: Stroke[]) => {
+      latestStrokesRef.current = strokes;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        runRecognition();
+      }, RECOGNITION_DEBOUNCE_MS);
+    },
+    [runRecognition],
+  );
 
   return (
-    <GameContainerGrip
-      title={`Write ${def.letter}`}
+    <LetterGameShell
+      theme={SHELL}
+      gameLabel="BLANK CANVAS"
+      gameTitle={`Write ${def.letter}`}
       currentStep={currentStep}
       totalSteps={totalSteps}
-      mascot="✏️"
-      mascotHint={`Write the letter ${def.letter} — no help!`}
       onBack={onBack}
+      headerRight={<Text style={styles.counter}>{idx + 1}/{subset.length}</Text>}
+      footer={
+        <LetterMascot
+          emoji="✏️"
+          name="Scribe"
+          hint={`Write the letter ${def.letter} — no help!`}
+          accent="#F87171"
+          bubbleBg="rgba(255,255,255,0.08)"
+          bubbleBorder="rgba(248,113,113,0.35)"
+          nameColor="#FCA5A5"
+          hintColor="#FEF2F2"
+        />
+      }
     >
       <View style={styles.promptRow}>
         <Text style={styles.promptLabel}>Write:</Text>
         <Text style={styles.promptLetter}>{def.letter}</Text>
-        <Text style={styles.promptCounter}>({idx + 1}/{subset.length})</Text>
       </View>
 
       <View style={styles.canvasWrap}>
         <View ref={shotRef} collapsable={false} style={styles.captureWrap}>
-          <DrawingCanvas ref={canvasRef} brushSize={10} canvasColor="rgba(255,255,255,0.55)" randomColors={false} onStrokeEnd={handleStrokeEnd} />
+          <DrawingCanvas
+            ref={canvasRef}
+            brushSize={10}
+            canvasColor="#FFFFFF"
+            randomColors={false}
+            onStrokeEnd={handleStrokeEnd}
+          />
         </View>
       </View>
 
@@ -158,6 +223,7 @@ export function FreeLetterWritingGame({
         expectedLetter={def.letter}
         passed={validationPassed}
         onRetry={handleRetry}
+        theme={FEEDBACK_THEME}
       />
 
       <View style={styles.bottomRow}>
@@ -165,32 +231,44 @@ export function FreeLetterWritingGame({
           <Text style={styles.clearText}>Clear</Text>
         </Pressable>
         <View style={styles.progressCol}>
-          <Text style={styles.label}>
-            {validationPassed ? 'Match: 100%' : `Match: ${barPct}%`}
-          </Text>
-          <View style={styles.barBg}>
-            <View style={[styles.barFill, { width: `${validationPassed ? 100 : barPct}%` }]} />
-          </View>
+          <TraceMeter
+            percent={validationPassed ? 100 : barPct}
+            label="Match"
+            color="#F87171"
+            textColor={SHELL.textOnDark}
+          />
         </View>
       </View>
       {showConfetti && <ConfettiEffect />}
-    </GameContainerGrip>
+    </LetterGameShell>
   );
 }
 
 const styles = StyleSheet.create({
+  counter: { fontSize: 14, fontWeight: '800', color: SHELL.labelColor },
   promptRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 8, marginBottom: 8 },
-  promptLabel: { fontSize: 18, fontWeight: '700', color: '#374151' },
-  promptLetter: { fontSize: 56, fontWeight: '900', color: '#DC2626' },
-  promptCounter: { fontSize: 14, fontWeight: '600', color: '#9CA3AF' },
-  canvasWrap: { flex: 1, minHeight: 220, borderRadius: 24, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.5)', borderWidth: 2, borderColor: '#E5E7EB' },
-  captureWrap: { flex: 1, minHeight: 220 },
-  bottomRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 12 },
-  clearBtn: { backgroundColor: '#FEE2E2', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 14 },
-  clearText: { fontSize: 15, fontWeight: '700', color: '#DC2626' },
+  promptLabel: { fontSize: 18, fontWeight: '700', color: '#FCA5A5' },
+  promptLetter: { fontSize: 56, fontWeight: '900', color: '#F87171' },
+  canvasWrap: {
+    flex: 1,
+    minHeight: 200,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: 'rgba(248,113,113,0.35)',
+  },
+  captureWrap: { flex: 1, minHeight: 200, backgroundColor: '#FFFFFF' },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 12 },
+  clearBtn: {
+    backgroundColor: 'rgba(248,113,113,0.2)',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(248,113,113,0.4)',
+  },
+  clearText: { fontSize: 15, fontWeight: '700', color: '#FCA5A5' },
   pressed: { opacity: 0.85 },
-  progressCol: { flex: 1, gap: 4 },
-  label: { fontSize: 14, fontWeight: '700', color: '#374151' },
-  barBg: { height: 12, backgroundColor: '#E5E7EB', borderRadius: 6, overflow: 'hidden' },
-  barFill: { height: '100%', backgroundColor: '#22C55E', borderRadius: 6 },
+  progressCol: { flex: 1 },
 });

@@ -1,159 +1,431 @@
 /**
- * Game 3 — Sort coins by value. ₹1, ₹2, ₹5, ₹10 into four groups. Tap coin then group to assign. Session 3: Direction Signs.
+ * Game 3 — Coin Sorter: Sort ₹1, ₹2, ₹5, ₹10 into matching value bays.
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { CitizenGameShell } from '@/components/citizen-session/shared/CitizenGameShell';
+import { CZ } from '@/components/citizen-session/shared/citizenTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 const COIN_VALUES = ['₹1', '₹2', '₹5', '₹10'] as const;
+type CoinValue = (typeof COIN_VALUES)[number];
 const VOICE = 'Sort the coins. Tap a coin, then tap the group it belongs to.';
 
-type CoinValue = (typeof COIN_VALUES)[number];
+const COIN_SIZE: Record<CoinValue, number> = {
+  '₹1': 70,
+  '₹2': 76,
+  '₹5': 82,
+  '₹10': 88,
+};
 
-export function CoinSorting({ onComplete }: { onComplete: () => void }) {
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [selectedCoin, setSelectedCoin] = useState<CoinValue | null>(null);
-  const [assignments, setAssignments] = useState<Record<CoinValue, CoinValue | null>>({
-    '₹1': null,
-    '₹2': null,
-    '₹5': null,
-    '₹10': null,
-  });
-  const [shakeAnim] = useState(() => new Animated.Value(0));
+const DEPOT = { accent: '#14B8A6', glow: '#5EEAD4', amber: '#F59E0B', coinGlow: '#FCD34D' } as const;
 
-  useEffect(() => {
-    speak(VOICE, 0.75);
-  }, []);
-
-  const triggerShake = useCallback(() => {
-    shakeAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-  }, [shakeAnim]);
-
-  const handleCoinTap = useCallback((value: CoinValue) => {
-    setSelectedCoin((prev) => (prev === value ? null : value));
-  }, []);
-
-  const handleGroupTap = useCallback(
-    (groupValue: CoinValue) => {
-      if (!selectedCoin) return;
-      setAssignments((prev) => ({ ...prev, [selectedCoin]: groupValue }));
-      setSelectedCoin(null);
-    },
-    [selectedCoin]
-  );
-
-  const allAssigned = COIN_VALUES.every((c) => assignments[c] !== null);
-  const allCorrect = allAssigned && COIN_VALUES.every((c) => assignments[c] === c);
+function CoinOrb({
+  value,
+  selected,
+  sorted,
+  shake,
+  onPress,
+}: {
+  value: CoinValue;
+  selected: boolean;
+  sorted: boolean;
+  shake: boolean;
+  onPress: () => void;
+}) {
+  const shakeX = useSharedValue(0);
+  const size = COIN_SIZE[value];
 
   useEffect(() => {
-    if (!allAssigned || !allCorrect) return;
-    speak('Correct! You sorted the coins!');
-    setShowSuccess(true);
-    const t = setTimeout(() => onComplete(), 2200);
-    return () => clearTimeout(t);
-  }, [allAssigned, allCorrect, onComplete]);
+    if (shake) {
+      shakeX.value = withSequence(
+        withTiming(-7, { duration: 50 }),
+        withTiming(7, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    }
+  }, [shake, shakeX]);
 
-  if (showSuccess) return <SuccessCelebration variant="indigo" title="Great Job!" subtitle="You sorted the coins!" />;
-
-  const shakeX = shakeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 10] });
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeX.value }],
+    opacity: sorted ? 0.4 : 1,
+  }));
 
   return (
-    <GameLayout
+    <Animated.View style={anim}>
+      <Pressable
+        onPress={onPress}
+        disabled={sorted}
+        style={({ pressed }) => [
+          styles.coin,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            borderColor: selected ? DEPOT.glow : `${DEPOT.amber}88`,
+          },
+          selected && styles.coinSelected,
+          sorted && styles.coinSorted,
+          pressed && !sorted && styles.pressed,
+        ]}
+        accessibilityLabel={`Coin ${value}`}
+      >
+        <LinearGradient
+          colors={[`${DEPOT.coinGlow}55`, `${DEPOT.amber}44`, 'rgba(11,10,26,0.6)']}
+          style={[styles.coinGrad, { borderRadius: size / 2 }]}
+        />
+        <Text style={styles.coinText}>{value}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+function ValueBay({
+  value,
+  filledCoin,
+  active,
+  shake,
+  onPress,
+}: {
+  value: CoinValue;
+  filledCoin: CoinValue | null;
+  active: boolean;
+  shake: boolean;
+  onPress: () => void;
+}) {
+  const shakeX = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (shake) {
+      shakeX.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    }
+  }, [shake, shakeX]);
+
+  useEffect(() => {
+    scale.value = active ? withSpring(1.04, { damping: 10 }) : withTiming(1, { duration: 150 });
+  }, [active, scale]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeX.value }, { scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={[styles.bayWrap, anim]}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.bay,
+          {
+            borderColor: filledCoin
+              ? CZ.good
+              : active
+                ? DEPOT.glow
+                : `${DEPOT.accent}66`,
+            backgroundColor: filledCoin ? 'rgba(52,211,153,0.12)' : 'rgba(11,10,26,0.55)',
+          },
+          pressed && styles.pressed,
+        ]}
+        accessibilityLabel={`Group ${value}`}
+      >
+        <Text style={styles.bayLabel}>{value}</Text>
+        <View style={styles.baySlot}>
+          {filledCoin ? (
+            <Text style={styles.slotCoin}>{filledCoin}</Text>
+          ) : (
+            <Text style={styles.slotPlaceholder}>+</Text>
+          )}
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+export function CoinSorting({ onComplete }: { onComplete: () => void }) {
+  const [sorted, setSorted] = useState<Set<CoinValue>>(new Set());
+  const [placedIn, setPlacedIn] = useState<Partial<Record<CoinValue, CoinValue>>>({});
+  const [selectedCoin, setSelectedCoin] = useState<CoinValue | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [wrongBay, setWrongBay] = useState<CoinValue | null>(null);
+  const [wrongCoin, setWrongCoin] = useState<CoinValue | null>(null);
+
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    playVoice();
+  }, [playVoice]);
+
+  const sortedCount = sorted.size;
+  const progressPct = (sortedCount / COIN_VALUES.length) * 100;
+
+  const coinInBay = useMemo(() => {
+    const map: Partial<Record<CoinValue, CoinValue>> = {};
+    for (const coin of COIN_VALUES) {
+      const bay = placedIn[coin];
+      if (bay) map[bay] = coin;
+    }
+    return map;
+  }, [placedIn]);
+
+  const handleCoinTap = useCallback(
+    (value: CoinValue) => {
+      if (sorted.has(value)) return;
+      setSelectedCoin((prev) => (prev === value ? null : value));
+      setWrongBay(null);
+      setWrongCoin(null);
+      speak(value, 0.6);
+    },
+    [sorted],
+  );
+
+  const handleBayTap = useCallback(
+    (bayValue: CoinValue) => {
+      if (!selectedCoin) return;
+      if (coinInBay[bayValue]) return;
+
+      if (selectedCoin !== bayValue) {
+        setWrongBay(bayValue);
+        setWrongCoin(selectedCoin);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Try again. Match each coin to its value group.', 0.7);
+        setSelectedCoin(null);
+        setTimeout(() => {
+          setWrongBay(null);
+          setWrongCoin(null);
+        }, 750);
+        return;
+      }
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      speak('Correct!', 0.6);
+      setSorted((s) => new Set(s).add(selectedCoin));
+      setPlacedIn((p) => ({ ...p, [selectedCoin]: bayValue }));
+      setSelectedCoin(null);
+
+      if (sorted.size + 1 >= COIN_VALUES.length) {
+        setShowSuccess(true);
+        setTimeout(() => onComplete(), 2400);
+      }
+    },
+    [coinInBay, onComplete, selectedCoin, sorted.size],
+  );
+
+  const coachLine = selectedCoin
+    ? `Tap the ${selectedCoin} bay for this coin`
+    : sortedCount === 0
+      ? 'Pick a coin from the vault, then sort it into the matching value bay!'
+      : `${sortedCount} of ${COIN_VALUES.length} sorted — keep going!`;
+
+  if (showSuccess) {
+    return (
+      <SuccessCelebration
+        variant="mint"
+        title="Coin Sorter!"
+        subtitle="You sorted all the coins!"
+        badgeEmoji="🪙"
+      />
+    );
+  }
+
+  return (
+    <CitizenGameShell
+      studio="COIN SORTER · GAME 3"
       title="Sort the coins"
       instruction="Tap a coin, then tap the group it belongs to."
-      icon="🪙"
-      backgroundVariant="indigo"
+      mascot="🪙"
+      coachLine={coachLine}
+      onReplayVoice={playVoice}
     >
-      <View style={styles.content}>
-        <Text style={styles.prompt}>Put each coin in its value group</Text>
-        <View style={styles.groupsRow}>
-          {COIN_VALUES.map((groupValue) => {
-            const coinInGroup = COIN_VALUES.find((c) => assignments[c] === groupValue);
-            return (
-              <View key={groupValue} style={styles.groupBox}>
-                <Text style={styles.groupLabel}>{groupValue}</Text>
-                <Pressable
-                  onPress={() => handleGroupTap(groupValue)}
-                  style={({ pressed }) => [
-                    styles.groupSlot,
-                    !!coinInGroup && styles.groupFilled,
-                    selectedCoin && styles.groupHighlight,
-                    pressed && styles.pressed,
-                  ]}
-                  accessibilityLabel={`Group ${groupValue}`}
-                >
-                  {coinInGroup ? (
-                    <Text style={styles.slotCoin}>{coinInGroup}</Text>
-                  ) : (
-                    <Text style={styles.slotPlaceholder}>+</Text>
-                  )}
-                </Pressable>
-              </View>
-            );
-          })}
+      <View style={styles.phaseStrip}>
+        <View style={[styles.phasePill, selectedCoin ? styles.phaseDone : styles.phaseActive]}>
+          <Text style={styles.phaseTxt}>1 · Pick</Text>
         </View>
+        <Text style={styles.phaseArrow}>→</Text>
+        <View style={[styles.phasePill, selectedCoin ? styles.phaseActive : styles.phaseIdle]}>
+          <Text style={styles.phaseTxt}>2 · Sort</Text>
+        </View>
+      </View>
+
+      <View style={styles.progressWrap}>
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressLabel}>COINS SORTED</Text>
+          <Text style={styles.progressCount}>
+            {sortedCount} / {COIN_VALUES.length}
+          </Text>
+        </View>
+        <View style={styles.progressBg}>
+          <LinearGradient
+            colors={[DEPOT.accent, DEPOT.amber]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.progressFill, { width: `${progressPct}%` }]}
+          />
+        </View>
+      </View>
+
+      <View style={styles.vaultFrame}>
+        <LinearGradient
+          colors={[`${DEPOT.amber}33`, 'transparent', `${DEPOT.accent}22`]}
+          style={styles.vaultGlow}
+        />
+        <Text style={styles.vaultLabel}>COIN VAULT</Text>
         <View style={styles.coinsRow}>
           {COIN_VALUES.map((value) => (
-            <Animated.View
+            <CoinOrb
               key={value}
-              style={[
-                styles.coinChip,
-                selectedCoin === value && styles.coinSelected,
-                { transform: [{ translateX: selectedCoin === value ? 0 : shakeX }] },
-              ]}
-            >
-              <Pressable
-                onPress={() => handleCoinTap(value)}
-                style={({ pressed }) => [styles.coinTouch, pressed && styles.pressed]}
-                accessibilityLabel={`Coin ${value}`}
-              >
-                <Text style={styles.coinText}>{value}</Text>
-              </Pressable>
-            </Animated.View>
+              value={value}
+              selected={selectedCoin === value}
+              sorted={sorted.has(value)}
+              shake={wrongCoin === value}
+              onPress={() => handleCoinTap(value)}
+            />
           ))}
         </View>
       </View>
-    </GameLayout>
+
+      <Text style={styles.baysTitle}>VALUE BAYS</Text>
+      <View style={styles.baysRow}>
+        {COIN_VALUES.map((value) => (
+          <ValueBay
+            key={value}
+            value={value}
+            filledCoin={coinInBay[value] ?? null}
+            active={!!selectedCoin}
+            shake={wrongBay === value}
+            onPress={() => handleBayTap(value)}
+          />
+        ))}
+      </View>
+    </CitizenGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 8, alignItems: 'center' },
-  prompt: { fontSize: 18, fontWeight: '800', color: '#374151', marginBottom: 20, textAlign: 'center' },
-  groupsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: 24 },
-  groupBox: { alignItems: 'center', minWidth: 72 },
-  groupLabel: { fontSize: 16, fontWeight: '800', color: '#374151', marginBottom: 8 },
-  groupSlot: {
-    width: 64,
-    height: 64,
-    borderRadius: 12,
-    borderWidth: 3,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#F9FAFB',
+  phaseStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  phasePill: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: 1.5,
+  },
+  phaseActive: {
+    backgroundColor: 'rgba(20,184,166,0.22)',
+    borderColor: DEPOT.glow,
+  },
+  phaseDone: {
+    backgroundColor: 'rgba(52,211,153,0.15)',
+    borderColor: CZ.good,
+  },
+  phaseIdle: {
+    backgroundColor: 'rgba(11,10,26,0.5)',
+    borderColor: CZ.glassBorder,
+  },
+  phaseTxt: { fontSize: 12, fontWeight: '800', color: CZ.textLight },
+  phaseArrow: { fontSize: 14, fontWeight: '900', color: CZ.textMuted },
+  progressWrap: { marginBottom: 14 },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  progressLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+    color: DEPOT.glow,
+  },
+  progressCount: { fontSize: 14, fontWeight: '900', color: CZ.textLight },
+  progressBg: {
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    overflow: 'hidden',
+  },
+  progressFill: { height: '100%', borderRadius: 5 },
+  vaultFrame: {
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: `${DEPOT.amber}55`,
+    backgroundColor: 'rgba(26,10,18,0.5)',
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    marginBottom: 16,
+    overflow: 'hidden',
+    alignItems: 'center',
+  },
+  vaultGlow: { ...StyleSheet.absoluteFillObject },
+  vaultLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: DEPOT.coinGlow,
+    marginBottom: 12,
+  },
+  coinsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'center' },
+  coin: {
+    borderWidth: 2.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  coinGrad: { ...StyleSheet.absoluteFillObject },
+  coinSelected: { backgroundColor: 'rgba(20,184,166,0.18)' },
+  coinSorted: { borderColor: `${CZ.good}66` },
+  coinText: { fontSize: 20, fontWeight: '900', color: CZ.textLight },
+  baysTitle: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: DEPOT.glow,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  baysRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
+  bayWrap: { minWidth: 72 },
+  bay: {
+    borderRadius: 14,
+    borderWidth: 2.5,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+  },
+  bayLabel: { fontSize: 14, fontWeight: '900', color: DEPOT.glow, marginBottom: 8 },
+  baySlot: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: CZ.glassBorder,
+    backgroundColor: 'rgba(0,0,0,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  groupFilled: { backgroundColor: '#DCFCE7', borderColor: '#22C55E' },
-  groupHighlight: { borderColor: '#4F46E5', backgroundColor: '#EEF2FF' },
-  slotCoin: { fontSize: 20, fontWeight: '800', color: '#1f2937' },
-  slotPlaceholder: { fontSize: 24, color: '#9CA3AF', fontWeight: '700' },
-  coinsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16 },
-  coinChip: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 999,
-    paddingVertical: 14,
-    paddingHorizontal: 22,
-    borderWidth: 3,
-    borderColor: '#F59E0B',
-  },
-  coinSelected: { borderColor: '#4F46E5', backgroundColor: '#FDE68A' },
-  coinTouch: { alignItems: 'center', justifyContent: 'center' },
-  pressed: { opacity: 0.9 },
-  coinText: { fontSize: 22, fontWeight: '800', color: '#1f2937' },
+  slotCoin: { fontSize: 18, fontWeight: '900', color: CZ.textLight },
+  slotPlaceholder: { fontSize: 22, fontWeight: '800', color: CZ.textMuted },
+  pressed: { opacity: 0.88 },
 });

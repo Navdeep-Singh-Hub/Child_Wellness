@@ -1,25 +1,110 @@
 /**
- * Level 7 Reader — Session 2, Real World Task: Show TWO objects of the same color.
- * Upload photo → AI verifies color similarity. Return SUCCESS or TRY AGAIN.
+ * Level 7 Reader — Session 2, Real World Task: Spectrum Signal
+ * Show TWO objects of the same color. Upload photo → AI verifies.
  */
+import { ReaderGameShell } from '@/components/reader-session/shared/ReaderGameShell';
+import { RD } from '@/components/reader-session/shared/readerTheme';
 import { speak } from '@/utils/tts';
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  Image,
-  StyleSheet,
-  Alert,
-  Platform,
-  ActivityIndicator,
-} from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { GameLayout } from '@/components/farm-session/GameLayout';
 import { API_BASE_URL, authHeaders } from '@/utils/api';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
-const INSTRUCTIONS =
-  'Show TWO objects of the SAME color.\n\nTake a photo or upload a picture of two objects that are the same color.';
+const VOICE =
+  'Show two objects of the same color. Then take a photo or upload a picture of them together.';
+const SIGNAL = { accent: '#06B6D4', glow: '#67E8F9', match: '#34D399' } as const;
+
+const STEPS = [
+  { icon: '🎨', title: 'Gather', body: 'Find 2 same-color objects.' },
+  { icon: '📷', title: 'Capture', body: 'Photograph them together.' },
+  { icon: '🔭', title: 'Verify', body: 'Scan checks the match!' },
+] as const;
+
+const PAIR_EXAMPLE = [
+  { emoji: '🔵', label: 'cup' },
+  { emoji: '🔵', label: 'ball' },
+] as const;
+
+function ColorPairSketch() {
+  const pulse = useSharedValue(0);
+
+  useEffect(() => {
+    pulse.value = withRepeat(
+      withSequence(withTiming(1, { duration: 900 }), withTiming(0, { duration: 900 })),
+      -1,
+      true,
+    );
+  }, [pulse]);
+
+  const glow = useAnimatedStyle(() => ({
+    opacity: 0.15 + pulse.value * 0.2,
+  }));
+
+  return (
+    <View style={sketch.wrap}>
+      <Text style={sketch.label}>TARGET SETUP</Text>
+      <Animated.View style={[sketch.glow, glow]} />
+      <View style={sketch.frame}>
+        <View style={sketch.pairRow}>
+          {PAIR_EXAMPLE.map((item, i) => (
+            <View key={i} style={sketch.itemSlot}>
+              <Text style={sketch.itemEmoji}>{item.emoji}</Text>
+              <Text style={sketch.itemLabel}>{item.label}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={sketch.matchBadge}>
+          <Text style={sketch.matchTxt}>SAME COLOR</Text>
+        </View>
+        <View style={sketch.hintRow}>
+          <Text style={sketch.hint}>✓ 2 objects</Text>
+          <Text style={sketch.hint}>✓ matching color</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function CheckRow({ label, ok, pending }: { label: string; ok?: boolean; pending?: boolean }) {
+  return (
+    <View style={check.row}>
+      <View
+        style={[
+          check.icon,
+          ok === true && check.iconOk,
+          ok === false && check.iconBad,
+          pending && check.iconPending,
+        ]}
+      >
+        {pending ? (
+          <ActivityIndicator size="small" color={SIGNAL.glow} />
+        ) : (
+          <Ionicons name={ok ? 'checkmark' : 'close'} size={16} color={ok ? RD.good : RD.warn} />
+        )}
+      </View>
+      <Text style={check.label}>{label}</Text>
+    </View>
+  );
+}
 
 export function ReaderNotebookUploadSameColor({
   onComplete,
@@ -27,8 +112,83 @@ export function ReaderNotebookUploadSameColor({
   onComplete: (correct: boolean) => void;
 }) {
   const [uploading, setUploading] = useState(false);
-  const [result, setResult] = useState<{ correct: boolean; feedback: string } | null>(null);
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [result, setResult] = useState<{
+    correct: boolean;
+    feedback: string;
+    two_objects_detected?: boolean;
+    same_color_detected?: boolean;
+  } | null>(null);
+
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    playVoice();
+  }, [playVoice]);
+
+  const uploadImage = async (uri: string) => {
+    setUploading(true);
+    setResult(null);
+    try {
+      const formData = new FormData();
+      const filename = 'reader-s2-same-color.jpg';
+      const type = 'image/jpeg';
+
+      if (Platform.OS === 'web' && (uri.startsWith('blob:') || uri.startsWith('data:'))) {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        formData.append('file', blob, filename);
+      } else {
+        formData.append('file', { uri, name: filename, type } as unknown as Blob);
+      }
+
+      const headers = await authHeaders({ multipart: true });
+      delete (headers as Record<string, string>)['Content-Type'];
+
+      const res = await fetch(`${API_BASE_URL}/api/upload-reader-s2-same-color-task`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error || `Upload failed: ${res.status}`);
+      }
+
+      const data = await res.json();
+      const correct = data.correct === true;
+      const feedback =
+        data.feedback ||
+        (correct
+          ? 'SUCCESS! We see two objects of the same color!'
+          : 'TRY AGAIN. Show two objects that are the same color and take a photo.');
+
+      setResult({
+        correct,
+        feedback,
+        two_objects_detected: data.two_objects_detected,
+        same_color_detected: data.same_color_detected,
+      });
+
+      if (correct) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speak('Success! Two objects, same color!', 0.75);
+        setTimeout(() => onComplete(true), 2600);
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Try again. Show two objects that are the same color.', 0.75);
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Upload failed. Try again.';
+      setResult({ correct: false, feedback: msg });
+      speak("Let's try again!", 0.7);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const pickImage = async () => {
     const permission =
@@ -48,7 +208,6 @@ export function ReaderNotebookUploadSameColor({
     if (pickerResult.canceled) return;
     const uri = pickerResult.assets[0].uri;
     setImageUri(uri);
-    setResult(null);
     await uploadImage(uri);
   };
 
@@ -69,151 +228,244 @@ export function ReaderNotebookUploadSameColor({
     if (pickerResult.canceled) return;
     const uri = pickerResult.assets[0].uri;
     setImageUri(uri);
-    setResult(null);
     await uploadImage(uri);
   };
 
-  const uploadImage = async (uri: string) => {
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      const filename = 'reader-s2-same-color.jpg';
-      const type = 'image/jpeg';
-
-      if (Platform.OS === 'web' && (uri.startsWith('blob:') || uri.startsWith('data:'))) {
-        const response = await fetch(uri);
-        const blob = await response.blob();
-        formData.append('file', blob, filename);
-      } else {
-        formData.append('file', {
-          uri,
-          name: filename,
-          type,
-        } as any);
-      }
-
-      const headers = await authHeaders({ multipart: true });
-      delete (headers as Record<string, string>)['Content-Type'];
-
-      const res = await fetch(`${API_BASE_URL}/api/upload-reader-s2-same-color-task`, {
-        method: 'POST',
-        headers,
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `Upload failed: ${res.status}`);
-      }
-      const data = await res.json();
-      const correct = data.correct === true;
-      const feedback =
-        data.feedback ||
-        (correct ? 'SUCCESS! We see two objects of the same color!' : 'TRY AGAIN.');
-      setResult({ correct, feedback });
-      if (correct) {
-        speak('Success! Two objects, same color!', 0.75);
-        setTimeout(() => onComplete(true), 2200);
-      } else {
-        speak('Try again. Show two objects that are the same color.', 0.75);
-        onComplete(false);
-      }
-    } catch (e: any) {
-      setResult({ correct: false, feedback: e?.message || 'Upload failed. Try again.' });
-      speak("Let's try again!", 0.7);
-      onComplete(false);
-    } finally {
-      setUploading(false);
-    }
-  };
+  const coachLine = uploading
+    ? 'Scanning color spectrum…'
+    : result?.correct
+      ? 'Verified! Two objects, same color.'
+      : result
+        ? 'Pick two objects that match — then capture again.'
+        : 'Find two things around you that share a color!';
 
   return (
-    <GameLayout
-      title="Real World Task"
-      instruction={INSTRUCTIONS}
-      icon="🎨"
-      backgroundVariant="indigo"
+    <ReaderGameShell
+      studio="SPECTRUM SIGNAL · MISSION"
+      title="Real-world proof"
+      instruction="Show two objects of the same color, then upload or photograph them."
+      mascot="🎨"
+      coachLine={coachLine}
+      onReplayVoice={playVoice}
     >
-      <View style={styles.content}>
-        {!result ? (
-          <>
-            <Text style={styles.taskLabel}>Show TWO objects of the same color. Then:</Text>
-            <Pressable
-              onPress={pickImage}
-              disabled={uploading}
-              style={({ pressed }) => [styles.uploadBtn, pressed && styles.pressed, uploading && styles.disabled]}
-              accessibilityLabel="Upload photo"
-            >
-              {uploading ? (
-                <ActivityIndicator size="large" color="#fff" />
-              ) : (
-                <>
-                  <Text style={styles.uploadEmoji}>📷</Text>
-                  <Text style={styles.uploadText}>Upload Photo</Text>
-                </>
-              )}
-            </Pressable>
-            <Pressable
-              onPress={takePhoto}
-              disabled={uploading}
-              style={({ pressed }) => [
-                styles.uploadBtn,
-                styles.secondaryBtn,
-                pressed && styles.pressed,
-                uploading && styles.disabled,
-              ]}
-              accessibilityLabel="Take photo"
-            >
-              <Text style={styles.uploadEmoji}>📸</Text>
-              <Text style={[styles.uploadText, styles.secondaryBtnText]}>Take Photo</Text>
-            </Pressable>
-            {imageUri ? (
-              <View style={styles.previewWrap}>
-                <Image source={{ uri: imageUri }} style={styles.preview} />
-              </View>
-            ) : null}
-          </>
-        ) : (
-          <View style={styles.resultWrap}>
-            <Text style={styles.resultEmoji}>{result.correct ? '🎉' : '😊'}</Text>
-            <Text style={[styles.resultTitle, result.correct ? styles.resultSuccess : styles.resultTryAgain]}>
-              {result.correct ? 'SUCCESS!' : 'TRY AGAIN'}
-            </Text>
-            <Text style={styles.resultFeedback}>{result.feedback}</Text>
-          </View>
-        )}
+      <View style={styles.badge}>
+        <Text style={styles.badgeTxt}>SESSION 2 · REAL-WORLD TASK</Text>
       </View>
-    </GameLayout>
+
+      <View style={styles.stepsRow}>
+        {STEPS.map((s, i) => (
+          <View key={s.title} style={styles.stepChip}>
+            <Text style={styles.stepIcon}>{s.icon}</Text>
+            <Text style={styles.stepTitle}>{s.title}</Text>
+            {i < STEPS.length - 1 && <Text style={styles.stepArrow}>›</Text>}
+          </View>
+        ))}
+      </View>
+
+      <ColorPairSketch />
+
+      {imageUri && !uploading && (
+        <View style={styles.previewWrap}>
+          <Text style={styles.previewLabel}>YOUR CAPTURE</Text>
+          <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="cover" />
+        </View>
+      )}
+
+      <View style={styles.actions}>
+        <Pressable
+          onPress={pickImage}
+          disabled={uploading}
+          style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed, uploading && styles.disabled]}
+        >
+          <LinearGradient colors={[SIGNAL.accent, '#0891B2']} style={styles.actionGrad}>
+            {uploading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <>
+                <Text style={styles.actionEmoji}>📷</Text>
+                <Text style={styles.actionTxt}>Upload Photo</Text>
+              </>
+            )}
+          </LinearGradient>
+        </Pressable>
+
+        <Pressable
+          onPress={takePhoto}
+          disabled={uploading}
+          style={({ pressed }) => [
+            styles.actionBtn,
+            styles.actionAlt,
+            pressed && styles.pressed,
+            uploading && styles.disabled,
+          ]}
+        >
+          <Text style={styles.actionEmoji}>📸</Text>
+          <Text style={[styles.actionTxt, styles.actionTxtAlt]}>Take Photo</Text>
+        </Pressable>
+      </View>
+
+      {(uploading || result) && (
+        <View style={[styles.resultCard, result?.correct ? styles.resultOk : styles.resultPending]}>
+          {uploading ? (
+            <>
+              <ActivityIndicator color={SIGNAL.glow} size="large" />
+              <Text style={styles.resultTitle}>Spectrum scan in progress…</Text>
+              <CheckRow label="Two objects detected" pending />
+              <CheckRow label="Same color match" pending />
+            </>
+          ) : result ? (
+            <>
+              <Text style={styles.resultTitle}>
+                {result.correct ? 'Signal verified!' : 'Adjust your setup'}
+              </Text>
+              <Text style={styles.resultFeedback}>{result.feedback}</Text>
+              <CheckRow label="Two objects detected" ok={result.two_objects_detected ?? result.correct} />
+              <CheckRow label="Same color match" ok={result.same_color_detected ?? result.correct} />
+              {!result.correct && (
+                <View style={styles.retryRow}>
+                  <Pressable
+                    onPress={() => {
+                      setResult(null);
+                      setImageUri(null);
+                    }}
+                    style={styles.retryBtn}
+                  >
+                    <Text style={styles.retryTxt}>Try another photo</Text>
+                  </Pressable>
+                  <Pressable onPress={() => onComplete(false)} style={styles.finishBtn}>
+                    <Text style={styles.finishTxt}>Finish anyway</Text>
+                  </Pressable>
+                </View>
+              )}
+            </>
+          ) : null}
+        </View>
+      )}
+    </ReaderGameShell>
   );
 }
 
-const styles = StyleSheet.create({
-  content: { flex: 1, alignItems: 'center', paddingVertical: 24 },
-  taskLabel: { fontSize: 18, fontWeight: '700', color: '#4338CA', marginBottom: 20, textAlign: 'center' },
-  uploadBtn: {
-    flexDirection: 'row',
+const sketch = StyleSheet.create({
+  wrap: { alignItems: 'center', marginBottom: 16 },
+  label: { fontSize: 9, fontWeight: '900', letterSpacing: 1.3, color: SIGNAL.glow, marginBottom: 8 },
+  glow: {
+    position: 'absolute',
+    top: 28,
+    width: 120,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: SIGNAL.accent,
+  },
+  frame: {
+    width: '92%',
+    backgroundColor: 'rgba(11,10,26,0.65)',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: `${SIGNAL.accent}55`,
+    paddingVertical: 18,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+  },
+  pairRow: { flexDirection: 'row', gap: 20, marginBottom: 10 },
+  itemSlot: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: `${SIGNAL.glow}66`,
+    backgroundColor: 'rgba(6,182,212,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4F46E5',
-    paddingVertical: 22,
-    paddingHorizontal: 40,
-    borderRadius: 20,
-    gap: 12,
-    minWidth: 220,
-    marginBottom: 16,
   },
-  secondaryBtn: { backgroundColor: 'rgba(99,102,241,0.12)' },
-  secondaryBtnText: { color: '#4338CA' },
+  itemEmoji: { fontSize: 28 },
+  itemLabel: { fontSize: 9, fontWeight: '800', color: RD.textMuted, marginTop: 2 },
+  matchBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: 'rgba(52,211,153,0.15)',
+    borderWidth: 1,
+    borderColor: `${SIGNAL.match}66`,
+    marginBottom: 8,
+  },
+  matchTxt: { fontSize: 10, fontWeight: '900', color: SIGNAL.match, letterSpacing: 0.8 },
+  hintRow: { flexDirection: 'row', gap: 12 },
+  hint: { fontSize: 11, fontWeight: '700', color: SIGNAL.glow },
+});
+
+const check = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, alignSelf: 'stretch' },
+  icon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconOk: { backgroundColor: 'rgba(52,211,153,0.2)' },
+  iconBad: { backgroundColor: 'rgba(251,113,133,0.2)' },
+  iconPending: { backgroundColor: 'rgba(103,232,249,0.15)' },
+  label: { fontSize: 14, fontWeight: '700', color: RD.textLight },
+});
+
+const styles = StyleSheet.create({
+  badge: {
+    alignSelf: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: RD.glass,
+    borderWidth: 1,
+    borderColor: RD.glassBorder,
+    marginBottom: 10,
+  },
+  badgeTxt: { fontSize: 9, fontWeight: '900', letterSpacing: 1, color: SIGNAL.glow },
+  stepsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginBottom: 12 },
+  stepChip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  stepIcon: { fontSize: 15 },
+  stepTitle: { fontSize: 11, fontWeight: '800', color: SIGNAL.glow },
+  stepArrow: { fontSize: 14, color: RD.textMuted, marginHorizontal: 2 },
+  previewWrap: { marginBottom: 14, alignItems: 'center' },
+  previewLabel: { fontSize: 9, fontWeight: '900', letterSpacing: 1.2, color: RD.textMuted, marginBottom: 6 },
+  preview: { width: '100%', height: 140, borderRadius: 14, borderWidth: 2, borderColor: RD.glassBorder },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'center' },
+  actionBtn: { borderRadius: 18, overflow: 'hidden', minWidth: 148, flex: 1, maxWidth: 200 },
+  actionAlt: {
+    borderWidth: 2,
+    borderColor: `${SIGNAL.accent}66`,
+    backgroundColor: 'rgba(6,182,212,0.12)',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+  },
+  actionGrad: { paddingVertical: 16, alignItems: 'center', gap: 4 },
+  actionEmoji: { fontSize: 28 },
+  actionTxt: { fontSize: 15, fontWeight: '900', color: '#FFF' },
+  actionTxtAlt: { color: SIGNAL.glow },
   pressed: { opacity: 0.9 },
-  disabled: { opacity: 0.8 },
-  uploadEmoji: { fontSize: 36 },
-  uploadText: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  previewWrap: { marginTop: 24, borderRadius: 16, overflow: 'hidden', borderWidth: 4, borderColor: 'rgba(99,102,241,0.35)' },
-  preview: { width: 240, height: 180 },
-  resultWrap: { alignItems: 'center', padding: 24 },
-  resultEmoji: { fontSize: 64, marginBottom: 12 },
-  resultTitle: { fontSize: 28, fontWeight: '800', marginBottom: 8 },
-  resultSuccess: { color: '#22C55E' },
-  resultTryAgain: { color: '#EF4444' },
-  resultFeedback: { fontSize: 18, color: '#475569', textAlign: 'center' },
+  disabled: { opacity: 0.65 },
+  resultCard: {
+    marginTop: 18,
+    borderRadius: 18,
+    borderWidth: 2,
+    padding: 16,
+    alignItems: 'center',
+    alignSelf: 'stretch',
+  },
+  resultOk: { borderColor: RD.good, backgroundColor: 'rgba(52,211,153,0.12)' },
+  resultPending: { borderColor: RD.glassBorder, backgroundColor: 'rgba(11,10,26,0.45)' },
+  resultTitle: { fontSize: 18, fontWeight: '900', color: RD.textLight, marginBottom: 6 },
+  resultFeedback: { fontSize: 14, fontWeight: '600', color: RD.textMuted, textAlign: 'center', marginBottom: 4 },
+  retryRow: { flexDirection: 'row', gap: 10, marginTop: 14, flexWrap: 'wrap', justifyContent: 'center' },
+  retryBtn: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, backgroundColor: SIGNAL.accent },
+  retryTxt: { fontSize: 14, fontWeight: '800', color: '#FFF' },
+  finishBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: RD.glassBorder,
+  },
+  finishTxt: { fontSize: 14, fontWeight: '700', color: RD.textMuted },
 });

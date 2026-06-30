@@ -1,19 +1,120 @@
 /**
- * Level 7 Reader — Session 3, Game 1: Logical Selection
- * Find the object that does NOT belong (e.g. dog, cat, car → car).
+ * Level 7 Reader — Session 3, Game 1: Logic Lock
+ * Find the object that does NOT belong (dog, cat, car → car).
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { ReaderGameShell } from '@/components/reader-session/shared/ReaderGameShell';
+import { RD } from '@/components/reader-session/shared/readerTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 const ITEMS = [
-  { id: 'dog', label: 'Dog', emoji: '🐕' },
-  { id: 'cat', label: 'Cat', emoji: '🐱' },
-  { id: 'car', label: 'Car', emoji: '🚗' },
-];
-const CORRECT_ID = 'car'; // does not belong (not an animal)
+  { id: 'dog', label: 'Dog', emoji: '🐕', group: 'animal' },
+  { id: 'cat', label: 'Cat', emoji: '🐱', group: 'animal' },
+  { id: 'car', label: 'Car', emoji: '🚗', group: 'vehicle' },
+] as const;
+
+type ItemId = (typeof ITEMS)[number]['id'];
+const CORRECT_ID: ItemId = 'car';
+
+const VOICE = 'Which one does NOT belong? Dog, cat, car. Tap the one that is different.';
+const LOGIC = { accent: '#A855F7', accentBright: '#D8B4FE', rose: '#EC4899' } as const;
+
+function ClusterCell({ item, index }: { item: (typeof ITEMS)[number]; index: number }) {
+  const drift = useSharedValue(0);
+
+  useEffect(() => {
+    drift.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1000 + index * 100 }),
+        withTiming(0, { duration: 1000 + index * 100 }),
+      ),
+      -1,
+      true,
+    );
+  }, [drift, index]);
+
+  const glow = useAnimatedStyle(() => ({
+    opacity: 0.15 + drift.value * 0.25,
+  }));
+
+  return (
+    <View style={styles.cellWrap}>
+      <Animated.View style={[styles.cellGlow, glow, { backgroundColor: `${LOGIC.accent}33` }]} />
+      <View style={styles.cell}>
+        <Text style={styles.cellEmoji}>{item.emoji}</Text>
+      </View>
+    </View>
+  );
+}
+
+function AnomalyOrb({
+  item,
+  selected,
+  feedback,
+  onPress,
+}: {
+  item: (typeof ITEMS)[number];
+  selected: boolean;
+  feedback: 'idle' | 'wrong' | 'correct';
+  onPress: () => void;
+}) {
+  const shake = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (feedback === 'wrong' && selected) {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    } else if (feedback === 'correct' && selected) {
+      scale.value = withSpring(1.08, { damping: 8 });
+    } else {
+      scale.value = withTiming(1, { duration: 150 });
+    }
+  }, [feedback, selected, shake, scale]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }, { scale: scale.value }],
+  }));
+
+  const border =
+    feedback === 'correct' && selected
+      ? RD.good
+      : feedback === 'wrong' && selected
+        ? RD.warn
+        : selected
+          ? LOGIC.accentBright
+          : RD.glassBorder;
+
+  return (
+    <Animated.View style={anim}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.orb, { borderColor: border }, pressed && styles.pressed]}
+        accessibilityLabel={item.label}
+      >
+        <View style={[styles.orbHalo, { backgroundColor: `${LOGIC.rose}22` }]} />
+        <Text style={styles.orbEmoji}>{item.emoji}</Text>
+        <Text style={styles.orbLabel}>{item.label}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 export interface LogicalSelectionReaderSession3GameProps {
   onComplete: () => void;
@@ -21,102 +122,188 @@ export interface LogicalSelectionReaderSession3GameProps {
 
 export function LogicalSelectionReaderSession3Game({ onComplete }: LogicalSelectionReaderSession3GameProps) {
   const [showSuccess, setShowSuccess] = useState(false);
-  const [wrongShake] = useState(() => new Animated.Value(0));
+  const [selected, setSelected] = useState<ItemId | null>(null);
+  const [feedback, setFeedback] = useState<'idle' | 'wrong' | 'correct'>('idle');
+  const [attempts, setAttempts] = useState(0);
 
-  useEffect(() => {
-    speak('Which one does NOT belong? Dog, cat, car. Tap the one that is different.', 0.75);
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
   }, []);
 
-  const triggerWrong = useCallback(() => {
-    wrongShake.setValue(0);
-    Animated.sequence([
-      Animated.timing(wrongShake, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(wrongShake, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-    speak('Try again. Which one is not like the others?', 0.7);
-  }, [wrongShake]);
+  useEffect(() => {
+    playVoice();
+  }, [playVoice]);
 
   const handleTap = useCallback(
-    (id: string) => {
+    (id: ItemId) => {
+      if (feedback === 'correct') return;
+      setSelected(id);
+      setAttempts((a) => a + 1);
+
       if (id === CORRECT_ID) {
+        setFeedback('correct');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         speak('Correct! The car does not belong!', 0.75);
         setShowSuccess(true);
-        setTimeout(() => onComplete(), 2200);
+        setTimeout(() => onComplete(), 2400);
       } else {
-        triggerWrong();
+        setFeedback('wrong');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('That is an animal. Which one is NOT an animal?', 0.7);
+        setTimeout(() => {
+          setFeedback('idle');
+          setSelected(null);
+        }, 900);
       }
     },
-    [onComplete, triggerWrong]
+    [feedback, onComplete],
   );
+
+  const coachLine =
+    attempts === 0
+      ? 'Two are animals — one is different. Find the odd signal!'
+      : 'Think: dog and cat are alike. What is NOT?';
 
   if (showSuccess) {
     return (
       <SuccessCelebration
-        variant="indigo"
-        title="Great Job!"
+        variant="sunset"
+        title="Logic Lock!"
         subtitle="You found the one that doesn't belong!"
         badgeEmoji="🧠"
       />
     );
   }
 
-  const shakeX = wrongShake.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
-
   return (
-    <GameLayout
-      title="Logical Selection"
+    <ReaderGameShell
+      studio="LOGIC LOCK · GAME 1"
+      title="Odd one out"
       instruction="Which one does NOT belong? Tap the one that is different."
-      icon="🧠"
-      backgroundVariant="indigo"
+      mascot="🧠"
+      coachLine={coachLine}
+      onReplayVoice={playVoice}
     >
-      <View style={styles.container}>
-        <Text style={styles.prompt}>Which one does NOT belong?</Text>
-        <View style={styles.itemsRow}>
-          {ITEMS.map((item) => (
-            <View key={item.id} style={styles.itemBox}>
-              <Text style={styles.itemEmoji}>{item.emoji}</Text>
-              <Text style={styles.itemLabel}>{item.label}</Text>
-            </View>
+      <View style={styles.clusterFrame}>
+        <LinearGradient
+          colors={[`${LOGIC.accent}33`, 'transparent', `${LOGIC.rose}22`]}
+          style={styles.clusterGlow}
+        />
+        <Text style={styles.clusterLabel}>SIGNAL CLUSTER</Text>
+        <View style={styles.clusterRow}>
+          {ITEMS.map((item, i) => (
+            <ClusterCell key={item.id} item={item} index={i} />
           ))}
         </View>
-        <Text style={styles.tapLabel}>Tap the one that is different</Text>
-        <Animated.View style={[styles.optionsRow, { transform: [{ translateX: shakeX }] }]}>
-          {ITEMS.map((item) => (
-            <Pressable
-              key={item.id}
-              onPress={() => handleTap(item.id)}
-              style={({ pressed }) => [styles.optionBtn, pressed && styles.pressed]}
-              accessibilityLabel={item.label}
-            >
-              <Text style={styles.optionEmoji}>{item.emoji}</Text>
-              <Text style={styles.optionLabel}>{item.label}</Text>
-            </Pressable>
-          ))}
-        </Animated.View>
+        <Text style={styles.clusterHint}>🐕 🐱 are animals · one is not</Text>
       </View>
-    </GameLayout>
+
+      <Text style={styles.prompt}>Tap the odd signal</Text>
+
+      <View style={styles.choicesRow}>
+        {ITEMS.map((item) => (
+          <AnomalyOrb
+            key={item.id}
+            item={item}
+            selected={selected === item.id}
+            feedback={feedback}
+            onPress={() => handleTap(item.id)}
+          />
+        ))}
+      </View>
+
+      <View style={styles.legend}>
+        <Text style={styles.legendTxt}>Find the item that does not fit the group</Text>
+      </View>
+    </ReaderGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', paddingVertical: 24 },
-  prompt: { fontSize: 22, fontWeight: '800', color: '#4338CA', marginBottom: 16, textAlign: 'center' },
-  itemsRow: { flexDirection: 'row', gap: 16, marginBottom: 20 },
-  itemBox: { alignItems: 'center' },
-  itemEmoji: { fontSize: 40 },
-  itemLabel: { fontSize: 14, color: '#64748B', marginTop: 4 },
-  tapLabel: { fontSize: 16, fontWeight: '700', color: '#64748B', marginBottom: 16 },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, justifyContent: 'center' },
-  optionBtn: {
-    minWidth: 100,
-    paddingVertical: 18,
+  clusterFrame: {
     borderRadius: 20,
-    borderWidth: 4,
-    borderColor: '#818CF8',
-    backgroundColor: '#FFF',
-    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: `${LOGIC.accent}55`,
+    backgroundColor: 'rgba(40,20,60,0.5)',
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    marginBottom: 18,
+    overflow: 'hidden',
   },
-  optionEmoji: { fontSize: 44, marginBottom: 8 },
-  optionLabel: { fontSize: 16, fontWeight: '700', color: '#0F172A' },
-  pressed: { opacity: 0.9, backgroundColor: '#EEF2FF' },
+  clusterGlow: { ...StyleSheet.absoluteFillObject },
+  clusterLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: LOGIC.accentBright,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  clusterRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 14,
+    marginBottom: 10,
+  },
+  clusterHint: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: LOGIC.rose,
+    textAlign: 'center',
+  },
+  cellWrap: { alignItems: 'center' },
+  cellGlow: {
+    position: 'absolute',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+  },
+  cell: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: `${LOGIC.accentBright}66`,
+    backgroundColor: 'rgba(11,10,26,0.75)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cellEmoji: { fontSize: 26 },
+  prompt: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: RD.textLight,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  choicesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 14,
+  },
+  orb: {
+    width: 104,
+    height: 118,
+    borderRadius: 20,
+    borderWidth: 2.5,
+    backgroundColor: 'rgba(11,10,26,0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  orbHalo: { ...StyleSheet.absoluteFillObject },
+  orbEmoji: { fontSize: 42 },
+  orbLabel: { fontSize: 13, fontWeight: '800', color: RD.textMuted, marginTop: 6 },
+  pressed: { opacity: 0.88 },
+  legend: {
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: 'rgba(168,85,247,0.12)',
+    borderWidth: 1,
+    borderColor: `${LOGIC.accent}44`,
+  },
+  legendTxt: { fontSize: 12, fontWeight: '700', color: LOGIC.accentBright, textAlign: 'center' },
 });

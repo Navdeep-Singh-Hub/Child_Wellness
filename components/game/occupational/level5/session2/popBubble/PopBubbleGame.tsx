@@ -6,7 +6,7 @@ import { useTraceSound } from '@/components/game/occupational/level4/session1/dr
 import { BubbleGardenBackdrop, PopBurstFX } from '@/components/game/occupational/level5/session2/popBubble/PopBubbleVisuals';
 import { BUBBLE_SIZE, POP_BUBBLE_COPY as COPY, POP_BUBBLE_THEME as THEME } from '@/components/game/occupational/level5/session2/popBubble/popBubbleTheme';
 import { SESSION5_2_PACING as P } from '@/components/game/occupational/level5/session2/session2Pacing';
-import { RoundCountdownOverlay, Session2HUD, Session2Intro } from '@/components/game/occupational/level5/session2/shared/Session2UI';
+import { PopBubbleCountdown, PopBubbleHUD, PopBubbleIntro } from '@/components/game/occupational/level5/session2/popBubble/PopBubbleUI';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { speak as speakTTS } from '@/utils/tts';
@@ -144,21 +144,7 @@ const PopBubbleGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
   if (showInfo) {
     return (
       <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-        <Session2Intro
-          config={{
-            theme: THEME,
-            emoji: COPY.emoji,
-            title: COPY.title,
-            tagline: COPY.tagline,
-            body: COPY.body,
-            chips: [...COPY.chips],
-            startLabel: COPY.startLabel,
-            startGradient: ['#38BDF8', '#0EA5E9', '#0284C7'],
-            backdrop: <BubbleGardenBackdrop />,
-          }}
-          onStart={() => setShowInfo(false)}
-          onBack={exit}
-        />
+        <PopBubbleIntro onStart={() => setShowInfo(false)} onBack={exit} />
       </SafeAreaView>
     );
   }
@@ -180,12 +166,12 @@ const PopBubbleGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <TouchableOpacity onPress={exit} style={styles.back}><Text style={styles.backText}>← Exit</Text></TouchableOpacity>
-      <Session2HUD theme={THEME} gameTitle="Pop" emoji={COPY.emoji} round={round} totalRounds={P.rounds} score={score} scoreLabel="POPS" hint={hint} showHint={phase === 'playing'} />
+      <PopBubbleHUD round={round} totalRounds={P.rounds} score={score} hint={hint} showHint={phase === 'playing'} />
       <View style={styles.arena} onLayout={(e) => { playW.current = e.nativeEvent.layout.width; playH.current = e.nativeEvent.layout.height; }}>
         <BubbleGardenBackdrop />
         {bursts.map((b) => <PopBurstFX key={b.key} burstKey={b.key} x={b.x} y={b.y} />)}
         {phase === 'playing' && bubbles.map((b) => <InteractiveBubble key={b.id} bubble={b} onPop={onPop} />)}
-        {phase === 'countdown' && <RoundCountdownOverlay key={`cd-${round}`} accent={THEME.accent} onDone={startPlaying} />}
+        {phase === 'countdown' && <PopBubbleCountdown key={`cd-${round}`} accent={THEME.accent} onDone={startPlaying} />}
       </View>
     </SafeAreaView>
   );

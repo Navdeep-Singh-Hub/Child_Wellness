@@ -29,19 +29,19 @@ console.log('[SUBSCRIPTION ROUTER] RAZORPAY_KEY_ID:', keyId ? (keyId.substring(0
 console.log('[SUBSCRIPTION ROUTER] RAZORPAY_KEY_SECRET:', keySecret ? 'SET (hidden)' : 'NOT SET');
 console.log('[SUBSCRIPTION ROUTER] Has valid keys:', hasKeys);
 
-try {
-  razorpay = new Razorpay({
-    key_id: keyId || '',
-    key_secret: keySecret || '',
-  });
-  if (hasKeys) {
+if (hasKeys) {
+  try {
+    razorpay = new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret,
+    });
     console.log('[SUBSCRIPTION ROUTER] ✅ Razorpay initialized with valid keys');
-  } else {
-    console.log('[SUBSCRIPTION ROUTER] ⚠️ Razorpay initialized but keys are missing (localhost mode)');
+  } catch (error) {
+    console.error('[SUBSCRIPTION ROUTER] ❌ Failed to initialize Razorpay:', error);
+    razorpay = { plans: {}, customers: {}, subscriptions: {}, payments: {} };
   }
-} catch (error) {
-  console.error('[SUBSCRIPTION ROUTER] ❌ Failed to initialize Razorpay:', error);
-  // Create a dummy instance to prevent module load failure
+} else {
+  console.log('[SUBSCRIPTION ROUTER] Razorpay keys not configured - using dummy instance for localhost development');
   razorpay = { plans: {}, customers: {}, subscriptions: {}, payments: {} };
 }
 

@@ -1,53 +1,38 @@
-export type GauntletChallenge =
-  | 'movingTap'
-  | 'flashTap'
-  | 'goStop'
-  | 'distractTap'
-  | 'nearFar'
-  | 'speedMatch';
+/** Backward-compat barrel — OT L5 Session 10 gauntlet configs */
+export type { GauntletChallenge, GauntletConfig } from '@/components/game/occupational/level5/session10/gauntletTheme';
 
-export interface GauntletConfig {
-  logType: string;
-  skillTags: string[];
-  challenges: GauntletChallenge[];
-  randomPool?: boolean;
-}
+export {
+  COMET_CHASE_CONFIG,
+  PURSUIT_COMBO_CONFIG,
+} from '@/components/game/occupational/level5/session10/cometChase/cometChaseTheme';
+export {
+  FOCUS_FORTRESS_CONFIG,
+  FOCUS_RELAY_CONFIG,
+} from '@/components/game/occupational/level5/session10/focusFortress/focusFortressTheme';
+export {
+  CANYON_RALLY_CONFIG,
+  DEPTH_MIX_CONFIG,
+} from '@/components/game/occupational/level5/session10/canyonRally/canyonRallyTheme';
+export {
+  REACTION_RELAY_CONFIG,
+  STORM_RELAY_CONFIG,
+} from '@/components/game/occupational/level5/session10/stormRelay/stormRelayTheme';
+export {
+  EAGLE_EYE_CONFIG,
+  EAGLE_EYE_QUEST_CONFIG,
+} from '@/components/game/occupational/level5/session10/eagleEyeQuest/eagleEyeQuestTheme';
 
-export const PURSUIT_COMBO_CONFIG: GauntletConfig = {
-  logType: 'pursuit-combo',
-  skillTags: ['visual-integration', 'pursuit', 'reflex'],
-  challenges: ['movingTap', 'flashTap'],
-};
-
-export const FOCUS_RELAY_CONFIG: GauntletConfig = {
-  logType: 'focus-relay',
-  skillTags: ['visual-integration', 'selective-attention', 'inhibition'],
-  challenges: ['distractTap', 'goStop'],
-};
-
-export const DEPTH_MIX_CONFIG: GauntletConfig = {
-  logType: 'depth-mix',
-  skillTags: ['visual-integration', 'depth-perception', 'pursuit'],
-  challenges: ['nearFar', 'movingTap'],
-};
-
-export const REACTION_RELAY_CONFIG: GauntletConfig = {
-  logType: 'reaction-relay',
-  skillTags: ['visual-integration', 'reaction-time', 'speed-discrimination'],
-  challenges: ['flashTap', 'goStop', 'speedMatch'],
-};
-
-export const EAGLE_EYE_CONFIG: GauntletConfig = {
-  logType: 'eagle-eye-quest',
-  skillTags: ['visual-integration', 'multi-skill', 'visual-motor'],
-  challenges: ['movingTap', 'flashTap', 'goStop', 'distractTap', 'nearFar', 'speedMatch'],
-  randomPool: true,
-};
+import type { GauntletConfig } from '@/components/game/occupational/level5/session10/gauntletTheme';
+import { COMET_CHASE_CONFIG } from '@/components/game/occupational/level5/session10/cometChase/cometChaseTheme';
+import { FOCUS_FORTRESS_CONFIG } from '@/components/game/occupational/level5/session10/focusFortress/focusFortressTheme';
+import { CANYON_RALLY_CONFIG } from '@/components/game/occupational/level5/session10/canyonRally/canyonRallyTheme';
+import { STORM_RELAY_CONFIG } from '@/components/game/occupational/level5/session10/stormRelay/stormRelayTheme';
+import { EAGLE_EYE_QUEST_CONFIG } from '@/components/game/occupational/level5/session10/eagleEyeQuest/eagleEyeQuestTheme';
 
 export const L5_SESSION10_GAUNTLET_CONFIGS: Record<string, GauntletConfig> = {
-  'pursuit-combo': PURSUIT_COMBO_CONFIG,
-  'focus-relay': FOCUS_RELAY_CONFIG,
-  'depth-mix': DEPTH_MIX_CONFIG,
-  'reaction-relay': REACTION_RELAY_CONFIG,
-  'eagle-eye-quest': EAGLE_EYE_CONFIG,
+  'pursuit-combo': COMET_CHASE_CONFIG,
+  'focus-relay': FOCUS_FORTRESS_CONFIG,
+  'depth-mix': CANYON_RALLY_CONFIG,
+  'reaction-relay': STORM_RELAY_CONFIG,
+  'eagle-eye-quest': EAGLE_EYE_QUEST_CONFIG,
 };

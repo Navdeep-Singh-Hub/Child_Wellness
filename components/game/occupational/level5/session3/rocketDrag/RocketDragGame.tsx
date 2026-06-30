@@ -1,0 +1,418 @@
+/**
+ * OT Level 5 · Session 3 · Game 1 — Rocket Drag
+ * Horizontal smooth-pursuit drag tracking in a space launch corridor.
+ */
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import {
+  DockCelebration,
+  DockingPuck,
+  EnergyTether,
+  ExhaustTrail,
+  FuelGauge,
+  LaunchCountdown,
+  LaunchCorridorBackdrop,
+  RocketDragHUD,
+  RocketDragInfoScreen,
+  RocketShip,
+  type TrailPoint,
+} from '@/components/game/occupational/level5/session3/rocketDrag/RocketDragVisuals';
+import { ROCKET_DRAG_COPY as COPY } from '@/components/game/occupational/level5/session3/rocketDrag/rocketDragTheme';
+import { distPx, useTraceSound } from '@/components/game/occupational/level5/session1/followUtils';
+import { SESSION5_3_PACING as P } from '@/components/game/occupational/level5/session3/session3Pacing';
+import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { speak as speakTTS } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+const SUCCESS = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
+const HALF = P.targetHalfPx;
+const FINGER = P.fingerHalfPx;
+const TRAIL_LEN = 8;
+
+const RocketDragGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({
+  onBack,
+  onComplete,
+}) => {
+  const router = useRouter();
+  const playSuccess = useTraceSound(SUCCESS);
+
+  const [showInfo, setShowInfo] = useState(true);
+  const [round, setRound] = useState(1);
+  const [score, setScore] = useState(0);
+  const [done, setDone] = useState(false);
+  const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const [showCongratulations, setShowCongratulations] = useState(false);
+
+  const [phase, setPhase] = useState<'countdown' | 'playing' | 'idle'>('idle');
+  const [followProgress, setFollowProgress] = useState(0);
+  const [isDocked, setIsDocked] = useState(false);
+  const [showCelebrate, setShowCelebrate] = useState(false);
+  const [statusHint, setStatusHint] = useState('');
+  const [exhaust, setExhaust] = useState<TrailPoint[]>([]);
+
+  const [rocketPos, setRocketPos] = useState({ x: 180, y: 200 });
+  const [fingerPos, setFingerPos] = useState({ x: 180, y: 280 });
+
+  const doneRef = useRef(false);
+  const scoreRef = useRef(0);
+  const roundRef = useRef(1);
+  const activeRef = useRef(false);
+  const completeRef = useRef(false);
+  const followingRef = useRef(false);
+  const followStartRef = useRef<number | null>(null);
+  const moveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const checkTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const playW = useRef(360);
+  const playH = useRef(400);
+  const timeRef = useRef(0);
+  const rocketPosRef = useRef({ x: 180, y: 200 });
+  const fingerPosRef = useRef({ x: 180, y: 280 });
+  const exhaustRef = useRef<TrailPoint[]>([]);
+
+  useEffect(() => {
+    scoreRef.current = score;
+    roundRef.current = round;
+  }, [score, round]);
+
+  const pushExhaust = useCallback((x: number, y: number) => {
+    const next: TrailPoint[] = [{ x, y, opacity: 1 }, ...exhaustRef.current].slice(0, TRAIL_LEN);
+    next.forEach((pt, i) => {
+      pt.opacity = 1 - i / TRAIL_LEN;
+    });
+    exhaustRef.current = next;
+    setExhaust([...next]);
+  }, []);
+
+  const clearTimers = useCallback(() => {
+    if (moveTimerRef.current) {
+      clearInterval(moveTimerRef.current);
+      moveTimerRef.current = null;
+    }
+    if (checkTimerRef.current) {
+      clearInterval(checkTimerRef.current);
+      checkTimerRef.current = null;
+    }
+    if (roundTimerRef.current) {
+      clearTimeout(roundTimerRef.current);
+      roundTimerRef.current = null;
+    }
+  }, []);
+
+  const endGame = useCallback(
+    (finalScore: number) => {
+      const total = P.rounds;
+      const xp = finalScore * P.xpPerScore;
+      setFinalStats({ correct: finalScore, total, xp });
+      setDone(true);
+      doneRef.current = true;
+      clearTimers();
+      activeRef.current = false;
+      setPhase('idle');
+      setShowCongratulations(true);
+      speakTTS(COPY.ttsComplete, 0.78);
+      recordGame(xp)
+        .then(() =>
+          logGameAndAward({
+            type: COPY.logType,
+            correct: finalScore,
+            total,
+            accuracy: (finalScore / total) * 100,
+            xpAwarded: xp,
+            skillTags: [...COPY.skillTags],
+          }),
+        )
+        .then(() => router.setParams({ refreshStats: Date.now().toString() }))
+        .catch(console.error);
+    },
+    [clearTimers, router],
+  );
+
+  const advanceRound = useCallback(() => {
+    clearTimers();
+    activeRef.current = false;
+    completeRef.current = false;
+    followingRef.current = false;
+    followStartRef.current = null;
+    setFollowProgress(0);
+    setIsDocked(false);
+    setShowCelebrate(false);
+    exhaustRef.current = [];
+    setExhaust([]);
+    if (roundRef.current >= P.rounds) {
+      endGame(scoreRef.current);
+      return;
+    }
+    setPhase('idle');
+    roundTimerRef.current = setTimeout(() => setRound((r) => r + 1), P.nextRoundDelayMs);
+  }, [clearTimers, endGame]);
+
+  const completeRound = useCallback(() => {
+    if (completeRef.current || doneRef.current) return;
+    completeRef.current = true;
+    clearTimers();
+    setShowCelebrate(true);
+    playSuccess();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    speakTTS(COPY.ttsSuccess, 0.85).catch(() => {});
+    setScore((s) => {
+      scoreRef.current = s + 1;
+      return s + 1;
+    });
+    roundTimerRef.current = setTimeout(() => advanceRound(), 900);
+  }, [advanceRound, clearTimers, playSuccess]);
+
+  const tickRocket = useCallback(() => {
+    if (!activeRef.current || completeRef.current) return;
+    timeRef.current += P.moveTickMs / 1000;
+    const w = playW.current;
+    const h = playH.current;
+    const cx = w * 0.5;
+    const cy = h * 0.45;
+    const r = Math.min(w, h) * 0.22;
+    const speedBoost = 1 + (roundRef.current - 1) * 0.04;
+    const nx = cx + Math.sin(timeRef.current * 0.9 * speedBoost) * r * 1.1;
+    const ny = cy;
+    rocketPosRef.current = { x: nx, y: ny };
+    setRocketPos({ x: nx, y: ny });
+    pushExhaust(nx + HALF, ny);
+  }, [pushExhaust]);
+
+  const checkDock = useCallback(() => {
+    if (!activeRef.current || completeRef.current || doneRef.current) return;
+    const d = distPx(
+      fingerPosRef.current.x,
+      fingerPosRef.current.y,
+      rocketPosRef.current.x,
+      rocketPosRef.current.y,
+    );
+    if (d <= P.followDistancePx) {
+      if (!followingRef.current) {
+        followingRef.current = true;
+        followStartRef.current = Date.now();
+        setIsDocked(true);
+        setStatusHint(COPY.progressHint);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      } else {
+        const elapsed = Date.now() - (followStartRef.current ?? Date.now());
+        const prog = Math.min(100, Math.round((elapsed / P.followHoldMs) * 100));
+        setFollowProgress(prog);
+        if (elapsed >= P.followHoldMs) completeRound();
+      }
+    } else {
+      if (followingRef.current) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft).catch(() => {});
+        speakTTS(COPY.ttsLost, 0.75).catch(() => {});
+      }
+      followingRef.current = false;
+      followStartRef.current = null;
+      setIsDocked(false);
+      setFollowProgress(0);
+      setStatusHint(COPY.lostHint);
+    }
+  }, [completeRound]);
+
+  const startPlaying = useCallback(() => {
+    if (doneRef.current) return;
+    completeRef.current = false;
+    followingRef.current = false;
+    followStartRef.current = null;
+    setFollowProgress(0);
+    setIsDocked(false);
+    setShowCelebrate(false);
+    activeRef.current = true;
+    setPhase('playing');
+    timeRef.current = 0;
+    const w = playW.current;
+    const h = playH.current;
+    rocketPosRef.current = { x: w * 0.5, y: h * 0.45 };
+    fingerPosRef.current = { x: w * 0.5, y: h * 0.72 };
+    setRocketPos({ x: w * 0.5, y: h * 0.45 });
+    setFingerPos({ x: w * 0.5, y: h * 0.72 });
+    exhaustRef.current = [];
+    setExhaust([]);
+    setStatusHint(COPY.followHint);
+    speakTTS(COPY.ttsCue, 0.78).catch(() => {});
+    moveTimerRef.current = setInterval(tickRocket, P.moveTickMs);
+    checkTimerRef.current = setInterval(checkDock, 80);
+  }, [checkDock, tickRocket]);
+
+  useEffect(() => {
+    if (showInfo || done) return;
+    if (round === 1) speakTTS(COPY.ttsIntro, 0.78).catch(() => {});
+    setPhase('countdown');
+  }, [round, showInfo, done]);
+
+  useEffect(
+    () => () => {
+      stopAllSpeech();
+      cleanupSounds();
+      clearTimers();
+    },
+    [clearTimers],
+  );
+
+  const panGesture = Gesture.Pan()
+    .runOnJS(true)
+    .onUpdate((e) => {
+      if (!activeRef.current || completeRef.current || doneRef.current) return;
+      const nx = Math.max(FINGER, Math.min(playW.current - FINGER, e.x));
+      const ny = Math.max(FINGER, Math.min(playH.current - FINGER, e.y));
+      fingerPosRef.current = { x: nx, y: ny };
+      setFingerPos({ x: nx, y: ny });
+    });
+
+  const handleExit = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
+    clearTimers();
+    onBack?.();
+  }, [clearTimers, onBack]);
+
+  if (showInfo) {
+    return (
+      <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+        <RocketDragInfoScreen onStart={() => setShowInfo(false)} onBack={handleExit} />
+      </SafeAreaView>
+    );
+  }
+
+  if (showCongratulations && done && finalStats) {
+    return (
+      <CongratulationsScreen
+        message={COPY.congratsMessage}
+        showButtons
+        correct={finalStats.correct}
+        total={finalStats.total}
+        xpAwarded={finalStats.xp}
+        onContinue={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onComplete ? onComplete() : onBack?.();
+        }}
+        onHome={handleExit}
+      />
+    );
+  }
+
+  if (done && finalStats && !showCongratulations) return null;
+
+  const dockDist = distPx(fingerPos.x, fingerPos.y, rocketPos.x, rocketPos.y);
+  const showTether = phase === 'playing' && dockDist <= P.followDistancePx + 24;
+
+  return (
+    <SafeAreaView style={styles.root} edges={['top']}>
+      <TouchableOpacity onPress={handleExit} style={styles.backBtn} activeOpacity={0.85}>
+        <Text style={styles.backText}>← Exit</Text>
+      </TouchableOpacity>
+
+      <RocketDragHUD
+        round={round}
+        totalRounds={P.rounds}
+        score={score}
+        hint={statusHint}
+        showHint={phase === 'playing'}
+        followProgress={followProgress}
+        isDocked={isDocked}
+      />
+
+      <GestureDetector gesture={panGesture}>
+        <View
+          style={styles.corridor}
+          onLayout={(e) => {
+            playW.current = e.nativeEvent.layout.width;
+            playH.current = e.nativeEvent.layout.height;
+          }}
+        >
+          <LaunchCorridorBackdrop />
+
+          {phase === 'playing' && (
+            <>
+              <ExhaustTrail points={exhaust} />
+              {showTether && (
+                <EnergyTether
+                  x1={fingerPos.x}
+                  y1={fingerPos.y}
+                  x2={rocketPos.x}
+                  y2={rocketPos.y}
+                  active={isDocked}
+                />
+              )}
+              <RocketShip x={rocketPos.x} y={rocketPos.y} docked={isDocked} />
+              <DockingPuck x={fingerPos.x} y={fingerPos.y} active={isDocked} progress={followProgress} />
+              <FuelGauge
+                x={rocketPos.x}
+                y={rocketPos.y - HALF - 40}
+                progress={followProgress}
+                visible={isDocked}
+              />
+            </>
+          )}
+
+          {phase === 'countdown' && (
+            <LaunchCountdown key={`cd-${round}`} onDone={startPlaying} />
+          )}
+
+          {phase === 'idle' && !done && (
+            <View style={styles.readyBanner} pointerEvents="none">
+              <Text style={styles.readyText}>🚀 Orbit {round}</Text>
+            </View>
+          )}
+
+          <DockCelebration visible={showCelebrate} x={rocketPos.x} y={rocketPos.y} />
+        </View>
+      </GestureDetector>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#020617' },
+  backBtn: {
+    position: 'absolute',
+    top: 52,
+    left: 14,
+    zIndex: 50,
+    backgroundColor: 'rgba(15,23,42,0.85)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(129,140,248,0.4)',
+  },
+  backText: { color: '#E0E7FF', fontWeight: '800', fontSize: 14 },
+  corridor: {
+    flex: 1,
+    marginHorizontal: 10,
+    marginTop: 4,
+    marginBottom: 12,
+    borderRadius: 24,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(129,140,248,0.35)',
+    shadowColor: '#6366F1',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  readyBanner: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: '44%',
+    backgroundColor: 'rgba(15,23,42,0.9)',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: 'rgba(129,140,248,0.45)',
+    zIndex: 10,
+  },
+  readyText: { fontSize: 17, fontWeight: '800', color: '#A5B4FC' },
+});
+
+export default RocketDragGame;

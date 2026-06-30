@@ -37,6 +37,8 @@ import {
 import { usePostureAnalytics } from '@/components/game/occupational/level6/session1/usePostureAnalytics';
 import { TaskCue } from '@/components/game/occupational/level6/session10/components/TaskCue';
 import { CHAMPION_GAME_THEMES, TASK_INFO, type ChampionMode, type TaskType } from '@/components/game/occupational/level6/session10/championTheme';
+import { ChampionHUD, ChampionIntroPanel } from '@/components/game/occupational/level6/session10/shared/ChampionUI';
+import { ChampionBackdrop } from '@/components/game/occupational/level6/session10/shared/ChampionVisuals';
 import { SESSION10_PACING } from '@/components/game/occupational/level6/session10/session10Pacing';
 import { usePoseDetection } from '@/hooks/usePoseDetection';
 import { poseStageNativeProps } from '@/components/game/occupational/level6/session1/poseStageProps';
@@ -44,10 +46,9 @@ import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { speak as speakTTS } from '@/utils/tts';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const P = SESSION10_PACING;
@@ -132,6 +133,7 @@ export const IntegratedChallengeGame: React.FC<{
 }> = ({ mode, onBack, onComplete }) => {
   const router = useRouter();
   const T = CHAMPION_GAME_THEMES[mode];
+  const S = T.shell;
   const sequence = T.sequence;
   const totalTasks = sequence.length;
 
@@ -439,42 +441,22 @@ export const IntegratedChallengeGame: React.FC<{
   const info = TASK_INFO[current];
 
   return (
-    <LinearGradient colors={T.gradient} style={styles.root}>
+    <View style={styles.root}>
+      <ChampionBackdrop backdrop={T.backdrop} shell={S} />
       <SafeAreaView style={styles.safe}>
         <View style={styles.topRow}>
-          <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
-            <Text style={[styles.backText, { color: T.textLight }]}>← Back</Text>
+          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { borderColor: S.backBorder }]}>
+            <Text style={[styles.backText, { color: S.backText }]}>← Back</Text>
           </TouchableOpacity>
-          <Text style={[styles.academyLabel, { color: T.textSoft }]}>{T.bannerLabel}</Text>
           <View style={{ width: 64 }} />
         </View>
 
-        <View style={styles.header}>
-          <Text style={styles.title}>
-            {T.emoji} {T.title}
-          </Text>
-          <Text style={[styles.subtitle, { color: T.textSoft }]}>{T.subtitle}</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.statPill}>
-              <Text style={[styles.statLabel, { color: T.textSoft }]}>Task</Text>
-              <Text style={styles.statValue}>
-                {taskLabel}/{totalTasks}
-              </Text>
-            </View>
-            <View style={styles.statPill}>
-              <Text style={styles.coinEmoji}>{T.treasure}</Text>
-              <Text style={styles.statValue}>{treasures}</Text>
-            </View>
-            <View style={styles.statPill}>
-              <Text style={styles.coinEmoji}>⏱️</Text>
-              <Text style={styles.statValue}>{courseSec}s</Text>
-            </View>
-          </View>
-        </View>
+        <ChampionHUD theme={T} taskLabel={taskLabel} totalTasks={totalTasks} treasures={treasures} courseSec={courseSec} />
 
         <View style={styles.stageWrap}>
           <CameraStage
             {...poseStageNativeProps(poseDetection)}
+            shell={S}
             previewContainerId={previewContainerId}
             cameraSupported={usingCamera}
             hasCamera={hasCamera}
@@ -499,7 +481,7 @@ export const IntegratedChallengeGame: React.FC<{
               />
             )}
 
-            <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={T.accent} count={18} />
+            <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={S.sparkleColor} count={18} />
 
             {phase === 'calibrate' && (
               <View style={styles.calibWrap} pointerEvents="none">
@@ -513,46 +495,18 @@ export const IntegratedChallengeGame: React.FC<{
         </View>
 
         {phase === 'intro' && (
-          <View style={styles.bottomPanel}>
-            {cameraSupported && error ? (
-              <>
-                <Text style={styles.errorText}>{error}</Text>
-                <View style={styles.btnRow}>
-                  <Pressable style={[styles.primaryBtn, { backgroundColor: T.accent }]} onPress={() => setActive(true)}>
-                    <Text style={styles.primaryBtnText}>Retry Camera</Text>
-                  </Pressable>
-                  <Pressable style={styles.secondaryBtn} onPress={() => { setForceFallback(true); handleStart(); }}>
-                    <Text style={styles.secondaryBtnText}>Play Guided</Text>
-                  </Pressable>
-                </View>
-              </>
-            ) : (
-              <>
-                <Text style={[styles.introText, { color: T.textLight }]}>
-                  {cameraSupported
-                    ? hasCamera
-                      ? 'Stand back so the camera sees your whole body — clear some space for the course!'
-                      : 'Starting camera…'
-                    : 'Guided mode: follow the coach through every task!'}
-                </Text>
-                <Pressable
-                  style={[styles.primaryBtn, { backgroundColor: T.accent, opacity: cameraSupported && !hasCamera ? 0.6 : 1 }]}
-                  disabled={cameraSupported && !hasCamera}
-                  onPress={handleStart}
-                >
-                  <Text style={styles.primaryBtnText}>{T.hero} Start Challenge</Text>
-                </Pressable>
-                {cameraSupported && (
-                  <Pressable style={styles.linkBtn} onPress={() => { setForceFallback(true); handleStart(); }}>
-                    <Text style={[styles.linkText, { color: T.textSoft }]}>No camera? Play guided mode</Text>
-                  </Pressable>
-                )}
-              </>
-            )}
-          </View>
+          <ChampionIntroPanel
+            theme={T}
+            errorText={cameraSupported && error ? error : undefined}
+            cameraSupported={cameraSupported}
+            hasCamera={hasCamera}
+            onStart={handleStart}
+            onRetry={() => setActive(true)}
+            onGuided={() => { setForceFallback(true); handleStart(); }}
+          />
         )}
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 };
 
@@ -560,42 +514,13 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   safe: { flex: 1, paddingHorizontal: 14 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
-  backBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', backgroundColor: 'rgba(255,255,255,0.08)' },
+  backBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.08)' },
   backText: { fontSize: 14, fontWeight: '800' },
-  academyLabel: { fontSize: 12, fontWeight: '900', letterSpacing: 1 },
-  header: { alignItems: 'center', marginTop: 8 },
-  title: { color: '#fff', fontSize: 23, fontWeight: '900', textAlign: 'center' },
-  subtitle: { fontSize: 14, fontWeight: '600', marginTop: 2, textAlign: 'center' },
-  statsRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
-  statPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  statLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
-  statValue: { color: '#FEF3C7', fontSize: 16, fontWeight: '900' },
-  coinEmoji: { fontSize: 15 },
-  stageWrap: { flex: 1, marginTop: 14, marginBottom: 12 },
+  stageWrap: { flex: 1, marginTop: 10, marginBottom: 8 },
   calibWrap: { position: 'absolute', top: '44%', alignSelf: 'center', alignItems: 'center', width: '74%' },
   calibText: { color: '#fff', fontSize: 16, fontWeight: '900', marginBottom: 8 },
   calibTrack: { width: '100%', height: 12, borderRadius: 6, backgroundColor: 'rgba(15,23,42,0.7)', overflow: 'hidden' },
   calibFill: { height: '100%' },
-  bottomPanel: { paddingBottom: 16, alignItems: 'center', gap: 10 },
-  introText: { fontSize: 14, fontWeight: '600', textAlign: 'center' },
-  errorText: { color: '#FCA5A5', fontSize: 14, fontWeight: '700', textAlign: 'center' },
-  btnRow: { flexDirection: 'row', gap: 12 },
-  primaryBtn: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: 20 },
-  primaryBtnText: { color: '#fff', fontSize: 17, fontWeight: '900' },
-  secondaryBtn: { paddingHorizontal: 22, paddingVertical: 14, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.14)' },
-  secondaryBtnText: { color: '#fff', fontSize: 15, fontWeight: '800' },
-  linkBtn: { paddingVertical: 6 },
-  linkText: { fontSize: 13, fontWeight: '700', textDecorationLine: 'underline' },
 });
 
 export default IntegratedChallengeGame;

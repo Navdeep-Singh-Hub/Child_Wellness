@@ -1,22 +1,156 @@
 /**
- * Level 7 Reader — Session 1, Game 1: Pattern Logic
+ * Level 7 Reader — Session 1, Game 1: Orbit Weave
  * Sequence: square, circle, triangle, square, circle, ? → triangle.
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { ReaderGameShell } from '@/components/reader-session/shared/ReaderGameShell';
+import { RD } from '@/components/reader-session/shared/readerTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
-const PATTERN = ['square', 'circle', 'triangle', 'square', 'circle'];
-const OPTIONS = [
-  { id: 'square', label: 'Square', emoji: '⬜' },
-  { id: 'circle', label: 'Circle', emoji: '⭕' },
-  { id: 'triangle', label: 'Triangle', emoji: '🔺' },
+const PATTERN = ['square', 'circle', 'triangle', 'square', 'circle'] as const;
+type ShapeId = 'square' | 'circle' | 'triangle';
+
+const CORRECT_ID: ShapeId = 'triangle';
+const OPTIONS: { id: ShapeId; label: string; emoji: string; glow: string }[] = [
+  { id: 'square', label: 'Square', emoji: '◆', glow: '#A78BFA' },
+  { id: 'circle', label: 'Circle', emoji: '●', glow: '#67E8F9' },
+  { id: 'triangle', label: 'Triangle', emoji: '▲', glow: '#FDE68A' },
 ];
-const CORRECT_ID = 'triangle';
 
-const SHAPE_EMOJI: Record<string, string> = { square: '⬜', circle: '⭕', triangle: '🔺' };
+const VOICE =
+  'Complete the pattern. Square, circle, triangle, square, circle. What comes next?';
+
+const ORBIT = { accent: '#8B5CF6', accentBright: '#C4B5FD', rail: '#6D28D9' } as const;
+
+const SHAPE_STYLE: Record<ShapeId, { color: string; emoji: string }> = {
+  square: { color: '#A78BFA', emoji: '◆' },
+  circle: { color: '#67E8F9', emoji: '●' },
+  triangle: { color: '#FDE68A', emoji: '▲' },
+};
+
+function OrbitCell({ shape, index }: { shape: ShapeId; index: number }) {
+  const drift = useSharedValue(0);
+  useEffect(() => {
+    drift.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1000 + index * 100 }),
+        withTiming(0, { duration: 1000 + index * 100 }),
+      ),
+      -1,
+      true,
+    );
+  }, [drift, index]);
+
+  const glow = useAnimatedStyle(() => ({
+    opacity: 0.2 + drift.value * 0.35,
+    transform: [{ scale: 1 + drift.value * 0.07 }],
+  }));
+
+  const s = SHAPE_STYLE[shape];
+
+  return (
+    <View style={styles.cellWrap}>
+      <Animated.View style={[styles.cellGlow, glow, { backgroundColor: `${s.color}44` }]} />
+      <View style={[styles.cell, { borderColor: `${s.color}88` }]}>
+        <Text style={[styles.cellEmoji, { color: s.color }]}>{s.emoji}</Text>
+        <Text style={styles.cellIdx}>{index + 1}</Text>
+      </View>
+    </View>
+  );
+}
+
+function VoidSlot() {
+  const pulse = useSharedValue(0);
+  useEffect(() => {
+    pulse.value = withRepeat(
+      withSequence(withTiming(1, { duration: 750 }), withTiming(0, { duration: 750 })),
+      -1,
+      true,
+    );
+  }, [pulse]);
+
+  const anim = useAnimatedStyle(() => ({
+    borderColor: `rgba(139,92,246,${0.4 + pulse.value * 0.5})`,
+    transform: [{ scale: 1 + pulse.value * 0.06 }],
+  }));
+
+  return (
+    <Animated.View style={[styles.voidSlot, anim]}>
+      <LinearGradient colors={[`${ORBIT.accent}55`, 'rgba(11,10,26,0.6)']} style={styles.voidGrad} />
+      <Text style={styles.voidQ}>?</Text>
+      <Text style={styles.voidLbl}>NEXT</Text>
+    </Animated.View>
+  );
+}
+
+function GlyphOrb({
+  option,
+  selected,
+  feedback,
+  onPress,
+}: {
+  option: (typeof OPTIONS)[number];
+  selected: boolean;
+  feedback: 'idle' | 'wrong' | 'correct';
+  onPress: () => void;
+}) {
+  const shake = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (feedback === 'wrong' && selected) {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-6, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    } else if (feedback === 'correct' && selected) {
+      scale.value = withSpring(1.08, { damping: 8 });
+    } else {
+      scale.value = withTiming(1, { duration: 150 });
+    }
+  }, [feedback, selected, shake, scale]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }, { scale: scale.value }],
+  }));
+
+  const border =
+    feedback === 'correct' && selected
+      ? RD.good
+      : feedback === 'wrong' && selected
+        ? RD.warn
+        : selected
+          ? ORBIT.accentBright
+          : RD.glassBorder;
+
+  return (
+    <Animated.View style={anim}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.orb, { borderColor: border }, pressed && styles.pressed]}
+        accessibilityLabel={option.label}
+      >
+        <View style={[styles.orbHalo, { backgroundColor: `${option.glow}22` }]} />
+        <Text style={[styles.orbEmoji, { color: option.glow }]}>{option.emoji}</Text>
+        <Text style={styles.orbLabel}>{option.label}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 export interface PatternLogicReaderSession1GameProps {
   onComplete: () => void;
@@ -24,115 +158,210 @@ export interface PatternLogicReaderSession1GameProps {
 
 export function PatternLogicReaderSession1Game({ onComplete }: PatternLogicReaderSession1GameProps) {
   const [showSuccess, setShowSuccess] = useState(false);
-  const [wrongShake] = useState(() => new Animated.Value(0));
+  const [selected, setSelected] = useState<ShapeId | null>(null);
+  const [feedback, setFeedback] = useState<'idle' | 'wrong' | 'correct'>('idle');
+  const [attempts, setAttempts] = useState(0);
 
-  useEffect(() => {
-    speak('Complete the pattern. Square, circle, triangle, square, circle. What comes next?', 0.75);
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
   }, []);
 
-  const triggerWrong = useCallback(() => {
-    wrongShake.setValue(0);
-    Animated.sequence([
-      Animated.timing(wrongShake, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(wrongShake, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-    speak('Try again. Square, circle, triangle, square, circle.', 0.7);
-  }, [wrongShake]);
+  useEffect(() => {
+    playVoice();
+  }, [playVoice]);
 
   const handleTap = useCallback(
-    (id: string) => {
+    (id: ShapeId) => {
+      if (feedback === 'correct') return;
+      setSelected(id);
+      setAttempts((a) => a + 1);
+
       if (id === CORRECT_ID) {
+        setFeedback('correct');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         speak('Correct! Triangle comes next!', 0.75);
         setShowSuccess(true);
-        setTimeout(() => onComplete(), 2200);
+        setTimeout(() => onComplete(), 2400);
       } else {
-        triggerWrong();
+        setFeedback('wrong');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak(
+          id === 'circle'
+            ? 'Circle was just before. Listen to the full pattern!'
+            : 'Not quite. Square, circle, triangle — then it repeats!',
+          0.7,
+        );
+        setTimeout(() => {
+          setFeedback('idle');
+          setSelected(null);
+        }, 900);
       }
     },
-    [onComplete, triggerWrong]
+    [feedback, onComplete],
   );
+
+  const coachLine =
+    attempts === 0
+      ? 'Three shapes repeat: Square, Circle, Triangle — then start again!'
+      : 'Say it aloud: Square — Circle — Triangle — Square — Circle — ?';
 
   if (showSuccess) {
     return (
       <SuccessCelebration
-        variant="indigo"
-        title="Great Job!"
-        subtitle="You completed the pattern!"
-        badgeEmoji="🔺"
+        variant="ocean"
+        title="Orbit Weave!"
+        subtitle="You completed the constellation sequence!"
+        badgeEmoji="🛰️"
       />
     );
   }
 
-  const shakeX = wrongShake.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
-
   return (
-    <GameLayout
-      title="Pattern Logic"
-      instruction="Square, circle, triangle, square, circle. What comes next?"
-      icon="🧩"
-      backgroundVariant="indigo"
+    <ReaderGameShell
+      studio="ORBIT WEAVE · GAME 1"
+      title="Complete the pattern"
+      instruction="Square, circle, triangle, square, circle — what comes next?"
+      mascot="🛰️"
+      coachLine={coachLine}
+      onReplayVoice={playVoice}
     >
-      <View style={styles.container}>
-        <Text style={styles.label}>Pattern</Text>
+      <View style={styles.railWrap}>
+        <LinearGradient
+          colors={[`${ORBIT.rail}44`, 'transparent', `${ORBIT.rail}44`]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.railGlow}
+        />
+        <Text style={styles.railLabel}>CONSTELLATION RAIL</Text>
         <View style={styles.patternRow}>
-          {PATTERN.map((id, i) => (
-            <View key={i} style={styles.patternItem}>
-              <Text style={styles.patternEmoji}>{SHAPE_EMOJI[id]}</Text>
-            </View>
+          {PATTERN.map((shape, i) => (
+            <OrbitCell key={i} shape={shape} index={i} />
           ))}
-          <View style={styles.patternItem}>
-            <Text style={styles.question}>?</Text>
-          </View>
+          <VoidSlot />
         </View>
-        <Text style={styles.tapLabel}>Tap the next shape</Text>
-        <Animated.View style={[styles.optionsRow, { transform: [{ translateX: shakeX }] }]}>
-          {OPTIONS.map((opt) => (
-            <Pressable
-              key={opt.id}
-              onPress={() => handleTap(opt.id)}
-              style={({ pressed }) => [styles.optionBtn, pressed && styles.pressed]}
-              accessibilityLabel={opt.label}
-            >
-              <Text style={styles.optionEmoji}>{opt.emoji}</Text>
-              <Text style={styles.optionLabel}>{opt.label}</Text>
-            </Pressable>
-          ))}
-        </Animated.View>
       </View>
-    </GameLayout>
+
+      <Text style={styles.prompt}>Tap the next shape</Text>
+
+      <View style={styles.choicesRow}>
+        {OPTIONS.map((opt) => (
+          <GlyphOrb
+            key={opt.id}
+            option={opt}
+            selected={selected === opt.id}
+            feedback={feedback}
+            onPress={() => handleTap(opt.id)}
+          />
+        ))}
+      </View>
+
+      <View style={styles.legend}>
+        <Text style={styles.legendTxt}>Pattern: ◆ ● ▲ repeats in orbit</Text>
+      </View>
+    </ReaderGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', paddingVertical: 24 },
-  label: { fontSize: 18, fontWeight: '700', color: '#4338CA', marginBottom: 12 },
-  patternRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', justifyContent: 'center' },
-  patternItem: {
-    width: 54,
-    height: 54,
+  railWrap: {
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: `${ORBIT.accent}55`,
+    backgroundColor: 'rgba(30,20,60,0.55)',
+    paddingVertical: 16,
+    paddingHorizontal: 10,
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  railGlow: { ...StyleSheet.absoluteFillObject },
+  railLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: ORBIT.accentBright,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  patternRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cellWrap: { alignItems: 'center' },
+  cellGlow: {
+    position: 'absolute',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+  },
+  cell: {
+    width: 52,
+    height: 52,
     borderRadius: 14,
-    backgroundColor: 'rgba(99,102,241,0.12)',
-    borderWidth: 3,
-    borderColor: 'rgba(99,102,241,0.35)',
+    borderWidth: 2,
+    backgroundColor: 'rgba(11,10,26,0.75)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  patternEmoji: { fontSize: 30 },
-  question: { fontSize: 26, fontWeight: '800', color: '#64748B' },
-  tapLabel: { fontSize: 16, fontWeight: '700', color: '#64748B', marginBottom: 16 },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, justifyContent: 'center' },
-  optionBtn: {
-    minWidth: 110,
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    borderRadius: 18,
-    backgroundColor: '#FFF',
-    borderWidth: 4,
-    borderColor: 'rgba(99,102,241,0.55)',
-    alignItems: 'center',
+  cellEmoji: { fontSize: 26, fontWeight: '900' },
+  cellIdx: {
+    position: 'absolute',
+    bottom: 2,
+    right: 4,
+    fontSize: 8,
+    fontWeight: '900',
+    color: RD.textMuted,
   },
-  optionEmoji: { fontSize: 40, marginBottom: 6 },
-  optionLabel: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
-  pressed: { opacity: 0.9, backgroundColor: 'rgba(99,102,241,0.10)' },
+  voidSlot: {
+    width: 58,
+    height: 58,
+    borderRadius: 16,
+    borderWidth: 2.5,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  voidGrad: { ...StyleSheet.absoluteFillObject },
+  voidQ: { fontSize: 26, fontWeight: '900', color: ORBIT.accentBright },
+  voidLbl: { fontSize: 7, fontWeight: '900', color: RD.textMuted, letterSpacing: 0.8, marginTop: 2 },
+  prompt: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: RD.textLight,
+    textAlign: 'center',
+    marginBottom: 18,
+  },
+  choicesRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 14,
+    flexWrap: 'wrap',
+  },
+  orb: {
+    width: 96,
+    height: 110,
+    borderRadius: 20,
+    borderWidth: 2.5,
+    backgroundColor: 'rgba(11,10,26,0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  orbHalo: { ...StyleSheet.absoluteFillObject },
+  orbEmoji: { fontSize: 42, fontWeight: '900' },
+  orbLabel: { fontSize: 13, fontWeight: '800', color: RD.textMuted, marginTop: 6 },
+  pressed: { opacity: 0.88 },
+  legend: {
+    marginTop: 18,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: 'rgba(139,92,246,0.12)',
+    borderWidth: 1,
+    borderColor: `${ORBIT.accent}44`,
+  },
+  legendTxt: { fontSize: 12, fontWeight: '700', color: ORBIT.accentBright, textAlign: 'center' },
 });
-

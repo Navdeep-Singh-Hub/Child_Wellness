@@ -1,18 +1,35 @@
 /**
- * Level 7 Reader — Session 10, Game 1: Mixed Quiz
+ * Level 7 Reader — Session 10, Game 1: Fusion Scan
  * Identify shapes, colors, and numbers (one question per type).
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { ReaderGameShell } from '@/components/reader-session/shared/ReaderGameShell';
+import { RD } from '@/components/reader-session/shared/readerTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 type QuestionType = 'shape' | 'color' | 'number';
 
-const QUESTIONS: { type: QuestionType; prompt: string; options: { id: string; label: string; emoji?: string; color?: string }[]; correctId: string }[] = [
+const QUESTIONS: {
+  type: QuestionType;
+  prompt: string;
+  tag: string;
+  options: { id: string; label: string; emoji?: string; color?: string }[];
+  correctId: string;
+}[] = [
   {
     type: 'shape',
+    tag: 'SHAPE',
     prompt: 'Which shape is a circle?',
     options: [
       { id: 'circle', label: 'Circle', emoji: '⭕' },
@@ -23,6 +40,7 @@ const QUESTIONS: { type: QuestionType; prompt: string; options: { id: string; la
   },
   {
     type: 'color',
+    tag: 'COLOR',
     prompt: 'Which color is RED?',
     options: [
       { id: 'red', label: 'Red', color: '#EF4444' },
@@ -33,6 +51,7 @@ const QUESTIONS: { type: QuestionType; prompt: string; options: { id: string; la
   },
   {
     type: 'number',
+    tag: 'COUNT',
     prompt: 'How many stars?',
     options: [
       { id: '4', label: '4' },
@@ -44,6 +63,76 @@ const QUESTIONS: { type: QuestionType; prompt: string; options: { id: string; la
   },
 ];
 
+const FUSION = { accent: '#EAB308', glow: '#FDE047', violet: '#A855F7' } as const;
+
+function QuizOrb({
+  option,
+  selected,
+  feedback,
+  onPress,
+}: {
+  option: (typeof QUESTIONS)[number]['options'][number];
+  selected: boolean;
+  feedback: 'idle' | 'wrong' | 'correct';
+  onPress: () => void;
+}) {
+  const shake = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (feedback === 'wrong' && selected) {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    } else if (feedback === 'correct' && selected) {
+      scale.value = withSpring(1.08, { damping: 8 });
+    } else {
+      scale.value = withTiming(1, { duration: 150 });
+    }
+  }, [feedback, selected, shake, scale]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }, { scale: scale.value }],
+  }));
+
+  const border =
+    feedback === 'correct' && selected
+      ? RD.good
+      : feedback === 'wrong' && selected
+        ? RD.warn
+        : selected
+          ? FUSION.glow
+          : option.color
+            ? option.color
+            : RD.glassBorder;
+
+  return (
+    <Animated.View style={anim}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.orb, { borderColor: border }, pressed && styles.pressed]}
+        accessibilityLabel={option.label}
+      >
+        <View
+          style={[
+            styles.orbHalo,
+            { backgroundColor: option.color ? `${option.color}22` : `${FUSION.violet}22` },
+          ]}
+        />
+        {option.emoji ? <Text style={styles.orbEmoji}>{option.emoji}</Text> : null}
+        {option.color ? <View style={[styles.colorDot, { backgroundColor: option.color }]} /> : null}
+        {!option.emoji && !option.color ? (
+          <Text style={styles.orbNumber}>{option.label}</Text>
+        ) : null}
+        <Text style={styles.orbLabel}>{option.label}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 export interface MixedQuizReaderSession10GameProps {
   onComplete: () => void;
 }
@@ -51,115 +140,265 @@ export interface MixedQuizReaderSession10GameProps {
 export function MixedQuizReaderSession10Game({ onComplete }: MixedQuizReaderSession10GameProps) {
   const [qIndex, setQIndex] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [wrongShake] = useState(() => new Animated.Value(0));
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<'idle' | 'wrong' | 'correct'>('idle');
+  const [lock, setLock] = useState(false);
 
   const q = QUESTIONS[qIndex];
+  const progressPct = ((qIndex + (feedback === 'correct' ? 1 : 0)) / QUESTIONS.length) * 100;
+
+  const playVoice = useCallback(() => {
+    speak(q.prompt, 0.75).catch(() => {});
+  }, [q.prompt]);
 
   useEffect(() => {
-    speak(q.prompt, 0.75);
-  }, [qIndex]);
-
-  const triggerWrong = useCallback(() => {
-    wrongShake.setValue(0);
-    Animated.sequence([
-      Animated.timing(wrongShake, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(wrongShake, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-    speak('Try again. ' + q.prompt, 0.7);
-  }, [wrongShake, q.prompt]);
+    playVoice();
+    setSelectedId(null);
+    setFeedback('idle');
+    setLock(false);
+  }, [qIndex, playVoice]);
 
   const handleTap = useCallback(
     (id: string) => {
+      if (lock || feedback === 'correct') return;
+      setSelectedId(id);
+
       if (id === q.correctId) {
+        setFeedback('correct');
+        setLock(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         speak('Correct!', 0.6);
+
         if (qIndex + 1 >= QUESTIONS.length) {
           speak('You got them all! Shapes, colors, and numbers!', 0.75);
           setShowSuccess(true);
-          setTimeout(() => onComplete(), 2200);
+          setTimeout(() => onComplete(), 2400);
         } else {
-          setQIndex((i) => i + 1);
+          setTimeout(() => setQIndex((i) => i + 1), 900);
         }
       } else {
-        triggerWrong();
+        setFeedback('wrong');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Try again. ' + q.prompt, 0.7);
+        setTimeout(() => {
+          setFeedback('idle');
+          setSelectedId(null);
+        }, 900);
       }
     },
-    [q, qIndex, onComplete, triggerWrong]
+    [lock, feedback, q, qIndex, onComplete],
   );
+
+  const coachLine =
+    q.type === 'shape'
+      ? 'Pick the circle — round with no corners!'
+      : q.type === 'color'
+        ? 'Find the red signal among the color choices!'
+        : 'Count every star in the cluster before you answer!';
 
   if (showSuccess) {
     return (
       <SuccessCelebration
-        variant="indigo"
-        title="Great Job!"
+        variant="sunset"
+        title="Fusion Scan!"
         subtitle="You identified shapes, colors, and numbers!"
         badgeEmoji="🎯"
       />
     );
   }
 
-  const shakeX = wrongShake.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
-
   return (
-    <GameLayout
-      title="Mixed Quiz"
-      instruction="Identify shapes, colors, and numbers."
-      icon="🎯"
-      backgroundVariant="indigo"
+    <ReaderGameShell
+      studio="FUSION SCAN · GAME 1"
+      title="Mixed quiz"
+      instruction="Answer shape, color, and counting questions — one scan at a time."
+      mascot="🎯"
+      coachLine={coachLine}
+      onReplayVoice={playVoice}
     >
-      <View style={styles.container}>
-        <Text style={styles.progress}>Question {qIndex + 1} of {QUESTIONS.length}</Text>
+      <View style={styles.progressWrap}>
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressLabel}>SCAN PROGRESS</Text>
+          <Text style={styles.progressCount}>
+            {qIndex + 1} / {QUESTIONS.length}
+          </Text>
+        </View>
+        <View style={styles.progressBg}>
+          <LinearGradient
+            colors={[FUSION.accent, FUSION.violet]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.progressFill, { width: `${progressPct}%` }]}
+          />
+        </View>
+        <View style={styles.phaseRow}>
+          {QUESTIONS.map((item, i) => (
+            <View
+              key={item.type}
+              style={[
+                styles.phasePill,
+                i < qIndex && styles.phaseDone,
+                i === qIndex && styles.phaseActive,
+                i > qIndex && styles.phaseIdle,
+              ]}
+            >
+              <Text style={styles.phaseTxt}>{item.tag}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.promptFrame}>
+        <LinearGradient
+          colors={[`${FUSION.accent}33`, 'transparent', `${FUSION.violet}22`]}
+          style={styles.promptGlow}
+        />
+        <Text style={styles.promptTag}>{q.tag} SCAN</Text>
         <Text style={styles.prompt}>{q.prompt}</Text>
         {q.type === 'number' ? (
-          <View style={styles.starsWrap}>
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Text key={i} style={styles.star}>⭐</Text>
-            ))}
+          <View style={styles.starsFrame}>
+            <Text style={styles.starsLabel}>STAR CLUSTER</Text>
+            <View style={styles.starsRow}>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Text key={i} style={styles.star}>
+                  ⭐
+                </Text>
+              ))}
+            </View>
           </View>
         ) : null}
-        <Text style={styles.tapLabel}>Tap your answer</Text>
-        <Animated.View style={[styles.optionsRow, { transform: [{ translateX: shakeX }] }]}>
-          {q.options.map((opt) => (
-            <Pressable
-              key={opt.id}
-              onPress={() => handleTap(opt.id)}
-              style={({ pressed }) => [
-                styles.optionBtn,
-                opt.color ? { borderColor: opt.color } : undefined,
-                pressed && styles.pressed,
-              ]}
-              accessibilityLabel={opt.label}
-            >
-              {opt.emoji ? <Text style={styles.optionEmoji}>{opt.emoji}</Text> : null}
-              {opt.color ? <View style={[styles.colorDot, { backgroundColor: opt.color }]} /> : null}
-              <Text style={styles.optionLabel}>{opt.label}</Text>
-            </Pressable>
-          ))}
-        </Animated.View>
       </View>
-    </GameLayout>
+
+      <Text style={styles.tapLabel}>Tap your answer</Text>
+
+      <View style={styles.choicesRow}>
+        {q.options.map((opt) => (
+          <QuizOrb
+            key={opt.id}
+            option={opt}
+            selected={selectedId === opt.id}
+            feedback={feedback}
+            onPress={() => handleTap(opt.id)}
+          />
+        ))}
+      </View>
+    </ReaderGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', paddingVertical: 24 },
-  progress: { fontSize: 14, fontWeight: '700', color: '#64748B', marginBottom: 12 },
-  prompt: { fontSize: 20, fontWeight: '800', color: '#4338CA', marginBottom: 20, textAlign: 'center' },
-  starsWrap: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 20 },
-  star: { fontSize: 36 },
-  tapLabel: { fontSize: 16, fontWeight: '700', color: '#64748B', marginBottom: 16 },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 14 },
-  optionBtn: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 16,
-    backgroundColor: '#FFF',
-    borderWidth: 3,
-    borderColor: '#818CF8',
+  progressWrap: { marginBottom: 16 },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    minWidth: 80,
+    marginBottom: 8,
   },
-  pressed: { opacity: 0.9, backgroundColor: '#EEF2FF' },
-  optionEmoji: { fontSize: 40, marginBottom: 6 },
-  colorDot: { width: 36, height: 36, borderRadius: 18, marginBottom: 8 },
-  optionLabel: { fontSize: 16, fontWeight: '700', color: '#4338CA' },
+  progressLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+    color: FUSION.glow,
+  },
+  progressCount: { fontSize: 14, fontWeight: '900', color: RD.textLight },
+  progressBg: {
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    overflow: 'hidden',
+  },
+  progressFill: { height: '100%', borderRadius: 5 },
+  phaseRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 10, flexWrap: 'wrap' },
+  phasePill: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    borderWidth: 1.5,
+  },
+  phaseActive: {
+    backgroundColor: 'rgba(234,179,8,0.22)',
+    borderColor: FUSION.glow,
+  },
+  phaseDone: {
+    backgroundColor: 'rgba(52,211,153,0.15)',
+    borderColor: RD.good,
+  },
+  phaseIdle: {
+    backgroundColor: 'rgba(11,10,26,0.5)',
+    borderColor: RD.glassBorder,
+  },
+  phaseTxt: { fontSize: 9, fontWeight: '900', color: RD.textMuted, letterSpacing: 0.6 },
+  promptFrame: {
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: `${FUSION.accent}55`,
+    backgroundColor: 'rgba(11,10,26,0.5)',
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+    overflow: 'hidden',
+    alignItems: 'center',
+  },
+  promptGlow: { ...StyleSheet.absoluteFillObject },
+  promptTag: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: FUSION.glow,
+    marginBottom: 8,
+  },
+  prompt: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: RD.textLight,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  starsFrame: {
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: `${FUSION.glow}55`,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+  },
+  starsLabel: {
+    fontSize: 8,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+    color: FUSION.glow,
+    marginBottom: 8,
+  },
+  starsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6 },
+  star: { fontSize: 30 },
+  tapLabel: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: RD.textMuted,
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  choicesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  orb: {
+    width: 96,
+    height: 112,
+    borderRadius: 20,
+    borderWidth: 2.5,
+    backgroundColor: 'rgba(11,10,26,0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  orbHalo: { ...StyleSheet.absoluteFillObject },
+  orbEmoji: { fontSize: 38 },
+  orbNumber: { fontSize: 32, fontWeight: '900', color: RD.textLight },
+  colorDot: { width: 34, height: 34, borderRadius: 17, marginBottom: 4 },
+  orbLabel: { fontSize: 12, fontWeight: '800', color: RD.textMuted, marginTop: 4 },
+  pressed: { opacity: 0.88 },
 });

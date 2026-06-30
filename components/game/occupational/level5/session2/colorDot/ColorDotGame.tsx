@@ -4,9 +4,9 @@
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { ResultToast } from '@/components/game/FX';
 import { PaintStudioBackdrop, TargetColorBanner } from '@/components/game/occupational/level5/session2/colorDot/ColorDotVisuals';
-import { COLORS, COLOR_DOT_COPY as COPY, COLOR_DOT_THEME as THEME, DOT_SIZE } from '@/components/game/occupational/level5/session2/colorDot/colorDotTheme';
+import { COLORS, COLOR_DOT_COPY as COPY, DOT_SIZE } from '@/components/game/occupational/level5/session2/colorDot/colorDotTheme';
 import { SESSION5_2_PACING as P } from '@/components/game/occupational/level5/session2/session2Pacing';
-import { Session2HUD, Session2Intro } from '@/components/game/occupational/level5/session2/shared/Session2UI';
+import { ColorDotHUD, ColorDotIntro } from '@/components/game/occupational/level5/session2/colorDot/ColorDotUI';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { speak as speakTTS, stopTTS } from '@/utils/tts';
@@ -124,11 +124,7 @@ const ColorDotGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> =
   if (showInfo) {
     return (
       <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-        <Session2Intro
-          config={{ theme: THEME, emoji: COPY.emoji, title: COPY.title, tagline: COPY.tagline, body: COPY.body, chips: [...COPY.chips], startLabel: COPY.startLabel, startGradient: ['#A855F7', '#7C3AED', '#6D28D9'], backdrop: <PaintStudioBackdrop /> }}
-          onStart={() => { refillDeck(); setShowInfo(false); }}
-          onBack={exit}
-        />
+        <ColorDotIntro onStart={() => { refillDeck(); setShowInfo(false); }} onBack={exit} />
       </SafeAreaView>
     );
   }
@@ -140,14 +136,10 @@ const ColorDotGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> =
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <TouchableOpacity onPress={exit} style={styles.back}><Text style={styles.backText}>← Exit</Text></TouchableOpacity>
-      <Session2HUD
-        theme={THEME}
-        gameTitle="Color Dot"
-        emoji={COPY.emoji}
+      <ColorDotHUD
         round={round}
         totalRounds={P.rounds}
         score={score}
-        scoreLabel="HITS"
         hint={`Find ${COLORS[targetIdx].emoji} ${COLORS[targetIdx].name}`}
         showHint
         extra={roundData ? <TargetColorBanner colorIndex={roundData.targetColorIndex} /> : null}

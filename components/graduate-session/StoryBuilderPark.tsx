@@ -1,126 +1,347 @@
 /**
- * Game 1 — Story Builder. Arrange: I went to the park (1), I played with my friend (2), We went home (3). Session 10: Graduate Master Challenge.
+ * Game 1 — Story Builder. Arrange: I went to the park (1), I played with my friend (2), We went home (3).
+ * Session 10: Graduate Master Challenge (finale).
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { GraduateGameShell } from '@/components/graduate-session/shared/GraduateGameShell';
+import { GR } from '@/components/graduate-session/shared/graduateTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
-const CARDS = [
-  { id: 'park', label: 'I went to the park', correctOrder: 1 },
-  { id: 'friend', label: 'I played with my friend', correctOrder: 2 },
-  { id: 'home', label: 'We went home', correctOrder: 3 },
-];
+const SENTENCES = [
+  { id: 'park', label: 'I went to the park', emoji: '🌳', correctOrder: 1 },
+  { id: 'friend', label: 'I played with my friend', emoji: '👫', correctOrder: 2 },
+  { id: 'home', label: 'We went home', emoji: '🏠', correctOrder: 3 },
+] as const;
+
+type SentenceId = (typeof SENTENCES)[number]['id'];
+
 const VOICE = 'Arrange the story cards to make a story. Tap them in order.';
+
+const PALETTE = { accent: '#4F46E5', glow: '#FCD34D', secondary: '#818CF8' } as const;
+
+function TimelineSlot({
+  num,
+  filled,
+  active,
+}: {
+  num: number;
+  filled?: { emoji: string; label: string };
+  active: boolean;
+}) {
+  const pulse = useSharedValue(0);
+
+  useEffect(() => {
+    if (!active || filled) {
+      pulse.value = 0;
+      return;
+    }
+    pulse.value = withRepeat(
+      withSequence(withTiming(1, { duration: 600 }), withTiming(0, { duration: 600 })),
+      -1,
+      true,
+    );
+  }, [active, filled, pulse]);
+
+  const anim = useAnimatedStyle(() => ({
+    borderColor:
+      active && !filled
+        ? `rgba(252,211,77,${0.45 + pulse.value * 0.45})`
+        : filled
+          ? PALETTE.accent
+          : GR.glassBorder,
+    transform: [{ scale: active && !filled ? 1 + pulse.value * 0.04 : 1 }],
+  }));
+
+  return (
+    <Animated.View style={[styles.slot, anim, filled && styles.slotFilled]}>
+      <View style={[styles.slotBadge, active && !filled && styles.slotBadgeActive]}>
+        <Text style={styles.slotNum}>{num}</Text>
+      </View>
+      {filled ? (
+        <>
+          <Text style={styles.slotEmoji}>{filled.emoji}</Text>
+          <Text style={styles.slotLabel}>{filled.label}</Text>
+        </>
+      ) : (
+        <Text style={styles.slotEmpty}>{active ? 'Tap step' : '—'}</Text>
+      )}
+    </Animated.View>
+  );
+}
+
+function StoryCard({
+  sentence,
+  onPress,
+  shake,
+}: {
+  sentence: (typeof SENTENCES)[number];
+  onPress: () => void;
+  shake: boolean;
+}) {
+  const shakeX = useSharedValue(0);
+
+  useEffect(() => {
+    if (!shake) return;
+    shakeX.value = withSequence(
+      withTiming(10, { duration: 45 }),
+      withTiming(-10, { duration: 45 }),
+      withTiming(0, { duration: 45 }),
+    );
+  }, [shake, shakeX]);
+
+  const anim = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }] }));
+
+  return (
+    <Animated.View style={anim}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.storyCard, pressed && styles.pressed]}
+        accessibilityLabel={sentence.label}
+      >
+        <LinearGradient colors={[`${PALETTE.accent}33`, 'rgba(15,10,30,0.55)']} style={styles.storyGrad} />
+        <Text style={styles.storyEmoji}>{sentence.emoji}</Text>
+        <Text style={styles.storyLabel}>{sentence.label}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 export function StoryBuilderPark({ onComplete }: { onComplete: () => void }) {
   const [nextSlot, setNextSlot] = useState(1);
-  const [order, setOrder] = useState<Record<string, number>>({});
+  const [order, setOrder] = useState<Partial<Record<SentenceId, number>>>({});
   const [showSuccess, setShowSuccess] = useState(false);
-  const [shakeAnim] = useState(() => new Animated.Value(0));
+  const [wrongId, setWrongId] = useState<SentenceId | null>(null);
 
-  useEffect(() => {
-    speak(VOICE, 0.75);
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
   }, []);
 
-  const triggerShake = useCallback(() => {
-    shakeAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-  }, [shakeAnim]);
+  useEffect(() => {
+    playVoice();
+  }, [playVoice]);
 
   const handleTap = useCallback(
-    (id: string) => {
-      const step = CARDS.find((s) => s.id === id);
+    (id: SentenceId) => {
+      const step = SENTENCES.find((s) => s.id === id);
       if (!step || step.correctOrder !== nextSlot) {
-        speak('Try again.');
-        triggerShake();
+        setWrongId(id);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Try again.', 0.65);
+        setTimeout(() => setWrongId(null), 700);
         return;
       }
-      speak(`${nextSlot}. ${step.label}!`);
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      speak(`${nextSlot}. ${step.label}!`, 0.7);
       setOrder((prev) => ({ ...prev, [id]: nextSlot }));
+
       if (nextSlot === 3) {
-        speak('Great job!');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speak('Great job!', 0.75);
         setShowSuccess(true);
         setTimeout(() => onComplete(), 2200);
       } else {
         setNextSlot((n) => n + 1);
       }
     },
-    [nextSlot, onComplete, triggerShake]
+    [nextSlot, onComplete],
   );
 
-  if (showSuccess) return <SuccessCelebration variant="indigo" title="Great Job!" subtitle="Story in order!" />;
+  const coachLine =
+    nextSlot === 1
+      ? 'Every park story starts with going to the park — tap step 1!'
+      : nextSlot === 2
+        ? 'Next, play with your friend at the park.'
+        : 'Last step — time to go home together!';
 
-  const shakeX = shakeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 10] });
-  const remaining = CARDS.filter((s) => !order[s.id]);
+  if (showSuccess) {
+    return (
+      <SuccessCelebration
+        variant="indigo"
+        title="Great Job!"
+        subtitle="Story in order!"
+        badgeEmoji="📖"
+      />
+    );
+  }
+
+  const remaining = SENTENCES.filter((s) => !order[s.id]);
+  const progressPct = ((nextSlot - 1) / 3) * 100;
 
   return (
-    <GameLayout
-      title="Arrange the story"
-      instruction="Arrange the story cards to make a story."
-      icon="📖"
-      backgroundVariant="indigo"
+    <GraduateGameShell
+      studio="STORY BUILDER · FINALE GAME 1"
+      title="Arrange the park story"
+      instruction="Arrange the story cards to make a story. Tap them in order."
+      mascot="📖"
+      coachLine={`${coachLine} (Step ${nextSlot} of 3)`}
+      onReplayVoice={playVoice}
     >
-      <View style={styles.content}>
-        <Text style={styles.prompt}>What is step number {nextSlot}?</Text>
-        <View style={styles.slots}>
-          {[1, 2, 3].map((n) => (
-            <View key={n} style={styles.slot}>
-              <Text style={styles.slotNum}>{n}</Text>
-              {CARDS.find((s) => order[s.id] === n) ? (
-                <Text style={styles.slotLabel}>{CARDS.find((s) => order[s.id] === n)!.label}</Text>
-              ) : (
-                <Text style={styles.slotEmpty}>—</Text>
-              )}
-            </View>
-          ))}
+      <View style={styles.progressWrap}>
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressLabel}>STORY TIMELINE</Text>
+          <Text style={styles.progressCount}>{nextSlot - 1} / 3 placed</Text>
         </View>
+        <View style={styles.progressBg}>
+          <LinearGradient
+            colors={[PALETTE.accent, PALETTE.glow]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.progressFill, { width: `${progressPct}%` }]}
+          />
+        </View>
+      </View>
+
+      <View style={styles.mission}>
+        <Text style={styles.missionTitle}>🌳 My Park Day</Text>
+        <Text style={styles.missionSub}>What is step number {nextSlot}?</Text>
+      </View>
+
+      <View style={styles.timeline}>
+        <View style={styles.connector} />
+        {[1, 2, 3].map((n) => {
+          const filled = SENTENCES.find((s) => order[s.id] === n);
+          return (
+            <TimelineSlot
+              key={n}
+              num={n}
+              active={n === nextSlot}
+              filled={filled ? { emoji: filled.emoji, label: filled.label } : undefined}
+            />
+          );
+        })}
+      </View>
+
+      <View style={styles.tray}>
+        <Text style={styles.trayLabel}>STORY TRAY — pick the next card</Text>
         <View style={styles.cardsRow}>
           {remaining.map((s) => (
-            <Animated.View key={s.id} style={{ transform: [{ translateX: shakeX }] }}>
-              <Pressable
-                onPress={() => handleTap(s.id)}
-                style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-                accessibilityLabel={s.label}
-              >
-                <Text style={styles.cardLabel}>{s.label}</Text>
-              </Pressable>
-            </Animated.View>
+            <StoryCard
+              key={s.id}
+              sentence={s}
+              onPress={() => handleTap(s.id)}
+              shake={wrongId === s.id}
+            />
           ))}
         </View>
       </View>
-    </GameLayout>
+    </GraduateGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 8, alignItems: 'center' },
-  prompt: { fontSize: 18, fontWeight: '700', color: '#374151', marginBottom: 20, textAlign: 'center' },
-  slots: { flexDirection: 'row', gap: 10, marginBottom: 24, flexWrap: 'wrap', justifyContent: 'center' },
-  slot: {
-    backgroundColor: '#E0E7FF',
-    borderRadius: 16,
-    padding: 14,
-    minWidth: 90,
+  progressWrap: { marginBottom: 14 },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#4F46E5',
+    marginBottom: 8,
   },
-  slotNum: { fontSize: 12, fontWeight: '800', color: '#4F46E5', marginBottom: 4 },
-  slotLabel: { fontSize: 13, fontWeight: '700', color: '#374151', textAlign: 'center' },
-  slotEmpty: { fontSize: 16, color: '#9CA3AF' },
+  progressLabel: { fontSize: 9, fontWeight: '900', letterSpacing: 1.2, color: PALETTE.glow },
+  progressCount: { fontSize: 14, fontWeight: '900', color: GR.textLight },
+  progressBg: {
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    overflow: 'hidden',
+  },
+  progressFill: { height: '100%', borderRadius: 5 },
+  mission: {
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    backgroundColor: 'rgba(79,70,229,0.12)',
+    borderWidth: 1,
+    borderColor: `${PALETTE.accent}44`,
+  },
+  missionTitle: { fontSize: 18, fontWeight: '900', color: PALETTE.glow },
+  missionSub: { fontSize: 14, fontWeight: '600', color: GR.textMuted, marginTop: 4 },
+  timeline: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: 18,
+    position: 'relative',
+    paddingTop: 8,
+  },
+  connector: {
+    position: 'absolute',
+    top: 28,
+    left: '10%',
+    right: '10%',
+    height: 3,
+    backgroundColor: `${PALETTE.glow}55`,
+    borderRadius: 2,
+  },
+  slot: {
+    flex: 1,
+    maxWidth: 110,
+    minHeight: 112,
+    borderRadius: 18,
+    borderWidth: 2.5,
+    borderColor: GR.glassBorder,
+    backgroundColor: 'rgba(15,10,30,0.55)',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+  },
+  slotFilled: { backgroundColor: 'rgba(79,70,229,0.14)' },
+  slotBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(99,102,241,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  slotBadgeActive: { backgroundColor: PALETTE.accent },
+  slotNum: { fontSize: 13, fontWeight: '900', color: GR.textLight },
+  slotEmoji: { fontSize: 28 },
+  slotLabel: { fontSize: 10, fontWeight: '800', color: PALETTE.glow, marginTop: 2, textAlign: 'center' },
+  slotEmpty: { fontSize: 11, fontWeight: '600', color: GR.textMuted, marginTop: 10, textAlign: 'center' },
+  tray: {
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: `${PALETTE.accent}55`,
+    backgroundColor: 'rgba(15,10,30,0.45)',
+    padding: 14,
+  },
+  trayLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+    color: PALETTE.glow,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
   cardsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 },
-  card: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 4,
-    borderColor: '#E5E7EB',
+  storyCard: {
+    minWidth: 120,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: GR.glassBorder,
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    overflow: 'hidden',
   },
-  pressed: { opacity: 0.85 },
-  cardLabel: { fontSize: 16, fontWeight: '700', color: '#1f2937' },
+  storyGrad: { ...StyleSheet.absoluteFillObject },
+  storyEmoji: { fontSize: 32 },
+  storyLabel: { fontSize: 14, fontWeight: '800', color: GR.textLight, marginTop: 6, textAlign: 'center' },
+  pressed: { opacity: 0.88 },
 });

@@ -1,20 +1,131 @@
 /**
- * Level 7 Reader — Session 5, Game 1: Memory Pattern
- * Show sequence of colors, then user repeats it. Simon-says style.
+ * Level 7 Reader — Session 5, Game 1: Pulse Echo
+ * Watch a color signal sequence, then repeat it in order.
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { ReaderGameShell } from '@/components/reader-session/shared/ReaderGameShell';
+import { RD } from '@/components/reader-session/shared/readerTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
-const PATTERN = ['red', 'blue', 'green', 'yellow'];
-const OPTIONS = [
-  { id: 'red', label: 'Red', color: '#EF4444' },
-  { id: 'blue', label: 'Blue', color: '#3B82F6' },
-  { id: 'green', label: 'Green', color: '#22C55E' },
-  { id: 'yellow', label: 'Yellow', color: '#EAB308' },
+const PATTERN = ['red', 'blue', 'green', 'yellow'] as const;
+type ColorId = (typeof PATTERN)[number];
+
+const OPTIONS: { id: ColorId; label: string; color: string; glow: string; glyph: string }[] = [
+  { id: 'red', label: 'Red', color: '#EF4444', glow: '#FCA5A5', glyph: '●' },
+  { id: 'blue', label: 'Blue', color: '#3B82F6', glow: '#93C5FD', glyph: '●' },
+  { id: 'green', label: 'Green', color: '#22C55E', glow: '#86EFAC', glyph: '●' },
+  { id: 'yellow', label: 'Yellow', color: '#EAB308', glow: '#FDE047', glyph: '●' },
 ];
+
+const VOICE = 'Watch the color signal. Then tap the colors in the same order.';
+const ECHO = { accent: '#6366F1', glow: '#A5B4FC', cyan: '#38BDF8' } as const;
+
+function SignalOrb({
+  color,
+  glow,
+  glyph,
+  label,
+  active,
+  size = 'md',
+}: {
+  color: string;
+  glow: string;
+  glyph: string;
+  label?: string;
+  active?: boolean;
+  size?: 'sm' | 'md' | 'lg';
+}) {
+  const pulse = useSharedValue(0);
+
+  useEffect(() => {
+    if (active) {
+      pulse.value = withRepeat(
+        withSequence(withTiming(1, { duration: 280 }), withTiming(0.3, { duration: 280 })),
+        -1,
+        true,
+      );
+    } else {
+      pulse.value = withTiming(0, { duration: 200 });
+    }
+  }, [active, pulse]);
+
+  const halo = useAnimatedStyle(() => ({
+    opacity: active ? 0.25 + pulse.value * 0.45 : 0.08,
+    transform: [{ scale: active ? 1 + pulse.value * 0.18 : 1 }],
+  }));
+
+  const dim = size === 'sm' ? 40 : size === 'lg' ? 64 : 52;
+
+  return (
+    <View style={[orb.wrap, { width: dim, height: dim }]}>
+      <Animated.View style={[orb.halo, { backgroundColor: glow, borderRadius: dim / 2 }, halo]} />
+      <View style={[orb.core, { backgroundColor: color, width: dim - 8, height: dim - 8, borderRadius: (dim - 8) / 2 }]}>
+        <Text style={[orb.glyph, size === 'sm' && orb.glyphSm]}>{glyph}</Text>
+      </View>
+      {label ? <Text style={orb.label}>{label}</Text> : null}
+    </View>
+  );
+}
+
+function TapPad({
+  option,
+  shake,
+  onPress,
+}: {
+  option: (typeof OPTIONS)[number];
+  shake: boolean;
+  onPress: () => void;
+}) {
+  const shakeX = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (shake) {
+      shakeX.value = withSequence(
+        withTiming(-9, { duration: 45 }),
+        withTiming(9, { duration: 45 }),
+        withTiming(-6, { duration: 45 }),
+        withTiming(0, { duration: 45 }),
+      );
+      scale.value = withSequence(withSpring(0.94, { damping: 8 }), withSpring(1, { damping: 10 }));
+    }
+  }, [shake, shakeX, scale]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeX.value }, { scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={anim}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [pad.btn, pressed && pad.pressed]}
+        accessibilityLabel={option.label}
+      >
+        <LinearGradient
+          colors={[`${option.color}EE`, `${option.color}99`]}
+          style={pad.grad}
+        >
+          <View style={[pad.halo, { backgroundColor: `${option.glow}33` }]} />
+          <Text style={pad.glyph}>{option.glyph}</Text>
+          <Text style={pad.label}>{option.label}</Text>
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 export interface MemoryPatternReaderSession5GameProps {
   onComplete: () => void;
@@ -25,16 +136,29 @@ export function MemoryPatternReaderSession5Game({ onComplete }: MemoryPatternRea
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const [userIndex, setUserIndex] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [wrongShake] = useState(() => new Animated.Value(0));
+  const [wrongId, setWrongId] = useState<ColorId | null>(null);
+  const [attempts, setAttempts] = useState(0);
+  const showRunRef = useRef(0);
 
-  useEffect(() => {
-    speak('Watch the pattern. Then tap the colors in the same order.', 0.75);
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (phase !== 'show') return;
+    playVoice();
+  }, [playVoice]);
+
+  const runShowSequence = useCallback(() => {
+    showRunRef.current += 1;
+    const runId = showRunRef.current;
+    setPhase('show');
+    setHighlightIndex(-1);
+    setUserIndex(0);
+    setWrongId(null);
+
     let i = 0;
-    const run = () => {
+    const step = () => {
+      if (runId !== showRunRef.current) return;
       if (i >= PATTERN.length) {
         setHighlightIndex(-1);
         speak('Your turn! Tap the colors in the same order.', 0.8);
@@ -43,124 +167,222 @@ export function MemoryPatternReaderSession5Game({ onComplete }: MemoryPatternRea
       }
       setHighlightIndex(i);
       i += 1;
-      setTimeout(run, 650);
+      setTimeout(step, 680);
     };
-    const t = setTimeout(run, 700);
-    return () => clearTimeout(t);
-  }, [phase]);
+    setTimeout(step, 500);
+  }, []);
 
-  const triggerWrong = useCallback(() => {
-    wrongShake.setValue(0);
-    Animated.sequence([
-      Animated.timing(wrongShake, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(wrongShake, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-    speak('Try again. Watch and remember the order.', 0.7);
-    setUserIndex(0);
-  }, [wrongShake]);
+  useEffect(() => {
+    runShowSequence();
+  }, [runShowSequence]);
 
   const handleTap = useCallback(
-    (id: string) => {
+    (id: ColorId) => {
       if (phase !== 'repeat') return;
       const expected = PATTERN[userIndex];
       if (id === expected) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
         const next = userIndex + 1;
         setUserIndex(next);
-        speak(id, 0.5);
+        setWrongId(null);
         if (next >= PATTERN.length) {
-          speak('Correct! You repeated the pattern!', 0.75);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          speak('Correct! You repeated the signal!', 0.75);
           setShowSuccess(true);
-          setTimeout(() => onComplete(), 2200);
+          setTimeout(() => onComplete(), 2400);
         }
       } else {
-        triggerWrong();
+        setAttempts((a) => a + 1);
+        setWrongId(id);
+        setUserIndex(0);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Not that one. Watch the signal and try again.', 0.7);
+        setTimeout(() => setWrongId(null), 700);
       }
     },
-    [phase, userIndex, onComplete, triggerWrong]
+    [phase, userIndex, onComplete],
   );
+
+  const coachLine =
+    phase === 'show'
+      ? 'Watch each color pulse — memorize the order.'
+      : userIndex === 0 && attempts > 0
+        ? 'Start from the first color. Tap Replay signal if you need to watch again.'
+        : `Signal progress: ${userIndex} of ${PATTERN.length} colors matched.`;
 
   if (showSuccess) {
     return (
       <SuccessCelebration
-        variant="indigo"
-        title="Great Job!"
-        subtitle="You remembered the pattern!"
-        badgeEmoji="🧠"
+        variant="ocean"
+        title="Pulse Echo!"
+        subtitle="You repeated the full color signal!"
+        badgeEmoji="📡"
       />
     );
   }
 
-  const shakeX = wrongShake.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
-
   return (
-    <GameLayout
-      title="Memory Pattern"
-      instruction="Watch the pattern, then tap the colors in the same order."
-      icon="🧠"
-      backgroundVariant="indigo"
+    <ReaderGameShell
+      studio="PULSE ECHO · GAME 1"
+      title="Repeat the signal"
+      instruction="Watch the color sequence, then tap the same colors in order."
+      mascot="📡"
+      coachLine={coachLine}
+      onReplayVoice={playVoice}
     >
-      <View style={styles.container}>
-        {phase === 'show' ? (
-          <>
-            <Text style={styles.prompt}>Watch the pattern</Text>
-            <View style={styles.patternRow}>
-              {PATTERN.map((id, i) => {
-                const opt = OPTIONS.find((o) => o.id === id);
-                return (
-                  <View
-                    key={i}
-                    style={[
-                      styles.patternDot,
-                      { backgroundColor: opt?.color ?? '#999' },
-                      highlightIndex === i && styles.patternDotHighlight,
-                    ]}
-                  />
-                );
-              })}
-            </View>
-          </>
-        ) : (
-          <>
-            <Text style={styles.prompt}>Your turn! Tap in the same order</Text>
-            <Animated.View style={[styles.optionsRow, { transform: [{ translateX: shakeX }] }]}>
-              {OPTIONS.map((opt) => (
-                <Pressable
-                  key={opt.id}
-                  onPress={() => handleTap(opt.id)}
-                  style={({ pressed }) => [
-                    styles.optionBtn,
-                    { backgroundColor: opt.color },
-                    pressed && styles.pressed,
-                  ]}
-                  accessibilityLabel={opt.label}
-                >
-                  <Text style={styles.optionLabel}>{opt.label}</Text>
-                </Pressable>
-              ))}
-            </Animated.View>
-          </>
-        )}
+      <View style={styles.phaseRow}>
+        <View style={[styles.phaseChip, phase === 'show' && styles.phaseActive]}>
+          <Text style={styles.phaseIcon}>👁</Text>
+          <Text style={[styles.phaseTxt, phase === 'show' && styles.phaseTxtOn]}>WATCH</Text>
+        </View>
+        <Text style={styles.phaseArrow}>›</Text>
+        <View style={[styles.phaseChip, phase === 'repeat' && styles.phaseActive]}>
+          <Text style={styles.phaseIcon}>👆</Text>
+          <Text style={[styles.phaseTxt, phase === 'repeat' && styles.phaseTxtOn]}>REPEAT</Text>
+        </View>
       </View>
-    </GameLayout>
+
+      {phase === 'show' ? (
+        <View style={styles.showStage}>
+          <Text style={styles.stageLabel}>INCOMING SIGNAL</Text>
+          <View style={styles.signalRail}>
+            <LinearGradient
+              colors={[`${ECHO.accent}44`, 'transparent', `${ECHO.cyan}33`]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.railGlow}
+            />
+            {PATTERN.map((id, i) => {
+              const opt = OPTIONS.find((o) => o.id === id)!;
+              return (
+                <SignalOrb
+                  key={i}
+                  color={opt.color}
+                  glow={opt.glow}
+                  glyph={opt.glyph}
+                  active={highlightIndex === i}
+                  size="lg"
+                />
+              );
+            })}
+          </View>
+          <Text style={styles.showHint}>Colors light up one at a time…</Text>
+        </View>
+      ) : (
+        <>
+          <View style={styles.progressWrap}>
+            <Text style={styles.progressLabel}>ECHO PROGRESS</Text>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${(userIndex / PATTERN.length) * 100}%` }]} />
+            </View>
+            <View style={styles.dotRow}>
+              {PATTERN.map((_, i) => (
+                <View
+                  key={i}
+                  style={[styles.dot, i < userIndex && styles.dotDone, i === userIndex && styles.dotCurrent]}
+                />
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.padGrid}>
+            {OPTIONS.map((opt) => (
+              <TapPad
+                key={opt.id}
+                option={opt}
+                shake={wrongId === opt.id}
+                onPress={() => handleTap(opt.id)}
+              />
+            ))}
+          </View>
+
+          <Pressable
+            onPress={runShowSequence}
+            style={({ pressed }) => [styles.replayBtn, pressed && styles.pressed]}
+          >
+            <Text style={styles.replayTxt}>↺ Replay signal</Text>
+          </Pressable>
+        </>
+      )}
+    </ReaderGameShell>
   );
 }
 
+const orb = StyleSheet.create({
+  wrap: { alignItems: 'center', justifyContent: 'center' },
+  halo: { position: 'absolute', width: '100%', height: '100%' },
+  core: { alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.45)' },
+  glyph: { fontSize: 22, color: '#FFF', fontWeight: '900' },
+  glyphSm: { fontSize: 16 },
+  label: { marginTop: 6, fontSize: 9, fontWeight: '800', color: RD.textMuted, letterSpacing: 0.6 },
+});
+
+const pad = StyleSheet.create({
+  btn: { borderRadius: 18, overflow: 'hidden', minWidth: 130, flex: 1, maxWidth: 160 },
+  grad: { paddingVertical: 18, alignItems: 'center', borderRadius: 18, borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)' },
+  halo: { position: 'absolute', top: 8, left: 8, right: 8, bottom: 8, borderRadius: 12 },
+  glyph: { fontSize: 28, color: '#FFF', fontWeight: '900' },
+  label: { fontSize: 13, fontWeight: '900', color: '#FFF', marginTop: 4 },
+  pressed: { opacity: 0.88 },
+});
+
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', paddingVertical: 24 },
-  prompt: { fontSize: 18, fontWeight: '700', color: '#4338CA', marginBottom: 24, textAlign: 'center' },
-  patternRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  patternDot: { width: 48, height: 48, borderRadius: 24, borderWidth: 4, borderColor: '#C7D2FE' },
-  patternDotHighlight: { borderColor: '#FFF', transform: [{ scale: 1.15 }] },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, justifyContent: 'center' },
-  optionBtn: {
-    minWidth: 72,
-    paddingVertical: 16,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.5)',
+  phaseRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 },
+  phaseChip: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: RD.glass,
+    borderWidth: 1,
+    borderColor: RD.glassBorder,
   },
-  optionLabel: { fontSize: 14, fontWeight: '800', color: '#FFF' },
+  phaseActive: { borderColor: ECHO.glow, backgroundColor: 'rgba(99,102,241,0.2)' },
+  phaseIcon: { fontSize: 14 },
+  phaseTxt: { fontSize: 10, fontWeight: '900', letterSpacing: 1, color: RD.textMuted },
+  phaseTxtOn: { color: ECHO.glow },
+  phaseArrow: { fontSize: 16, color: RD.textMuted },
+  showStage: { alignItems: 'center', marginBottom: 8 },
+  stageLabel: { fontSize: 9, fontWeight: '900', letterSpacing: 1.4, color: ECHO.glow, marginBottom: 14 },
+  signalRail: {
+    flexDirection: 'row',
+    gap: 14,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: `${ECHO.accent}55`,
+    backgroundColor: 'rgba(11,10,26,0.5)',
+    overflow: 'hidden',
+  },
+  railGlow: { ...StyleSheet.absoluteFillObject },
+  showHint: { marginTop: 12, fontSize: 13, fontWeight: '700', color: RD.textMuted },
+  progressWrap: { marginBottom: 18, alignSelf: 'stretch' },
+  progressLabel: { fontSize: 9, fontWeight: '900', letterSpacing: 1.2, color: ECHO.glow, marginBottom: 6 },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(99,102,241,0.2)',
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  progressFill: { height: '100%', borderRadius: 4, backgroundColor: ECHO.accent },
+  dotRow: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: 'rgba(165,180,252,0.25)' },
+  dotDone: { backgroundColor: ECHO.glow },
+  dotCurrent: { backgroundColor: ECHO.cyan, transform: [{ scale: 1.2 }] },
+  padGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'center', marginBottom: 14 },
+  replayBtn: {
+    alignSelf: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: `${ECHO.accent}66`,
+    backgroundColor: 'rgba(99,102,241,0.12)',
+  },
+  replayTxt: { fontSize: 14, fontWeight: '800', color: ECHO.glow },
   pressed: { opacity: 0.9 },
 });

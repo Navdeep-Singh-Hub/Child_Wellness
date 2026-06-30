@@ -1,102 +1,233 @@
 /**
- * Game 1 — Tap the correct sign. Display STOP, GO, EXIT. Instruction: "Tap the STOP sign." Session 1: Safety Signs.
+ * Game 1 — Sign Scan: Tap the correct sign. STOP, GO, EXIT. Answer: STOP.
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { CitizenGameShell } from '@/components/citizen-session/shared/CitizenGameShell';
+import { CZ } from '@/components/citizen-session/shared/citizenTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 const SIGNS = [
-  { id: 'STOP', label: 'STOP', color: '#DC2626', bg: '#FEE2E2' },
-  { id: 'GO', label: 'GO', color: '#16A34A', bg: '#DCFCE7' },
-  { id: 'EXIT', label: 'EXIT', color: '#1E40AF', bg: '#DBEAFE' },
-];
-const CORRECT = 'STOP';
+  { id: 'STOP', label: 'STOP', color: '#DC2626', glow: '#FCA5A5' },
+  { id: 'GO', label: 'GO', color: '#16A34A', glow: '#86EFAC' },
+  { id: 'EXIT', label: 'EXIT', color: '#1E40AF', glow: '#93C5FD' },
+] as const;
+
+type SignId = (typeof SIGNS)[number]['id'];
+const CORRECT: SignId = 'STOP';
 const VOICE = 'Tap the STOP sign.';
+
+function SignPlate({
+  sign,
+  selected,
+  feedback,
+  onPress,
+}: {
+  sign: (typeof SIGNS)[number];
+  selected: boolean;
+  feedback: 'idle' | 'wrong' | 'correct';
+  onPress: () => void;
+}) {
+  const shake = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (feedback === 'wrong' && selected) {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    } else if (feedback === 'correct' && selected) {
+      scale.value = withSpring(1.06, { damping: 8 });
+    } else {
+      scale.value = withTiming(1, { duration: 150 });
+    }
+  }, [feedback, selected, shake, scale]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }, { scale: scale.value }],
+  }));
+
+  const border =
+    feedback === 'correct' && selected
+      ? CZ.good
+      : feedback === 'wrong' && selected
+        ? CZ.warn
+        : selected
+          ? sign.glow
+          : `${sign.color}88`;
+
+  return (
+    <Animated.View style={anim}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.plate, { borderColor: border }, pressed && styles.pressed]}
+        accessibilityLabel={sign.label}
+      >
+        <LinearGradient
+          colors={[`${sign.color}44`, 'rgba(11,10,26,0.75)']}
+          style={styles.plateGrad}
+        />
+        <Text style={[styles.plateText, { color: sign.color }]}>{sign.label}</Text>
+        {sign.id === 'STOP' && <View style={[styles.stopBar, { backgroundColor: sign.color }]} />}
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 export function SignRecognition({ onComplete }: { onComplete: () => void }) {
   const [showSuccess, setShowSuccess] = useState(false);
-  const [shakeAnim] = useState(() => new Animated.Value(0));
+  const [selected, setSelected] = useState<SignId | null>(null);
+  const [feedback, setFeedback] = useState<'idle' | 'wrong' | 'correct'>('idle');
+  const [attempts, setAttempts] = useState(0);
 
-  useEffect(() => {
-    speak(VOICE, 0.75);
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
   }, []);
 
-  const triggerShake = useCallback(() => {
-    shakeAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-  }, [shakeAnim]);
+  useEffect(() => {
+    playVoice();
+  }, [playVoice]);
 
   const handleTap = useCallback(
-    (id: string) => {
-      if (id !== CORRECT) {
-        speak('Try again.');
-        triggerShake();
-        return;
+    (id: SignId) => {
+      if (feedback === 'correct') return;
+      setSelected(id);
+      setAttempts((a) => a + 1);
+
+      if (id === CORRECT) {
+        setFeedback('correct');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speak('Correct!', 0.75);
+        setShowSuccess(true);
+        setTimeout(() => onComplete(), 2400);
+      } else {
+        setFeedback('wrong');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Try again. Tap the STOP sign.', 0.7);
+        setTimeout(() => {
+          setFeedback('idle');
+          setSelected(null);
+        }, 900);
       }
-      speak('Correct!');
-      setShowSuccess(true);
-      setTimeout(() => onComplete(), 2200);
     },
-    [onComplete, triggerShake]
+    [feedback, onComplete],
   );
 
-  if (showSuccess) return <SuccessCelebration variant="indigo" title="Great Job!" subtitle="You found STOP!" />;
+  const coachLine =
+    attempts === 0
+      ? 'STOP is red — it tells you to wait and look!'
+      : 'Find the red STOP sign among the three.';
 
-  const shakeX = shakeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 10] });
+  if (showSuccess) {
+    return (
+      <SuccessCelebration
+        variant="sunset"
+        title="Sign Scan!"
+        subtitle="You found STOP!"
+        badgeEmoji="🛑"
+      />
+    );
+  }
 
   return (
-    <GameLayout
+    <CitizenGameShell
+      studio="SIGN SCAN · GAME 1"
       title="Tap the correct sign"
       instruction="Tap the STOP sign."
-      icon="🛑"
-      backgroundVariant="indigo"
+      mascot="🛑"
+      coachLine={coachLine}
+      onReplayVoice={playVoice}
     >
-      <View style={styles.content}>
-        <Text style={styles.prompt}>Which one is the STOP sign?</Text>
+      <View style={styles.depotFrame}>
+        <LinearGradient
+          colors={[`${CZ.accent}33`, 'transparent', `${CZ.amber}22`]}
+          style={styles.depotGlow}
+        />
+        <Text style={styles.depotLabel}>SAFETY SIGN DEPOT</Text>
+        <Text style={styles.prompt}>Which one is STOP?</Text>
         <View style={styles.signsRow}>
           {SIGNS.map((sign) => (
-            <Animated.View
+            <SignPlate
               key={sign.id}
-              style={[
-                styles.signCard,
-                { backgroundColor: sign.bg, borderColor: sign.color },
-                sign.id === CORRECT && { borderWidth: 4 },
-                { transform: [{ translateX: sign.id === CORRECT ? 0 : shakeX }] },
-              ]}
-            >
-              <Pressable
-                onPress={() => handleTap(sign.id)}
-                style={({ pressed }) => [styles.signTouch, pressed && styles.pressed]}
-                accessibilityLabel={sign.label}
-              >
-                <Text style={[styles.signText, { color: sign.color }]}>{sign.label}</Text>
-              </Pressable>
-            </Animated.View>
+              sign={sign}
+              selected={selected === sign.id}
+              feedback={feedback}
+              onPress={() => handleTap(sign.id)}
+            />
           ))}
         </View>
+        <Text style={styles.hint}>🛑 red · means stop and wait</Text>
       </View>
-    </GameLayout>
+    </CitizenGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 8, alignItems: 'center' },
-  prompt: { fontSize: 20, fontWeight: '800', color: '#374151', marginBottom: 24, textAlign: 'center' },
-  signsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16 },
-  signCard: {
+  depotFrame: {
     borderRadius: 20,
-    padding: 24,
-    borderWidth: 3,
+    borderWidth: 2,
+    borderColor: `${CZ.accent}55`,
+    backgroundColor: 'rgba(26,10,18,0.5)',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    overflow: 'hidden',
+    alignItems: 'center',
+  },
+  depotGlow: { ...StyleSheet.absoluteFillObject },
+  depotLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: CZ.accentGlow,
+    marginBottom: 12,
+  },
+  prompt: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: CZ.textLight,
+    textAlign: 'center',
+    marginBottom: 18,
+  },
+  signsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 },
+  plate: {
+    minWidth: 96,
+    minHeight: 96,
+    borderRadius: 18,
+    borderWidth: 2.5,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 100,
+    overflow: 'hidden',
+    padding: 12,
   },
-  signTouch: { alignItems: 'center', justifyContent: 'center' },
-  pressed: { opacity: 0.9 },
-  signText: { fontSize: 22, fontWeight: '800' },
+  plateGrad: { ...StyleSheet.absoluteFillObject },
+  plateText: { fontSize: 20, fontWeight: '900', letterSpacing: 1 },
+  stopBar: {
+    position: 'absolute',
+    bottom: 10,
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    opacity: 0.85,
+  },
+  pressed: { opacity: 0.88 },
+  hint: {
+    marginTop: 16,
+    fontSize: 12,
+    fontWeight: '700',
+    color: CZ.amberGlow,
+    textAlign: 'center',
+  },
 });

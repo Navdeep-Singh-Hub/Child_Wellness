@@ -1,15 +1,16 @@
 /**
- * Game 3: Memory Copy — show letter briefly → hide → child writes from memory.
+ * Game 2: Flash Recall — show letter briefly → hide → write from memory.
  * Validation: OpenAI vision (GPT-4o).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent, Animated as RNAnimated } from 'react-native';
+import { View, Text, StyleSheet, LayoutChangeEvent, Animated as RNAnimated, AccessibilityInfo } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import * as Speech from 'expo-speech';
+import { speak, stopTTS } from '@/utils/tts';
 import { DrawingCanvas, DrawingCanvasRef, Stroke } from '@/components/games/Level1/DrawingCanvas';
-import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
+import { LetterGameShell } from '@/components/level1-straight-letters-session/letters-shared/LetterGameShell';
+import { LetterMascot } from '@/components/level1-straight-letters-session/letters-shared/LetterMascot';
 import { ALPHABET, scaleStrokes } from '@/components/level1-full-alphabet-session/alphabetData';
 import { isLetterValidationPass, letterRecognitionFailureHint, validateLetterImage } from '@/utils/recognizeLetter';
 import { captureDrawingForAi } from './captureDrawingBase64';
@@ -18,6 +19,27 @@ import { LetterRecognitionFeedback } from './LetterRecognitionFeedback';
 const ROUND_SIZE = 8;
 const SHOW_MS = 2500;
 const RECOGNITION_DEBOUNCE_MS = 750;
+
+const SHELL = {
+  bg: '#2E1065',
+  labelColor: '#C4B5FD',
+  titleColor: '#F5F3FF',
+  textOnDark: '#F5F3FF',
+  backBg: 'rgba(255,255,255,0.08)',
+  backBorder: 'rgba(167,139,250,0.35)',
+  dotIdle: 'rgba(255,255,255,0.15)',
+  dotActive: '#8B5CF6',
+  dotDone: '#34D399',
+};
+
+const FEEDBACK_THEME = {
+  accent: '#A78BFA',
+  bg: 'rgba(255,255,255,0.08)',
+  border: 'rgba(167,139,250,0.35)',
+  text: '#F5F3FF',
+  letter: '#C4B5FD',
+  retryBg: '#7C3AED',
+};
 
 function shuffleArr<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -29,12 +51,21 @@ function shuffleArr<T>(arr: T[]): T[] {
 }
 
 export function MemoryCopyGame({
-  currentStep, totalSteps, onBack, onComplete,
-}: { currentStep: number; totalSteps: number; onBack: () => void; onComplete: () => void }) {
+  currentStep,
+  totalSteps,
+  onBack,
+  onComplete,
+}: {
+  currentStep: number;
+  totalSteps: number;
+  onBack: () => void;
+  onComplete: () => void;
+}) {
   const [showDims, setShowDims] = useState({ width: 200, height: 160 });
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<'show' | 'write'>('show');
   const [showConfetti, setShowConfetti] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const shotRef = useRef<View>(null);
   const fadeAnim = useRef(new RNAnimated.Value(1)).current;
@@ -52,6 +83,11 @@ export function MemoryCopyGame({
   const def = subset[idx];
   const showGuides = useMemo(() => scaleStrokes(def.strokes, showDims.width, showDims.height), [def, showDims]);
 
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => setReduceMotion(!!v)).catch(() => {});
+    return () => stopTTS();
+  }, []);
+
   const onShowLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
     if (width > 0 && height > 0) setShowDims({ width, height });
@@ -63,6 +99,7 @@ export function MemoryCopyGame({
     setConfidence(null);
     setAiFeedback(null);
     setChecking(false);
+    setValidationPassed(false);
     canvasRef.current?.clear();
     latestStrokesRef.current = [];
     if (debounceRef.current) {
@@ -70,12 +107,18 @@ export function MemoryCopyGame({
       debounceRef.current = null;
     }
     fadeAnim.setValue(1);
-    try { Speech.stop(); Speech.speak(`Remember ${def.letter}!`, { rate: 0.85, pitch: 1.1 }); } catch (_) {}
+    speak(`Remember ${def.letter}!`, 0.72);
+
+    const showDuration = reduceMotion ? 1200 : SHOW_MS;
+    const fadeDuration = reduceMotion ? 200 : 400;
     const timer = setTimeout(() => {
-      RNAnimated.timing(fadeAnim, { toValue: 0, duration: 400, useNativeDriver: true }).start(() => setPhase('write'));
-    }, SHOW_MS);
+      RNAnimated.timing(fadeAnim, { toValue: 0, duration: fadeDuration, useNativeDriver: true }).start(() => {
+        setPhase('write');
+        speak(`Now write ${def.letter} from memory!`, 0.72);
+      });
+    }, showDuration);
     return () => clearTimeout(timer);
-  }, [idx, def.letter, fadeAnim]);
+  }, [idx, def.letter, fadeAnim, reduceMotion]);
 
   const runRecognition = useCallback(async () => {
     const expected = def.letter;
@@ -101,7 +144,7 @@ export function MemoryCopyGame({
       setAiFeedback(
         data.error === 'recognition_unavailable'
           ? 'Letter check is not set up yet. Ask a grown-up to add the key on the server.'
-          : letterRecognitionFailureHint(data) || 'Could not check your letter. Try again.'
+          : letterRecognitionFailureHint(data) || 'Could not check your letter. Try again.',
       );
       return;
     }
@@ -116,26 +159,36 @@ export function MemoryCopyGame({
 
     if (passed) {
       try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
-      try { Speech.stop(); Speech.speak(`Great ${def.letter}!`, { rate: 0.9 }); } catch (_) {}
+      speak(`Great ${def.letter}!`, 0.72);
       if (idx < subset.length - 1) {
         setShowConfetti(true);
-        setTimeout(() => { setShowConfetti(false); setIdx((i) => i + 1); }, 1200);
+        setTimeout(() => {
+          setShowConfetti(false);
+          setIdx((i) => i + 1);
+        }, reduceMotion ? 400 : 1200);
       } else {
         setShowConfetti(true);
-        setTimeout(() => { setShowConfetti(false); onComplete(); }, 1500);
+        speak('Flash recall complete!', 0.72);
+        setTimeout(() => {
+          setShowConfetti(false);
+          onComplete();
+        }, reduceMotion ? 500 : 1500);
       }
     }
-  }, [def.letter, idx, subset.length, onComplete]);
+  }, [def.letter, idx, subset.length, onComplete, reduceMotion]);
 
-  const handleStrokeEnd = useCallback((strokes: Stroke[]) => {
-    if (phase !== 'write') return;
-    latestStrokesRef.current = strokes;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      debounceRef.current = null;
-      runRecognition();
-    }, RECOGNITION_DEBOUNCE_MS);
-  }, [phase, runRecognition]);
+  const handleStrokeEnd = useCallback(
+    (strokes: Stroke[]) => {
+      if (phase !== 'write') return;
+      latestStrokesRef.current = strokes;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        runRecognition();
+      }, RECOGNITION_DEBOUNCE_MS);
+    },
+    [phase, runRecognition],
+  );
 
   const handleRetry = useCallback(() => {
     canvasRef.current?.clear();
@@ -150,23 +203,44 @@ export function MemoryCopyGame({
     }
   }, []);
 
+  const mascotHint = phase === 'show' ? `Look at ${def.letter}…` : `Write ${def.letter} from memory!`;
+
   return (
-    <GameContainerGrip
-      title={`Memory: ${def.letter}`}
+    <LetterGameShell
+      theme={SHELL}
+      gameLabel="FLASH RECALL"
+      gameTitle={`Memory ${def.letter}`}
       currentStep={currentStep}
       totalSteps={totalSteps}
-      mascot="🧠"
-      mascotHint={phase === 'show' ? `Look at ${def.letter}...` : `Now write ${def.letter} from memory!`}
       onBack={onBack}
+      headerRight={<Text style={styles.counter}>{idx + 1}/{subset.length}</Text>}
+      footer={
+        <LetterMascot
+          emoji="⚡"
+          name="Flash"
+          hint={mascotHint}
+          accent="#A78BFA"
+          bubbleBg="rgba(255,255,255,0.08)"
+          bubbleBorder="rgba(167,139,250,0.35)"
+          nameColor="#C4B5FD"
+          hintColor="#F5F3FF"
+        />
+      }
     >
-      <Text style={styles.counter}>{def.letter} ({idx + 1}/{subset.length})</Text>
-
       {phase === 'show' && (
         <RNAnimated.View style={[styles.showBox, { opacity: fadeAnim }]} onLayout={onShowLayout}>
           <Svg width={showDims.width} height={showDims.height}>
             {showGuides.map((s, i) => (
-              <Line key={i} x1={s.from.x} y1={s.from.y} x2={s.to.x} y2={s.to.y}
-                stroke="#1E40AF" strokeWidth={7} strokeLinecap="round" />
+              <Line
+                key={i}
+                x1={s.from.x}
+                y1={s.from.y}
+                x2={s.to.x}
+                y2={s.to.y}
+                stroke="#A78BFA"
+                strokeWidth={7}
+                strokeLinecap="round"
+              />
             ))}
           </Svg>
           <Text style={styles.showHint}>Memorize!</Text>
@@ -195,19 +269,37 @@ export function MemoryCopyGame({
             expectedLetter={def.letter}
             passed={validationPassed}
             onRetry={handleRetry}
+            theme={FEEDBACK_THEME}
           />
         </>
       )}
       {showConfetti && <ConfettiEffect />}
-    </GameContainerGrip>
+    </LetterGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  counter: { textAlign: 'center', fontSize: 16, fontWeight: '800', color: '#1E40AF', marginBottom: 6 },
-  showBox: { flex: 1, backgroundColor: '#EFF6FF', borderRadius: 24, padding: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#BFDBFE' },
-  showHint: { fontSize: 18, fontWeight: '800', color: '#3B82F6', marginTop: 10 },
-  writeLabel: { fontSize: 14, fontWeight: '700', color: '#374151', marginBottom: 4 },
-  canvasWrap: { flex: 1, minHeight: 180, borderRadius: 24, overflow: 'hidden', backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#E5E7EB' },
+  counter: { fontSize: 14, fontWeight: '800', color: SHELL.labelColor },
+  showBox: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 24,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(167,139,250,0.35)',
+  },
+  showHint: { fontSize: 18, fontWeight: '800', color: '#C4B5FD', marginTop: 10 },
+  writeLabel: { fontSize: 14, fontWeight: '700', color: '#C4B5FD', marginBottom: 4 },
+  canvasWrap: {
+    flex: 1,
+    minHeight: 180,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: 'rgba(167,139,250,0.25)',
+  },
   captureWrap: { flex: 1, width: '100%', minHeight: 160, backgroundColor: '#FFFFFF' },
 });

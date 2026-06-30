@@ -1,14 +1,17 @@
 /**
- * Game 2: Free Curve Drawing
- * Show example curve at top. User draws any curve below. Detect curvature → success.
+ * Game 2: Swoosh Garden — free curve drawing with vine example.
  */
-import React, { useCallback, useRef, useState } from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, LayoutChangeEvent, AccessibilityInfo } from 'react-native';
 import Svg, { Path as SvgPath } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { DrawingCanvas, DrawingCanvasRef, Stroke } from '@/components/games/Level1/DrawingCanvas';
-import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
+import { speak, stopTTS } from '@/utils/tts';
+import { CurveGameShell } from './curves-shared/CurveGameShell';
+import { GardenBackground } from './swoosh-garden/GardenBackground';
+import { BreezeMascot } from './swoosh-garden/BreezeMascot';
+import { GARDEN, SHELL_GARDEN, GARDEN_HINTS } from './swoosh-garden/theme';
 import { hasCurvature } from './curvedPathUtils';
 
 function exampleCurvePath(w: number): string {
@@ -35,7 +38,18 @@ export function FreeCurveDrawingGame({
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [done, setDone] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
   const canvasRef = useRef<DrawingCanvasRef>(null);
+  const spokeIntro = useRef(false);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => setReduceMotion(!!v)).catch(() => {});
+    if (!spokeIntro.current) {
+      spokeIntro.current = true;
+      speak(GARDEN_HINTS.idle, 0.72);
+    }
+    return () => stopTTS();
+  }, []);
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -48,75 +62,86 @@ export function FreeCurveDrawingGame({
       const last = strokes[strokes.length - 1];
       if (!last) return;
       if (hasCurvature(last.path)) {
-        setFeedback('Nice curve! 🌈');
+        setFeedback(GARDEN_HINTS.curvy);
         setDone(true);
         setShowConfetti(true);
+        speak('What a lovely swoosh! Your curve flows like a garden vine!', 0.72);
         try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
         setTimeout(() => {
           setShowConfetti(false);
           onComplete();
-        }, 1800);
+        }, reduceMotion ? 500 : 1800);
       } else {
-        setFeedback('Try making it curvy!');
+        setFeedback(GARDEN_HINTS.straight);
+        speak('Try making it curvy, like a vine in the wind!', 0.72);
         try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (_) {}
       }
     },
-    [done, onComplete]
+    [done, onComplete, reduceMotion],
   );
 
-  const exPath = exampleCurvePath(dims.width);
+  const exPath = exampleCurvePath(dims.width - 32);
+  const hint = feedback ?? GARDEN_HINTS.idle;
 
   return (
-    <GameContainerGrip
-      title="Free Curve Drawing"
-      currentStep={currentStep}
-      totalSteps={totalSteps}
-      mascot="🎨"
-      mascotHint="Draw a curvy line below — like the example!"
-      onBack={onBack}
-    >
-      <View style={styles.outer} onLayout={onLayout}>
-        <View style={styles.exampleWrap}>
-          <Text style={styles.exLabel}>Example:</Text>
-          <Svg width={dims.width - 32} height={80}>
-            <SvgPath d={exPath} stroke="#7C3AED" strokeWidth={4} fill="none" strokeLinecap="round" />
-          </Svg>
-        </View>
-        <Text style={styles.drawHint}>Draw your curve below ↓</Text>
-        <View style={styles.canvasWrap}>
-          <DrawingCanvas
-            ref={canvasRef}
-            brushSize={10}
-            canvasColor="rgba(255,255,255,0.6)"
-            randomColors
-            onStrokeEnd={handleStrokeEnd}
-          />
-        </View>
-        {feedback && (
-          <View style={[styles.feedbackBox, done ? styles.feedbackGood : styles.feedbackHint]}>
-            <Text style={styles.feedbackText}>{feedback}</Text>
+    <View style={styles.root}>
+      <GardenBackground />
+      <CurveGameShell
+        theme={SHELL_GARDEN}
+        gameLabel="SWOOSH GARDEN"
+        gameTitle="Draw a Curve"
+        currentStep={currentStep}
+        totalSteps={totalSteps}
+        onBack={onBack}
+      >
+        <BreezeMascot hint={hint} />
+
+        <View style={styles.outer} onLayout={onLayout}>
+          <View style={styles.exampleWrap}>
+            <Text style={styles.exLabel}>Vine example</Text>
+            <Svg width={dims.width - 32} height={80}>
+              <SvgPath d={exPath} stroke={GARDEN.example} strokeWidth={5} fill="none" strokeLinecap="round" />
+            </Svg>
           </View>
-        )}
-      </View>
+          <Text style={styles.drawHint}>Draw your swoosh below ↓</Text>
+          <View style={styles.canvasWrap}>
+            <DrawingCanvas
+              ref={canvasRef}
+              brushSize={10}
+              canvasColor="rgba(255,255,255,0.55)"
+              randomColors
+              onStrokeEnd={handleStrokeEnd}
+            />
+          </View>
+          {feedback && (
+            <View style={[styles.feedbackBox, done ? styles.feedbackGood : styles.feedbackHint]}>
+              <Text style={styles.feedbackText}>{feedback}</Text>
+            </View>
+          )}
+        </View>
+      </CurveGameShell>
       {showConfetti && <ConfettiEffect />}
-    </GameContainerGrip>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: GARDEN.skyBottom },
   outer: { flex: 1 },
   exampleWrap: {
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: GARDEN.panel,
     borderRadius: 16,
     padding: 10,
     marginBottom: 8,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: GARDEN.panelBorder,
   },
-  exLabel: { fontSize: 14, fontWeight: '700', color: '#7C3AED', marginBottom: 4 },
-  drawHint: { fontSize: 16, fontWeight: '700', color: '#5B21B6', textAlign: 'center', marginBottom: 6 },
-  canvasWrap: { flex: 1, minHeight: 200, borderRadius: 24, overflow: 'hidden' },
+  exLabel: { fontSize: 13, fontWeight: '800', color: GARDEN.accent, marginBottom: 4 },
+  drawHint: { fontSize: 15, fontWeight: '700', color: GARDEN.textMuted, textAlign: 'center', marginBottom: 6 },
+  canvasWrap: { flex: 1, minHeight: 200, borderRadius: 20, overflow: 'hidden', borderWidth: 2, borderColor: GARDEN.panelBorder },
   feedbackBox: { marginTop: 12, padding: 14, borderRadius: 16, alignItems: 'center' },
-  feedbackGood: { backgroundColor: '#D1FAE5' },
-  feedbackHint: { backgroundColor: '#FEF3C7' },
-  feedbackText: { fontSize: 18, fontWeight: '800', color: '#1F2937' },
+  feedbackGood: { backgroundColor: '#D1FAE5', borderWidth: 2, borderColor: GARDEN.success },
+  feedbackHint: { backgroundColor: GARDEN.hint, borderWidth: 2, borderColor: GARDEN.hintBorder },
+  feedbackText: { fontSize: 16, fontWeight: '800', color: GARDEN.textDark },
 });

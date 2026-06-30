@@ -102,7 +102,9 @@ import { Level9Session1 } from '@/components/level9-session/Level9Session1';
 import { Level9Session2 } from '@/components/level9-session/Level9Session2';
 import { Level9Session3 } from '@/components/level9-session/Level9Session3';
 import { Level9Session4 } from '@/components/level9-session/Level9Session4';
+import { Level9Session5 } from '@/components/level9-session/Level9Session5';
 import { Level9Session6 } from '@/components/level9-session/Level9Session6';
+import { Level9Session7 } from '@/components/level9-session/Level9Session7';
 import { Level9Session8 } from '@/components/level9-session/Level9Session8';
 import { Level9Session9 } from '@/components/level9-session/Level9Session9';
 import { Level9Session10 } from '@/components/level9-session/Level9Session10';
@@ -529,9 +531,17 @@ export function SpecialEducationNavigator() {
     const handleExitSession = () => { setMode('sessions'); setSelectedSession(null); };
     return <Level9Session4 onExit={handleExitSession} />;
   }
+  if (mode === 'games' && selectedSection === 9 && selectedSession === 5) {
+    const handleExitSession = () => { setMode('sessions'); setSelectedSession(null); };
+    return <Level9Session5 onExit={handleExitSession} />;
+  }
   if (mode === 'games' && selectedSection === 9 && selectedSession === 6) {
     const handleExitSession = () => { setMode('sessions'); setSelectedSession(null); };
     return <Level9Session6 onExit={handleExitSession} />;
+  }
+  if (mode === 'games' && selectedSection === 9 && selectedSession === 7) {
+    const handleExitSession = () => { setMode('sessions'); setSelectedSession(null); };
+    return <Level9Session7 onExit={handleExitSession} />;
   }
   if (mode === 'games' && selectedSection === 9 && selectedSession === 8) {
     const handleExitSession = () => { setMode('sessions'); setSelectedSession(null); };

@@ -1,9 +1,2 @@
-import React from 'react';
-import DepthDistanceGame from './DepthDistanceGame';
-import { THREE_LAYER_TAP } from './depthDistanceConfig';
-
-const ThreeLayerTapGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => (
-  <DepthDistanceGame config={THREE_LAYER_TAP} onBack={onBack} onComplete={onComplete} />
-);
-
-export default ThreeLayerTapGame;
+/** OT Level 5 · Session 7 · Game 5 — Layer Stack */
+export { default } from '@/components/game/occupational/level5/session7/layerStack/LayerStackGame';

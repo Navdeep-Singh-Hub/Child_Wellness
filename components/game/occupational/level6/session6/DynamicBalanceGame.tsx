@@ -32,7 +32,9 @@ import { usePostureAnalytics } from '@/components/game/occupational/level6/sessi
 import { BridgePath } from '@/components/game/occupational/level6/session5/components/BridgePath';
 import { WeightShiftBar } from '@/components/game/occupational/level6/session5/components/WeightShiftBar';
 import { ActionCue } from '@/components/game/occupational/level6/session6/components/ActionCue';
-import { DYNAMIC_GAME_THEMES, TRAIL_SHELL, type DynamicMode } from '@/components/game/occupational/level6/session6/trailTheme';
+import { DYNAMIC_GAME_THEMES, type DynamicMode } from '@/components/game/occupational/level6/session6/trailTheme';
+import { TrailHUD, TrailIntroPanel } from '@/components/game/occupational/level6/session6/shared/TrailUI';
+import { TrailBackdrop } from '@/components/game/occupational/level6/session6/shared/TrailVisuals';
 import { SESSION6_PACING } from '@/components/game/occupational/level6/session6/session6Pacing';
 import { usePoseDetection } from '@/hooks/usePoseDetection';
 import { poseStageNativeProps } from '@/components/game/occupational/level6/session1/poseStageProps';
@@ -40,10 +42,9 @@ import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { speak as speakTTS } from '@/utils/tts';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const P = SESSION6_PACING;
@@ -95,6 +96,7 @@ export const DynamicBalanceGame: React.FC<{
 }> = ({ mode, onBack, onComplete }) => {
   const router = useRouter();
   const T = DYNAMIC_GAME_THEMES[mode];
+  const S = T.shell;
   const showTrail = mode === 'steppingStones' || mode === 'riverCrossing' || mode === 'crossBridge';
 
   const [active, setActive] = useState(true);
@@ -451,42 +453,22 @@ export const DynamicBalanceGame: React.FC<{
   const directional = currentAction === 'left' || currentAction === 'right' || currentAction === 'center';
 
   return (
-    <LinearGradient colors={TRAIL_SHELL.gradient} style={styles.root}>
+    <View style={styles.root}>
+      <TrailBackdrop backdrop={T.backdrop} shell={S} />
       <SafeAreaView style={styles.safe}>
         <View style={styles.topRow}>
-          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { borderColor: TRAIL_SHELL.backBorder }]}>
-            <Text style={[styles.backText, { color: TRAIL_SHELL.backText }]}>← Back</Text>
+          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { borderColor: S.backBorder }]}>
+            <Text style={[styles.backText, { color: S.backText }]}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.academyLabel}>🌲 WILD TRAIL</Text>
           <View style={{ width: 64 }} />
         </View>
 
-        <View style={styles.header}>
-          <Text style={styles.title}>
-            {T.emoji} {T.title}
-          </Text>
-          <Text style={styles.subtitle}>{T.subtitle}</Text>
-          <View style={styles.statsRow}>
-            <View style={[styles.statPill, { borderColor: TRAIL_SHELL.statBorder }]}>
-              <Text style={[styles.statLabel, { color: TRAIL_SHELL.statLabel }]}>Step</Text>
-              <Text style={[styles.statValue, { color: TRAIL_SHELL.statValue }]}>
-                {round}/{totalRounds}
-              </Text>
-            </View>
-            <View style={[styles.statPill, { borderColor: TRAIL_SHELL.statBorder }]}>
-              <Text style={styles.starEmoji}>⭐</Text>
-              <Text style={[styles.statValue, { color: TRAIL_SHELL.statValue }]}>{score}</Text>
-            </View>
-            <View style={[styles.statPill, { borderColor: TRAIL_SHELL.statBorder }]}>
-              <Text style={styles.coinEmoji}>🪙</Text>
-              <Text style={[styles.statValue, { color: TRAIL_SHELL.statValue }]}>{coins}</Text>
-            </View>
-          </View>
-        </View>
+        <TrailHUD theme={T} round={round} totalRounds={totalRounds} score={score} coins={coins} />
 
         <View style={styles.stageWrap}>
           <CameraStage
             {...poseStageNativeProps(poseDetection)}
+            shell={S}
             previewContainerId={previewContainerId}
             cameraSupported={usingCamera}
             hasCamera={hasCamera}
@@ -508,7 +490,7 @@ export const DynamicBalanceGame: React.FC<{
               <WeightShiftBar shiftX={shiftXDisplay} target={directional ? laneOf(currentAction) : null} inZone={matchedNow} accent={T.accent} />
             )}
 
-            <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={TRAIL_SHELL.sparkleColor} count={14} />
+            <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={S.sparkleColor} count={14} />
 
             {phase === 'calibrate' && (
               <View style={styles.calibWrap} pointerEvents="none">
@@ -522,46 +504,18 @@ export const DynamicBalanceGame: React.FC<{
         </View>
 
         {phase === 'intro' && (
-          <View style={styles.bottomPanel}>
-            {cameraSupported && error ? (
-              <>
-                <Text style={styles.errorText}>{error}</Text>
-                <View style={styles.btnRow}>
-                  <Pressable style={[styles.primaryBtn, { backgroundColor: T.accent }]} onPress={() => setActive(true)}>
-                    <Text style={styles.primaryBtnText}>Retry Camera</Text>
-                  </Pressable>
-                  <Pressable style={styles.secondaryBtn} onPress={() => { setForceFallback(true); handleStart(); }}>
-                    <Text style={styles.secondaryBtnText}>Play Guided</Text>
-                  </Pressable>
-                </View>
-              </>
-            ) : (
-              <>
-                <Text style={styles.introText}>
-                  {cameraSupported
-                    ? hasCamera
-                      ? 'Stand back so the camera sees your whole body — give yourself room to step and turn!'
-                      : 'Starting camera…'
-                    : 'Guided mode: follow the trail cues and move along!'}
-                </Text>
-                <Pressable
-                  style={[styles.primaryBtn, { backgroundColor: T.accent, opacity: cameraSupported && !hasCamera ? 0.6 : 1 }]}
-                  disabled={cameraSupported && !hasCamera}
-                  onPress={handleStart}
-                >
-                  <Text style={styles.primaryBtnText}>{T.hero} Start Mission</Text>
-                </Pressable>
-                {cameraSupported && (
-                  <Pressable style={styles.linkBtn} onPress={() => { setForceFallback(true); handleStart(); }}>
-                    <Text style={styles.linkText}>No camera? Play guided mode</Text>
-                  </Pressable>
-                )}
-              </>
-            )}
-          </View>
+          <TrailIntroPanel
+            theme={T}
+            errorText={cameraSupported && error ? error : undefined}
+            cameraSupported={cameraSupported}
+            hasCamera={hasCamera}
+            onStart={handleStart}
+            onRetry={() => setActive(true)}
+            onGuided={() => { setForceFallback(true); handleStart(); }}
+          />
         )}
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 };
 
@@ -571,40 +525,11 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
   backBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.08)' },
   backText: { fontSize: 14, fontWeight: '800' },
-  academyLabel: { color: '#D9F99D', fontSize: 12, fontWeight: '900', letterSpacing: 1 },
-  header: { alignItems: 'center', marginTop: 8 },
-  title: { color: '#fff', fontSize: 24, fontWeight: '900' },
-  subtitle: { color: '#D9F99D', fontSize: 14, fontWeight: '600', marginTop: 2, textAlign: 'center' },
-  statsRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
-  statPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 18,
-    borderWidth: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  statLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
-  statValue: { fontSize: 16, fontWeight: '900' },
-  starEmoji: { fontSize: 15 },
-  coinEmoji: { fontSize: 15 },
-  stageWrap: { flex: 1, marginTop: 14, marginBottom: 12 },
+  stageWrap: { flex: 1, marginTop: 10, marginBottom: 8 },
   calibWrap: { position: 'absolute', top: '46%', alignSelf: 'center', alignItems: 'center', width: '74%' },
   calibText: { color: '#fff', fontSize: 16, fontWeight: '900', marginBottom: 8 },
   calibTrack: { width: '100%', height: 12, borderRadius: 6, backgroundColor: 'rgba(15,36,23,0.7)', overflow: 'hidden' },
   calibFill: { height: '100%', backgroundColor: '#FBBF24' },
-  bottomPanel: { paddingBottom: 16, alignItems: 'center', gap: 10 },
-  introText: { color: '#ECFCCB', fontSize: 14, fontWeight: '600', textAlign: 'center' },
-  errorText: { color: '#FCA5A5', fontSize: 14, fontWeight: '700', textAlign: 'center' },
-  btnRow: { flexDirection: 'row', gap: 12 },
-  primaryBtn: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: 20 },
-  primaryBtnText: { color: '#fff', fontSize: 17, fontWeight: '900' },
-  secondaryBtn: { paddingHorizontal: 22, paddingVertical: 14, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.14)' },
-  secondaryBtnText: { color: '#fff', fontSize: 15, fontWeight: '800' },
-  linkBtn: { paddingVertical: 6 },
-  linkText: { color: '#BEF264', fontSize: 13, fontWeight: '700', textDecorationLine: 'underline' },
 });
 
 export default DynamicBalanceGame;

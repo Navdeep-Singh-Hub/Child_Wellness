@@ -1,109 +1,248 @@
 /**
- * Game 3 — Identify coin total. ₹5 + ₹5 = ? Options ₹5, ₹10, ₹15. Correct: ₹10. Session 9: Community Signs.
+ * Game 3 — Coin Total: ₹5 + ₹5 = ? Options ₹5, ₹10, ₹15. Correct: ₹10.
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { CitizenGameShell } from '@/components/citizen-session/shared/CitizenGameShell';
+import { CZ } from '@/components/citizen-session/shared/citizenTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
+const COINS_DISPLAY = ['₹5', '₹5'] as const;
 const CORRECT_TOTAL = '₹10';
-const OPTIONS = ['₹5', '₹10', '₹15'];
+const OPTIONS = ['₹5', '₹10', '₹15'] as const;
 const VOICE = 'What is the total? Tap the correct amount.';
+
+const COMMUNITY = { accent: '#10B981', glow: '#6EE7B7', violet: '#8B5CF6', coinGlow: '#FCD34D' } as const;
+
+function TotalChip({
+  amount,
+  selected,
+  feedback,
+  onPress,
+}: {
+  amount: string;
+  selected: boolean;
+  feedback: 'idle' | 'wrong' | 'correct';
+  onPress: () => void;
+}) {
+  const shake = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (feedback === 'wrong' && selected) {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    } else if (feedback === 'correct' && selected) {
+      scale.value = withSpring(1.08, { damping: 8 });
+    } else {
+      scale.value = withTiming(1, { duration: 150 });
+    }
+  }, [feedback, selected, shake, scale]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }, { scale: scale.value }],
+  }));
+
+  const border =
+    feedback === 'correct' && selected
+      ? CZ.good
+      : feedback === 'wrong' && selected
+        ? CZ.warn
+        : selected
+          ? COMMUNITY.coinGlow
+          : CZ.glassBorder;
+
+  return (
+    <Animated.View style={anim}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.totalChip, { borderColor: border }, pressed && styles.pressed]}
+        accessibilityLabel={amount}
+      >
+        <Text style={styles.totalText}>{amount}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 export function CommunityCoinTotal({ onComplete }: { onComplete: () => void }) {
   const [showSuccess, setShowSuccess] = useState(false);
-  const [shakeAnim] = useState(() => new Animated.Value(0));
+  const [selected, setSelected] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<'idle' | 'wrong' | 'correct'>('idle');
+  const [attempts, setAttempts] = useState(0);
 
-  useEffect(() => {
-    speak(VOICE, 0.75);
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
   }, []);
 
-  const triggerShake = useCallback(() => {
-    shakeAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-  }, [shakeAnim]);
+  useEffect(() => {
+    playVoice();
+  }, [playVoice]);
 
   const handleChoice = useCallback(
     (amount: string) => {
-      if (amount !== CORRECT_TOTAL) {
-        speak('Try again. Five plus five is ten.');
-        triggerShake();
-        return;
+      if (feedback === 'correct') return;
+      setSelected(amount);
+      setAttempts((a) => a + 1);
+
+      if (amount === CORRECT_TOTAL) {
+        setFeedback('correct');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speak('Correct! Ten rupees!', 0.75);
+        setShowSuccess(true);
+        setTimeout(() => onComplete(), 2400);
+      } else {
+        setFeedback('wrong');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Try again. Five plus five is ten.', 0.7);
+        setTimeout(() => {
+          setFeedback('idle');
+          setSelected(null);
+        }, 900);
       }
-      speak('Correct! Ten rupees!');
-      setShowSuccess(true);
-      setTimeout(() => onComplete(), 2200);
     },
-    [onComplete, triggerShake]
+    [feedback, onComplete],
   );
 
-  if (showSuccess) return <SuccessCelebration variant="indigo" title="Great Job!" subtitle="You got the total!" />;
+  const coachLine =
+    attempts === 0
+      ? 'Add them up: ₹5 + ₹5 — what is the total?'
+      : 'Count each five-rupee coin, then pick the total!';
 
-  const shakeX = shakeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 10] });
+  if (showSuccess) {
+    return (
+      <SuccessCelebration
+        variant="mint"
+        title="Coin Total!"
+        subtitle="You got ₹10!"
+        badgeEmoji="🪙"
+      />
+    );
+  }
 
   return (
-    <GameLayout
+    <CitizenGameShell
+      studio="COIN TOTAL · GAME 3"
       title="Identify coin total"
       instruction="Count the coins and choose the correct total."
-      icon="🪙"
-      backgroundVariant="indigo"
+      mascot="🪙"
+      coachLine={coachLine}
+      onReplayVoice={playVoice}
     >
-      <View style={styles.content}>
-        <View style={styles.equationRow}>
-          <View style={styles.coinChip}><Text style={styles.coinText}>₹5</Text></View>
-          <Text style={styles.plus}>+</Text>
-          <View style={styles.coinChip}><Text style={styles.coinText}>₹5</Text></View>
-          <Text style={styles.equals}>=</Text>
-          <Text style={styles.question}>?</Text>
+      <View style={styles.tallyFrame}>
+        <LinearGradient
+          colors={[`${COMMUNITY.accent}33`, 'transparent', `${COMMUNITY.violet}22`]}
+          style={styles.tallyGlow}
+        />
+        <Text style={styles.tallyLabel}>COMMUNITY FARE FUND</Text>
+
+        <View style={styles.coinsRow}>
+          {COINS_DISPLAY.map((v, i) => (
+            <View key={i} style={styles.coinOrb}>
+              <LinearGradient
+                colors={[`${COMMUNITY.coinGlow}55`, `${COMMUNITY.accent}44`]}
+                style={styles.coinGrad}
+              />
+              <Text style={styles.coinText}>{v}</Text>
+            </View>
+          ))}
         </View>
+
+        <View style={styles.equationRow}>
+          <Text style={styles.equation}>₹5 + ₹5 = ?</Text>
+        </View>
+
         <Text style={styles.prompt}>What is the total?</Text>
+
         <View style={styles.optionsRow}>
           {OPTIONS.map((opt) => (
-            <Animated.View key={opt} style={{ transform: [{ translateX: opt === CORRECT_TOTAL ? 0 : shakeX }] }}>
-              <Pressable
-                onPress={() => handleChoice(opt)}
-                style={({ pressed }) => [styles.optionCard, pressed && styles.pressed]}
-                accessibilityLabel={opt}
-              >
-                <Text style={styles.optionText}>{opt}</Text>
-              </Pressable>
-            </Animated.View>
+            <TotalChip
+              key={opt}
+              amount={opt}
+              selected={selected === opt}
+              feedback={feedback}
+              onPress={() => handleChoice(opt)}
+            />
           ))}
         </View>
       </View>
-    </GameLayout>
+    </CitizenGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 8, alignItems: 'center' },
-  equationRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24, justifyContent: 'center' },
-  coinChip: {
-    backgroundColor: '#FEF3C7',
-    borderRadius: 999,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderWidth: 3,
-    borderColor: '#F59E0B',
+  tallyFrame: {
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: `${COMMUNITY.accent}55`,
+    backgroundColor: 'rgba(26,10,18,0.5)',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    overflow: 'hidden',
+    alignItems: 'center',
   },
-  coinText: { fontSize: 22, fontWeight: '800', color: '#1f2937' },
-  plus: { fontSize: 24, fontWeight: '800', color: '#374151' },
-  equals: { fontSize: 24, fontWeight: '800', color: '#374151' },
-  question: { fontSize: 28, fontWeight: '800', color: '#6B7280' },
-  prompt: { fontSize: 20, fontWeight: '800', color: '#374151', marginBottom: 20 },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16 },
-  optionCard: {
-    backgroundColor: '#FFF',
+  tallyGlow: { ...StyleSheet.absoluteFillObject },
+  tallyLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: COMMUNITY.glow,
+    marginBottom: 14,
+  },
+  coinsRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  coinOrb: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 2,
+    borderColor: `${COMMUNITY.coinGlow}88`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  coinGrad: { ...StyleSheet.absoluteFillObject },
+  coinText: { fontSize: 20, fontWeight: '900', color: CZ.textLight },
+  equationRow: {
+    marginBottom: 14,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: 'rgba(16,185,129,0.12)',
+    borderWidth: 1,
+    borderColor: `${COMMUNITY.accent}44`,
+  },
+  equation: { fontSize: 16, fontWeight: '800', color: COMMUNITY.glow },
+  prompt: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: CZ.textLight,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 },
+  totalChip: {
+    minWidth: 80,
+    paddingVertical: 18,
+    paddingHorizontal: 22,
     borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 28,
-    borderWidth: 4,
-    borderColor: '#E5E7EB',
+    borderWidth: 2.5,
+    backgroundColor: 'rgba(11,10,26,0.7)',
+    alignItems: 'center',
   },
-  pressed: { opacity: 0.85 },
-  optionText: { fontSize: 22, fontWeight: '800', color: '#1f2937' },
+  totalText: { fontSize: 22, fontWeight: '900', color: CZ.textLight },
+  pressed: { opacity: 0.88 },
 });

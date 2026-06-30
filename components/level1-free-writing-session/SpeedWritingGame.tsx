@@ -1,21 +1,34 @@
 /**
- * Game 3: Speed Writing — timer-based writing challenge.
- * A letter appears, child must write it before the timer runs out.
+ * Game 3: Lightning Lane — timer-based writing challenge.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, AccessibilityInfo } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import * as Speech from 'expo-speech';
+import { speak, stopTTS } from '@/utils/tts';
 import { DrawingCanvas, DrawingCanvasRef, Stroke } from '@/components/games/Level1/DrawingCanvas';
-import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
+import { LetterGameShell } from '@/components/level1-straight-letters-session/letters-shared/LetterGameShell';
+import { LetterMascot } from '@/components/level1-straight-letters-session/letters-shared/LetterMascot';
+import { TraceMeter } from '@/components/level1-full-alphabet-session/alphabet-shared/TraceMeter';
 import { ALPHABET } from '@/components/level1-full-alphabet-session/alphabetData';
-import { isLetterValidationPass, letterRecognitionFailureHint, validateLetterImage } from '@/utils/recognizeLetter';
+import { isLetterValidationPass, validateLetterImage } from '@/utils/recognizeLetter';
 import { captureDrawingForAi } from '@/components/level1-copy-letters-session/captureDrawingBase64';
 
 const ROUND_SIZE = 10;
 const TIME_LIMIT = 12;
 const RECOGNITION_DEBOUNCE_MS = 750;
+
+const SHELL = {
+  bg: '#451A03',
+  labelColor: '#FDE68A',
+  titleColor: '#FFFBEB',
+  textOnDark: '#FFFBEB',
+  backBg: 'rgba(255,255,255,0.08)',
+  backBorder: 'rgba(251,191,36,0.35)',
+  dotIdle: 'rgba(255,255,255,0.15)',
+  dotActive: '#F59E0B',
+  dotDone: '#34D399',
+};
 
 function shuffleArr<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -27,15 +40,23 @@ function shuffleArr<T>(arr: T[]): T[] {
 }
 
 export function SpeedWritingGame({
-  currentStep, totalSteps, onBack, onComplete,
-}: { currentStep: number; totalSteps: number; onBack: () => void; onComplete: () => void }) {
-  const [dims, setDims] = useState({ width: 300, height: 300 });
+  currentStep,
+  totalSteps,
+  onBack,
+  onComplete,
+}: {
+  currentStep: number;
+  totalSteps: number;
+  onBack: () => void;
+  onComplete: () => void;
+}) {
   const [idx, setIdx] = useState(0);
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT);
   const [score, setScore] = useState(0);
   const [pct, setPct] = useState(0);
   const [done, setDone] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const shotRef = useRef<View>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -47,9 +68,9 @@ export function SpeedWritingGame({
   const subset = useMemo(() => shuffleArr(ALPHABET).slice(0, ROUND_SIZE), []);
   const def = subset[idx];
 
-  const onLayout = useCallback((e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    if (width > 0 && height > 0) setDims({ width, height });
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => setReduceMotion(!!v)).catch(() => {});
+    return () => stopTTS();
   }, []);
 
   useEffect(() => {
@@ -63,7 +84,7 @@ export function SpeedWritingGame({
       clearTimeout(debounceRef.current);
       debounceRef.current = null;
     }
-    try { Speech.stop(); Speech.speak(`Quick! Write ${def.letter}`, { rate: 1.0, pitch: 1.2 }); } catch (_) {}
+    speak(`Quick! Write ${def.letter}`, 0.78);
 
     timerRef.current = setInterval(() => {
       setTimeLeft((t) => {
@@ -79,7 +100,9 @@ export function SpeedWritingGame({
       });
     }, 1000);
 
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [idx, def.letter]);
 
   const advanceLetter = useCallback(() => {
@@ -96,12 +119,16 @@ export function SpeedWritingGame({
         setDone(false);
         doneRef.current = false;
         setIdx((i) => i + 1);
-      }, 800);
+      }, reduceMotion ? 400 : 800);
     } else {
       setShowConfetti(true);
-      setTimeout(() => { setShowConfetti(false); onComplete(); }, 1500);
+      speak('Lightning lane complete!', 0.72);
+      setTimeout(() => {
+        setShowConfetti(false);
+        onComplete();
+      }, reduceMotion ? 500 : 1500);
     }
-  }, [idx, subset.length, onComplete]);
+  }, [idx, subset.length, onComplete, reduceMotion]);
 
   const runRecognition = useCallback(async () => {
     if (doneRef.current) return;
@@ -121,54 +148,85 @@ export function SpeedWritingGame({
     if (p) advanceLetter();
   }, [def.letter, advanceLetter]);
 
-  const handleStrokeEnd = useCallback((strokes: Stroke[]) => {
-    if (doneRef.current) return;
-    latestStrokesRef.current = strokes;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      debounceRef.current = null;
-      runRecognition();
-    }, RECOGNITION_DEBOUNCE_MS);
-  }, [runRecognition]);
+  const handleStrokeEnd = useCallback(
+    (strokes: Stroke[]) => {
+      if (doneRef.current) return;
+      latestStrokesRef.current = strokes;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        runRecognition();
+      }, RECOGNITION_DEBOUNCE_MS);
+    },
+    [runRecognition],
+  );
 
   const handleSkip = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     doneRef.current = true;
     setDone(true);
     if (idx < subset.length - 1) {
-      setTimeout(() => { setDone(false); doneRef.current = false; setIdx((i) => i + 1); }, 600);
+      setTimeout(() => {
+        setDone(false);
+        doneRef.current = false;
+        setIdx((i) => i + 1);
+      }, reduceMotion ? 300 : 600);
     } else {
-      setTimeout(() => onComplete(), 600);
+      setTimeout(() => onComplete(), reduceMotion ? 300 : 600);
     }
-  }, [idx, subset.length, onComplete]);
+  }, [idx, subset.length, onComplete, reduceMotion]);
 
-  const timerColor = timeLeft <= 3 ? '#DC2626' : timeLeft <= 6 ? '#F59E0B' : '#22C55E';
+  const timerColor = timeLeft <= 3 ? '#F87171' : timeLeft <= 6 ? '#FBBF24' : '#34D399';
 
   return (
-    <GameContainerGrip
-      title="Speed Writing"
+    <LetterGameShell
+      theme={SHELL}
+      gameLabel="LIGHTNING LANE"
+      gameTitle="Speed Write"
       currentStep={currentStep}
       totalSteps={totalSteps}
-      mascot="⚡"
-      mascotHint="Write fast before time runs out!"
       onBack={onBack}
-    >
-      <View style={styles.topRow}>
-        <View style={styles.timerBox}>
+      headerRight={
+        <View style={[styles.timerBox, { borderColor: timerColor }]}>
           <Text style={[styles.timerText, { color: timerColor }]}>{timeLeft}s</Text>
         </View>
+      }
+      footer={
+        <LetterMascot
+          emoji="⚡"
+          name="Bolt"
+          hint="Write fast before time runs out!"
+          accent="#FBBF24"
+          bubbleBg="rgba(255,255,255,0.08)"
+          bubbleBorder="rgba(251,191,36,0.35)"
+          nameColor="#FDE68A"
+          hintColor="#FFFBEB"
+        />
+      }
+    >
+      <View style={styles.topRow}>
         <Text style={styles.promptLetter}>{def.letter}</Text>
         <View style={styles.scoreBox}>
           <Text style={styles.scoreText}>{score}/{subset.length}</Text>
         </View>
       </View>
 
-      <View style={styles.canvasWrap} onLayout={onLayout}>
+      <View style={styles.canvasWrap}>
         {!done && (
-          <DrawingCanvas ref={canvasRef} brushSize={10} canvasColor="rgba(255,255,255,0.55)" randomColors={false} onStrokeEnd={handleStrokeEnd} />
+          <View ref={shotRef} collapsable={false} style={styles.captureWrap}>
+            <DrawingCanvas
+              ref={canvasRef}
+              brushSize={10}
+              canvasColor="#FFFFFF"
+              randomColors={false}
+              onStrokeEnd={handleStrokeEnd}
+            />
+          </View>
         )}
         {done && timeLeft === 0 && (
-          <View style={styles.timeUpOverlay}><Text style={styles.timeUpText}>Time's up!</Text></View>
+          <View style={styles.timeUpOverlay}>
+            <Text style={styles.timeUpText}>Time&apos;s up!</Text>
+          </View>
         )}
       </View>
 
@@ -179,32 +237,56 @@ export function SpeedWritingGame({
           </Pressable>
         )}
         <View style={styles.progressCol}>
-          <Text style={styles.label}>Match: {pct}%</Text>
-          <View style={styles.barBg}><View style={[styles.barFill, { width: `${pct}%` }]} /></View>
+          <TraceMeter percent={pct} label="Match" color="#FBBF24" textColor={SHELL.textOnDark} />
         </View>
       </View>
       {showConfetti && <ConfettiEffect />}
-    </GameContainerGrip>
+    </LetterGameShell>
   );
 }
 
 const styles = StyleSheet.create({
+  timerBox: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 2,
+  },
+  timerText: { fontSize: 18, fontWeight: '900' },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  timerBox: { backgroundColor: '#FEF3C7', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12 },
-  timerText: { fontSize: 22, fontWeight: '900' },
-  promptLetter: { fontSize: 56, fontWeight: '900', color: '#DC2626' },
-  scoreBox: { backgroundColor: '#D1FAE5', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12 },
-  scoreText: { fontSize: 18, fontWeight: '800', color: '#059669' },
-  canvasWrap: { flex: 1, minHeight: 220, borderRadius: 24, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.5)', borderWidth: 2, borderColor: '#E5E7EB' },
-  captureWrap: { flex: 1, minHeight: 220 },
-  timeUpOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(220,38,38,0.08)' },
-  timeUpText: { fontSize: 28, fontWeight: '900', color: '#DC2626' },
-  bottomRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 12 },
-  skipBtn: { backgroundColor: '#FEE2E2', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 14 },
-  skipText: { fontSize: 15, fontWeight: '700', color: '#DC2626' },
+  promptLetter: { fontSize: 56, fontWeight: '900', color: '#FBBF24' },
+  scoreBox: {
+    backgroundColor: 'rgba(52,211,153,0.2)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(52,211,153,0.4)',
+  },
+  scoreText: { fontSize: 18, fontWeight: '800', color: '#34D399' },
+  canvasWrap: {
+    flex: 1,
+    minHeight: 200,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: 'rgba(251,191,36,0.35)',
+  },
+  captureWrap: { flex: 1, minHeight: 200, backgroundColor: '#FFFFFF' },
+  timeUpOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(248,113,113,0.12)' },
+  timeUpText: { fontSize: 28, fontWeight: '900', color: '#F87171' },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 12 },
+  skipBtn: {
+    backgroundColor: 'rgba(248,113,113,0.2)',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(248,113,113,0.4)',
+  },
+  skipText: { fontSize: 15, fontWeight: '700', color: '#FCA5A5' },
   pressed: { opacity: 0.85 },
-  progressCol: { flex: 1, gap: 4 },
-  label: { fontSize: 14, fontWeight: '700', color: '#374151' },
-  barBg: { height: 12, backgroundColor: '#E5E7EB', borderRadius: 6, overflow: 'hidden' },
-  barFill: { height: '100%', backgroundColor: '#22C55E', borderRadius: 6 },
+  progressCol: { flex: 1 },
 });

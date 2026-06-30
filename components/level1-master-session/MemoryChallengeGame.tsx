@@ -1,21 +1,33 @@
 /**
- * Game 2: Memory Challenge — hear a letter, write it from memory.
- * No visual prompt at all — audio only. Tests full recall.
+ * Game 2: Echo Chamber — hear a letter, write it from memory (audio only).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, AccessibilityInfo } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import * as Speech from 'expo-speech';
+import { speak, stopTTS } from '@/utils/tts';
 import { DrawingCanvas, DrawingCanvasRef, Stroke } from '@/components/games/Level1/DrawingCanvas';
-import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
+import { LetterGameShell } from '@/components/level1-straight-letters-session/letters-shared/LetterGameShell';
+import { LetterMascot } from '@/components/level1-straight-letters-session/letters-shared/LetterMascot';
+import { TraceMeter } from '@/components/level1-full-alphabet-session/alphabet-shared/TraceMeter';
 import { ALPHABET } from '@/components/level1-full-alphabet-session/alphabetData';
 import { isLetterValidationPass, validateLetterImage } from '@/utils/recognizeLetter';
 import { captureDrawingForAi } from '@/components/level1-copy-letters-session/captureDrawingBase64';
 
 const RECOGNITION_DEBOUNCE_MS = 750;
-
 const ROUND_SIZE = 10;
+
+const SHELL = {
+  bg: '#1E1B4B',
+  labelColor: '#A5B4FC',
+  titleColor: '#EEF2FF',
+  textOnDark: '#EEF2FF',
+  backBg: 'rgba(255,255,255,0.08)',
+  backBorder: 'rgba(129,140,248,0.35)',
+  dotIdle: 'rgba(255,255,255,0.15)',
+  dotActive: '#6366F1',
+  dotDone: '#34D399',
+};
 
 function shuffleArr<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -27,12 +39,21 @@ function shuffleArr<T>(arr: T[]): T[] {
 }
 
 export function MemoryChallengeGame({
-  currentStep, totalSteps, onBack, onComplete,
-}: { currentStep: number; totalSteps: number; onBack: () => void; onComplete: () => void }) {
+  currentStep,
+  totalSteps,
+  onBack,
+  onComplete,
+}: {
+  currentStep: number;
+  totalSteps: number;
+  onBack: () => void;
+  onComplete: () => void;
+}) {
   const [idx, setIdx] = useState(0);
   const [pct, setPct] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const shotRef = useRef<View>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -43,6 +64,11 @@ export function MemoryChallengeGame({
   const def = subset[idx];
 
   useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => setReduceMotion(!!v)).catch(() => {});
+    return () => stopTTS();
+  }, []);
+
+  useEffect(() => {
     setPct(0);
     setRevealed(false);
     canvasRef.current?.clear();
@@ -51,7 +77,7 @@ export function MemoryChallengeGame({
       clearTimeout(debounceRef.current);
       debounceRef.current = null;
     }
-    try { Speech.stop(); Speech.speak(`Write the letter ${def.letter}`, { rate: 0.8, pitch: 1.1 }); } catch (_) {}
+    speak(`Write the letter ${def.letter}`, 0.72);
   }, [idx, def.letter]);
 
   const runRecognition = useCallback(async () => {
@@ -70,25 +96,35 @@ export function MemoryChallengeGame({
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (_) {}
     if (p) {
       try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
-      try { Speech.stop(); Speech.speak(`Great ${def.letter}!`, { rate: 0.9 }); } catch (_) {}
+      speak(`Great ${def.letter}!`, 0.72);
       if (idx < subset.length - 1) {
         setShowConfetti(true);
-        setTimeout(() => { setShowConfetti(false); setIdx((i) => i + 1); }, 1000);
+        setTimeout(() => {
+          setShowConfetti(false);
+          setIdx((i) => i + 1);
+        }, reduceMotion ? 400 : 1000);
       } else {
         setShowConfetti(true);
-        setTimeout(() => { setShowConfetti(false); onComplete(); }, 1500);
+        speak('Echo chamber complete!', 0.72);
+        setTimeout(() => {
+          setShowConfetti(false);
+          onComplete();
+        }, reduceMotion ? 500 : 1500);
       }
     }
-  }, [def.letter, idx, subset.length, onComplete]);
+  }, [def.letter, idx, subset.length, onComplete, reduceMotion]);
 
-  const handleStrokeEnd = useCallback((strokes: Stroke[]) => {
-    latestStrokesRef.current = strokes;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      debounceRef.current = null;
-      runRecognition();
-    }, RECOGNITION_DEBOUNCE_MS);
-  }, [runRecognition]);
+  const handleStrokeEnd = useCallback(
+    (strokes: Stroke[]) => {
+      latestStrokesRef.current = strokes;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        runRecognition();
+      }, RECOGNITION_DEBOUNCE_MS);
+    },
+    [runRecognition],
+  );
 
   const handleClear = useCallback(() => {
     canvasRef.current?.clear();
@@ -99,22 +135,35 @@ export function MemoryChallengeGame({
       debounceRef.current = null;
     }
   }, []);
+
   const handleRepeat = useCallback(() => {
-    try { Speech.stop(); Speech.speak(def.letter, { rate: 0.7, pitch: 1.0 }); } catch (_) {}
+    speak(def.letter, 0.65);
   }, [def.letter]);
+
   const handleReveal = useCallback(() => setRevealed(true), []);
 
   return (
-    <GameContainerGrip
-      title="Memory Challenge"
+    <LetterGameShell
+      theme={SHELL}
+      gameLabel="ECHO CHAMBER"
+      gameTitle="Audio Memory"
       currentStep={currentStep}
       totalSteps={totalSteps}
-      mascot="🧠"
-      mascotHint="Listen and write — no peeking!"
       onBack={onBack}
+      headerRight={<Text style={styles.counter}>{idx + 1}/{subset.length}</Text>}
+      footer={
+        <LetterMascot
+          emoji="🔊"
+          name="Echo"
+          hint="Listen and write — no peeking!"
+          accent="#818CF8"
+          bubbleBg="rgba(255,255,255,0.08)"
+          bubbleBorder="rgba(129,140,248,0.35)"
+          nameColor="#A5B4FC"
+          hintColor="#EEF2FF"
+        />
+      }
     >
-      <Text style={styles.counter}>{idx + 1}/{subset.length}</Text>
-
       <View style={styles.audioBox}>
         <Text style={styles.audioIcon}>🔊</Text>
         <Text style={styles.audioHint}>Listen for the letter!</Text>
@@ -131,7 +180,13 @@ export function MemoryChallengeGame({
 
       <View style={styles.canvasWrap}>
         <View ref={shotRef} collapsable={false} style={styles.captureWrap}>
-          <DrawingCanvas ref={canvasRef} brushSize={10} canvasColor="rgba(255,255,255,0.55)" randomColors={false} onStrokeEnd={handleStrokeEnd} />
+          <DrawingCanvas
+            ref={canvasRef}
+            brushSize={10}
+            canvasColor="#FFFFFF"
+            randomColors={false}
+            onStrokeEnd={handleStrokeEnd}
+          />
         </View>
       </View>
 
@@ -145,35 +200,61 @@ export function MemoryChallengeGame({
           </Pressable>
         )}
         <View style={styles.progressCol}>
-          <Text style={styles.label}>Match: {pct}%</Text>
-          <View style={styles.barBg}><View style={[styles.barFill, { width: `${pct}%` }]} /></View>
+          <TraceMeter percent={pct} label="Match" color="#818CF8" textColor={SHELL.textOnDark} />
         </View>
       </View>
       {showConfetti && <ConfettiEffect />}
-    </GameContainerGrip>
+    </LetterGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  counter: { textAlign: 'center', fontSize: 14, fontWeight: '700', color: '#9CA3AF', marginBottom: 4 },
-  audioBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEF3C7', borderRadius: 16, padding: 12, gap: 10, marginBottom: 8 },
+  counter: { fontSize: 14, fontWeight: '800', color: SHELL.labelColor },
+  audioBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    padding: 12,
+    gap: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(129,140,248,0.35)',
+  },
   audioIcon: { fontSize: 28 },
-  audioHint: { flex: 1, fontSize: 15, fontWeight: '700', color: '#92400E' },
-  replayBtn: { backgroundColor: '#FDE68A', paddingVertical: 6, paddingHorizontal: 14, borderRadius: 10 },
-  replayText: { fontSize: 14, fontWeight: '700', color: '#92400E' },
-  revealBox: { alignSelf: 'center', backgroundColor: '#DBEAFE', paddingHorizontal: 20, paddingVertical: 6, borderRadius: 12, marginBottom: 6 },
-  revealLetter: { fontSize: 28, fontWeight: '900', color: '#1E40AF' },
-  canvasWrap: { flex: 1, minHeight: 200, borderRadius: 24, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.5)', borderWidth: 2, borderColor: '#E5E7EB' },
-  captureWrap: { flex: 1, minHeight: 200 },
-  bottomRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 10 },
+  audioHint: { flex: 1, fontSize: 15, fontWeight: '700', color: '#A5B4FC' },
+  replayBtn: {
+    backgroundColor: 'rgba(129,140,248,0.25)',
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  replayText: { fontSize: 14, fontWeight: '700', color: '#EEF2FF' },
+  revealBox: {
+    alignSelf: 'center',
+    backgroundColor: 'rgba(129,140,248,0.2)',
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginBottom: 6,
+  },
+  revealLetter: { fontSize: 28, fontWeight: '900', color: '#A5B4FC' },
+  canvasWrap: {
+    flex: 1,
+    minHeight: 180,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: 'rgba(129,140,248,0.35)',
+  },
+  captureWrap: { flex: 1, minHeight: 180, backgroundColor: '#FFFFFF' },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 10 },
   actionBtn: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 14 },
-  clearBtn: { backgroundColor: '#FEE2E2' },
-  clearText: { fontSize: 14, fontWeight: '700', color: '#DC2626' },
-  hintBtn: { backgroundColor: '#DBEAFE' },
-  hintText: { fontSize: 14, fontWeight: '700', color: '#1E40AF' },
+  clearBtn: { backgroundColor: 'rgba(248,113,113,0.2)', borderWidth: 1, borderColor: 'rgba(248,113,113,0.4)' },
+  clearText: { fontSize: 14, fontWeight: '700', color: '#FCA5A5' },
+  hintBtn: { backgroundColor: 'rgba(129,140,248,0.2)', borderWidth: 1, borderColor: 'rgba(129,140,248,0.4)' },
+  hintText: { fontSize: 14, fontWeight: '700', color: '#A5B4FC' },
   pressed: { opacity: 0.85 },
-  progressCol: { flex: 1, gap: 3 },
-  label: { fontSize: 13, fontWeight: '700', color: '#374151' },
-  barBg: { height: 10, backgroundColor: '#E5E7EB', borderRadius: 5, overflow: 'hidden' },
-  barFill: { height: '100%', backgroundColor: '#22C55E', borderRadius: 5 },
+  progressCol: { flex: 1 },
 });

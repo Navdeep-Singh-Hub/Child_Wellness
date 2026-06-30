@@ -1,108 +1,270 @@
 /**
  * Game 3 — Word problem. 7 pencils, get 2 more. How many now? Options 8, 9, 10. Correct: 9. Session 7: Real Life Problems.
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { GraduateGameShell } from '@/components/graduate-session/shared/GraduateGameShell';
+import { GR } from '@/components/graduate-session/shared/graduateTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 const OPTIONS = ['8', '9', '10'];
 const CORRECT = '9';
 const VOICE = 'Read the story and choose the correct number.';
 
-export function WordProblemPencils({ onComplete }: { onComplete: () => void }) {
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [shakeAnim] = useState(() => new Animated.Value(0));
+const PALETTE = { accent: '#14B8A6', glow: '#5EEAD4', secondary: '#2DD4BF' } as const;
+
+function NumberChip({
+  label,
+  selected,
+  feedback,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  feedback: 'idle' | 'wrong' | 'correct';
+  onPress: () => void;
+}) {
+  const shake = useSharedValue(0);
+  const scale = useSharedValue(1);
 
   useEffect(() => {
-    speak(VOICE, 0.75);
+    if (feedback === 'wrong' && selected) {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    } else if (feedback === 'correct' && selected) {
+      scale.value = withSpring(1.08, { damping: 8 });
+    } else {
+      scale.value = withTiming(1, { duration: 150 });
+    }
+  }, [feedback, selected, shake, scale]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }, { scale: scale.value }],
+  }));
+
+  const border =
+    feedback === 'correct' && selected
+      ? GR.good
+      : feedback === 'wrong' && selected
+        ? GR.warn
+        : selected
+          ? PALETTE.glow
+          : GR.glassBorder;
+
+  return (
+    <Animated.View style={anim}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.numberChip, { borderColor: border }, pressed && styles.pressed]}
+        accessibilityLabel={label}
+      >
+        <Text style={styles.numberText}>{label}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+export function WordProblemPencils({ onComplete }: { onComplete: () => void }) {
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<'idle' | 'wrong' | 'correct'>('idle');
+  const [lock, setLock] = useState(false);
+
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
   }, []);
 
-  const triggerShake = useCallback(() => {
-    shakeAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-  }, [shakeAnim]);
+  useEffect(() => {
+    playVoice();
+  }, [playVoice]);
 
   const handleChoice = useCallback(
     (num: string) => {
-      if (num !== CORRECT) {
-        speak('Try again. Seven plus two is nine.');
-        triggerShake();
-        return;
+      if (lock || feedback === 'correct') return;
+      setSelected(num);
+
+      if (num === CORRECT) {
+        setFeedback('correct');
+        setLock(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speak('Correct! Nine pencils!', 0.7);
+        setShowSuccess(true);
+        setTimeout(() => onComplete(), 2200);
+      } else {
+        setFeedback('wrong');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Try again. Seven plus two is nine.', 0.65);
+        setTimeout(() => {
+          setFeedback('idle');
+          setSelected(null);
+        }, 900);
       }
-      speak('Correct! Nine pencils!');
-      setShowSuccess(true);
-      setTimeout(() => onComplete(), 2200);
     },
-    [onComplete, triggerShake]
+    [lock, feedback, onComplete],
   );
 
-  if (showSuccess) return <SuccessCelebration variant="indigo" title="Great Job!" subtitle="You solved the problem!" />;
-
-  const shakeX = shakeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 10] });
+  if (showSuccess) {
+    return (
+      <SuccessCelebration
+        variant="indigo"
+        title="Great Job!"
+        subtitle="You solved the problem!"
+        badgeEmoji="✏️"
+      />
+    );
+  }
 
   return (
-    <GameLayout
+    <GraduateGameShell
+      studio="STORY PROBLEM · GAME 3"
       title="Solve the story problem"
       instruction="Read the story and choose the correct number."
-      icon="📖"
-      backgroundVariant="indigo"
+      mascot="✏️"
+      coachLine="Seven pencils in your hand — two more arrive, add them up!"
+      onReplayVoice={playVoice}
     >
-      <View style={styles.content}>
-        <View style={styles.storyBox}>
-          <Text style={styles.storyLine}>
-            You have <Text style={styles.bold}>7 pencils</Text>.
-          </Text>
-          <Text style={styles.storyLine}>
-            You get <Text style={styles.bold}>2 more pencils</Text>.
-          </Text>
-          <Text style={styles.question}>How many pencils now?</Text>
+      <View style={styles.storyFrame}>
+        <LinearGradient
+          colors={[`${PALETTE.accent}33`, 'transparent', `${PALETTE.secondary}22`]}
+          style={styles.storyGlow}
+        />
+        <Text style={styles.frameLabel}>STORY CARD</Text>
+
+        <Text style={styles.storyLine}>
+          You have <Text style={styles.highlight}>7 pencils</Text>.
+        </Text>
+        <Text style={styles.storyLine}>
+          You get <Text style={styles.highlight}>2 more pencils</Text>.
+        </Text>
+
+        <View style={styles.visualRow}>
+          <View style={styles.pencilGroup}>
+            {Array.from({ length: 7 }, (_, i) => (
+              <Text key={i} style={styles.pencilEmoji}>
+                ✏️
+              </Text>
+            ))}
+          </View>
+          <Text style={styles.plusSign}>+</Text>
+          <View style={styles.pencilGroupSmall}>
+            <Text style={styles.pencilEmoji}>✏️</Text>
+            <Text style={styles.pencilEmoji}>✏️</Text>
+          </View>
+          <Text style={styles.equalsSign}>=</Text>
+          <Text style={styles.questionMark}>?</Text>
         </View>
+
+        <Text style={styles.question}>How many pencils now?</Text>
+
         <View style={styles.optionsRow}>
           {OPTIONS.map((opt) => (
-            <Animated.View key={opt} style={{ transform: [{ translateX: opt === CORRECT ? 0 : shakeX }] }}>
-              <Pressable
-                onPress={() => handleChoice(opt)}
-                style={({ pressed }) => [styles.optionCard, pressed && styles.pressed]}
-                accessibilityLabel={opt}
-              >
-                <Text style={styles.optionText}>{opt}</Text>
-              </Pressable>
-            </Animated.View>
+            <NumberChip
+              key={opt}
+              label={opt}
+              selected={selected === opt}
+              feedback={feedback}
+              onPress={() => handleChoice(opt)}
+            />
           ))}
         </View>
       </View>
-    </GameLayout>
+    </GraduateGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 8, alignItems: 'center' },
-  storyBox: {
-    backgroundColor: '#EDE9FE',
-    borderRadius: 16,
-    padding: 24,
-    borderWidth: 3,
-    borderColor: '#8B5CF6',
-    marginBottom: 24,
-    minWidth: 260,
+  storyFrame: {
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: `${PALETTE.accent}55`,
+    backgroundColor: 'rgba(15,10,30,0.5)',
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    overflow: 'hidden',
+    alignItems: 'center',
   },
-  storyLine: { fontSize: 18, color: '#374151', marginBottom: 8 },
-  bold: { fontWeight: '800', color: '#5B21B6' },
-  question: { fontSize: 20, fontWeight: '800', color: '#374151', marginTop: 12 },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16 },
-  optionCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 32,
-    borderWidth: 4,
-    borderColor: '#E5E7EB',
+  storyGlow: { ...StyleSheet.absoluteFillObject },
+  frameLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: PALETTE.glow,
+    marginBottom: 12,
+    textAlign: 'center',
   },
-  pressed: { opacity: 0.85 },
-  optionText: { fontSize: 24, fontWeight: '800', color: '#1f2937' },
+  storyLine: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: GR.textLight,
+    textAlign: 'center',
+    marginBottom: 6,
+    lineHeight: 24,
+  },
+  highlight: { fontWeight: '900', color: PALETTE.glow },
+  visualRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginVertical: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: `${PALETTE.accent}44`,
+    backgroundColor: 'rgba(11,10,26,0.55)',
+    width: '100%',
+  },
+  pencilGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 2,
+    justifyContent: 'center',
+    maxWidth: 100,
+  },
+  pencilGroupSmall: { flexDirection: 'row', gap: 2 },
+  pencilEmoji: { fontSize: 20 },
+  plusSign: { fontSize: 22, fontWeight: '900', color: PALETTE.glow },
+  equalsSign: { fontSize: 22, fontWeight: '900', color: PALETTE.glow },
+  questionMark: { fontSize: 28, fontWeight: '900', color: GR.amberGlow },
+  question: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: GR.textLight,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  optionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+    width: '100%',
+  },
+  numberChip: {
+    borderRadius: 16,
+    borderWidth: 2,
+    backgroundColor: 'rgba(11,10,26,0.7)',
+    paddingVertical: 18,
+    paddingHorizontal: 28,
+    minWidth: 72,
+    alignItems: 'center',
+  },
+  numberText: { fontSize: 26, fontWeight: '900', color: GR.textLight },
+  pressed: { opacity: 0.88 },
 });

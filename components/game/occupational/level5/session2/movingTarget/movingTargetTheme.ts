@@ -1,4 +1,4 @@
-import type { Session2ThemeTokens } from '@/components/game/occupational/level5/session2/shared/Session2UI';
+import type { Session2Copy, Session2GameMeta, Session2ThemeTokens } from '@/components/game/occupational/level5/session2/session2Theme';
 
 export const MOVING_TARGET_THEME: Session2ThemeTokens = {
   sky: ['#0F172A', '#1E1B4B', '#312E81', '#1E293B'],
@@ -11,8 +11,8 @@ export const MOVING_TARGET_THEME: Session2ThemeTokens = {
   cue: '#67E8F9',
 };
 
-export const MOVING_TARGET_COPY = {
-  title: 'Moving Target',
+export const MOVING_TARGET_COPY: Session2Copy = {
+  title: 'Neon Arcade',
   emoji: '⚡',
   tagline: 'Neon Arcade · Timing Control',
   body: 'A glowing orb zips across the neon grid. Track it with your eyes and tap at the right moment — it speeds up as you improve!',
@@ -22,4 +22,10 @@ export const MOVING_TARGET_COPY = {
   congrats: 'Arcade Ace!',
   logType: 'moving-target',
   skillTags: ['timing-control', 'hand-eye-coordination', 'reaction-time'],
-} as const;
+};
+
+export const MOVING_TARGET_META: Session2GameMeta = {
+  startGradient: ['#22D3EE', '#06B6D4', '#0891B2'],
+  hudTitle: 'Neon Orb',
+  scoreLabel: 'HITS',
+};

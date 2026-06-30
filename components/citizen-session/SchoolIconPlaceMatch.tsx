@@ -1,11 +1,27 @@
 /**
- * Game 2 — Match icon with place. 📚→library, 🏫→classroom, ⚽→playground. Session 6: School Signs.
+ * Game 2 — Place Match: 📚→library, 🏫→classroom, ⚽→playground.
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { CitizenGameShell } from '@/components/citizen-session/shared/CitizenGameShell';
+import { CZ } from '@/components/citizen-session/shared/citizenTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+
+const ICON_STYLE: Record<string, { color: string; glow: string; label: string }> = {
+  '📚': { color: '#1E40AF', glow: '#93C5FD', label: 'BOOKS' },
+  '🏫': { color: '#16A34A', glow: '#86EFAC', label: 'SCHOOL' },
+  '⚽': { color: '#9D174D', glow: '#F9A8D4', label: 'PLAY' },
+};
 
 const QUESTIONS: {
   icon: string;
@@ -13,105 +29,277 @@ const QUESTIONS: {
   options: string[];
   voice: string;
 }[] = [
-  { icon: '📚', correctPlace: 'library', options: ['library', 'classroom', 'playground'], voice: 'What place is this? Tap library.' },
-  { icon: '🏫', correctPlace: 'classroom', options: ['library', 'classroom', 'playground'], voice: 'What place is this? Tap classroom.' },
-  { icon: '⚽', correctPlace: 'playground', options: ['library', 'classroom', 'playground'], voice: 'What place is this? Tap playground.' },
+  {
+    icon: '📚',
+    correctPlace: 'library',
+    options: ['library', 'classroom', 'playground'],
+    voice: 'What place is this? Tap library.',
+  },
+  {
+    icon: '🏫',
+    correctPlace: 'classroom',
+    options: ['library', 'classroom', 'playground'],
+    voice: 'What place is this? Tap classroom.',
+  },
+  {
+    icon: '⚽',
+    correctPlace: 'playground',
+    options: ['library', 'classroom', 'playground'],
+    voice: 'What place is this? Tap playground.',
+  },
 ];
+
+const CAMPUS = { accent: '#6366F1', glow: '#A5B4FC', amber: '#F59E0B' } as const;
+
+function PlaceChip({
+  label,
+  selected,
+  feedback,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  feedback: 'idle' | 'wrong' | 'correct';
+  onPress: () => void;
+}) {
+  const shake = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (feedback === 'wrong' && selected) {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    } else if (feedback === 'correct' && selected) {
+      scale.value = withSpring(1.04, { damping: 8 });
+    } else {
+      scale.value = withTiming(1, { duration: 150 });
+    }
+  }, [feedback, selected, shake, scale]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }, { scale: scale.value }],
+  }));
+
+  const border =
+    feedback === 'correct' && selected
+      ? CZ.good
+      : feedback === 'wrong' && selected
+        ? CZ.warn
+        : selected
+          ? CAMPUS.glow
+          : CZ.glassBorder;
+
+  return (
+    <Animated.View style={[styles.chipWrap, anim]}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.chip, { borderColor: border }, pressed && styles.pressed]}
+        accessibilityLabel={label}
+      >
+        <Text style={styles.chipText}>{label}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 export function SchoolIconPlaceMatch({ onComplete }: { onComplete: () => void }) {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [shakeAnim] = useState(() => new Animated.Value(0));
+  const [selected, setSelected] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<'idle' | 'wrong' | 'correct'>('idle');
+  const [lock, setLock] = useState(false);
 
   const q = QUESTIONS[questionIndex];
+  const iconStyle = ICON_STYLE[q.icon];
   const isLast = questionIndex === QUESTIONS.length - 1;
+  const progressPct = ((questionIndex + (feedback === 'correct' ? 1 : 0)) / QUESTIONS.length) * 100;
+
+  const playVoice = useCallback(() => {
+    speak(q.voice, 0.75).catch(() => {});
+  }, [q.voice]);
 
   useEffect(() => {
-    speak(q.voice, 0.75);
-  }, [questionIndex]);
-
-  const triggerShake = useCallback(() => {
-    shakeAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-  }, [shakeAnim]);
+    playVoice();
+    setSelected(null);
+    setFeedback('idle');
+    setLock(false);
+  }, [questionIndex, playVoice]);
 
   const handleChoice = useCallback(
     (place: string) => {
-      if (place !== q.correctPlace) {
-        speak('Try again.');
-        triggerShake();
-        return;
-      }
-      speak('Correct!');
-      if (isLast) {
-        setShowSuccess(true);
-        setTimeout(() => onComplete(), 2200);
+      if (lock || feedback === 'correct') return;
+      setSelected(place);
+
+      if (place === q.correctPlace) {
+        setFeedback('correct');
+        setLock(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speak('Correct!', 0.7);
+
+        if (isLast) {
+          setShowSuccess(true);
+          setTimeout(() => onComplete(), 2400);
+        } else {
+          setTimeout(() => setQuestionIndex((i) => i + 1), 900);
+        }
       } else {
-        setQuestionIndex((i) => i + 1);
+        setFeedback('wrong');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Try again.', 0.65);
+        setTimeout(() => {
+          setFeedback('idle');
+          setSelected(null);
+        }, 900);
       }
     },
-    [q.correctPlace, isLast, onComplete, triggerShake]
+    [lock, feedback, q.correctPlace, isLast, onComplete],
   );
 
-  if (showSuccess) return <SuccessCelebration variant="indigo" title="Great Job!" subtitle="You know the places!" />;
+  const coachLine =
+    q.icon === '📚'
+      ? 'Books mean library — which place matches?'
+      : q.icon === '🏫'
+        ? 'The school building is the classroom area — find it!'
+        : 'Sports and play happen outside — pick playground!';
 
-  const shakeX = shakeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 10] });
+  if (showSuccess) {
+    return (
+      <SuccessCelebration
+        variant="indigo"
+        title="Place Match!"
+        subtitle="You know the school places!"
+        badgeEmoji="📋"
+      />
+    );
+  }
 
   return (
-    <GameLayout
-      title="Match the icon with the place"
-      instruction="Which place does this icon show?"
-      icon="📚"
-      backgroundVariant="indigo"
+    <CitizenGameShell
+      studio="PLACE MATCH · GAME 2"
+      title="Match icon to place"
+      instruction="Which place does this icon show? Tap the correct word."
+      mascot="📚"
+      coachLine={coachLine}
+      onReplayVoice={playVoice}
     >
-      <View style={styles.content}>
-        <View style={styles.iconDisplay}>
+      <View style={styles.progressWrap}>
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressLabel}>ICON ROUNDS</Text>
+          <Text style={styles.progressCount}>
+            {questionIndex + 1} / {QUESTIONS.length}
+          </Text>
+        </View>
+        <View style={styles.progressBg}>
+          <LinearGradient
+            colors={[CAMPUS.accent, CAMPUS.amber]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.progressFill, { width: `${progressPct}%` }]}
+          />
+        </View>
+      </View>
+
+      <View style={styles.matchFrame}>
+        <LinearGradient
+          colors={[`${iconStyle.color}33`, 'transparent', `${CAMPUS.amber}22`]}
+          style={styles.matchGlow}
+        />
+        <Text style={styles.matchLabel}>ACTIVE ICON</Text>
+        <View style={[styles.iconBadge, { borderColor: iconStyle.glow }]}>
           <Text style={styles.iconEmoji}>{q.icon}</Text>
+          <Text style={[styles.iconTag, { color: iconStyle.color }]}>{iconStyle.label}</Text>
         </View>
         <Text style={styles.prompt}>Which place is it?</Text>
+
         <View style={styles.optionsColumn}>
           {q.options.map((opt) => (
-            <Animated.View key={opt} style={{ transform: [{ translateX: opt === q.correctPlace ? 0 : shakeX }] }}>
-              <Pressable
-                onPress={() => handleChoice(opt)}
-                style={({ pressed }) => [styles.optionCard, pressed && styles.pressed]}
-                accessibilityLabel={opt}
-              >
-                <Text style={styles.optionText}>{opt}</Text>
-              </Pressable>
-            </Animated.View>
+            <PlaceChip
+              key={opt}
+              label={opt}
+              selected={selected === opt}
+              feedback={feedback}
+              onPress={() => handleChoice(opt)}
+            />
           ))}
         </View>
-        <Text style={styles.progressText}>Question {questionIndex + 1} of {QUESTIONS.length}</Text>
       </View>
-    </GameLayout>
+    </CitizenGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 8, alignItems: 'center' },
-  iconDisplay: {
-    backgroundColor: '#DBEAFE',
+  progressWrap: { marginBottom: 14 },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  progressLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+    color: CAMPUS.glow,
+  },
+  progressCount: { fontSize: 14, fontWeight: '900', color: CZ.textLight },
+  progressBg: {
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    overflow: 'hidden',
+  },
+  progressFill: { height: '100%', borderRadius: 5 },
+  matchFrame: {
     borderRadius: 20,
-    padding: 28,
-    borderWidth: 3,
-    borderColor: '#1E40AF',
-    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: `${CAMPUS.accent}55`,
+    backgroundColor: 'rgba(26,10,18,0.5)',
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    overflow: 'hidden',
+    alignItems: 'center',
   },
-  iconEmoji: { fontSize: 56 },
-  prompt: { fontSize: 18, fontWeight: '700', color: '#374151', marginBottom: 20 },
-  optionsColumn: { gap: 12, width: '100%', maxWidth: 320 },
-  optionCard: {
-    backgroundColor: '#FFF',
+  matchGlow: { ...StyleSheet.absoluteFillObject },
+  matchLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: CAMPUS.glow,
+    marginBottom: 12,
+  },
+  iconBadge: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 18,
+    borderWidth: 2,
+    backgroundColor: 'rgba(11,10,26,0.65)',
+    marginBottom: 14,
+    gap: 6,
+  },
+  iconEmoji: { fontSize: 48 },
+  iconTag: { fontSize: 12, fontWeight: '900', letterSpacing: 1.5 },
+  prompt: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: CZ.textLight,
+    marginBottom: 14,
+    textAlign: 'center',
+  },
+  optionsColumn: { width: '100%', gap: 10 },
+  chipWrap: { width: '100%' },
+  chip: {
     borderRadius: 16,
-    padding: 20,
-    borderWidth: 4,
-    borderColor: '#E5E7EB',
+    borderWidth: 2,
+    backgroundColor: 'rgba(11,10,26,0.7)',
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    alignItems: 'center',
   },
-  pressed: { opacity: 0.85 },
-  optionText: { fontSize: 18, fontWeight: '700', color: '#1f2937' },
-  progressText: { fontSize: 14, color: '#6B7280', marginTop: 20 },
+  chipText: { fontSize: 16, fontWeight: '800', color: CZ.textLight, textAlign: 'center' },
+  pressed: { opacity: 0.88 },
 });

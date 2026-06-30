@@ -1,16 +1,17 @@
 /**
- * Game 3: Mixed Challenge — identify + write + trace combo.
- * Each round has 3 phases: (1) identify from options, (2) write freehand, (3) trace dotted guides.
+ * Game 3: Triad Trial — identify + write + trace combo per round.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent, Pressable } from 'react-native';
+import { View, Text, StyleSheet, LayoutChangeEvent, Pressable, AccessibilityInfo } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import * as Speech from 'expo-speech';
+import { speak, stopTTS } from '@/utils/tts';
 import { DrawingCanvas, DrawingCanvasRef, Stroke } from '@/components/games/Level1/DrawingCanvas';
-import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
-import { ALPHABET, scaleDots, scaleStrokes, type Point, type StrokeDef } from '@/components/level1-full-alphabet-session/alphabetData';
+import { LetterGameShell } from '@/components/level1-straight-letters-session/letters-shared/LetterGameShell';
+import { LetterMascot } from '@/components/level1-straight-letters-session/letters-shared/LetterMascot';
+import { TraceMeter } from '@/components/level1-full-alphabet-session/alphabet-shared/TraceMeter';
+import { ALPHABET, scaleDots, scaleStrokes } from '@/components/level1-full-alphabet-session/alphabetData';
 import { getConnectedDots } from '@/components/level1-grip-session/shapeFillUtils';
 import { isLetterValidationPass, validateLetterImage } from '@/utils/recognizeLetter';
 import { captureDrawingForAi } from '@/components/level1-copy-letters-session/captureDrawingBase64';
@@ -20,9 +21,24 @@ const RECOGNITION_DEBOUNCE_MS = 750;
 const DOT_HIT_R = 22;
 const DOT_SUCCESS = 65;
 
+const SHELL = {
+  bg: '#450A0A',
+  labelColor: '#FCA5A5',
+  titleColor: '#FEF2F2',
+  textOnDark: '#FEF2F2',
+  backBg: 'rgba(255,255,255,0.08)',
+  backBorder: 'rgba(248,113,113,0.35)',
+  dotIdle: 'rgba(255,255,255,0.15)',
+  dotActive: '#EF4444',
+  dotDone: '#34D399',
+};
+
 function shuffleArr<T>(arr: T[]): T[] {
   const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
   return a;
 }
 
@@ -32,8 +48,16 @@ function pickOptions(target: string, all: string[], count: number): string[] {
 }
 
 export function MixedChallengeGame({
-  currentStep, totalSteps, onBack, onComplete,
-}: { currentStep: number; totalSteps: number; onBack: () => void; onComplete: () => void }) {
+  currentStep,
+  totalSteps,
+  onBack,
+  onComplete,
+}: {
+  currentStep: number;
+  totalSteps: number;
+  onBack: () => void;
+  onComplete: () => void;
+}) {
   const [dims, setDims] = useState({ width: 300, height: 260 });
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<'identify' | 'write' | 'trace'>('identify');
@@ -41,6 +65,7 @@ export function MixedChallengeGame({
   const [dotConnected, setDotConnected] = useState<Set<number>>(new Set());
   const [wrongPick, setWrongPick] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const shotRef = useRef<View>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -53,6 +78,11 @@ export function MixedChallengeGame({
   const options = useMemo(() => pickOptions(def.letter, allNames, 4), [def, allNames]);
   const guides = useMemo(() => scaleStrokes(def.strokes, dims.width, dims.height), [def, dims]);
   const dots = useMemo(() => scaleDots(def.dots, dims.width, dims.height), [def, dims]);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => setReduceMotion(!!v)).catch(() => {});
+    return () => stopTTS();
+  }, []);
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -70,20 +100,23 @@ export function MixedChallengeGame({
       clearTimeout(debounceRef.current);
       debounceRef.current = null;
     }
-    try { Speech.stop(); Speech.speak(`Find ${def.letter}!`, { rate: 0.85, pitch: 1.1 }); } catch (_) {}
+    speak(`Find ${def.letter}!`, 0.72);
   }, [idx, def.letter]);
 
-  const handlePick = useCallback((l: string) => {
-    if (l === def.letter) {
-      try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
-      try { Speech.stop(); Speech.speak(`Now write ${def.letter}!`, { rate: 0.9 }); } catch (_) {}
-      setPhase('write');
-    } else {
-      try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); } catch (_) {}
-      setWrongPick(l);
-      setTimeout(() => setWrongPick(null), 500);
-    }
-  }, [def.letter]);
+  const handlePick = useCallback(
+    (l: string) => {
+      if (l === def.letter) {
+        try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
+        speak(`Now write ${def.letter}!`, 0.72);
+        setPhase('write');
+      } else {
+        try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); } catch (_) {}
+        setWrongPick(l);
+        setTimeout(() => setWrongPick(null), 500);
+      }
+    },
+    [def.letter],
+  );
 
   const runWriteRecognition = useCallback(async () => {
     if (phase !== 'write') return;
@@ -102,7 +135,7 @@ export function MixedChallengeGame({
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (_) {}
     if (p) {
       try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
-      try { Speech.stop(); Speech.speak(`Now trace ${def.letter}!`, { rate: 0.9 }); } catch (_) {}
+      speak(`Now trace ${def.letter}!`, 0.72);
       canvasRef.current?.clear();
       latestStrokesRef.current = [];
       setPct(0);
@@ -110,56 +143,80 @@ export function MixedChallengeGame({
     }
   }, [phase, def.letter]);
 
-  const handleWriteEnd = useCallback((strokes: Stroke[]) => {
-    if (phase !== 'write') return;
-    latestStrokesRef.current = strokes;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      debounceRef.current = null;
-      runWriteRecognition();
-    }, RECOGNITION_DEBOUNCE_MS);
-  }, [phase, runWriteRecognition]);
+  const handleWriteEnd = useCallback(
+    (strokes: Stroke[]) => {
+      if (phase !== 'write') return;
+      latestStrokesRef.current = strokes;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        runWriteRecognition();
+      }, RECOGNITION_DEBOUNCE_MS);
+    },
+    [phase, runWriteRecognition],
+  );
 
-  const handleTraceEnd = useCallback((strokes: Stroke[]) => {
-    if (phase !== 'trace') return;
-    const next = getConnectedDots(strokes, dots, DOT_HIT_R);
-    setDotConnected(next);
-    const dp = dots.length > 0 ? (next.size / dots.length) * 100 : 0;
-    setPct(Math.round(dp));
-    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (_) {}
-    if (dp >= DOT_SUCCESS) {
-      try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
-      if (idx < subset.length - 1) {
-        setShowConfetti(true);
-        setTimeout(() => { setShowConfetti(false); setIdx((i) => i + 1); }, 1000);
-      } else {
-        setShowConfetti(true);
-        setTimeout(() => { setShowConfetti(false); onComplete(); }, 1500);
+  const handleTraceEnd = useCallback(
+    (strokes: Stroke[]) => {
+      if (phase !== 'trace') return;
+      const next = getConnectedDots(strokes, dots, DOT_HIT_R);
+      setDotConnected(next);
+      const dp = dots.length > 0 ? (next.size / dots.length) * 100 : 0;
+      setPct(Math.round(dp));
+      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (_) {}
+      if (dp >= DOT_SUCCESS) {
+        try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
+        speak(`Triad complete for ${def.letter}!`, 0.72);
+        if (idx < subset.length - 1) {
+          setShowConfetti(true);
+          setTimeout(() => {
+            setShowConfetti(false);
+            setIdx((i) => i + 1);
+          }, reduceMotion ? 400 : 1000);
+        } else {
+          setShowConfetti(true);
+          speak('Triad trial complete!', 0.72);
+          setTimeout(() => {
+            setShowConfetti(false);
+            onComplete();
+          }, reduceMotion ? 500 : 1500);
+        }
       }
-    }
-  }, [phase, dots, idx, subset.length, onComplete]);
+    },
+    [phase, dots, idx, subset.length, onComplete, def.letter, reduceMotion],
+  );
 
   const phaseLabel = phase === 'identify' ? `Tap ${def.letter}` : phase === 'write' ? `Write ${def.letter}` : `Trace ${def.letter}`;
   const phaseNum = phase === 'identify' ? 1 : phase === 'write' ? 2 : 3;
 
   return (
-    <GameContainerGrip
-      title="Mixed Challenge"
+    <LetterGameShell
+      theme={SHELL}
+      gameLabel="TRIAD TRIAL"
+      gameTitle={`Round ${idx + 1}`}
       currentStep={currentStep}
       totalSteps={totalSteps}
-      mascot="🔥"
-      mascotHint={phaseLabel}
       onBack={onBack}
+      headerRight={<Text style={styles.counter}>{def.letter} · {idx + 1}/{subset.length}</Text>}
+      footer={
+        <LetterMascot
+          emoji="🔥"
+          name="Trial"
+          hint={phaseLabel}
+          accent="#F87171"
+          bubbleBg="rgba(255,255,255,0.08)"
+          bubbleBorder="rgba(248,113,113,0.35)"
+          nameColor="#FCA5A5"
+          hintColor="#FEF2F2"
+        />
+      }
     >
-      <View style={styles.headerRow}>
-        <Text style={styles.counter}>{def.letter} · Round {idx + 1}/{subset.length}</Text>
-        <View style={styles.phaseRow}>
-          {['Identify', 'Write', 'Trace'].map((p, i) => (
-            <View key={p} style={[styles.phaseDot, i < phaseNum && styles.phaseDotActive]}>
-              <Text style={[styles.phaseText, i < phaseNum && styles.phaseTextActive]}>{i + 1}</Text>
-            </View>
-          ))}
-        </View>
+      <View style={styles.phaseRow}>
+        {['Identify', 'Write', 'Trace'].map((p, i) => (
+          <View key={p} style={[styles.phaseDot, i < phaseNum && styles.phaseDotActive]}>
+            <Text style={[styles.phaseText, i < phaseNum && styles.phaseTextActive]}>{i + 1}</Text>
+          </View>
+        ))}
       </View>
 
       {phase === 'identify' && (
@@ -167,8 +224,15 @@ export function MixedChallengeGame({
           <Text style={styles.quizPrompt}>Tap: {def.letter}</Text>
           <View style={styles.optionsRow}>
             {options.map((l) => (
-              <Pressable key={l} onPress={() => handlePick(l)}
-                style={({ pressed }) => [styles.optionBtn, wrongPick === l && styles.optionWrong, pressed && styles.pressed]}>
+              <Pressable
+                key={l}
+                onPress={() => handlePick(l)}
+                style={({ pressed }) => [
+                  styles.optionBtn,
+                  wrongPick === l && styles.optionWrong,
+                  pressed && styles.pressed,
+                ]}
+              >
                 <Text style={[styles.optionText, wrongPick === l && styles.optionTextWrong]}>{l}</Text>
               </Pressable>
             ))}
@@ -181,10 +245,16 @@ export function MixedChallengeGame({
           <Text style={styles.phaseTitle}>Write {def.letter}:</Text>
           <View style={styles.canvasWrap} onLayout={onLayout}>
             <View ref={shotRef} collapsable={false} style={styles.captureWrap}>
-              <DrawingCanvas ref={canvasRef} brushSize={10} canvasColor="rgba(255,255,255,0.55)" randomColors={false} onStrokeEnd={handleWriteEnd} />
+              <DrawingCanvas
+                ref={canvasRef}
+                brushSize={10}
+                canvasColor="#FFFFFF"
+                randomColors={false}
+                onStrokeEnd={handleWriteEnd}
+              />
             </View>
           </View>
-          <View style={styles.barRow}><Text style={styles.label}>Match: {pct}%</Text><View style={styles.barBg}><View style={[styles.barFill, { width: `${pct}%` }]} /></View></View>
+          <TraceMeter percent={pct} label="Match" color="#F87171" textColor={SHELL.textOnDark} />
         </>
       )}
 
@@ -192,49 +262,89 @@ export function MixedChallengeGame({
         <>
           <Text style={styles.phaseTitle}>Trace {def.letter}:</Text>
           <View style={styles.canvasWrap} onLayout={onLayout}>
-            <DrawingCanvas ref={canvasRef} brushSize={10} canvasColor="rgba(255,255,255,0.55)" randomColors={false} onStrokeEnd={handleTraceEnd} />
+            <DrawingCanvas
+              ref={canvasRef}
+              brushSize={10}
+              canvasColor="rgba(255,255,255,0.12)"
+              randomColors={false}
+              onStrokeEnd={handleTraceEnd}
+            />
             <View style={StyleSheet.absoluteFill} pointerEvents="none">
               <Svg width={dims.width} height={dims.height}>
                 {guides.map((s, i) => (
-                  <Line key={i} x1={s.from.x} y1={s.from.y} x2={s.to.x} y2={s.to.y}
-                    stroke="#C4B5FD" strokeWidth={3} strokeDasharray="6 6" strokeLinecap="round" />
+                  <Line
+                    key={i}
+                    x1={s.from.x}
+                    y1={s.from.y}
+                    x2={s.to.x}
+                    y2={s.to.y}
+                    stroke="#FCA5A5"
+                    strokeWidth={3}
+                    strokeDasharray="6 6"
+                    strokeLinecap="round"
+                  />
                 ))}
                 {dots.map((d, i) => (
-                  <Circle key={i} cx={d.x} cy={d.y} r={dotConnected.has(i) ? 10 : 7}
-                    fill={dotConnected.has(i) ? '#22C55E' : '#7C3AED'} opacity={dotConnected.has(i) ? 1 : 0.7} />
+                  <Circle
+                    key={i}
+                    cx={d.x}
+                    cy={d.y}
+                    r={dotConnected.has(i) ? 10 : 7}
+                    fill={dotConnected.has(i) ? '#34D399' : '#F87171'}
+                    opacity={dotConnected.has(i) ? 1 : 0.7}
+                  />
                 ))}
               </Svg>
             </View>
           </View>
-          <View style={styles.barRow}><Text style={styles.label}>Traced: {pct}%</Text><View style={styles.barBg}><View style={[styles.barFill, { width: `${pct}%` }]} /></View></View>
+          <TraceMeter percent={pct} label="Traced" color="#F87171" textColor={SHELL.textOnDark} />
         </>
       )}
       {showConfetti && <ConfettiEffect />}
-    </GameContainerGrip>
+    </LetterGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  headerRow: { alignItems: 'center', marginBottom: 6 },
-  counter: { fontSize: 14, fontWeight: '800', color: '#374151' },
-  phaseRow: { flexDirection: 'row', gap: 8, marginTop: 6 },
-  phaseDot: { width: 26, height: 26, borderRadius: 13, backgroundColor: '#E5E7EB', justifyContent: 'center', alignItems: 'center' },
-  phaseDotActive: { backgroundColor: '#22C55E' },
+  counter: { fontSize: 13, fontWeight: '800', color: SHELL.labelColor },
+  phaseRow: { flexDirection: 'row', gap: 8, justifyContent: 'center', marginBottom: 10 },
+  phaseDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  phaseDotActive: { backgroundColor: '#34D399' },
   phaseText: { fontSize: 12, fontWeight: '800', color: '#9CA3AF' },
   phaseTextActive: { color: '#FFF' },
   quizWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 20 },
-  quizPrompt: { fontSize: 26, fontWeight: '800', color: '#1F2937' },
+  quizPrompt: { fontSize: 26, fontWeight: '800', color: '#FEF2F2' },
   optionsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16 },
-  optionBtn: { width: 68, height: 68, borderRadius: 18, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#BFDBFE' },
-  optionWrong: { backgroundColor: '#FEE2E2', borderColor: '#DC2626' },
-  optionText: { fontSize: 30, fontWeight: '900', color: '#1E40AF' },
-  optionTextWrong: { color: '#DC2626' },
+  optionBtn: {
+    width: 68,
+    height: 68,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'rgba(248,113,113,0.4)',
+  },
+  optionWrong: { backgroundColor: 'rgba(248,113,113,0.25)', borderColor: '#F87171' },
+  optionText: { fontSize: 30, fontWeight: '900', color: '#FCA5A5' },
+  optionTextWrong: { color: '#F87171' },
   pressed: { opacity: 0.85 },
-  phaseTitle: { fontSize: 16, fontWeight: '700', color: '#374151', marginBottom: 4 },
-  canvasWrap: { flex: 1, minHeight: 180, borderRadius: 24, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.5)', borderWidth: 2, borderColor: '#E5E7EB' },
-  captureWrap: { flex: 1, minHeight: 180 },
-  barRow: { marginTop: 6, gap: 3 },
-  label: { fontSize: 13, fontWeight: '700', color: '#374151' },
-  barBg: { height: 10, backgroundColor: '#E5E7EB', borderRadius: 5, overflow: 'hidden' },
-  barFill: { height: '100%', backgroundColor: '#22C55E', borderRadius: 5 },
+  phaseTitle: { fontSize: 16, fontWeight: '700', color: '#FCA5A5', marginBottom: 4 },
+  canvasWrap: {
+    flex: 1,
+    minHeight: 160,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 2,
+    borderColor: 'rgba(248,113,113,0.35)',
+  },
+  captureWrap: { flex: 1, minHeight: 160, backgroundColor: '#FFFFFF' },
 });

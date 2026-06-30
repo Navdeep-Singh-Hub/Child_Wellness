@@ -2,11 +2,11 @@
  * OT Level 5 · Session 10 — Integrated Visual Challenge engine.
  * Rotates mixed challenge types from Sessions 1–9 per round.
  */
-import { RoundCountdownOverlay } from '@/components/game/occupational/level5/session2/shared/Session2UI';
+import { GauntletCountdown } from '@/components/game/occupational/level5/session10/shared/GauntletUI';
 import { GauntletShell, useGauntletExit } from '@/components/game/occupational/level5/session10/GauntletShell';
 import { SESSION5_10_PACING as P } from '@/components/game/occupational/level5/session10/session10Pacing';
 import { GauntletFlash, GauntletOrb, GauntletSignal } from '@/components/game/occupational/level5/session10/VisualGauntletVisuals';
-import type { GauntletConfig, GauntletChallenge } from '@/components/game/occupational/level5/session10/visualGauntletConfig';
+import type { GauntletChallenge, GauntletConfig } from '@/components/game/occupational/level5/session10/gauntletTheme';
 import { CHALLENGE_HINTS, CHALLENGE_TTS, getGauntletTheme } from '@/components/game/occupational/level5/session10/visualGauntletThemes';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds } from '@/utils/soundPlayer';
@@ -388,6 +388,7 @@ const VisualGauntletGame: React.FC<{ config: GauntletConfig; onBack?: () => void
       score={score}
       hint={hint}
       showHint={!showInfo && !done && phase === 'playing'}
+      challengeLabel={challenge ? challenge.toUpperCase() : undefined}
       onStart={() => { setShowInfo(false); setPhase('countdown'); }}
       onExit={handleExit}
       onContinue={onComplete}
@@ -419,7 +420,7 @@ const VisualGauntletGame: React.FC<{ config: GauntletConfig; onBack?: () => void
         )}
       </Pressable>
       {phase === 'countdown' && (
-        <RoundCountdownOverlay
+        <GauntletCountdown
           accent={theme.accent}
           onDone={() => { setPhase('playing'); stopTTS(); }}
         />

@@ -1,6 +1,6 @@
 /**
  * OT Level 5 · Session 1 · Game 1 — Ball Chase
- * Dedicated stadium experience with bounce physics, countdown, and goal celebrations.
+ * Stadium experience: bounce physics, tap feedback, goal celebrations.
  */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { ResultToast } from '@/components/game/FX';
@@ -10,9 +10,12 @@ import {
   BallChaseInfoScreen,
   GoalCelebration,
   KickoffBanner,
+  NearMissToast,
   RoundCountdown,
   SoccerBallView,
   StadiumBackdrop,
+  TapRippleLayer,
+  type TapRippleData,
   type TrailPoint,
 } from '@/components/game/occupational/level5/session1/ballChase/BallChaseVisuals';
 import { BALL_CHASE_COPY as COPY } from '@/components/game/occupational/level5/session1/ballChase/ballChaseTheme';
@@ -30,7 +33,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const SUCCESS = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const HALF = BALL_RADIUS;
 const TAP_TOLERANCE = Platform.OS === 'android' ? P.tapTolerancePx + 14 : P.tapTolerancePx;
-const TRAIL_LEN = 5;
+const NEAR_MISS_EXTRA = 36;
+const TRAIL_LEN = 6;
 
 type Phase = 'countdown' | 'playing' | 'celebrating' | 'idle';
 
@@ -50,11 +54,15 @@ const BallChaseGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
 
   const [phase, setPhase] = useState<Phase>('idle');
   const [ballPos, setBallPos] = useState({ x: 180, y: 200 });
-  const [ballScale, setBallScale] = useState(1);
+  const [ballScaleX, setBallScaleX] = useState(1);
+  const [ballScaleY, setBallScaleY] = useState(1);
   const [ballRotation, setBallRotation] = useState(0);
+  const [ballSpeed, setBallSpeed] = useState(0);
   const [trail, setTrail] = useState<TrailPoint[]>([]);
   const [showGoalFx, setShowGoalFx] = useState(false);
   const [showMissToast, setShowMissToast] = useState(false);
+  const [showNearMiss, setShowNearMiss] = useState(false);
+  const [ripples, setRipples] = useState<TapRippleData[]>([]);
   const [statusHint, setStatusHint] = useState('');
 
   const doneRef = useRef(false);
@@ -62,6 +70,7 @@ const BallChaseGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
   const roundRef = useRef(1);
   const phaseRef = useRef<Phase>('idle');
   const roundCompleteRef = useRef(false);
+  const rippleIdRef = useRef(0);
   const moveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const roundTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playW = useRef(360);
@@ -82,6 +91,12 @@ const BallChaseGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
   useEffect(() => {
     phaseRef.current = phase;
   }, [phase]);
+
+  const addRipple = useCallback((x: number, y: number, kind: TapRippleData['kind']) => {
+    const id = ++rippleIdRef.current;
+    setRipples((prev) => [...prev.slice(-4), { id, x, y, kind }]);
+    setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), 650);
+  }, []);
 
   const clearTimers = useCallback(() => {
     if (moveTimerRef.current) {
@@ -139,8 +154,10 @@ const BallChaseGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
     const y = randomInRange(pad + 50, h - pad - 20);
     ballPosRef.current = { x, y };
     setBallPos({ x, y });
-    setBallScale(1);
+    setBallScaleX(1);
+    setBallScaleY(1);
     setBallRotation(0);
+    setBallSpeed(0);
     trailRef.current = [];
     setTrail([]);
     dirX.current = Math.random() > 0.5 ? 1 : -1;
@@ -164,20 +181,30 @@ const BallChaseGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
       dirX.current *= -1;
       nx = Math.max(pad, Math.min(w - pad, nx));
       bounced = true;
-      setBallScale(1.12);
-      setTimeout(() => setBallScale(1), 90);
+      setBallScaleX(1.18);
+      setBallScaleY(0.86);
+      setTimeout(() => {
+        setBallScaleX(1);
+        setBallScaleY(1);
+      }, 100);
     }
     if (ny <= pad + 40 || ny >= h - pad - 8) {
       dirY.current *= -1;
       ny = Math.max(pad + 40, Math.min(h - pad - 8, ny));
       bounced = true;
-      setBallScale(0.92);
-      setTimeout(() => setBallScale(1), 90);
+      setBallScaleX(0.9);
+      setBallScaleY(1.14);
+      setTimeout(() => {
+        setBallScaleX(1);
+        setBallScaleY(1);
+      }, 100);
     }
 
     ballPosRef.current = { x: nx, y: ny };
     setBallPos({ x: nx, y: ny });
-    setBallRotation((r) => r + speedX.current * dirX.current * 2.2);
+    const spd = Math.sqrt(speedX.current ** 2 + speedY.current ** 2);
+    setBallSpeed(spd);
+    setBallRotation((r) => r + speedX.current * dirX.current * 2.4);
     pushTrail(nx, ny);
 
     if (bounced) {
@@ -196,7 +223,7 @@ const BallChaseGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
     setShowGoalFx(false);
     layoutBall();
     setPhase('playing');
-    setStatusHint('Tap the ball to score!');
+    setStatusHint(roundRef.current <= 3 ? '👀 Watch the ball — tap to score!' : 'Tap the ball!');
     speakTTS(COPY.ttsCue, 0.78).catch(() => {});
     startMovement();
   }, [layoutBall, startMovement]);
@@ -219,7 +246,8 @@ const BallChaseGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
     clearTimers();
     setPhase('celebrating');
     setShowGoalFx(true);
-    setBallScale(1.35);
+    setBallScaleX(1.4);
+    setBallScaleY(1.4);
     playSuccess();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     speakTTS(COPY.ttsSuccess, 0.85).catch(() => {});
@@ -227,7 +255,7 @@ const BallChaseGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
       scoreRef.current = s + 1;
       return s + 1;
     });
-    roundTimerRef.current = setTimeout(() => advanceRound(), 780);
+    roundTimerRef.current = setTimeout(() => advanceRound(), 900);
   }, [advanceRound, clearTimers, playSuccess]);
 
   const startRoundSequence = useCallback(() => {
@@ -258,15 +286,28 @@ const BallChaseGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
     (locationX: number, locationY: number) => {
       if (phaseRef.current !== 'playing' || roundCompleteRef.current || doneRef.current) return;
       const { x, y } = ballPosRef.current;
-      if (distPx(locationX, locationY, x, y) <= TAP_TOLERANCE + HALF) {
+      const dist = distPx(locationX, locationY, x, y);
+      const hitRadius = TAP_TOLERANCE + HALF;
+
+      if (dist <= hitRadius) {
+        addRipple(locationX, locationY, 'hit');
         completeRound();
+      } else if (dist <= hitRadius + NEAR_MISS_EXTRA) {
+        addRipple(locationX, locationY, 'near');
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        setShowNearMiss(true);
+        setStatusHint(COPY.nearMissHint);
+        speakTTS(COPY.ttsNearMiss, 0.8).catch(() => {});
+        setTimeout(() => setShowNearMiss(false), 800);
       } else {
+        addRipple(locationX, locationY, 'miss');
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
         setShowMissToast(true);
+        setStatusHint(COPY.missHint);
         setTimeout(() => setShowMissToast(false), 700);
       }
     },
-    [completeRound],
+    [addRipple, completeRound],
   );
 
   const handleExit = useCallback(() => {
@@ -279,10 +320,7 @@ const BallChaseGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
   if (showInfo) {
     return (
       <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-        <BallChaseInfoScreen
-          onStart={() => setShowInfo(false)}
-          onBack={handleExit}
-        />
+        <BallChaseInfoScreen onStart={() => setShowInfo(false)} onBack={handleExit} />
       </SafeAreaView>
     );
   }
@@ -330,6 +368,7 @@ const BallChaseGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
         onPress={(e) => handleTap(e.nativeEvent.locationX, e.nativeEvent.locationY)}
       >
         <StadiumBackdrop />
+        <TapRippleLayer ripples={ripples} />
 
         {phase === 'idle' && round <= P.rounds && !done && (
           <KickoffBanner text={round === 1 ? 'Get ready…' : `Round ${round}`} />
@@ -339,15 +378,18 @@ const BallChaseGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
           <SoccerBallView
             x={ballPos.x}
             y={ballPos.y}
-            scale={ballScale}
+            scaleX={ballScaleX}
+            scaleY={ballScaleY}
             rotation={ballRotation}
             trail={trail}
             showAimRing={phase === 'playing' && round <= 3}
+            speed={ballSpeed}
           />
         )}
 
         <GoalCelebration visible={showGoalFx} x={ballPos.x} y={ballPos.y} />
-        <ResultToast text="Keep your eyes on the ball!" type="bad" show={showMissToast} />
+        <NearMissToast show={showNearMiss} />
+        <ResultToast text={COPY.missHint} type="bad" show={showMissToast} />
 
         {phase === 'countdown' && <RoundCountdown key={`cd-${round}`} onDone={beginPlaying} />}
       </Pressable>
@@ -356,18 +398,18 @@ const BallChaseGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> 
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#0369A1' },
+  root: { flex: 1, backgroundColor: '#0C4A6E' },
   backBtn: {
     position: 'absolute',
     top: 52,
     left: 14,
     zIndex: 50,
-    backgroundColor: 'rgba(15,23,42,0.55)',
+    backgroundColor: 'rgba(15,23,42,0.6)',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(255,255,255,0.25)',
   },
   backText: { color: '#F8FAFC', fontWeight: '800', fontSize: 14 },
   pitch: {
@@ -377,8 +419,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: 24,
     overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.35)',
+    borderWidth: 2.5,
+    borderColor: 'rgba(255,255,255,0.4)',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
   },
 });
 

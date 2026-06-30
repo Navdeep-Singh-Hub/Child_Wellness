@@ -1,115 +1,452 @@
 /**
- * AI Task: Write any capital letter (A–Z) on paper and upload photo.
+ * Game 5: Capital Archive — write any capital letter on paper and upload.
  * POST /api/verify-capital-letter
  */
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View, Text, Pressable, Image, StyleSheet, Alert, Platform, ActivityIndicator,
+  View,
+  Text,
+  Pressable,
+  Image,
+  StyleSheet,
+  Alert,
+  Platform,
+  ActivityIndicator,
+  AccessibilityInfo,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { API_BASE_URL, authHeaders } from '@/utils/api';
-import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
+import { speak, stopTTS } from '@/utils/tts';
+import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
+import { LetterMascot } from '@/components/level1-straight-letters-session/letters-shared/LetterMascot';
 
-const INSTRUCTION = 'Write any capital letter (A–Z) on paper and upload a photo.';
+type UploadPhase = 1 | 2 | 3;
+
+const SHELL = {
+  bg: '#4A044E',
+  labelColor: '#F9A8D4',
+  titleColor: '#FAF5FF',
+  textOnDark: '#FAF5FF',
+  backBg: 'rgba(255,255,255,0.1)',
+  backBorder: 'rgba(244,114,182,0.35)',
+  dotIdle: 'rgba(255,255,255,0.15)',
+  dotActive: '#EC4899',
+  dotDone: '#22D3EE',
+};
 
 export function CapitalLetterUploadTask({
-  currentStep, totalSteps, onBack, onComplete,
-}: { currentStep: number; totalSteps: number; onBack: () => void; onComplete: (success: boolean) => void }) {
+  currentStep,
+  totalSteps,
+  onBack,
+  onComplete,
+}: {
+  currentStep: number;
+  totalSteps: number;
+  onBack: () => void;
+  onComplete: (success: boolean) => void;
+}) {
   const [uploading, setUploading] = useState(false);
+  const [phase, setPhase] = useState<UploadPhase>(1);
   const [result, setResult] = useState<{ success: boolean; message: string; feedback: string } | null>(null);
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [showCelebrate, setShowCelebrate] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const spokeIntro = useRef(false);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => setReduceMotion(!!v)).catch(() => {});
+    if (!spokeIntro.current) {
+      spokeIntro.current = true;
+      speak('Write any capital letter from A to Z on paper, then photograph it for the archive!', 0.72);
+    }
+    return () => stopTTS();
+  }, []);
+
+  const mascotHint =
+    phase === 1
+      ? 'Write any capital letter A through Z on paper!'
+      : phase === 2
+        ? 'Ready? Photograph your letter for the archive.'
+        : result?.success
+          ? 'Sealed in the Capital Archive!'
+          : result
+            ? result.feedback
+            : 'The archivist is reviewing…';
+
+  const upload = useCallback(
+    async (uri: string) => {
+      setUploading(true);
+      setPhase(3);
+      try {
+        const fd = new FormData();
+        if (Platform.OS === 'web' && (uri.startsWith('blob:') || uri.startsWith('data:'))) {
+          const blob = await (await fetch(uri)).blob();
+          fd.append('file', blob, 'letter.jpg');
+        } else {
+          fd.append('file', { uri, name: 'letter.jpg', type: 'image/jpeg' } as any);
+        }
+        const h = await authHeaders({ multipart: true });
+        delete (h as Record<string, string>)['Content-Type'];
+        const res = await fetch(`${API_BASE_URL}/api/verify-capital-letter`, { method: 'POST', headers: h, body: fd });
+        if (!res.ok) {
+          const e = await res.json().catch(() => ({}));
+          throw new Error(e.error || `Upload failed: ${res.status}`);
+        }
+        const data = await res.json();
+        const ok = data.success === true;
+        setResult({
+          success: ok,
+          message: ok ? 'Archived!' : 'Try Again',
+          feedback: data.feedback || (ok ? 'Great capital letter!' : 'Try again with a clearer letter.'),
+        });
+        if (ok) {
+          setShowCelebrate(true);
+          speak('Wonderful! Your letter is preserved in the Capital Archive!', 0.72);
+          try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
+          setTimeout(() => {
+            setShowCelebrate(false);
+            onComplete(true);
+          }, reduceMotion ? 800 : 2000);
+        } else {
+          speak(data.feedback || 'Try writing a clearer capital letter.', 0.72);
+          try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); } catch (_) {}
+        }
+      } catch (e) {
+        setResult({
+          success: false,
+          message: 'Try Again',
+          feedback: e instanceof Error ? e.message : 'Something went wrong.',
+        });
+        speak('Something went wrong. Please try again.', 0.72);
+      } finally {
+        setUploading(false);
+      }
+    },
+    [onComplete, reduceMotion],
+  );
 
   const pickImage = async () => {
-    const permission = Platform.OS === 'web'
-      ? { status: 'granted' as const }
-      : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (permission.status !== 'granted') { Alert.alert('Permission needed', 'Allow access to photos.'); return; }
-    const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.8 });
+    const permission =
+      Platform.OS === 'web'
+        ? { status: 'granted' as const }
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow access to photos.');
+      return;
+    }
+    setPhase(2);
+    const r = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
     if (r.canceled) return;
-    setImageUri(r.assets[0].uri); setResult(null);
+    setImageUri(r.assets[0].uri);
+    setResult(null);
     await upload(r.assets[0].uri);
   };
 
   const takePhoto = async () => {
-    const permission = Platform.OS === 'web'
-      ? { status: 'granted' as const }
-      : await ImagePicker.requestCameraPermissionsAsync();
-    if (permission.status !== 'granted') { Alert.alert('Permission needed', 'Allow camera access.'); return; }
+    const permission =
+      Platform.OS === 'web'
+        ? { status: 'granted' as const }
+        : await ImagePicker.requestCameraPermissionsAsync();
+    if (permission.status !== 'granted') {
+      Alert.alert('Permission needed', 'Allow camera access.');
+      return;
+    }
+    setPhase(2);
     const r = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [4, 3], quality: 0.8 });
     if (r.canceled) return;
-    setImageUri(r.assets[0].uri); setResult(null);
+    setImageUri(r.assets[0].uri);
+    setResult(null);
     await upload(r.assets[0].uri);
   };
 
-  const upload = async (uri: string) => {
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      if (Platform.OS === 'web' && (uri.startsWith('blob:') || uri.startsWith('data:'))) {
-        const blob = await (await fetch(uri)).blob();
-        fd.append('file', blob, 'letter.jpg');
-      } else {
-        fd.append('file', { uri, name: 'letter.jpg', type: 'image/jpeg' } as any);
-      }
-      const h = await authHeaders({ multipart: true });
-      delete (h as Record<string, string>)['Content-Type'];
-      const res = await fetch(`${API_BASE_URL}/api/verify-capital-letter`, { method: 'POST', headers: h, body: fd });
-      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `Upload failed: ${res.status}`); }
-      const data = await res.json();
-      const ok = data.success === true;
-      setResult({ success: ok, message: data.message || (ok ? 'SUCCESS' : 'TRY AGAIN'), feedback: data.feedback || (ok ? 'Great letter!' : 'Try again.') });
-      if (ok) onComplete(true);
-    } catch (e) {
-      setResult({ success: false, message: 'TRY AGAIN', feedback: e instanceof Error ? e.message : 'Something went wrong.' });
-    } finally { setUploading(false); }
+  const handleReady = () => {
+    setPhase(2);
+    speak('Now photograph your capital letter!', 0.72);
+    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (_) {}
   };
 
+  const handleRetry = () => {
+    setResult(null);
+    setImageUri(null);
+    setPhase(1);
+    speak('Let us try again! Write a letter on paper first.', 0.72);
+  };
+
+  const stepDots = Array.from({ length: totalSteps }, (_, i) => i + 1);
+  const phases = [
+    { n: 1, label: 'Write letter', icon: '✏️' },
+    { n: 2, label: 'Photograph', icon: '📷' },
+    { n: 3, label: 'Archive', icon: '🏺' },
+  ];
+
+  if (showCelebrate) {
+    return (
+      <View style={styles.root}>
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <View style={{ flex: 1, backgroundColor: SHELL.bg }} />
+        </View>
+        <View style={styles.celebrateOverlay}>
+          {!reduceMotion ? <ConfettiEffect /> : null}
+          <View style={styles.celebrateCard}>
+            <Text style={styles.celebrateEmoji}>🏺</Text>
+            <Text style={styles.celebrateTitle}>In the Archive!</Text>
+            <Text style={styles.celebrateSub}>Your capital letter is preserved forever</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <GameContainerGrip title="Letter Task" currentStep={currentStep} totalSteps={totalSteps} mascot="📷" mascotHint={INSTRUCTION} onBack={onBack}>
-      <View style={styles.content}>
-        <Text style={styles.instruction}>{INSTRUCTION}</Text>
-        {imageUri ? <View style={styles.previewWrap}><Image source={{ uri: imageUri }} style={styles.preview} resizeMode="contain" /></View> : null}
-        {result && (
-          <View style={[styles.resultBox, result.success ? styles.resultOk : styles.resultFail]}>
-            <Text style={styles.resultMsg}>{result.message}</Text>
-            <Text style={styles.resultFb}>{result.feedback}</Text>
+    <View style={styles.root}>
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <View style={{ flex: 1, backgroundColor: SHELL.bg }} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(236,72,153,0.1)' }]} />
+      </View>
+
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <View style={styles.header}>
+          <Pressable
+            onPress={onBack}
+            style={({ pressed }) => [
+              styles.backBtn,
+              { backgroundColor: SHELL.backBg, borderColor: SHELL.backBorder },
+              pressed && styles.pressed,
+            ]}
+          >
+            <Ionicons name="chevron-back" size={22} color={SHELL.textOnDark} />
+          </Pressable>
+          <View style={styles.headerCenter}>
+            <Text style={styles.gameLabel}>CAPITAL ARCHIVE</Text>
+            <Text style={styles.gameTitle}>Real Paper Entry</Text>
+          </View>
+        </View>
+
+        <View style={styles.dotsRow}>
+          {stepDots.map((n) => (
+            <View
+              key={n}
+              style={[
+                styles.dot,
+                { backgroundColor: SHELL.dotIdle },
+                n === currentStep && [styles.dotActive, { backgroundColor: SHELL.dotActive }],
+                n < currentStep && { backgroundColor: SHELL.dotDone },
+              ]}
+            />
+          ))}
+        </View>
+
+        <LetterMascot
+          emoji="🏺"
+          name="Archivist"
+          hint={mascotHint}
+          accent="#EC4899"
+          bubbleBg="rgba(255,255,255,0.08)"
+          bubbleBorder="rgba(244,114,182,0.35)"
+          nameColor="#F472B6"
+          hintColor="#FAF5FF"
+        />
+
+        <View style={styles.phaseRow}>
+          {phases.map((p) => (
+            <View key={p.n} style={styles.phaseStep}>
+              <View style={[styles.phaseDot, phase >= p.n && styles.phaseDotActive]}>
+                <Text style={styles.phaseIcon}>{p.icon}</Text>
+              </View>
+              <Text style={[styles.phaseLabel, phase >= p.n && styles.phaseLabelActive]}>{p.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {phase === 1 ? (
+          <View style={styles.paperCard}>
+            <View style={styles.paperFrame}>
+              <Text style={styles.paperEmoji}>🔤</Text>
+              <Text style={styles.paperTitle}>Capital Letter A–Z</Text>
+              <Text style={styles.paperDesc}>
+                Write any capital letter on paper — slant, curve, or straight — then seal it in the archive!
+              </Text>
+            </View>
+            <Pressable onPress={handleReady} style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}>
+              <Ionicons name="checkmark-circle-outline" size={22} color={SHELL.bg} />
+              <Text style={styles.primaryBtnText}>I wrote my letter!</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.uploadArea}>
+            {imageUri ? (
+              <View style={styles.frameOuter}>
+                <View style={styles.frameInner}>
+                  <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="contain" />
+                </View>
+                <Text style={styles.frameCaption}>Archive Entry</Text>
+              </View>
+            ) : (
+              <View style={styles.placeholderFrame}>
+                <Text style={styles.placeholderIcon}>📷</Text>
+                <Text style={styles.placeholderText}>Photograph your letter</Text>
+              </View>
+            )}
+            {result && (
+              <View style={[styles.resultBox, result.success ? styles.resultOk : styles.resultFail]}>
+                <Text style={styles.resultMsg}>{result.message}</Text>
+                <Text style={styles.resultFb}>{result.feedback}</Text>
+              </View>
+            )}
+            {uploading ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color="#F472B6" size="large" />
+                <Text style={styles.loadingText}>Archivist is reviewing…</Text>
+              </View>
+            ) : (
+              <View style={styles.buttons}>
+                <Pressable onPress={takePhoto} style={({ pressed }) => [styles.primaryBtn, pressed && styles.pressed]}>
+                  <Ionicons name="camera" size={22} color={SHELL.bg} />
+                  <Text style={styles.primaryBtnText}>Take Photo</Text>
+                </Pressable>
+                <Pressable onPress={pickImage} style={({ pressed }) => [styles.secondaryBtn, pressed && styles.pressed]}>
+                  <Ionicons name="images-outline" size={20} color="#FAF5FF" />
+                  <Text style={styles.secondaryBtnText}>Choose from Gallery</Text>
+                </Pressable>
+              </View>
+            )}
+            {result && !result.success && !uploading ? (
+              <Pressable onPress={handleRetry} style={styles.retryBtn}>
+                <Text style={styles.retryText}>Start over</Text>
+              </Pressable>
+            ) : null}
           </View>
         )}
-        <View style={styles.buttons}>
-          <Pressable onPress={takePhoto} disabled={uploading} style={({ pressed }) => [styles.btn, styles.btnPri, pressed && styles.pressed]}>
-            {uploading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.btnText}>Take Photo</Text>}
-          </Pressable>
-          <Pressable onPress={pickImage} disabled={uploading} style={({ pressed }) => [styles.btn, styles.btnSec, pressed && styles.pressed]}>
-            <Text style={[styles.btnText, styles.btnTextSec]}>Choose from Gallery</Text>
-          </Pressable>
-        </View>
-        {result && !result.success && (
-          <Pressable onPress={() => { setResult(null); setImageUri(null); }} style={styles.tryAgain}>
-            <Text style={styles.tryAgainText}>Try again</Text>
-          </Pressable>
-        )}
-      </View>
-    </GameContainerGrip>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { flex: 1 },
-  instruction: { fontSize: 18, fontWeight: '700', color: '#5B21B6', textAlign: 'center', marginBottom: 20, lineHeight: 26 },
-  previewWrap: { marginBottom: 16, borderRadius: 16, overflow: 'hidden', backgroundColor: '#F3F4F6', minHeight: 200 },
-  preview: { width: '100%', height: 200 },
-  resultBox: { padding: 16, borderRadius: 16, marginBottom: 16 },
+  root: { flex: 1 },
+  safe: { flex: 1, paddingHorizontal: 18 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  backBtn: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  headerCenter: { flex: 1 },
+  gameLabel: { fontSize: 10, fontWeight: '800', color: '#F9A8D4', letterSpacing: 1.2 },
+  gameTitle: { fontSize: 22, fontWeight: '900', color: '#FAF5FF' },
+  dotsRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginBottom: 10 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  dotActive: { width: 22 },
+  phaseRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, gap: 6 },
+  phaseStep: { flex: 1, alignItems: 'center' },
+  phaseDot: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  phaseDotActive: { backgroundColor: 'rgba(236,72,153,0.25)', borderColor: '#EC4899' },
+  phaseIcon: { fontSize: 18 },
+  phaseLabel: { fontSize: 10, fontWeight: '600', color: '#E9D5FF', textAlign: 'center' },
+  phaseLabelActive: { color: '#FAF5FF', fontWeight: '800' },
+  paperCard: { flex: 1, gap: 16 },
+  paperFrame: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: 'rgba(244,114,182,0.5)',
+    marginBottom: 8,
+  },
+  paperEmoji: { fontSize: 56, marginBottom: 16 },
+  paperTitle: { fontSize: 22, fontWeight: '900', color: '#FAF5FF', marginBottom: 10 },
+  paperDesc: { fontSize: 16, fontWeight: '500', color: '#E9D5FF', textAlign: 'center', lineHeight: 24, maxWidth: 300 },
+  uploadArea: { flex: 1 },
+  frameOuter: { alignItems: 'center', marginBottom: 16 },
+  frameInner: {
+    width: '100%',
+    minHeight: 200,
+    borderWidth: 4,
+    borderColor: '#EC4899',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    padding: 8,
+  },
+  preview: { width: '100%', height: 200, backgroundColor: '#FFF' },
+  frameCaption: { marginTop: 8, fontSize: 12, fontWeight: '700', color: '#F9A8D4', letterSpacing: 1, textTransform: 'uppercase' },
+  placeholderFrame: {
+    minHeight: 180,
+    borderWidth: 3,
+    borderColor: '#EC4899',
+    borderStyle: 'dashed',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  placeholderIcon: { fontSize: 40, marginBottom: 8 },
+  placeholderText: { fontSize: 15, fontWeight: '600', color: '#E9D5FF' },
+  resultBox: { padding: 14, borderRadius: 14, marginBottom: 12 },
   resultOk: { backgroundColor: '#D1FAE5', borderWidth: 2, borderColor: '#059669' },
   resultFail: { backgroundColor: '#FEE2E2', borderWidth: 2, borderColor: '#DC2626' },
-  resultMsg: { fontSize: 20, fontWeight: '800', textAlign: 'center', marginBottom: 4 },
-  resultFb: { fontSize: 16, textAlign: 'center' },
-  buttons: { gap: 12 },
-  btn: { paddingVertical: 18, borderRadius: 16, alignItems: 'center' },
-  btnPri: { backgroundColor: '#5B21B6' },
-  btnSec: { backgroundColor: '#EDE9FE' },
-  btnText: { fontSize: 18, fontWeight: '800', color: '#FFF' },
-  btnTextSec: { color: '#5B21B6' },
-  pressed: { opacity: 0.9 },
-  tryAgain: { marginTop: 12, alignSelf: 'center' },
-  tryAgainText: { fontSize: 16, fontWeight: '700', color: '#5B21B6' },
+  resultMsg: { fontSize: 18, fontWeight: '900', textAlign: 'center', color: '#1F2937', marginBottom: 4 },
+  resultFb: { fontSize: 14, textAlign: 'center', color: '#6B7280' },
+  loadingRow: { alignItems: 'center', gap: 12, paddingVertical: 20 },
+  loadingText: { fontSize: 15, fontWeight: '600', color: '#F9A8D4' },
+  buttons: { gap: 10 },
+  primaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: '#F472B6',
+  },
+  primaryBtnText: { fontSize: 17, fontWeight: '800', color: '#4A044E' },
+  secondaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 2,
+    borderColor: 'rgba(244,114,182,0.5)',
+  },
+  secondaryBtnText: { fontSize: 16, fontWeight: '700', color: '#FAF5FF' },
+  retryBtn: { alignSelf: 'center', marginTop: 12, padding: 8 },
+  retryText: { fontSize: 15, fontWeight: '700', color: '#F9A8D4' },
+  pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
+  celebrateOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(74,4,78,0.85)',
+  },
+  celebrateCard: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 28,
+    paddingVertical: 32,
+    paddingHorizontal: 40,
+    borderWidth: 4,
+    borderColor: '#EC4899',
+  },
+  celebrateEmoji: { fontSize: 56, marginBottom: 10 },
+  celebrateTitle: { fontSize: 26, fontWeight: '900', color: '#4A044E', marginBottom: 6 },
+  celebrateSub: { fontSize: 15, fontWeight: '600', color: '#86198F' },
 });

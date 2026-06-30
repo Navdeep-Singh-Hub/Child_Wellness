@@ -1,108 +1,279 @@
 /**
  * Game 3 — Word problem. 8 candies, eat 3. How many left? Options 4, 5, 6. Correct: 5. Session 9: Story Problem Solver.
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { GraduateGameShell } from '@/components/graduate-session/shared/GraduateGameShell';
+import { GR } from '@/components/graduate-session/shared/graduateTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 const OPTIONS = ['4', '5', '6'];
 const CORRECT = '5';
 const VOICE = 'Read the story and choose the correct number.';
 
-export function WordProblemCandiesLeft({ onComplete }: { onComplete: () => void }) {
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [shakeAnim] = useState(() => new Animated.Value(0));
+const PALETTE = { accent: '#EA580C', glow: '#FDBA74', secondary: '#FB923C' } as const;
+
+function NumberChip({
+  label,
+  selected,
+  feedback,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  feedback: 'idle' | 'wrong' | 'correct';
+  onPress: () => void;
+}) {
+  const shake = useSharedValue(0);
+  const scale = useSharedValue(1);
 
   useEffect(() => {
-    speak(VOICE, 0.75);
+    if (feedback === 'wrong' && selected) {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    } else if (feedback === 'correct' && selected) {
+      scale.value = withSpring(1.08, { damping: 8 });
+    } else {
+      scale.value = withTiming(1, { duration: 150 });
+    }
+  }, [feedback, selected, shake, scale]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }, { scale: scale.value }],
+  }));
+
+  const border =
+    feedback === 'correct' && selected
+      ? GR.good
+      : feedback === 'wrong' && selected
+        ? GR.warn
+        : selected
+          ? PALETTE.glow
+          : GR.glassBorder;
+
+  return (
+    <Animated.View style={anim}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.numberChip, { borderColor: border }, pressed && styles.pressed]}
+        accessibilityLabel={label}
+      >
+        <Text style={styles.numberText}>{label}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+export function WordProblemCandiesLeft({ onComplete }: { onComplete: () => void }) {
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<'idle' | 'wrong' | 'correct'>('idle');
+  const [lock, setLock] = useState(false);
+
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
   }, []);
 
-  const triggerShake = useCallback(() => {
-    shakeAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-  }, [shakeAnim]);
+  useEffect(() => {
+    playVoice();
+  }, [playVoice]);
 
   const handleChoice = useCallback(
     (num: string) => {
-      if (num !== CORRECT) {
-        speak('Try again. Eight minus three is five.');
-        triggerShake();
-        return;
+      if (lock || feedback === 'correct') return;
+      setSelected(num);
+
+      if (num === CORRECT) {
+        setFeedback('correct');
+        setLock(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speak('Correct! Five candies left!', 0.7);
+        setShowSuccess(true);
+        setTimeout(() => onComplete(), 2200);
+      } else {
+        setFeedback('wrong');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Try again. Eight minus three is five.', 0.65);
+        setTimeout(() => {
+          setFeedback('idle');
+          setSelected(null);
+        }, 900);
       }
-      speak('Correct! Five candies left!');
-      setShowSuccess(true);
-      setTimeout(() => onComplete(), 2200);
     },
-    [onComplete, triggerShake]
+    [lock, feedback, onComplete],
   );
 
-  if (showSuccess) return <SuccessCelebration variant="indigo" title="Great Job!" subtitle="You solved the problem!" />;
-
-  const shakeX = shakeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 10] });
+  if (showSuccess) {
+    return (
+      <SuccessCelebration
+        variant="indigo"
+        title="Great Job!"
+        subtitle="You solved the problem!"
+        badgeEmoji="🍬"
+      />
+    );
+  }
 
   return (
-    <GameLayout
+    <GraduateGameShell
+      studio="STORY PROBLEM · GAME 3"
       title="Solve the story problem"
       instruction="Read the story and choose the correct number."
-      icon="📖"
-      backgroundVariant="indigo"
+      mascot="🍬"
+      coachLine="Eight candies in your jar — eat three and count what's left!"
+      onReplayVoice={playVoice}
     >
-      <View style={styles.content}>
-        <View style={styles.storyBox}>
-          <Text style={styles.storyLine}>
-            You have <Text style={styles.bold}>8 candies</Text>.
-          </Text>
-          <Text style={styles.storyLine}>
-            You eat <Text style={styles.bold}>3 candies</Text>.
-          </Text>
-          <Text style={styles.question}>How many candies are left?</Text>
+      <View style={styles.storyFrame}>
+        <LinearGradient
+          colors={[`${PALETTE.accent}33`, 'transparent', `${PALETTE.secondary}22`]}
+          style={styles.storyGlow}
+        />
+        <Text style={styles.frameLabel}>STORY CARD</Text>
+
+        <Text style={styles.storyLine}>
+          You have <Text style={styles.highlight}>8 candies</Text>.
+        </Text>
+        <Text style={styles.storyLine}>
+          You eat <Text style={styles.highlight}>3 candies</Text>.
+        </Text>
+
+        <View style={styles.visualRow}>
+          <View style={styles.candyGroup}>
+            {Array.from({ length: 8 }, (_, i) => (
+              <Text key={i} style={styles.candyEmoji}>
+                🍬
+              </Text>
+            ))}
+          </View>
+          <Text style={styles.minusSign}>−</Text>
+          <View style={styles.eatGroup}>
+            <Text style={styles.candyEmoji}>🍬</Text>
+            <Text style={styles.candyEmoji}>🍬</Text>
+            <Text style={styles.candyEmoji}>🍬</Text>
+            <Text style={styles.eatEmoji}>😋</Text>
+          </View>
+          <Text style={styles.equalsSign}>=</Text>
+          <Text style={styles.questionMark}>?</Text>
         </View>
+
+        <Text style={styles.question}>How many candies are left?</Text>
+
         <View style={styles.optionsRow}>
           {OPTIONS.map((opt) => (
-            <Animated.View key={opt} style={{ transform: [{ translateX: opt === CORRECT ? 0 : shakeX }] }}>
-              <Pressable
-                onPress={() => handleChoice(opt)}
-                style={({ pressed }) => [styles.optionCard, pressed && styles.pressed]}
-                accessibilityLabel={opt}
-              >
-                <Text style={styles.optionText}>{opt}</Text>
-              </Pressable>
-            </Animated.View>
+            <NumberChip
+              key={opt}
+              label={opt}
+              selected={selected === opt}
+              feedback={feedback}
+              onPress={() => handleChoice(opt)}
+            />
           ))}
         </View>
       </View>
-    </GameLayout>
+    </GraduateGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 8, alignItems: 'center' },
-  storyBox: {
-    backgroundColor: '#EDE9FE',
-    borderRadius: 16,
-    padding: 24,
-    borderWidth: 3,
-    borderColor: '#8B5CF6',
-    marginBottom: 24,
-    minWidth: 260,
+  storyFrame: {
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: `${PALETTE.accent}55`,
+    backgroundColor: 'rgba(15,10,30,0.5)',
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    overflow: 'hidden',
+    alignItems: 'center',
   },
-  storyLine: { fontSize: 18, color: '#374151', marginBottom: 8 },
-  bold: { fontWeight: '800', color: '#5B21B6' },
-  question: { fontSize: 20, fontWeight: '800', color: '#374151', marginTop: 12 },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16 },
-  optionCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 32,
-    borderWidth: 4,
-    borderColor: '#E5E7EB',
+  storyGlow: { ...StyleSheet.absoluteFillObject },
+  frameLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: PALETTE.glow,
+    marginBottom: 12,
+    textAlign: 'center',
   },
-  pressed: { opacity: 0.85 },
-  optionText: { fontSize: 24, fontWeight: '800', color: '#1f2937' },
+  storyLine: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: GR.textLight,
+    textAlign: 'center',
+    marginBottom: 6,
+    lineHeight: 24,
+  },
+  highlight: { fontWeight: '900', color: PALETTE.glow },
+  visualRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginVertical: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: `${PALETTE.accent}44`,
+    backgroundColor: 'rgba(11,10,26,0.55)',
+    width: '100%',
+  },
+  candyGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 2,
+    justifyContent: 'center',
+    maxWidth: 100,
+  },
+  eatGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 2,
+    maxWidth: 72,
+  },
+  candyEmoji: { fontSize: 20 },
+  eatEmoji: { fontSize: 18 },
+  minusSign: { fontSize: 22, fontWeight: '900', color: GR.warn },
+  equalsSign: { fontSize: 22, fontWeight: '900', color: PALETTE.glow },
+  questionMark: { fontSize: 28, fontWeight: '900', color: GR.amberGlow },
+  question: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: GR.textLight,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  optionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+    width: '100%',
+  },
+  numberChip: {
+    borderRadius: 16,
+    borderWidth: 2,
+    backgroundColor: 'rgba(11,10,26,0.7)',
+    paddingVertical: 18,
+    paddingHorizontal: 28,
+    minWidth: 72,
+    alignItems: 'center',
+  },
+  numberText: { fontSize: 26, fontWeight: '900', color: GR.textLight },
+  pressed: { opacity: 0.88 },
 });

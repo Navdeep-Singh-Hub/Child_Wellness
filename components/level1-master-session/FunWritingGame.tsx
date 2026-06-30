@@ -1,15 +1,15 @@
 /**
- * Game 4: Fun Writing Game — write letters in creative ways.
- * Each round has a fun prompt: rainbow, giant, tiny, backwards, wavy style.
+ * Game 4: Artistry Studio — write letters in creative fun styles.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, AccessibilityInfo } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import * as Speech from 'expo-speech';
+import { speak, stopTTS } from '@/utils/tts';
 import { DrawingCanvas, DrawingCanvasRef, Stroke } from '@/components/games/Level1/DrawingCanvas';
-import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
-import { ALPHABET } from '@/components/level1-full-alphabet-session/alphabetData';
+import { LetterGameShell } from '@/components/level1-straight-letters-session/letters-shared/LetterGameShell';
+import { LetterMascot } from '@/components/level1-straight-letters-session/letters-shared/LetterMascot';
+import { TraceMeter } from '@/components/level1-full-alphabet-session/alphabet-shared/TraceMeter';
 import { isLetterValidationPass, validateLetterImage } from '@/utils/recognizeLetter';
 import { captureDrawingForAi } from '@/components/level1-copy-letters-session/captureDrawingBase64';
 
@@ -34,12 +34,33 @@ const FUN_ROUNDS: FunRound[] = [
   { letter: 'Z', style: 'Zigzag', emoji: '⚡', hint: 'Make it sharp and bold!', useColors: false },
 ];
 
+const SHELL = {
+  bg: '#500724',
+  labelColor: '#F9A8D4',
+  titleColor: '#FDF2F8',
+  textOnDark: '#FDF2F8',
+  backBg: 'rgba(255,255,255,0.08)',
+  backBorder: 'rgba(244,114,182,0.35)',
+  dotIdle: 'rgba(255,255,255,0.15)',
+  dotActive: '#EC4899',
+  dotDone: '#34D399',
+};
+
 export function FunWritingGame({
-  currentStep, totalSteps, onBack, onComplete,
-}: { currentStep: number; totalSteps: number; onBack: () => void; onComplete: () => void }) {
+  currentStep,
+  totalSteps,
+  onBack,
+  onComplete,
+}: {
+  currentStep: number;
+  totalSteps: number;
+  onBack: () => void;
+  onComplete: () => void;
+}) {
   const [idx, setIdx] = useState(0);
   const [pct, setPct] = useState(0);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
   const canvasRef = useRef<DrawingCanvasRef>(null);
   const shotRef = useRef<View>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,6 +70,11 @@ export function FunWritingGame({
   const round = FUN_ROUNDS[idx];
 
   useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => setReduceMotion(!!v)).catch(() => {});
+    return () => stopTTS();
+  }, []);
+
+  useEffect(() => {
     setPct(0);
     canvasRef.current?.clear();
     latestStrokesRef.current = [];
@@ -56,7 +82,7 @@ export function FunWritingGame({
       clearTimeout(debounceRef.current);
       debounceRef.current = null;
     }
-    try { Speech.stop(); Speech.speak(`${round.style} ${round.letter}! ${round.hint}`, { rate: 0.85, pitch: 1.1 }); } catch (_) {}
+    speak(`${round.style} ${round.letter}! ${round.hint}`, 0.72);
   }, [idx, round]);
 
   const runRecognition = useCallback(async () => {
@@ -75,24 +101,35 @@ export function FunWritingGame({
     try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (_) {}
     if (p) {
       try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (_) {}
+      speak(`Creative ${round.letter}!`, 0.72);
       if (idx < FUN_ROUNDS.length - 1) {
         setShowConfetti(true);
-        setTimeout(() => { setShowConfetti(false); setIdx((i) => i + 1); }, 1000);
+        setTimeout(() => {
+          setShowConfetti(false);
+          setIdx((i) => i + 1);
+        }, reduceMotion ? 400 : 1000);
       } else {
         setShowConfetti(true);
-        setTimeout(() => { setShowConfetti(false); onComplete(); }, 1500);
+        speak('Artistry studio complete!', 0.72);
+        setTimeout(() => {
+          setShowConfetti(false);
+          onComplete();
+        }, reduceMotion ? 500 : 1500);
       }
     }
-  }, [round.letter, idx, onComplete]);
+  }, [round.letter, idx, onComplete, reduceMotion]);
 
-  const handleStrokeEnd = useCallback((strokes: Stroke[]) => {
-    latestStrokesRef.current = strokes;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      debounceRef.current = null;
-      runRecognition();
-    }, RECOGNITION_DEBOUNCE_MS);
-  }, [runRecognition]);
+  const handleStrokeEnd = useCallback(
+    (strokes: Stroke[]) => {
+      latestStrokesRef.current = strokes;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        runRecognition();
+      }, RECOGNITION_DEBOUNCE_MS);
+    },
+    [runRecognition],
+  );
 
   const handleClear = useCallback(() => {
     canvasRef.current?.clear();
@@ -105,13 +142,26 @@ export function FunWritingGame({
   }, []);
 
   return (
-    <GameContainerGrip
-      title="Fun Writing"
+    <LetterGameShell
+      theme={SHELL}
+      gameLabel="ARTISTRY STUDIO"
+      gameTitle={`${round.style} ${round.letter}`}
       currentStep={currentStep}
       totalSteps={totalSteps}
-      mascot={round.emoji}
-      mascotHint={round.hint}
       onBack={onBack}
+      headerRight={<Text style={styles.counter}>{idx + 1}/{FUN_ROUNDS.length}</Text>}
+      footer={
+        <LetterMascot
+          emoji={round.emoji}
+          name="Artist"
+          hint={round.hint}
+          accent="#F472B6"
+          bubbleBg="rgba(255,255,255,0.08)"
+          bubbleBorder="rgba(244,114,182,0.35)"
+          nameColor="#F9A8D4"
+          hintColor="#FDF2F8"
+        />
+      }
     >
       <View style={styles.promptBox}>
         <Text style={styles.promptEmoji}>{round.emoji}</Text>
@@ -122,12 +172,15 @@ export function FunWritingGame({
         <Text style={styles.promptHint}>{round.hint}</Text>
       </View>
 
-      <Text style={styles.counter}>{idx + 1}/{FUN_ROUNDS.length}</Text>
-
       <View style={styles.canvasWrap}>
         <View ref={shotRef} collapsable={false} style={styles.captureWrap}>
-          <DrawingCanvas ref={canvasRef} brushSize={12} canvasColor="rgba(255,255,255,0.55)"
-            randomColors={round.useColors} onStrokeEnd={handleStrokeEnd} />
+          <DrawingCanvas
+            ref={canvasRef}
+            brushSize={12}
+            canvasColor="#FFFFFF"
+            randomColors={round.useColors}
+            onStrokeEnd={handleStrokeEnd}
+          />
         </View>
       </View>
 
@@ -136,31 +189,52 @@ export function FunWritingGame({
           <Text style={styles.clearText}>Clear</Text>
         </Pressable>
         <View style={styles.progressCol}>
-          <Text style={styles.label}>Match: {pct}%</Text>
-          <View style={styles.barBg}><View style={[styles.barFill, { width: `${pct}%` }]} /></View>
+          <TraceMeter percent={pct} label="Match" color="#F472B6" textColor={SHELL.textOnDark} />
         </View>
       </View>
       {showConfetti && <ConfettiEffect />}
-    </GameContainerGrip>
+    </LetterGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  promptBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF7ED', borderRadius: 18, padding: 12, gap: 10, marginBottom: 6, borderWidth: 2, borderColor: '#FED7AA' },
+  counter: { fontSize: 14, fontWeight: '800', color: SHELL.labelColor },
+  promptBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 18,
+    padding: 12,
+    gap: 10,
+    marginBottom: 6,
+    borderWidth: 2,
+    borderColor: 'rgba(244,114,182,0.35)',
+  },
   promptEmoji: { fontSize: 34 },
   promptTextWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 6, flex: 1 },
-  promptStyle: { fontSize: 16, fontWeight: '700', color: '#9A3412' },
-  promptLetter: { fontSize: 36, fontWeight: '900', color: '#EA580C' },
-  promptHint: { fontSize: 12, fontWeight: '600', color: '#C2410C', maxWidth: 80, textAlign: 'right' },
-  counter: { textAlign: 'center', fontSize: 13, fontWeight: '700', color: '#9CA3AF', marginBottom: 4 },
-  canvasWrap: { flex: 1, minHeight: 200, borderRadius: 24, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.5)', borderWidth: 2, borderColor: '#FED7AA' },
-  captureWrap: { flex: 1, minHeight: 200 },
-  bottomRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 12 },
-  clearBtn: { backgroundColor: '#FEE2E2', paddingVertical: 10, paddingHorizontal: 18, borderRadius: 14 },
-  clearText: { fontSize: 14, fontWeight: '700', color: '#DC2626' },
+  promptStyle: { fontSize: 16, fontWeight: '700', color: '#F9A8D4' },
+  promptLetter: { fontSize: 36, fontWeight: '900', color: '#F472B6' },
+  promptHint: { fontSize: 12, fontWeight: '600', color: '#FBCFE8', maxWidth: 80, textAlign: 'right' },
+  canvasWrap: {
+    flex: 1,
+    minHeight: 180,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: 'rgba(244,114,182,0.35)',
+  },
+  captureWrap: { flex: 1, minHeight: 180, backgroundColor: '#FFFFFF' },
+  bottomRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 12 },
+  clearBtn: {
+    backgroundColor: 'rgba(244,114,182,0.2)',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(244,114,182,0.4)',
+  },
+  clearText: { fontSize: 14, fontWeight: '700', color: '#F9A8D4' },
   pressed: { opacity: 0.85 },
-  progressCol: { flex: 1, gap: 3 },
-  label: { fontSize: 13, fontWeight: '700', color: '#374151' },
-  barBg: { height: 10, backgroundColor: '#E5E7EB', borderRadius: 5, overflow: 'hidden' },
-  barFill: { height: '100%', backgroundColor: '#22C55E', borderRadius: 5 },
+  progressCol: { flex: 1 },
 });

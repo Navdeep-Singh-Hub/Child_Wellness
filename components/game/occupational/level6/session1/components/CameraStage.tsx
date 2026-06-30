@@ -1,7 +1,8 @@
 /**
  * CameraStage — the live "mission view" for OT Level 6 posture games.
  */
-import { HERO_SHELL } from '@/components/game/occupational/level6/session1/superheroTheme';
+import type { PostureShell } from '@/components/game/occupational/level6/session1/superheroTheme';
+import { POSTURE_GAME_THEMES } from '@/components/game/occupational/level6/session1/superheroTheme';
 import type { MediapipePoseSolution } from '@/hooks/poseDetectionTypes';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
@@ -44,14 +45,15 @@ type Props = {
   glowColor: string;
   hero: string;
   coachCue: string;
+  shell?: PostureShell;
   children?: React.ReactNode;
   mediapipeSolution?: MediapipePoseSolution | null;
 };
 
-const qualityColor = (q: number) => {
-  if (q >= 0.8) return HERO_SHELL.good;
-  if (q >= 0.55) return HERO_SHELL.gold;
-  return HERO_SHELL.warn;
+const qualityColor = (q: number, shell: PostureShell) => {
+  if (q >= 0.8) return shell.good;
+  if (q >= 0.55) return shell.gold;
+  return shell.warn;
 };
 
 export const CameraStage: React.FC<Props> = ({
@@ -64,6 +66,7 @@ export const CameraStage: React.FC<Props> = ({
   quality,
   hero,
   coachCue,
+  shell = POSTURE_GAME_THEMES.powerSit.shell,
   children,
   mediapipeSolution,
 }) => {
@@ -75,7 +78,7 @@ export const CameraStage: React.FC<Props> = ({
 
   const glowStyle = useAnimatedStyle(() => ({
     opacity: 0.45 + pulse.value * 0.35,
-    borderColor: present ? qualityColor(quality) : 'rgba(196,181,253,0.4)',
+    borderColor: present ? qualityColor(quality, shell) : shell.glassBorder,
   }));
 
   const heroFloat = useAnimatedStyle(() => ({
@@ -98,7 +101,7 @@ export const CameraStage: React.FC<Props> = ({
   const showGuidedPlaceholder = !showMediapipeCamera && !showExpoPreview;
 
   return (
-    <View style={styles.stage}>
+    <View style={[styles.stage, { borderColor: shell.stageBorder, backgroundColor: shell.stageBg }]}>
       {Platform.OS === 'web' ? (
         <View nativeID={previewContainerId} style={styles.previewFill} />
       ) : showMediapipeCamera && mediapipeSolution && MediapipeCamera ? (
@@ -111,7 +114,7 @@ export const CameraStage: React.FC<Props> = ({
       ) : showExpoPreview ? (
         <CameraView style={styles.previewFill} facing={CameraTypeRef ? CameraTypeRef.front : 'front'} />
       ) : (
-        <LinearGradient colors={['#1E1B4B', '#4C1D95', '#312E81']} style={styles.previewFill}>
+        <LinearGradient colors={[...shell.gradient]} style={styles.previewFill}>
           <Animated.Text style={[styles.placeholderHero, heroFloat]}>{hero}</Animated.Text>
           <Text style={styles.placeholderText}>
             {cameraSupported && !permissionGranted ? 'Allow camera to start' : 'Guided Mode'}
@@ -152,7 +155,7 @@ export const CameraStage: React.FC<Props> = ({
 
       {!!coachCue && (
         <View style={styles.cueWrap} pointerEvents="none">
-          <Text style={styles.cueText}>{coachCue}</Text>
+          <Text style={[styles.cueText, { color: shell.gold }]}>{coachCue}</Text>
         </View>
       )}
     </View>
@@ -165,8 +168,6 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     overflow: 'hidden',
     borderWidth: 2,
-    borderColor: HERO_SHELL.stageBorder,
-    backgroundColor: HERO_SHELL.stageBg,
     position: 'relative',
   },
   previewFill: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' } as any,
@@ -208,7 +209,7 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: HERO_SHELL.glassBorder,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
-  cueText: { color: '#FDE68A', fontSize: 15, fontWeight: '800', textAlign: 'center' },
+  cueText: { fontSize: 15, fontWeight: '800', textAlign: 'center' },
 });

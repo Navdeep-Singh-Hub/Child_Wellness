@@ -1,4 +1,4 @@
-import type { Session2ThemeTokens } from '@/components/game/occupational/level5/session2/shared/Session2UI';
+import type { Session2Copy, Session2GameMeta, Session2ThemeTokens } from '@/components/game/occupational/level5/session2/session2Theme';
 
 export const COLOR_DOT_THEME: Session2ThemeTokens = {
   sky: ['#FDF4FF', '#FAE8FF', '#F3E8FF', '#EDE9FE'],
@@ -11,8 +11,8 @@ export const COLOR_DOT_THEME: Session2ThemeTokens = {
   cue: '#5B21B6',
 };
 
-export const COLOR_DOT_COPY = {
-  title: 'Color Dot Hit',
+export const COLOR_DOT_COPY: Session2Copy = {
+  title: 'Paint Studio',
   emoji: '🎨',
   tagline: 'Paint Studio · Visual Discrimination',
   body: 'The studio shows colorful paint dots. Listen for the target color, then tap the matching dot among the others!',
@@ -22,7 +22,13 @@ export const COLOR_DOT_COPY = {
   congrats: 'Color Artist!',
   logType: 'color-dot-hit',
   skillTags: ['visual-discrimination', 'color-recognition', 'attention'],
-} as const;
+};
+
+export const COLOR_DOT_META: Session2GameMeta = {
+  startGradient: ['#A855F7', '#7C3AED', '#6D28D9'],
+  hudTitle: 'Color Dot',
+  scoreLabel: 'HITS',
+};
 
 export const DOT_SIZE = 64;
 

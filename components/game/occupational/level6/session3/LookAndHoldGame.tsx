@@ -1,9 +1,1 @@
-/** OT Level 6 · Session 3 · Game 2 — Look & Hold */
-import { HeadTrackingGame } from '@/components/game/occupational/level6/session3/HeadTrackingGame';
-import React from 'react';
-
-const LookAndHoldGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
-  <HeadTrackingGame {...props} mode="lookHold" />
-);
-
-export default LookAndHoldGame;
+export { default } from './sentinelTower/SentinelTowerGame';

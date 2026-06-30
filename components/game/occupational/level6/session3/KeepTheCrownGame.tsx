@@ -1,9 +1,1 @@
-/** OT Level 6 · Session 3 · Game 4 — Keep The Crown */
-import { HeadTrackingGame } from '@/components/game/occupational/level6/session3/HeadTrackingGame';
-import React from 'react';
-
-const KeepTheCrownGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = (props) => (
-  <HeadTrackingGame {...props} mode="keepCrown" />
-);
-
-export default KeepTheCrownGame;
+export { default } from './royalOrbit/RoyalOrbitGame';

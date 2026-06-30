@@ -2,11 +2,21 @@
  * Level 9 (Clockwise) — Session 4, Game 4: Sorting Game
  * Sort objects into Kitchen / Garden / Bedroom. Tap item then category.
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { ClockwiseGameShell } from '@/components/level9-session/shared/ClockwiseGameShell';
+import { CW } from '@/components/level9-session/shared/clockwiseTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 const ITEMS = [
   { id: 'spoon', category: 'kitchen' as const, label: 'Spoon', emoji: '🥄' },
@@ -19,34 +29,152 @@ const ITEMS = [
 
 type Category = 'kitchen' | 'garden' | 'bedroom';
 
-const CATEGORIES: { id: Category; label: string; emoji: string }[] = [
-  { id: 'kitchen', label: 'Kitchen', emoji: '🍳' },
-  { id: 'garden', label: 'Garden', emoji: '🌻' },
-  { id: 'bedroom', label: 'Bedroom', emoji: '🛏️' },
+const CATEGORIES: { id: Category; label: string; emoji: string; accent: string; glow: string }[] = [
+  { id: 'kitchen', label: 'Kitchen', emoji: '🍳', accent: '#F59E0B', glow: '#FCD34D' },
+  { id: 'garden', label: 'Garden', emoji: '🌻', accent: '#22C55E', glow: '#86EFAC' },
+  { id: 'bedroom', label: 'Bedroom', emoji: '🛏️', accent: '#818CF8', glow: '#A5B4FC' },
 ];
+
+const VOICE = 'Sort into Kitchen, Garden, or Bedroom. Tap an item, then tap the category.';
+const PALETTE = { accent: '#F59E0B', glow: '#FCD34D', secondary: '#FBBF24' } as const;
+
+const COACH: Record<string, string> = {
+  spoon: 'Spoons help us eat — where do we cook and eat?',
+  pot: 'Pots are for cooking — which room?',
+  flower: 'Flowers grow outside — garden or bedroom?',
+  tree: 'Trees belong outdoors in the…',
+  bed: 'We sleep in a bed — which room?',
+  lamp: 'Lamps light up where we rest at night.',
+};
+
+function ItemChip({
+  item,
+  selected,
+  placed,
+  onPress,
+}: {
+  item: (typeof ITEMS)[number];
+  selected: boolean;
+  placed: boolean;
+  onPress: () => void;
+}) {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (selected) {
+      scale.value = withSpring(1.05, { damping: 8 });
+    } else {
+      scale.value = withTiming(1, { duration: 150 });
+    }
+  }, [selected, scale]);
+
+  const anim = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <Animated.View style={anim}>
+      <Pressable
+        onPress={onPress}
+        disabled={placed}
+        style={({ pressed }) => [
+          styles.itemChip,
+          selected && styles.itemSelected,
+          placed && styles.itemPlaced,
+          pressed && !placed && styles.pressed,
+        ]}
+        accessibilityLabel={item.label}
+      >
+        <Text style={styles.itemEmoji}>{item.emoji}</Text>
+        <Text style={styles.itemLabel}>{item.label}</Text>
+        {placed ? <Text style={styles.placedMark}>✓</Text> : null}
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+function CategoryBin({
+  cat,
+  active,
+  shake,
+  count,
+  onPress,
+}: {
+  cat: (typeof CATEGORIES)[number];
+  active: boolean;
+  shake: boolean;
+  count: number;
+  onPress: () => void;
+}) {
+  const shakeX = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (shake) {
+      shakeX.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    }
+  }, [shake, shakeX]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shakeX.value }, { scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={[styles.binWrap, anim]}>
+      <Pressable
+        onPress={() => {
+          scale.value = withSpring(0.96, { damping: 10 });
+          setTimeout(() => {
+            scale.value = withSpring(1, { damping: 10 });
+          }, 120);
+          onPress();
+        }}
+        style={({ pressed }) => [
+          styles.bin,
+          { borderColor: active ? cat.glow : `${cat.accent}66` },
+          active && { backgroundColor: `${cat.accent}28` },
+          pressed && styles.pressed,
+        ]}
+        accessibilityLabel={cat.label}
+      >
+        <LinearGradient colors={[`${cat.accent}33`, 'rgba(8,12,40,0.55)']} style={styles.binGrad} />
+        <Text style={styles.binEmoji}>{cat.emoji}</Text>
+        <Text style={[styles.binLabel, { color: cat.glow }]}>{cat.label}</Text>
+        {count > 0 ? <Text style={styles.binCount}>{count} sorted</Text> : null}
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 export interface KitchenGardenBedroomSortingLevel9Session4GameProps {
   onComplete: () => void;
 }
 
-export function KitchenGardenBedroomSortingLevel9Session4Game({ onComplete }: KitchenGardenBedroomSortingLevel9Session4GameProps) {
+export function KitchenGardenBedroomSortingLevel9Session4Game({
+  onComplete,
+}: KitchenGardenBedroomSortingLevel9Session4GameProps) {
   const [sorted, setSorted] = useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [wrongShake] = useState(() => new Animated.Value(0));
+  const [wrongBin, setWrongBin] = useState<Category | null>(null);
 
-  useEffect(() => {
-    speak('Sort into Kitchen, Garden, or Bedroom. Tap an item, then tap the category.', 0.75);
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
   }, []);
 
-  const triggerWrong = useCallback(() => {
-    wrongShake.setValue(0);
-    Animated.sequence([
-      Animated.timing(wrongShake, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(wrongShake, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-    speak('Try again. Is it for the kitchen, garden, or bedroom?', 0.7);
-  }, [wrongShake]);
+  useEffect(() => {
+    playVoice();
+  }, [playVoice]);
+
+  const sortedCount = sorted.size;
+  const progressPct = (sortedCount / ITEMS.length) * 100;
+  const selectedItem = ITEMS.find((i) => i.id === selectedId);
+
+  const countFor = (cat: Category) =>
+    ITEMS.filter((i) => sorted.has(i.id) && i.category === cat).length;
 
   const handleItemTap = useCallback(
     (id: string) => {
@@ -55,7 +183,7 @@ export function KitchenGardenBedroomSortingLevel9Session4Game({ onComplete }: Ki
       const item = ITEMS.find((i) => i.id === id);
       speak(item?.label ?? id, 0.6);
     },
-    [sorted]
+    [sorted],
   );
 
   const handleCategoryTap = useCallback(
@@ -63,21 +191,33 @@ export function KitchenGardenBedroomSortingLevel9Session4Game({ onComplete }: Ki
       if (!selectedId) return;
       const item = ITEMS.find((i) => i.id === selectedId);
       if (!item || item.category !== category) {
-        triggerWrong();
+        setWrongBin(category);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Try again. Is it for the kitchen, garden, or bedroom?', 0.7);
         setSelectedId(null);
+        setTimeout(() => setWrongBin(null), 700);
         return;
       }
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       speak('Correct!', 0.6);
       const nextSorted = new Set(sorted).add(selectedId);
       setSorted(nextSorted);
       setSelectedId(null);
+
       if (nextSorted.size >= ITEMS.length) {
         setShowSuccess(true);
         setTimeout(() => onComplete(), 2200);
       }
     },
-    [onComplete, selectedId, sorted, triggerWrong]
+    [onComplete, selectedId, sorted],
   );
+
+  const coachLine = selectedItem
+    ? COACH[selectedItem.id] ?? `Where does ${selectedItem.label} belong?`
+    : sortedCount === 0
+      ? 'Tap an item from the tray, then pick Kitchen, Garden, or Bedroom!'
+      : `${sortedCount} of ${ITEMS.length} sorted — keep going!`;
 
   if (showSuccess) {
     return (
@@ -90,83 +230,153 @@ export function KitchenGardenBedroomSortingLevel9Session4Game({ onComplete }: Ki
     );
   }
 
-  const shakeX = wrongShake.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
-
   return (
-    <GameLayout
-      title="Sorting Game"
-      instruction="Put each item in Kitchen, Garden, or Bedroom."
-      icon="📂"
-      backgroundVariant="indigo"
+    <ClockwiseGameShell
+      studio="SORTING GAME · GAME 4"
+      title="Kitchen, Garden, or Bedroom?"
+      instruction="Tap an item, then tap the room it belongs in."
+      mascot="📂"
+      coachLine={coachLine}
+      onReplayVoice={playVoice}
     >
-      <View style={styles.container}>
-        <Text style={styles.label}>Items</Text>
-        <Animated.View style={[styles.itemsRow, { transform: [{ translateX: shakeX }] }]}>
+      <View style={styles.progressWrap}>
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressLabel}>ITEMS SORTED</Text>
+          <Text style={styles.progressCount}>
+            {sortedCount} / {ITEMS.length}
+          </Text>
+        </View>
+        <View style={styles.progressBg}>
+          <LinearGradient
+            colors={[PALETTE.accent, PALETTE.secondary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.progressFill, { width: `${progressPct}%` }]}
+          />
+        </View>
+      </View>
+
+      <View style={styles.trayFrame}>
+        <LinearGradient
+          colors={[`${PALETTE.accent}33`, 'transparent', `${PALETTE.secondary}22`]}
+          style={styles.trayGlow}
+        />
+        <Text style={styles.frameLabel}>FORGE TRAY · PICK AN ITEM</Text>
+        <View style={styles.itemsRow}>
           {ITEMS.map((item) => (
-            <Pressable
+            <ItemChip
               key={item.id}
+              item={item}
+              selected={selectedId === item.id}
+              placed={sorted.has(item.id)}
               onPress={() => handleItemTap(item.id)}
-              style={[
-                styles.itemBtn,
-                selectedId === item.id && styles.selected,
-                sorted.has(item.id) && styles.placed,
-              ]}
-              accessibilityLabel={item.label}
-            >
-              <Text style={styles.itemEmoji}>{item.emoji}</Text>
-              <Text style={styles.itemLabel}>{item.label}</Text>
-            </Pressable>
-          ))}
-        </Animated.View>
-        <Text style={styles.label}>Categories — tap to place</Text>
-        <View style={styles.categoriesRow}>
-          {CATEGORIES.map((cat) => (
-            <Pressable
-              key={cat.id}
-              onPress={() => handleCategoryTap(cat.id)}
-              style={[styles.catBtn, selectedId && styles.catBtnActive]}
-              accessibilityLabel={cat.label}
-            >
-              <Text style={styles.catEmoji}>{cat.emoji}</Text>
-              <Text style={styles.catLabel}>{cat.label}</Text>
-            </Pressable>
+            />
           ))}
         </View>
       </View>
-    </GameLayout>
+
+      <Text style={styles.prompt}>
+        {selectedId ? 'Now tap a room bin' : 'Select an item first'}
+      </Text>
+
+      <View style={styles.categoriesRow}>
+        {CATEGORIES.map((cat) => (
+          <CategoryBin
+            key={cat.id}
+            cat={cat}
+            active={!!selectedId}
+            shake={wrongBin === cat.id}
+            count={countFor(cat.id)}
+            onPress={() => handleCategoryTap(cat.id)}
+          />
+        ))}
+      </View>
+    </ClockwiseGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', paddingVertical: 24 },
-  label: { fontSize: 18, fontWeight: '700', color: '#4338CA', marginBottom: 12 },
-  itemsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginBottom: 24 },
-  itemBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+  progressWrap: { marginBottom: 14 },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  progressLabel: { fontSize: 9, fontWeight: '900', letterSpacing: 1.2, color: PALETTE.glow },
+  progressCount: { fontSize: 14, fontWeight: '900', color: CW.textLight },
+  progressBg: {
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    overflow: 'hidden',
+  },
+  progressFill: { height: '100%', borderRadius: 5 },
+  trayFrame: {
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: `${PALETTE.accent}55`,
+    backgroundColor: 'rgba(8,12,40,0.5)',
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  trayGlow: { ...StyleSheet.absoluteFillObject },
+  frameLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: PALETTE.glow,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  itemsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
+  itemChip: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: 14,
-    backgroundColor: '#FFF',
-    borderWidth: 3,
-    borderColor: '#818CF8',
+    borderWidth: 2,
+    borderColor: CW.glassBorder,
+    backgroundColor: 'rgba(8,12,40,0.75)',
     alignItems: 'center',
     minWidth: 72,
   },
-  selected: { backgroundColor: '#EEF2FF', borderColor: '#6366F1' },
-  placed: { opacity: 0.5 },
-  itemEmoji: { fontSize: 32, marginBottom: 4 },
-  itemLabel: { fontSize: 12, fontWeight: '700', color: '#4338CA' },
-  categoriesRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 },
-  catBtn: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 16,
-    backgroundColor: '#C7D2FE',
-    borderWidth: 3,
-    borderColor: '#818CF8',
-    alignItems: 'center',
-    minWidth: 90,
+  itemSelected: {
+    borderColor: PALETTE.glow,
+    backgroundColor: 'rgba(245,158,11,0.22)',
   },
-  catBtnActive: { backgroundColor: '#EEF2FF' },
-  catEmoji: { fontSize: 32, marginBottom: 6 },
-  catLabel: { fontSize: 14, fontWeight: '700', color: '#4338CA' },
+  itemPlaced: { opacity: 0.45 },
+  itemEmoji: { fontSize: 28 },
+  itemLabel: { fontSize: 11, fontWeight: '800', color: CW.textLight, marginTop: 2 },
+  placedMark: {
+    position: 'absolute',
+    top: 4,
+    right: 6,
+    fontSize: 10,
+    fontWeight: '900',
+    color: CW.goodGlow,
+  },
+  prompt: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: CW.textLight,
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  categoriesRow: { flexDirection: 'row', gap: 10, justifyContent: 'center', flexWrap: 'wrap' },
+  binWrap: { flex: 1, minWidth: 100, maxWidth: 120 },
+  bin: {
+    borderRadius: 18,
+    borderWidth: 2.5,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  binGrad: { ...StyleSheet.absoluteFillObject },
+  binEmoji: { fontSize: 30 },
+  binLabel: { fontSize: 13, fontWeight: '900', marginTop: 6 },
+  binCount: { fontSize: 9, fontWeight: '700', color: CW.textMuted, marginTop: 4 },
+  pressed: { opacity: 0.88 },
 });

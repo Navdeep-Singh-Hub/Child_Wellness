@@ -1,9 +1,2 @@
-import React from 'react';
-import EyeTrackGame from './EyeTrackGame';
-import { CIRCULAR_TRACK } from './eyeTrackConfig';
-
-const CircularTrackGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => (
-  <EyeTrackGame config={CIRCULAR_TRACK} onBack={onBack} onComplete={onComplete} />
-);
-
-export default CircularTrackGame;
+/** OT Level 5 · Session 5 · Game 3 — Orbit Eye */
+export { default } from '@/components/game/occupational/level5/session5/orbitEye/OrbitEyeGame';

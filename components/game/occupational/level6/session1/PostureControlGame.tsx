@@ -9,9 +9,7 @@
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
 import { CameraStage } from '@/components/game/occupational/level6/session1/components/CameraStage';
-import { CrownOverlay } from '@/components/game/occupational/level6/session1/components/CrownOverlay';
 import { DistractionLayer } from '@/components/game/occupational/level6/session1/components/DistractionLayer';
-import { PowerMeter } from '@/components/game/occupational/level6/session1/components/PowerMeter';
 import { StarTarget } from '@/components/game/occupational/level6/session1/components/StarTarget';
 import { TrafficLight, type LightState } from '@/components/game/occupational/level6/session1/components/TrafficLight';
 import {
@@ -32,18 +30,32 @@ import {
 } from '@/components/game/occupational/level6/session1/poseUtils';
 import { SESSION1_PACING } from '@/components/game/occupational/level6/session1/session1Pacing';
 import { usePostureAnalytics } from '@/components/game/occupational/level6/session1/usePostureAnalytics';
-import { HERO_SHELL, POSTURE_GAME_THEMES, type PostureMode } from '@/components/game/occupational/level6/session1/superheroTheme';
+import { PostureIntroPanel, PostureHUD } from '@/components/game/occupational/level6/session1/shared/PostureUI';
+import { PostureBackdrop } from '@/components/game/occupational/level6/session1/shared/PostureVisuals';
+import { ThunderForgeBackdrop } from '@/components/game/occupational/level6/session1/thunderForge/ThunderForgeBackdrop';
+import { ThunderForgeCalibration } from '@/components/game/occupational/level6/session1/thunderForge/ThunderForgeCalibration';
+import { ThunderForgeCoach } from '@/components/game/occupational/level6/session1/thunderForge/ThunderForgeCoach';
+import { ThunderForgeHUD } from '@/components/game/occupational/level6/session1/thunderForge/ThunderForgeHUD';
+import { ThunderForgeIntro } from '@/components/game/occupational/level6/session1/thunderForge/ThunderForgeIntro';
+import { ThunderForgeReactorMeter } from '@/components/game/occupational/level6/session1/thunderForge/ThunderForgeReactorMeter';
+import { RoyalObservatoryBackdrop } from '@/components/game/occupational/level6/session1/royalObservatory/RoyalObservatoryBackdrop';
+import { RoyalObservatoryCalibration } from '@/components/game/occupational/level6/session1/royalObservatory/RoyalObservatoryCalibration';
+import { RoyalObservatoryCoach } from '@/components/game/occupational/level6/session1/royalObservatory/RoyalObservatoryCoach';
+import { RoyalObservatoryHUD } from '@/components/game/occupational/level6/session1/royalObservatory/RoyalObservatoryHUD';
+import { RoyalObservatoryIntro } from '@/components/game/occupational/level6/session1/royalObservatory/RoyalObservatoryIntro';
+import { RoyalCrownGauge } from '@/components/game/occupational/level6/session1/royalObservatory/RoyalCrownGauge';
+import { RoyalDistractionLayer } from '@/components/game/occupational/level6/session1/royalObservatory/RoyalDistractionLayer';
 import { usePoseDetection } from '@/hooks/usePoseDetection';
 import { friendlyPoseError } from '@/hooks/usePoseDetectionNative';
+import { POSTURE_GAME_THEMES, type PostureMode } from '@/components/game/occupational/level6/session1/superheroTheme';
 import { poseStageNativeProps } from '@/components/game/occupational/level6/session1/poseStageProps';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { speak as speakTTS } from '@/utils/tts';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AccessibilityInfo, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const P = SESSION1_PACING;
@@ -73,7 +85,10 @@ export const PostureControlGame: React.FC<{
 }> = ({ mode, onBack, onComplete }) => {
   const router = useRouter();
   const T = POSTURE_GAME_THEMES[mode];
+  const S = T.shell;
   const totalRounds = roundsForMode(mode);
+  const isThunderForge = mode === 'powerSit';
+  const isRoyalObservatory = mode === 'crown';
 
   const [active, setActive] = useState(true);
   const poseDetection = usePoseDetection(active);
@@ -110,10 +125,12 @@ export const PostureControlGame: React.FC<{
   const [coachCue, setCoachCue] = useState(T.hintText);
   const [calibProgress, setCalibProgress] = useState(0);
   const [sparkleKey, setSparkleKey] = useState(0);
+  const [reduceMotion, setReduceMotion] = useState(false);
 
   // Per-mode display state
   const [power, setPower] = useState(0);
   const [crownSafePct, setCrownSafePct] = useState(100);
+  const [crownRemainSec, setCrownRemainSec] = useState(0);
   const [crownStability, setCrownStability] = useState(1);
   const [stillPct, setStillPct] = useState(100);
   const [light, setLight] = useState<LightState>('off');
@@ -144,6 +161,8 @@ export const PostureControlGame: React.FC<{
 
   // power-sit
   const powerRef = useRef(0);
+  const powerMilestoneRef = useRef(0);
+  const crownWarnRef = useRef(false);
   const holdStartRef = useRef<number | null>(null);
   const wasUprightRef = useRef(false);
   // crown / statue
@@ -268,11 +287,14 @@ export const PostureControlGame: React.FC<{
 
     if (mode_ === 'powerSit') {
       powerRef.current = 0;
+      powerMilestoneRef.current = 0;
       setPower(0);
-      setCoachCue(T.hintText);
+      setCoachCue(isThunderForge ? 'Charge the reactor — sit tall and still!' : T.hintText);
     } else if (mode_ === 'crown') {
+      crownWarnRef.current = false;
       setCrownSafePct(100);
-      setCoachCue('Hold your head tall and steady!');
+      setCrownRemainSec(P.crownRoundMs / 1000);
+      setCoachCue(isRoyalObservatory ? 'Royal watch begins — keep the crown steady!' : 'Hold your head tall and steady!');
       scheduleDistraction(P.crownDistractionEveryMs);
       scheduleRoundTimeout(P.crownRoundMs, () => finishTimedRound('crown'));
     } else if (mode_ === 'statue') {
@@ -325,7 +347,9 @@ export const PostureControlGame: React.FC<{
       recordHold(safeMsRef.current);
       const earned = pct >= 55;
       awardStar(earned);
-      setCoachCue(earned ? (m === 'crown' ? 'Crown kept safe! 👑' : 'Perfectly still! 🗿') : 'Good try — steady next time!');
+      setCoachCue(earned
+        ? (m === 'crown' ? (isRoyalObservatory ? 'The crown is safe! Royal excellence! 👑' : 'Crown kept safe! 👑') : 'Perfectly still! 🗿')
+        : (m === 'crown' && isRoyalObservatory ? 'The crown wobbled — steady your head next watch!' : 'Good try — steady next time!'));
       advanceRound();
     },
     [advanceRound, recordHold, awardStar],
@@ -461,12 +485,17 @@ export const PostureControlGame: React.FC<{
         // Fallback fills steadily to complete in fallbackHoldMs.
         if (!cam) powerRef.current = Math.min(100, powerRef.current + (100 / P.fallbackHoldMs) * dt);
         setPower(powerRef.current);
+        if (powerRef.current >= 50 && powerMilestoneRef.current < 50) {
+          powerMilestoneRef.current = 50;
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+          if (isThunderForge) setCoachCue('Half power! Keep your core strong!');
+        }
         recordTick(dt, { upright: cam ? isUpright : true, still: false, quality: cam ? up : 0.85 });
         if (powerRef.current >= 100) {
           if (holdStartRef.current) recordHold(now - holdStartRef.current);
           phaseGuardComplete(() => {
             awardStar(true);
-            setCoachCue('Power charged! ⚡');
+            setCoachCue(isThunderForge ? 'Reactor cycle complete! ⚡' : 'Power charged! ⚡');
             advanceRound();
           });
         }
@@ -477,8 +506,20 @@ export const PostureControlGame: React.FC<{
         if (cam ? stab >= P.crownStableThreshold : true) safeMsRef.current += dt;
         if (!cam) safeMsRef.current = totalMsRef.current; // fallback: assume steady
         const pct = totalMsRef.current > 0 ? (safeMsRef.current / totalMsRef.current) * 100 : 100;
+        const remainSec = Math.max(0, (roundStartRef.current + P.crownRoundMs - now) / 1000);
         setCrownSafePct(pct);
+        setCrownRemainSec(remainSec);
         setCrownStability(cam ? stab : 0.85);
+        if (isRoyalObservatory) {
+          if (pct < 35 && !crownWarnRef.current) {
+            crownWarnRef.current = true;
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+            setCoachCue('Careful — the crown is tipping!');
+          } else if (pct >= 55 && crownWarnRef.current) {
+            crownWarnRef.current = false;
+            setCoachCue('Beautiful steadiness — the crown glows!');
+          }
+        }
         recordTick(dt, { upright: isUpright, still: isStill, quality: cam ? stab : 0.85 });
         break;
       }
@@ -548,8 +589,15 @@ export const PostureControlGame: React.FC<{
     }
     setPhase('calibrate');
     phaseRef.current = 'calibrate';
-    setCoachCue('Sit up nice and tall like a superhero!');
-    speakTTS('Sit up nice and tall, and hold still!', 0.8).catch(() => {});
+    setCoachCue(isThunderForge ? 'Reactor boot — hold tall like a superhero!' : isRoyalObservatory ? 'Align the crown lens — hold your head tall!' : 'Sit up nice and tall like a superhero!');
+    speakTTS(
+      isThunderForge
+        ? 'Hold still while the forge calibrates your posture!'
+        : isRoyalObservatory
+          ? 'Hold your head tall while the observatory aligns the crown lens!'
+          : 'Sit up nice and tall, and hold still!',
+      0.8,
+    ).catch(() => {});
     calibSamplesRef.current = [];
     const start = Date.now();
     const sampler = setInterval(() => {
@@ -582,6 +630,12 @@ export const PostureControlGame: React.FC<{
       }
     };
   }, [phase, tick]);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((v) => setReduceMotion(!!v))
+      .catch(() => {});
+  }, []);
 
   // Intro voice + cleanup.
   useEffect(() => {
@@ -643,43 +697,44 @@ export const PostureControlGame: React.FC<{
     );
   }
 
+  const charging = phase === 'play' && (quality >= P.powerUprightThreshold || !camLive);
+  const showForgeCoach = isThunderForge && (phase === 'play' || phase === 'calibrate');
+  const showRoyalCoach = isRoyalObservatory && (phase === 'play' || phase === 'calibrate');
+  const useCustomIntro = isThunderForge || isRoyalObservatory;
+  const crownRoundSec = P.crownRoundMs / 1000;
+
   return (
-    <LinearGradient colors={HERO_SHELL.gradient} style={styles.root}>
+    <View style={styles.root}>
+      {isThunderForge ? (
+        <ThunderForgeBackdrop reduceMotion={reduceMotion} charging={charging} />
+      ) : isRoyalObservatory ? (
+        <RoyalObservatoryBackdrop
+          reduceMotion={reduceMotion}
+          steady={crownStability >= P.crownStableThreshold}
+        />
+      ) : (
+        <PostureBackdrop backdrop={T.backdrop} shell={S} />
+      )}
       <SafeAreaView style={styles.safe}>
         <View style={styles.topRow}>
-          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { borderColor: HERO_SHELL.backBorder }]}>
-            <Text style={[styles.backText, { color: HERO_SHELL.backText }]}>← Back</Text>
+          <TouchableOpacity onPress={handleBack} style={[styles.backBtn, { borderColor: S.backBorder }]}>
+            <Text style={[styles.backText, { color: S.backText }]}>← Back</Text>
           </TouchableOpacity>
-          <Text style={styles.academyLabel}>🦸 SUPERHERO ACADEMY</Text>
           <View style={{ width: 64 }} />
         </View>
 
-        <View style={styles.header}>
-          <Text style={styles.title}>
-            {T.emoji} {T.title}
-          </Text>
-          <Text style={styles.subtitle}>{T.subtitle}</Text>
-          <View style={styles.statsRow}>
-            <View style={[styles.statPill, { borderColor: HERO_SHELL.statBorder }]}>
-              <Text style={[styles.statLabel, { color: HERO_SHELL.statLabel }]}>Round</Text>
-              <Text style={[styles.statValue, { color: HERO_SHELL.statValue }]}>
-                {round}/{totalRounds}
-              </Text>
-            </View>
-            <View style={[styles.statPill, { borderColor: HERO_SHELL.statBorder }]}>
-              <Text style={styles.starEmoji}>⭐</Text>
-              <Text style={[styles.statValue, { color: HERO_SHELL.statValue }]}>{score}</Text>
-            </View>
-            <View style={[styles.statPill, { borderColor: HERO_SHELL.statBorder }]}>
-              <Text style={styles.coinEmoji}>🪙</Text>
-              <Text style={[styles.statValue, { color: HERO_SHELL.statValue }]}>{coins}</Text>
-            </View>
-          </View>
-        </View>
+        {isThunderForge ? (
+          <ThunderForgeHUD round={round} totalRounds={totalRounds} score={score} coins={coins} />
+        ) : isRoyalObservatory ? (
+          <RoyalObservatoryHUD round={round} totalRounds={totalRounds} score={score} coins={coins} />
+        ) : (
+          <PostureHUD theme={T} round={round} totalRounds={totalRounds} score={score} coins={coins} />
+        )}
 
         <View style={styles.stageWrap}>
           <CameraStage
             {...poseStageNativeProps(poseDetection)}
+            shell={S}
             previewContainerId={previewContainerId}
             cameraSupported={cameraSupported}
             permissionGranted={permissionGranted}
@@ -690,15 +745,21 @@ export const PostureControlGame: React.FC<{
             quality={quality}
             glowColor={T.glow}
             hero={T.hero}
-            coachCue={phase === 'play' || phase === 'calibrate' ? coachCue : ''}
+            coachCue={showForgeCoach || showRoyalCoach ? '' : phase === 'play' || phase === 'calibrate' ? coachCue : ''}
           >
-            {phase === 'play' && mode === 'powerSit' && (
-              <PowerMeter power={power} charging={quality >= P.powerUprightThreshold || !camLive} accent={T.accent} />
+            {phase === 'play' && isThunderForge && (
+              <ThunderForgeReactorMeter power={power} charging={charging} reduceMotion={reduceMotion} />
             )}
-            {phase === 'play' && mode === 'crown' && (
+            {phase === 'play' && isRoyalObservatory && (
               <>
-                <CrownOverlay stability={crownStability} safePct={crownSafePct} />
-                <DistractionLayer trigger={distraction} />
+                <RoyalCrownGauge
+                  stability={crownStability}
+                  safePct={crownSafePct}
+                  remainSec={crownRemainSec}
+                  totalSec={crownRoundSec}
+                  reduceMotion={reduceMotion}
+                />
+                <RoyalDistractionLayer trigger={distraction} reduceMotion={reduceMotion} />
               </>
             )}
             {phase === 'play' && mode === 'statue' && (
@@ -715,10 +776,11 @@ export const PostureControlGame: React.FC<{
               <StarTarget anchor={REACH_ANCHORS[reachDir]} active={!reachCaught} caught={reachCaught} />
             )}
 
-            <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={HERO_SHELL.sparkleColor} count={14} />
+            <SparkleBurst key={sparkleKey} visible={sparkleKey > 0} color={S.sparkleColor} count={14} />
 
-            {/* Calibration progress */}
-            {phase === 'calibrate' && (
+            {phase === 'calibrate' && isThunderForge && <ThunderForgeCalibration progress={calibProgress} />}
+            {phase === 'calibrate' && isRoyalObservatory && <RoyalObservatoryCalibration progress={calibProgress} />}
+            {phase === 'calibrate' && !useCustomIntro && (
               <View style={styles.calibWrap} pointerEvents="none">
                 <Text style={styles.calibText}>Hold still… {Math.round(calibProgress * 100)}%</Text>
                 <View style={styles.calibTrack}>
@@ -729,58 +791,72 @@ export const PostureControlGame: React.FC<{
           </CameraStage>
         </View>
 
-        {/* Bottom: intro / errors / play hint */}
-        {phase === 'intro' && (
-          <View style={styles.bottomPanel}>
-            {cameraSupported && error ? (
-              <>
-                <Text style={styles.errorText}>{friendlyPoseError(error)}</Text>
-                <View style={styles.btnRow}>
-                  <Pressable style={[styles.primaryBtn, { backgroundColor: T.accent }]} onPress={() => setActive(true)}>
-                    <Text style={styles.primaryBtnText}>Retry Camera</Text>
-                  </Pressable>
-                  <Pressable style={styles.secondaryBtn} onPress={() => { setForceFallback(true); handleStart(); }}>
-                    <Text style={styles.secondaryBtnText}>Play Guided</Text>
-                  </Pressable>
-                </View>
-              </>
-            ) : !cameraSupported ? (
-              <>
-                <Text style={styles.introText}>{friendlyPoseError(error)}</Text>
-                <Pressable
-                  style={[styles.primaryBtn, { backgroundColor: T.accent }]}
-                  onPress={() => {
-                    setForceFallback(true);
-                    handleStart();
-                  }}
-                >
-                  <Text style={styles.primaryBtnText}>{T.hero} Play Guided Mode</Text>
-                </Pressable>
-              </>
-            ) : (
-              <>
-                <Text style={styles.introText}>
-                  {!permissionGranted
-                    ? 'Tap Start Mission — you will be asked to allow camera access.'
-                    : hasCamera
-                      ? 'Sit where the camera can see your head and shoulders.'
-                      : 'Loading body tracking…'}
-                </Text>
-                <Pressable
-                  style={[styles.primaryBtn, { backgroundColor: T.accent }]}
-                  onPress={handleStart}
-                >
-                  <Text style={styles.primaryBtnText}>{T.hero} Start Mission</Text>
-                </Pressable>
-                <Pressable style={styles.linkBtn} onPress={() => { setForceFallback(true); beginCalibration(); }}>
-                  <Text style={styles.linkText}>No camera? Play guided mode</Text>
-                </Pressable>
-              </>
-            )}
-          </View>
+        {showForgeCoach && (
+          <ThunderForgeCoach
+            hint={coachCue}
+            power={power}
+            round={round}
+            totalRounds={totalRounds}
+            phase={phase}
+          />
+        )}
+
+        {showRoyalCoach && (
+          <RoyalObservatoryCoach
+            hint={coachCue}
+            safePct={crownSafePct}
+            remainSec={crownRemainSec}
+            round={round}
+            totalRounds={totalRounds}
+            phase={phase}
+          />
+        )}
+
+        {phase === 'intro' && isThunderForge && (
+          <ThunderForgeIntro
+            errorText={cameraSupported && error ? friendlyPoseError(error) : undefined}
+            cameraSupported={cameraSupported}
+            permissionGranted={permissionGranted}
+            hasCamera={hasCamera}
+            onStart={handleStart}
+            onRetry={() => setActive(true)}
+            onGuided={() => {
+              setForceFallback(true);
+              beginCalibration();
+            }}
+          />
+        )}
+
+        {phase === 'intro' && isRoyalObservatory && (
+          <RoyalObservatoryIntro
+            errorText={cameraSupported && error ? friendlyPoseError(error) : undefined}
+            cameraSupported={cameraSupported}
+            permissionGranted={permissionGranted}
+            hasCamera={hasCamera}
+            onStart={handleStart}
+            onRetry={() => setActive(true)}
+            onGuided={() => {
+              setForceFallback(true);
+              beginCalibration();
+            }}
+          />
+        )}
+
+        {phase === 'intro' && !useCustomIntro && (
+          <PostureIntroPanel
+            theme={T}
+            errorText={cameraSupported && error ? friendlyPoseError(error) : undefined}
+            introText={!cameraSupported ? friendlyPoseError(error) : undefined}
+            cameraSupported={cameraSupported}
+            permissionGranted={permissionGranted}
+            hasCamera={hasCamera}
+            onStart={handleStart}
+            onRetry={() => setActive(true)}
+            onGuided={() => { setForceFallback(true); beginCalibration(); }}
+          />
         )}
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 };
 
@@ -790,26 +866,7 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
   backBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, borderWidth: 1, backgroundColor: 'rgba(255,255,255,0.08)' },
   backText: { fontSize: 14, fontWeight: '800' },
-  academyLabel: { color: '#C4B5FD', fontSize: 12, fontWeight: '900', letterSpacing: 1 },
-  header: { alignItems: 'center', marginTop: 8 },
-  title: { color: '#fff', fontSize: 24, fontWeight: '900' },
-  subtitle: { color: '#C4B5FD', fontSize: 14, fontWeight: '600', marginTop: 2, textAlign: 'center' },
-  statsRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
-  statPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 18,
-    borderWidth: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  statLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
-  statValue: { fontSize: 16, fontWeight: '900' },
-  starEmoji: { fontSize: 15 },
-  coinEmoji: { fontSize: 15 },
-  stageWrap: { flex: 1, marginTop: 14, marginBottom: 12 },
+  stageWrap: { flex: 1, marginTop: 10, marginBottom: 8 },
   stillBadge: {
     position: 'absolute',
     top: 16,
@@ -826,16 +883,6 @@ const styles = StyleSheet.create({
   calibText: { color: '#fff', fontSize: 16, fontWeight: '900', marginBottom: 8 },
   calibTrack: { width: '100%', height: 12, borderRadius: 6, backgroundColor: 'rgba(15,12,41,0.7)', overflow: 'hidden' },
   calibFill: { height: '100%', backgroundColor: '#FBBF24' },
-  bottomPanel: { paddingBottom: 16, alignItems: 'center', gap: 10 },
-  introText: { color: '#E9D5FF', fontSize: 14, fontWeight: '600', textAlign: 'center' },
-  errorText: { color: '#FCA5A5', fontSize: 14, fontWeight: '700', textAlign: 'center' },
-  btnRow: { flexDirection: 'row', gap: 12 },
-  primaryBtn: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: 20 },
-  primaryBtnText: { color: '#fff', fontSize: 17, fontWeight: '900' },
-  secondaryBtn: { paddingHorizontal: 22, paddingVertical: 14, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.14)' },
-  secondaryBtnText: { color: '#fff', fontSize: 15, fontWeight: '800' },
-  linkBtn: { paddingVertical: 6 },
-  linkText: { color: '#A78BFA', fontSize: 13, fontWeight: '700', textDecorationLine: 'underline' },
 });
 
 export default PostureControlGame;

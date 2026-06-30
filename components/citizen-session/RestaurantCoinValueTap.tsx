@@ -1,103 +1,235 @@
 /**
- * Game 3 — Find the correct coin. Tap the ₹10 coin. Display ₹1, ₹2, ₹5, ₹10. Session 7: Restaurant Signs.
+ * Game 3 — Coin Tap: Find the correct coin. Display ₹1, ₹2, ₹5, ₹10. Answer: ₹10.
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { CitizenGameShell } from '@/components/citizen-session/shared/CitizenGameShell';
+import { CZ } from '@/components/citizen-session/shared/citizenTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 const COINS = [
-  { id: '₹1', label: '₹1', color: '#374151', bg: '#F3F4F6' },
-  { id: '₹2', label: '₹2', color: '#374151', bg: '#E5E7EB' },
-  { id: '₹5', label: '₹5', color: '#1f2937', bg: '#FEF3C7' },
-  { id: '₹10', label: '₹10', color: '#1f2937', bg: '#FDE68A' },
-];
-const CORRECT = '₹10';
+  { id: '1', value: '₹1', label: '1 rupee', size: 72 },
+  { id: '2', value: '₹2', label: '2 rupees', size: 80 },
+  { id: '5', value: '₹5', label: '5 rupees', size: 88 },
+  { id: '10', value: '₹10', label: '10 rupees', size: 96 },
+] as const;
+
+type CoinId = (typeof COINS)[number]['id'];
+const CORRECT_ID: CoinId = '10';
 const VOICE = 'Tap the ten rupees coin.';
+
+const DINING = { accent: '#F59E0B', glow: '#FDE68A', rose: '#EC4899' } as const;
+
+function CoinOrb({
+  coin,
+  selected,
+  feedback,
+  onPress,
+}: {
+  coin: (typeof COINS)[number];
+  selected: boolean;
+  feedback: 'idle' | 'wrong' | 'correct';
+  onPress: () => void;
+}) {
+  const shake = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (feedback === 'wrong' && selected) {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    } else if (feedback === 'correct' && selected) {
+      scale.value = withSpring(1.08, { damping: 8 });
+    } else {
+      scale.value = withTiming(1, { duration: 150 });
+    }
+  }, [feedback, selected, shake, scale]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }, { scale: scale.value }],
+  }));
+
+  const border =
+    feedback === 'correct' && selected
+      ? CZ.good
+      : feedback === 'wrong' && selected
+        ? CZ.warn
+        : selected
+          ? DINING.glow
+          : `${DINING.accent}88`;
+
+  return (
+    <Animated.View style={anim}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.coin,
+          { width: coin.size, height: coin.size, borderRadius: coin.size / 2, borderColor: border },
+          pressed && styles.pressed,
+        ]}
+        accessibilityLabel={coin.label}
+      >
+        <LinearGradient
+          colors={[`${DINING.glow}55`, `${DINING.accent}44`, 'rgba(11,10,26,0.6)']}
+          style={[styles.coinGrad, { borderRadius: coin.size / 2 }]}
+        />
+        <Text style={styles.coinValue}>{coin.value}</Text>
+        <Text style={styles.coinRing}>◯</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 export function RestaurantCoinValueTap({ onComplete }: { onComplete: () => void }) {
   const [showSuccess, setShowSuccess] = useState(false);
-  const [shakeAnim] = useState(() => new Animated.Value(0));
+  const [selected, setSelected] = useState<CoinId | null>(null);
+  const [feedback, setFeedback] = useState<'idle' | 'wrong' | 'correct'>('idle');
+  const [attempts, setAttempts] = useState(0);
 
-  useEffect(() => {
-    speak(VOICE, 0.75);
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
   }, []);
 
-  const triggerShake = useCallback(() => {
-    shakeAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-  }, [shakeAnim]);
+  useEffect(() => {
+    playVoice();
+  }, [playVoice]);
 
   const handleTap = useCallback(
-    (id: string) => {
-      if (id !== CORRECT) {
-        speak('Try again.');
-        triggerShake();
-        return;
+    (id: CoinId) => {
+      if (feedback === 'correct') return;
+      setSelected(id);
+      setAttempts((a) => a + 1);
+
+      if (id === CORRECT_ID) {
+        setFeedback('correct');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speak('Correct! Ten rupees!', 0.75);
+        setShowSuccess(true);
+        setTimeout(() => onComplete(), 2400);
+      } else {
+        setFeedback('wrong');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Try again. Tap the ten rupee coin.', 0.7);
+        setTimeout(() => {
+          setFeedback('idle');
+          setSelected(null);
+        }, 900);
       }
-      speak('Correct! Ten rupees!');
-      setShowSuccess(true);
-      setTimeout(() => onComplete(), 2200);
     },
-    [onComplete, triggerShake]
+    [feedback, onComplete],
   );
 
-  if (showSuccess) return <SuccessCelebration variant="indigo" title="Great Job!" subtitle="You found ₹10!" />;
+  const coachLine =
+    attempts === 0
+      ? 'At the restaurant, bigger coins pay more — find ₹10!'
+      : '₹10 is the biggest coin here — not ₹1, ₹2, or ₹5.';
 
-  const shakeX = shakeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 10] });
+  if (showSuccess) {
+    return (
+      <SuccessCelebration
+        variant="sunset"
+        title="Coin Tap!"
+        subtitle="You found ₹10!"
+        badgeEmoji="🪙"
+      />
+    );
+  }
 
   return (
-    <GameLayout
+    <CitizenGameShell
+      studio="COIN TAP · GAME 3"
       title="Find the correct coin"
       instruction="Tap the ₹10 coin."
-      icon="🪙"
-      backgroundVariant="indigo"
+      mascot="🪙"
+      coachLine={coachLine}
+      onReplayVoice={playVoice}
     >
-      <View style={styles.content}>
+      <View style={styles.tillFrame}>
+        <LinearGradient
+          colors={[`${DINING.accent}33`, 'transparent', `${DINING.rose}22`]}
+          style={styles.tillGlow}
+        />
+        <Text style={styles.tillLabel}>RESTAURANT TILL</Text>
         <Text style={styles.prompt}>Which coin is ₹10?</Text>
         <View style={styles.coinsRow}>
           {COINS.map((coin) => (
-            <Animated.View
+            <CoinOrb
               key={coin.id}
-              style={[
-                styles.coinCard,
-                { backgroundColor: coin.bg, borderColor: '#F59E0B' },
-                coin.id === CORRECT && { borderWidth: 4 },
-                { transform: [{ translateX: coin.id === CORRECT ? 0 : shakeX }] },
-              ]}
-            >
-              <Pressable
-                onPress={() => handleTap(coin.id)}
-                style={({ pressed }) => [styles.coinTouch, pressed && styles.pressed]}
-                accessibilityLabel={`Coin ${coin.label}`}
-              >
-                <Text style={[styles.coinText, { color: coin.color }]}>{coin.label}</Text>
-              </Pressable>
-            </Animated.View>
+              coin={coin}
+              selected={selected === coin.id}
+              feedback={feedback}
+              onPress={() => handleTap(coin.id)}
+            />
           ))}
         </View>
+        <Text style={styles.hint}>₹1 · ₹2 · ₹5 · ₹10 — tap the ten-rupee coin</Text>
       </View>
-    </GameLayout>
+    </CitizenGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 8, alignItems: 'center' },
-  prompt: { fontSize: 20, fontWeight: '800', color: '#374151', marginBottom: 24, textAlign: 'center' },
-  coinsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 16 },
-  coinCard: {
-    borderRadius: 999,
-    padding: 24,
-    borderWidth: 3,
+  tillFrame: {
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: `${DINING.accent}55`,
+    backgroundColor: 'rgba(26,10,18,0.5)',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    overflow: 'hidden',
+    alignItems: 'center',
+  },
+  tillGlow: { ...StyleSheet.absoluteFillObject },
+  tillLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: DINING.glow,
+    marginBottom: 12,
+  },
+  prompt: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: CZ.textLight,
+    textAlign: 'center',
+    marginBottom: 18,
+  },
+  coinsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 14 },
+  coin: {
+    borderWidth: 2.5,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 72,
+    overflow: 'hidden',
   },
-  coinTouch: { alignItems: 'center', justifyContent: 'center' },
-  pressed: { opacity: 0.9 },
-  coinText: { fontSize: 22, fontWeight: '800' },
+  coinGrad: { ...StyleSheet.absoluteFillObject },
+  coinValue: { fontSize: 22, fontWeight: '900', color: CZ.textLight },
+  coinRing: {
+    position: 'absolute',
+    fontSize: 10,
+    color: DINING.glow,
+    opacity: 0.5,
+    bottom: 8,
+  },
+  pressed: { opacity: 0.88 },
+  hint: {
+    marginTop: 16,
+    fontSize: 12,
+    fontWeight: '700',
+    color: DINING.glow,
+    textAlign: 'center',
+  },
 });

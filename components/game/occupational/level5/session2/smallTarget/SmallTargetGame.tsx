@@ -5,7 +5,7 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { ArcheryRangeBackdrop, BullseyeTarget, HitRipple } from '@/components/game/occupational/level5/session2/smallTarget/SmallTargetVisuals';
 import { BULLSEYE_SIZE, SMALL_TARGET_COPY as COPY, SMALL_TARGET_THEME as THEME } from '@/components/game/occupational/level5/session2/smallTarget/smallTargetTheme';
 import { SESSION5_2_PACING as P } from '@/components/game/occupational/level5/session2/session2Pacing';
-import { RoundCountdownOverlay, Session2HUD, Session2Intro } from '@/components/game/occupational/level5/session2/shared/Session2UI';
+import { ArcheryRangeCountdown, ArcheryRangeHUD, ArcheryRangeIntro } from '@/components/game/occupational/level5/session2/smallTarget/SmallTargetUI';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { speak as speakTTS } from '@/utils/tts';
@@ -89,11 +89,7 @@ const SmallTargetGame: React.FC<{ onBack?: () => void; onComplete?: () => void }
   if (showInfo) {
     return (
       <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
-        <Session2Intro
-          config={{ theme: THEME, emoji: COPY.emoji, title: COPY.title, tagline: COPY.tagline, body: COPY.body, chips: [...COPY.chips], startLabel: COPY.startLabel, startGradient: ['#EF4444', '#DC2626', '#B91C1C'], backdrop: <ArcheryRangeBackdrop /> }}
-          onStart={() => setShowInfo(false)}
-          onBack={exit}
-        />
+        <ArcheryRangeIntro onStart={() => setShowInfo(false)} onBack={exit} />
       </SafeAreaView>
     );
   }
@@ -107,7 +103,7 @@ const SmallTargetGame: React.FC<{ onBack?: () => void; onComplete?: () => void }
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <TouchableOpacity onPress={exit} style={styles.back}><Text style={styles.backText}>← Exit</Text></TouchableOpacity>
-      <Session2HUD theme={THEME} gameTitle="Bullseye" emoji={COPY.emoji} round={round} totalRounds={P.rounds} score={score} scoreLabel="HITS" hint={hint} showHint={phase === 'playing'} />
+      <ArcheryRangeHUD round={round} totalRounds={P.rounds} score={score} hint={hint} showHint={phase === 'playing'} />
       <View style={styles.arena} onLayout={(e) => { playW.current = e.nativeEvent.layout.width; playH.current = e.nativeEvent.layout.height; }}>
         <ArcheryRangeBackdrop />
         {target && phase === 'playing' && (
@@ -117,7 +113,7 @@ const SmallTargetGame: React.FC<{ onBack?: () => void; onComplete?: () => void }
           </>
         )}
         {ripple && <HitRipple x={ripple.x} y={ripple.y} visible />}
-        {phase === 'countdown' && <RoundCountdownOverlay key={`cd-${round}`} accent={THEME.accent} onDone={startPlaying} />}
+        {phase === 'countdown' && <ArcheryRangeCountdown key={`cd-${round}`} accent={THEME.accent} onDone={startPlaying} />}
       </View>
     </SafeAreaView>
   );

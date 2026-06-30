@@ -1,9 +1,2 @@
-import React from 'react';
-import EyeTrackGame from './EyeTrackGame';
-import { JUMP_TRACK } from './eyeTrackConfig';
-
-const JumpTrackGame: React.FC<{ onBack?: () => void; onComplete?: () => void }> = ({ onBack, onComplete }) => (
-  <EyeTrackGame config={JUMP_TRACK} onBack={onBack} onComplete={onComplete} />
-);
-
-export default JumpTrackGame;
+/** OT Level 5 · Session 5 · Game 4 — Lightning Jump */
+export { default } from '@/components/game/occupational/level5/session5/lightningJump/LightningJumpGame';

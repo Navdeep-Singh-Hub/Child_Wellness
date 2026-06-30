@@ -1,27 +1,34 @@
 /**
- * Game 3: Big → Small shapes — fill must come from strokes inside the boundary only.
- * Completes when passesStrict (≥95% inside coverage, ≤10% outside sample points).
+ * Game 3: Shrink Lab — big circle → square → small triangle.
  */
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, LayoutChangeEvent, Animated, Easing, AccessibilityInfo } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { BoundaryDrawingCanvas, type BoundaryDrawingCanvasRef, type FillStats } from './BoundaryDrawingCanvas';
 import { circleBoundary, squareBoundary, triangleBoundary } from './boundaryShapes';
 import type { Boundary } from './boundaryUtils';
-import { GameContainerGrip } from '@/components/level1-grip-session/GameContainerGrip';
 import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
+import { speak, stopTTS } from '@/utils/tts';
+import { BoundaryGameShell } from './controlled-shared/BoundaryGameShell';
 
-const STAGES: { key: string; label: string; getBoundary: (w: number, h: number) => Boundary }[] = [
-  { key: 'circle', label: 'Big Circle', getBoundary: (w, h) => circleBoundary(w, h, 0.44) },
-  { key: 'square', label: 'Medium Square', getBoundary: (w, h) => squareBoundary(w, h, 0.4) },
-  { key: 'triangle', label: 'Small Triangle', getBoundary: (w, h) => triangleBoundary(w, h, 0.32) },
+const STAGES: { key: string; label: string; emoji: string; getBoundary: (w: number, h: number) => Boundary }[] = [
+  { key: 'circle', label: 'Big Circle', emoji: '⭕', getBoundary: (w, h) => circleBoundary(w, h, 0.44) },
+  { key: 'square', label: 'Medium Square', emoji: '⬜', getBoundary: (w, h) => squareBoundary(w, h, 0.4) },
+  { key: 'triangle', label: 'Small Triangle', emoji: '🔺', getBoundary: (w, h) => triangleBoundary(w, h, 0.32) },
 ];
 
-function insideHintForStage(key: string): string {
-  if (key === 'circle') return 'Stay inside the circle!';
-  if (key === 'square') return 'Stay inside the square!';
-  return 'Stay inside the triangle!';
-}
+const THEME = {
+  bg: '#312E81',
+  labelColor: '#C4B5FD',
+  titleColor: '#F5F3FF',
+  textOnDark: '#F5F3FF',
+  backBg: 'rgba(255,255,255,0.1)',
+  backBorder: 'rgba(167,139,250,0.35)',
+  dotIdle: 'rgba(255,255,255,0.15)',
+  dotActive: '#A78BFA',
+  dotDone: '#34D399',
+};
 
 export function BigSmallShapesFillGame({
   currentStep,
@@ -37,7 +44,9 @@ export function BigSmallShapesFillGame({
   const [dimensions, setDimensions] = useState({ width: 300, height: 300 });
   const [stageIndex, setStageIndex] = useState(0);
   const [stats, setStats] = useState<FillStats | null>(null);
-  const [showReward, setShowReward] = useState(false);
+  const [showCelebrate, setShowCelebrate] = useState(false);
+  const [celebrateLabel, setCelebrateLabel] = useState('');
+  const [reduceMotion, setReduceMotion] = useState(false);
   const canvasRef = useRef<BoundaryDrawingCanvasRef>(null);
   const outsideFrames = useRef(0);
   const completingRef = useRef(false);
@@ -46,6 +55,18 @@ export function BigSmallShapesFillGame({
   const stage = STAGES[stageIndex];
   const boundary = stage.getBoundary(dimensions.width, dimensions.height);
 
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => setReduceMotion(!!v)).catch(() => {});
+    speak('Welcome to the Shrink Lab! Fill each shape — they get smaller!', 0.72);
+    return () => stopTTS();
+  }, []);
+
+  useEffect(() => {
+    outsideFrames.current = 0;
+    completingRef.current = false;
+    speak(`Now shrink to the ${stage.label.toLowerCase()}!`, 0.75);
+  }, [stageIndex, stage.label]);
+
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
     if (width > 0 && height > 0) setDimensions({ width, height });
@@ -53,23 +74,15 @@ export function BigSmallShapesFillGame({
 
   const runShake = useCallback(() => {
     Animated.sequence([
-      Animated.timing(shakeX, { toValue: 10, duration: 45, easing: Easing.linear, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: -10, duration: 45, easing: Easing.linear, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: 8, duration: 40, easing: Easing.linear, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: 0, duration: 50, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue: 10, duration: 45, useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue: -10, duration: 45, useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue: 0, duration: 50, useNativeDriver: true }),
     ]).start();
   }, [shakeX]);
 
   const handleStatsChange = useCallback(
     (s: FillStats) => {
       setStats(s);
-
-      if (s.outsideRatio > 0.05 && s.outsidePoints > 0) {
-        try {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        } catch (_) {}
-      }
-
       if (s.outsideRatio > 0.2) {
         outsideFrames.current += 1;
         if (outsideFrames.current % 4 === 0) {
@@ -84,12 +97,13 @@ export function BigSmallShapesFillGame({
 
       if (s.passesStrict && !completingRef.current) {
         completingRef.current = true;
-        setShowReward(true);
+        setCelebrateLabel(stage.label);
+        setShowCelebrate(true);
         try {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch (_) {}
         setTimeout(() => {
-          setShowReward(false);
+          setShowCelebrate(false);
           completingRef.current = false;
           if (stageIndex < STAGES.length - 1) {
             setStageIndex((i) => i + 1);
@@ -97,43 +111,67 @@ export function BigSmallShapesFillGame({
             setStats(null);
             outsideFrames.current = 0;
           } else {
+            speak('Shrink Lab complete! Incredible precision!', 0.72);
             onComplete();
           }
-        }, 1800);
+        }, 1500);
       }
     },
-    [stageIndex, onComplete, runShake]
+    [stageIndex, stage.label, onComplete, runShake],
   );
 
-  useEffect(() => {
-    outsideFrames.current = 0;
-    completingRef.current = false;
-  }, [stageIndex]);
-
   const fillShown = stats ? Math.min(100, Math.round(stats.fillDisplayPercent)) : 0;
-  const rawFill = stats ? Math.min(100, Math.round(stats.fillInsidePercent)) : 0;
-  const showOutsideMsg = stats != null && stats.outsideRatio > 0.05 && stats.outsidePoints > 0;
-  const showStayHint = stats != null && stats.outsideRatio > 0.12;
+
+  if (showCelebrate) {
+    return (
+      <View style={styles.root}>
+        <LinearGradient colors={['#312E81', '#4C1D95']} style={StyleSheet.absoluteFill} />
+        <View style={styles.celebrate}>
+          {!reduceMotion ? <ConfettiEffect /> : null}
+          <Text style={styles.celebrateEmoji}>{stage.emoji}</Text>
+          <Text style={styles.celebrateTitle}>{celebrateLabel} shrunk!</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
-    <GameContainerGrip
-      title="Big → Small Shapes"
+    <BoundaryGameShell
+      theme={THEME}
+      gameLabel="SHRINK LAB"
+      gameTitle={stage.label}
       currentStep={currentStep}
       totalSteps={totalSteps}
-      mascot="📐"
-      mascotHint={`Fill the ${stage.label.toLowerCase()} — only scribbles inside count!`}
       onBack={onBack}
+      headerRight={
+        <View style={styles.stageBadge}>
+          <Text style={styles.stageBadgeText}>{stageIndex + 1}/{STAGES.length}</Text>
+        </View>
+      }
     >
-      <Animated.View style={{ transform: [{ translateX: shakeX }] }}>
-        <View style={styles.outer} onLayout={onLayout}>
-          <Text style={styles.stageLabel}>{stage.label}</Text>
-          {showOutsideMsg ? (
-            <Text style={styles.warnBanner}>Draw inside the shape!</Text>
-          ) : null}
-          {showStayHint ? (
-            <Text style={styles.hintBanner}>{insideHintForStage(stage.key)}</Text>
-          ) : null}
-          <View style={styles.canvasWrap} key={stage.key}>
+      <LinearGradient colors={['#312E81', '#3730A3']} style={StyleSheet.absoluteFill} pointerEvents="none" />
+
+      <View style={styles.stagePills}>
+        {STAGES.map((s, i) => (
+          <View key={s.key} style={[styles.pill, i === stageIndex && styles.pillActive, i < stageIndex && styles.pillDone]}>
+            <Text style={styles.pillText}>{s.emoji}</Text>
+          </View>
+        ))}
+      </View>
+
+      <Animated.View style={{ flex: 1, transform: [{ translateX: shakeX }] }}>
+        <View style={styles.meter}>
+          <Text style={styles.meterLabel}>Inside fill: {fillShown}%</Text>
+          <Text style={styles.meterSub}>
+            Outside: {stats ? Math.round(stats.outsideRatio * 100) : 0}% · need ≤10%
+          </Text>
+          <View style={styles.barBg}>
+            <View style={[styles.barFill, { width: `${fillShown}%` }]} />
+          </View>
+        </View>
+
+        <View style={styles.canvasFrame} onLayout={onLayout}>
+          <View style={styles.canvasInner} key={stage.key}>
             <BoundaryDrawingCanvas
               ref={canvasRef}
               boundary={boundary}
@@ -145,57 +183,59 @@ export function BigSmallShapesFillGame({
               showInsidePulse
             />
           </View>
-          <View style={styles.progressRow}>
-            <Text style={styles.label}>
-              Fill: {fillShown}% (inside {rawFill}%){stats && stats.outsideRatio > 0.2 ? ' · penalty applied' : ''}
-            </Text>
-            <Text style={styles.subLabel}>
-              Outside strokes: {stats ? Math.round(stats.outsideRatio * 100) : 0}% — need ≤10% to finish
-            </Text>
-            <View style={styles.barBg}>
-              <View style={[styles.barFill, { width: `${fillShown}%` }]} />
-            </View>
-          </View>
         </View>
       </Animated.View>
-      {showReward && (
-        <View style={styles.rewardOverlay} pointerEvents="none">
-          <ConfettiEffect />
-          <Text style={styles.rewardText}>Great job!</Text>
-        </View>
-      )}
-    </GameContainerGrip>
+    </BoundaryGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  outer: { flex: 1 },
-  stageLabel: { fontSize: 18, fontWeight: '800', color: '#5B21B6', marginBottom: 6, textAlign: 'center' },
-  warnBanner: {
-    textAlign: 'center',
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#B91C1C',
-    marginBottom: 4,
+  root: { flex: 1 },
+  celebrate: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  celebrateEmoji: { fontSize: 56, marginBottom: 10 },
+  celebrateTitle: { fontSize: 24, fontWeight: '900', color: '#F5F3FF' },
+  stageBadge: {
+    backgroundColor: 'rgba(167,139,250,0.3)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#A78BFA',
   },
-  hintBanner: {
-    textAlign: 'center',
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#9D174D',
-    marginBottom: 6,
-  },
-  canvasWrap: { flex: 1, minHeight: 240, alignItems: 'center', justifyContent: 'center' },
-  progressRow: { marginTop: 12, gap: 4 },
-  label: { fontSize: 15, fontWeight: '700', color: '#5B21B6' },
-  subLabel: { fontSize: 12, fontWeight: '600', color: '#6B7280' },
-  barBg: { height: 14, backgroundColor: '#E5E7EB', borderRadius: 7, overflow: 'hidden' },
-  barFill: { height: '100%', backgroundColor: '#22C55E', borderRadius: 7 },
-  rewardOverlay: {
-    ...StyleSheet.absoluteFillObject,
+  stageBadgeText: { fontSize: 12, fontWeight: '800', color: '#E9D5FF' },
+  stagePills: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginBottom: 12 },
+  pill: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
-  rewardText: { fontSize: 28, fontWeight: '800', color: '#22C55E', marginTop: 20 },
+  pillActive: { borderColor: '#A78BFA', backgroundColor: 'rgba(167,139,250,0.25)' },
+  pillDone: { backgroundColor: 'rgba(52,211,153,0.25)', borderColor: '#34D399' },
+  pillText: { fontSize: 20 },
+  meter: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.3)',
+  },
+  meterLabel: { fontSize: 14, fontWeight: '800', color: '#E9D5FF', marginBottom: 4 },
+  meterSub: { fontSize: 12, color: '#C4B5FD', marginBottom: 8 },
+  barBg: { height: 10, backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 5, overflow: 'hidden' },
+  barFill: { height: '100%', backgroundColor: '#A78BFA', borderRadius: 5 },
+  canvasFrame: { flex: 1, minHeight: 220 },
+  canvasInner: {
+    flex: 1,
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(167,139,250,0.5)',
+    backgroundColor: 'rgba(15,23,42,0.4)',
+  },
 });

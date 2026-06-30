@@ -1,11 +1,27 @@
 /**
- * Game 2 — Match sign with meaning. LEFT→go left, RIGHT→go right, EXIT→door to leave. Session 3: Direction Signs.
+ * Game 2 — Direction Match: LEFT→go left, RIGHT→go right, EXIT→door to leave.
  */
-import { speak } from '@/utils/tts';
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { CitizenGameShell } from '@/components/citizen-session/shared/CitizenGameShell';
+import { CZ } from '@/components/citizen-session/shared/citizenTheme';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { speak } from '@/utils/tts';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+
+const SIGN_STYLE: Record<string, { color: string; glow: string; emoji: string }> = {
+  LEFT: { color: '#0D9488', glow: '#5EEAD4', emoji: '⬅️' },
+  RIGHT: { color: '#0891B2', glow: '#67E8F9', emoji: '➡️' },
+  EXIT: { color: '#1E40AF', glow: '#93C5FD', emoji: '🚪' },
+};
 
 const QUESTIONS: {
   sign: string;
@@ -13,106 +29,278 @@ const QUESTIONS: {
   options: string[];
   voice: string;
 }[] = [
-  { sign: 'LEFT', correctMeaning: 'go left', options: ['go left', 'go right', 'door to leave'], voice: 'What does LEFT mean? Tap go left.' },
-  { sign: 'RIGHT', correctMeaning: 'go right', options: ['go left', 'go right', 'door to leave'], voice: 'What does RIGHT mean? Tap go right.' },
-  { sign: 'EXIT', correctMeaning: 'door to leave', options: ['go left', 'go right', 'door to leave'], voice: 'What does EXIT mean? Tap door to leave.' },
+  {
+    sign: 'LEFT',
+    correctMeaning: 'go left',
+    options: ['go left', 'go right', 'door to leave'],
+    voice: 'What does LEFT mean? Tap go left.',
+  },
+  {
+    sign: 'RIGHT',
+    correctMeaning: 'go right',
+    options: ['go left', 'go right', 'door to leave'],
+    voice: 'What does RIGHT mean? Tap go right.',
+  },
+  {
+    sign: 'EXIT',
+    correctMeaning: 'door to leave',
+    options: ['go left', 'go right', 'door to leave'],
+    voice: 'What does EXIT mean? Tap door to leave.',
+  },
 ];
+
+const DEPOT = { accent: '#14B8A6', glow: '#5EEAD4', amber: '#F59E0B' } as const;
+
+function MeaningChip({
+  label,
+  selected,
+  feedback,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  feedback: 'idle' | 'wrong' | 'correct';
+  onPress: () => void;
+}) {
+  const shake = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (feedback === 'wrong' && selected) {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+    } else if (feedback === 'correct' && selected) {
+      scale.value = withSpring(1.04, { damping: 8 });
+    } else {
+      scale.value = withTiming(1, { duration: 150 });
+    }
+  }, [feedback, selected, shake, scale]);
+
+  const anim = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }, { scale: scale.value }],
+  }));
+
+  const border =
+    feedback === 'correct' && selected
+      ? CZ.good
+      : feedback === 'wrong' && selected
+        ? CZ.warn
+        : selected
+          ? DEPOT.glow
+          : CZ.glassBorder;
+
+  return (
+    <Animated.View style={[styles.chipWrap, anim]}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [styles.chip, { borderColor: border }, pressed && styles.pressed]}
+        accessibilityLabel={label}
+      >
+        <Text style={styles.chipText}>{label}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 export function DirectionSignMeaningMatch({ onComplete }: { onComplete: () => void }) {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [shakeAnim] = useState(() => new Animated.Value(0));
+  const [selected, setSelected] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<'idle' | 'wrong' | 'correct'>('idle');
+  const [lock, setLock] = useState(false);
 
   const q = QUESTIONS[questionIndex];
+  const signStyle = SIGN_STYLE[q.sign];
   const isLast = questionIndex === QUESTIONS.length - 1;
+  const progressPct = ((questionIndex + (feedback === 'correct' ? 1 : 0)) / QUESTIONS.length) * 100;
+
+  const playVoice = useCallback(() => {
+    speak(q.voice, 0.75).catch(() => {});
+  }, [q.voice]);
 
   useEffect(() => {
-    speak(q.voice, 0.75);
-  }, [questionIndex]);
-
-  const triggerShake = useCallback(() => {
-    shakeAnim.setValue(0);
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-  }, [shakeAnim]);
+    playVoice();
+    setSelected(null);
+    setFeedback('idle');
+    setLock(false);
+  }, [questionIndex, playVoice]);
 
   const handleChoice = useCallback(
     (meaning: string) => {
-      if (meaning !== q.correctMeaning) {
-        speak('Try again.');
-        triggerShake();
-        return;
-      }
-      speak('Correct!');
-      if (isLast) {
-        setShowSuccess(true);
-        setTimeout(() => onComplete(), 2200);
+      if (lock || feedback === 'correct') return;
+      setSelected(meaning);
+
+      if (meaning === q.correctMeaning) {
+        setFeedback('correct');
+        setLock(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speak('Correct!', 0.7);
+
+        if (isLast) {
+          setShowSuccess(true);
+          setTimeout(() => onComplete(), 2400);
+        } else {
+          setTimeout(() => setQuestionIndex((i) => i + 1), 900);
+        }
       } else {
-        setQuestionIndex((i) => i + 1);
+        setFeedback('wrong');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak('Try again.', 0.65);
+        setTimeout(() => {
+          setFeedback('idle');
+          setSelected(null);
+        }, 900);
       }
     },
-    [q.correctMeaning, isLast, onComplete, triggerShake]
+    [lock, feedback, q.correctMeaning, isLast, onComplete],
   );
 
-  if (showSuccess) return <SuccessCelebration variant="indigo" title="Great Job!" subtitle="You know the signs!" />;
+  const coachLine =
+    q.sign === 'LEFT'
+      ? 'LEFT tells you to turn that way — which phrase matches?'
+      : q.sign === 'RIGHT'
+        ? 'RIGHT points the other direction — find the right meaning!'
+        : 'EXIT shows a way out — pick the matching phrase!';
 
-  const shakeX = shakeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 10] });
+  if (showSuccess) {
+    return (
+      <SuccessCelebration
+        variant="mint"
+        title="Direction Match!"
+        subtitle="You know the direction signs!"
+        badgeEmoji="📋"
+      />
+    );
+  }
 
   return (
-    <GameLayout
-      title="Match sign with its meaning"
-      instruction="What does this sign mean?"
-      icon="📋"
-      backgroundVariant="indigo"
+    <CitizenGameShell
+      studio="DIRECTION MATCH · GAME 2"
+      title="Match sign to meaning"
+      instruction="What does this sign mean? Tap the correct phrase."
+      mascot="📋"
+      coachLine={coachLine}
+      onReplayVoice={playVoice}
     >
-      <View style={styles.content}>
-        <View style={styles.signDisplay}>
-          <Text style={[styles.signText, { color: '#1E40AF' }]}>{q.sign}</Text>
+      <View style={styles.progressWrap}>
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressLabel}>SIGN ROUNDS</Text>
+          <Text style={styles.progressCount}>
+            {questionIndex + 1} / {QUESTIONS.length}
+          </Text>
+        </View>
+        <View style={styles.progressBg}>
+          <LinearGradient
+            colors={[DEPOT.accent, DEPOT.amber]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.progressFill, { width: `${progressPct}%` }]}
+          />
+        </View>
+      </View>
+
+      <View style={styles.matchFrame}>
+        <LinearGradient
+          colors={[`${signStyle.color}33`, 'transparent', `${DEPOT.amber}22`]}
+          style={styles.matchGlow}
+        />
+        <Text style={styles.matchLabel}>ACTIVE SIGN</Text>
+        <View style={[styles.signBadge, { borderColor: signStyle.glow }]}>
+          <Text style={styles.signEmoji}>{signStyle.emoji}</Text>
+          <Text style={[styles.signText, { color: signStyle.color }]}>{q.sign}</Text>
         </View>
         <Text style={styles.prompt}>What does it mean?</Text>
+
         <View style={styles.optionsColumn}>
           {q.options.map((opt) => (
-            <Animated.View key={opt} style={{ transform: [{ translateX: opt === q.correctMeaning ? 0 : shakeX }] }}>
-              <Pressable
-                onPress={() => handleChoice(opt)}
-                style={({ pressed }) => [styles.optionCard, pressed && styles.pressed]}
-                accessibilityLabel={opt}
-              >
-                <Text style={styles.optionText}>{opt}</Text>
-              </Pressable>
-            </Animated.View>
+            <MeaningChip
+              key={opt}
+              label={opt}
+              selected={selected === opt}
+              feedback={feedback}
+              onPress={() => handleChoice(opt)}
+            />
           ))}
         </View>
-        <Text style={styles.progressText}>Question {questionIndex + 1} of {QUESTIONS.length}</Text>
       </View>
-    </GameLayout>
+    </CitizenGameShell>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 8, alignItems: 'center' },
-  signDisplay: {
-    backgroundColor: '#DBEAFE',
-    borderRadius: 16,
+  progressWrap: { marginBottom: 14 },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  progressLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+    color: DEPOT.glow,
+  },
+  progressCount: { fontSize: 14, fontWeight: '900', color: CZ.textLight },
+  progressBg: {
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    overflow: 'hidden',
+  },
+  progressFill: { height: '100%', borderRadius: 5 },
+  matchFrame: {
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: `${DEPOT.accent}55`,
+    backgroundColor: 'rgba(26,10,18,0.5)',
     paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderWidth: 3,
-    borderColor: '#1E40AF',
-    marginBottom: 16,
+    paddingHorizontal: 14,
+    overflow: 'hidden',
+    alignItems: 'center',
   },
-  signText: { fontSize: 28, fontWeight: '800' },
-  prompt: { fontSize: 18, fontWeight: '700', color: '#374151', marginBottom: 20 },
-  optionsColumn: { gap: 12, width: '100%', maxWidth: 320 },
-  optionCard: {
-    backgroundColor: '#FFF',
+  matchGlow: { ...StyleSheet.absoluteFillObject },
+  matchLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    color: DEPOT.glow,
+    marginBottom: 12,
+  },
+  signBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
     borderRadius: 16,
-    padding: 20,
-    borderWidth: 4,
-    borderColor: '#E5E7EB',
+    borderWidth: 2,
+    backgroundColor: 'rgba(11,10,26,0.65)',
+    marginBottom: 14,
   },
-  pressed: { opacity: 0.85 },
-  optionText: { fontSize: 18, fontWeight: '700', color: '#1f2937' },
-  progressText: { fontSize: 14, color: '#6B7280', marginTop: 20 },
+  signEmoji: { fontSize: 28 },
+  signText: { fontSize: 26, fontWeight: '900', letterSpacing: 2 },
+  prompt: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: CZ.textLight,
+    marginBottom: 14,
+    textAlign: 'center',
+  },
+  optionsColumn: { width: '100%', gap: 10 },
+  chipWrap: { width: '100%' },
+  chip: {
+    borderRadius: 16,
+    borderWidth: 2,
+    backgroundColor: 'rgba(11,10,26,0.7)',
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+  },
+  chipText: { fontSize: 16, fontWeight: '800', color: CZ.textLight, textAlign: 'center' },
+  pressed: { opacity: 0.88 },
 });

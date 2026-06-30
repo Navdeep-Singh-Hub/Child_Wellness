@@ -1,22 +1,97 @@
 /**
- * Notebook Task — Draw a boy behind a tree. Upload photo, AI check: tree_detected, boy_detected, boy_behind_tree.
+ * Game 5 — Trail Proof: draw a boy BEHIND a tree, upload for AI check.
+ * Logic Lab · Section 6 · Session 5 (capstone notebook task)
  */
+import { LogicLabGameShell } from '@/components/logic-lab-session/shared/LogicLabGameShell';
+import { LL } from '@/components/logic-lab-session/shared/logicLabTheme';
 import { speak } from '@/utils/tts';
-import React, { useState } from 'react';
+import { API_BASE_URL, authHeaders } from '@/utils/api';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Platform,
   Pressable,
   StyleSheet,
-  Alert,
-  Platform,
-  ActivityIndicator,
+  Text,
+  View,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { GameLayout } from '@/components/farm-session/GameLayout';
-import { API_BASE_URL, authHeaders } from '@/utils/api';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
-const INSTRUCTIONS = 'Draw a boy behind a tree. Then upload or take a photo of your drawing.';
+const VOICE =
+  'Draw a boy behind a tree in your notebook. Then take a photo or upload your drawing.';
+
+const TRAIL = { deep: '#14532D', glow: '#4ADE80', bark: '#A16207', paper: '#F0FDF4', ink: '#166534' } as const;
+
+const STEPS = [
+  { icon: '✏️', title: 'Sketch', body: 'Draw a tree with the boy BEHIND it.' },
+  { icon: '📷', title: 'Capture', body: 'Photograph or upload your page.' },
+  { icon: '🔍', title: 'Verify', body: 'Lab checks tree, boy, and BEHIND!' },
+] as const;
+
+function ExampleSketch() {
+  const pulse = useSharedValue(0);
+  useEffect(() => {
+    pulse.value = withRepeat(
+      withSequence(withTiming(1, { duration: 900 }), withTiming(0, { duration: 900 })),
+      -1,
+      true,
+    );
+  }, [pulse]);
+
+  const glow = useAnimatedStyle(() => ({
+    opacity: 0.18 + pulse.value * 0.22,
+  }));
+
+  return (
+    <View style={example.wrap}>
+      <Text style={example.label}>TARGET SKETCH</Text>
+      <Animated.View style={[example.glow, glow]} />
+      <View style={example.paper}>
+        <View style={example.scene}>
+          <View style={example.rearZone}>
+            <Text style={example.boyEmoji}>👦</Text>
+          </View>
+          <Text style={example.treeEmoji}>🌳</Text>
+        </View>
+        <Text style={example.caption}>boy BEHIND tree</Text>
+      </View>
+    </View>
+  );
+}
+
+function CheckRow({ label, ok, pending }: { label: string; ok?: boolean; pending?: boolean }) {
+  return (
+    <View style={check.row}>
+      <View
+        style={[
+          check.icon,
+          ok === true && check.iconOk,
+          ok === false && check.iconBad,
+          pending && check.iconPending,
+        ]}
+      >
+        {pending ? (
+          <ActivityIndicator size="small" color={TRAIL.glow} />
+        ) : (
+          <Ionicons name={ok ? 'checkmark' : 'close'} size={16} color={ok ? LL.good : LL.warn} />
+        )}
+      </View>
+      <Text style={check.label}>{label}</Text>
+    </View>
+  );
+}
 
 export function PrepositionBehindNotebookUpload({
   onComplete,
@@ -24,6 +99,7 @@ export function PrepositionBehindNotebookUpload({
   onComplete: (correct: boolean) => void;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [result, setResult] = useState<{
     correct: boolean;
     feedback: string;
@@ -31,7 +107,76 @@ export function PrepositionBehindNotebookUpload({
     boy_detected?: boolean;
     boy_behind_tree?: boolean;
   } | null>(null);
-  const [imageUri, setImageUri] = useState<string | null>(null);
+
+  const playVoice = useCallback(() => {
+    speak(VOICE, 0.75).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    playVoice();
+  }, [playVoice]);
+
+  const uploadImage = async (uri: string) => {
+    setUploading(true);
+    setResult(null);
+    try {
+      const formData = new FormData();
+      const filename = 'notebook.jpg';
+      const type = 'image/jpeg';
+
+      if (Platform.OS === 'web' && (uri.startsWith('blob:') || uri.startsWith('data:'))) {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        formData.append('file', blob, filename);
+      } else {
+        formData.append('file', { uri, name: filename, type } as unknown as Blob);
+      }
+
+      const headers = await authHeaders({ multipart: true });
+      delete (headers as Record<string, string>)['Content-Type'];
+
+      const res = await fetch(`${API_BASE_URL}/api/upload-preposition-behind-task`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error || `Upload failed: ${res.status}`);
+      }
+
+      const data = await res.json();
+      const treeOk = data.tree_detected ?? true;
+      const boyOk = data.boy_detected ?? true;
+      const behindOk = data.boy_behind_tree ?? true;
+      const correct = data.correct ?? (treeOk && boyOk && behindOk);
+      const feedback = data.feedback || (correct ? 'Great job!' : "Let's try again!");
+
+      setResult({
+        correct,
+        feedback,
+        tree_detected: data.tree_detected,
+        boy_detected: data.boy_detected,
+        boy_behind_tree: data.boy_behind_tree,
+      });
+
+      if (correct) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        speak('Great job! The boy is BEHIND the tree!');
+        setTimeout(() => onComplete(true), 2600);
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+        speak("Let's try again. Draw the boy hiding BEHIND the tree trunk.");
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Upload failed. Try again.';
+      setResult({ correct: false, feedback: msg });
+      speak("Let's try again!");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const pickImage = async () => {
     const permission =
@@ -51,7 +196,6 @@ export function PrepositionBehindNotebookUpload({
     if (pickerResult.canceled) return;
     const uri = pickerResult.assets[0].uri;
     setImageUri(uri);
-    setResult(null);
     await uploadImage(uri);
   };
 
@@ -72,170 +216,237 @@ export function PrepositionBehindNotebookUpload({
     if (pickerResult.canceled) return;
     const uri = pickerResult.assets[0].uri;
     setImageUri(uri);
-    setResult(null);
     await uploadImage(uri);
   };
 
-  const uploadImage = async (uri: string) => {
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      const filename = 'notebook.jpg';
-      const type = 'image/jpeg';
-
-      if (Platform.OS === 'web' && (uri.startsWith('blob:') || uri.startsWith('data:'))) {
-        const response = await fetch(uri);
-        const blob = await response.blob();
-        formData.append('file', blob, filename);
-      } else {
-        formData.append('file', {
-          uri,
-          name: filename,
-          type,
-        } as any);
-      }
-
-      const headers = await authHeaders({ multipart: true });
-      delete (headers as Record<string, string>)['Content-Type'];
-
-      const res = await fetch(`${API_BASE_URL}/api/upload-preposition-behind-task`, {
-        method: 'POST',
-        headers,
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `Upload failed: ${res.status}`);
-      }
-      const data = await res.json();
-      const treeOk = data.tree_detected ?? true;
-      const boyOk = data.boy_detected ?? true;
-      const behindOk = data.boy_behind_tree ?? true;
-      const correct = data.correct ?? (treeOk && boyOk && behindOk);
-      const feedback = data.feedback || (correct ? 'Great job!' : "Let's try again!");
-      setResult({
-        correct,
-        feedback,
-        tree_detected: data.tree_detected,
-        boy_detected: data.boy_detected,
-        boy_behind_tree: data.boy_behind_tree,
-      });
-      if (correct) {
-        speak('Great job!');
-        setTimeout(() => onComplete(true), 2200);
-      } else {
-        speak("Let's try again!");
-        onComplete(false);
-      }
-    } catch (e: any) {
-      setResult({
-        correct: false,
-        feedback: e?.message || 'Upload failed. Try again.',
-      });
-      speak("Let's try again!");
-      onComplete(false);
-    } finally {
-      setUploading(false);
-    }
-  };
+  const coachLine = uploading
+    ? 'Scanning your trail sketch…'
+    : result?.correct
+      ? 'Verified! Boy is BEHIND the tree.'
+      : result
+        ? 'Hide the boy at the BACK of the tree and capture again.'
+        : 'Sketch on paper first — boy peeking BEHIND the tree trunk.';
 
   return (
-    <GameLayout
-      title="Notebook Activity"
-      instruction="Draw a boy behind a tree. Then upload or take a photo."
-      icon="📓"
-      backgroundVariant="indigo"
+    <LogicLabGameShell
+      studio="TRAIL PROOF · GAME 5"
+      title="Notebook proof"
+      instruction="Draw a boy BEHIND a tree, then upload or photograph your page."
+      mascot="🌳"
+      coachLine={coachLine}
+      onReplayVoice={playVoice}
     >
-      <View style={styles.content}>
-        <Text style={styles.instructions}>{INSTRUCTIONS}</Text>
-        <View style={styles.exampleRow}>
-          <Text style={styles.exampleLabel}>Example: </Text>
-          <View style={styles.exampleVisual}>
-            <View style={styles.exampleTree} />
-            <View style={styles.exampleBoy} />
+      <View style={styles.badge}>
+        <Text style={styles.badgeTxt}>SESSION 5 · BEHIND · CAPSTONE</Text>
+      </View>
+
+      <View style={styles.stepsRow}>
+        {STEPS.map((s, i) => (
+          <View key={s.title} style={styles.stepChip}>
+            <Text style={styles.stepIcon}>{s.icon}</Text>
+            <Text style={styles.stepTitle}>{s.title}</Text>
+            {i < STEPS.length - 1 && <Text style={styles.stepArrow}>›</Text>}
           </View>
-          <Text style={styles.exampleText}>boy behind tree</Text>
+        ))}
+      </View>
+
+      <ExampleSketch />
+
+      {imageUri && !uploading && (
+        <View style={styles.previewWrap}>
+          <Text style={styles.previewLabel}>YOUR CAPTURE</Text>
+          <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="cover" />
         </View>
-        <View style={styles.buttonRow}>
-          <Pressable
-            onPress={pickImage}
-            disabled={uploading}
-            style={({ pressed }) => [styles.uploadBtn, pressed && styles.pressed, uploading && styles.disabled]}
-            accessibilityLabel="Upload photo"
-          >
+      )}
+
+      <View style={styles.actions}>
+        <Pressable
+          onPress={pickImage}
+          disabled={uploading}
+          style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed, uploading && styles.disabled]}
+        >
+          <LinearGradient colors={[TRAIL.deep, TRAIL.ink]} style={styles.actionGrad}>
             {uploading ? (
-              <ActivityIndicator color="#FFF" size="large" />
+              <ActivityIndicator color="#FFF" />
             ) : (
               <>
-                <Text style={styles.btnEmoji}>📷</Text>
-                <Text style={styles.btnText}>Upload Photo</Text>
+                <Text style={styles.actionEmoji}>📷</Text>
+                <Text style={styles.actionTxt}>Upload Photo</Text>
               </>
             )}
-          </Pressable>
-          <Pressable
-            onPress={takePhoto}
-            disabled={uploading}
-            style={({ pressed }) => [styles.uploadBtn, pressed && styles.pressed, uploading && styles.disabled]}
-            accessibilityLabel="Take photo"
-          >
-            <Text style={styles.btnEmoji}>📸</Text>
-            <Text style={styles.btnText}>Take Photo</Text>
-          </Pressable>
-        </View>
-        {result && (
-          <View style={[styles.resultBox, result.correct ? styles.resultCorrect : styles.resultIncorrect]}>
-            <Text style={styles.resultText}>{result.feedback}</Text>
-          </View>
-        )}
+          </LinearGradient>
+        </Pressable>
+
+        <Pressable
+          onPress={takePhoto}
+          disabled={uploading}
+          style={({ pressed }) => [styles.actionBtn, styles.actionAlt, pressed && styles.pressed, uploading && styles.disabled]}
+        >
+          <Text style={styles.actionEmoji}>📸</Text>
+          <Text style={[styles.actionTxt, styles.actionTxtAlt]}>Take Photo</Text>
+        </Pressable>
       </View>
-    </GameLayout>
+
+      {(uploading || result) && (
+        <View style={[styles.resultCard, result?.correct ? styles.resultOk : styles.resultPending]}>
+          {uploading ? (
+            <>
+              <ActivityIndicator color={TRAIL.glow} size="large" />
+              <Text style={styles.resultTitle}>Trail scan in progress…</Text>
+              <CheckRow label="Tree detected" pending />
+              <CheckRow label="Boy detected" pending />
+              <CheckRow label="Boy BEHIND tree" pending />
+            </>
+          ) : result ? (
+            <>
+              <Text style={styles.resultTitle}>
+                {result.correct ? 'Trail Proof verified!' : 'Adjust your sketch'}
+              </Text>
+              <Text style={styles.resultFeedback}>{result.feedback}</Text>
+              <CheckRow label="Tree detected" ok={result.tree_detected ?? result.correct} />
+              <CheckRow label="Boy detected" ok={result.boy_detected ?? result.correct} />
+              <CheckRow label="Boy BEHIND tree" ok={result.boy_behind_tree ?? result.correct} />
+              {!result.correct && (
+                <View style={styles.retryRow}>
+                  <Pressable
+                    onPress={() => {
+                      setResult(null);
+                      setImageUri(null);
+                    }}
+                    style={styles.retryBtn}
+                  >
+                    <Text style={styles.retryTxt}>Try another photo</Text>
+                  </Pressable>
+                  <Pressable onPress={() => onComplete(false)} style={styles.finishBtn}>
+                    <Text style={styles.finishTxt}>Finish anyway</Text>
+                  </Pressable>
+                </View>
+              )}
+            </>
+          ) : null}
+        </View>
+      )}
+    </LogicLabGameShell>
   );
 }
 
-const styles = StyleSheet.create({
-  content: { padding: 16 },
-  instructions: { fontSize: 18, color: '#374151', marginBottom: 16, textAlign: 'center' },
-  exampleRow: { alignItems: 'center', marginBottom: 24 },
-  exampleLabel: { fontSize: 16, fontWeight: '600', color: '#6B7280', marginBottom: 8 },
-  exampleVisual: { width: 80, height: 70, position: 'relative', marginBottom: 8 },
-  exampleTree: {
+const example = StyleSheet.create({
+  wrap: { alignItems: 'center', marginBottom: 16 },
+  label: { fontSize: 9, fontWeight: '900', letterSpacing: 1.3, color: TRAIL.glow, marginBottom: 8 },
+  glow: {
     position: 'absolute',
-    left: 28,
-    width: 28,
-    height: 44,
-    backgroundColor: '#22C55E',
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#166534',
+    top: 20,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: TRAIL.deep,
   },
-  exampleBoy: {
-    position: 'absolute',
-    left: 18,
-    top: 22,
-    width: 22,
-    height: 28,
-    backgroundColor: '#93C5FD',
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#1D4ED8',
-  },
-  exampleText: { fontSize: 14, color: '#6B7280' },
-  buttonRow: { flexDirection: 'row', gap: 12, justifyContent: 'center', flexWrap: 'wrap' },
-  uploadBtn: {
-    backgroundColor: '#4F46E5',
-    paddingVertical: 18,
-    paddingHorizontal: 24,
+  paper: {
+    width: '88%',
+    backgroundColor: TRAIL.paper,
     borderRadius: 16,
+    borderWidth: 2,
+    borderColor: `${TRAIL.ink}55`,
+    paddingVertical: 22,
     alignItems: 'center',
-    minWidth: 140,
   },
+  scene: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 0,
+    minHeight: 64,
+  },
+  rearZone: {
+    width: 40,
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: 'rgba(20,83,45,0.12)',
+    borderWidth: 1,
+    borderColor: `${TRAIL.glow}44`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: -8,
+    zIndex: 1,
+  },
+  boyEmoji: { fontSize: 26 },
+  treeEmoji: { fontSize: 48, zIndex: 2 },
+  caption: { marginTop: 14, fontSize: 14, fontWeight: '800', color: TRAIL.ink },
+});
+
+const check = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, alignSelf: 'stretch' },
+  icon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconOk: { backgroundColor: 'rgba(52,211,153,0.2)' },
+  iconBad: { backgroundColor: 'rgba(251,113,133,0.2)' },
+  iconPending: { backgroundColor: 'rgba(74,222,128,0.15)' },
+  label: { fontSize: 14, fontWeight: '700', color: LL.textLight },
+});
+
+const styles = StyleSheet.create({
+  badge: {
+    alignSelf: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: 'rgba(20,83,45,0.2)',
+    borderWidth: 1,
+    borderColor: `${TRAIL.glow}55`,
+    marginBottom: 10,
+  },
+  badgeTxt: { fontSize: 9, fontWeight: '900', letterSpacing: 1, color: TRAIL.glow },
+  stepsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginBottom: 12 },
+  stepChip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  stepIcon: { fontSize: 15 },
+  stepTitle: { fontSize: 11, fontWeight: '800', color: TRAIL.glow },
+  stepArrow: { fontSize: 14, color: LL.textMuted, marginHorizontal: 2 },
+  previewWrap: { marginBottom: 14, alignItems: 'center' },
+  previewLabel: { fontSize: 9, fontWeight: '900', letterSpacing: 1.2, color: LL.textMuted, marginBottom: 6 },
+  preview: { width: '100%', height: 140, borderRadius: 14, borderWidth: 2, borderColor: LL.glassBorder },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'center' },
+  actionBtn: { borderRadius: 18, overflow: 'hidden', minWidth: 148, flex: 1, maxWidth: 200 },
+  actionAlt: {
+    borderWidth: 2,
+    borderColor: `${TRAIL.glow}66`,
+    backgroundColor: 'rgba(20,83,45,0.2)',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+  },
+  actionGrad: { paddingVertical: 16, alignItems: 'center', gap: 4 },
+  actionEmoji: { fontSize: 28 },
+  actionTxt: { fontSize: 15, fontWeight: '900', color: '#FFF' },
+  actionTxtAlt: { color: TRAIL.glow },
   pressed: { opacity: 0.9 },
-  disabled: { opacity: 0.7 },
-  btnEmoji: { fontSize: 32, marginBottom: 4 },
-  btnText: { fontSize: 18, fontWeight: '800', color: '#FFF' },
-  resultBox: { marginTop: 20, padding: 16, borderRadius: 12, alignItems: 'center' },
-  resultCorrect: { backgroundColor: '#DCFCE7', borderWidth: 2, borderColor: '#22C55E' },
-  resultIncorrect: { backgroundColor: '#FEE2E2', borderWidth: 2, borderColor: '#EF4444' },
-  resultText: { fontSize: 18, fontWeight: '700', color: '#1f2937' },
+  disabled: { opacity: 0.65 },
+  resultCard: {
+    marginTop: 18,
+    borderRadius: 18,
+    borderWidth: 2,
+    padding: 16,
+    alignItems: 'center',
+    alignSelf: 'stretch',
+  },
+  resultOk: { borderColor: LL.good, backgroundColor: 'rgba(52,211,153,0.12)' },
+  resultPending: { borderColor: LL.glassBorder, backgroundColor: 'rgba(15,23,42,0.45)' },
+  resultTitle: { fontSize: 18, fontWeight: '900', color: LL.textLight, marginBottom: 6 },
+  resultFeedback: { fontSize: 14, fontWeight: '600', color: LL.textMuted, textAlign: 'center', marginBottom: 4 },
+  retryRow: { flexDirection: 'row', gap: 10, marginTop: 14, flexWrap: 'wrap', justifyContent: 'center' },
+  retryBtn: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, backgroundColor: TRAIL.deep },
+  retryTxt: { fontSize: 14, fontWeight: '800', color: '#FFF' },
+  finishBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: LL.glassBorder,
+  },
+  finishTxt: { fontSize: 14, fontWeight: '700', color: LL.textMuted },
 });
