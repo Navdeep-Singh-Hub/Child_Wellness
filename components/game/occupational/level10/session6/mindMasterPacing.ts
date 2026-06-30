@@ -1,0 +1,22 @@
+/** Pacing — OT Level 10 Session 6 · Game 5 Mind Master capstone */
+export const MIND_MASTER_PACING = {
+  rounds: 5,
+  calibrationMs: 3000,
+  tickMs: 80,
+  focusHoldMs: 1100,
+  focusGraceMs: 400,
+  regulateHoldMs: 1400,
+  regulateGraceMs: 450,
+  masterHoldMs: 1700,
+  masterGraceMs: 450,
+  minPostureForRegulate: 0.34,
+  minStillnessForRegulate: 0.36,
+  minPostureForMaster: 0.36,
+  minAttentionForMaster: 0.38,
+  betweenRoundsMs: 1200,
+  roundIntroMs: 900,
+  fallbackFocusMs: 1800,
+  fallbackRegulateMs: 2200,
+  fallbackMasterMs: 2600,
+  starEveryNRounds: 2,
+} as const;

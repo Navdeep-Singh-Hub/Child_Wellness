@@ -6,7 +6,11 @@ dist/
 web-build/
 android/.gradle/
 android/build/
+android/app/build
 android/app/build/
+android/app/.cxx
+android/app/.cxx/
+android/.kotlin/
 ios/
 tts-service/
 farm-module/

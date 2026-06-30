@@ -1,0 +1,23 @@
+{
+  "name": "child-wellness-vision",
+  "version": "1.0.0",
+  "description": "Native Android vision tracking (MediaPipe Tasks + CameraX) for OT head-movement games",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "expo-module build",
+    "clean": "expo-module clean"
+  },
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  },
+  "expo": {
+    "name": "child-wellness-vision",
+    "plugins": ["./app.plugin.js"]
+  },
+  "devDependencies": {
+    "expo-module-scripts": "^4.0.0"
+  }
+}

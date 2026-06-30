@@ -14,7 +14,7 @@
     "build": "node --max-old-space-size=8192 ./node_modules/expo/bin/cli export -p web",
     "build:web": "npm run build",
     "lint": "expo lint",
-    "postinstall": "patch-package",
+    "postinstall": "patch-package && node scripts/downloadVisionModels.js",
     "setup:local": "node -e \"require('fs').writeFileSync('.env.local', 'EXPO_PUBLIC_API_BASE_URL=http://localhost:4000\\n', 'utf8'); console.log('✅ Created .env.local with localhost configuration')\"",
     "eas-build-pre-install": "node scripts/optimizeAndroidBundleAssets.js"
   },
@@ -28,7 +28,7 @@
     "@react-navigation/native": "^7.1.8",
     "@tensorflow/tfjs": "^4.15.0",
     "@the-vedantic-coder/piper-tts-web": "^1.0.10",
-    "auth": "^1.2.3",
+    "child-wellness-vision": "file:./modules/child-wellness-vision",
     "axios": "^1.13.5",
     "child-wellness-vision": "file:./modules/child-wellness-vision",
     "expo": "54.0.13",

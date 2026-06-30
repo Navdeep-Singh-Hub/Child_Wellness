@@ -4,6 +4,7 @@ import { GauntletBackdrop } from '@/components/game/occupational/level5/session1
 import type { GauntletCopy } from '@/components/game/occupational/level5/session10/gauntletTheme';
 import { GauntletHUD, GauntletIntro, type GauntletTheme } from '@/components/game/occupational/level5/session10/shared/GauntletUI';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { configurePlaybackAudio } from '@/utils/configureAppAudio';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -36,10 +37,24 @@ export function GauntletShell({
   if (showInfo) {
     return (
       <SafeAreaView style={[styles.root, { backgroundColor: copy.rootBg }]} edges={['top', 'bottom']}>
+<<<<<<< HEAD
         <GauntletIntro
           theme={theme} copy={introCopy} chips={copy.chips} startLabel={copy.startLabel} startColors={copy.startGradient}
           backdrop={<GauntletBackdrop theme={theme} backdrop={copy.backdrop} />}
           onStart={onStart} onBack={onExit}
+=======
+        <Session2Intro
+          config={{
+            theme, emoji: copy.emoji, title: copy.gameTitle, tagline: copy.tagline, body: copy.introBody,
+            chips: copy.chips, startLabel: copy.startLabel, startGradient: copy.startGradient,
+            backdrop: <GauntletBackdrop theme={theme} backdrop={copy.backdrop} />,
+          }}
+          onStart={() => {
+            void configurePlaybackAudio();
+            onStart();
+          }}
+          onBack={onExit}
+>>>>>>> parent of d0342ff (Revert "fgh")
         />
       </SafeAreaView>
     );

@@ -17,6 +17,7 @@ export const BALL_SIZE = 64;
 const TOLERANCE = 50;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+<<<<<<< HEAD:components/game/occupational/level5/session6/shared/useSpeedCatchGame.ts
 export type CatchPhase = 'countdown' | 'playing' | 'idle';
 
 type Options = {
@@ -26,6 +27,18 @@ type Options = {
 };
 
 export function useSpeedCatchGame({ config, ttsComplete, onBack }: Options) {
+=======
+/** Round 1 = catch during slow; rounds 2+ = catch during fast. */
+function roundWantsFast(roundNum: number): boolean {
+  return roundNum > 1;
+}
+
+const SpeedCatchGame: React.FC<{ config: SpeedCatchConfig; onBack?: () => void; onComplete?: () => void }> = ({
+  config,
+  onBack,
+  onComplete,
+}) => {
+>>>>>>> parent of d0342ff (Revert "fgh"):components/game/occupational/level5/session6/SpeedCatchGame.tsx
   const router = useRouter();
   const [showInfo, setShowInfo] = useState(true);
   const [showCongrats, setShowCongrats] = useState(false);
@@ -34,7 +47,7 @@ export function useSpeedCatchGame({ config, ttsComplete, onBack }: Options) {
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
-  const [isFast, setIsFast] = useState(true);
+  const [isFast, setIsFast] = useState(false);
 
   const ballX = useSharedValue(SCREEN_WIDTH * 0.5);
   const ballY = useSharedValue(SCREEN_HEIGHT * 0.5);
@@ -44,8 +57,10 @@ export function useSpeedCatchGame({ config, ttsComplete, onBack }: Options) {
   const animationRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const switchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const endGameRef = useRef<((finalScore: number) => Promise<void>) | null>(null);
+  const scoreRef = useRef(0);
   const resetBallRef = useRef<(() => void) | null>(null);
-  const isFastRef = useRef(true);
+  const isFastRef = useRef(false);
+  const roundRef = useRef(1);
   const directionX = useRef(1);
   const directionY = useRef(1);
   const speedX = useRef(config.speedMin);
@@ -74,6 +89,28 @@ export function useSpeedCatchGame({ config, ttsComplete, onBack }: Options) {
   useEffect(() => {
     resetBallRef.current = resetBall;
   }, [resetBall]);
+
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
+
+  const applySwitchRoundSpeed = useCallback((roundNum: number) => {
+    const fast = roundWantsFast(roundNum);
+    isFastRef.current = fast;
+    setIsFast(fast);
+  }, []);
+
+  const speakSwitchRoundCue = useCallback((roundNum: number) => {
+    speakTTS(
+      roundWantsFast(roundNum) ? 'Catch it on turbo speed!' : 'Catch it on slow speed!',
+      0.8,
+      'en-US',
+    );
+  }, []);
 
   const moveBall = useCallback(() => {
     clearTimers();
@@ -148,45 +185,78 @@ export function useSpeedCatchGame({ config, ttsComplete, onBack }: Options) {
       ballScale.value = withSpring(1);
     });
 
-    setScore((s) => {
-      const newScore = s + 1;
-      if (newScore >= P.catchRounds) {
-        setTimeout(() => endGameRef.current?.(newScore), 900);
-      } else {
-        setTimeout(() => {
-          setRound((r) => r + 1);
-          if (config.mode === 'switch') {
-            isFastRef.current = true;
-            setIsFast(true);
-          }
-          resetBallRef.current?.();
-          moveBall();
-        }, config.mode === 'slow' ? 1200 : 700);
-      }
-      return newScore;
-    });
+    const newScore = scoreRef.current + 1;
+    scoreRef.current = newScore;
+    setScore(newScore);
+
+    if (newScore >= P.catchRounds) {
+      setTimeout(() => endGameRef.current?.(newScore), 900);
+    } else {
+      setTimeout(() => {
+        const nextRound = roundRef.current + 1;
+        roundRef.current = nextRound;
+        setRound(nextRound);
+        if (config.mode === 'switch') {
+          applySwitchRoundSpeed(nextRound);
+        }
+        resetBallRef.current?.();
+        moveBall();
+        if (config.mode === 'switch') {
+          setTimeout(() => speakSwitchRoundCue(nextRound), 350);
+        }
+      }, config.mode === 'slow' ? 1200 : 700);
+    }
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+<<<<<<< HEAD:components/game/occupational/level5/session6/shared/useSpeedCatchGame.ts
     speakTTS(config.ttsSuccess, 0.9).catch(() => {});
   }, [ballScale, clearTimers, config.mode, config.ttsSuccess, moveBall]);
+=======
+    speakTTS(config.ttsSuccess, 0.9, 'en-US');
+  }, [applySwitchRoundSpeed, ballScale, clearTimers, config.mode, config.ttsSuccess, moveBall, speakSwitchRoundCue]);
+>>>>>>> parent of d0342ff (Revert "fgh"):components/game/occupational/level5/session6/SpeedCatchGame.tsx
 
   const handleGameTap = useCallback(
     (event: GestureResponderEvent) => {
       if (done || phase !== 'playing') return;
-      if (isTapNearTarget(event, ballX.value, ballY.value, BALL_SIZE, TOLERANCE)) {
-        onCatchSuccess();
+      if (!isTapNearTarget(event, ballX.value, ballY.value, BALL_SIZE, TOLERANCE)) return;
+
+      if (config.mode === 'switch') {
+        const wantsFast = roundWantsFast(roundRef.current);
+        if (isFastRef.current !== wantsFast) {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+          speakTTS(
+            wantsFast ? 'Wait for turbo speed!' : 'Wait for slow speed!',
+            0.8,
+            'en-US',
+          );
+          return;
+        }
       }
+
+      onCatchSuccess();
     },
-    [ballX, ballY, done, onCatchSuccess, phase],
+    [ballX, ballY, config.mode, done, onCatchSuccess, phase],
   );
 
   const startPlaying = useCallback(() => {
     setPhase('playing');
     stopTTS();
+    if (config.mode === 'switch') {
+      applySwitchRoundSpeed(1);
+    }
     resetBallRef.current?.();
     moveBall();
+<<<<<<< HEAD:components/game/occupational/level5/session6/shared/useSpeedCatchGame.ts
     setTimeout(() => speakTTS(config.ttsStart, 0.8).catch(() => {}), 350);
   }, [config.ttsStart, moveBall]);
+=======
+    setTimeout(
+      () => (config.mode === 'switch' ? speakSwitchRoundCue(1) : speakTTS(config.ttsStart, 0.8, 'en-US')),
+      350,
+    );
+  }, [applySwitchRoundSpeed, config.mode, config.ttsStart, moveBall, speakSwitchRoundCue]);
+>>>>>>> parent of d0342ff (Revert "fgh"):components/game/occupational/level5/session6/SpeedCatchGame.tsx
 
   const handleStart = useCallback(() => {
     setShowInfo(false);
@@ -220,9 +290,13 @@ export function useSpeedCatchGame({ config, ttsComplete, onBack }: Options) {
 
   const hint =
     config.mode === 'switch'
-      ? isFast
-        ? '⚡ Turbo speed — react fast!'
-        : '🐢 Crawl speed — stay steady'
+      ? roundWantsFast(round)
+        ? isFast
+          ? '⚡ Turbo now — tap!'
+          : '⚡ Wait for turbo speed…'
+        : isFast
+          ? '🐢 Wait for slow speed…'
+          : '🐢 Slow now — tap!'
       : config.instruction;
 
   return {

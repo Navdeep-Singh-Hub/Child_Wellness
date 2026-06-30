@@ -119,9 +119,18 @@ export type PostureMetrics = {
   shoulderMid: Point;
   /** Hip midpoint, normalized screen coords. */
   hipMid: Point;
+  /** Hips (normalized). null when not confidently visible. */
+  leftHip: Point | null;
+  rightHip: Point | null;
   /** Wrists (normalized). null when not confidently visible. */
   leftWrist: Point | null;
   rightWrist: Point | null;
+  /** Elbows (normalized). null when not confidently visible. */
+  leftElbow: Point | null;
+  rightElbow: Point | null;
+  /** Shoulders (normalized). null when not confidently visible. */
+  leftShoulder: Point | null;
+  rightShoulder: Point | null;
   /** Nose point (normalized) — used for stillness tracking. */
   nose: Point | null;
   /** Selfie-mirrored face bounds for crown / face overlay (0..1 screen coords). */
@@ -256,8 +265,14 @@ export const EMPTY_METRICS: PostureMetrics = {
   shoulderWidth: 0.25,
   shoulderMid: { x: 0.5, y: 0.4 },
   hipMid: { x: 0.5, y: 0.8 },
+  leftHip: null,
+  rightHip: null,
   leftWrist: null,
   rightWrist: null,
+  leftElbow: null,
+  rightElbow: null,
+  leftShoulder: null,
+  rightShoulder: null,
   nose: null,
   headBounds: null,
   faceLandmarks: [],
@@ -305,6 +320,8 @@ export function computeMetrics(pose: PoseLandmark[] | null | undefined): Posture
 
   const lw = pose[POSE_IDX.leftWrist];
   const rw = pose[POSE_IDX.rightWrist];
+  const leftElbowLm = pose[POSE_IDX.leftElbow];
+  const rightElbowLm = pose[POSE_IDX.rightElbow];
   const la = pose[POSE_IDX.leftAnkle];
   const ra = pose[POSE_IDX.rightAnkle];
   const lk = pose[POSE_IDX.leftKnee];
@@ -319,8 +336,14 @@ export function computeMetrics(pose: PoseLandmark[] | null | undefined): Posture
     shoulderWidth,
     shoulderMid,
     hipMid,
+    leftHip: haveHips ? { x: lh!.x, y: lh!.y } : null,
+    rightHip: haveHips ? { x: rh!.x, y: rh!.y } : null,
     leftWrist: visible(lw, 0.3) ? { x: lw!.x, y: lw!.y } : null,
     rightWrist: visible(rw, 0.3) ? { x: rw!.x, y: rw!.y } : null,
+    leftElbow: visible(leftElbowLm, 0.3) ? { x: leftElbowLm!.x, y: leftElbowLm!.y } : null,
+    rightElbow: visible(rightElbowLm, 0.3) ? { x: rightElbowLm!.x, y: rightElbowLm!.y } : null,
+    leftShoulder: { x: ls.x, y: ls.y },
+    rightShoulder: { x: rs.x, y: rs.y },
     nose: visible(nose, 0.3) ? { x: nose!.x, y: nose!.y } : null,
     headBounds: computeHeadBounds(pose),
     faceLandmarks: extractFaceLandmarks(pose),

@@ -3,6 +3,7 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import type { ReactionCopy, ReactionThemeTokens } from '@/components/game/occupational/level5/session9/reactionTheme';
 import { ReactionHUD, ReactionIntro } from '@/components/game/occupational/level5/session9/shared/ReactionUI';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { configurePlaybackAudio } from '@/utils/configureAppAudio';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -40,10 +41,24 @@ export function ReactionShell({
   if (showInfo) {
     return (
       <SafeAreaView style={[styles.root, { backgroundColor: copy.rootBg }]} edges={['top', 'bottom']}>
+<<<<<<< HEAD
         <ReactionIntro
           theme={theme} copy={introCopy} chips={[...copy.chips]} startLabel={copy.startLabel} startColors={copy.startGradient}
           backdrop={backdrop}
           onStart={onStart} onBack={onExit}
+=======
+        <Session2Intro
+          config={{
+            theme, emoji: copy.emoji, title: copy.gameTitle, tagline: copy.tagline, body: copy.introBody,
+            chips: copy.chips, startLabel: copy.startLabel, startGradient: copy.startGradient,
+            backdrop: <ReactionBackdrop theme={theme} backdrop={copy.backdrop} />,
+          }}
+          onStart={() => {
+            void configurePlaybackAudio();
+            onStart();
+          }}
+          onBack={onExit}
+>>>>>>> parent of d0342ff (Revert "fgh")
         />
       </SafeAreaView>
     );
