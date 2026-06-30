@@ -13,6 +13,61 @@ export type PoseLandmark = {
   visibility?: number;
 };
 
+/** BlazePose face-region indices (0–10) on the 33-point pose model. */
+export const FACE_POSE_IDX = {
+  nose: 0,
+  leftEyeInner: 1,
+  leftEye: 2,
+  leftEyeOuter: 3,
+  rightEyeInner: 4,
+  rightEye: 5,
+  rightEyeOuter: 6,
+  leftEar: 7,
+  rightEar: 8,
+  mouthLeft: 9,
+  mouthRight: 10,
+} as const;
+
+export type FaceLandmarkId = keyof typeof FACE_POSE_IDX;
+export type FaceLandmarkKind = 'nose' | 'eye' | 'ear' | 'mouth';
+
+export type FaceLandmarkPoint = {
+  id: FaceLandmarkId;
+  kind: FaceLandmarkKind;
+  /** Mirrored 0..1 screen coords (matches front-camera preview). */
+  x: number;
+  y: number;
+};
+
+const FACE_LANDMARK_SPECS: { id: FaceLandmarkId; kind: FaceLandmarkKind }[] = [
+  { id: 'nose', kind: 'nose' },
+  { id: 'leftEyeInner', kind: 'eye' },
+  { id: 'leftEye', kind: 'eye' },
+  { id: 'leftEyeOuter', kind: 'eye' },
+  { id: 'rightEyeInner', kind: 'eye' },
+  { id: 'rightEye', kind: 'eye' },
+  { id: 'rightEyeOuter', kind: 'eye' },
+  { id: 'leftEar', kind: 'ear' },
+  { id: 'rightEar', kind: 'ear' },
+  { id: 'mouthLeft', kind: 'mouth' },
+  { id: 'mouthRight', kind: 'mouth' },
+];
+
+/** Pairs of face landmark ids to draw as guide lines on the preview overlay. */
+export const FACE_LANDMARK_EDGES: [FaceLandmarkId, FaceLandmarkId][] = [
+  ['leftEyeInner', 'leftEye'],
+  ['leftEye', 'leftEyeOuter'],
+  ['rightEyeInner', 'rightEye'],
+  ['rightEye', 'rightEyeOuter'],
+  ['leftEye', 'nose'],
+  ['rightEye', 'nose'],
+  ['leftEar', 'leftEyeOuter'],
+  ['rightEar', 'rightEyeOuter'],
+  ['mouthLeft', 'mouthRight'],
+  ['mouthLeft', 'nose'],
+  ['mouthRight', 'nose'],
+];
+
 /** BlazePose 33-landmark indices we rely on. */
 export const POSE_IDX = {
   nose: 0,
@@ -36,6 +91,18 @@ export const POSE_IDX = {
 
 export type Point = { x: number; y: number };
 
+/** Mirrored face rectangle derived from pose landmarks (matches front-camera preview). */
+export type HeadBounds = {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+  width: number;
+  height: number;
+  centerX: number;
+  crownY: number;
+};
+
 export type PostureMetrics = {
   present: boolean;
   /** Lateral head tilt from horizontal ear/eye line, degrees (0 = level). */
@@ -57,6 +124,10 @@ export type PostureMetrics = {
   rightWrist: Point | null;
   /** Nose point (normalized) — used for stillness tracking. */
   nose: Point | null;
+  /** Selfie-mirrored face bounds for crown / face overlay (0..1 screen coords). */
+  headBounds: HeadBounds | null;
+  /** Mirrored face landmark dots for preview overlay (BlazePose indices 0–10). */
+  faceLandmarks: FaceLandmarkPoint[];
   /** Ankles & knees (normalized). null when not confidently visible (legs off-frame). */
   leftAnkle: Point | null;
   rightAnkle: Point | null;
@@ -84,8 +155,80 @@ const RAD2DEG = 180 / Math.PI;
 
 const mid = (a: Point, b: Point): Point => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+
+/** Mirror x so overlay coords match the child's selfie preview. */
+const mirrorX = (x: number) => 1 - x;
+
+/**
+ * Face bounding box from nose / eyes / ears. Coordinates are mirrored for
+ * front-camera display and include padding for a visible frame around the face.
+ */
+export function computeHeadBounds(pose: PoseLandmark[] | null | undefined): HeadBounds | null {
+  if (!pose || pose.length < 9) return null;
+
+  const candidates = [
+    pose[POSE_IDX.nose],
+    pose[POSE_IDX.leftEye],
+    pose[POSE_IDX.rightEye],
+    pose[POSE_IDX.leftEar],
+    pose[POSE_IDX.rightEar],
+  ].filter((lm) => visible(lm, 0.25));
+
+  if (candidates.length < 2) return null;
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+
+  for (const lm of candidates) {
+    const x = mirrorX(lm!.x);
+    const y = lm!.y;
+    minX = Math.min(minX, x);
+    maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y);
+    maxY = Math.max(maxY, y);
+  }
+
+  const coreW = Math.max(0.06, maxX - minX);
+  const coreH = Math.max(0.06, maxY - minY);
+  const padX = coreW * 0.42;
+  const padTop = coreH * 0.55;
+  const padBottom = coreH * 0.28;
+
+  const left = clamp01(minX - padX);
+  const right = clamp01(maxX + padX);
+  const top = clamp01(minY - padTop);
+  const bottom = clamp01(maxY + padBottom);
+  const width = Math.max(0.08, right - left);
+  const height = Math.max(0.1, bottom - top);
+  const centerX = clamp01((left + right) / 2);
+  const crownY = clamp01(top - coreH * 0.22);
+
+  return { left, top, right, bottom, width, height, centerX, crownY };
+}
+
 const visible = (lm: PoseLandmark | undefined, min = 0.4): boolean =>
   !!lm && (lm.visibility === undefined || lm.visibility >= min);
+
+/** Mirrored face landmark points for the camera preview overlay. */
+export function extractFaceLandmarks(pose: PoseLandmark[] | null | undefined): FaceLandmarkPoint[] {
+  if (!pose || pose.length < 11) return [];
+
+  const out: FaceLandmarkPoint[] = [];
+  for (const spec of FACE_LANDMARK_SPECS) {
+    const lm = pose[FACE_POSE_IDX[spec.id]];
+    if (!visible(lm, 0.25)) continue;
+    out.push({
+      id: spec.id,
+      kind: spec.kind,
+      x: mirrorX(lm!.x),
+      y: lm!.y,
+    });
+  }
+  return out;
+}
 
 /** Angle of segment a→b measured from the horizontal axis, in degrees (-90..90). */
 const lineAngleFromHorizontal = (a: Point, b: Point): number => {
@@ -116,6 +259,8 @@ export const EMPTY_METRICS: PostureMetrics = {
   leftWrist: null,
   rightWrist: null,
   nose: null,
+  headBounds: null,
+  faceLandmarks: [],
   leftAnkle: null,
   rightAnkle: null,
   leftKnee: null,
@@ -177,6 +322,8 @@ export function computeMetrics(pose: PoseLandmark[] | null | undefined): Posture
     leftWrist: visible(lw, 0.3) ? { x: lw!.x, y: lw!.y } : null,
     rightWrist: visible(rw, 0.3) ? { x: rw!.x, y: rw!.y } : null,
     nose: visible(nose, 0.3) ? { x: nose!.x, y: nose!.y } : null,
+    headBounds: computeHeadBounds(pose),
+    faceLandmarks: extractFaceLandmarks(pose),
     leftAnkle: visible(la, 0.3) ? { x: la!.x, y: la!.y } : null,
     rightAnkle: visible(ra, 0.3) ? { x: ra!.x, y: ra!.y } : null,
     leftKnee: visible(lk, 0.3) ? { x: lk!.x, y: lk!.y } : null,
@@ -233,8 +380,6 @@ const LEAN_TOL = 20; // deg of trunk lean before score hits zero
 const SHOULDER_TOL = 16; // deg of shoulder drop/tilt
 const HEAD_TILT_TOL = 22; // deg of head tilt
 const HEAD_OFFSET_TOL = 0.7; // normalized lateral head drift
-
-const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
 /**
  * Overall upright quality 0..1 relative to the calibrated baseline.

@@ -1,120 +1,310 @@
 /**
- * Builder Session 4 — Game 1: Color Recognition
- * Tap the BLUE object. Show 3 colored objects (red, blue, yellow).
+ * Builder Session 4 — Game 1: Prism Color Row
+ * Tap the BLUE object among colored tiles.
  */
-import { speak } from '@/utils/tts';
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { BUILDER_SESSION, PRISM_PICK_THEME as T } from './builderSessionTheme';
+import { speakBuilderHint, stopBuilderSpeech } from './builderSessionSpeech';
+import { MountainWorkshopBackground } from './MountainWorkshopBackground';
 
 const ITEMS = [
   { id: 'red', label: 'RED', color: '#EF4444', emoji: '🔴' },
   { id: 'blue', label: 'BLUE', color: '#3B82F6', emoji: '🔵' },
   { id: 'yellow', label: 'YELLOW', color: '#FBBF24', emoji: '🟡' },
-];
+] as const;
 
 const CORRECT_ID = 'blue';
 
-export interface ColorRecognitionGameProps {
-  onComplete: () => void;
-}
-
-export function ColorRecognitionGame({ onComplete }: ColorRecognitionGameProps) {
-  const prompt = 'Tap the BLUE object.';
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [wrongShake] = useState(() => new Animated.Value(0));
+function ColorTile({
+  label,
+  emoji,
+  color,
+  onPress,
+  state,
+  disabled,
+}: {
+  label: string;
+  emoji: string;
+  color: string;
+  onPress: () => void;
+  state: 'idle' | 'wrong' | 'correct';
+  disabled: boolean;
+}) {
+  const scale = useSharedValue(1);
+  const shake = useSharedValue(0);
 
   useEffect(() => {
-    speak(prompt, 0.75);
-  }, []);
+    if (state === 'wrong') {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 })
+      );
+    }
+    if (state === 'correct') {
+      scale.value = withSequence(withSpring(1.1, { damping: 6 }), withSpring(1, { damping: 10 }));
+    }
+  }, [state, scale, shake]);
 
-  const triggerWrong = useCallback(() => {
-    wrongShake.setValue(0);
-    Animated.sequence([
-      Animated.timing(wrongShake, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(wrongShake, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-    speak('Try again. Tap the blue one!', 0.7);
-  }, [wrongShake]);
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }, { translateX: shake.value }],
+  }));
+
+  const borderColor =
+    state === 'correct' ? T.tileCorrect : state === 'wrong' ? T.tileWrong : 'rgba(0,0,0,0.12)';
+
+  return (
+    <Animated.View style={animStyle}>
+      <Pressable
+        onPress={onPress}
+        disabled={disabled}
+        style={({ pressed }) => [
+          styles.tile,
+          { backgroundColor: color, borderColor },
+          state === 'correct' && styles.tileCorrectRing,
+          pressed && !disabled && styles.pressed,
+        ]}
+        accessibilityLabel={label}
+      >
+        <Text style={styles.tileEmoji}>{emoji}</Text>
+        <Text style={styles.tileLabel}>{label}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+export interface ColorRecognitionGameProps {
+  onComplete: () => void;
+  onBack?: () => void;
+  currentStep?: number;
+  totalSteps?: number;
+  sessionTitle?: string;
+}
+
+export function ColorRecognitionGame({
+  onComplete,
+  onBack,
+  currentStep = 1,
+  totalSteps = 5,
+  sessionTitle,
+}: ColorRecognitionGameProps) {
+  const [tileState, setTileState] = useState<Record<string, 'idle' | 'wrong' | 'correct'>>({});
+  const [celebrating, setCelebrating] = useState(false);
+  const [locked, setLocked] = useState(false);
+
+  const progressPct = Math.round((currentStep / totalSteps) * 100);
+
+  useEffect(() => {
+    speakBuilderHint('Tap the BLUE object on the prism color row!');
+    return () => stopBuilderSpeech();
+  }, []);
 
   const handleTap = useCallback(
     (id: string) => {
-      if (id === CORRECT_ID) {
-        speak('Correct! You found the blue object!', 0.75);
-        setShowSuccess(true);
-        setTimeout(() => onComplete(), 2200);
-      } else {
-        triggerWrong();
+      if (locked) return;
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {
+        /* ignore */
       }
+
+      if (id === CORRECT_ID) {
+        setLocked(true);
+        setTileState((s) => ({ ...s, [id]: 'correct' }));
+        speakBuilderHint('Correct! You found the blue object!');
+        setCelebrating(true);
+        setTimeout(() => onComplete(), 2200);
+        return;
+      }
+
+      setTileState((s) => ({ ...s, [id]: 'wrong' }));
+      speakBuilderHint('Try again. Tap the blue one!');
+      setTimeout(() => setTileState((s) => ({ ...s, [id]: 'idle' })), 500);
     },
-    [onComplete, triggerWrong]
+    [locked, onComplete]
   );
 
-  if (showSuccess) {
+  if (celebrating) {
     return (
-      <SuccessCelebration
-        variant="mint"
-        title="Great Job!"
-        subtitle="You found the blue object!"
-        badgeEmoji="🔵"
-      />
+      <View style={styles.root}>
+        <ConfettiEffect />
+        <SuccessCelebration
+          title="Blue Found!"
+          subtitle="You spotted blue on the prism row!"
+          badgeEmoji="🔵"
+          variant="indigo"
+        />
+      </View>
     );
   }
 
-  const shakeX = wrongShake.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
-
   return (
-    <GameLayout
-      title="Color Recognition"
-      instruction={prompt}
-      icon="🔵"
-      backgroundVariant="indigo"
-    >
-      <View style={styles.container}>
-        <Text style={styles.prompt}>Tap the BLUE object</Text>
-        <Animated.View style={[styles.row, { transform: [{ translateX: shakeX }] }]}>
-          {ITEMS.map((item) => (
-            <Pressable
-              key={item.id}
-              onPress={() => handleTap(item.id)}
-              style={({ pressed }) => [
-                styles.card,
-                { backgroundColor: item.color },
-                pressed && styles.cardPressed,
-              ]}
-              accessibilityLabel={item.label}
-            >
-              <Text style={styles.emoji}>{item.emoji}</Text>
-              <Text style={styles.label}>{item.label}</Text>
+    <View style={styles.root}>
+      <LinearGradient
+        colors={[...T.gradient]}
+        locations={[...T.gradientLocations]}
+        style={StyleSheet.absoluteFill}
+      />
+      <MountainWorkshopBackground />
+
+      {onBack ? (
+        <Pressable
+          onPress={onBack}
+          style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="arrow-back" size={22} color={T.accentDeep} />
+          <Text style={styles.backText}>Back</Text>
+        </Pressable>
+      ) : null}
+
+      <View style={styles.header}>
+        <View style={styles.badgeRow}>
+          <View style={styles.stepPill}>
+            <Text style={styles.stepPillText}>
+              Build {currentStep} · {progressPct}%
+            </Text>
+          </View>
+          <View style={styles.targetPill}>
+            <Text style={styles.targetPillText}>Target: BLUE</Text>
+          </View>
+        </View>
+
+        <Text style={styles.title}>{T.name}</Text>
+        {sessionTitle ? <Text style={styles.subtitle}>{sessionTitle}</Text> : null}
+
+        <View style={styles.speechBubble}>
+          <Text style={styles.mascot}>{T.mascot}</Text>
+          <View style={styles.bubbleBody}>
+            <Text style={styles.mascotName}>{T.mascotName} says:</Text>
+            <Pressable onPress={() => speakBuilderHint('Tap the blue object!')}>
+              <Text style={styles.prompt}>Tap the BLUE object 🔊</Text>
             </Pressable>
-          ))}
-        </Animated.View>
+          </View>
+        </View>
       </View>
-    </GameLayout>
+
+      <View style={styles.playArea}>
+        <View style={styles.panel}>
+          <Text style={styles.panelLabel}>Color Prism Row</Text>
+          <View style={styles.row}>
+            {ITEMS.map((item) => (
+              <ColorTile
+                key={item.id}
+                label={item.label}
+                emoji={item.emoji}
+                color={item.color}
+                onPress={() => handleTap(item.id)}
+                state={tileState[item.id] ?? 'idle'}
+                disabled={locked}
+              />
+            ))}
+          </View>
+        </View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', paddingVertical: 24 },
-  prompt: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#4F46E5',
-    marginBottom: 28,
-    textAlign: 'center',
+  root: { flex: 1 },
+  pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginTop: Platform.OS === 'web' ? 12 : 48,
+    marginLeft: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    borderRadius: BUILDER_SESSION.radius.pill,
+    borderWidth: 1,
+    borderColor: T.panelBorder,
+    zIndex: 10,
+    ...BUILDER_SESSION.shadow.soft,
   },
-  row: { flexDirection: 'row', gap: 20, flexWrap: 'wrap', justifyContent: 'center' },
-  card: {
-    width: 100,
-    height: 110,
+  backText: { fontSize: 15, fontWeight: '700', color: T.accentDeep },
+  header: { paddingHorizontal: 20, paddingTop: 8, gap: 8, zIndex: 5 },
+  badgeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  stepPill: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: BUILDER_SESSION.radius.pill,
+    borderWidth: 1,
+    borderColor: T.panelBorder,
+  },
+  stepPillText: { fontSize: 12, fontWeight: '800', color: T.accentDeep },
+  targetPill: {
+    backgroundColor: 'rgba(219, 234, 254, 0.65)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: BUILDER_SESSION.radius.pill,
+    borderWidth: 1.5,
+    borderColor: T.accentSoft,
+  },
+  targetPillText: { fontSize: 12, fontWeight: '900', color: T.ink },
+  title: { fontSize: 26, fontWeight: '900', color: T.ink, textAlign: 'center' },
+  subtitle: { fontSize: 12, fontWeight: '600', color: T.inkMuted, textAlign: 'center' },
+  speechBubble: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: T.panel,
+    borderRadius: BUILDER_SESSION.radius.card,
+    borderWidth: 1,
+    borderColor: T.panelBorder,
+    padding: 14,
+    ...BUILDER_SESSION.shadow.soft,
+  },
+  mascot: { fontSize: 32 },
+  bubbleBody: { flex: 1, gap: 2 },
+  mascotName: { fontSize: 11, fontWeight: '800', color: T.accent, textTransform: 'uppercase', letterSpacing: 0.8 },
+  prompt: { fontSize: 14, fontWeight: '700', color: T.ink, lineHeight: 20 },
+  playArea: { flex: 1, paddingHorizontal: 20, justifyContent: 'center' },
+  panel: {
+    backgroundColor: T.panel,
+    borderRadius: BUILDER_SESSION.radius.card,
+    borderWidth: 1,
+    borderColor: T.panelBorder,
+    padding: 20,
+    alignItems: 'center',
+    ...BUILDER_SESSION.shadow.card,
+  },
+  panelLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: T.inkMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 16,
+  },
+  row: { flexDirection: 'row', gap: 14, flexWrap: 'wrap', justifyContent: 'center' },
+  tile: {
+    width: 96,
+    height: 108,
     borderRadius: 20,
     borderWidth: 4,
-    borderColor: 'rgba(0,0,0,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardPressed: { opacity: 0.9 },
-  emoji: { fontSize: 44, marginBottom: 6 },
-  label: { fontSize: 14, fontWeight: '800', color: '#1F2937' },
+  tileCorrectRing: { borderColor: T.tileCorrect, borderWidth: 5 },
+  tileEmoji: { fontSize: 40, marginBottom: 4 },
+  tileLabel: { fontSize: 13, fontWeight: '900', color: '#1F2937' },
 });

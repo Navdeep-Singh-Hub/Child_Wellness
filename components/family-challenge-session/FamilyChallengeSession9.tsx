@@ -1,31 +1,38 @@
 /**
- * Family Challenge Session 9 — Level 4 (Grouper) Session 9: Family Sorting Challenge
- * Flow: Intro → Game 1 (Word Family Sort) → Game 2 (Rhyme Match) → Game 3 (Clap Word) → Game 4 (Category Sort) → Notebook → Result
- * AAC-friendly: Primary #4F46E5, Success #22C55E, Background #F3F4F6.
+ * Level 4 Grouper — Session 9: Family Sorting Challenge
+ * Hub → 4 games + champion journal task → completion
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
+import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { markSessionGameComplete } from '@/components/special-education/shared/useSessionIntroProgress';
+import { WordFamilySortGame } from '@/components/grouper-session/session9/WordFamilySortGame';
+import { RhymePairsGame } from '@/components/grouper-session/session9/RhymePairsGame';
+import { SyllableClapGame } from '@/components/grouper-session/session9/SyllableClapGame';
+import { CategorySortingGame } from '@/components/grouper-session/session9/CategorySortingGame';
+import { FamilyChallengeNotebookUpload } from '@/components/grouper-session/session9/FamilyChallengeNotebookUpload';
 import {
-  View,
-  Text,
-  StyleSheet,
+  GROUPER_S9_HUB_THEME as H,
+  GROUPER_S9_QUESTS,
+  GROUPER_SESSION,
+} from '@/components/grouper-session/grouperSessionTheme';
+import { ChallengeCampBackground } from '@/components/grouper-session/ChallengeCampBackground';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useState } from 'react';
+import {
+  Platform,
+  Pressable,
   SafeAreaView,
   ScrollView,
-  TouchableOpacity,
-  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { getLastCompletedGameIndex, markSessionGameComplete } from '@/components/special-education/shared/useSessionIntroProgress';
-import { WordFamilySortingChallenge } from '@/components/WordFamilySortingChallenge';
-import { RhymeMatchPuzzleChallenge } from '@/components/RhymeMatchPuzzleChallenge';
-import { ClapWordChallenge } from '@/components/ClapWordChallenge';
-import { CategorySortingChallenge } from '@/components/CategorySortingChallenge';
-import { FamilyChallengeNotebookUpload } from '@/components/FamilyChallengeNotebookUpload';
 
-const TOTAL_GAMES = 5;
-const GAME_COUNT = 4;
+const PLAY_STEPS = 5;
+const SESSION_TITLE = 'Session 9 · Family Challenge';
 const SECTION_NUMBER = 4;
 const SESSION_NUMBER = 9;
-const BG = '#F3F4F6';
 
 interface FamilyChallengeSession9Props {
   onExit?: () => void;
@@ -33,248 +40,366 @@ interface FamilyChallengeSession9Props {
 
 export function FamilyChallengeSession9({ onExit }: FamilyChallengeSession9Props = {}) {
   const [step, setStep] = useState(0);
-  const [stars, setStars] = useState(0);
-  const [notebookCorrect, setNotebookCorrect] = useState<boolean | null>(null);
-  const [lastCompletedGameIndex, setLastCompletedGameIndex] = useState(0);
+  const [doneCount, setDoneCount] = useState(0);
+  const [taskCorrect, setTaskCorrect] = useState<boolean | null>(null);
+  const [completedBuilds, setCompletedBuilds] = useState<Set<number>>(() => new Set());
 
-  useEffect(() => {
-    if (step === 0) {
-      getLastCompletedGameIndex(SECTION_NUMBER, SESSION_NUMBER, GAME_COUNT).then(setLastCompletedGameIndex);
-    }
-  }, [step]);
-
-  const advance = useCallback(async () => {
-    const currentStep = step;
-    setStars((s) => Math.min(s + 1, TOTAL_GAMES));
-    setStep((g) => Math.min(g + 1, 6));
-    if (currentStep >= 1 && currentStep <= GAME_COUNT) {
-      await markSessionGameComplete(SECTION_NUMBER, SESSION_NUMBER, currentStep);
-      setLastCompletedGameIndex((prev) => Math.max(prev, currentStep));
-    }
-  }, [step]);
-
-  const handleNotebookComplete = useCallback((correct: boolean) => {
-    setNotebookCorrect(correct);
-    if (correct) setStars((s) => Math.min(s + 1, TOTAL_GAMES));
-    setStep(6);
+  const markComplete = useCallback((buildStep: number) => {
+    setCompletedBuilds((prev) => {
+      const next = new Set(prev);
+      next.add(buildStep);
+      return next;
+    });
+    setDoneCount((c) => Math.min(c + 1, PLAY_STEPS));
   }, []);
 
-  const progressPct = step >= 1 && step <= 5 ? (step / TOTAL_GAMES) * 100 : 0;
+  const advance = useCallback(async () => {
+    if (step >= 1 && step <= 4) {
+      await markSessionGameComplete(SECTION_NUMBER, SESSION_NUMBER, step);
+    }
+    markComplete(step);
+    setStep((s) => Math.min(s + 1, 6));
+  }, [markComplete, step]);
+
+  const handleTaskComplete = useCallback(
+    async (correct: boolean) => {
+      setTaskCorrect(correct);
+      if (correct) {
+        await markSessionGameComplete(SECTION_NUMBER, SESSION_NUMBER, 5);
+        markComplete(5);
+      }
+      setStep(6);
+    },
+    [markComplete]
+  );
 
   if (step === 0) {
-    const cards = [
-      { icon: '📂', title: 'Sort words into families', desc: 'Word families' },
-      { icon: '🎵', title: 'Match the rhyming words', desc: 'Rhyming' },
-      { icon: '👏', title: 'Clap the syllables', desc: 'Syllables' },
-      { icon: '📦', title: 'Sort the objects', desc: 'Categories' },
-    ];
-    const nextStep = Math.min(lastCompletedGameIndex + 1, 5);
-    const startLabel = nextStep <= 4 ? `Start Game ${nextStep}` : 'Notebook';
+    const progressPct = Math.round((completedBuilds.size / PLAY_STEPS) * 100);
     return (
-      <SafeAreaView style={styles.safe}>
-        <ScrollView contentContainerStyle={styles.introScroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.introHeader}>
-            <Text style={styles.introTitle}>Family Sorting Challenge</Text>
-            <Text style={styles.introSub}>
-              Let's review all the word families you learned!
-            </Text>
-          </View>
-          <View style={styles.familiesBox}>
-            <Text style={styles.familiesTitle}>Word families:</Text>
-            <View style={styles.familiesRow}>
-              <Text style={styles.familyTag}>-at</Text>
-              <Text style={styles.familyTag}>-in</Text>
-              <Text style={styles.familyTag}>-un</Text>
-              <Text style={styles.familyTag}>-op</Text>
-              <Text style={styles.familyTag}>-an</Text>
+      <View style={styles.root}>
+        <LinearGradient
+          colors={[...H.gradient]}
+          locations={[...H.gradientLocations]}
+          style={StyleSheet.absoluteFill}
+        />
+        <ChallengeCampBackground />
+
+        <SafeAreaView style={styles.hubSafe}>
+          {onExit ? (
+            <Pressable
+              onPress={onExit}
+              style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
+            >
+              <Ionicons name="arrow-back" size={22} color={H.accentDeep} />
+              <Text style={styles.backText}>Sessions</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.backSpacer} />
+          )}
+
+          <ScrollView contentContainerStyle={styles.hubScroll} showsVerticalScrollIndicator={false}>
+            <View style={styles.hubHeader}>
+              <Text style={styles.hubEyebrow}>Grouper · Session 9 · Challenge Camp</Text>
+              <Text style={styles.hubTitle}>{H.name}</Text>
+              <Text style={styles.hubSession}>Family Sorting Challenge</Text>
+
+              <View style={styles.exampleChip}>
+                <Text style={styles.exampleText}>-at · -in · -un · -op · -an</Text>
+              </View>
+
+              <View style={styles.progressRow}>
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
+                </View>
+                <Text style={styles.progressLabel}>
+                  {completedBuilds.size}/{PLAY_STEPS} builds
+                </Text>
+              </View>
+
+              <View style={styles.speechBubble}>
+                <Text style={styles.mascot}>{H.mascot}</Text>
+                <View style={styles.bubbleBody}>
+                  <Text style={styles.mascotName}>{H.mascotName} says:</Text>
+                  <Text style={styles.hubPrompt}>
+                    Welcome to Challenge Camp! Sort every family, match rhymes, clap syllables, sort categories, then prove you're a champion in your journal!
+                  </Text>
+                </View>
+              </View>
             </View>
-          </View>
-          <View style={styles.cardsWrap}>
-            {cards.map((card, i) => {
-              const gameNum = i + 1;
-              const unlocked = lastCompletedGameIndex >= i;
+
+            {GROUPER_S9_QUESTS.map((quest) => {
+              const done = completedBuilds.has(quest.step);
               return (
                 <Pressable
-                  key={i}
-                  onPress={() => unlocked && setStep(gameNum)}
-                  style={({ pressed }) => [
-                    styles.introCard,
-                    !unlocked && styles.introCardLocked,
-                    unlocked && pressed && styles.introCardPressed,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel={unlocked ? `${card.title}. Tap to play.` : `${card.title}. Complete game ${gameNum - 1} first.`}
-                  accessibilityState={{ disabled: !unlocked }}
+                  key={quest.step}
+                  onPress={() => setStep(quest.step)}
+                  style={({ pressed }) => [styles.questCard, pressed && styles.pressed]}
+                  accessibilityLabel={`Build ${quest.step}: ${quest.label}`}
                 >
-                  <Text style={styles.introCardIcon}>{card.icon}</Text>
-                  <Text style={[styles.introCardTitle, !unlocked && styles.introCardTextLocked]}>{card.title}</Text>
-                  <Text style={[styles.introCardDesc, !unlocked && styles.introCardTextLocked]}>{card.desc}</Text>
-                  {!unlocked && (
-                    <View style={styles.introCardLockBadge}>
-                      <Ionicons name="lock-closed" size={20} color="#94A3B8" />
-                    </View>
-                  )}
+                  <View style={[styles.questAccent, { backgroundColor: quest.theme.accent }]} />
+                  <View style={styles.questIconWrap}>
+                    <Text style={styles.questIcon}>{quest.theme.mascot}</Text>
+                    {done ? (
+                      <View style={styles.doneBadge}>
+                        <Ionicons name="checkmark" size={12} color="#fff" />
+                      </View>
+                    ) : null}
+                  </View>
+                  <View style={styles.questText}>
+                    <Text style={styles.questStep}>Build {quest.step}</Text>
+                    <Text style={styles.questTitle}>{quest.label}</Text>
+                    <Text style={styles.questDesc} numberOfLines={2}>
+                      {quest.desc}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={22} color={H.inkMuted} />
                 </Pressable>
               );
             })}
-          </View>
-          <Pressable
-            onPress={() => setStep(nextStep)}
-            style={({ pressed }) => [styles.startBtn, pressed && styles.pressed]}
-            accessibilityLabel={nextStep === 1 ? 'Start first game' : `Start game ${nextStep}`}
-          >
-            <Text style={styles.startBtnText}>{nextStep === 1 ? 'Start' : startLabel}</Text>
-          </Pressable>
-        </ScrollView>
-      </SafeAreaView>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
     );
   }
 
   if (step === 6) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <ScrollView contentContainerStyle={styles.resultScroll} showsVerticalScrollIndicator={false}>
-          <Text style={styles.resultTitle}>You completed the Family Sorting Challenge!</Text>
-          <View style={styles.resultBadge}>
-            <Text style={styles.resultBadgeEmoji}>⭐</Text>
-            <Text style={styles.resultBadgeText}>Word Family Champion</Text>
-          </View>
-          <View style={styles.resultStats}>
-            <Text style={styles.resultStat}>Games completed: {stars}</Text>
-            <Text style={styles.resultStat}>
-              Notebook: {notebookCorrect === null ? '—' : notebookCorrect ? '✓ Done' : 'Try again'}
-            </Text>
-          </View>
-          <View style={styles.starsRow}>
-            {Array.from({ length: TOTAL_GAMES }, (_, i) => (
-              <Text key={i} style={[styles.star, i < stars && styles.starEarned]}>⭐</Text>
-            ))}
-          </View>
+      <View style={styles.root}>
+        <LinearGradient
+          colors={[...H.gradient]}
+          locations={[...H.gradientLocations]}
+          style={StyleSheet.absoluteFill}
+        />
+        <ChallengeCampBackground />
+        <ConfettiEffect />
+        <SuccessCelebration
+          title="You completed the Family Sorting Challenge!"
+          subtitle={`Word Family Champion ⚡\n${SESSION_TITLE}\nCompleted ${doneCount}/${PLAY_STEPS} builds${
+            taskCorrect === false ? '\nChampion Journal: try again next time!' : ''
+          }`}
+          badgeEmoji="⭐"
+          variant="sunset"
+        />
+        <View style={styles.doneActions}>
           {onExit ? (
-            <TouchableOpacity style={styles.backBtn} onPress={onExit} activeOpacity={0.8}>
-              <Text style={styles.backBtnText}>Back to sessions</Text>
-            </TouchableOpacity>
-          ) : null}
-        </ScrollView>
-      </SafeAreaView>
+            <Pressable onPress={onExit} style={({ pressed }) => [pressed && styles.pressed]}>
+              <LinearGradient
+                colors={[...H.doneGradient]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.doneBtn}
+              >
+                <Text style={styles.doneBtnText}>Back to sessions</Text>
+              </LinearGradient>
+            </Pressable>
+          ) : (
+            <Pressable onPress={() => setStep(0)} style={({ pressed }) => [pressed && styles.pressed]}>
+              <LinearGradient
+                colors={[...H.doneGradient]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.doneBtn}
+              >
+                <Text style={styles.doneBtnText}>Back to builds</Text>
+              </LinearGradient>
+            </Pressable>
+          )}
+        </View>
+      </View>
     );
   }
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Family Sorting Challenge</Text>
-        <Text style={styles.subtitle}>Session 9</Text>
-        <View style={styles.progressRow}>
-          <View style={styles.progressBg}>
-            <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
-          </View>
-          <Text style={styles.progressText}>{step} / {TOTAL_GAMES}</Text>
-        </View>
-        <View style={styles.starsRow}>
-          {Array.from({ length: TOTAL_GAMES }, (_, i) => (
-            <Text key={i} style={[styles.star, i < stars && styles.starEarned]}>⭐</Text>
-          ))}
-        </View>
-      </View>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {step === 1 && <WordFamilySortingChallenge onComplete={advance} />}
-        {step === 2 && <RhymeMatchPuzzleChallenge onComplete={advance} />}
-        {step === 3 && <ClapWordChallenge onComplete={advance} />}
-        {step === 4 && <CategorySortingChallenge onComplete={advance} />}
-        {step === 5 && <FamilyChallengeNotebookUpload onComplete={handleNotebookComplete} />}
-      </ScrollView>
-    </SafeAreaView>
-  );
+  if (step === 1) {
+    return (
+      <WordFamilySortGame
+        sessionTitle={SESSION_TITLE}
+        currentStep={1}
+        totalSteps={PLAY_STEPS}
+        onBack={() => setStep(0)}
+        onComplete={advance}
+      />
+    );
+  }
+
+  if (step === 2) {
+    return (
+      <RhymePairsGame
+        sessionTitle={SESSION_TITLE}
+        currentStep={2}
+        totalSteps={PLAY_STEPS}
+        onBack={() => setStep(0)}
+        onComplete={advance}
+      />
+    );
+  }
+
+  if (step === 3) {
+    return (
+      <SyllableClapGame
+        sessionTitle={SESSION_TITLE}
+        currentStep={3}
+        totalSteps={PLAY_STEPS}
+        onBack={() => setStep(0)}
+        onComplete={advance}
+      />
+    );
+  }
+
+  if (step === 4) {
+    return (
+      <CategorySortingGame
+        sessionTitle={SESSION_TITLE}
+        currentStep={4}
+        totalSteps={PLAY_STEPS}
+        onBack={() => setStep(0)}
+        onComplete={advance}
+      />
+    );
+  }
+
+  if (step === 5) {
+    return (
+      <FamilyChallengeNotebookUpload
+        sessionTitle={SESSION_TITLE}
+        currentStep={5}
+        totalSteps={PLAY_STEPS}
+        onBack={() => setStep(0)}
+        onComplete={handleTaskComplete}
+      />
+    );
+  }
+
+  return null;
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BG },
-  header: {
-    backgroundColor: '#E0E7FF',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
-    borderBottomWidth: 3,
-    borderBottomColor: '#4F46E5',
-  },
-  title: { fontSize: 22, fontWeight: '800', color: '#3730A3', textAlign: 'center' },
-  subtitle: { fontSize: 14, color: '#4F46E5', textAlign: 'center', marginTop: 4 },
-  progressRow: { flexDirection: 'row', alignItems: 'center', marginTop: 14, gap: 12 },
-  progressBg: { flex: 1, height: 14, backgroundColor: '#C7D2FE', borderRadius: 7, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: '#4F46E5', borderRadius: 7 },
-  progressText: { fontSize: 16, fontWeight: '700', color: '#3730A3', minWidth: 48 },
-  starsRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 10, gap: 6 },
-  star: { fontSize: 24, opacity: 0.35 },
-  starEarned: { opacity: 1 },
-  scroll: { flex: 1 },
-  scrollContent: { flexGrow: 1, paddingBottom: 24 },
-  introScroll: { flexGrow: 1, padding: 24, paddingBottom: 40 },
-  introHeader: { marginBottom: 24 },
-  introTitle: { fontSize: 28, fontWeight: '800', color: '#3730A3', textAlign: 'center', marginBottom: 12 },
-  introSub: { fontSize: 18, color: '#4F46E5', textAlign: 'center', lineHeight: 26 },
-  familiesBox: {
-    backgroundColor: '#E0E7FF',
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 3,
-    borderColor: '#4F46E5',
-    marginBottom: 24,
-    alignItems: 'center',
-  },
-  familiesTitle: { fontSize: 18, fontWeight: '700', color: '#3730A3', marginBottom: 12 },
-  familiesRow: { flexDirection: 'row', gap: 12, flexWrap: 'wrap', justifyContent: 'center' },
-  familyTag: { fontSize: 22, fontWeight: '800', color: '#1f2937' },
-  cardsWrap: { gap: 16, marginBottom: 28 },
-  introCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 3,
-    borderColor: '#4F46E5',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  introCardLocked: { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1', opacity: 0.9 },
-  introCardPressed: { opacity: 0.9 },
-  introCardTextLocked: { color: '#94A3B8' },
-  introCardLockBadge: { marginLeft: 'auto', padding: 6 },
-  introCardIcon: { fontSize: 36 },
-  introCardTitle: { fontSize: 20, fontWeight: '800', color: '#1f2937', flex: 1 },
-  introCardDesc: { fontSize: 16, color: '#6b7280' },
-  startBtn: {
-    backgroundColor: '#4F46E5',
-    paddingVertical: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-  startBtnText: { fontSize: 24, fontWeight: '800', color: '#FFF' },
-  pressed: { opacity: 0.9 },
-  resultScroll: { flexGrow: 1, padding: 24, alignItems: 'center', paddingBottom: 40 },
-  resultTitle: { fontSize: 24, fontWeight: '800', color: '#3730A3', textAlign: 'center', marginBottom: 24 },
-  resultBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#DCFCE7',
-    paddingVertical: 16,
-    paddingHorizontal: 28,
-    borderRadius: 20,
-    borderWidth: 3,
-    borderColor: '#22C55E',
-    gap: 10,
-    marginBottom: 24,
-  },
-  resultBadgeEmoji: { fontSize: 32 },
-  resultBadgeText: { fontSize: 20, fontWeight: '800', color: '#166534' },
-  resultStats: { marginBottom: 16 },
-  resultStat: { fontSize: 18, color: '#374151', marginBottom: 4 },
+  root: { flex: 1 },
+  pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
+  hubSafe: { flex: 1 },
+  backSpacer: { height: Platform.OS === 'web' ? 12 : 8 },
   backBtn: {
-    marginTop: 24,
-    backgroundColor: '#4F46E5',
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginTop: Platform.OS === 'web' ? 8 : 4,
+    marginLeft: 16,
+    marginBottom: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.82)',
+    borderRadius: GROUPER_SESSION.radius.pill,
+    borderWidth: 1,
+    borderColor: H.cardBorder,
+    zIndex: 10,
+    ...GROUPER_SESSION.shadow.soft,
+  },
+  backText: { fontSize: 15, fontWeight: '700', color: H.accentDeep },
+  hubScroll: { paddingHorizontal: 20, paddingBottom: 40, gap: 12 },
+  hubHeader: { alignItems: 'center', gap: 10, marginBottom: 8 },
+  hubEyebrow: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: H.inkMuted,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  hubTitle: { fontSize: 28, fontWeight: '900', color: H.ink, textAlign: 'center' },
+  hubSession: { fontSize: 15, fontWeight: '600', color: H.inkMuted, textAlign: 'center' },
+  exampleChip: {
+    backgroundColor: 'rgba(129, 140, 248, 0.2)',
+    borderWidth: 2,
+    borderColor: H.accentSoft,
+    borderRadius: GROUPER_SESSION.radius.pill,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+  },
+  exampleText: { fontSize: 18, fontWeight: '900', color: H.accentDeep, letterSpacing: 1 },
+  progressRow: { width: '100%', alignItems: 'center', gap: 6, marginTop: 4 },
+  progressTrack: {
+    width: '100%',
+    height: 8,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  progressFill: { height: '100%', backgroundColor: H.accent, borderRadius: 999 },
+  progressLabel: { fontSize: 13, fontWeight: '700', color: H.inkMuted },
+  speechBubble: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: H.card,
+    borderRadius: GROUPER_SESSION.radius.card,
+    borderWidth: 1,
+    borderColor: H.cardBorder,
+    padding: 14,
+    width: '100%',
+    marginTop: 6,
+    ...GROUPER_SESSION.shadow.soft,
+  },
+  mascot: { fontSize: 32 },
+  bubbleBody: { flex: 1, gap: 2 },
+  mascotName: { fontSize: 12, fontWeight: '800', color: H.accentDeep, textTransform: 'uppercase' },
+  hubPrompt: { fontSize: 14, fontWeight: '600', color: H.ink, lineHeight: 20 },
+  questCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: H.card,
+    borderRadius: GROUPER_SESSION.radius.card,
+    borderWidth: 1,
+    borderColor: H.cardBorder,
+    padding: 16,
+    gap: 14,
+    overflow: 'hidden',
+    ...GROUPER_SESSION.shadow.card,
+  },
+  questAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 5,
+  },
+  questIconWrap: { position: 'relative', marginLeft: 4 },
+  questIcon: { fontSize: 38 },
+  doneBadge: {
+    position: 'absolute',
+    right: -4,
+    bottom: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  questText: { flex: 1, gap: 2 },
+  questStep: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: H.inkMuted,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  questTitle: { fontSize: 17, fontWeight: '800', color: H.ink },
+  questDesc: { fontSize: 13, color: H.inkMuted, lineHeight: 18 },
+  doneBtn: {
     paddingVertical: 14,
     paddingHorizontal: 28,
-    borderRadius: 12,
+    borderRadius: GROUPER_SESSION.radius.button,
+    alignItems: 'center',
+    minWidth: 200,
   },
-  backBtnText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
+  doneBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
+  doneActions: {
+    position: 'absolute',
+    bottom: 48,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
 });

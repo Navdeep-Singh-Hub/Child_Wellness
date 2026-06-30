@@ -9,6 +9,7 @@
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
 import { CameraStage } from '@/components/game/occupational/level6/session1/components/CameraStage';
+import { CrownOverlay } from '@/components/game/occupational/level6/session1/components/CrownOverlay';
 import { DistractionLayer } from '@/components/game/occupational/level6/session1/components/DistractionLayer';
 import { StarTarget } from '@/components/game/occupational/level6/session1/components/StarTarget';
 import { TrafficLight, type LightState } from '@/components/game/occupational/level6/session1/components/TrafficLight';
@@ -132,6 +133,7 @@ export const PostureControlGame: React.FC<{
   const [crownSafePct, setCrownSafePct] = useState(100);
   const [crownRemainSec, setCrownRemainSec] = useState(0);
   const [crownStability, setCrownStability] = useState(1);
+  const [crownFallen, setCrownFallen] = useState(false);
   const [stillPct, setStillPct] = useState(100);
   const [light, setLight] = useState<LightState>('off');
   const [reachDir, setReachDir] = useState<ReachDir>('right');
@@ -168,6 +170,9 @@ export const PostureControlGame: React.FC<{
   // crown / statue
   const safeMsRef = useRef(0);
   const totalMsRef = useRef(0);
+  const crownUnstableMsRef = useRef(0);
+  const crownRoundEndingRef = useRef(false);
+  const roundTokenRef = useRef(0);
   const stillStreakStartRef = useRef<number | null>(null);
   const roundStartRef = useRef(0);
   // freeze
@@ -291,12 +296,20 @@ export const PostureControlGame: React.FC<{
       setPower(0);
       setCoachCue(isThunderForge ? 'Charge the reactor — sit tall and still!' : T.hintText);
     } else if (mode_ === 'crown') {
+      crownRoundEndingRef.current = false;
+      crownUnstableMsRef.current = 0;
+      setCrownFallen(false);
       crownWarnRef.current = false;
       setCrownSafePct(100);
+      setCrownStability(1);
       setCrownRemainSec(P.crownRoundMs / 1000);
       setCoachCue(isRoyalObservatory ? 'Royal watch begins — keep the crown steady!' : 'Hold your head tall and steady!');
       scheduleDistraction(P.crownDistractionEveryMs);
-      scheduleRoundTimeout(P.crownRoundMs, () => finishTimedRound('crown'));
+      const token = ++roundTokenRef.current;
+      scheduleRoundTimeout(P.crownRoundMs, () => {
+        if (roundTokenRef.current !== token) return;
+        finishCrownRound('time');
+      });
     } else if (mode_ === 'statue') {
       setStillPct(100);
       setCoachCue('Freeze like a statue — do not move!');
@@ -338,6 +351,27 @@ export const PostureControlGame: React.FC<{
       schedule(fn, ms);
     },
     [schedule],
+  );
+
+  const finishCrownRound = useCallback(
+    (reason: 'time' | 'fallen') => {
+      if (doneRef.current || crownRoundEndingRef.current) return;
+      crownRoundEndingRef.current = true;
+      roundTokenRef.current += 1;
+      const pct = totalMsRef.current > 0 ? (safeMsRef.current / totalMsRef.current) * 100 : 0;
+      recordHold(safeMsRef.current);
+      const earned = reason === 'time' && pct >= 55;
+      if (reason === 'fallen') {
+        setCrownFallen(true);
+        setCoachCue('Crown fell! Head too wobbly — next round!');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+      } else {
+        setCoachCue(earned ? 'Crown kept safe! 👑' : 'Good try — steady next time!');
+      }
+      awardStar(earned);
+      advanceRound();
+    },
+    [advanceRound, awardStar, recordHold],
   );
 
   const finishTimedRound = useCallback(
@@ -460,7 +494,7 @@ export const PostureControlGame: React.FC<{
     const isUpright = up >= (mode === 'freeze' ? P.freezeUprightThreshold : P.powerUprightThreshold);
     const isStill = still >= (mode === 'freeze' ? P.freezeStillThreshold : P.statueStillThreshold);
 
-    if (cam && mode !== 'reach') {
+    if (cam && mode !== 'reach' && !(mode === 'crown' && crownRoundEndingRef.current)) {
       setQuality(mode === 'statue' ? still : mode === 'crown' ? stab : up);
       setCoachCue(m.present ? coachingCue(m, base) : 'Sit so the camera can see your head and shoulders.');
     } else if (cam && mode === 'reach') {
@@ -502,9 +536,22 @@ export const PostureControlGame: React.FC<{
         break;
       }
       case 'crown': {
+        if (crownRoundEndingRef.current) break;
         totalMsRef.current += dt;
-        if (cam ? stab >= P.crownStableThreshold : true) safeMsRef.current += dt;
-        if (!cam) safeMsRef.current = totalMsRef.current; // fallback: assume steady
+        const stab = cam ? headStability(m, base) : 0.85;
+        if (cam ? stab >= P.crownStableThreshold : true) {
+          safeMsRef.current += dt;
+          crownUnstableMsRef.current = Math.max(0, crownUnstableMsRef.current - dt * 0.6);
+        } else if (cam && stab < P.crownUnstableThreshold) {
+          crownUnstableMsRef.current += dt;
+          if (crownUnstableMsRef.current >= P.crownUnstableFailMs) {
+            finishCrownRound('fallen');
+            break;
+          }
+        } else {
+          crownUnstableMsRef.current = Math.max(0, crownUnstableMsRef.current - dt * 0.35);
+        }
+        if (!cam) safeMsRef.current = totalMsRef.current;
         const pct = totalMsRef.current > 0 ? (safeMsRef.current / totalMsRef.current) * 100 : 100;
         const remainSec = Math.max(0, (roundStartRef.current + P.crownRoundMs - now) / 1000);
         setCrownSafePct(pct);
@@ -574,7 +621,7 @@ export const PostureControlGame: React.FC<{
         break;
       }
     }
-  }, [advanceRound, awardStar, catchStar, mode, recordTick, recordHold, recordPostureBreak, phaseGuardComplete]);
+  }, [advanceRound, awardStar, catchStar, finishCrownRound, mode, recordTick, recordHold, recordPostureBreak, phaseGuardComplete]);
 
   // ── Calibration ──
   const beginCalibration = useCallback(() => {
@@ -752,12 +799,15 @@ export const PostureControlGame: React.FC<{
             )}
             {phase === 'play' && isRoyalObservatory && (
               <>
-                <RoyalCrownGauge
+                <CrownOverlay
                   stability={crownStability}
                   safePct={crownSafePct}
-                  remainSec={crownRemainSec}
-                  totalSec={crownRoundSec}
-                  reduceMotion={reduceMotion}
+                  steadinessPct={Math.round(crownStability * 100)}
+                  headBounds={metrics.headBounds}
+                  faceLandmarks={metrics.faceLandmarks}
+                  headTiltDeg={metrics.headTiltDeg}
+                  crownFallen={crownFallen}
+                  tracking={present && camLive}
                 />
                 <RoyalDistractionLayer trigger={distraction} reduceMotion={reduceMotion} />
               </>
