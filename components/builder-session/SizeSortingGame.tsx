@@ -1,12 +1,23 @@
 /**
- * Builder Session 7 — Game 1: Size Sorting
- * Sort objects by size: small, medium, large. Tap item then tap correct bin.
+ * Builder Session 7 — Game 1: Size Ladder Yard
+ * Sort objects by size: small, medium, large.
  */
-import { speak } from '@/utils/tts';
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { BUILDER_SESSION, SIZE_LADDER_THEME as T } from './builderSessionTheme';
+import { speakBuilderHint, stopBuilderSpeech } from './builderSessionSpeech';
+import { MountainWorkshopBackground } from './MountainWorkshopBackground';
 
 const ITEMS = [
   { id: 'small', size: 'small' as const, label: 'Small', emoji: '🔵' },
@@ -14,35 +25,73 @@ const ITEMS = [
   { id: 'large', size: 'large' as const, label: 'Large', emoji: '🔵' },
 ];
 
+const BINS = [
+  { size: 'small' as const, label: 'Small' },
+  { size: 'medium' as const, label: 'Medium' },
+  { size: 'large' as const, label: 'Large' },
+];
+
 export interface SizeSortingGameProps {
   onComplete: () => void;
+  onBack?: () => void;
+  currentStep?: number;
+  totalSteps?: number;
+  sessionTitle?: string;
 }
 
-export function SizeSortingGame({ onComplete }: SizeSortingGameProps) {
+export function SizeSortingGame({
+  onComplete,
+  onBack,
+  currentStep = 1,
+  totalSteps = 5,
+  sessionTitle,
+}: SizeSortingGameProps) {
   const [sorted, setSorted] = useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [wrongShake] = useState(() => new Animated.Value(0));
+  const [celebrating, setCelebrating] = useState(false);
+  const shake = useSharedValue(0);
+
+  const progressPct = Math.round((currentStep / totalSteps) * 100);
 
   useEffect(() => {
-    speak('Sort by size. Put each ball in the correct size box. Tap a ball, then tap the matching box.', 0.75);
+    speakBuilderHint(
+      'Sort by size. Tap a ball, then tap the matching size bin — small, medium, or large.'
+    );
+    return () => stopBuilderSpeech();
   }, []);
 
-  const triggerWrong = useCallback(() => {
-    wrongShake.setValue(0);
-    Animated.sequence([
-      Animated.timing(wrongShake, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(wrongShake, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-    speak('Try again. Match the size: small, medium, or large.', 0.7);
-  }, [wrongShake]);
+  const shakeStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shake.value }],
+  }));
 
-  const handleItemTap = useCallback((id: string) => {
-    if (sorted.has(id)) return;
-    setSelectedId(id);
-    const item = ITEMS.find((i) => i.id === id);
-    speak(item?.label ?? id, 0.7);
-  }, [sorted]);
+  const triggerWrong = useCallback(() => {
+    shake.value = withSequence(
+      withTiming(-8, { duration: 50 }),
+      withTiming(8, { duration: 50 }),
+      withTiming(-5, { duration: 50 }),
+      withTiming(0, { duration: 50 })
+    );
+    speakBuilderHint('Try again. Match the size: small, medium, or large.');
+    try {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    } catch {
+      /* ignore */
+    }
+  }, [shake]);
+
+  const handleItemTap = useCallback(
+    (id: string) => {
+      if (sorted.has(id)) return;
+      setSelectedId(id);
+      speakBuilderHint(ITEMS.find((i) => i.id === id)?.label ?? id);
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {
+        /* ignore */
+      }
+    },
+    [sorted]
+  );
 
   const handleBinTap = useCallback(
     (size: 'small' | 'medium' | 'large') => {
@@ -53,87 +102,235 @@ export function SizeSortingGame({ onComplete }: SizeSortingGameProps) {
         setSelectedId(null);
         return;
       }
-      speak(`Correct! ${item.label}!`, 0.7);
-      setSorted((s) => new Set(s).add(selectedId));
+
+      speakBuilderHint(`Correct! ${item.label}!`);
+      const nextSorted = new Set(sorted).add(selectedId);
+      setSorted(nextSorted);
       setSelectedId(null);
-      if (sorted.size + 1 >= ITEMS.length) {
-        setShowSuccess(true);
+
+      try {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {
+        /* ignore */
+      }
+
+      if (nextSorted.size >= ITEMS.length) {
+        speakBuilderHint('All sizes sorted!');
+        setCelebrating(true);
         setTimeout(() => onComplete(), 2200);
       }
     },
-    [selectedId, sorted, onComplete, triggerWrong]
+    [onComplete, selectedId, sorted, triggerWrong]
   );
 
-  if (showSuccess) {
+  if (celebrating) {
     return (
-      <SuccessCelebration
-        variant="mint"
-        title="Great Job!"
-        subtitle="You sorted by size!"
-        badgeEmoji="📏"
-      />
+      <View style={styles.root}>
+        <ConfettiEffect />
+        <SuccessCelebration
+          title="Ladder Complete!"
+          subtitle="You sorted every ball by size!"
+          badgeEmoji="📏"
+          variant="mint"
+        />
+      </View>
     );
   }
 
-  const shakeX = wrongShake.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
-
   return (
-    <GameLayout
-      title="Size Sorting"
-      instruction="Put each ball in the correct size box."
-      icon="📏"
-      backgroundVariant="indigo"
-    >
-      <View style={styles.container}>
-        <Text style={styles.label}>Balls</Text>
-        <Animated.View style={[styles.itemsRow, { transform: [{ translateX: shakeX }] }]}>
-          {ITEMS.map((item) => (
-            <Pressable
-              key={item.id}
-              onPress={() => handleItemTap(item.id)}
-              style={[
-                styles.itemBtn,
-                item.size === 'small' && styles.smallBtn,
-                item.size === 'medium' && styles.mediumBtn,
-                item.size === 'large' && styles.largeBtn,
-                selectedId === item.id && styles.selected,
-                sorted.has(item.id) && styles.sorted,
-              ]}
-              accessibilityLabel={item.label}
-            >
-              <Text style={styles.emoji}>{item.emoji}</Text>
-            </Pressable>
-          ))}
-        </Animated.View>
-        <Text style={styles.label}>Boxes</Text>
-        <View style={styles.binsRow}>
-          <Pressable onPress={() => handleBinTap('small')} style={[styles.bin, styles.smallBin]} accessibilityLabel="Small box">
-            <Text style={styles.binLabel}>Small</Text>
-          </Pressable>
-          <Pressable onPress={() => handleBinTap('medium')} style={[styles.bin, styles.mediumBin]} accessibilityLabel="Medium box">
-            <Text style={styles.binLabel}>Medium</Text>
-          </Pressable>
-          <Pressable onPress={() => handleBinTap('large')} style={[styles.bin, styles.largeBin]} accessibilityLabel="Large box">
-            <Text style={styles.binLabel}>Large</Text>
-          </Pressable>
+    <View style={styles.root}>
+      <LinearGradient
+        colors={[...T.gradient]}
+        locations={[...T.gradientLocations]}
+        style={StyleSheet.absoluteFill}
+      />
+      <MountainWorkshopBackground />
+
+      {onBack ? (
+        <Pressable
+          onPress={onBack}
+          style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="arrow-back" size={22} color={T.accentDeep} />
+          <Text style={styles.backText}>Back</Text>
+        </Pressable>
+      ) : null}
+
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <View style={styles.badgeRow}>
+            <View style={styles.stepPill}>
+              <Text style={styles.stepPillText}>
+                Build {currentStep} · {progressPct}%
+              </Text>
+            </View>
+            <View style={styles.sortPill}>
+              <Text style={styles.sortPillText}>
+                {sorted.size}/{ITEMS.length} sorted
+              </Text>
+            </View>
+          </View>
+
+          <Text style={styles.title}>{T.name}</Text>
+          {sessionTitle ? <Text style={styles.subtitle}>{sessionTitle}</Text> : null}
+
+          <View style={styles.speechBubble}>
+            <Text style={styles.mascot}>{T.mascot}</Text>
+            <View style={styles.bubbleBody}>
+              <Text style={styles.mascotName}>{T.mascotName} says:</Text>
+              <Pressable
+                onPress={() =>
+                  speakBuilderHint('Tap a ball, then tap the bin that matches its size.')
+                }
+              >
+                <Text style={styles.prompt}>Sort by size 🔊</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
-        {selectedId ? (
-          <Text style={styles.hint}>Tap the {ITEMS.find((i) => i.id === selectedId)?.label.toLowerCase()} box</Text>
-        ) : null}
-      </View>
-    </GameLayout>
+
+        <Animated.View style={[styles.playArea, shakeStyle]}>
+          <Text style={styles.sectionLabel}>Balls</Text>
+          <View style={styles.itemsRow}>
+            {ITEMS.map((item) => (
+              <Pressable
+                key={item.id}
+                onPress={() => handleItemTap(item.id)}
+                style={[
+                  styles.itemBtn,
+                  item.size === 'small' && styles.smallBtn,
+                  item.size === 'medium' && styles.mediumBtn,
+                  item.size === 'large' && styles.largeBtn,
+                  selectedId === item.id && styles.selected,
+                  sorted.has(item.id) && styles.sortedItem,
+                ]}
+                accessibilityLabel={item.label}
+              >
+                <Text style={styles.emoji}>{item.emoji}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Text style={styles.sectionLabel}>Size bins</Text>
+          <View style={styles.binsRow}>
+            {BINS.map((bin) => (
+              <Pressable
+                key={bin.size}
+                onPress={() => handleBinTap(bin.size)}
+                style={[
+                  styles.bin,
+                  bin.size === 'small' && styles.smallBin,
+                  bin.size === 'medium' && styles.mediumBin,
+                  bin.size === 'large' && styles.largeBin,
+                ]}
+                accessibilityLabel={`${bin.label} bin`}
+              >
+                <Text style={styles.binLabel}>{bin.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Text style={styles.hint}>
+            {selectedId
+              ? `Tap the ${ITEMS.find((i) => i.id === selectedId)?.label.toLowerCase()} bin`
+              : 'Tap a ball first, then its size bin'}
+          </Text>
+        </Animated.View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', paddingVertical: 24 },
-  label: { fontSize: 18, fontWeight: '700', color: '#4F46E5', marginBottom: 12 },
-  itemsRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 20, marginBottom: 28, height: 100 },
+  root: { flex: 1 },
+  scroll: { paddingBottom: Platform.OS === 'ios' ? 32 : 20 },
+  pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginTop: Platform.OS === 'web' ? 12 : 48,
+    marginLeft: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    borderRadius: BUILDER_SESSION.radius.pill,
+    borderWidth: 1,
+    borderColor: T.panelBorder,
+    zIndex: 10,
+    ...BUILDER_SESSION.shadow.soft,
+  },
+  backText: { fontSize: 15, fontWeight: '700', color: T.accentDeep },
+  header: { paddingHorizontal: 20, paddingTop: 8, gap: 8, zIndex: 5 },
+  badgeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  stepPill: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: BUILDER_SESSION.radius.pill,
+    borderWidth: 1,
+    borderColor: T.panelBorder,
+  },
+  stepPillText: { fontSize: 12, fontWeight: '800', color: T.accentDeep },
+  sortPill: {
+    backgroundColor: 'rgba(207, 250, 254, 0.55)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: BUILDER_SESSION.radius.pill,
+    borderWidth: 1,
+    borderColor: T.accentSoft,
+  },
+  sortPillText: { fontSize: 12, fontWeight: '800', color: T.ink },
+  title: { fontSize: 26, fontWeight: '900', color: T.ink, textAlign: 'center' },
+  subtitle: { fontSize: 12, fontWeight: '600', color: T.inkMuted, textAlign: 'center' },
+  speechBubble: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: T.panel,
+    borderRadius: BUILDER_SESSION.radius.card,
+    borderWidth: 1,
+    borderColor: T.panelBorder,
+    padding: 14,
+    ...BUILDER_SESSION.shadow.soft,
+  },
+  mascot: { fontSize: 32 },
+  bubbleBody: { flex: 1, gap: 2 },
+  mascotName: { fontSize: 11, fontWeight: '800', color: T.accent, textTransform: 'uppercase', letterSpacing: 0.8 },
+  prompt: { fontSize: 14, fontWeight: '700', color: T.ink, lineHeight: 20 },
+  playArea: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    padding: 16,
+    borderRadius: BUILDER_SESSION.radius.card,
+    backgroundColor: T.panel,
+    borderWidth: 1,
+    borderColor: T.panelBorder,
+    ...BUILDER_SESSION.shadow.card,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: T.inkMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  itemsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 20,
+    marginBottom: 22,
+    minHeight: 100,
+  },
   itemBtn: {
     borderRadius: 999,
     borderWidth: 4,
-    borderColor: '#A78BFA',
-    backgroundColor: '#E0E7FF',
+    borderColor: T.accentSoft,
+    backgroundColor: '#E0F2FE',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -141,19 +338,20 @@ const styles = StyleSheet.create({
   mediumBtn: { width: 70, height: 70 },
   largeBtn: { width: 90, height: 90 },
   emoji: { fontSize: 28 },
-  selected: { borderColor: '#22C55E', backgroundColor: '#DCFCE7' },
-  sorted: { opacity: 0.5 },
-  binsRow: { flexDirection: 'row', gap: 12 },
+  selected: { borderColor: '#22C55E', backgroundColor: T.selected },
+  sortedItem: { opacity: 0.45, backgroundColor: T.sorted },
+  binsRow: { flexDirection: 'row', gap: 10, justifyContent: 'center', marginBottom: 8 },
   bin: {
-    width: 80,
+    flex: 1,
+    maxWidth: 96,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 4,
     alignItems: 'center',
   },
-  smallBin: { backgroundColor: '#FEF3C7', borderColor: '#F59E0B' },
-  mediumBin: { backgroundColor: '#DBEAFE', borderColor: '#3B82F6' },
-  largeBin: { backgroundColor: '#D1FAE5', borderColor: '#10B981' },
-  binLabel: { fontSize: 14, fontWeight: '800', color: '#1F2937' },
-  hint: { marginTop: 20, fontSize: 16, color: '#6B7280', fontWeight: '600' },
+  smallBin: { backgroundColor: T.smallBin, borderColor: T.smallBorder },
+  mediumBin: { backgroundColor: T.mediumBin, borderColor: T.mediumBorder },
+  largeBin: { backgroundColor: T.largeBin, borderColor: T.largeBorder },
+  binLabel: { fontSize: 13, fontWeight: '800', color: T.ink },
+  hint: { marginTop: 12, fontSize: 14, fontWeight: '700', color: T.inkMuted, textAlign: 'center' },
 });

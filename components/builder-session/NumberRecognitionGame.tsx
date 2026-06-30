@@ -1,109 +1,306 @@
 /**
- * Builder Session 7 — Game 2: Number Recognition
- * Tap number 5. Show numbers 3, 5, 8 (or similar); correct is 5.
+ * Builder Session 7 — Game 2: Five Beacon Ridge
+ * Tap number 5 among 3, 5, and 8.
  */
-import { speak } from '@/utils/tts';
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { BUILDER_SESSION, FIVE_BEACON_THEME as T } from './builderSessionTheme';
+import { speakBuilderHint, stopBuilderSpeech } from './builderSessionSpeech';
+import { MountainWorkshopBackground } from './MountainWorkshopBackground';
 
-const NUMBERS = [
-  { id: '3', value: '3' },
-  { id: '5', value: '5' },
-  { id: '8', value: '8' },
-];
+const NUMBERS = ['3', '5', '8'];
+const CORRECT = '5';
 
-const CORRECT_ID = '5';
+function NumberTile({
+  num,
+  onPress,
+  state,
+  disabled,
+}: {
+  num: string;
+  onPress: () => void;
+  state: 'idle' | 'wrong' | 'correct';
+  disabled: boolean;
+}) {
+  const scale = useSharedValue(1);
+  const shake = useSharedValue(0);
+
+  useEffect(() => {
+    if (state === 'wrong') {
+      shake.value = withSequence(
+        withTiming(-8, { duration: 50 }),
+        withTiming(8, { duration: 50 }),
+        withTiming(-5, { duration: 50 }),
+        withTiming(0, { duration: 50 })
+      );
+    }
+    if (state === 'correct') {
+      scale.value = withSequence(withSpring(1.12, { damping: 6 }), withSpring(1, { damping: 10 }));
+    }
+  }, [state, scale, shake]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }, { translateX: shake.value }],
+  }));
+
+  const borderColor =
+    state === 'correct' ? T.tileCorrect : state === 'wrong' ? T.tileWrong : T.panelBorder;
+  const bg =
+    state === 'correct'
+      ? 'rgba(220, 252, 231, 0.95)'
+      : state === 'wrong'
+        ? 'rgba(254, 226, 226, 0.9)'
+        : T.panel;
+
+  return (
+    <Animated.View style={animStyle}>
+      <Pressable
+        onPress={onPress}
+        disabled={disabled}
+        style={({ pressed }) => [
+          styles.numTile,
+          { backgroundColor: bg, borderColor },
+          pressed && !disabled && styles.pressed,
+        ]}
+        accessibilityLabel={`Number ${num}`}
+      >
+        <Text style={styles.numText}>{num}</Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
 
 export interface NumberRecognitionGameProps {
   onComplete: () => void;
+  onBack?: () => void;
+  currentStep?: number;
+  totalSteps?: number;
+  sessionTitle?: string;
 }
 
-export function NumberRecognitionGame({ onComplete }: NumberRecognitionGameProps) {
-  const prompt = 'Tap number 5.';
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [wrongShake] = useState(() => new Animated.Value(0));
+export function NumberRecognitionGame({
+  onComplete,
+  onBack,
+  currentStep = 2,
+  totalSteps = 5,
+  sessionTitle,
+}: NumberRecognitionGameProps) {
+  const [tileStates, setTileStates] = useState<Record<string, 'idle' | 'wrong' | 'correct'>>({
+    '3': 'idle',
+    '5': 'idle',
+    '8': 'idle',
+  });
+  const [celebrating, setCelebrating] = useState(false);
+  const [locked, setLocked] = useState(false);
+
+  const progressPct = Math.round((currentStep / totalSteps) * 100);
 
   useEffect(() => {
-    speak(prompt, 0.75);
+    speakBuilderHint('Tap the number 5. Look carefully at each beacon tile.');
+    return () => stopBuilderSpeech();
   }, []);
 
-  const triggerWrong = useCallback(() => {
-    wrongShake.setValue(0);
-    Animated.sequence([
-      Animated.timing(wrongShake, { toValue: 1, duration: 80, useNativeDriver: true }),
-      Animated.timing(wrongShake, { toValue: 0, duration: 80, useNativeDriver: true }),
-    ]).start();
-    speak('Try again. Tap the number 5!', 0.7);
-  }, [wrongShake]);
-
   const handleTap = useCallback(
-    (id: string) => {
-      if (id === CORRECT_ID) {
-        speak('Correct! You found 5!', 0.75);
-        setShowSuccess(true);
+    (num: string) => {
+      if (locked) return;
+
+      if (num === CORRECT) {
+        setTileStates((s) => ({ ...s, [num]: 'correct' }));
+        setLocked(true);
+        speakBuilderHint('Correct! You found 5!');
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {
+          /* ignore */
+        }
+        setCelebrating(true);
         setTimeout(() => onComplete(), 2200);
       } else {
-        triggerWrong();
+        setTileStates((s) => ({ ...s, [num]: 'wrong' }));
+        speakBuilderHint('Try again. Tap the number 5!');
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        } catch {
+          /* ignore */
+        }
+        setTimeout(() => setTileStates((s) => ({ ...s, [num]: 'idle' })), 700);
       }
     },
-    [onComplete, triggerWrong]
+    [locked, onComplete]
   );
 
-  if (showSuccess) {
+  if (celebrating) {
     return (
-      <SuccessCelebration
-        variant="mint"
-        title="Great Job!"
-        subtitle="You found the number 5!"
-        badgeEmoji="5️⃣"
-      />
+      <View style={styles.root}>
+        <ConfettiEffect />
+        <SuccessCelebration
+          title="Beacon Found!"
+          subtitle="You spotted the number 5!"
+          badgeEmoji="5️⃣"
+          variant="sunset"
+        />
+      </View>
     );
   }
 
-  const shakeX = wrongShake.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
-
   return (
-    <GameLayout
-      title="Number Recognition"
-      instruction={prompt}
-      icon="5️⃣"
-      backgroundVariant="indigo"
-    >
-      <View style={styles.container}>
-        <Text style={styles.prompt}>Tap number 5</Text>
-        <Animated.View style={[styles.row, { transform: [{ translateX: shakeX }] }]}>
-          {NUMBERS.map((n) => (
-            <Pressable
-              key={n.id}
-              onPress={() => handleTap(n.id)}
-              style={({ pressed }) => [styles.numBtn, pressed && styles.pressed]}
-              accessibilityLabel={`Number ${n.value}`}
-            >
-              <Text style={styles.numText}>{n.value}</Text>
-            </Pressable>
+    <View style={styles.root}>
+      <LinearGradient
+        colors={[...T.gradient]}
+        locations={[...T.gradientLocations]}
+        style={StyleSheet.absoluteFill}
+      />
+      <MountainWorkshopBackground />
+
+      {onBack ? (
+        <Pressable
+          onPress={onBack}
+          style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="arrow-back" size={22} color={T.accentDeep} />
+          <Text style={styles.backText}>Back</Text>
+        </Pressable>
+      ) : null}
+
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <View style={styles.stepPill}>
+            <Text style={styles.stepPillText}>
+              Build {currentStep} · {progressPct}%
+            </Text>
+          </View>
+
+          <Text style={styles.title}>{T.name}</Text>
+          {sessionTitle ? <Text style={styles.subtitle}>{sessionTitle}</Text> : null}
+
+          <View style={styles.speechBubble}>
+            <Text style={styles.mascot}>{T.mascot}</Text>
+            <View style={styles.bubbleBody}>
+              <Text style={styles.mascotName}>{T.mascotName} says:</Text>
+              <Pressable onPress={() => speakBuilderHint('Tap the number 5.')}>
+                <Text style={styles.prompt}>Find number 5 🔊</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.targetCard}>
+          <Text style={styles.targetLabel}>Target number</Text>
+          <Text style={styles.targetNum}>5</Text>
+        </View>
+
+        <View style={styles.row}>
+          {NUMBERS.map((num) => (
+            <NumberTile
+              key={num}
+              num={num}
+              onPress={() => handleTap(num)}
+              state={tileStates[num]}
+              disabled={locked}
+            />
           ))}
-        </Animated.View>
-      </View>
-    </GameLayout>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', paddingVertical: 24 },
-  prompt: { fontSize: 22, fontWeight: '800', color: '#4F46E5', marginBottom: 28, textAlign: 'center' },
-  row: { flexDirection: 'row', gap: 24 },
-  numBtn: {
+  root: { flex: 1 },
+  scroll: { paddingBottom: Platform.OS === 'ios' ? 32 : 20 },
+  pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginTop: Platform.OS === 'web' ? 12 : 48,
+    marginLeft: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    borderRadius: BUILDER_SESSION.radius.pill,
+    borderWidth: 1,
+    borderColor: T.panelBorder,
+    zIndex: 10,
+    ...BUILDER_SESSION.shadow.soft,
+  },
+  backText: { fontSize: 15, fontWeight: '700', color: T.accentDeep },
+  header: { paddingHorizontal: 20, paddingTop: 8, gap: 8, zIndex: 5, alignItems: 'center' },
+  stepPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: BUILDER_SESSION.radius.pill,
+    borderWidth: 1,
+    borderColor: T.panelBorder,
+  },
+  stepPillText: { fontSize: 12, fontWeight: '800', color: T.accentDeep },
+  title: { fontSize: 26, fontWeight: '900', color: T.ink, textAlign: 'center' },
+  subtitle: { fontSize: 12, fontWeight: '600', color: T.inkMuted, textAlign: 'center' },
+  speechBubble: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: T.panel,
+    borderRadius: BUILDER_SESSION.radius.card,
+    borderWidth: 1,
+    borderColor: T.panelBorder,
+    padding: 14,
+    width: '100%',
+    ...BUILDER_SESSION.shadow.soft,
+  },
+  mascot: { fontSize: 32 },
+  bubbleBody: { flex: 1, gap: 2 },
+  mascotName: { fontSize: 11, fontWeight: '800', color: T.accent, textTransform: 'uppercase', letterSpacing: 0.8 },
+  prompt: { fontSize: 14, fontWeight: '700', color: T.ink, lineHeight: 20 },
+  targetCard: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    padding: 16,
+    borderRadius: BUILDER_SESSION.radius.card,
+    backgroundColor: T.targetGlow,
+    borderWidth: 2,
+    borderColor: T.accentSoft,
+    alignItems: 'center',
+  },
+  targetLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: T.inkMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  targetNum: { fontSize: 56, fontWeight: '900', color: T.accentDeep, marginTop: 4 },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  numTile: {
     width: 88,
     height: 88,
     borderRadius: 20,
-    backgroundColor: '#FFF',
     borderWidth: 4,
-    borderColor: '#A78BFA',
     alignItems: 'center',
     justifyContent: 'center',
+    ...BUILDER_SESSION.shadow.soft,
   },
-  pressed: { opacity: 0.9, backgroundColor: '#EDE9FE' },
-  numText: { fontSize: 48, fontWeight: '800', color: '#5B21B6' },
+  numText: { fontSize: 44, fontWeight: '900', color: T.accentDeep },
 });

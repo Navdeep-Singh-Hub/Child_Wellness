@@ -1,12 +1,24 @@
 /**
- * Builder Session 6 — Game 1: Memory Game
- * Match colored cards. Flip two at a time to find matching color pairs.
+ * Builder Session 6 — Game 1: Chroma Memory Deck
+ * Flip two cards at a time to find matching color pairs.
  */
-import { speak } from '@/utils/tts';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
-import { GameLayout } from '@/components/farm-session/GameLayout';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
 import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { BUILDER_SESSION, CHROMA_MEMORY_THEME as T } from './builderSessionTheme';
+import { speakBuilderHint, stopBuilderSpeech } from './builderSessionSpeech';
+import { MountainWorkshopBackground } from './MountainWorkshopBackground';
 
 const PAIRS = [
   { pairId: 'red', color: '#EF4444', label: 'Red' },
@@ -15,20 +27,73 @@ const PAIRS = [
   { pairId: 'yellow', color: '#FBBF24', label: 'Yellow' },
 ];
 
-function shuffle<T>(arr: T[]): T[] {
+function shuffle<U>(arr: U[]): U[] {
   const out = [...arr];
-  for (let i = out.length - 1; i > 0; i--) {
+  for (let i = out.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out;
 }
 
-export interface MemoryColoredGameProps {
-  onComplete: () => void;
+function ColorCard({
+  color,
+  faceUp,
+  matched,
+  onPress,
+  disabled,
+}: {
+  color: string;
+  faceUp: boolean;
+  matched: boolean;
+  onPress: () => void;
+  disabled: boolean;
+}) {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (faceUp && !matched) {
+      scale.value = withSequence(withSpring(1.06, { damping: 8 }), withSpring(1, { damping: 10 }));
+    }
+  }, [faceUp, matched, scale]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  return (
+    <Animated.View style={animStyle}>
+      <Pressable
+        onPress={onPress}
+        disabled={disabled || matched}
+        style={({ pressed }) => [
+          styles.card,
+          faceUp || matched
+            ? { backgroundColor: color, borderColor: matched ? T.cardMatchedBorder : 'rgba(0,0,0,0.15)' }
+            : styles.cardBack,
+          pressed && !disabled && !matched && styles.pressed,
+        ]}
+        accessibilityLabel={faceUp || matched ? 'Color card' : 'Hidden card'}
+      />
+    </Animated.View>
+  );
 }
 
-export function MemoryColoredGame({ onComplete }: MemoryColoredGameProps) {
+export interface MemoryColoredGameProps {
+  onComplete: () => void;
+  onBack?: () => void;
+  currentStep?: number;
+  totalSteps?: number;
+  sessionTitle?: string;
+}
+
+export function MemoryColoredGame({
+  onComplete,
+  onBack,
+  currentStep = 1,
+  totalSteps = 5,
+  sessionTitle,
+}: MemoryColoredGameProps) {
   const cards = useMemo(
     () =>
       shuffle(
@@ -42,105 +107,236 @@ export function MemoryColoredGame({ onComplete }: MemoryColoredGameProps) {
 
   const [flipped, setFlipped] = useState<number[]>([]);
   const [matched, setMatched] = useState<Set<string>>(new Set());
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [celebrating, setCelebrating] = useState(false);
   const [lock, setLock] = useState(false);
 
+  const progressPct = Math.round((currentStep / totalSteps) * 100);
+
   useEffect(() => {
-    speak('Flip two cards to find matching colors. Tap a card to flip it.', 0.75);
+    speakBuilderHint('Flip two cards to find matching colors. Tap a card to turn it over.');
+    return () => stopBuilderSpeech();
   }, []);
 
   const handleCardTap = useCallback(
     (index: number) => {
       if (lock || matched.has(cards[index].pairId) || flipped.includes(index)) return;
+
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {
+        /* ignore */
+      }
+
       const nextFlipped = flipped.length === 2 ? [index] : [...flipped, index];
       setFlipped(nextFlipped);
 
       if (nextFlipped.length === 2) {
         setLock(true);
         const [a, b] = nextFlipped;
-        const match = cards[a].pairId === cards[b].pairId;
-        if (match) {
+        const isMatch = cards[a].pairId === cards[b].pairId;
+
+        if (isMatch) {
           const pairId = cards[a].pairId;
           setMatched((m) => {
             const next = new Set(m).add(pairId);
             if (next.size >= PAIRS.length) {
-              setShowSuccess(true);
+              speakBuilderHint('All color pairs found!');
+              setCelebrating(true);
               setTimeout(() => onComplete(), 2200);
             }
             return next;
           });
           setFlipped([]);
-          speak('Match!', 0.7);
+          speakBuilderHint('Match!');
           setLock(false);
         } else {
-          speak('Try again.', 0.6);
+          speakBuilderHint('Not a match. Try again.');
           setTimeout(() => {
             setFlipped([]);
             setLock(false);
-          }, 800);
+          }, 850);
         }
       }
     },
     [cards, flipped, lock, onComplete]
   );
 
-  if (showSuccess) {
+  if (celebrating) {
     return (
-      <SuccessCelebration
-        variant="mint"
-        title="Great Job!"
-        subtitle="You found all the color pairs!"
-        badgeEmoji="🎨"
-      />
+      <View style={styles.root}>
+        <ConfettiEffect />
+        <SuccessCelebration
+          title="Chroma Cleared!"
+          subtitle="You matched every color on the deck!"
+          badgeEmoji="🎨"
+          variant="indigo"
+        />
+      </View>
     );
   }
 
   return (
-    <GameLayout
-      title="Memory Game"
-      instruction="Tap two cards to find matching colors."
-      icon="🎨"
-      backgroundVariant="indigo"
-    >
-      <View style={styles.container}>
-        <Text style={styles.label}>Find the matching colors</Text>
-        <View style={styles.grid}>
-          {cards.map((card, index) => {
-            const isFlipped = flipped.includes(index) || matched.has(card.pairId);
-            return (
-              <Pressable
-                key={card.id}
-                onPress={() => handleCardTap(index)}
-                style={[
-                  styles.card,
-                  isFlipped && [styles.cardFlipped, { backgroundColor: card.color }],
-                ]}
-                accessibilityLabel={isFlipped ? card.pairId : 'Card face down'}
-              >
-                {!isFlipped && <Text style={styles.cardBack}>?</Text>}
-              </Pressable>
-            );
-          })}
+    <View style={styles.root}>
+      <LinearGradient
+        colors={[...T.gradient]}
+        locations={[...T.gradientLocations]}
+        style={StyleSheet.absoluteFill}
+      />
+      <MountainWorkshopBackground />
+
+      {onBack ? (
+        <Pressable
+          onPress={onBack}
+          style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="arrow-back" size={22} color={T.accentDeep} />
+          <Text style={styles.backText}>Back</Text>
+        </Pressable>
+      ) : null}
+
+      <View style={styles.header}>
+        <View style={styles.badgeRow}>
+          <View style={styles.stepPill}>
+            <Text style={styles.stepPillText}>
+              Build {currentStep} · {progressPct}%
+            </Text>
+          </View>
+          <View style={styles.pairPill}>
+            <Text style={styles.pairPillText}>
+              {matched.size}/{PAIRS.length} pairs
+            </Text>
+          </View>
+        </View>
+
+        <Text style={styles.title}>{T.name}</Text>
+        {sessionTitle ? <Text style={styles.subtitle}>{sessionTitle}</Text> : null}
+
+        <View style={styles.speechBubble}>
+          <Text style={styles.mascot}>{T.mascot}</Text>
+          <View style={styles.bubbleBody}>
+            <Text style={styles.mascotName}>{T.mascotName} says:</Text>
+            <Pressable onPress={() => speakBuilderHint('Find matching color pairs!')}>
+              <Text style={styles.prompt}>Match the colors 🔊</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
-    </GameLayout>
+
+      <View style={styles.playArea}>
+        <View style={styles.panel}>
+          <Text style={styles.panelLabel}>Color Deck</Text>
+          <View style={styles.grid}>
+            {cards.map((card, index) => {
+              const isFlipped = flipped.includes(index) || matched.has(card.pairId);
+              return (
+                <ColorCard
+                  key={card.id}
+                  color={card.color}
+                  faceUp={isFlipped}
+                  matched={matched.has(card.pairId)}
+                  onPress={() => handleCardTap(index)}
+                  disabled={lock}
+                />
+              );
+            })}
+          </View>
+        </View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', paddingVertical: 24 },
-  label: { fontSize: 18, fontWeight: '700', color: '#4F46E5', marginBottom: 20 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', maxWidth: 260 },
-  card: {
-    width: 60,
-    height: 60,
-    borderRadius: 14,
-    backgroundColor: '#A78BFA',
-    borderWidth: 3,
-    borderColor: '#7C3AED',
+  root: { flex: 1 },
+  pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
+  backBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    alignSelf: 'flex-start',
+    marginTop: Platform.OS === 'web' ? 12 : 48,
+    marginLeft: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    borderRadius: BUILDER_SESSION.radius.pill,
+    borderWidth: 1,
+    borderColor: T.panelBorder,
+    zIndex: 10,
+    ...BUILDER_SESSION.shadow.soft,
   },
-  cardFlipped: { borderColor: 'rgba(0,0,0,0.2)' },
-  cardBack: { fontSize: 28, fontWeight: '800', color: '#FFF' },
+  backText: { fontSize: 15, fontWeight: '700', color: T.accentDeep },
+  header: { paddingHorizontal: 20, paddingTop: 8, gap: 8, zIndex: 5 },
+  badgeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  stepPill: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: BUILDER_SESSION.radius.pill,
+    borderWidth: 1,
+    borderColor: T.panelBorder,
+  },
+  stepPillText: { fontSize: 12, fontWeight: '800', color: T.accentDeep },
+  pairPill: {
+    backgroundColor: 'rgba(252, 231, 243, 0.55)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: BUILDER_SESSION.radius.pill,
+    borderWidth: 1,
+    borderColor: T.accentSoft,
+  },
+  pairPillText: { fontSize: 12, fontWeight: '800', color: T.ink },
+  title: { fontSize: 26, fontWeight: '900', color: T.ink, textAlign: 'center' },
+  subtitle: { fontSize: 12, fontWeight: '600', color: T.inkMuted, textAlign: 'center' },
+  speechBubble: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: T.panel,
+    borderRadius: BUILDER_SESSION.radius.card,
+    borderWidth: 1,
+    borderColor: T.panelBorder,
+    padding: 14,
+    ...BUILDER_SESSION.shadow.soft,
+  },
+  mascot: { fontSize: 32 },
+  bubbleBody: { flex: 1, gap: 2 },
+  mascotName: { fontSize: 11, fontWeight: '800', color: T.accent, textTransform: 'uppercase', letterSpacing: 0.8 },
+  prompt: { fontSize: 14, fontWeight: '700', color: T.ink, lineHeight: 20 },
+  playArea: { flex: 1, paddingHorizontal: 20, justifyContent: 'center' },
+  panel: {
+    backgroundColor: T.panel,
+    borderRadius: BUILDER_SESSION.radius.card,
+    borderWidth: 1,
+    borderColor: T.panelBorder,
+    padding: 16,
+    alignItems: 'center',
+    ...BUILDER_SESSION.shadow.card,
+  },
+  panelLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: T.inkMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 14,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
+    maxWidth: 280,
+  },
+  card: {
+    width: 58,
+    height: 58,
+    borderRadius: 14,
+    borderWidth: 3,
+  },
+  cardBack: {
+    backgroundColor: T.cardBack,
+    borderColor: T.cardBackBorder,
+  },
 });

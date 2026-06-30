@@ -27,6 +27,7 @@ import { FreeWritingSession9 } from '@/components/level1-free-writing-session/Fr
 import { LettersQRSession9 } from '@/components/explorer-session/LettersQRSession9';
 import { MasterSession10 } from '@/components/level1-master-session/MasterSession10';
 import { MatcherSmallLettersSession } from '@/components/matcher-small-letters/MatcherSmallLettersSession';
+import { MatcherSessionSelector } from '@/components/matcher-small-letters/MatcherSessionSelector';
 import { ExplorerMasterSession10 } from '@/components/explorer-session/ExplorerMasterSession10';
 import { ATWordSession1 } from '@/components/at-word-session/ATWordSession1';
 import { INWordSession2 } from '@/components/in-word-session/INWordSession2';
@@ -69,6 +70,7 @@ import { DialogueBuilderSession8 } from '@/components/graduate-session/DialogueB
 import { StoryProblemSolverSession9 } from '@/components/graduate-session/StoryProblemSolverSession9';
 import { GraduateMasterSession10 } from '@/components/graduate-session/GraduateMasterSession10';
 import { BuilderSession1 } from '@/components/builder-session/BuilderSession1';
+import { BuilderSessionSelector } from '@/components/builder-session/BuilderSessionSelector';
 import { BuilderSession2 } from '@/components/builder-session/BuilderSession2';
 import { BuilderSession3 } from '@/components/builder-session/BuilderSession3';
 import { BuilderSession4 } from '@/components/builder-session/BuilderSession4';
@@ -159,6 +161,26 @@ export function SpecialEducationNavigator() {
       <ProgressMap
         onBack={() => setMode('sections')}
         currentSection={selectedSection || 1}
+      />
+    );
+  }
+
+  if (mode === 'sessions' && selectedSection === 2) {
+    return (
+      <MatcherSessionSelector
+        onBack={handleBack}
+        onSelectSession={handleSelectSession}
+        onShowMap={handleShowMap}
+      />
+    );
+  }
+
+  if (mode === 'sessions' && selectedSection === 3) {
+    return (
+      <BuilderSessionSelector
+        onBack={handleBack}
+        onSelectSession={handleSelectSession}
+        onShowMap={handleShowMap}
       />
     );
   }

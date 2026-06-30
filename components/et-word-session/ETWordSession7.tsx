@@ -1,33 +1,38 @@
 /**
- * ET Word Session 7 — Level 4 (Grouper) Session 7: The -ET Word Family
- * Flow: Intro → Game 1 (Word Family Finder) → Game 2 (Rhyme Match) → Game 3 (Clap Word) → Game 4 (Object Sort) → Notebook → Result
- * AAC-friendly: Primary #4F46E5, Success #22C55E, Background #F3F4F6.
+ * Level 4 Grouper — Session 7: The -ET Word Family
+ * Hub → 4 games + sunset journal task → completion
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import { ConfettiEffect } from '@/components/games/Level1/ConfettiEffect';
+import { SuccessCelebration } from '@/components/ui/SuccessCelebration';
+import { markSessionGameComplete } from '@/components/special-education/shared/useSessionIntroProgress';
+import { WordFamilyFinderGame } from '@/components/grouper-session/session7/WordFamilyFinderGame';
+import { RhymeMatchGame } from '@/components/grouper-session/session7/RhymeMatchGame';
+import { ClapWordGame } from '@/components/grouper-session/session7/ClapWordGame';
+import { ObjectSortingGame } from '@/components/grouper-session/session7/ObjectSortingGame';
+import { ETWordNotebookUpload } from '@/components/grouper-session/session7/ETWordNotebookUpload';
 import {
-  View,
-  Text,
-  StyleSheet,
+  GROUPER_S7_HUB_THEME as H,
+  GROUPER_S7_QUESTS,
+  GROUPER_SESSION,
+} from '@/components/grouper-session/grouperSessionTheme';
+import { SunsetShelfBackground } from '@/components/grouper-session/SunsetShelfBackground';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useCallback, useState } from 'react';
+import {
+  Platform,
+  Pressable,
   SafeAreaView,
   ScrollView,
-  TouchableOpacity,
-  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { getLastCompletedGameIndex, markSessionGameComplete } from '@/components/special-education/shared/useSessionIntroProgress';
-import { WordFamilyFinderET } from '@/components/WordFamilyFinderET';
-import { RhymeMatchET } from '@/components/RhymeMatchET';
-import { ClapWordET } from '@/components/ClapWordET';
-import { ObjectSortingET } from '@/components/ObjectSortingET';
-import { ETWordNotebookUpload } from '@/components/ETWordNotebookUpload';
 
-const TOTAL_GAMES = 5;
-const GAME_COUNT = 4;
+const PLAY_STEPS = 5;
+const SESSION_TITLE = 'Session 7 · The -ET Family';
 const SECTION_NUMBER = 4;
 const SESSION_NUMBER = 7;
-const PRIMARY = '#4F46E5';
-const SUCCESS = '#22C55E';
-const BG = '#F3F4F6';
 
 interface ETWordSession7Props {
   onExit?: () => void;
@@ -35,247 +40,366 @@ interface ETWordSession7Props {
 
 export function ETWordSession7({ onExit }: ETWordSession7Props = {}) {
   const [step, setStep] = useState(0);
-  const [stars, setStars] = useState(0);
-  const [notebookCorrect, setNotebookCorrect] = useState<boolean | null>(null);
-  const [lastCompletedGameIndex, setLastCompletedGameIndex] = useState(0);
+  const [doneCount, setDoneCount] = useState(0);
+  const [taskCorrect, setTaskCorrect] = useState<boolean | null>(null);
+  const [completedBuilds, setCompletedBuilds] = useState<Set<number>>(() => new Set());
 
-  useEffect(() => {
-    if (step === 0) {
-      getLastCompletedGameIndex(SECTION_NUMBER, SESSION_NUMBER, GAME_COUNT).then(setLastCompletedGameIndex);
-    }
-  }, [step]);
-
-  const advance = useCallback(async () => {
-    const currentStep = step;
-    setStars((s) => Math.min(s + 1, TOTAL_GAMES));
-    setStep((g) => Math.min(g + 1, 6));
-    if (currentStep >= 1 && currentStep <= GAME_COUNT) {
-      await markSessionGameComplete(SECTION_NUMBER, SESSION_NUMBER, currentStep);
-      setLastCompletedGameIndex((prev) => Math.max(prev, currentStep));
-    }
-  }, [step]);
-
-  const handleNotebookComplete = useCallback((correct: boolean) => {
-    setNotebookCorrect(correct);
-    if (correct) setStars((s) => Math.min(s + 1, TOTAL_GAMES));
-    setStep(6);
+  const markComplete = useCallback((buildStep: number) => {
+    setCompletedBuilds((prev) => {
+      const next = new Set(prev);
+      next.add(buildStep);
+      return next;
+    });
+    setDoneCount((c) => Math.min(c + 1, PLAY_STEPS));
   }, []);
 
-  const progressPct = step >= 1 && step <= 5 ? (step / TOTAL_GAMES) * 100 : 0;
+  const advance = useCallback(async () => {
+    if (step >= 1 && step <= 4) {
+      await markSessionGameComplete(SECTION_NUMBER, SESSION_NUMBER, step);
+    }
+    markComplete(step);
+    setStep((s) => Math.min(s + 1, 6));
+  }, [markComplete, step]);
+
+  const handleTaskComplete = useCallback(
+    async (correct: boolean) => {
+      setTaskCorrect(correct);
+      if (correct) {
+        await markSessionGameComplete(SECTION_NUMBER, SESSION_NUMBER, 5);
+        markComplete(5);
+      }
+      setStep(6);
+    },
+    [markComplete]
+  );
 
   if (step === 0) {
-    const cards = [
-      { icon: '🔍', title: 'Find the -ET words', desc: 'Word family' },
-      { icon: '🎵', title: 'Find the rhyme', desc: 'Rhyming' },
-      { icon: '👏', title: 'Clap the word', desc: 'Syllables' },
-      { icon: '📦', title: 'Sort the objects', desc: 'Classification' },
-    ];
-    const nextStep = Math.min(lastCompletedGameIndex + 1, 5);
-    const startLabel = nextStep <= 4 ? `Start Game ${nextStep}` : 'Notebook';
+    const progressPct = Math.round((completedBuilds.size / PLAY_STEPS) * 100);
     return (
-      <SafeAreaView style={styles.safe}>
-        <ScrollView contentContainerStyle={styles.introScroll} showsVerticalScrollIndicator={false}>
-          <View style={styles.introHeader}>
-            <Text style={styles.introTitle}>The -ET Family</Text>
-            <Text style={styles.introSub}>
-              Let's learn words that end with -et.
-            </Text>
-          </View>
-          <View style={styles.exampleBox}>
-            <Text style={styles.exampleTitle}>Example words:</Text>
-            <View style={styles.exampleWordsRow}>
-              <Text style={styles.exampleWord}>pet</Text>
-              <Text style={styles.exampleWord}>net</Text>
-              <Text style={styles.exampleWord}>jet</Text>
-              <Text style={styles.exampleWord}>wet</Text>
+      <View style={styles.root}>
+        <LinearGradient
+          colors={[...H.gradient]}
+          locations={[...H.gradientLocations]}
+          style={StyleSheet.absoluteFill}
+        />
+        <SunsetShelfBackground />
+
+        <SafeAreaView style={styles.hubSafe}>
+          {onExit ? (
+            <Pressable
+              onPress={onExit}
+              style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
+            >
+              <Ionicons name="arrow-back" size={22} color={H.accentDeep} />
+              <Text style={styles.backText}>Sessions</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.backSpacer} />
+          )}
+
+          <ScrollView contentContainerStyle={styles.hubScroll} showsVerticalScrollIndicator={false}>
+            <View style={styles.hubHeader}>
+              <Text style={styles.hubEyebrow}>Grouper · Session 7 · Sunset Shelf</Text>
+              <Text style={styles.hubTitle}>{H.name}</Text>
+              <Text style={styles.hubSession}>The -ET Word Family</Text>
+
+              <View style={styles.exampleChip}>
+                <Text style={styles.exampleText}>pet · net · jet · wet</Text>
+              </View>
+
+              <View style={styles.progressRow}>
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
+                </View>
+                <Text style={styles.progressLabel}>
+                  {completedBuilds.size}/{PLAY_STEPS} builds
+                </Text>
+              </View>
+
+              <View style={styles.speechBubble}>
+                <Text style={styles.mascot}>{H.mascot}</Text>
+                <View style={styles.bubbleBody}>
+                  <Text style={styles.mascotName}>{H.mascotName} says:</Text>
+                  <Text style={styles.hubPrompt}>
+                    On the sunset shelf, -ET words glow at dusk — scout them, echo rhymes, clap, sort, then sketch your journal!
+                  </Text>
+                </View>
+              </View>
             </View>
-          </View>
-          <View style={styles.cardsWrap}>
-            {cards.map((card, i) => {
-              const gameNum = i + 1;
-              const unlocked = lastCompletedGameIndex >= i;
+
+            {GROUPER_S7_QUESTS.map((quest) => {
+              const done = completedBuilds.has(quest.step);
               return (
                 <Pressable
-                  key={i}
-                  onPress={() => unlocked && setStep(gameNum)}
-                  style={({ pressed }) => [
-                    styles.introCard,
-                    !unlocked && styles.introCardLocked,
-                    unlocked && pressed && styles.introCardPressed,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel={unlocked ? `${card.title}. Tap to play.` : `${card.title}. Complete game ${gameNum - 1} first.`}
-                  accessibilityState={{ disabled: !unlocked }}
+                  key={quest.step}
+                  onPress={() => setStep(quest.step)}
+                  style={({ pressed }) => [styles.questCard, pressed && styles.pressed]}
+                  accessibilityLabel={`Build ${quest.step}: ${quest.label}`}
                 >
-                  <Text style={styles.introCardIcon}>{card.icon}</Text>
-                  <Text style={[styles.introCardTitle, !unlocked && styles.introCardTextLocked]}>{card.title}</Text>
-                  <Text style={[styles.introCardDesc, !unlocked && styles.introCardTextLocked]}>{card.desc}</Text>
-                  {!unlocked && (
-                    <View style={styles.introCardLockBadge}>
-                      <Ionicons name="lock-closed" size={20} color="#94A3B8" />
-                    </View>
-                  )}
+                  <View style={[styles.questAccent, { backgroundColor: quest.theme.accent }]} />
+                  <View style={styles.questIconWrap}>
+                    <Text style={styles.questIcon}>{quest.theme.mascot}</Text>
+                    {done ? (
+                      <View style={styles.doneBadge}>
+                        <Ionicons name="checkmark" size={12} color="#fff" />
+                      </View>
+                    ) : null}
+                  </View>
+                  <View style={styles.questText}>
+                    <Text style={styles.questStep}>Build {quest.step}</Text>
+                    <Text style={styles.questTitle}>{quest.label}</Text>
+                    <Text style={styles.questDesc} numberOfLines={2}>
+                      {quest.desc}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={22} color={H.inkMuted} />
                 </Pressable>
               );
             })}
-          </View>
-          <Pressable
-            onPress={() => setStep(nextStep)}
-            style={({ pressed }) => [styles.startBtn, pressed && styles.pressed]}
-            accessibilityLabel={nextStep === 1 ? 'Start first game' : `Start game ${nextStep}`}
-          >
-            <Text style={styles.startBtnText}>{nextStep === 1 ? 'Start' : startLabel}</Text>
-          </Pressable>
-        </ScrollView>
-      </SafeAreaView>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
     );
   }
 
   if (step === 6) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <ScrollView contentContainerStyle={styles.resultScroll} showsVerticalScrollIndicator={false}>
-          <Text style={styles.resultTitle}>Great job learning the -ET family!</Text>
-          <View style={styles.resultBadge}>
-            <Text style={styles.resultBadgeEmoji}>⭐</Text>
-            <Text style={styles.resultBadgeText}>ET Family Star</Text>
-          </View>
-          <View style={styles.resultStats}>
-            <Text style={styles.resultStat}>Games completed: {stars}</Text>
-            <Text style={styles.resultStat}>
-              Notebook: {notebookCorrect === null ? '—' : notebookCorrect ? '✓ Done' : 'Try again'}
-            </Text>
-          </View>
-          <View style={styles.starsRow}>
-            {Array.from({ length: TOTAL_GAMES }, (_, i) => (
-              <Text key={i} style={[styles.star, i < stars && styles.starEarned]}>⭐</Text>
-            ))}
-          </View>
+      <View style={styles.root}>
+        <LinearGradient
+          colors={[...H.gradient]}
+          locations={[...H.gradientLocations]}
+          style={StyleSheet.absoluteFill}
+        />
+        <SunsetShelfBackground />
+        <ConfettiEffect />
+        <SuccessCelebration
+          title="Great job learning the -ET family!"
+          subtitle={`ET Family Star 🐾\n${SESSION_TITLE}\nCompleted ${doneCount}/${PLAY_STEPS} builds${
+            taskCorrect === false ? '\nSunset Journal: try again next time!' : ''
+          }`}
+          badgeEmoji="⭐"
+          variant="sunset"
+        />
+        <View style={styles.doneActions}>
           {onExit ? (
-            <TouchableOpacity style={styles.backBtn} onPress={onExit} activeOpacity={0.8}>
-              <Text style={styles.backBtnText}>Back to sessions</Text>
-            </TouchableOpacity>
-          ) : null}
-        </ScrollView>
-      </SafeAreaView>
+            <Pressable onPress={onExit} style={({ pressed }) => [pressed && styles.pressed]}>
+              <LinearGradient
+                colors={[...H.doneGradient]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.doneBtn}
+              >
+                <Text style={styles.doneBtnText}>Back to sessions</Text>
+              </LinearGradient>
+            </Pressable>
+          ) : (
+            <Pressable onPress={() => setStep(0)} style={({ pressed }) => [pressed && styles.pressed]}>
+              <LinearGradient
+                colors={[...H.doneGradient]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.doneBtn}
+              >
+                <Text style={styles.doneBtnText}>Back to builds</Text>
+              </LinearGradient>
+            </Pressable>
+          )}
+        </View>
+      </View>
     );
   }
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Text style={styles.title}>The -ET Family</Text>
-        <Text style={styles.subtitle}>Session 7</Text>
-        <View style={styles.progressRow}>
-          <View style={styles.progressBg}>
-            <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
-          </View>
-          <Text style={styles.progressText}>{step} / {TOTAL_GAMES}</Text>
-        </View>
-        <View style={styles.starsRow}>
-          {Array.from({ length: TOTAL_GAMES }, (_, i) => (
-            <Text key={i} style={[styles.star, i < stars && styles.starEarned]}>⭐</Text>
-          ))}
-        </View>
-      </View>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {step === 1 && <WordFamilyFinderET onComplete={advance} />}
-        {step === 2 && <RhymeMatchET onComplete={advance} />}
-        {step === 3 && <ClapWordET onComplete={advance} />}
-        {step === 4 && <ObjectSortingET onComplete={advance} />}
-        {step === 5 && <ETWordNotebookUpload onComplete={handleNotebookComplete} />}
-      </ScrollView>
-    </SafeAreaView>
-  );
+  if (step === 1) {
+    return (
+      <WordFamilyFinderGame
+        sessionTitle={SESSION_TITLE}
+        currentStep={1}
+        totalSteps={PLAY_STEPS}
+        onBack={() => setStep(0)}
+        onComplete={advance}
+      />
+    );
+  }
+
+  if (step === 2) {
+    return (
+      <RhymeMatchGame
+        sessionTitle={SESSION_TITLE}
+        currentStep={2}
+        totalSteps={PLAY_STEPS}
+        onBack={() => setStep(0)}
+        onComplete={advance}
+      />
+    );
+  }
+
+  if (step === 3) {
+    return (
+      <ClapWordGame
+        sessionTitle={SESSION_TITLE}
+        currentStep={3}
+        totalSteps={PLAY_STEPS}
+        onBack={() => setStep(0)}
+        onComplete={advance}
+      />
+    );
+  }
+
+  if (step === 4) {
+    return (
+      <ObjectSortingGame
+        sessionTitle={SESSION_TITLE}
+        currentStep={4}
+        totalSteps={PLAY_STEPS}
+        onBack={() => setStep(0)}
+        onComplete={advance}
+      />
+    );
+  }
+
+  if (step === 5) {
+    return (
+      <ETWordNotebookUpload
+        sessionTitle={SESSION_TITLE}
+        currentStep={5}
+        totalSteps={PLAY_STEPS}
+        onBack={() => setStep(0)}
+        onComplete={handleTaskComplete}
+      />
+    );
+  }
+
+  return null;
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BG },
-  header: {
-    backgroundColor: '#E0E7FF',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
-    borderBottomWidth: 3,
-    borderBottomColor: PRIMARY,
-  },
-  title: { fontSize: 22, fontWeight: '800', color: '#3730A3', textAlign: 'center' },
-  subtitle: { fontSize: 14, color: '#4F46E5', textAlign: 'center', marginTop: 4 },
-  progressRow: { flexDirection: 'row', alignItems: 'center', marginTop: 14, gap: 12 },
-  progressBg: { flex: 1, height: 14, backgroundColor: '#C7D2FE', borderRadius: 7, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: PRIMARY, borderRadius: 7 },
-  progressText: { fontSize: 16, fontWeight: '700', color: '#3730A3', minWidth: 48 },
-  starsRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 10, gap: 6 },
-  star: { fontSize: 24, opacity: 0.35 },
-  starEarned: { opacity: 1 },
-  scroll: { flex: 1 },
-  scrollContent: { flexGrow: 1, paddingBottom: 24 },
-  introScroll: { flexGrow: 1, padding: 24, paddingBottom: 40 },
-  introHeader: { marginBottom: 24 },
-  introTitle: { fontSize: 28, fontWeight: '800', color: '#3730A3', textAlign: 'center', marginBottom: 12 },
-  introSub: { fontSize: 18, color: '#4F46E5', textAlign: 'center', lineHeight: 26 },
-  exampleBox: {
-    backgroundColor: '#E0E7FF',
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 3,
-    borderColor: PRIMARY,
-    marginBottom: 24,
-    alignItems: 'center',
-  },
-  exampleTitle: { fontSize: 18, fontWeight: '700', color: '#3730A3', marginBottom: 12 },
-  exampleWordsRow: { flexDirection: 'row', gap: 16 },
-  exampleWord: { fontSize: 24, fontWeight: '800', color: '#1f2937' },
-  cardsWrap: { gap: 16, marginBottom: 28 },
-  introCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 3,
-    borderColor: PRIMARY,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  introCardLocked: { backgroundColor: '#F1F5F9', borderColor: '#CBD5E1', opacity: 0.9 },
-  introCardPressed: { opacity: 0.9 },
-  introCardTextLocked: { color: '#94A3B8' },
-  introCardLockBadge: { marginLeft: 'auto', padding: 6 },
-  introCardIcon: { fontSize: 36 },
-  introCardTitle: { fontSize: 20, fontWeight: '800', color: '#1f2937', flex: 1 },
-  introCardDesc: { fontSize: 16, color: '#6b7280' },
-  startBtn: {
-    backgroundColor: PRIMARY,
-    paddingVertical: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-  },
-  startBtnText: { fontSize: 24, fontWeight: '800', color: '#FFF' },
-  pressed: { opacity: 0.9 },
-  resultScroll: { flexGrow: 1, padding: 24, alignItems: 'center', paddingBottom: 40 },
-  resultTitle: { fontSize: 24, fontWeight: '800', color: '#3730A3', textAlign: 'center', marginBottom: 24 },
-  resultBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#DCFCE7',
-    paddingVertical: 16,
-    paddingHorizontal: 28,
-    borderRadius: 20,
-    borderWidth: 3,
-    borderColor: SUCCESS,
-    gap: 10,
-    marginBottom: 24,
-  },
-  resultBadgeEmoji: { fontSize: 32 },
-  resultBadgeText: { fontSize: 20, fontWeight: '800', color: '#166534' },
-  resultStats: { marginBottom: 16 },
-  resultStat: { fontSize: 18, color: '#374151', marginBottom: 4 },
+  root: { flex: 1 },
+  pressed: { opacity: 0.88, transform: [{ scale: 0.98 }] },
+  hubSafe: { flex: 1 },
+  backSpacer: { height: Platform.OS === 'web' ? 12 : 8 },
   backBtn: {
-    marginTop: 24,
-    backgroundColor: PRIMARY,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginTop: Platform.OS === 'web' ? 8 : 4,
+    marginLeft: 16,
+    marginBottom: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    gap: 6,
+    backgroundColor: 'rgba(255,255,255,0.82)',
+    borderRadius: GROUPER_SESSION.radius.pill,
+    borderWidth: 1,
+    borderColor: H.cardBorder,
+    zIndex: 10,
+    ...GROUPER_SESSION.shadow.soft,
+  },
+  backText: { fontSize: 15, fontWeight: '700', color: H.accentDeep },
+  hubScroll: { paddingHorizontal: 20, paddingBottom: 40, gap: 12 },
+  hubHeader: { alignItems: 'center', gap: 10, marginBottom: 8 },
+  hubEyebrow: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: H.inkMuted,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  hubTitle: { fontSize: 28, fontWeight: '900', color: H.ink, textAlign: 'center' },
+  hubSession: { fontSize: 15, fontWeight: '600', color: H.inkMuted, textAlign: 'center' },
+  exampleChip: {
+    backgroundColor: 'rgba(251, 113, 133, 0.2)',
+    borderWidth: 2,
+    borderColor: H.accentSoft,
+    borderRadius: GROUPER_SESSION.radius.pill,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+  },
+  exampleText: { fontSize: 18, fontWeight: '900', color: H.accentDeep, letterSpacing: 1 },
+  progressRow: { width: '100%', alignItems: 'center', gap: 6, marginTop: 4 },
+  progressTrack: {
+    width: '100%',
+    height: 8,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  progressFill: { height: '100%', backgroundColor: H.accent, borderRadius: 999 },
+  progressLabel: { fontSize: 13, fontWeight: '700', color: H.inkMuted },
+  speechBubble: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: H.card,
+    borderRadius: GROUPER_SESSION.radius.card,
+    borderWidth: 1,
+    borderColor: H.cardBorder,
+    padding: 14,
+    width: '100%',
+    marginTop: 6,
+    ...GROUPER_SESSION.shadow.soft,
+  },
+  mascot: { fontSize: 32 },
+  bubbleBody: { flex: 1, gap: 2 },
+  mascotName: { fontSize: 12, fontWeight: '800', color: H.accentDeep, textTransform: 'uppercase' },
+  hubPrompt: { fontSize: 14, fontWeight: '600', color: H.ink, lineHeight: 20 },
+  questCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: H.card,
+    borderRadius: GROUPER_SESSION.radius.card,
+    borderWidth: 1,
+    borderColor: H.cardBorder,
+    padding: 16,
+    gap: 14,
+    overflow: 'hidden',
+    ...GROUPER_SESSION.shadow.card,
+  },
+  questAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 5,
+  },
+  questIconWrap: { position: 'relative', marginLeft: 4 },
+  questIcon: { fontSize: 38 },
+  doneBadge: {
+    position: 'absolute',
+    right: -4,
+    bottom: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  questText: { flex: 1, gap: 2 },
+  questStep: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: H.inkMuted,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  questTitle: { fontSize: 17, fontWeight: '800', color: H.ink },
+  questDesc: { fontSize: 13, color: H.inkMuted, lineHeight: 18 },
+  doneBtn: {
     paddingVertical: 14,
     paddingHorizontal: 28,
-    borderRadius: 12,
+    borderRadius: GROUPER_SESSION.radius.button,
+    alignItems: 'center',
+    minWidth: 200,
   },
-  backBtnText: { color: '#FFF', fontWeight: '700', fontSize: 16 },
+  doneBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
+  doneActions: {
+    position: 'absolute',
+    bottom: 48,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
 });
