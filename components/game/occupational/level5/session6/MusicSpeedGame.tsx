@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-/** OT Level 5 · Session 6 · Game 5 — Beat Blitz */
-export { default } from '@/components/game/occupational/level5/session6/beatBlitz/BeatBlitzGame';
-=======
 import { isTapNearTarget } from '@/components/game/occupational/level5/shared/movingTargetTouch';
 import { BigCountdown, GlowingTarget } from '@/components/game/occupational/level5/session6/SpeedMatchVisuals';
 import { SpeedMatchShell, useSpeedMatchExit } from '@/components/game/occupational/level5/session6/SpeedMatchShell';
@@ -266,4 +262,3 @@ const styles = StyleSheet.create({
 });
 
 export default MusicSpeedGame;
->>>>>>> parent of d0342ff (Revert "fgh")

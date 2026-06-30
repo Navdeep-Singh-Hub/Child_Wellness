@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-export { default } from './synesthesiaLab/SynesthesiaLabGame';
-=======
 import { RoundCountdownOverlay } from '@/components/game/occupational/level5/session2/shared/Session2UI';
 import { ReactionShell, useReactionExit } from '@/components/game/occupational/level5/session9/ReactionShell';
 import { SESSION5_9_PACING } from '@/components/game/occupational/level5/session9/session9Pacing';
@@ -282,4 +279,3 @@ const styles = StyleSheet.create({
   lightRing: { borderWidth: 3, borderRadius: TARGET_SIZE / 2 + 6, padding: 3 },
 });
 export default SoundLightGame;
->>>>>>> parent of d0342ff (Revert "fgh")

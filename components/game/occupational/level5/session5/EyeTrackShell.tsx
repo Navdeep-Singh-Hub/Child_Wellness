@@ -1,18 +1,19 @@
-/** Shared layout shell for OT L5 Session 9 visual reaction games */
+/** Shared layout shell for OT L5 Session 5 eye-tracking games */
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { Session2HUD, Session2Intro } from '@/components/game/occupational/level5/session2/shared/Session2UI';
 import type { Session2ThemeTokens } from '@/components/game/occupational/level5/session2/shared/Session2UI';
-import { ReactionBackdrop } from '@/components/game/occupational/level5/session9/VisualReactionVisuals';
-import type { ReactionCopy } from '@/components/game/occupational/level5/session9/visualReactionThemes';
+import { EyeTrackBackdrop } from '@/components/game/occupational/level5/session5/EyeTrackVisuals';
+import type { EyeTrackCopy } from '@/components/game/occupational/level5/session5/eyeTrackThemes';
+import type { EyeTrackMode } from '@/components/game/occupational/level5/session5/eyeTrackConfig';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
-import { configurePlaybackAudio } from '@/utils/configureAppAudio';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type ShellProps = {
   theme: Session2ThemeTokens;
-  copy: ReactionCopy;
+  copy: EyeTrackCopy;
+  mode: EyeTrackMode;
   showInfo: boolean;
   showCongrats: boolean;
   done: boolean;
@@ -22,7 +23,6 @@ type ShellProps = {
   score: number;
   hint?: string;
   showHint?: boolean;
-  hudExtra?: React.ReactNode;
   onStart: () => void;
   onExit: () => void;
   onContinue?: () => void;
@@ -30,23 +30,41 @@ type ShellProps = {
   children: React.ReactNode;
 };
 
-export function ReactionShell({
-  theme, copy, showInfo, showCongrats, done, finalStats, round, totalRounds, score, hint, showHint, hudExtra,
-  onStart, onExit, onContinue, onBack, children,
+export function EyeTrackShell({
+  theme,
+  copy,
+  mode,
+  showInfo,
+  showCongrats,
+  done,
+  finalStats,
+  round,
+  totalRounds,
+  score,
+  hint,
+  showHint,
+  onStart,
+  onExit,
+  onContinue,
+  onBack,
+  children,
 }: ShellProps) {
   if (showInfo) {
     return (
       <SafeAreaView style={[styles.root, { backgroundColor: copy.rootBg }]} edges={['top', 'bottom']}>
         <Session2Intro
           config={{
-            theme, emoji: copy.emoji, title: copy.gameTitle, tagline: copy.tagline, body: copy.introBody,
-            chips: copy.chips, startLabel: copy.startLabel, startGradient: copy.startGradient,
-            backdrop: <ReactionBackdrop theme={theme} backdrop={copy.backdrop} />,
+            theme,
+            emoji: copy.emoji,
+            title: copy.gameTitle,
+            tagline: copy.tagline,
+            body: copy.introBody,
+            chips: copy.chips,
+            startLabel: copy.startLabel,
+            startGradient: copy.startGradient,
+            backdrop: <EyeTrackBackdrop theme={theme} backdrop={copy.backdrop} mode={mode} />,
           }}
-          onStart={() => {
-            void configurePlaybackAudio();
-            onStart();
-          }}
+          onStart={onStart}
           onBack={onExit}
         />
       </SafeAreaView>
@@ -61,7 +79,11 @@ export function ReactionShell({
         correct={finalStats.correct}
         total={finalStats.total}
         xpAwarded={finalStats.xp}
-        onContinue={() => { stopAllSpeech(); cleanupSounds(); onContinue ? onContinue() : onBack?.(); }}
+        onContinue={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onContinue ? onContinue() : onBack?.();
+        }}
         onHome={onExit}
       />
     );
@@ -82,23 +104,36 @@ export function ReactionShell({
         scoreLabel={copy.scoreLabel}
         hint={hint}
         showHint={showHint}
-        extra={hudExtra}
       />
       <View style={[styles.arena, { borderColor: theme.hudBorder }]}>
-        <ReactionBackdrop theme={theme} backdrop={copy.backdrop} />
+        <EyeTrackBackdrop theme={theme} backdrop={copy.backdrop} mode={mode} />
         {children}
       </View>
     </SafeAreaView>
   );
 }
 
-export function useReactionExit(onBack?: () => void) {
-  return () => { stopAllSpeech(); cleanupSounds(); onBack?.(); };
+export function useEyeTrackExit(onBack?: () => void) {
+  return () => {
+    stopAllSpeech();
+    cleanupSounds();
+    onBack?.();
+  };
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  back: { position: 'absolute', top: 52, left: 12, zIndex: 50, backgroundColor: 'rgba(0,0,0,0.45)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 18, borderWidth: 1 },
+  back: {
+    position: 'absolute',
+    top: 52,
+    left: 12,
+    zIndex: 50,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
   backText: { color: '#F8FAFC', fontWeight: '800', fontSize: 13 },
   arena: { flex: 1, margin: 10, marginTop: 4, borderRadius: 22, overflow: 'hidden', borderWidth: 2 },
 });

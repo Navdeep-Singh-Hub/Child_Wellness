@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-export { default } from './signalControl/SignalControlGame';
-=======
 import { RoundCountdownOverlay } from '@/components/game/occupational/level5/session2/shared/Session2UI';
 import { ReactionShell, useReactionExit } from '@/components/game/occupational/level5/session9/ReactionShell';
 import { SESSION5_9_PACING } from '@/components/game/occupational/level5/session9/session9Pacing';
@@ -250,4 +247,3 @@ const styles = StyleSheet.create({
   center: { justifyContent: 'center', alignItems: 'center' },
 });
 export default GoStopGame;
->>>>>>> parent of d0342ff (Revert "fgh")

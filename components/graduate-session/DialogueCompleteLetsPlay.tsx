@@ -135,7 +135,7 @@ export function DialogueCompleteLetsPlay({ onComplete }: { onComplete: () => voi
       title="Choose the correct reply"
       instruction="Choose the best reply."
       mascot="💬"
-      coachLine='When a friend says "Let\'s play," saying Yes is a friendly answer!'
+      coachLine={'When a friend says "Let\'s play," saying Yes is a friendly answer!'}
       onReplayVoice={playVoice}
     >
       <View style={styles.dialogueFrame}>
